@@ -50,7 +50,9 @@ export async function GET() {
 
     return NextResponse.json({ status: 'SUCCESS', title: video.title });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ 
+      error: err.message || "Unknown error", 
+      details: err 
+    }, { status: 500 });
   }
 }
