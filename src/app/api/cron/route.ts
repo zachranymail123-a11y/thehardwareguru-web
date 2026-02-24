@@ -12,8 +12,8 @@ export async function GET() {
     const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
     const channelId = 'UC_YOUR_CHANNEL_ID'; 
-    const feed = await parser.parseURL('https://www.youtube.com/feeds/videos.xml?channel_id=' + channelId);
-    
+    const feed = await parser.parseURL(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`);
+
     if (!feed.items || feed.items.length === 0) return NextResponse.json({ status: 'Zadne video' });
     const video = feed.items[0];
 
