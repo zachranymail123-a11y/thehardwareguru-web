@@ -13,7 +13,7 @@ export async function GET() {
 
     // Tady doplň ID svého YouTube kanálu
     const channelId = 'UC_TVÉ_ID_KANÁLU'; 
-    const feed = await parser.parseURL(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`);
+    const feed = await parser.parseURL(`https://www.youtube.com/feeds/videos.xml?channel_id=${UCgDdszBhhpqkNQc6t4YOCNw}`);
     
     if (!feed.items || feed.items.length === 0) {
       return NextResponse.json({ status: 'Zadne video nenalezeno' });
