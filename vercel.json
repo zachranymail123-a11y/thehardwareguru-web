@@ -1,1 +1,1 @@
-﻿{ "rewrites": [ { "source": "/api/cron", "destination": "/api/cron.js" } ] }
+{"rewrites": [{"source": "/api/cron", "destination": "/api/cron.js"}]}
