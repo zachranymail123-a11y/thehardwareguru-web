@@ -12,7 +12,7 @@ export async function GET() {
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
     // Tady doplň ID svého YouTube kanálu
-    const channelId = 'UC_TVÉ_ID_KANÁLU'; 
+    const channelId = 'UCgDdszBhhpqkNQc6t4YOCNw'; 
     const feed = await parser.parseURL(`https://www.youtube.com/feeds/videos.xml?channel_id=${UCgDdszBhhpqkNQc6t4YOCNw}`);
     
     if (!feed.items || feed.items.length === 0) {
