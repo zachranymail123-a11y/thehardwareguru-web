@@ -11,48 +11,54 @@ export async function GET() {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-    // Tady doplň ID svého YouTube kanálu
-    const channelId = 'UCgDdszBhhpqkNQc6t4YOCNw'; 
+    const channelId = 'UC_TVÉ_ID_KANÁLU'; // Doplň své ID
     const feed = await parser.parseURL(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`);
     
     if (!feed.items || feed.items.length === 0) {
       return NextResponse.json({ status: 'Zadne video nenalezeno' });
     }
 
-    const video = feed.items[0];
+    let processedCount = 0;
+    let skippedCount = 0;
 
-    // Kontrola duplicity v Supabase
-    const { data: duplicate } = await supabase
-      .from('reports')
-      .select('id')
-      .eq('video_id', video.id)
-      .maybeSingle();
+    // Projdeme všech 15 videí (feed.items)
+    for (const video of feed.items) {
+      // Kontrola duplicity
+      const { data: duplicate } = await supabase
+        .from('reports')
+        .select('id')
+        .eq('video_id', video.id)
+        .maybeSingle();
 
-    if (duplicate) {
-      return NextResponse.json({ status: 'Uz existuje', title: video.title });
+      if (duplicate) {
+        skippedCount++;
+        continue; // Video už máme, jdeme na další
+      }
+
+      // AI souhrn
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: 'Vytvoř stručný technický souhrn videa v češtině: ' + video.title }],
+      });
+
+      // Uložení
+      await supabase.from('reports').insert([{ 
+        title: video.title, 
+        video_id: video.id, 
+        content: completion.choices[0].message.content, 
+        url: video.link 
+      }]);
+
+      processedCount++;
     }
 
-    // AI souhrn přes OpenAI
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: 'Vytvoř stručný a výstižný technický souhrn videa v češtině: ' + video.title }],
+    return NextResponse.json({ 
+      status: 'DOKONČENO', 
+      novych_videi: processedCount, 
+      preskoceno: skippedCount 
     });
 
-    // Uložení do Supabase
-    const { error } = await supabase.from('reports').insert([{ 
-      title: video.title, 
-      video_id: video.id, 
-      content: completion.choices[0].message.content, 
-      url: video.link 
-    }]);
-
-    if (error) throw error;
-
-    return NextResponse.json({ status: 'SUCCESS', title: video.title });
   } catch (err) {
-    return NextResponse.json({ 
-      error: err.message || "Unknown error", 
-      details: err 
-    }, { status: 500 });
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
