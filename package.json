@@ -1,16 +1,17 @@
 {
   "name": "thehardwareguru-web",
   "version": "1.0.0",
-  "description": "AI Autopilot pro TheHardwareGuru",
-  "main": "backend/automat.js",
-  "engines": {
-    "node": "20.x"
-  },
+  "private": true,
   "scripts": {
-    "start": "node backend/automat.js",
-    "dev": "node backend/automat.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
     "rss-parser": "^3.13.0",
     "openai": "^4.0.0",
     "@supabase/supabase-js": "^2.39.0",
