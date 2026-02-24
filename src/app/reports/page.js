@@ -4,8 +4,8 @@ export const dynamic = 'force-dynamic'; // Chceme vždy čerstvá data
 
 export default async function ReportsPage() {
   const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.https://luepzmdwgrbtnevlznbx.supabase.co,
+    process.env.sb_publishable_wa3MgO-wdn8oWrZbJReNPw_CT9Bp2mq
   );
 
   // Vytáhneme všechny reporty seřazené od nejnovějšího
