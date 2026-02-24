@@ -11,8 +11,14 @@ export async function GET() {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-    const channelId = 'UC_TVÉ_ID_KANÁLU'; // Doplň své ID
-    const feed = await parser.parseURL(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`);
+    // Tady MUSÍ být tvoje ID (začíná na UC...)
+    const channelId = 'UCgDdszBhhpqkNQc6t4YOCNw'; 
+    const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
+    
+    // Zkusíme stáhnout feed
+    const feed = await parser.parseURL(url).catch(err => {
+      throw new Error(`YouTube Feed nenalezen (404). Zkontroluj ID kanálu: ${channelId}`);
+    });
     
     if (!feed.items || feed.items.length === 0) {
       return NextResponse.json({ status: 'Zadne video nenalezeno' });
@@ -21,9 +27,8 @@ export async function GET() {
     let processedCount = 0;
     let skippedCount = 0;
 
-    // Projdeme všech 15 videí (feed.items)
+    // Projedeme max 15 videí
     for (const video of feed.items) {
-      // Kontrola duplicity
       const { data: duplicate } = await supabase
         .from('reports')
         .select('id')
@@ -32,16 +37,14 @@ export async function GET() {
 
       if (duplicate) {
         skippedCount++;
-        continue; // Video už máme, jdeme na další
+        continue;
       }
 
-      // AI souhrn
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: 'Vytvoř stručný technický souhrn videa v češtině: ' + video.title }],
       });
 
-      // Uložení
       await supabase.from('reports').insert([{ 
         title: video.title, 
         video_id: video.id, 
@@ -59,6 +62,6 @@ export async function GET() {
     });
 
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
