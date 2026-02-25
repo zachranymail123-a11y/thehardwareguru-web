@@ -1,67 +1,79 @@
 import { NextResponse } from 'next/server';
-import Parser from 'rss-parser';
-import { OpenAI } from 'openai';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+
+  const YOUTUBE_CHANNELS = [
+    { id: 'UC2_X6C2v_q_A8Y0S-Yv9TfQ', name: 'TheHardwareGuru_Czech' } 
+  ];
+
+  const API_KEY = process.env.YOUTUBE_API_KEY;
+  let novych = 0;
+  let preskoceno = 0;
+
   try {
-    const parser = new Parser();
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    for (const channel of YOUTUBE_CHANNELS) {
+      // 1. Získáme videa z YT
+      const res = await fetch(
+        `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${channel.id}&part=snippet,id&order=date&maxResults=5`
+      );
+      const data = await res.json();
 
-    // Tady MUSÍ být tvoje ID (začíná na UC...)
-    const channelId = 'UCgDdszBhhpqkNQc6t4YOCNw'; 
-    const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-    
-    // Zkusíme stáhnout feed
-    const feed = await parser.parseURL(url).catch(err => {
-      throw new Error(`YouTube Feed nenalezen (404). Zkontroluj ID kanálu: ${channelId}`);
-    });
-    
-    if (!feed.items || feed.items.length === 0) {
-      return NextResponse.json({ status: 'Zadne video nenalezeno' });
-    }
+      if (!data.items) continue;
 
-    let processedCount = 0;
-    let skippedCount = 0;
+      for (const item of data.items) {
+        const videoId = item.id.videoId;
+        if (!videoId) continue;
 
-    // Projedeme max 15 videí
-    for (const video of feed.items) {
-      const { data: duplicate } = await supabase
-        .from('reports')
-        .select('id')
-        .eq('video_id', video.id)
-        .maybeSingle();
+        const title = item.snippet.title;
+        const description = item.snippet.description;
+        
+        // Vytvoříme slug z nadpisu
+        const slug = title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '');
 
-      if (duplicate) {
-        skippedCount++;
-        continue;
+        // 2. Kontrola, jestli už ho nemáme (podle video_id)
+        const { data: existujici } = await supabase
+          .from('posts')
+          .select('id')
+          .eq('video_id', videoId)
+          .single();
+
+        if (existujici) {
+          preskoceno++;
+          continue;
+        }
+
+        // 3. Uložení do databáze VČETNĚ video_id
+        const { error } = await supabase.from('posts').insert([
+          {
+            title: title,
+            slug: slug,
+            video_id: videoId, // TADY UKLÁDÁME TO ID
+            content: `
+              <p>${description}</p>
+              <p>Sledujte video přímo zde nebo na mém YouTube kanálu.</p>
+              <p>https://www.youtube.com/watch?v=${videoId}</p>
+            `,
+            created_at: new Date().toISOString(),
+          },
+        ]);
+
+        if (!error) novych++;
       }
-
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: 'Vytvoř stručný technický souhrn videa v češtině: ' + video.title }],
-      });
-
-      await supabase.from('reports').insert([{ 
-        title: video.title, 
-        video_id: video.id, 
-        content: completion.choices[0].message.content, 
-        url: video.link 
-      }]);
-
-      processedCount++;
     }
 
-    return NextResponse.json({ 
-      status: 'DOKONČENO', 
-      novych_videi: processedCount, 
-      preskoceno: skippedCount 
-    });
+    return NextResponse.json({ status: 'DOKONČENO', novych, preskoceno });
 
-  } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
