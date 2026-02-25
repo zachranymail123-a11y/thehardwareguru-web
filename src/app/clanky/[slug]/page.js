@@ -70,4 +70,9 @@ export default async function ClanekPage(props) {
 
           {/* ODKAZY NA SÍTĚ (PŘÍMO V KÓDU) */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '30px' }}>
-            <a href="
+            <a href="https://kick.com/thehardwareguru" target="_blank" 
+               style={{ flex: '1', textAlign: 'center', background: '#05ff5b', color: '#000', padding: '12px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', minWidth: '120px' }}>
+               KICK
+            </a>
+            <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" 
+               style={{ flex: '1', textAlign: 'center', background: '#ff0000', color: '#fff', padding: '12px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', minWidth:
