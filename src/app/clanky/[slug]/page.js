@@ -2,14 +2,15 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ClanekPage({ params }) {
+export default async function ClanekPage(props) {
+  // Tady je ta změna - musíme počkat na parametry
+  const params = await props.params;
   const { slug } = params;
-  
-  // Ošetření slugu - nahradí vše divné pomlčkami
+
+  // Ošetření slugu
   let cleanSlug = slug.replace('.html', '').trim();
-  cleanSlug = cleanSlug.replace(/-+/g, '-'); // sjednotí pomlčky
-  
-  // Záchytná síť proti pádům
+  cleanSlug = cleanSlug.replace(/-+/g, '-'); 
+
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
@@ -22,7 +23,7 @@ export default async function ClanekPage({ params }) {
       .eq('slug', cleanSlug)
       .single();
 
-    // Pokud nenajde přesně, zkusí najít "přibližně" (např. když chybí písmeno)
+    // Pokud nenajde přesně, zkusí najít podobný
     if (!post) {
        const shortSlug = cleanSlug.split('-').slice(0, 3).join('-');
        if (shortSlug.length > 5) {
@@ -36,20 +37,16 @@ export default async function ClanekPage({ params }) {
        }
     }
 
-    // Vykreslení vlastní chybové stránky místo pádu aplikace
     if (!post || error) {
       return (
-        <div style={{ padding: '50px', background: '#000', color: 'red', fontFamily: 'monospace', height: '100vh' }}>
-          <h1>⚠️ OMLOUVÁME SE, ČLÁNEK NENALEZEN</h1>
-          <p>Systém nenašel článek pro adresu: <br/><strong style={{color:'white'}}>{cleanSlug}</strong></p>
-          <hr style={{borderColor:'#333', margin:'20px 0'}}/>
-          <p style={{color:'gray'}}>Technické info: {error ? error.message : 'Post is null'}</p>
-          <a href="/" style={{color:'white', textDecoration:'underline'}}>ZPĚT NA HLAVNÍ STRÁNKU</a>
+        <div style={{ padding: '50px', background: '#000', color: 'red', fontFamily: 'monospace', minHeight: '100vh' }}>
+          <h1>⚠️ ČLÁNEK NENALEZEN</h1>
+          <p>Hledám slug: <strong>{cleanSlug}</strong></p>
+          <a href="/" style={{color:'white'}}>ZPĚT NA HOME</a>
         </div>
       );
     }
 
-    // ÚSPĚCH - VYKRESLENÍ ČLÁNKU
     return (
       <div style={{ backgroundColor: '#000', color: '#ccc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
         <header style={{ padding: '20px', borderBottom: '1px solid #333', textAlign: 'center' }}>
@@ -63,7 +60,6 @@ export default async function ClanekPage({ params }) {
     );
 
   } catch (err) {
-    // Pokud se stane cokoliv strašného, zobrazíme to, ale nepadneme
     return (
       <div style={{ padding: '50px', background: '#300', color: '#fff' }}>
         <h1>KRITICKÁ CHYBA</h1>
