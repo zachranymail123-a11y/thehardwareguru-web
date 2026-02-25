@@ -10,12 +10,13 @@ export async function GET() {
   );
 
   const API_KEY = process.env.YOUTUBE_API_KEY;
-  const CHANNEL_ID = 'UC2_X6C2v_q_A8Y0S-Yv9TfQ'; // ID pro TheHardwareGuru_Czech
+  // Použijeme tvůj handle - to je nejjistější cesta k tvým datům
+  const HANDLE = 'TheHardwareGuru_Czech'; 
   
   try {
-    // 1. Získáme přesné detaily kanálu, abychom dostali ID playlistu nahrávek
+    // 1. KROK: Najdeme kanál a jeho Uploads playlist podle HANDLE
     const channelRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/channels?key=${API_KEY}&id=${CHANNEL_ID}&part=contentDetails`
+      `https://www.googleapis.com/youtube/v3/channels?key=${API_KEY}&forHandle=${HANDLE}&part=contentDetails,id`
     );
     const channelData = await channelRes.json();
 
@@ -23,16 +24,16 @@ export async function GET() {
       return NextResponse.json({ chyba_api: channelData.error.message }, { status: 400 });
     }
 
-    const uploadsPlaylistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
-
-    if (!uploadsPlaylistId) {
+    if (!channelData.items || channelData.items.length === 0) {
       return NextResponse.json({ 
-        chyba: 'Playlist nahrávek nenalezen.', 
-        debug_info: channelData 
+        chyba: 'Kanál nebyl nalezen podle jména @TheHardwareGuru_Czech.', 
+        debug: channelData 
       }, { status: 404 });
     }
 
-    // 2. Vytáhneme videa z toho správného playlistu
+    const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads;
+
+    // 2. KROK: Vytáhneme videa z playlistu nahrávek
     const playlistRes = await fetch(
       `https://www.googleapis.com/youtube/v3/playlistItems?key=${API_KEY}&playlistId=${uploadsPlaylistId}&part=snippet&maxResults=10`
     );
@@ -52,7 +53,7 @@ export async function GET() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
 
-      // Kontrola v DB, jestli už tam není
+      // Kontrola duplicity v DB
       const { data: existujici } = await supabase
         .from('posts')
         .select('id')
@@ -64,7 +65,7 @@ export async function GET() {
         continue;
       }
 
-      // Vložení do databáze
+      // Vložení do DB
       const { error: insertError } = await supabase.from('posts').insert([
         {
           title: title,
@@ -72,7 +73,7 @@ export async function GET() {
           video_id: videoId,
           content: `
             <p>${description.replace(/\n/g, '<br>')}</p>
-            <p><strong>Sledujte zde:</strong> https://www.youtube.com/watch?v=${videoId}</p>
+            <p><strong>Odkaz na video:</strong> https://www.youtube.com/watch?v=${videoId}</p>
           `,
           created_at: new Date().toISOString(),
         }
@@ -84,7 +85,7 @@ export async function GET() {
     return NextResponse.json({ 
       status: 'HOTOVO', 
       zprava: `Úspěšně přidáno ${novych} videí, ${preskoceno} už tam bylo.`,
-      pouzity_playlist: uploadsPlaylistId
+      nalezene_channel_id: channelData.items[0].id
     });
 
   } catch (error) {
