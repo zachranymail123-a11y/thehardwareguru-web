@@ -1,14 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 
-// Vypne cache - tohle je dulezite pro okamzite zmeny
+// TOTO TAM CHYBĚLO: Vypne veškerou paměť serveru. Musí to být 0.
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function Home() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+  // Používám přesně stejný způsob načtení proměnných jako v diagnostice
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   // Stáhneme data
   const { data: posts } = await supabase
@@ -18,11 +20,9 @@ export default async function Home() {
 
   // Funkce pro náhledovku
   const getThumbnail = (post) => {
-    // Pokud je video_id a je delší než 5 znaků, je to YouTube
     if (post.video_id && post.video_id.length > 5) {
         return `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`;
     }
-    // Jinak je to HW novinka -> vracíme obrázek hardwaru
     return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop';
   };
 
@@ -39,7 +39,7 @@ export default async function Home() {
         .read-more { color: #66fcf1; text-transform: uppercase; font-weight: bold; font-size: 0.9rem; letter-spacing: 1px; }
       `}</style>
 
-      {/* HLAVIČKA */}
+      {/* HLAVIČKA S ODKAZY */}
       <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: '#1f2833', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 0 15px rgba(102, 252, 241, 0.3)', flexWrap: 'wrap', gap: '20px' }}>
         <div style={{ fontSize: '1.8rem', fontWeight: '900', color: '#66fcf1', letterSpacing: '2px', textShadow: '2px 2px 0px #000' }}>
           THE HARDWARE GURU
@@ -62,6 +62,7 @@ export default async function Home() {
                 Čau pařani! Jsem 45letý HW nadšenec, gamer a streamer. 
                 Tady najdeš vše o hardwaru, recenze her a hlavně záznamy z mých streamů. 
                 Na Kicku mi sekunduje unikátní <strong style={{color: '#66fcf1'}}>AI umělá inteligence</strong>, která komunikuje s chatem a komentuje můj gameplay. 
+                Doraž na stream a pokcej s námi!
             </p>
             <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                 <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn">SLEDUJ STREAM (KICK)</a>
@@ -74,7 +75,7 @@ export default async function Home() {
         </div>
       </header>
 
-      {/* OBSAH */}
+      {/* HLAVNÍ OBSAH */}
       <main style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
         <h2 style={{ color: '#fff', textAlign: 'center', marginBottom: '40px', fontSize: '2.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px', textShadow: '0 0 10px rgba(102, 252, 241, 0.5)' }}>
           Nejnovější články & Videa
@@ -138,7 +139,9 @@ export default async function Home() {
           ))}
           
           {(!posts || posts.length === 0) && (
-             <div style={{gridColumn: '1/-1', textAlign: 'center', color: '#fff', padding: '50px'}}>Náčítám obsah...</div>
+             <div style={{gridColumn: '1/-1', textAlign: 'center', color: '#fff', padding: '50px'}}>
+                Zatím zde nejsou žádné články. Zkus spustit Cron.
+             </div>
           )}
 
         </div>
@@ -150,6 +153,7 @@ export default async function Home() {
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
             <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
+            <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="nav-link">INSTAGRAM</a>
           </div>
           <p style={{ color: '#45a29e', opacity: 0.7 }}>© 2026 The Hardware Guru. Powered by AI & Caffeine.</p>
       </footer>
