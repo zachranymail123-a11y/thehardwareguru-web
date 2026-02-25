@@ -4,17 +4,49 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// Pomocná funkce pro zjištění Live statusu
+async function getLiveStatus() {
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  const channelId = "UCgDdszBhhpqkNQc6t4YOCNw";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${process.env.VERCEL_URL}`;
+
+  try {
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&eventType=live&key=${apiKey}`;
+    const res = await fetch(url, { next: { revalidate: 300 } });
+    const data = await res.json();
+    
+    if (data.items && data.items.length > 0) {
+      const streamTitle = data.items[0].snippet.title;
+      // Zkusíme vytáhnout název hry (očekáváme formát: Název Hry | Nějaký text)
+      const gameGuess = streamTitle.split('|')[0].trim();
+      
+      // Zavoláme naše nové AI API pro popis hry
+      const aiRes = await fetch(`${baseUrl}/api/game-info?game=${encodeURIComponent(gameGuess)}`, { next: { revalidate: 3600 } });
+      const aiData = await aiRes.json();
+
+      return { 
+        isLive: true, 
+        title: streamTitle,
+        gameDesc: aiData.description 
+      };
+    }
+  } catch (e) {
+    console.error("YouTube Live Error:", e);
+  }
+  return { isLive: false, title: "", gameDesc: "" };
+}
+
 export default async function Home() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. PŘIČTEME NÁVŠTĚVU
-  await supabase.rpc('increment_total_visits');
+  // 1. PŘIČTEME NÁVŠTĚVU (spuštěno asynchronně)
+  supabase.rpc('increment_total_visits').catch(() => {});
 
-  // 2. STÁHNEME DATA
-  const [{ data: posts }, { data: stats }] = await Promise.all([
+  // 2. STÁHNEME DATA + LIVE STATUS
+  const [liveStatus, { data: posts }, { data: stats }] = await Promise.all([
+    getLiveStatus(),
     supabase.from('posts').select('*').order('created_at', { ascending: false }),
     supabase.from('stats').select('value').eq('name', 'total_visits').single()
   ]);
@@ -47,6 +79,16 @@ export default async function Home() {
         .social-btn { display: inline-block; padding: 12px 25px; background: #1f2833; color: #66fcf1; border: 1px solid #45a29e; text-decoration: none; font-weight: bold; border-radius: 5px; transition: all 0.3s; text-transform: uppercase; }
         .social-btn:hover { background: #66fcf1; color: #0b0c10; box-shadow: 0 0 15px #66fcf1; transform: scale(1.05); }
         .read-more { color: #66fcf1; text-transform: uppercase; font-weight: bold; font-size: 0.9rem; letter-spacing: 1px; }
+        
+        @keyframes pulse-red {
+          0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+          70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
+          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        }
+        .live-dot {
+          width: 12px; height: 12px; background: #ff0000; border-radius: 50%;
+          display: inline-block; margin-right: 10px; animation: pulse-red 2s infinite;
+        }
       `}</style>
 
       {/* HLAVIČKA */}
@@ -55,12 +97,36 @@ export default async function Home() {
           THE HARDWARE GURU
         </div>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
+            <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">
+              {liveStatus.isLive && <span className="live-dot" style={{width: '8px', height: '8px'}}></span>}
+              KICK {liveStatus.isLive && <span style={{color: '#ff4444'}}>(LIVE)</span>}
+            </a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
             <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="nav-link">INSTAGRAM</a>
             <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
         </div>
       </nav>
+
+      {/* AI LIVE BOX - ZOBRAZÍ SE JEN KDYŽ JSI LIVE */}
+      {liveStatus.isLive && (
+        <section style={{ maxWidth: '1200px', margin: '40px auto', padding: '30px', background: 'rgba(255, 0, 0, 0.05)', borderRadius: '15px', border: '2px solid #ff0000', boxShadow: '0 0 30px rgba(255, 0, 0, 0.2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: '300px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
+                <span className="live-dot"></span>
+                <span style={{ color: '#ff0000', fontWeight: 'bold', letterSpacing: '2px' }}>PRÁVĚ STREAMUJI</span>
+              </div>
+              <h2 style={{ color: '#fff', fontSize: '1.8rem', marginBottom: '15px' }}>{liveStatus.title}</h2>
+              <p style={{ color: '#e0e0e0', fontSize: '1.1rem', lineHeight: '1.6', fontStyle: 'italic', borderLeft: '4px solid #ff0000', paddingLeft: '20px' }}>
+                {liveStatus.gameDesc}
+              </p>
+              <div style={{ marginTop: '25px' }}>
+                <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn" style={{ background: '#ff0000', color: '#fff', border: 'none' }}>VSTOUPIT DO STREAMU</a>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* BIO */}
       <header style={{ maxWidth: '1200px', margin: '60px auto', padding: '40px', background: 'linear-gradient(145deg, rgba(31, 40, 51, 0.95), rgba(11, 12, 16, 0.95))', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
@@ -92,7 +158,6 @@ export default async function Home() {
         </h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '40px' }}>
-          
           {posts?.map((post) => (
             <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
               <div className="game-card" style={{ 
@@ -105,14 +170,12 @@ export default async function Home() {
                 boxShadow: '0 4px 6px rgba(0,0,0,0.3)', 
                 cursor: 'pointer'
               }}>
-                
                 <div style={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden', borderBottom: '2px solid #45a29e' }}>
                   <img 
                     src={getThumbnail(post)} 
                     alt={post.title}
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                   />
-                  
                   <div style={{ 
                     position: 'absolute', 
                     top: '10px', 
@@ -145,17 +208,10 @@ export default async function Home() {
               </div>
             </Link>
           ))}
-          
-          {(!posts || posts.length === 0) && (
-             <div style={{gridColumn: '1/-1', textAlign: 'center', color: '#fff', padding: '50px'}}>
-                Zatím zde nejsou žádné články. Zkus spustit Cron.
-             </div>
-          )}
-
         </div>
       </main>
 
-      {/* DISCORD WIDGET - TVOJE ID */}
+      {/* DISCORD WIDGET */}
       <section style={{ maxWidth: '800px', margin: '60px auto', padding: '0 20px', textAlign: 'center' }}>
         <h2 style={{ color: '#fff', fontSize: '2rem', marginBottom: '30px', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '2px' }}>
           Komunita <span style={{ color: '#66fcf1' }}>Hardware Guru</span>
