@@ -1,9 +1,48 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 
-// Vypneme cache, aby byl článek vždy aktuální
 export const dynamic = 'force-dynamic';
 
+// --- SEO: GENERUJEME METADATA PRO GOOGLE A SOCIÁLNÍ SÍTĚ ---
+export async function generateMetadata({ params }) {
+  const { slug } = params;
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+
+  const { data: post } = await supabase.from('posts').select('*').eq('slug', slug).single();
+
+  if (!post) {
+    return { title: 'Článek nenalezen | The Hardware Guru' };
+  }
+
+  const imageUrl = post.video_id 
+    ? `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`
+    : 'https://via.placeholder.com/1200x630.png?text=TheHardwareGuru';
+
+  // Ořízneme HTML z textu pro krátký popis (description)
+  const plainText = post.content.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...';
+
+  return {
+    title: `${post.title} | The Hardware Guru`,
+    description: plainText,
+    openGraph: {
+      title: post.title,
+      description: plainText,
+      images: [{ url: imageUrl }],
+      type: 'article',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: plainText,
+      images: [imageUrl],
+    },
+  };
+}
+
+// --- HLAVNÍ KOMPONENTA STRÁNKY (DESIGN) ---
 export default async function ArticlePage({ params }) {
   const { slug } = params;
 
@@ -12,7 +51,6 @@ export default async function ArticlePage({ params }) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  // Stáhneme článek
   const { data: post } = await supabase
     .from('posts')
     .select('*')
@@ -31,7 +69,6 @@ export default async function ArticlePage({ params }) {
   return (
     <div style={{ backgroundColor: '#0b0c10', color: '#c5c6c7', minHeight: '100vh', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
       
-      {/* CSS STYLY (Stejné jako na Homepage) */}
       <style>{`
         .nav-link { margin: 0 15px; color: #fff; text-decoration: none; font-weight: bold; transition: color 0.3s; text-transform: uppercase; letter-spacing: 1px; display: inline-block; }
         .nav-link:hover { color: #66fcf1; text-shadow: 0 0 10px #66fcf1; }
@@ -42,7 +79,7 @@ export default async function ArticlePage({ params }) {
         .article-content ul { background: #1f2833; padding: 20px 40px; border-radius: 10px; border-left: 4px solid #66fcf1; }
       `}</style>
 
-      {/* HLAVIČKA (Zkopírovaná z Homepage) */}
+      {/* HLAVIČKA */}
       <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: '#1f2833', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 0 15px rgba(102, 252, 241, 0.3)', flexWrap: 'wrap', gap: '20px' }}>
         <Link href="/" style={{ textDecoration: 'none' }}>
             <div style={{ fontSize: '1.8rem', fontWeight: '900', color: '#66fcf1', letterSpacing: '2px', textShadow: '2px 2px 0px #000' }}>
@@ -59,18 +96,14 @@ export default async function ArticlePage({ params }) {
       </nav>
 
       <main style={{ maxWidth: '900px', margin: '60px auto', padding: '0 20px' }}>
-        
-        {/* TITULEK ČLÁNKU */}
         <h1 style={{ color: '#fff', fontSize: '2.8rem', marginBottom: '20px', lineHeight: '1.2', fontWeight: '900', textShadow: '0 0 10px rgba(102, 252, 241, 0.3)' }}>
           {post.title}
         </h1>
 
-        {/* INFO O DATU */}
         <div style={{ color: '#45a29e', marginBottom: '40px', fontSize: '1rem', borderBottom: '1px solid #1f2833', paddingBottom: '20px' }}>
           Publikováno: {new Date(post.created_at).toLocaleDateString('cs-CZ')}
         </div>
 
-        {/* VIDEO PLAYER */}
         {post.video_id && (
           <div style={{ marginBottom: '50px', borderRadius: '15px', overflow: 'hidden', border: '2px solid #45a29e', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
             <iframe
@@ -85,14 +118,12 @@ export default async function ArticlePage({ params }) {
           </div>
         )}
 
-        {/* SAMOTNÝ TEXT ČLÁNKU */}
         <div 
           className="article-content"
           style={{ lineHeight: '1.8', fontSize: '1.15rem', color: '#e0e0e0', marginBottom: '80px' }}
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
 
-        {/* SEKCE O MNĚ (POD ČLÁNKEM) */}
         <div style={{ padding: '40px', background: 'linear-gradient(145deg, #1f2833, #0b0c10)', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '30px', flexWrap: 'wrap', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
             <div style={{ width: '150px', height: '150px', background: '#0b0c10', borderRadius: '50%', border: '3px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                 <span style={{color: '#45a29e', fontSize: '3rem', fontWeight: 'bold'}}>HG</span>
@@ -104,7 +135,6 @@ export default async function ArticlePage({ params }) {
                 <p style={{ fontSize: '1rem', lineHeight: '1.6', marginBottom: '20px', color: '#c5c6c7' }}>
                     Líbil se ti článek? Jsem 45letý HW nadšenec a streamer. 
                     Nezapomeň, že na mém <strong>KICK streamu</strong> běží unikátní AI, která reaguje na chat. 
-                    Přijď se podívat živě!
                 </p>
                 <div>
                     <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn">SLEDOVAT NA KICKU</a>
@@ -112,10 +142,8 @@ export default async function ArticlePage({ params }) {
                 </div>
             </div>
         </div>
-
       </main>
 
-      {/* PATIČKA (Stejná jako na Homepage) */}
       <footer style={{ background: '#1f2833', padding: '40px 20px', textAlign: 'center', borderTop: '2px solid #66fcf1', marginTop: '60px' }}>
           <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
