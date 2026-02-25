@@ -25,50 +25,126 @@ export default async function SestavyPage() {
         backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed'
     }}>
       <style>{`
-        .build-card { border: 1px solid #45a29e; transition: all 0.3s ease; background: rgba(31, 40, 51, 0.8); position: relative; overflow: hidden; display: flex; flexDirection: column; }
-        .build-card:hover { transform: translateY(-5px); box-shadow: 0 0 25px rgba(102, 252, 241, 0.2); border-color: #66fcf1; }
-        .spec-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(69, 162, 158, 0.3); }
-        .spec-label { color: #45a29e; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; }
-        .spec-val { color: #fff; text-align: right; font-weight: 500; }
-        
-        .cta-box {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px dashed #66fcf1;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: auto;
+        .build-card { 
+            border: 1px solid #45a29e; 
+            transition: all 0.3s ease; 
+            background: rgba(20, 24, 30, 0.9); 
+            display: flex; 
+            flex-direction: column;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .build-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 0 30px rgba(102, 252, 241, 0.15); 
+            border-color: #66fcf1; 
+        }
+
+        /* HEADER KARTY */
+        .card-header {
+            background: rgba(102, 252, 241, 0.05);
+            padding: 25px;
+            border-bottom: 1px solid #45a29e;
             text-align: center;
+        }
+        .build-name { color: #fff; margin: 0; fontSize: 1.8rem; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; }
+        .build-price { color: #66fcf1; fontSize: 1.4rem; font-weight: bold; marginTop: 10px; text-shadow: 0 0 10px rgba(102, 252, 241, 0.3); }
+
+        /* SPECIFIKACE */
+        .specs-container {
+            padding: 25px;
+        }
+        .spec-row { 
+            display: grid; 
+            grid-template-columns: 80px 1fr; 
+            align-items: center; 
+            padding: 12px 0; 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
+        }
+        .spec-row:last-child { border-bottom: none; }
+        .spec-label { color: #45a29e; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; }
+        .spec-val { color: #fff; text-align: right; font-weight: 500; font-size: 1rem; }
+
+        /* POPIS (GURU VERDIKT) */
+        .desc-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px 25px;
+            border-top: 1px solid rgba(69, 162, 158, 0.3);
+            border-bottom: 1px solid rgba(69, 162, 158, 0.3);
+        }
+        .desc-text {
+            font-style: italic; 
+            color: #d1d5db; 
+            line-height: 1.6; 
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        /* CTA SEKCE (Tlačítko) */
+        .cta-box {
+            padding: 25px;
+            background: rgba(10, 10, 10, 0.4);
+            margin-top: auto; /* Tlačí patičku dolů */
+            text-align: center;
+        }
+        
+        .cta-title {
+            color: #fff; font-weight: bold; margin-bottom: 15px; font-size: 0.9rem; text-transform: uppercase;
         }
 
         .cta-button { 
-            display: block; width: 100%; padding: 15px; 
-            background: linear-gradient(90deg, #cc0000, #ff0000, #cc0000); 
+            display: block; width: 100%; padding: 18px; 
+            background: linear-gradient(90deg, #b91c1c, #ef4444, #b91c1c); 
             background-size: 200% 100%;
             color: white; text-align: center; font-weight: 900; text-transform: uppercase; 
             text-decoration: none; letter-spacing: 1px; border: none; cursor: pointer;
-            border-radius: 4px; transition: all 0.4s;
-            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+            border-radius: 6px; transition: all 0.4s;
+            box-shadow: 0 5px 15px rgba(220, 38, 38, 0.3);
             animation: gradientMove 3s infinite;
         }
-        .cta-button:hover { box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); transform: scale(1.02); }
+        .cta-button:hover { 
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.6); 
+            transform: scale(1.02); 
+        }
 
         @keyframes gradientMove {
             0% { background-position: 100% 0; }
             100% { background-position: -100% 0; }
         }
 
-        .social-row { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
-        .social-mini { color: #c5c6c7; text-decoration: none; font-size: 0.85rem; font-weight: bold; transition: color 0.3s; display: flex; align-items: center; gap: 5px; }
-        .social-mini:hover { color: #66fcf1; }
+        /* SOCIÁLNÍ SÍTĚ */
+        .social-row { 
+            display: flex; 
+            justify-content: center; 
+            gap: 25px; 
+            margin-top: 20px; 
+        }
+        .social-mini { 
+            color: #9ca3af; 
+            text-decoration: none; 
+            font-size: 0.85rem; 
+            font-weight: bold; 
+            transition: all 0.3s; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            padding: 5px 10px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.05);
+        }
+        .social-mini:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+        .expert-badge {
+            background: #0f1216; border: 2px solid #66fcf1; color: #66fcf1;
+            padding: 8px 20px; border-radius: 50px; font-weight: 800; font-size: 0.9rem;
+            display: inline-block; margin-bottom: 30px; 
+            box-shadow: 0 0 20px rgba(102, 252, 241, 0.15);
+            text-transform: uppercase; letter-spacing: 1px;
+        }
 
         .nav-link { margin: 0 15px; color: #fff; text-decoration: none; font-weight: bold; transition: color 0.3s; text-transform: uppercase; }
         .nav-link:hover { color: #66fcf1; }
-        
-        .expert-badge {
-            background: #1f2833; border: 1px solid #66fcf1; color: #66fcf1;
-            padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem;
-            display: inline-block; margin-bottom: 20px; box-shadow: 0 0 10px rgba(102, 252, 241, 0.2);
-        }
       `}</style>
 
       {/* HLAVIČKA */}
@@ -80,10 +156,9 @@ export default async function SestavyPage() {
         </div>
       </nav>
 
-      <div style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 20px', textAlign: 'center' }}>
+      <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '0 20px', textAlign: 'center' }}>
         
-        {/* TITULKY A PRAXE */}
-        <h1 style={{ color: '#fff', fontSize: '2.5rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '15px' }}>
+        <h1 style={{ color: '#fff', fontSize: '2.5rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '20px' }}>
           Doporučené herní sestavy <span style={{color: '#66fcf1'}}>2026</span>
         </h1>
         
@@ -91,56 +166,58 @@ export default async function SestavyPage() {
             🛠️ 20 LET PRAXE JAKO SERVISNÍ TECHNIK
         </div>
 
-        <p style={{ maxWidth: '800px', margin: '0 auto 40px', fontSize: '1.1rem', color: '#c5c6c7', lineHeight: '1.6' }}>
+        <p style={{ maxWidth: '800px', margin: '0 auto 50px', fontSize: '1.1rem', color: '#c5c6c7', lineHeight: '1.6' }}>
           Žádné marketingové kecy. Tohle jsou sestavy, které dávají smysl poměrem cena/výkon. 
           Jako bývalý servisák kancelářské a výpočetní techniky vím, co se kazí a co drží.
           Ceny létají nahoru dolů, proto finální doladění děláme <strong>LIVE</strong>.
         </p>
 
-        {/* SEZNAM SESTAV */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '40px' }}>
+        {/* SEZNAM SESTAV - KARTY */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '50px' }}>
           {builds?.map((build) => (
-            <div key={build.id} className="build-card" style={{ padding: '30px', borderRadius: '15px' }}>
+            <div key={build.id} className="build-card">
               
-              <div style={{ marginBottom: '20px', borderBottom: '2px solid #66fcf1', paddingBottom: '15px', textAlign: 'left' }}>
-                <h2 style={{ color: '#fff', margin: 0, fontSize: '1.6rem', textTransform: 'uppercase', fontWeight: '800' }}>{build.name}</h2>
-                <div style={{ color: '#66fcf1', fontSize: '1.3rem', fontWeight: 'bold', marginTop: '5px' }}>{build.price_range}</div>
+              {/* 1. HLAVIČKA: NÁZEV A CENA */}
+              <div className="card-header">
+                <h2 className="build-name">{build.name}</h2>
+                <div className="build-price">{build.price_range}</div>
               </div>
 
-              <div style={{ marginBottom: '25px' }}>
+              {/* 2. SPECIFIKACE */}
+              <div className="specs-container">
                 <div className="spec-row"><span className="spec-label">CPU</span><span className="spec-val">{build.cpu}</span></div>
                 <div className="spec-row"><span className="spec-label">GPU</span><span className="spec-val">{build.gpu}</span></div>
                 <div className="spec-row"><span className="spec-label">RAM</span><span className="spec-val">{build.ram}</span></div>
                 <div className="spec-row"><span className="spec-label">SSD</span><span className="spec-val">{build.storage}</span></div>
               </div>
 
-              <p style={{ fontStyle: 'italic', color: '#a0a0a0', marginBottom: '25px', textAlign: 'left', fontSize: '0.95rem' }}>
-                "{build.description}"
-              </p>
+              {/* 3. GURU POPIS (ODDĚLENÝ) */}
+              <div className="desc-box">
+                <p className="desc-text">
+                   <span style={{color: '#66fcf1', fontWeight: 'bold', marginRight: '5px'}}>GURU VERDIKT:</span> 
+                   "{build.description}"
+                </p>
+              </div>
 
-              {/* GURU TRAP + SOCIÁLNÍ SÍTĚ */}
+              {/* 4. TLAČÍTKO A ODKAZY */}
               <div className="cta-box">
-                <div style={{ fontSize: '0.9rem', color: '#fff', marginBottom: '15px', fontWeight: 'bold' }}>
-                   ⚠️ CHCEŠ TO POSKLÁDAT A OPTIMALIZOVAT?
+                <div className="cta-title">
+                   ⚠️ CHCEŠ TO POSKLÁDAT A OPTIMALIZOVAT? (PODMÍNKA: SUB NA KICKU)
                 </div>
                 
                 <a href="https://discord.com/invite/n7xThr8" target="_blank" className="cta-button">
                   CHCI TUTO SESTAVU NA MÍRU 🛠️
                 </a>
 
-                <div style={{ marginTop: '15px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px', fontSize: '0.8rem', color: '#888' }}>
-                    PODMÍNKA: SUB NA KICKU + DISCORD
-                </div>
-
                 <div className="social-row">
-                    <a href="https://kick.com/thehardwareguru" target="_blank" className="social-mini" style={{color: '#53fc18'}}>
-                        KICK
+                    <a href="https://kick.com/thehardwareguru" target="_blank" className="social-mini">
+                        <span style={{color: '#53fc18'}}>●</span> KICK
                     </a>
-                    <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-mini" style={{color: '#ff0000'}}>
-                        YOUTUBE
+                    <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-mini">
+                        <span style={{color: '#ff0000'}}>●</span> YOUTUBE
                     </a>
-                    <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="social-mini" style={{color: '#e1306c'}}>
-                        INSTAGRAM
+                    <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="social-mini">
+                        <span style={{color: '#e1306c'}}>●</span> INSTAGRAM
                     </a>
                 </div>
               </div>
