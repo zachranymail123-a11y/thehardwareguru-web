@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// Pomocná funkce pro zjištění Live statusu
+// Pomocná funkce pro zjištění Live statusu a AI popisu hry
 async function getLiveStatus() {
   const apiKey = process.env.YOUTUBE_API_KEY;
   const channelId = "UCgDdszBhhpqkNQc6t4YOCNw";
@@ -41,14 +41,12 @@ export default async function Home() {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. PŘIČTEME NÁVŠTĚVU (spuštěno asynchronně)
-  supabase.rpc('increment_total_visits').catch(() => {});
-
-  // 2. STÁHNEME DATA + LIVE STATUS
+  // 1. Spustíme paralelně načítání dat, Live statusu a počítadla
   const [liveStatus, { data: posts }, { data: stats }] = await Promise.all([
     getLiveStatus(),
     supabase.from('posts').select('*').order('created_at', { ascending: false }),
-    supabase.from('stats').select('value').eq('name', 'total_visits').single()
+    supabase.from('stats').select('value').eq('name', 'total_visits').single(),
+    supabase.rpc('increment_total_visits').catch(() => {})
   ]);
 
   const celkemNavstev = stats?.value || 0;
@@ -244,7 +242,7 @@ export default async function Home() {
           </div>
           
           <div style={{ marginBottom: '20px', color: '#66fcf1', fontSize: '1rem', fontWeight: 'bold', letterSpacing: '1px' }}>
-             WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #45a29e' }}>{celkemNavstev}</span> GURU FANOUŠKŮ 🦾
+              WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #45a29e' }}>{celkemNavstev}</span> GURU FANOUŠKŮ 🦾
           </div>
 
           <p style={{ color: '#45a29e', opacity: 0.7, fontSize: '0.8rem' }}>© 2026 The Hardware Guru. Powered by AI & Caffeine.</p>
