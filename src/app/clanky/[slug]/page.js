@@ -19,10 +19,9 @@ export async function generateMetadata({ params }) {
 
   const imageUrl = post.video_id 
     ? `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`
-    : 'https://via.placeholder.com/1200x630.png?text=TheHardwareGuru';
+    : 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop';
 
-  // Ořízneme HTML z textu pro krátký popis (description)
-  const plainText = post.content.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...';
+  const plainText = (post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 150) + '...';
 
   return {
     title: `${post.title} | The Hardware Guru`,
@@ -51,11 +50,16 @@ export default async function ArticlePage({ params }) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  const { data: post } = await supabase
-    .from('posts')
-    .select('*')
-    .eq('slug', slug)
-    .single();
+  // 1. ZAPOČÍTÁME NÁVŠTĚVU DO CELKOVÝCH STATISTIK (I když přijdou přímo na článek)
+  await supabase.rpc('increment_total_visits');
+
+  // 2. STÁHNEME DATA ČLÁNKU A CELKOVÉ NÁVŠTĚVY PRO PATIČKU
+  const [{ data: post }, { data: stats }] = await Promise.all([
+    supabase.from('posts').select('*').eq('slug', slug).single(),
+    supabase.from('stats').select('value').eq('name', 'total_visits').single()
+  ]);
+
+  const celkemNavstev = stats?.value || 0;
 
   if (!post) {
     return (
@@ -145,13 +149,18 @@ export default async function ArticlePage({ params }) {
       </main>
 
       <footer style={{ background: '#1f2833', padding: '40px 20px', textAlign: 'center', borderTop: '2px solid #66fcf1', marginTop: '60px' }}>
-          <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+          <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
             <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
             <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="nav-link">INSTAGRAM</a>
           </div>
-          <p style={{ color: '#45a29e', opacity: 0.7 }}>© 2026 The Hardware Guru. Powered by AI & Caffeine.</p>
+
+          <div style={{ marginBottom: '20px', color: '#66fcf1', fontSize: '1rem', fontWeight: 'bold', letterSpacing: '1px' }}>
+             WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #45a29e' }}>{celkemNavstev}</span> GURU FANOUŠKŮ 🦾
+          </div>
+
+          <p style={{ color: '#45a29e', opacity: 0.7, fontSize: '0.8rem' }}>© 2026 The Hardware Guru. Powered by AI & Caffeine.</p>
       </footer>
     </div>
   );
