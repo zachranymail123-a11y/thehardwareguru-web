@@ -9,10 +9,11 @@ async function getLiveStatus() {
   const apiKey = process.env.YOUTUBE_API_KEY;
   const channelId = "UCgDdszBhhpqkNQc6t4YOCNw";
   
-  // Totální pojistka pro baseUrl - automaticky detekuje kde web běží
-  let baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
-  if (!baseUrl && process.env.VERCEL_URL) baseUrl = `https://${process.env.VERCEL_URL}`;
-  if (!baseUrl) baseUrl = 'http://localhost:3000';
+  // Vylepšená detekce Base URL pro stabilitu
+  let rawBaseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL || process.env.URL || "localhost:3000";
+  
+  // Zajistíme, aby URL vždy začínala protokolem a neměla na konci lomítko
+  let baseUrl = rawBaseUrl.startsWith('http') ? rawBaseUrl : `https://${rawBaseUrl}`;
   baseUrl = baseUrl.replace(/\/$/, "");
 
   try {
@@ -26,17 +27,19 @@ async function getLiveStatus() {
       
       let aiDescription = "Paříme tuhle pecku! Pojď se podívat na gameplay a pokecat do chatu.";
       
-      // POJISTKA: I kdyby API v /api/game-info neexistovalo, web nespadne
       try {
+        // Volání tvého AI endpointu s absolutní URL a timeoutem
         const aiRes = await fetch(`${baseUrl}/api/game-info?game=${encodeURIComponent(gameGuess)}`, { 
-            next: { revalidate: 3600 } 
+            next: { revalidate: 3600 },
+            headers: { 'Accept': 'application/json' }
         });
+        
         if (aiRes.ok) {
             const aiData = await aiRes.json();
-            aiDescription = aiData.description;
+            if (aiData.description) aiDescription = aiData.description;
         }
       } catch (apiErr) {
-        console.error("AI API Error (Silent):", apiErr);
+        console.error("Vnitřní AI API fetch selhal, web jede dál v nouzovém režimu.");
       }
 
       return { 
@@ -57,14 +60,15 @@ export default async function Home() {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   // 1. Spustíme paralelně načítání dat, Live statusu a zápis návštěvy (Full Power)
-  const [liveStatus, { data: posts }, { data: stats }] = await Promise.all([
+  const [liveStatus, postsResult, statsResult] = await Promise.all([
     getLiveStatus(),
     supabase.from('posts').select('*').order('created_at', { ascending: false }),
     supabase.from('stats').select('value').eq('name', 'total_visits').single(),
     supabase.rpc('increment_total_visits').catch(() => {})
   ]);
 
-  const celkemNavstev = stats?.value || 0;
+  const posts = postsResult.data || [];
+  const celkemNavstev = statsResult.data?.value || 0;
 
   const getThumbnail = (post) => {
     if (post.video_id && post.video_id.length > 5) {
@@ -89,7 +93,7 @@ export default async function Home() {
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
         .nav-link { margin: 0 15px; color: #fff; text-decoration: none; font-weight: bold; transition: color 0.3s; text-transform: uppercase; letter-spacing: 1px; display: inline-block; }
         .nav-link:hover { color: #66fcf1; text-shadow: 0 0 10px #66fcf1; }
-        .social-btn { display: inline-block; padding: 12px 25px; background: #1f2833; color: #66fcf1; border: 1px solid #45a29e; text-decoration: none; font-weight: bold; border-radius: 5px; transition: all 0.3s; text-transform: uppercase; }
+        .social-btn { display: inline-block; padding: 12px 25px; background: #1f2833; color: #66fcf1; border: 1px solid #45a29e; text-decoration: none; font-weight: bold; border-radius: 5px; transition: all 0.3s; text-transform: uppercase; border: none; cursor: pointer; }
         .social-btn:hover { background: #66fcf1; color: #0b0c10; box-shadow: 0 0 15px #66fcf1; transform: scale(1.05); }
         .read-more { color: #66fcf1; text-transform: uppercase; font-weight: bold; font-size: 0.9rem; letter-spacing: 1px; }
         
@@ -133,7 +137,7 @@ export default async function Home() {
                 {liveStatus.gameDesc}
               </p>
               <div style={{ marginTop: '25px' }}>
-                <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn" style={{ background: '#ff0000', color: '#fff', border: 'none' }}>VSTOUPIT DO STREAMU</a>
+                <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn" style={{ background: '#ff0000', color: '#fff' }}>VSTOUPIT DO STREAMU</a>
               </div>
             </div>
           </div>
@@ -169,7 +173,7 @@ export default async function Home() {
         </h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '40px' }}>
-          {posts?.map((post) => (
+          {posts.map((post) => (
             <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
               <div className="game-card" style={{ 
                 backgroundColor: 'rgba(31, 40, 51, 0.95)', 
