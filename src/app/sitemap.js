@@ -6,14 +6,14 @@ export default async function sitemap() {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  // Stáhneme všechny články z DB, abychom o nich řekli Googlu
+  // Stáhneme všechny články z databáze
   const { data: posts } = await supabase
     .from('posts')
     .select('slug, created_at');
 
   const baseUrl = 'https://www.thehardwareguru.cz';
 
-  // Vygenerujeme dynamické URL pro každý jeden článek
+  // Vygenerujeme dynamické URL adresy pro každý článek
   const postUrls = posts?.map((post) => ({
     url: `${baseUrl}/clanky/${post.slug}`,
     lastModified: new Date(post.created_at).toISOString(),
@@ -21,7 +21,7 @@ export default async function sitemap() {
     priority: 0.8,
   })) || [];
 
-  // Vrátíme seznam: Hlavní stránka + všechny články
+  // Vrátíme pole, které obsahuje hlavní stránku + všechny články
   return [
     {
       url: baseUrl,
