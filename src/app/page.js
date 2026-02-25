@@ -11,7 +11,7 @@ export default async function Home() {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   // 1. PŘIČTEME NÁVŠTĚVU
-  await supabase.rpc('increment_total_visits').catch(() => {});
+  await supabase.rpc('increment_total_visits');
 
   // 2. STÁHNEME DATA
   const [{ data: posts }, { data: stats }] = await Promise.all([
@@ -55,9 +55,11 @@ export default async function Home() {
           THE HARDWARE GURU
         </div>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-            {/* TADY JSME PŘIDALI ODKAZ */}
-            <Link href="/sestavy" className="nav-link" style={{ border: '1px solid #66fcf1', padding: '5px 15px', borderRadius: '5px' }}>PC SESTAVY</Link>
-            
+            {/* TADY JE TEN NOVÝ ODKAZ - JEDINÁ ZMĚNA */}
+            <Link href="/sestavy" className="nav-link" style={{ color: '#66fcf1', border: '1px solid #66fcf1', padding: '5px 10px', borderRadius: '4px' }}>
+                PC SESTAVY
+            </Link>
+
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
             <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="nav-link">INSTAGRAM</a>
