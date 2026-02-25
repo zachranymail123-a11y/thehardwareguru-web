@@ -65,4 +65,55 @@ export default async function Home() {
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                boxShadow: '0 4px 6px rgba(0,0,0,
+                boxShadow: '0 4px 6px rgba(0,0,0,0.3)', 
+                cursor: 'pointer'
+              }}>
+                
+                {/* OBRÁZEK */}
+                <div style={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden', borderBottom: '2px solid #45a29e' }}>
+                  <img 
+                    src={getThumbnail(post.video_id)} 
+                    alt={post.title}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.8)', color: '#66fcf1', padding: '5px 10px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.8rem', border: '1px solid #66fcf1' }}>
+                    VIDEO
+                  </div>
+                </div>
+                
+                {/* TEXT KARTY */}
+                <div style={{ padding: '25px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <h3 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '1.3rem', lineHeight: '1.4', fontWeight: 'bold' }}>
+                    {post.title}
+                  </h3>
+                  
+                  {/* Perex - bezpečně zkrácený text */}
+                  <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px', flex: 1 }}>
+                    {(post.content || '')
+                      .replace(/<[^>]*>?/gm, '') // Odstraní HTML tagy
+                      .substring(0, 120) // Zkrátí na 120 znaků
+                    }...
+                  </p>
+
+                  <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: '#45a29e', fontSize: '0.85rem' }}>
+                      {post.created_at ? new Date(post.created_at).toLocaleDateString('cs-CZ') : ''}
+                    </span>
+                    <span className="read-more">
+                      ČÍST VÍCE →
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+          
+          {(!posts || posts.length === 0) && (
+             <div style={{gridColumn: '1/-1', textAlign: 'center', color: '#fff'}}>Žádné články nenalezeny.</div>
+          )}
+
+        </div>
+      </main>
+    </div>
+  );
+}
