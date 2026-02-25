@@ -11,9 +11,7 @@ export async function GET() {
   let results = { videoClanek: "žádné nové video", hwNovinka: "negenerována", errors: [] };
 
   try {
-    // --- 1. ČÁST: YOUTUBE (PLAYLIST STRATEGIE - NEPRŮSTŘELNÁ) ---
-    // Tvoje Channel ID je UC6O7V0u-9vO7W3zX-b_uG6A
-    // Playlist ID pro "Uploads" je vždy stejné, jen začíná UU...
+    // --- 1. ČÁST: YOUTUBE (PLAYLIST STRATEGIE) ---
     const UPLOADS_PLAYLIST_ID = 'UU6O7V0u-9vO7W3zX-b_uG6A'; 
     
     const ytUrl = `https://www.googleapis.com/youtube/v3/playlistItems?key=${process.env.YOUTUBE_API_KEY}&playlistId=${UPLOADS_PLAYLIST_ID}&part=snippet&maxResults=5`;
@@ -23,16 +21,13 @@ export async function GET() {
 
     if (ytData.items && ytData.items.length > 0) {
       for (const item of ytData.items) {
-        // U playlistItems je ID videa v snippet.resourceId.videoId
         const videoId = item.snippet.resourceId.videoId;
         const title = item.snippet.title;
         
-        // Ignorujeme privátní nebo smazaná videa
         if (title === "Private video" || title === "Deleted video") continue;
 
         const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         
-        // Kontrola v DB
         const { data: existing } = await supabase.from('posts').select('id').eq('video_id', videoId).maybeSingle();
 
         if (!existing) {
@@ -52,7 +47,7 @@ export async function GET() {
             content: content,
             video_id: videoId,
             slug: slug,
-            type: 'video' // Ujisti se, že máš sloupec 'type' v DB, nebo tento řádek smaž
+            type: 'video'
           }]);
 
           if (insertError) {
@@ -60,13 +55,12 @@ export async function GET() {
           } else {
             results.videoClanek = `Vytvořen: ${title}`;
           }
-          break; // Bereme jen nejnovější
+          break; 
         }
       }
     }
 
     // --- 2. ČÁST: HW NOVINKA PŘES SERPER ---
-    // Serper najde aktuální novinky
     const serperRes = await fetch("https://google.serper.dev/search", {
       method: "POST",
       headers: { "X-API-KEY": SERPER_API_KEY, "Content-Type": "application/json" },
@@ -75,7 +69,6 @@ export async function GET() {
     const searchData = await serperRes.json();
     
     if (searchData.organic && searchData.organic.length > 0) {
-        // Vezmeme první výsledek
         const topResult = searchData.organic[0];
         const topicPrompt = `Tady je aktuální zpráva z internetu: "${topResult.title}: ${topResult.snippet}".
         Jsi The Hardware Guru. Napiš o tom krátký, úderný článek (novinku). 
@@ -93,13 +86,20 @@ export async function GET() {
         const title = lines[0].replace(/#|Title:/g, '').trim();
         const content = lines.slice(1).join('\n').replace(/```html|```/g, '').trim();
         
-        // Přidáme náhodné číslo, ať se to bije
-        const slugNews = `novinka-${Date.now()}`;
+        // --- OPRAVA URL: Vytvoříme hezký slug z nadpisu ---
+        let slugNews = title
+          .toLowerCase()
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Odstraní diakritiku
+          .replace(/[^a-z0-9]+/g, "-") // Vše divné na pomlčky
+          .replace(/(^-|-$)+/g, ""); // Odstraní pomlčky na krajích
+        
+        // Přidáme náhodné číslo pro unikátnost (kdyby byl stejný nadpis)
+        slugNews = `${slugNews}-${Math.floor(Math.random() * 1000)}`;
 
         const { error: newsError } = await supabase.from('posts').insert([{
           title: title,
           content: content,
-          video_id: null, // Tady to padalo, pokud nemáš povolené NULL!
+          video_id: null,
           slug: slugNews,
           type: 'news'
         }]);
