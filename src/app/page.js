@@ -20,14 +20,24 @@ async function getLiveStatus() {
       // Zkusíme vytáhnout název hry (očekáváme formát: Název Hry | Nějaký text)
       const gameGuess = streamTitle.split('|')[0].trim();
       
-      // Zavoláme naše nové AI API pro popis hry
-      const aiRes = await fetch(`${baseUrl}/api/game-info?game=${encodeURIComponent(gameGuess)}`, { next: { revalidate: 3600 } });
-      const aiData = await aiRes.json();
+      // POJISTKA: Pokud fetch na tvé API selže, web nespadne
+      let aiDescription = "Paříme tuhle pecku! Pojď se podívat na gameplay a pokecat do chatu.";
+      try {
+        const aiRes = await fetch(`${baseUrl}/api/game-info?game=${encodeURIComponent(gameGuess)}`, { 
+            next: { revalidate: 3600 } 
+        });
+        if (aiRes.ok) {
+            const aiData = await aiRes.json();
+            aiDescription = aiData.description;
+        }
+      } catch (apiErr) {
+        console.error("AI API Error (Silent):", apiErr);
+      }
 
       return { 
         isLive: true, 
         title: streamTitle,
-        gameDesc: aiData.description 
+        gameDesc: aiDescription 
       };
     }
   } catch (e) {
@@ -39,14 +49,17 @@ async function getLiveStatus() {
 export default async function Home() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. Spustíme paralelně načítání dat, Live statusu a počítadla
+  // 1. PŘIČTEME NÁVŠTĚVU (spuštěno asynchronně s catch)
+  supabase.rpc('increment_total_visits').catch(() => {});
+
+  // 2. STÁHNEME DATA + LIVE STATUS PARALELNĚ
   const [liveStatus, { data: posts }, { data: stats }] = await Promise.all([
     getLiveStatus(),
     supabase.from('posts').select('*').order('created_at', { ascending: false }),
-    supabase.from('stats').select('value').eq('name', 'total_visits').single(),
-    supabase.rpc('increment_total_visits').catch(() => {})
+    supabase.from('stats').select('value').eq('name', 'total_visits').single()
   ]);
 
   const celkemNavstev = stats?.value || 0;
