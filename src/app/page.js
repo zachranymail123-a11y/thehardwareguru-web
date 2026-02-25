@@ -18,10 +18,11 @@ export default async function Home() {
 
   // Funkce pro náhledovku
   const getThumbnail = (post) => {
-    if (post.video_id) {
+    // Pokud je video_id a je delší než 5 znaků, je to YouTube
+    if (post.video_id && post.video_id.length > 5) {
         return `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`;
     }
-    // Záložní obrázek pro HW novinky
+    // Jinak je to HW novinka -> vracíme obrázek hardwaru
     return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop';
   };
 
@@ -108,13 +109,14 @@ export default async function Home() {
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                   
-                  {/* DYNAMICKÝ ŠTÍTEK - ZDE JE OPRAVENÁ LOGIKA */}
+                  {/* DYNAMICKÝ ŠTÍTEK */}
                   <div style={{ 
                     position: 'absolute', 
                     top: '10px', 
                     right: '10px', 
-                    background: post.video_id ? 'rgba(102, 252, 241, 0.85)' : 'rgba(255, 0, 0, 0.85)', 
-                    color: post.video_id ? '#0b0c10' : '#fff', 
+                    // Pokud je video_id a je dlouhé, je to VIDEO (Cyan). Jinak je to NOVINKA (Red).
+                    background: (post.video_id && post.video_id.length > 5) ? 'rgba(102, 252, 241, 0.85)' : 'rgba(255, 0, 0, 0.85)', 
+                    color: (post.video_id && post.video_id.length > 5) ? '#0b0c10' : '#fff', 
                     padding: '5px 12px', 
                     borderRadius: '4px', 
                     fontWeight: 'bold', 
@@ -122,7 +124,7 @@ export default async function Home() {
                     border: '1px solid #66fcf1',
                     textTransform: 'uppercase'
                   }}>
-                    {post.video_id ? 'VIDEO / SHORT' : 'HW NOVINKA'}
+                    {(post.video_id && post.video_id.length > 5) ? 'VIDEO / SHORT' : 'HW NOVINKA'}
                   </div>
                 </div>
                 
