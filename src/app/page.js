@@ -29,7 +29,6 @@ export default async function Home() {
   };
 
   return (
-    // ZMĚNA: VLOŽEN TVŮJ NOVÝ ODKAZ NA POZADÍ
     <div style={{ 
         minHeight: '100vh', 
         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
@@ -155,6 +154,29 @@ export default async function Home() {
 
         </div>
       </main>
+
+      {/* DISCORD WIDGET - TVOJE ID */}
+      <section style={{ maxWidth: '800px', margin: '60px auto', padding: '0 20px', textAlign: 'center' }}>
+        <h2 style={{ color: '#fff', fontSize: '2rem', marginBottom: '30px', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '2px' }}>
+          Komunita <span style={{ color: '#66fcf1' }}>Hardware Guru</span>
+        </h2>
+        <div style={{ 
+          background: 'rgba(31, 40, 51, 0.8)', 
+          borderRadius: '15px', 
+          border: '1px solid #45a29e', 
+          overflow: 'hidden',
+          boxShadow: '0 0 20px rgba(102, 252, 241, 0.1)'
+        }}>
+            <iframe 
+                src="https://ptb.discord.com/widget?id=762083540963164200&theme=dark" 
+                width="100%" 
+                height="500" 
+                allowtransparency="true" 
+                frameBorder="0" 
+                sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+            ></iframe>
+        </div>
+      </section>
 
       {/* PATIČKA */}
       <footer style={{ background: 'rgba(31, 40, 51, 0.95)', padding: '40px 20px', textAlign: 'center', borderTop: '2px solid #66fcf1', marginTop: '60px' }}>
