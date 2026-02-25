@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 
-// Vypne veškerou paměť serveru. Musí to být 0.
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -11,10 +10,10 @@ export default async function Home() {
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. PŘIČTEME NÁVŠTĚVU (Voláme tvou SQL funkci)
+  // 1. PŘIČTEME NÁVŠTĚVU
   await supabase.rpc('increment_total_visits');
 
-  // 2. STÁHNEME DATA (Články + Celkové statistiky)
+  // 2. STÁHNEME DATA
   const [{ data: posts }, { data: stats }] = await Promise.all([
     supabase.from('posts').select('*').order('created_at', { ascending: false }),
     supabase.from('stats').select('value').eq('name', 'total_visits').single()
@@ -22,7 +21,6 @@ export default async function Home() {
 
   const celkemNavstev = stats?.value || 0;
 
-  // Funkce pro náhledovku
   const getThumbnail = (post) => {
     if (post.video_id && post.video_id.length > 5) {
         return `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`;
@@ -31,7 +29,16 @@ export default async function Home() {
   };
 
   return (
-    <div style={{ backgroundColor: '#0b0c10', color: '#c5c6c7', minHeight: '100vh', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
+    // TADY JE ZMĚNA: Pozadí s obrázkem a tmavým filtrem
+    <div style={{ 
+        minHeight: '100vh', 
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        color: '#c5c6c7',
+        backgroundImage: "linear-gradient(rgba(11, 12, 16, 0.92), rgba(11, 12, 16, 0.85)), url('/bg-guru.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+    }}>
       
       <style>{`
         .game-card { transition: all 0.3s ease; border: 1px solid #45a29e; }
@@ -43,8 +50,8 @@ export default async function Home() {
         .read-more { color: #66fcf1; text-transform: uppercase; font-weight: bold; font-size: 0.9rem; letter-spacing: 1px; }
       `}</style>
 
-      {/* HLAVIČKA S ODKAZY */}
-      <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: '#1f2833', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 0 15px rgba(102, 252, 241, 0.3)', flexWrap: 'wrap', gap: '20px' }}>
+      {/* HLAVIČKA */}
+      <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: 'rgba(31, 40, 51, 0.9)', backdropFilter: 'blur(5px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 0 15px rgba(102, 252, 241, 0.3)', flexWrap: 'wrap', gap: '20px' }}>
         <div style={{ fontSize: '1.8rem', fontWeight: '900', color: '#66fcf1', letterSpacing: '2px', textShadow: '2px 2px 0px #000' }}>
           THE HARDWARE GURU
         </div>
@@ -57,7 +64,7 @@ export default async function Home() {
       </nav>
 
       {/* BIO */}
-      <header style={{ maxWidth: '1200px', margin: '60px auto', padding: '40px', background: 'linear-gradient(145deg, #1f2833, #0b0c10)', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
+      <header style={{ maxWidth: '1200px', margin: '60px auto', padding: '40px', background: 'linear-gradient(145deg, rgba(31, 40, 51, 0.95), rgba(11, 12, 16, 0.95))', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
         <div style={{ flex: '1', minWidth: '300px' }}>
             <h1 style={{ color: '#66fcf1', fontSize: '2.5rem', marginBottom: '20px', textTransform: 'uppercase', fontWeight: '900', textShadow: '0 0 10px rgba(102, 252, 241, 0.3)' }}>
                 The Hardware Guru
@@ -90,7 +97,7 @@ export default async function Home() {
           {posts?.map((post) => (
             <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
               <div className="game-card" style={{ 
-                backgroundColor: '#1f2833', 
+                backgroundColor: 'rgba(31, 40, 51, 0.95)', // Trochu průhledné karty
                 borderRadius: '12px', 
                 overflow: 'hidden', 
                 height: '100%',
@@ -100,7 +107,6 @@ export default async function Home() {
                 cursor: 'pointer'
               }}>
                 
-                {/* OBRÁZEK */}
                 <div style={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden', borderBottom: '2px solid #45a29e' }}>
                   <img 
                     src={getThumbnail(post)} 
@@ -108,7 +114,6 @@ export default async function Home() {
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                   
-                  {/* ŠTÍTEK */}
                   <div style={{ 
                     position: 'absolute', 
                     top: '10px', 
@@ -151,8 +156,8 @@ export default async function Home() {
         </div>
       </main>
 
-      {/* PATIČKA S POČÍTLADLEM */}
-      <footer style={{ background: '#1f2833', padding: '40px 20px', textAlign: 'center', borderTop: '2px solid #66fcf1', marginTop: '60px' }}>
+      {/* PATIČKA */}
+      <footer style={{ background: 'rgba(31, 40, 51, 0.95)', padding: '40px 20px', textAlign: 'center', borderTop: '2px solid #66fcf1', marginTop: '60px' }}>
           <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
@@ -160,7 +165,6 @@ export default async function Home() {
             <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="nav-link">INSTAGRAM</a>
           </div>
           
-          {/* TADY JE TO POČÍTLADLO */}
           <div style={{ marginBottom: '20px', color: '#66fcf1', fontSize: '1rem', fontWeight: 'bold', letterSpacing: '1px' }}>
              WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #45a29e' }}>{celkemNavstev}</span> GURU FANOUŠKŮ 🦾
           </div>
