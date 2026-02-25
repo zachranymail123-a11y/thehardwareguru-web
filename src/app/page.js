@@ -10,8 +10,8 @@ export default async function Home() {
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. PŘIČTEME NÁVŠTĚVU (s ošetřením chyby, aby web nespadl)
-  supabase.rpc('increment_total_visits').catch(() => {});
+  // 1. PŘIČTEME NÁVŠTĚVU
+  await supabase.rpc('increment_total_visits');
 
   // 2. STÁHNEME DATA
   const [{ data: posts }, { data: stats }] = await Promise.all([
@@ -23,8 +23,7 @@ export default async function Home() {
 
   const getThumbnail = (post) => {
     if (post.video_id && post.video_id.length > 5) {
-        // Shorts a videa mají jistější hqdefault.jpg, maxres občas chybí
-        return `https://img.youtube.com/vi/${post.video_id}/hqdefault.jpg`;
+        return `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`;
     }
     return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop';
   };
@@ -71,8 +70,9 @@ export default async function Home() {
             </h1>
             <p style={{ fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '30px', color: '#e0e0e0' }}>
                 Čau pařani! Jsem 45letý HW nadšenec, gamer a streamer. 
-                Tady najdeš vše o hardwaru, recenze her a záznamy z mých streamů. 
-                Na Kicku mi sekunduje unikátní <strong style={{color: '#66fcf1'}}>AI umělá inteligence</strong>.
+                Tady najdeš vše o hardwaru, recenze her a hlavně záznamy z mých streamů. 
+                Na Kicku mi sekunduje unikátní <strong style={{color: '#66fcf1'}}>AI umělá inteligence</strong>, která komunikuje s chatem a komentuje můj gameplay. 
+                Doraž na stream a pokcej s námi!
             </p>
             <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                 <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn">SLEDUJ STREAM (KICK)</a>
@@ -92,18 +92,48 @@ export default async function Home() {
         </h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '40px' }}>
+          
           {posts?.map((post) => (
             <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
               <div className="game-card" style={{ 
-                backgroundColor: 'rgba(31, 40, 51, 0.95)', borderRadius: '12px', overflow: 'hidden', 
-                height: '100%', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' 
+                backgroundColor: 'rgba(31, 40, 51, 0.95)', 
+                borderRadius: '12px', 
+                overflow: 'hidden', 
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.3)', 
+                cursor: 'pointer'
               }}>
+                
                 <div style={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden', borderBottom: '2px solid #45a29e' }}>
-                  <img src={getThumbnail(post)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img 
+                    src={getThumbnail(post)} 
+                    alt={post.title}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  
+                  <div style={{ 
+                    position: 'absolute', 
+                    top: '10px', 
+                    right: '10px', 
+                    background: (post.video_id && post.video_id.length > 5) ? 'rgba(102, 252, 241, 0.85)' : 'rgba(255, 0, 0, 0.85)', 
+                    color: (post.video_id && post.video_id.length > 5) ? '#0b0c10' : '#fff', 
+                    padding: '5px 12px', 
+                    borderRadius: '4px', 
+                    fontWeight: 'bold', 
+                    fontSize: '0.75rem', 
+                    border: '1px solid #66fcf1',
+                    textTransform: 'uppercase'
+                  }}>
+                    {(post.video_id && post.video_id.length > 5) ? 'VIDEO / SHORT' : 'HW NOVINKA'}
+                  </div>
                 </div>
                 
                 <div style={{ padding: '25px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <h3 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '1.3rem', lineHeight: '1.4', fontWeight: 'bold' }}>{post.title}</h3>
+                  <h3 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '1.3rem', lineHeight: '1.4', fontWeight: 'bold' }}>
+                    {post.title}
+                  </h3>
                   <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px', flex: 1 }}>
                     {(post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 120)}...
                   </p>
@@ -115,15 +145,30 @@ export default async function Home() {
               </div>
             </Link>
           ))}
+          
+          {(!posts || posts.length === 0) && (
+             <div style={{gridColumn: '1/-1', textAlign: 'center', color: '#fff', padding: '50px'}}>
+                Zatím zde nejsou žádné články. Zkus spustit Cron.
+             </div>
+          )}
+
         </div>
       </main>
 
       {/* PATIČKA */}
       <footer style={{ background: 'rgba(31, 40, 51, 0.95)', padding: '40px 20px', textAlign: 'center', borderTop: '2px solid #66fcf1', marginTop: '60px' }}>
-          <div style={{ marginBottom: '20px', color: '#66fcf1', fontSize: '1rem', fontWeight: 'bold' }}>
+          <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+            <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
+            <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
+            <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
+            <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="nav-link">INSTAGRAM</a>
+          </div>
+          
+          <div style={{ marginBottom: '20px', color: '#66fcf1', fontSize: '1rem', fontWeight: 'bold', letterSpacing: '1px' }}>
              WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #45a29e' }}>{celkemNavstev}</span> GURU FANOUŠKŮ 🦾
           </div>
-          <p style={{ color: '#45a29e', opacity: 0.7, fontSize: '0.8rem' }}>© 2026 The Hardware Guru.</p>
+
+          <p style={{ color: '#45a29e', opacity: 0.7, fontSize: '0.8rem' }}>© 2026 The Hardware Guru. Powered by AI & Caffeine.</p>
       </footer>
     </div>
   );
