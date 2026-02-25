@@ -9,12 +9,10 @@ async function getLiveStatus() {
   const apiKey = process.env.YOUTUBE_API_KEY;
   const channelId = "UCgDdszBhhpqkNQc6t4YOCNw";
   
-  // VYLADĚNÉ URČENÍ BASEURL: Nejdřív zkusíme tvoji proměnnou, pak Vercel URL, pak localhost
+  // Totální pojistka pro baseUrl - automaticky detekuje kde web běží
   let baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
   if (!baseUrl && process.env.VERCEL_URL) baseUrl = `https://${process.env.VERCEL_URL}`;
   if (!baseUrl) baseUrl = 'http://localhost:3000';
-  
-  // Odstranění koncového lomítka pro jistotu
   baseUrl = baseUrl.replace(/\/$/, "");
 
   try {
@@ -24,13 +22,12 @@ async function getLiveStatus() {
     
     if (data.items && data.items.length > 0) {
       const streamTitle = data.items[0].snippet.title;
-      // Extrakce názvu hry před znakem "|"
       const gameGuess = streamTitle.split('|')[0].trim();
       
       let aiDescription = "Paříme tuhle pecku! Pojď se podívat na gameplay a pokecat do chatu.";
       
+      // POJISTKA: I kdyby API v /api/game-info neexistovalo, web nespadne
       try {
-        // Volání tvého AI endpointu s absolutní URL
         const aiRes = await fetch(`${baseUrl}/api/game-info?game=${encodeURIComponent(gameGuess)}`, { 
             next: { revalidate: 3600 } 
         });
