@@ -17,9 +17,12 @@ export default async function Home() {
     .order('created_at', { ascending: false });
 
   // Funkce pro náhledovku
-  const getThumbnail = (videoId) => {
-    if (videoId) return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-    return 'https://via.placeholder.com/640x360.png?text=TheHardwareGuru';
+  const getThumbnail = (post) => {
+    if (post.video_id) {
+        return `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`;
+    }
+    // Záložní obrázek pro HW novinky (pěkný detail hardwaru)
+    return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop';
   };
 
   return (
@@ -67,7 +70,6 @@ export default async function Home() {
             </div>
         </div>
         
-        {/* LOGO / FOTKA (Placeholder s iniciály) */}
         <div style={{ width: '200px', height: '200px', background: '#0b0c10', borderRadius: '50%', border: '4px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 0 20px #66fcf1' }}>
             <span style={{color: '#45a29e', fontSize: '4rem', fontWeight: 'bold'}}>HG</span>
         </div>
@@ -98,15 +100,29 @@ export default async function Home() {
                 cursor: 'pointer'
               }}>
                 
-                {/* OBRÁZEK */}
+                {/* OBRÁZEK S DYNAMICKÝM ŠTÍTKEM */}
                 <div style={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden', borderBottom: '2px solid #45a29e' }}>
                   <img 
-                    src={getThumbnail(post.video_id)} 
+                    src={getThumbnail(post)} 
                     alt={post.title}
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                   />
-                  <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.8)', color: '#66fcf1', padding: '5px 10px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.8rem', border: '1px solid #66fcf1' }}>
-                    VIDEO
+                  
+                  {/* DYNAMICKÝ ŠTÍTEK (Změna barvy a textu) */}
+                  <div style={{ 
+                    position: 'absolute', 
+                    top: '10px', 
+                    right: '10px', 
+                    background: post.video_id ? 'rgba(255, 0, 0, 0.85)' : 'rgba(102, 252, 241, 0.85)', 
+                    color: post.video_id ? '#fff' : '#0b0c10', 
+                    padding: '5px 12px', 
+                    borderRadius: '4px', 
+                    fontWeight: 'bold', 
+                    fontSize: '0.75rem', 
+                    border: '1px solid #66fcf1',
+                    textTransform: 'uppercase'
+                  }}>
+                    {post.video_id ? 'VIDEO / SHORT' : 'HW NOVINKA'}
                   </div>
                 </div>
                 
@@ -116,11 +132,10 @@ export default async function Home() {
                     {post.title}
                   </h3>
                   
-                  {/* Perex - bezpečně zkrácený text */}
                   <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px', flex: 1 }}>
                     {(post.content || '')
-                      .replace(/<[^>]*>?/gm, '') // Odstraní HTML tagy
-                      .substring(0, 120) // Zkrátí na 120 znaků
+                      .replace(/<[^>]*>?/gm, '')
+                      .substring(0, 120)
                     }...
                   </p>
 
