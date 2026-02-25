@@ -1,21 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
+import OpenAI from 'openai'; // Přidáno pro přímé volání AI
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// Stabilní funkce pro zjištění statusu - NIKDY nesmí shodit web
+// Tato funkce běží přímo na serveru, nevolá žádné vnitřní API, takže nespadne
 async function getLiveStatus() {
   const apiKey = process.env.YOUTUBE_API_KEY;
   const channelId = "UCgDdszBhhpqkNQc6t4YOCNw";
-  
-  // ZÍSKÁNÍ URL: Pokud není, API volání přeskočíme, aby web nespadl
-  let baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.URL || "";
-  if (baseUrl && !baseUrl.startsWith('http')) baseUrl = `https://${baseUrl}`;
-  baseUrl = baseUrl.replace(/\/$/, "");
+  const openaiKey = process.env.OPENAI_API_KEY;
 
   try {
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${apiKey}`;
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&eventType=live&key=${apiKey}`;
     const res = await fetch(url, { next: { revalidate: 300 } });
     const data = await res.json();
     
@@ -24,25 +21,28 @@ async function getLiveStatus() {
       const gameGuess = streamTitle.split('|')[0].trim();
       let aiDescription = "Právě streamujeme tuhle pecku! Doraz pokecat do chatu.";
 
-      // VOLÁME AI JEN KDYŽ MÁME ADRESU A NEOBĚTAVĚ TO CHYTÁME DO TRY-CATCH
-      if (baseUrl) {
+      // Voláme OpenAI přímo zde, pokud máme klíč
+      if (openaiKey) {
         try {
-          const aiRes = await fetch(`${baseUrl}/api/game-info?game=${encodeURIComponent(gameGuess)}`, { 
-            next: { revalidate: 3600 },
-            headers: { 'Accept': 'application/json' }
+          const openai = new OpenAI({ apiKey: openaiKey });
+          const completion = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              { role: "system", content: "Jsi The Hardware Guru, 45letý nadšenec. Krátce (2 věty) a úderně popiš hru." },
+              { role: "user", content: `Hra: ${gameGuess}` }
+            ],
+            max_tokens: 80
           });
-          if (aiRes.ok) {
-            const aiData = await aiRes.json();
-            aiDescription = aiData.description || aiDescription;
-          }
-        } catch (e) {
-          console.error("Vnitřní API fetch selhal - web jede dál");
+          aiDescription = completion.choices[0].message.content;
+        } catch (aiErr) {
+          console.error("AI skip:", aiErr);
         }
       }
+
       return { isLive: true, title: streamTitle, gameDesc: aiDescription };
     }
   } catch (e) {
-    console.error("YouTube error:", e);
+    console.error("Live status error:", e);
   }
   return { isLive: false, title: "", gameDesc: "" };
 }
@@ -52,7 +52,7 @@ export default async function Home() {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Přesně tvůj původní funkční kód pro data
+  // Paralelní načítání všeho najednou - tvůj původní stabilní přístup
   const [liveStatus, postsResult, statsResult] = await Promise.all([
     getLiveStatus(),
     supabase.from('posts').select('*').order('created_at', { ascending: false }),
@@ -88,7 +88,7 @@ export default async function Home() {
         .live-dot { width: 12px; height: 12px; background: #ff0000; border-radius: 50%; display: inline-block; margin-right: 10px; animation: pulse-red 2s infinite; }
       `}</style>
 
-      {/* HLAVIČKA */}
+      {/* NAVIGACE */}
       <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: 'rgba(31, 40, 51, 0.9)', backdropFilter: 'blur(5px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 0 15px rgba(102, 252, 241, 0.3)', flexWrap: 'wrap', gap: '20px' }}>
         <div style={{ fontSize: '1.8rem', fontWeight: '900', color: '#66fcf1', letterSpacing: '2px', textShadow: '2px 2px 0px #000' }}>THE HARDWARE GURU</div>
         <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -116,11 +116,11 @@ export default async function Home() {
         </section>
       )}
 
-      {/* BIO */}
+      {/* BIO HEADER */}
       <header style={{ maxWidth: '1200px', margin: '60px auto', padding: '40px', background: 'linear-gradient(145deg, rgba(31, 40, 51, 0.95), rgba(11, 12, 16, 0.95))', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
         <div style={{ flex: '1', minWidth: '300px' }}>
             <h1 style={{ color: '#66fcf1', fontSize: '2.5rem', marginBottom: '20px', textTransform: 'uppercase', fontWeight: '900' }}>The Hardware Guru</h1>
-            <p style={{ fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '30px', color: '#e0e0e0' }}>Čau pařani! Jsem 45letý HW nadšenec, gamer a streamer. Tady najdeš vše o hardwaru a záznamy ze streamů. Na Kicku mi sekunduje unikátní AI.</p>
+            <p style={{ fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '30px', color: '#e0e0e0' }}>Čau pařani! Jsem 45letý HW nadšenec, gamer a streamer. Tady najdeš vše o hardwaru a záznamy z mých streamů. Na Kicku mi sekunduje unikátní AI.</p>
             <div style={{ display: 'flex', gap: '15px' }}>
                 <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn">KICK STREAM</a>
                 <a href="https://discord.com/invite/n7xThr8" target="_blank" className="social-btn">DISCORD</a>
@@ -140,7 +140,7 @@ export default async function Home() {
                 <img src={getThumbnail(post)} alt={post.title} style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
                 <div style={{ padding: '25px', flex: 1 }}>
                   <h3 style={{ color: '#fff', marginBottom: '15px' }}>{post.title}</h3>
-                  <p style={{ color: '#c5c6c7', fontSize: '0.95rem' }}>{(post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 100)}...</p>
+                  <p style={{ color: '#c5c6c7' }}>{(post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 120)}...</p>
                 </div>
               </div>
             </Link>
