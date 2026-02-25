@@ -11,16 +11,13 @@ export async function GET() {
   );
 
   const API_KEY = process.env.YOUTUBE_API_KEY;
-  // ID kanálu, které nám fungovalo přes Search
   const CHANNEL_ID = 'UCgDdszBhhpqkNQc6t4YOCNw'; 
   
-  // Inicializace AI - klíč už máš ve Vercelu nastavený
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
 
   try {
-    // 1. Najdeme nová videa (Search metoda - ta jediná fungovala spolehlivě)
     const searchRes = await fetch(
       `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=5`
     );
@@ -35,7 +32,6 @@ export async function GET() {
     let errors = [];
 
     for (const item of searchData.items || []) {
-      // Chceme jen videa
       if (item.id.kind !== 'youtube#video') continue;
 
       const videoId = item.id.videoId;
@@ -48,7 +44,6 @@ export async function GET() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
 
-      // Kontrola, jestli už to video máme
       const { data: existujici } = await supabase
         .from('posts')
         .select('id')
@@ -60,7 +55,6 @@ export async function GET() {
         continue;
       }
 
-      // --- TADY ZAČÍNÁ MAGIE S AI ---
       let aiContent = '';
       
       try {
@@ -68,48 +62,26 @@ export async function GET() {
           messages: [
             {
               role: "system",
-              content: `Jsi zkušený redaktor webu 'The Hardware Guru'. Jsi 45letý pohodový gamer a HW nadšenec, který píše pro svou komunitu.
-              
-              Zadání:
-              Na základě názvu a krátkého popisu videa napiš poutavý článek v češtině (cca 300-500 slov).
-              
-              Styl:
-              - Tykáš čtenářům, jsi přátelský, občas použij herní slang.
-              - Používej HTML formátování (<h2> pro podnadpisy, <p> pro odstavce, <ul> pro seznamy).
-              - Text musí být čtivý a strukturovaný.
-              
-              Obsah musí obsahovat:
-              1. Úvod (o čem video je).
-              2. Hlavní část (rozveď téma, přidej technické detaily nebo herní tipy související s názvem).
-              3. Zmínka o tvém streamu: Vždy v textu zmiň, že na tvém Kick kanále (TheHardwareGuru) je unikátní AI, která komunikuje s diváky a komentuje hru.
-              4. Závěr s výzvou ke sledování.`
+              content: `Jsi redaktor webu 'The Hardware Guru'. Napiš článek na základě názvu a popisu videa.
+              Styl: Tykání, herní slang, HTML formátování (h2, p, ul).
+              Obsah: Úvod, hlavní část, zmínka o unikátní AI v chatu na Kicku, závěr.`
             },
             {
               role: "user",
-              content: `Název videa: ${title}\nOriginální popis: ${originalDescription}`
+              content: `Název: ${title}\nPopis: ${originalDescription}`
             }
           ],
-          model: "gpt-4o-mini", // Rychlý a levný model
+          model: "gpt-4o-mini",
         });
 
-        // Vezmeme text od AI
         aiContent = completion.choices[0].message.content;
-
-        // Přidáme na konec odkaz na video, kdyby ho AI zapomněla
-        aiContent += `
-          <hr />
-          <p><em>Tento článek byl automaticky vygenerován a rozšířen pomocí AI na základě videa.</em></p>
-          <p><strong>Sleduj video přímo na YouTube:</strong> <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank">ZDE</a></p>
-        `;
+        aiContent += `<hr /><p><strong>Sleduj video:</strong> <a href="https://www.youtube.com/watch?v=${videoId}">YouTube</a></p>`;
 
       } catch (aiError) {
-        console.error("AI selhala, používám zálohu:", aiError);
         errors.push(aiError.message);
-        // Kdyby došly kredity nebo AI spadla, použijeme původní popis, ať se to aspoň uloží
         aiContent = `<p>${originalDescription.replace(/\n/g, '<br>')}</p>`;
       }
 
-      // Uložení do databáze
       const { error: insertError } = await supabase.from('posts').insert([
         {
           title: title,
@@ -123,11 +95,7 @@ export async function GET() {
       if (!insertError) novych++;
     }
 
-    return NextResponse.json({ 
-      status: 'HOTOVO', 
-      zprava: `Přidáno ${novych} článků (AI powered), ${preskoceno} už existovalo.`,
-      debug_errors: errors.length > 0 ? errors : 'Žádné chyby AI'
-    });
+    return NextResponse.json({ status: 'HOTOVO', novych, preskoceno, errors });
 
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
