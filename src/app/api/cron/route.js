@@ -10,81 +10,75 @@ export async function GET() {
   );
 
   const API_KEY = process.env.YOUTUBE_API_KEY;
-  // Zkusíme najít kanál přímo podle handle (@TheHardwareGuru_Czech)
-  const HANDLE = 'TheHardwareGuru_Czech'; 
+  // TOHLE JE TO SPRÁVNÉ ID TVÉHO KANÁLU:
+  const CORRECT_CHANNEL_ID = 'UCgDdszBhhpqkNQc6t4YOCNw'; 
   
   try {
-    // 1. KROK: Najdeme správné ID kanálu podle handle
-    const findChannel = await fetch(
-      `https://www.googleapis.com/youtube/v3/channels?key=${API_KEY}&forHandle=${HANDLE}&part=id,contentDetails,snippet`
+    // 1. Získáme ID playlistu "Uploads" pro tvůj správný kanál
+    const channelRes = await fetch(
+      `https://www.googleapis.com/youtube/v3/channels?key=${API_KEY}&id=${CORRECT_CHANNEL_ID}&part=contentDetails`
     );
-    const channelData = await findChannel.json();
+    const channelData = await channelRes.json();
 
-    if (channelData.error) {
-       return NextResponse.json({ CHYBA_API: channelData.error.message }, { status: 400 });
+    const uploadsId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+
+    if (!uploadsId) {
+      return NextResponse.json({ chyba: 'Nepodařilo se najít složku videí.' }, { status: 404 });
     }
 
-    if (!channelData.items || channelData.items.length === 0) {
-       return NextResponse.json({ 
-         chyba: "Google nenašel kanál pod handle @TheHardwareGuru_Czech. Zkontroluj handle v kódu.",
-         vystup: channelData 
-       }, { status: 404 });
-    }
-
-    const channelId = channelData.items[0].id;
-    const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads;
-
-    // 2. KROK: Vytáhneme videa z playlistu
+    // 2. Vytáhneme posledních 10 videí
     const playlistRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/playlistItems?key=${API_KEY}&playlistId=${uploadsPlaylistId}&part=snippet&maxResults=10`
+      `https://www.googleapis.com/youtube/v3/playlistItems?key=${API_KEY}&playlistId=${uploadsId}&part=snippet&maxResults=10`
     );
     const playlistData = await playlistRes.json();
 
     let novych = 0;
     let preskoceno = 0;
 
-    if (playlistData.items) {
-      for (const item of playlistData.items) {
-        const videoId = item.snippet.resourceId.videoId;
-        const title = item.snippet.title;
-        const description = item.snippet.description;
-        
-        const slug = title
-          .toLowerCase()
-          .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, '');
+    for (const item of playlistData.items || []) {
+      const videoId = item.snippet.resourceId.videoId;
+      const title = item.snippet.title;
+      const description = item.snippet.description;
+      
+      const slug = title
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
 
-        const { data: existujici } = await supabase
-          .from('posts')
-          .select('id')
-          .eq('video_id', videoId)
-          .maybeSingle();
+      // Kontrola, jestli už video v DB máme
+      const { data: existujici } = await supabase
+        .from('posts')
+        .select('id')
+        .eq('video_id', videoId)
+        .maybeSingle();
 
-        if (existujici) {
-          preskoceno++;
-          continue;
-        }
-
-        const { error: insertError } = await supabase.from('posts').insert([
-          {
-            title: title,
-            slug: slug,
-            video_id: videoId,
-            content: `<p>${description.replace(/\n/g, '<br>')}</p>`,
-            created_at: new Date().toISOString(),
-          }
-        ]);
-
-        if (!insertError) novych++;
+      if (existujici) {
+        preskoceno++;
+        continue;
       }
+
+      // Vložení nového článku
+      const { error: insertError } = await supabase.from('posts').insert([
+        {
+          title: title,
+          slug: slug,
+          video_id: videoId,
+          content: `
+            <p>${description.replace(/\n/g, '<br>')}</p>
+            <p><strong>Sledujte zde:</strong> https://www.youtube.com/watch?v=${videoId}</p>
+          `,
+          created_at: new Date().toISOString(),
+        }
+      ]);
+
+      if (!insertError) novych++;
     }
 
     return NextResponse.json({ 
-      status: 'SUCCESS', 
-      nalezene_id_kanalu: channelId,
-      novych, 
-      preskoceno 
+      status: 'HOTOVO', 
+      zprava: `Nalezeno ${novych} nových videí, ${preskoceno} už tam bylo.`,
+      kanál: "TheHardwareGuru"
     });
 
   } catch (error) {
