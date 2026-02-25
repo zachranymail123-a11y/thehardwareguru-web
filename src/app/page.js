@@ -1,22 +1,26 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 
-// TOTO TAM CHYBĚLO: Vypne veškerou paměť serveru. Musí to být 0.
+// Vypne veškerou paměť serveru. Musí to být 0.
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function Home() {
-  // Používám přesně stejný způsob načtení proměnných jako v diagnostice
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Stáhneme data
-  const { data: posts } = await supabase
-    .from('posts')
-    .select('*')
-    .order('created_at', { ascending: false });
+  // 1. PŘIČTEME NÁVŠTĚVU (Voláme tvou SQL funkci)
+  await supabase.rpc('increment_total_visits');
+
+  // 2. STÁHNEME DATA (Články + Celkové statistiky)
+  const [{ data: posts }, { data: stats }] = await Promise.all([
+    supabase.from('posts').select('*').order('created_at', { ascending: false }),
+    supabase.from('stats').select('value').eq('name', 'total_visits').single()
+  ]);
+
+  const celkemNavstev = stats?.value || 0;
 
   // Funkce pro náhledovku
   const getThumbnail = (post) => {
@@ -147,15 +151,21 @@ export default async function Home() {
         </div>
       </main>
 
-      {/* PATIČKA */}
+      {/* PATIČKA S POČÍTLADLEM */}
       <footer style={{ background: '#1f2833', padding: '40px 20px', textAlign: 'center', borderTop: '2px solid #66fcf1', marginTop: '60px' }}>
-          <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+          <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
             <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
             <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="nav-link">INSTAGRAM</a>
           </div>
-          <p style={{ color: '#45a29e', opacity: 0.7 }}>© 2026 The Hardware Guru. Powered by AI & Caffeine.</p>
+          
+          {/* TADY JE TO POČÍTLADLO */}
+          <div style={{ marginBottom: '20px', color: '#66fcf1', fontSize: '1rem', fontWeight: 'bold', letterSpacing: '1px' }}>
+             WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #45a29e' }}>{celkemNavstev}</span> GURU FANOUŠKŮ 🦾
+          </div>
+
+          <p style={{ color: '#45a29e', opacity: 0.7, fontSize: '0.8rem' }}>© 2026 The Hardware Guru. Powered by AI & Caffeine.</p>
       </footer>
     </div>
   );
