@@ -29,12 +29,12 @@ export default async function Home() {
   };
 
   return (
-    // TADY JE ZMĚNA: Pozadí s obrázkem a tmavým filtrem
+    // ZMĚNA: VLOŽEN TVŮJ NOVÝ ODKAZ NA POZADÍ
     <div style={{ 
         minHeight: '100vh', 
         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
         color: '#c5c6c7',
-        backgroundImage: "linear-gradient(rgba(11, 12, 16, 0.92), rgba(11, 12, 16, 0.85)), url('https://i.imgur.com/VR3903p.png')",
+        backgroundImage: "linear-gradient(rgba(11, 12, 16, 0.92), rgba(11, 12, 16, 0.85)), url('https://i.postimg.cc/QdWxszv3/bg-guru.png')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
@@ -97,7 +97,7 @@ export default async function Home() {
           {posts?.map((post) => (
             <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
               <div className="game-card" style={{ 
-                backgroundColor: 'rgba(31, 40, 51, 0.95)', // Trochu průhledné karty
+                backgroundColor: 'rgba(31, 40, 51, 0.95)', 
                 borderRadius: '12px', 
                 overflow: 'hidden', 
                 height: '100%',
