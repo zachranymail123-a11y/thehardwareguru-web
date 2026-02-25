@@ -4,15 +4,17 @@ import { notFound } from 'next/navigation';
 export const dynamic = 'force-dynamic';
 
 export default async function ClanekPage({ params }) {
-  // Tady ošetříme tu koncovku .html, která ti hází 404
-  const rawSlug = params.slug;
-  const cleanSlug = rawSlug.endsWith('.html') ? rawSlug.replace('.html', '') : rawSlug;
+  const { slug } = params;
+  
+  // Tohle odstraní .html i případné mezery, co by tam dělaly bordel
+  const cleanSlug = slug.replace('.html', '').trim();
   
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
+  // Hledáme článek - zkusíme ho najít podle slugu
   const { data: post, error } = await supabase
     .from('posts')
     .select('*')
@@ -20,17 +22,19 @@ export default async function ClanekPage({ params }) {
     .single();
 
   if (!post || error) {
+    console.error("Clanek nenalezen pro slug:", cleanSlug);
     notFound();
   }
 
   return (
-    <div style={{ fontFamily: 'sans-serif', color: '#000', backgroundColor: '#fff', minHeight: '100vh' }}>
-      <header style={{ textAlign: 'center', padding: '20px', borderBottom: '1px solid #eee' }}>
-        <a href="/" style={{ textDecoration: 'none', color: '#ff0000', fontWeight: 'bold' }}>← ZPĚT NA HOME</a>
-        <h1 style={{ fontSize: '2rem', textTransform: 'uppercase', marginTop: '20px' }}>{post.title}</h1>
+    <div style={{ backgroundColor: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+      <header style={{ padding: '20px', borderBottom: '2px solid #ff0000' }}>
+        <a href="/" style={{ color: '#ff0000', textDecoration: 'none', fontWeight: 'bold' }}>← ZPĚT</a>
       </header>
-      <main style={{ maxWidth: '800px', margin: '40px auto', padding: '0 20px', lineHeight: '1.8', fontSize: '1.1rem' }}>
-        <div dangerouslySetInnerHTML={{ __html: post.content }} />
+      <main style={{ maxWidth: '800px', margin: '40px auto', padding: '0 20px' }}>
+        <h1 style={{ fontSize: '2.5rem', color: '#ff0000' }}>{post.title}</h1>
+        <div style={{ lineHeight: '1.8', fontSize: '1.1rem', marginTop: '30px' }} 
+             dangerouslySetInnerHTML={{ __html: post.content }} />
       </main>
     </div>
   );
