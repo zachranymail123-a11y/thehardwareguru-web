@@ -3,7 +3,6 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-// --- SEO: GENERUJEME METADATA PRO GOOGLE A SOCIÁLNÍ SÍTĚ ---
 export async function generateMetadata({ params }) {
   const { slug } = params;
   const supabase = createClient(
@@ -41,7 +40,6 @@ export async function generateMetadata({ params }) {
   };
 }
 
-// --- HLAVNÍ KOMPONENTA STRÁNKY (DESIGN) ---
 export default async function ArticlePage({ params }) {
   const { slug } = params;
 
@@ -50,10 +48,8 @@ export default async function ArticlePage({ params }) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  // 1. ZAPOČÍTÁME NÁVŠTĚVU DO CELKOVÝCH STATISTIK (I když přijdou přímo na článek)
   await supabase.rpc('increment_total_visits');
 
-  // 2. STÁHNEME DATA ČLÁNKU A CELKOVÉ NÁVŠTĚVY PRO PATIČKU
   const [{ data: post }, { data: stats }] = await Promise.all([
     supabase.from('posts').select('*').eq('slug', slug).single(),
     supabase.from('stats').select('value').eq('name', 'total_visits').single()
@@ -71,7 +67,16 @@ export default async function ArticlePage({ params }) {
   }
 
   return (
-    <div style={{ backgroundColor: '#0b0c10', color: '#c5c6c7', minHeight: '100vh', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
+    // ZMĚNA POZADÍ I ZDE
+    <div style={{ 
+        minHeight: '100vh', 
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        color: '#c5c6c7',
+        backgroundImage: "linear-gradient(rgba(11, 12, 16, 0.92), rgba(11, 12, 16, 0.85)), url('/bg-guru.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+    }}>
       
       <style>{`
         .nav-link { margin: 0 15px; color: #fff; text-decoration: none; font-weight: bold; transition: color 0.3s; text-transform: uppercase; letter-spacing: 1px; display: inline-block; }
@@ -80,11 +85,11 @@ export default async function ArticlePage({ params }) {
         .social-btn:hover { background: #66fcf1; color: #0b0c10; box-shadow: 0 0 15px #66fcf1; transform: scale(1.05); }
         .article-content a { color: #66fcf1; }
         .article-content h2 { color: #fff; margin-top: 30px; border-bottom: 1px solid #45a29e; padding-bottom: 10px; }
-        .article-content ul { background: #1f2833; padding: 20px 40px; border-radius: 10px; border-left: 4px solid #66fcf1; }
+        .article-content ul { background: rgba(31, 40, 51, 0.8); padding: 20px 40px; border-radius: 10px; border-left: 4px solid #66fcf1; }
       `}</style>
 
       {/* HLAVIČKA */}
-      <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: '#1f2833', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 0 15px rgba(102, 252, 241, 0.3)', flexWrap: 'wrap', gap: '20px' }}>
+      <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: 'rgba(31, 40, 51, 0.9)', backdropFilter: 'blur(5px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 0 15px rgba(102, 252, 241, 0.3)', flexWrap: 'wrap', gap: '20px' }}>
         <Link href="/" style={{ textDecoration: 'none' }}>
             <div style={{ fontSize: '1.8rem', fontWeight: '900', color: '#66fcf1', letterSpacing: '2px', textShadow: '2px 2px 0px #000' }}>
             THE HARDWARE GURU
@@ -122,13 +127,22 @@ export default async function ArticlePage({ params }) {
           </div>
         )}
 
+        {/* Text článku s podkladem pro čitelnost */}
         <div 
           className="article-content"
-          style={{ lineHeight: '1.8', fontSize: '1.15rem', color: '#e0e0e0', marginBottom: '80px' }}
+          style={{ 
+              lineHeight: '1.8', 
+              fontSize: '1.15rem', 
+              color: '#e0e0e0', 
+              marginBottom: '80px',
+              background: 'rgba(11, 12, 16, 0.7)', // Poloprůhledný podklad pod textem
+              padding: '20px',
+              borderRadius: '15px'
+          }}
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
 
-        <div style={{ padding: '40px', background: 'linear-gradient(145deg, #1f2833, #0b0c10)', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '30px', flexWrap: 'wrap', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
+        <div style={{ padding: '40px', background: 'linear-gradient(145deg, rgba(31, 40, 51, 0.95), rgba(11, 12, 16, 0.95))', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '30px', flexWrap: 'wrap', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
             <div style={{ width: '150px', height: '150px', background: '#0b0c10', borderRadius: '50%', border: '3px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                 <span style={{color: '#45a29e', fontSize: '3rem', fontWeight: 'bold'}}>HG</span>
             </div>
@@ -148,7 +162,7 @@ export default async function ArticlePage({ params }) {
         </div>
       </main>
 
-      <footer style={{ background: '#1f2833', padding: '40px 20px', textAlign: 'center', borderTop: '2px solid #66fcf1', marginTop: '60px' }}>
+      <footer style={{ background: 'rgba(31, 40, 51, 0.95)', padding: '40px 20px', textAlign: 'center', borderTop: '2px solid #66fcf1', marginTop: '60px' }}>
           <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
