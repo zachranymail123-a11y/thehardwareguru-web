@@ -1,15 +1,10 @@
 {
-  "version": 2,
-  "crons": [
+  "cleanUrls": true,
+  "redirects": [
     {
-      "path": "/api/cron",
-      "schedule": "0 5 * * *"
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/cron",
-      "destination": "/api/cron"
+      "source": "/clanky/:slug.html",
+      "destination": "/clanky/:slug",
+      "permanent": true
     }
   ]
 }
