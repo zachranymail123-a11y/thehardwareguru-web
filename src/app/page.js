@@ -8,7 +8,8 @@ export const revalidate = 0;
 async function getLiveStatus() {
   const apiKey = process.env.YOUTUBE_API_KEY;
   const channelId = "UCgDdszBhhpqkNQc6t4YOCNw";
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${process.env.VERCEL_URL}`;
+  // Dynamické určení baseUrl pro Server Side fetch
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
   try {
     const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&eventType=live&key=${apiKey}`;
@@ -17,12 +18,13 @@ async function getLiveStatus() {
     
     if (data.items && data.items.length > 0) {
       const streamTitle = data.items[0].snippet.title;
-      // Zkusíme vytáhnout název hry (očekáváme formát: Název Hry | Nějaký text)
+      // Extrakce názvu hry před znakem "|"
       const gameGuess = streamTitle.split('|')[0].trim();
       
-      // POJISTKA: Pokud fetch na tvé API selže, web nespadne
       let aiDescription = "Paříme tuhle pecku! Pojď se podívat na gameplay a pokecat do chatu.";
+      
       try {
+        // Volání tvého AI endpointu
         const aiRes = await fetch(`${baseUrl}/api/game-info?game=${encodeURIComponent(gameGuess)}`, { 
             next: { revalidate: 3600 } 
         });
@@ -49,17 +51,14 @@ async function getLiveStatus() {
 export default async function Home() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. PŘIČTEME NÁVŠTĚVU (spuštěno asynchronně s catch)
-  supabase.rpc('increment_total_visits').catch(() => {});
-
-  // 2. STÁHNEME DATA + LIVE STATUS PARALELNĚ
+  // 1. Spustíme paralelně načítání dat, Live statusu a zápis návštěvy
   const [liveStatus, { data: posts }, { data: stats }] = await Promise.all([
     getLiveStatus(),
     supabase.from('posts').select('*').order('created_at', { ascending: false }),
-    supabase.from('stats').select('value').eq('name', 'total_visits').single()
+    supabase.from('stats').select('value').eq('name', 'total_visits').single(),
+    supabase.rpc('increment_total_visits').catch(() => {})
   ]);
 
   const celkemNavstev = stats?.value || 0;
@@ -113,12 +112,11 @@ export default async function Home() {
               KICK {liveStatus.isLive && <span style={{color: '#ff4444'}}>(LIVE)</span>}
             </a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
-            <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="nav-link">INSTAGRAM</a>
             <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
         </div>
       </nav>
 
-      {/* AI LIVE BOX - ZOBRAZÍ SE JEN KDYŽ JSI LIVE */}
+      {/* AI LIVE BOX */}
       {liveStatus.isLive && (
         <section style={{ maxWidth: '1200px', margin: '40px auto', padding: '30px', background: 'rgba(255, 0, 0, 0.05)', borderRadius: '15px', border: '2px solid #ff0000', boxShadow: '0 0 30px rgba(255, 0, 0, 0.2)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
@@ -127,7 +125,7 @@ export default async function Home() {
                 <span className="live-dot"></span>
                 <span style={{ color: '#ff0000', fontWeight: 'bold', letterSpacing: '2px' }}>PRÁVĚ STREAMUJI</span>
               </div>
-              <h2 style={{ color: '#fff', fontSize: '1.8rem', marginBottom: '15px' }}>{liveStatus.title}</h2>
+              <h2 style={{ color: '#fff', fontSize: '1.8rem', marginBottom: '15px', textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>{liveStatus.title}</h2>
               <p style={{ color: '#e0e0e0', fontSize: '1.1rem', lineHeight: '1.6', fontStyle: 'italic', borderLeft: '4px solid #ff0000', paddingLeft: '20px' }}>
                 {liveStatus.gameDesc}
               </p>
@@ -149,7 +147,6 @@ export default async function Home() {
                 Čau pařani! Jsem 45letý HW nadšenec, gamer a streamer. 
                 Tady najdeš vše o hardwaru, recenze her a hlavně záznamy z mých streamů. 
                 Na Kicku mi sekunduje unikátní <strong style={{color: '#66fcf1'}}>AI umělá inteligence</strong>, která komunikuje s chatem a komentuje můj gameplay. 
-                Doraž na stream a pokcej s námi!
             </p>
             <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                 <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn">SLEDUJ STREAM (KICK)</a>
@@ -162,7 +159,7 @@ export default async function Home() {
         </div>
       </header>
 
-      {/* HLAVNÍ OBSAH */}
+      {/* HLAVNÍ OBSAH - ČLÁNKY */}
       <main style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
         <h2 style={{ color: '#fff', textAlign: 'center', marginBottom: '40px', fontSize: '2.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px', textShadow: '0 0 10px rgba(102, 252, 241, 0.5)' }}>
           Nejnovější články & Videa
@@ -222,42 +219,11 @@ export default async function Home() {
         </div>
       </main>
 
-      {/* DISCORD WIDGET */}
-      <section style={{ maxWidth: '800px', margin: '60px auto', padding: '0 20px', textAlign: 'center' }}>
-        <h2 style={{ color: '#fff', fontSize: '2rem', marginBottom: '30px', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '2px' }}>
-          Komunita <span style={{ color: '#66fcf1' }}>Hardware Guru</span>
-        </h2>
-        <div style={{ 
-          background: 'rgba(31, 40, 51, 0.8)', 
-          borderRadius: '15px', 
-          border: '1px solid #45a29e', 
-          overflow: 'hidden',
-          boxShadow: '0 0 20px rgba(102, 252, 241, 0.1)'
-        }}>
-            <iframe 
-                src="https://ptb.discord.com/widget?id=762083540963164200&theme=dark" 
-                width="100%" 
-                height="500" 
-                allowtransparency="true" 
-                frameBorder="0" 
-                sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
-            ></iframe>
-        </div>
-      </section>
-
       {/* PATIČKA */}
       <footer style={{ background: 'rgba(31, 40, 51, 0.95)', padding: '40px 20px', textAlign: 'center', borderTop: '2px solid #66fcf1', marginTop: '60px' }}>
-          <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
-            <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
-            <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
-            <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
-            <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="nav-link">INSTAGRAM</a>
+          <div style={{ marginBottom: '20px', color: '#66fcf1', fontSize: '1.2rem', fontWeight: 'bold', letterSpacing: '1px', textShadow: '0 0 5px #66fcf1' }}>
+              WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 10px', borderRadius: '4px', border: '1px solid #45a29e' }}>{celkemNavstev}</span> GURU FANOUŠKŮ 🦾
           </div>
-          
-          <div style={{ marginBottom: '20px', color: '#66fcf1', fontSize: '1rem', fontWeight: 'bold', letterSpacing: '1px' }}>
-              WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #45a29e' }}>{celkemNavstev}</span> GURU FANOUŠKŮ 🦾
-          </div>
-
           <p style={{ color: '#45a29e', opacity: 0.7, fontSize: '0.8rem' }}>© 2026 The Hardware Guru. Powered by AI & Caffeine.</p>
       </footer>
     </div>
