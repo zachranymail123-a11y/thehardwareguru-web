@@ -10,27 +10,23 @@ export async function GET() {
   );
 
   const API_KEY = process.env.YOUTUBE_API_KEY;
-  // TOHLE JE TO SPRÁVNÉ ID TVÉHO KANÁLU:
-  const CORRECT_CHANNEL_ID = 'UCgDdszBhhpqkNQc6t4YOCNw'; 
+  // DEFINITIVNĚ SPRÁVNÉ ID KANÁLU PRO THEHARDWAREGURU_CZECH:
+  const CHANNEL_ID = 'UC2_X6C2v_q_A8Y0S-Yv9TfQ'; 
   
   try {
-    // 1. Získáme ID playlistu "Uploads" pro tvůj správný kanál
-    const channelRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/channels?key=${API_KEY}&id=${CORRECT_CHANNEL_ID}&part=contentDetails`
-    );
-    const channelData = await channelRes.json();
+    // 1. Zjistíme ID playlistu "Uploads" (přidáním 'UU' místo 'UC' na začátek ID kanálu)
+    // Tohle je nejspolehlivější trik YouTube API
+    const uploadsId = CHANNEL_ID.replace('UC', 'UU');
 
-    const uploadsId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
-
-    if (!uploadsId) {
-      return NextResponse.json({ chyba: 'Nepodařilo se najít složku videí.' }, { status: 404 });
-    }
-
-    // 2. Vytáhneme posledních 10 videí
+    // 2. Vytáhneme posledních 10 videí přímo z playlistu nahrávek
     const playlistRes = await fetch(
       `https://www.googleapis.com/youtube/v3/playlistItems?key=${API_KEY}&playlistId=${uploadsId}&part=snippet&maxResults=10`
     );
     const playlistData = await playlistRes.json();
+
+    if (playlistData.error) {
+      return NextResponse.json({ chyba: playlistData.error.message }, { status: 400 });
+    }
 
     let novych = 0;
     let preskoceno = 0;
@@ -46,7 +42,7 @@ export async function GET() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
 
-      // Kontrola, jestli už video v DB máme
+      // Kontrola v DB
       const { data: existujici } = await supabase
         .from('posts')
         .select('id')
@@ -58,7 +54,7 @@ export async function GET() {
         continue;
       }
 
-      // Vložení nového článku
+      // Vložení
       const { error: insertError } = await supabase.from('posts').insert([
         {
           title: title,
@@ -77,8 +73,8 @@ export async function GET() {
 
     return NextResponse.json({ 
       status: 'HOTOVO', 
-      zprava: `Nalezeno ${novych} nových videí, ${preskoceno} už tam bylo.`,
-      kanál: "TheHardwareGuru"
+      zprava: `Úspěch! Přidáno ${novych} videí, ${preskoceno} už tam bylo.`,
+      id_pouziteho_playlistu: uploadsId
     });
 
   } catch (error) {
