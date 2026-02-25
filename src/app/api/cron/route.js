@@ -1,114 +1,87 @@
-import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-
-  const API_KEY = process.env.YOUTUBE_API_KEY;
-  // ID kanálu
-  const CHANNEL_ID = 'UCgDdszBhhpqkNQc6t4YOCNw'; 
-  
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  });
-
   try {
-    // 1. Stáhneme videa (Zvedl jsem limit na 10, ať se ti načte víc videí)
-    const searchRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=10`
-    );
-    const searchData = await searchRes.json();
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    if (searchData.error) {
-      return NextResponse.json({ chyba_youtube: searchData.error.message }, { status: 400 });
-    }
+    // 1. ZKUSÍME NAJÍT TVOJE VIDEO (VČETNĚ SHORTS)
+    const YOUTUBE_CH_ID = 'UC6O7V0u-9vO7W3zX-b_uG6A'; // Tvé ID
+    const ytUrl = `https://www.googleapis.com/youtube/v3/search?key=${process.env.YOUTUBE_API_KEY}&channelId=${YOUTUBE_CH_ID}&part=snippet,id&order=date&maxResults=5`;
+    
+    const ytRes = await fetch(ytUrl);
+    const ytData = await ytRes.json();
 
-    let novych = 0;
-    let preskoceno = 0;
-    let errors = [];
+    let newPostCreated = false;
 
-    for (const item of searchData.items || []) {
-      if (item.id.kind !== 'youtube#video') continue;
+    if (ytData.items && ytData.items.length > 0) {
+      for (const item of ytData.items) {
+        const videoId = item.id.videoId;
+        if (!videoId) continue;
 
-      const videoId = item.id.videoId;
-      const title = item.snippet.title;
-      const originalDescription = item.snippet.description;
-      
-      const slug = title
-        .toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
+        const slug = item.snippet.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        
+        // Kontrola, jestli už ho nemáme
+        const { data: existing } = await supabase.from('posts').select('id').eq('slug', slug).single();
+        if (existing) continue;
 
-      // Kontrola existence
-      const { data: existujici } = await supabase
-        .from('posts')
-        .select('id')
-        .eq('video_id', videoId)
-        .maybeSingle();
-
-      if (existujici) {
-        preskoceno++;
-        continue;
-      }
-
-      // --- AI GENEROVÁNÍ ---
-      let aiContent = '';
-      
-      try {
-        const completion = await openai.chat.completions.create({
-          messages: [
-            {
-              role: "system",
-              content: `Jsi redaktor webu 'The Hardware Guru'. Napiš článek na základě názvu a popisu videa.
-              Styl: Tykání, herní slang, HTML formátování (pouze tagy h2, p, ul, li, strong).
-              DŮLEŽITÉ: Vrať pouze čistý HTML kód bez markdown značek.
-              Obsah: Úvod, hlavní část, zmínka o unikátní AI v chatu na Kicku, závěr.`
-            },
-            {
-              role: "user",
-              content: `Název: ${title}\nPopis: ${originalDescription}`
-            }
-          ],
-          model: "gpt-4o-mini",
+        // Máme nové video/short! Necháme AI napsat článek.
+        const prompt = `Jsi The Hardware Guru, 45letý herní nadšenec. Napiš článek na základě tohoto názvu videa: "${item.snippet.title}" a popisu: "${item.snippet.description}". Styl: herní slang, tykání, vtipné, zmíni Kick stream a tvou AI.`;
+        
+        const aiRes = await openai.chat.completions.create({
+          model: "gpt-4-turbo-preview",
+          messages: [{ role: "user", content: prompt }]
         });
 
-        aiContent = completion.choices[0].message.content;
+        const content = aiRes.choices[0].message.content.replace(/```html|```/g, '').trim();
 
-        // --- ČIŠTĚNÍ KÓDU (FIX PROTI BUGU '''html) ---
-        // Odstraníme '''html na začátku a ''' na konci
-        aiContent = aiContent.replace(/^```html/g, '').replace(/^```/g, '').replace(/```$/g, '');
-
-        aiContent += `<hr /><p><strong>Sleduj video:</strong> <a href="https://www.youtube.com/watch?v=${videoId}">YouTube</a></p>`;
-
-      } catch (aiError) {
-        errors.push(aiError.message);
-        aiContent = `<p>${originalDescription.replace(/\n/g, '<br>')}</p>`;
-      }
-
-      // Uložení
-      const { error: insertError } = await supabase.from('posts').insert([
-        {
-          title: title,
-          slug: slug,
+        await supabase.from('posts').insert([{
+          title: item.snippet.title,
+          content: content,
           video_id: videoId,
-          content: aiContent,
-          created_at: new Date().toISOString(),
-        }
-      ]);
+          slug: slug,
+          type: 'video' // Štítek pro video
+        }]);
 
-      if (!insertError) novych++;
+        newPostCreated = true;
+        break; // Vytvoříme jeden a stačí
+      }
     }
 
-    return NextResponse.json({ status: 'HOTOVO', novych, preskoceno, errors });
+    // 2. KDYŽ NENÍ NOVÉ VIDEO, VYGENERUJEME HW NOVINKU
+    if (!newPostCreated) {
+      const topicPrompt = `Napiš zajímavou aktuální novinku, únik (rumor) nebo rekord ze světa hardwaru (CPU, GPU, základní desky, chladiče). Zaměř se na aktuální trendy (např. RTX 50-série, nové Ryzeny, Intel). Styl: The Hardware Guru (45 let, expert, vtipný, slang). Nadpis dej na první řádek, pak text.`;
+      
+      const aiRes = await openai.chat.completions.create({
+        model: "gpt-4-turbo-preview",
+        messages: [{ role: "user", content: topicPrompt }]
+      });
 
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+      const fullText = aiRes.choices[0].message.content.trim();
+      const lines = fullText.split('\n');
+      const title = lines[0].replace(/#|Title:/g, '').trim();
+      const content = lines.slice(1).join('\n').replace(/```html|```/g, '').trim();
+      const slug = 'hw-novinka-' + title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 50);
+
+      // Kontrola, jestli už tenhle slug náhodou nemáme (prevence duplicit)
+      const { data: existingHw } = await supabase.from('posts').select('id').eq('slug', slug).single();
+      
+      if (!existingHw) {
+        await supabase.from('posts').insert([{
+          title: title,
+          content: content,
+          video_id: null, // Žádné video
+          slug: slug,
+          type: 'news' // Štítek pro novinku
+        }]);
+      }
+    }
+
+    return Response.json({ status: "HOTOVO" });
+  } catch (err) {
+    return Response.json({ error: err.message }, { status: 500 });
   }
 }
