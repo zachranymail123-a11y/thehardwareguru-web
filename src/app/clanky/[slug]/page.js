@@ -2,15 +2,15 @@ import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ClanekPage(props) {
-  // Bezpečné načtení parametrů (funguje pro starý i nový Next.js)
-  const params = await props.params; 
+export default async function Page(props) {
+  // 1. Ošetření parametrů pro nový Next.js (tohle opravuje bílou chybu)
+  const params = await props.params;
   const { slug } = params;
 
-  // 1. Očistíme slug od bordelu
+  // 2. Čištění slugu (vyhodí .html, sjednotí pomlčky)
   let cleanSlug = slug.replace('.html', '').trim();
-  cleanSlug = cleanSlug.replace(/-+/g, '-'); // sjednotí dvojité pomlčky
-  cleanSlug = cleanSlug.replace(/^-|-$/g, ''); // ořízne pomlčky na krajích
+  cleanSlug = cleanSlug.replace(/-+/g, '-');
+  cleanSlug = cleanSlug.replace(/^-+|-+$/g, '');
 
   try {
     const supabase = createClient(
@@ -18,17 +18,19 @@ export default async function ClanekPage(props) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 2. Najdeme článek
+    // 3. Hledání článku
     let { data: post, error } = await supabase
       .from('posts')
       .select('*')
       .eq('slug', cleanSlug)
       .single();
 
-    // 3. Pokud nenajdeme přesně, zkusíme najít podobný (ZÁCHRANA)
+    // 4. Fallback: Pokud nenajde přesně, zkusí najít podle části názvu
     if (!post) {
-       const shortSlug = cleanSlug.split('-').slice(0, 3).join('-');
-       if (shortSlug.length > 5) {
+       const parts = cleanSlug.split('-');
+       // Pokud je název dost dlouhý, zkusíme první 3 slova
+       if (parts.length >= 3) {
+         const shortSlug = parts.slice(0, 3).join('-');
          const { data: fallback } = await supabase
            .from('posts')
            .select('*')
@@ -39,22 +41,24 @@ export default async function ClanekPage(props) {
        }
     }
 
-    // 4. Pokud se ani tak nenašel, ukážeme černou chybu (žádná bílá smrt)
+    // 5. Pokud se ani tak nenašel, zobrazíme černou chybu (místo pádu aplikace)
     if (!post || error) {
       return (
         <div style={{ padding: '50px', background: '#000', color: 'red', fontFamily: 'monospace', minHeight: '100vh' }}>
           <h1>⚠️ ČLÁNEK NENALEZEN</h1>
           <p>Hledaný slug: <strong>{cleanSlug}</strong></p>
+          <hr style={{ borderColor: '#333' }} />
+          <p>Systém nenašel článek v databázi.</p>
           <a href="/" style={{color:'white', textDecoration:'underline', marginTop:'20px', display:'block'}}>ZPĚT NA HOME</a>
         </div>
       );
     }
 
-    // 5. VYKRESLENÍ (S ODKAZY NA SÍTĚ)
+    // 6. ÚSPĚCH - VYKRESLENÍ STRÁNKY
     return (
       <div style={{ backgroundColor: '#000', color: '#ccc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
         
-        {/* Lišta nahoře */}
+        {/* Horní lišta */}
         <header style={{ padding: '20px', borderBottom: '1px solid #333', background: '#050505', textAlign: 'center' }}>
             <a href="/" style={{ color: '#ff0000', textDecoration: 'none', fontWeight: 'bold', fontSize: '1.2rem' }}>
               ← ZPĚT NA HLAVNÍ STRÁNKU
@@ -68,11 +72,37 @@ export default async function ClanekPage(props) {
             {post.title}
           </h1>
 
-          {/* ODKAZY NA SÍTĚ (PŘÍMO V KÓDU) */}
+          {/* ODKAZY NA SÍTĚ - TVŮJ POŽADAVEK */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '30px' }}>
             <a href="https://kick.com/thehardwareguru" target="_blank" 
                style={{ flex: '1', textAlign: 'center', background: '#05ff5b', color: '#000', padding: '12px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', minWidth: '120px' }}>
                KICK
             </a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" 
-               style={{ flex: '1', textAlign: 'center', background: '#ff0000', color: '#fff', padding: '12px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', minWidth:
+               style={{ flex: '1', textAlign: 'center', background: '#ff0000', color: '#fff', padding: '12px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', minWidth: '120px' }}>
+               YOUTUBE
+            </a>
+            <a href="https://discord.com/invite/n7xThr8" target="_blank" 
+               style={{ flex: '1', textAlign: 'center', background: '#5865F2', color: '#fff', padding: '12px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', minWidth: '120px' }}>
+               DISCORD
+            </a>
+            <a href="https://www.instagram.com/thehardwareguru_czech/" target="_blank" 
+               style={{ flex: '1', textAlign: 'center', background: '#E1306C', color: '#fff', padding: '12px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', minWidth: '120px' }}>
+               INSTAGRAM
+            </a>
+          </div>
+
+          {/* Obsah článku */}
+          <div 
+            style={{ lineHeight: '1.8', fontSize: '1.1rem', color: '#ddd' }} 
+            dangerouslySetInnerHTML={{ __html: post.content }} 
+          />
+
+        </main>
+      </div>
+    );
+
+  } catch (err) {
+    // Kritická chyba kódu (záchranná brzda)
+    return (
+      <div style={{ padding
