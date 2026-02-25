@@ -48,7 +48,6 @@ export default async function ArticlePage({ params }) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
-  // Započítání návštěvy
   await supabase.rpc('increment_total_visits');
 
   const [{ data: post }, { data: stats }] = await Promise.all([
@@ -68,12 +67,12 @@ export default async function ArticlePage({ params }) {
   }
 
   return (
-    // ZMĚNA POZADÍ - IMGUR ODKAZ
+    // ZMĚNA: VLOŽEN TVŮJ NOVÝ ODKAZ NA POZADÍ
     <div style={{ 
         minHeight: '100vh', 
         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
         color: '#c5c6c7',
-        backgroundImage: "linear-gradient(rgba(11, 12, 16, 0.92), rgba(11, 12, 16, 0.85)), url('https://i.imgur.com/VR3903p.png')",
+        backgroundImage: "linear-gradient(rgba(11, 12, 16, 0.92), rgba(11, 12, 16, 0.85)), url('https://i.postimg.cc/QdWxszv3/bg-guru.png')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
@@ -136,7 +135,7 @@ export default async function ArticlePage({ params }) {
               fontSize: '1.15rem', 
               color: '#e0e0e0', 
               marginBottom: '80px',
-              background: 'rgba(11, 12, 16, 0.7)', // Poloprůhledný podklad pod textem
+              background: 'rgba(11, 12, 16, 0.7)', 
               padding: '20px',
               borderRadius: '15px'
           }}
