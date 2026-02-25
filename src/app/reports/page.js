@@ -4,8 +4,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function ReportsPage() {
   const supabase = createClient(
-    process.env.https://luepzmdwgrbtnevlznbx.supabase.co, // Takhle je to správně
-    process.env.sb_publishable_wa3MgO-wdn8oWrZbJReNPw_CT9Bp2mq // Takhle taky
+    process.env.NEXT_PUBLIC_SUPABASE_URL, // Takhle je to správně
+    process.env.SUPABASE_SERVICE_ROLE_KEY // Takhle taky
   );
 
   const { data: reports, error } = await supabase
