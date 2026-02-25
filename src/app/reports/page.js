@@ -3,17 +3,19 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 
 export default async function ReportsPage() {
-  // Takhle je to jedině správně - Vercel si ty údaje vytáhne z Environment Variables
+  // Inicializace klienta - Vercel si automaticky vytáhne údaje z tvého nastavení
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
+  // Načtení dat z tabulky reports
   const { data: reports, error } = await supabase
     .from('reports')
     .select('*')
     .order('created_at', { ascending: false });
 
+  // Ošetření chyby při načítání
   if (error) {
     return (
       <div style={{ padding: '20px', color: 'red', fontFamily: 'sans-serif' }}>
