@@ -5,25 +5,36 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function Home() {
+  // Inicializace klienta - bezpečně
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. PŘIČTEME NÁVŠTĚVU
-  await supabase.rpc('increment_total_visits').catch(() => {});
+  let posts = [];
+  let celkemNavstev = 0;
 
-  // 2. STÁHNEME DATA
-  const [{ data: posts }, { data: stats }] = await Promise.all([
-    supabase.from('posts').select('*').order('created_at', { ascending: false }),
-    supabase.from('stats').select('value').eq('name', 'total_visits').single()
-  ]);
+  try {
+    // 1. PŘIČTEME NÁVŠTĚVU (Bezpečně, chyba neshodí web)
+    await supabase.rpc('increment_total_visits').catch((err) => console.error('Visit error:', err));
 
-  const celkemNavstev = stats?.value || 0;
+    // 2. STÁHNEME DATA (Bezpečně)
+    const [postsResult, statsResult] = await Promise.all([
+      supabase.from('posts').select('*').order('created_at', { ascending: false }),
+      supabase.from('stats').select('value').eq('name', 'total_visits').single()
+    ]);
+
+    posts = postsResult.data || [];
+    celkemNavstev = statsResult.data?.value || 0;
+
+  } catch (error) {
+    console.error("Critical Load Error:", error);
+    // Web bude fungovat i s prázdnými daty, nespadne
+  }
 
   const getThumbnail = (post) => {
     if (post.video_id && post.video_id.length > 5) {
-        return `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`;
+        // hqdefault je sázka na jistotu, maxres občas u Shorts chybí
+        return `https://img.youtube.com/vi/${post.video_id}/hqdefault.jpg`;
     }
     return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop';
   };
@@ -49,7 +60,7 @@ export default async function Home() {
         .read-more { color: #66fcf1; text-transform: uppercase; font-weight: bold; font-size: 0.9rem; letter-spacing: 1px; }
       `}</style>
 
-      {/* HLAVIČKA - BEZ ODKAZU NA SESTAVY */}
+      {/* HLAVIČKA */}
       <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: 'rgba(31, 40, 51, 0.9)', backdropFilter: 'blur(5px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 0 15px rgba(102, 252, 241, 0.3)', flexWrap: 'wrap', gap: '20px' }}>
         <div style={{ fontSize: '1.8rem', fontWeight: '900', color: '#66fcf1', letterSpacing: '2px', textShadow: '2px 2px 0px #000' }}>
           THE HARDWARE GURU
@@ -148,7 +159,7 @@ export default async function Home() {
           
           {(!posts || posts.length === 0) && (
              <div style={{gridColumn: '1/-1', textAlign: 'center', color: '#fff', padding: '50px'}}>
-                Zatím zde nejsou žádné články. Zkus spustit Cron.
+                Zatím zde nejsou žádné články. Zkus spustit Cron nebo zkontroluj databázi.
              </div>
           )}
 
