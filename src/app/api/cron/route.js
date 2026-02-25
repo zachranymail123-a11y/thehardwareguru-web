@@ -16,30 +16,34 @@ export async function GET() {
   let preskoceno = 0;
 
   try {
-    const res = await fetch(
-      `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=10`
+    // 1. KROK: Zjistíme ID playlistu "Uploads" pro tvůj kanál
+    const channelRes = await fetch(
+      `https://www.googleapis.com/youtube/v3/channels?key=${API_KEY}&id=${CHANNEL_ID}&part=contentDetails`
     );
-    const data = await res.json();
+    const channelData = await channelRes.json();
 
-    // Pokud Google vrátí chybu (např. klíč, limit), vypíše ji to sem!
-    if (data.error) {
-      return NextResponse.json({ 
-        CHYBA_GOOGLE_API: data.error.message, 
-        KOD: data.error.code 
-      }, { status: 400 });
+    if (channelData.error) {
+      return NextResponse.json({ chyba: 'Chyba kanálu: ' + channelData.error.message }, { status: 400 });
     }
 
-    if (!data.items || data.items.length === 0) {
-      return NextResponse.json({ 
-        status: 'VAROVÁNÍ', 
-        zprava: 'Google nevrátil žádná videa. Zkontroluj, zda je kanál veřejný.' 
-      });
+    const uploadsPlaylistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+
+    if (!uploadsPlaylistId) {
+      return NextResponse.json({ chyba: 'Nepodařilo se najít playlist nahraných videí.' }, { status: 404 });
     }
 
-    for (const item of data.items) {
-      const videoId = item.id.videoId;
-      if (!videoId) continue; // Přeskočí věci co nejsou video (playlisty atd.)
+    // 2. KROK: Vytáhneme videa z tohoto playlistu (tohle je 100% spolehlivé)
+    const playlistRes = await fetch(
+      `https://www.googleapis.com/youtube/v3/playlistItems?key=${API_KEY}&playlistId=${uploadsPlaylistId}&part=snippet&maxResults=10`
+    );
+    const playlistData = await playlistRes.json();
 
+    if (!playlistData.items || playlistData.items.length === 0) {
+      return NextResponse.json({ status: 'PRÁZDNO', zprava: 'V playlistu nejsou žádná videa.' });
+    }
+
+    for (const item of playlistData.items) {
+      const videoId = item.snippet.resourceId.videoId;
       const title = item.snippet.title;
       const description = item.snippet.description;
       
@@ -49,7 +53,7 @@ export async function GET() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
 
-      // Kontrola, jestli už ho nemáme
+      // Kontrola duplicity
       const { data: existujici } = await supabase
         .from('posts')
         .select('id')
@@ -61,7 +65,7 @@ export async function GET() {
         continue;
       }
 
-      // Vložení do databáze
+      // Vložení do DB
       const { error: insertError } = await supabase.from('posts').insert([
         {
           title: title,
@@ -78,7 +82,12 @@ export async function GET() {
       if (!insertError) novych++;
     }
 
-    return NextResponse.json({ status: 'DOKONČENO', novych, preskoceno });
+    return NextResponse.json({ 
+      status: 'DOKONČENO', 
+      novych, 
+      preskoceno,
+      zprava: novych === 0 ? 'Všechna videa už v databázi máš.' : `Úspěšně přidáno ${novych} videí.`
+    });
 
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
