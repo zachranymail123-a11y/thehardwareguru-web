@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// RSS se musí generovat vždy čerstvé
+// TOTO JE DŮLEŽITÉ: Vypne cache na straně Next.js
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
   const supabase = createClient(
@@ -33,7 +34,6 @@ export async function GET() {
     </item>`;
   }).join('');
 
-  // Obalíme to do RSS struktury
   const rssXml = `<?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0">
   <channel>
@@ -48,7 +48,8 @@ export async function GET() {
   return new Response(rssXml, {
     headers: {
       'Content-Type': 'text/xml',
-      'Cache-Control': 's-maxage=3600, stale-while-revalidate',
+      // TOTO JE TA OPRAVA: Říkáme prohlížeči i serveru "Nic neukládej, vždy stahuj čerstvé!"
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
     },
   });
 }
