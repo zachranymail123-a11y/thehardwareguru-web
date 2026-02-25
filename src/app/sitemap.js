@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
+// TOTO JE DŮLEŽITÉ PRO CRON: Vynutí, aby se sitemap vždy přegenerovala
+export const revalidate = 0;
+
 export default async function sitemap() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
