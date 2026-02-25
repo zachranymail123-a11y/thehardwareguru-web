@@ -1,10 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
+import Link from 'next/link';
 
+// TOTO JE KLÍČOVÉ: Vypne cache pro detail článku, takže se změny projeví hned
 export const dynamic = 'force-dynamic';
 
-// --- TATO FUNKCE GENERUJE DATA PRO GOOGLE ---
-export async function generateMetadata(props) {
-  const params = await props.params;
+export default async function ArticlePage({ params }) {
   const { slug } = params;
 
   const supabase = createClient(
@@ -12,117 +12,70 @@ export async function generateMetadata(props) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
+  // 1. Najdeme článek podle slugu
   const { data: post } = await supabase
     .from('posts')
-    .select('title, content')
-    .eq('slug', slug.replace('.html', ''))
-    .single();
-
-  if (!post) return { title: 'Článek nenalezen | TheHardwareGuru' };
-
-  // Vyčistíme text od HTML značek pro popisek (description)
-  const cleanDescription = post.content
-    ? post.content.replace(/<[^>]*>?/gm, '').substring(0, 160) + '...'
-    : 'Hardware, gaming a streamy od TheHardwareGuru_Czech.';
-
-  return {
-    title: `${post.title} | TheHardwareGuru`,
-    description: cleanDescription,
-    openGraph: {
-      title: post.title,
-      description: cleanDescription,
-      url: `https://www.thehardwareguru.cz/clanky/${slug}`,
-      type: 'article',
-      // Tady by mohl být i odkaz na obrázek náhledu (thumbnail)
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: post.title,
-      description: cleanDescription,
-    },
-  };
-}
-
-// --- SAMOTNÁ STRÁNKA ČLÁNKU ---
-export default async function Page(props) {
-  const params = await props.params;
-  const { slug } = params;
-
-  let cleanSlug = slug.replace('.html', '').trim();
-  cleanSlug = cleanSlug.replace(/-+/g, '-').replace(/^-+|-+$/g, '');
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-
-  let { data: post, error } = await supabase
-    .from('posts')
     .select('*')
-    .eq('slug', cleanSlug)
+    .eq('slug', slug)
     .single();
 
-  const getYouTubeId = (content) => {
-    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
-    const match = content?.match(regex);
-    return match ? match[1] : null;
-  };
-
-  if (!post || error) {
-    return <div style={{background: '#0b0c10', color: '#66fcf1', padding: '50px', height: '100vh'}}>⚠️ Článek nenalezen.</div>;
+  if (!post) {
+    return (
+      <div style={{ color: '#fff', padding: '50px', textAlign: 'center', background: '#0b0c10', minHeight: '100vh' }}>
+        <h1>Článek nenalezen 😕</h1>
+        <Link href="/" style={{ color: '#66fcf1' }}>Zpět na hlavní stránku</Link>
+      </div>
+    );
   }
 
-  const videoId = post.video_id || getYouTubeId(post.content);
+  // Funkce pro získání náhledovky
+  const thumbnail = post.video_id 
+    ? `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`
+    : '/placeholder.jpg';
 
   return (
-    <div style={{ backgroundColor: '#0b0c10', color: '#c5c6c7', fontFamily: "'Inter', sans-serif", minHeight: '100vh' }}>
+    <div style={{ backgroundColor: '#0b0c10', color: '#c5c6c7', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+      
+      {/* HLAVIČKA */}
       <nav style={{ padding: '20px 40px', borderBottom: '1px solid #1f2833', background: '#0b0c10' }}>
-        <a href="/" style={{ color: '#66fcf1', textDecoration: 'none', fontWeight: '900', fontSize: '1.4rem' }}>
-          THE HARDWARE GURU
-        </a>
+        <Link href="/" style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#66fcf1', textDecoration: 'none' }}>
+          ← ZPĚT NA WEB
+        </Link>
       </nav>
 
-      <main style={{ maxWidth: '1000px', margin: '40px auto', padding: '0 20px' }}>
-        <h1 style={{ color: '#fff', fontSize: '3rem', fontWeight: '900', marginBottom: '10px', lineHeight: '1.1' }}>
+      <main style={{ maxWidth: '800px', margin: '40px auto', padding: '0 20px' }}>
+        
+        {/* TITULEK */}
+        <h1 style={{ color: '#fff', fontSize: '2.5rem', marginBottom: '20px', lineHeight: '1.2' }}>
           {post.title}
         </h1>
-        
-        <div style={{ color: '#45a29e', marginBottom: '30px', fontWeight: 'bold', fontSize: '0.9rem', textTransform: 'uppercase' }}>
+
+        {/* INFO */}
+        <div style={{ color: '#45a29e', marginBottom: '30px', fontSize: '0.9rem' }}>
           Publikováno: {new Date(post.created_at).toLocaleDateString('cs-CZ')}
         </div>
 
-        {videoId && (
-          <div style={{ marginBottom: '40px', borderRadius: '20px', overflow: 'hidden', border: '2px solid #66fcf1' }}>
+        {/* VIDEO */}
+        {post.video_id && (
+          <div style={{ marginBottom: '40px', borderRadius: '15px', overflow: 'hidden', border: '1px solid #45a29e' }}>
             <iframe
               width="100%"
-              height="560"
-              src={`https://www.youtube.com/embed/${videoId}`}
+              height="450"
+              src={`https://www.youtube.com/embed/${post.video_id}`}
               title="YouTube video player"
               frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             ></iframe>
           </div>
         )}
 
+        {/* TEXT ČLÁNKU (ZDE SE VYPISUJE TO HTML Z DATABÁZE) */}
         <div 
-          style={{ lineHeight: '1.9', fontSize: '1.2rem', color: '#ddd', marginBottom: '60px' }} 
-          dangerouslySetInnerHTML={{ __html: post.content }} 
+          style={{ lineHeight: '1.8', fontSize: '1.1rem', color: '#e0e0e0' }}
+          dangerouslySetInnerHTML={{ __html: post.content }}
         />
 
-        {/* SEKCE O MNĚ */}
-        <section style={{ background: '#1f2833', padding: '40px', borderRadius: '24px', border: '1px solid #66fcf1', display: 'flex', gap: '40px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ width: '150px', height: '150px', borderRadius: '50%', background: '#0b0c10', border: '4px solid #66fcf1', backgroundImage: 'url("https://github.com/shadcn.png")', backgroundSize: 'cover' }}></div>
-          <div style={{ flex: 1, minWidth: '300px' }}>
-            <h2 style={{ color: '#66fcf1', fontSize: '2rem', marginBottom: '15px' }}>TheHardwareGuru</h2>
-            <p style={{ lineHeight: '1.7', fontSize: '1.1rem', color: '#fff' }}>
-              45letý chill gamer, ministreamer a HW nadšenec. Moje unikátní AI v chatu komunikuje jako divák – to v CZ/SK jinde neuvidíš!
-            </p>
-            <div style={{ display: 'flex', gap: '20px', marginTop: '25px' }}>
-              <a href="https://kick.com/thehardwareguru" target="_blank" style={{ color: '#53fc18', textDecoration: 'none', fontWeight: '900' }}>● KICK</a>
-              <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" style={{ color: '#ff0000', textDecoration: 'none', fontWeight: '900' }}>● YOUTUBE</a>
-            </div>
-          </div>
-        </section>
       </main>
     </div>
   );
