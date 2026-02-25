@@ -11,6 +11,7 @@ export async function GET() {
   );
 
   const API_KEY = process.env.YOUTUBE_API_KEY;
+  // ID kanálu
   const CHANNEL_ID = 'UCgDdszBhhpqkNQc6t4YOCNw'; 
   
   const openai = new OpenAI({
@@ -18,8 +19,9 @@ export async function GET() {
   });
 
   try {
+    // 1. Stáhneme videa (Zvedl jsem limit na 10, ať se ti načte víc videí)
     const searchRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=5`
+      `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=10`
     );
     const searchData = await searchRes.json();
 
@@ -44,6 +46,7 @@ export async function GET() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
 
+      // Kontrola existence
       const { data: existujici } = await supabase
         .from('posts')
         .select('id')
@@ -55,6 +58,7 @@ export async function GET() {
         continue;
       }
 
+      // --- AI GENEROVÁNÍ ---
       let aiContent = '';
       
       try {
@@ -63,7 +67,8 @@ export async function GET() {
             {
               role: "system",
               content: `Jsi redaktor webu 'The Hardware Guru'. Napiš článek na základě názvu a popisu videa.
-              Styl: Tykání, herní slang, HTML formátování (h2, p, ul).
+              Styl: Tykání, herní slang, HTML formátování (pouze tagy h2, p, ul, li, strong).
+              DŮLEŽITÉ: Vrať pouze čistý HTML kód bez markdown značek.
               Obsah: Úvod, hlavní část, zmínka o unikátní AI v chatu na Kicku, závěr.`
             },
             {
@@ -75,6 +80,11 @@ export async function GET() {
         });
 
         aiContent = completion.choices[0].message.content;
+
+        // --- ČIŠTĚNÍ KÓDU (FIX PROTI BUGU '''html) ---
+        // Odstraníme '''html na začátku a ''' na konci
+        aiContent = aiContent.replace(/^```html/g, '').replace(/^```/g, '').replace(/```$/g, '');
+
         aiContent += `<hr /><p><strong>Sleduj video:</strong> <a href="https://www.youtube.com/watch?v=${videoId}">YouTube</a></p>`;
 
       } catch (aiError) {
@@ -82,6 +92,7 @@ export async function GET() {
         aiContent = `<p>${originalDescription.replace(/\n/g, '<br>')}</p>`;
       }
 
+      // Uložení
       const { error: insertError } = await supabase.from('posts').insert([
         {
           title: title,
