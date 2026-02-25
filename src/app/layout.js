@@ -1,5 +1,3 @@
-import './globals.css' // Pokud máš CSS soubor jinde, uprav cestu, nebo tento řádek smaž, pokud CSS nepoužíváš
-
 export const metadata = {
   title: 'The Hardware Guru',
   description: 'Tech, Gaming & AI',
