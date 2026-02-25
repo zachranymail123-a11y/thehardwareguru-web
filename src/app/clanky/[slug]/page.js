@@ -3,13 +3,36 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 
 export default async function ClanekPage(props) {
-  // Tady je ta změna - musíme počkat na parametry
+  // 1. Ošetření parametrů (aby to nepadalo na nové verzi Next.js)
   const params = await props.params;
   const { slug } = params;
 
-  // Ošetření slugu
+  // 2. Oprava adresy (vyhodí .html, sjednotí pomlčky)
   let cleanSlug = slug.replace('.html', '').trim();
   cleanSlug = cleanSlug.replace(/-+/g, '-'); 
+  cleanSlug = cleanSlug.replace(/^-|-$/g, '');
+
+  // 3. Odkazy na sociální sítě (Tohle tam vložíme)
+  const socialLinks = (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', margin: '20px 0 30px 0' }}>
+      <a href="https://kick.com/thehardwareguru" target="_blank" 
+         style={{ flex: '1', textAlign: 'center', background: '#05ff5b', color: '#000', padding: '12px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', minWidth: '120px' }}>
+         🟢 KICK
+      </a>
+      <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" 
+         style={{ flex: '1', textAlign: 'center', background: '#ff0000', color: '#fff', padding: '12px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', minWidth: '120px' }}>
+         🔴 YOUTUBE
+      </a>
+      <a href="https://discord.com/invite/n7xThr8" target="_blank" 
+         style={{ flex: '1', textAlign: 'center', background: '#5865F2', color: '#fff', padding: '12px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', minWidth: '120px' }}>
+         🔵 DISCORD
+      </a>
+      <a href="https://www.instagram.com/thehardwareguru_czech/" target="_blank" 
+         style={{ flex: '1', textAlign: 'center', background: '#E1306C', color: '#fff', padding: '12px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', minWidth: '120px' }}>
+         📸 INSTAGRAM
+      </a>
+    </div>
+  );
 
   try {
     const supabase = createClient(
@@ -17,54 +40,9 @@ export default async function ClanekPage(props) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
+    // 4. Hledání článku
     let { data: post, error } = await supabase
       .from('posts')
       .select('*')
       .eq('slug', cleanSlug)
       .single();
-
-    // Pokud nenajde přesně, zkusí najít podobný
-    if (!post) {
-       const shortSlug = cleanSlug.split('-').slice(0, 3).join('-');
-       if (shortSlug.length > 5) {
-         const { data: fallback } = await supabase
-           .from('posts')
-           .select('*')
-           .ilike('slug', `%${shortSlug}%`)
-           .limit(1)
-           .single();
-         if (fallback) post = fallback;
-       }
-    }
-
-    if (!post || error) {
-      return (
-        <div style={{ padding: '50px', background: '#000', color: 'red', fontFamily: 'monospace', minHeight: '100vh' }}>
-          <h1>⚠️ ČLÁNEK NENALEZEN</h1>
-          <p>Hledám slug: <strong>{cleanSlug}</strong></p>
-          <a href="/" style={{color:'white'}}>ZPĚT NA HOME</a>
-        </div>
-      );
-    }
-
-    return (
-      <div style={{ backgroundColor: '#000', color: '#ccc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
-        <header style={{ padding: '20px', borderBottom: '1px solid #333', textAlign: 'center' }}>
-          <a href="/" style={{ color: '#ff0000', fontWeight: 'bold' }}>← ZPĚT NA HOME</a>
-        </header>
-        <main style={{ maxWidth: '800px', margin: '40px auto', padding: '0 20px' }}>
-          <h1 style={{ color: '#fff', fontSize: '2rem', marginBottom: '20px' }}>{post.title}</h1>
-          <div dangerouslySetInnerHTML={{ __html: post.content }} style={{ lineHeight: '1.8' }} />
-        </main>
-      </div>
-    );
-
-  } catch (err) {
-    return (
-      <div style={{ padding: '50px', background: '#300', color: '#fff' }}>
-        <h1>KRITICKÁ CHYBA</h1>
-        <p>{err.message}</p>
-      </div>
-    );
-  }
-}
