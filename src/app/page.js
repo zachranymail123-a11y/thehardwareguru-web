@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 
-// Vypne cache - zajistí, že uvidíš vždy nové články
+// Vypne cache - tohle je dulezite pro okamzite zmeny
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
@@ -29,7 +29,6 @@ export default async function Home() {
   return (
     <div style={{ backgroundColor: '#0b0c10', color: '#c5c6c7', minHeight: '100vh', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
       
-      {/* CSS pro hover efekty a neonový styl */}
       <style>{`
         .game-card { transition: all 0.3s ease; border: 1px solid #45a29e; }
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
@@ -40,7 +39,7 @@ export default async function Home() {
         .read-more { color: #66fcf1; text-transform: uppercase; font-weight: bold; font-size: 0.9rem; letter-spacing: 1px; }
       `}</style>
 
-      {/* HLAVIČKA S ODKAZY */}
+      {/* HLAVIČKA */}
       <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: '#1f2833', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 0 15px rgba(102, 252, 241, 0.3)', flexWrap: 'wrap', gap: '20px' }}>
         <div style={{ fontSize: '1.8rem', fontWeight: '900', color: '#66fcf1', letterSpacing: '2px', textShadow: '2px 2px 0px #000' }}>
           THE HARDWARE GURU
@@ -53,7 +52,7 @@ export default async function Home() {
         </div>
       </nav>
 
-      {/* SEKCE O MNĚ (BIO) */}
+      {/* BIO */}
       <header style={{ maxWidth: '1200px', margin: '60px auto', padding: '40px', background: 'linear-gradient(145deg, #1f2833, #0b0c10)', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
         <div style={{ flex: '1', minWidth: '300px' }}>
             <h1 style={{ color: '#66fcf1', fontSize: '2.5rem', marginBottom: '20px', textTransform: 'uppercase', fontWeight: '900', textShadow: '0 0 10px rgba(102, 252, 241, 0.3)' }}>
@@ -63,7 +62,6 @@ export default async function Home() {
                 Čau pařani! Jsem 45letý HW nadšenec, gamer a streamer. 
                 Tady najdeš vše o hardwaru, recenze her a hlavně záznamy z mých streamů. 
                 Na Kicku mi sekunduje unikátní <strong style={{color: '#66fcf1'}}>AI umělá inteligence</strong>, která komunikuje s chatem a komentuje můj gameplay. 
-                Doraž na stream a pokcej s námi!
             </p>
             <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                 <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn">SLEDUJ STREAM (KICK)</a>
@@ -76,17 +74,13 @@ export default async function Home() {
         </div>
       </header>
 
-      {/* HLAVNÍ OBSAH - ČLÁNKY */}
+      {/* OBSAH */}
       <main style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
         <h2 style={{ color: '#fff', textAlign: 'center', marginBottom: '40px', fontSize: '2.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px', textShadow: '0 0 10px rgba(102, 252, 241, 0.5)' }}>
           Nejnovější články & Videa
         </h2>
 
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', 
-          gap: '40px' 
-        }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '40px' }}>
           
           {posts?.map((post) => (
             <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
@@ -101,7 +95,7 @@ export default async function Home() {
                 cursor: 'pointer'
               }}>
                 
-                {/* OBRÁZEK S DYNAMICKÝM ŠTÍTKEM */}
+                {/* OBRÁZEK */}
                 <div style={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden', borderBottom: '2px solid #45a29e' }}>
                   <img 
                     src={getThumbnail(post)} 
@@ -109,12 +103,11 @@ export default async function Home() {
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                   
-                  {/* DYNAMICKÝ ŠTÍTEK */}
+                  {/* ŠTÍTEK */}
                   <div style={{ 
                     position: 'absolute', 
                     top: '10px', 
                     right: '10px', 
-                    // Pokud je video_id a je dlouhé, je to VIDEO (Cyan). Jinak je to NOVINKA (Red).
                     background: (post.video_id && post.video_id.length > 5) ? 'rgba(102, 252, 241, 0.85)' : 'rgba(255, 0, 0, 0.85)', 
                     color: (post.video_id && post.video_id.length > 5) ? '#0b0c10' : '#fff', 
                     padding: '5px 12px', 
@@ -128,26 +121,16 @@ export default async function Home() {
                   </div>
                 </div>
                 
-                {/* TEXT KARTY */}
                 <div style={{ padding: '25px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <h3 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '1.3rem', lineHeight: '1.4', fontWeight: 'bold' }}>
                     {post.title}
                   </h3>
-                  
                   <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px', flex: 1 }}>
-                    {(post.content || '')
-                      .replace(/<[^>]*>?/gm, '')
-                      .substring(0, 120)
-                    }...
+                    {(post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 120)}...
                   </p>
-
                   <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#45a29e', fontSize: '0.85rem' }}>
-                      {post.created_at ? new Date(post.created_at).toLocaleDateString('cs-CZ') : ''}
-                    </span>
-                    <span className="read-more">
-                      ČÍST VÍCE →
-                    </span>
+                    <span style={{ color: '#45a29e', fontSize: '0.85rem' }}>{post.created_at ? new Date(post.created_at).toLocaleDateString('cs-CZ') : ''}</span>
+                    <span className="read-more">ČÍST VÍCE →</span>
                   </div>
                 </div>
               </div>
@@ -155,9 +138,7 @@ export default async function Home() {
           ))}
           
           {(!posts || posts.length === 0) && (
-             <div style={{gridColumn: '1/-1', textAlign: 'center', color: '#fff', padding: '50px'}}>
-                Zatím zde nejsou žádné články. Zkus spustit Cron.
-             </div>
+             <div style={{gridColumn: '1/-1', textAlign: 'center', color: '#fff', padding: '50px'}}>Náčítám obsah...</div>
           )}
 
         </div>
@@ -169,7 +150,6 @@ export default async function Home() {
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
             <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
-            <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="nav-link">INSTAGRAM</a>
           </div>
           <p style={{ color: '#45a29e', opacity: 0.7 }}>© 2026 The Hardware Guru. Powered by AI & Caffeine.</p>
       </footer>
