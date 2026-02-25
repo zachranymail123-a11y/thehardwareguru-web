@@ -10,40 +10,28 @@ export async function GET() {
   );
 
   const API_KEY = process.env.YOUTUBE_API_KEY;
-  // Použijeme tvůj handle - to je nejjistější cesta k tvým datům
-  const HANDLE = 'TheHardwareGuru_Czech'; 
+  // TVOJE ID, KTERÉ JSME KONEČNĚ POTVRDILI
+  const CHANNEL_ID = 'UCgDdszBhhpqkNQc6t4YOCNw'; 
   
   try {
-    // 1. KROK: Najdeme kanál a jeho Uploads playlist podle HANDLE
-    const channelRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/channels?key=${API_KEY}&forHandle=${HANDLE}&part=contentDetails,id`
+    // 3. KROK: Prohledáme kanál přímo přes Search (najde videa, streamy i shorts)
+    const searchRes = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=15`
     );
-    const channelData = await channelRes.json();
+    const searchData = await searchRes.json();
 
-    if (channelData.error) {
-      return NextResponse.json({ chyba_api: channelData.error.message }, { status: 400 });
+    if (searchData.error) {
+      return NextResponse.json({ chyba_api: searchData.error.message }, { status: 400 });
     }
-
-    if (!channelData.items || channelData.items.length === 0) {
-      return NextResponse.json({ 
-        chyba: 'Kanál nebyl nalezen podle jména @TheHardwareGuru_Czech.', 
-        debug: channelData 
-      }, { status: 404 });
-    }
-
-    const uploadsPlaylistId = channelData.items[0].contentDetails.relatedPlaylists.uploads;
-
-    // 2. KROK: Vytáhneme videa z playlistu nahrávek
-    const playlistRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/playlistItems?key=${API_KEY}&playlistId=${uploadsPlaylistId}&part=snippet&maxResults=10`
-    );
-    const playlistData = await playlistRes.json();
 
     let novych = 0;
     let preskoceno = 0;
 
-    for (const item of playlistData.items || []) {
-      const videoId = item.snippet.resourceId.videoId;
+    for (const item of searchData.items || []) {
+      // Zajímají nás jen videa (ne playlisty nebo kanály)
+      if (item.id.kind !== 'youtube#video') continue;
+
+      const videoId = item.id.videoId;
       const title = item.snippet.title;
       const description = item.snippet.description;
       
@@ -53,7 +41,7 @@ export async function GET() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
 
-      // Kontrola duplicity v DB
+      // Kontrola v DB
       const { data: existujici } = await supabase
         .from('posts')
         .select('id')
@@ -83,9 +71,9 @@ export async function GET() {
     }
 
     return NextResponse.json({ 
-      status: 'HOTOVO', 
-      zprava: `Úspěšně přidáno ${novych} videí, ${preskoceno} už tam bylo.`,
-      nalezene_channel_id: channelData.items[0].id
+      status: 'HOTOVO_SEARCH', 
+      zprava: `Nalezeno ${novych} nových věcí, ${preskoceno} už v DB bylo.`,
+      debug: { items_count: searchData.items?.length || 0 }
     });
 
   } catch (error) {
