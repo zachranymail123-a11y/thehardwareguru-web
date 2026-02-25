@@ -8,8 +8,14 @@ export const revalidate = 0;
 async function getLiveStatus() {
   const apiKey = process.env.YOUTUBE_API_KEY;
   const channelId = "UCgDdszBhhpqkNQc6t4YOCNw";
-  // Dynamické určení baseUrl pro Server Side fetch
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+  
+  // VYLADĚNÉ URČENÍ BASEURL: Nejdřív zkusíme tvoji proměnnou, pak Vercel URL, pak localhost
+  let baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
+  if (!baseUrl && process.env.VERCEL_URL) baseUrl = `https://${process.env.VERCEL_URL}`;
+  if (!baseUrl) baseUrl = 'http://localhost:3000';
+  
+  // Odstranění koncového lomítka pro jistotu
+  baseUrl = baseUrl.replace(/\/$/, "");
 
   try {
     const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&eventType=live&key=${apiKey}`;
@@ -24,7 +30,7 @@ async function getLiveStatus() {
       let aiDescription = "Paříme tuhle pecku! Pojď se podívat na gameplay a pokecat do chatu.";
       
       try {
-        // Volání tvého AI endpointu
+        // Volání tvého AI endpointu s absolutní URL
         const aiRes = await fetch(`${baseUrl}/api/game-info?game=${encodeURIComponent(gameGuess)}`, { 
             next: { revalidate: 3600 } 
         });
@@ -53,7 +59,7 @@ export default async function Home() {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. Spustíme paralelně načítání dat, Live statusu a zápis návštěvy
+  // 1. Spustíme paralelně načítání dat, Live statusu a zápis návštěvy (Full Power)
   const [liveStatus, { data: posts }, { data: stats }] = await Promise.all([
     getLiveStatus(),
     supabase.from('posts').select('*').order('created_at', { ascending: false }),
