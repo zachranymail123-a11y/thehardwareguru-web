@@ -34,6 +34,7 @@ export default async function SestavyPage() {
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            margin-bottom: 50px; /* Rozestup mezi kartami */
         }
         .build-card:hover { 
             transform: translateY(-5px); 
@@ -79,18 +80,19 @@ export default async function SestavyPage() {
             line-height: 1.6; 
             text-align: center;
             font-size: 0.95rem;
+            margin: 0;
         }
 
         /* CTA SEKCE (Tlačítko) */
         .cta-box {
-            padding: 25px;
+            padding: 30px 25px; /* Více místa */
             background: rgba(10, 10, 10, 0.4);
-            margin-top: auto; /* Tlačí patičku dolů */
+            margin-top: auto; 
             text-align: center;
         }
         
         .cta-title {
-            color: #fff; font-weight: bold; margin-bottom: 15px; font-size: 0.9rem; text-transform: uppercase;
+            color: #fff; font-weight: bold; margin-bottom: 20px; font-size: 1rem; text-transform: uppercase; line-height: 1.4;
         }
 
         .cta-button { 
@@ -117,8 +119,9 @@ export default async function SestavyPage() {
         .social-row { 
             display: flex; 
             justify-content: center; 
-            gap: 25px; 
-            margin-top: 20px; 
+            gap: 20px; 
+            margin-top: 25px; 
+            flex-wrap: wrap;
         }
         .social-mini { 
             color: #9ca3af; 
@@ -129,11 +132,12 @@ export default async function SestavyPage() {
             display: flex; 
             align-items: center; 
             gap: 8px; 
-            padding: 5px 10px;
+            padding: 8px 12px;
             border-radius: 4px;
             background: rgba(255,255,255,0.05);
+            border: 1px solid transparent;
         }
-        .social-mini:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .social-mini:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: #45a29e; }
 
         .expert-badge {
             background: #0f1216; border: 2px solid #66fcf1; color: #66fcf1;
@@ -173,7 +177,7 @@ export default async function SestavyPage() {
         </p>
 
         {/* SEZNAM SESTAV - KARTY */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '50px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {builds?.map((build) => (
             <div key={build.id} className="build-card">
               
@@ -201,8 +205,9 @@ export default async function SestavyPage() {
 
               {/* 4. TLAČÍTKO A ODKAZY */}
               <div className="cta-box">
+                {/* TADY JE TEN NOVÝ TEXT */}
                 <div className="cta-title">
-                   ⚠️ CHCEŠ TO POSKLÁDAT A OPTIMALIZOVAT? (PODMÍNKA: SUB NA KICKU)
+                   ⚠️ CHCEŠ PC? MÁŠ PŘEDSTAVU, ALE NEVÍŠ CO A JAK? JSI NA SPRÁVNÉM MÍSTĚ!
                 </div>
                 
                 <a href="https://discord.com/invite/n7xThr8" target="_blank" className="cta-button">
