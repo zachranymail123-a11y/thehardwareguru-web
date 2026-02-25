@@ -8,12 +8,21 @@ export async function GET() {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
-  let results = { videoClanek: "žádné nové video", hwNovinka: "negenerována", errors: [] };
+  let results = { vytvorenaVidea: [], hwNovinka: "negenerována", errors: [] };
+
+  // Pomocná funkce pro vyčištění URL (slugu)
+  const createSafeSlug = (text) => {
+    return text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // Odstraní háčky a čárky
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)+/g, "");
+  };
 
   try {
-    // --- 1. ČÁST: YOUTUBE (PLAYLIST STRATEGIE) ---
+    // --- 1. ČÁST: YOUTUBE (Zpracuje všechna nová videa z posledních 5) ---
     const UPLOADS_PLAYLIST_ID = 'UU6O7V0u-9vO7W3zX-b_uG6A'; 
-    
     const ytUrl = `https://www.googleapis.com/youtube/v3/playlistItems?key=${process.env.YOUTUBE_API_KEY}&playlistId=${UPLOADS_PLAYLIST_ID}&part=snippet&maxResults=5`;
     
     const ytRes = await fetch(ytUrl);
@@ -26,14 +35,13 @@ export async function GET() {
         
         if (title === "Private video" || title === "Deleted video") continue;
 
-        const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        
+        // Kontrola, zda video už máme
         const { data: existing } = await supabase.from('posts').select('id').eq('video_id', videoId).maybeSingle();
 
         if (!existing) {
           const prompt = `Jsi The Hardware Guru. Napiš článek k mému novému videu/shortu: "${title}". 
           Popis videa: "${item.snippet.description}". 
-          Styl: herní slang, tykání, vtipné, pozvi na Kick stream.`;
+          Styl: herní slang, tykání, vtipné, pozvi na Kick stream. Buď stručný, ale úderný.`;
           
           const aiRes = await openai.chat.completions.create({
             model: "gpt-4-turbo-preview",
@@ -41,6 +49,7 @@ export async function GET() {
           });
 
           const content = aiRes.choices[0].message.content.replace(/```html|```/g, '').trim();
+          const slug = createSafeSlug(title);
 
           const { error: insertError } = await supabase.from('posts').insert([{
             title: title,
@@ -51,11 +60,11 @@ export async function GET() {
           }]);
 
           if (insertError) {
-            results.errors.push(`Chyba uložení videa: ${insertError.message}`);
+            results.errors.push(`Chyba uložení videa ${title}: ${insertError.message}`);
           } else {
-            results.videoClanek = `Vytvořen: ${title}`;
+            results.vytvorenaVidea.push(title);
           }
-          break; 
+          // break; <-- TADY BYLA TA CHYBA. TEĎ TO ZPRACUJE VŠECHNY NOVINKY NAJEDNOU.
         }
       }
     }
@@ -70,50 +79,41 @@ export async function GET() {
     
     if (searchData.organic && searchData.organic.length > 0) {
         const topResult = searchData.organic[0];
-        const topicPrompt = `Tady je aktuální zpráva z internetu: "${topResult.title}: ${topResult.snippet}".
-        Jsi The Hardware Guru. Napiš o tom krátký, úderný článek (novinku). 
-        Styl: vtipný, slang, expert. 
-        Dnes je ${new Date().toLocaleDateString('cs-CZ')}.
-        Na první řádek dej nadpis, pak text.`;
         
-        const aiRes = await openai.chat.completions.create({
-          model: "gpt-4-turbo-preview",
-          messages: [{ role: "user", content: topicPrompt }]
-        });
+        // Kontrola, jestli už tuhle novinku náhodou nemáme (podle titulu)
+        const { data: existingNews } = await supabase.from('posts').select('id').eq('title', topResult.title).maybeSingle();
 
-        const fullText = aiRes.choices[0].message.content.trim();
-        const lines = fullText.split('\n');
-        const title = lines[0].replace(/#|Title:/g, '').trim();
-        const content = lines.slice(1).join('\n').replace(/```html|```/g, '').trim();
-        
-        // --- OPRAVA URL: Vytvoříme hezký slug z nadpisu ---
-        let slugNews = title
-          .toLowerCase()
-          .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Odstraní diakritiku
-          .replace(/[^a-z0-9]+/g, "-") // Vše divné na pomlčky
-          .replace(/(^-|-$)+/g, ""); // Odstraní pomlčky na krajích
-        
-        // Přidáme náhodné číslo pro unikátnost (kdyby byl stejný nadpis)
-        slugNews = `${slugNews}-${Math.floor(Math.random() * 1000)}`;
+        if (!existingNews) {
+            const topicPrompt = `Tady je aktuální zpráva: "${topResult.title}: ${topResult.snippet}".
+            Jsi The Hardware Guru. Napiš o tom krátký, úderný článek (novinku). Styl: vtipný, slang, expert. 
+            Na první řádek dej nadpis, pak text.`;
+            
+            const aiRes = await openai.chat.completions.create({
+              model: "gpt-4-turbo-preview",
+              messages: [{ role: "user", content: topicPrompt }]
+            });
 
-        const { error: newsError } = await supabase.from('posts').insert([{
-          title: title,
-          content: content,
-          video_id: null,
-          slug: slugNews,
-          type: 'news'
-        }]);
+            const fullText = aiRes.choices[0].message.content.trim();
+            const lines = fullText.split('\n');
+            const newsTitle = lines[0].replace(/#|Title:/g, '').trim();
+            const newsContent = lines.slice(1).join('\n').replace(/```html|```/g, '').trim();
+            const slugNews = `${createSafeSlug(newsTitle)}-${Math.floor(Math.random() * 1000)}`;
 
-        if (newsError) {
-            results.errors.push(`Chyba uložení novinky: ${newsError.message}`);
-        } else {
-            results.hwNovinka = `Vytvořena: ${title}`;
+            const { error: newsError } = await supabase.from('posts').insert([{
+              title: newsTitle,
+              content: newsContent,
+              video_id: null,
+              slug: slugNews,
+              type: 'news'
+            }]);
+
+            if (!newsError) results.hwNovinka = `Vytvořena: ${newsTitle}`;
         }
     }
 
     return Response.json({ status: "HOTOVO", detaily: results });
 
   } catch (err) {
-    return Response.json({ error: err.message, stack: err.stack }, { status: 500 });
+    return Response.json({ error: err.message }, { status: 500 });
   }
 }
