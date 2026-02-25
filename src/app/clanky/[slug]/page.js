@@ -105,4 +105,10 @@ export default async function Page(props) {
   } catch (err) {
     // Kritická chyba kódu (záchranná brzda)
     return (
-      <div style={{ padding
+      <div style={{ padding: '50px', background: '#300', color: '#fff' }}>
+        <h1>KRITICKÁ CHYBA</h1>
+        <p>{err.message}</p>
+      </div>
+    );
+  }
+}
