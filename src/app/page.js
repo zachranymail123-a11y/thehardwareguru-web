@@ -10,21 +10,14 @@ export default async function Home() {
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. PŘIČTEME NÁVŠTĚVU (Ošetřeno, aby neshodilo web)
-  await supabase.rpc('increment_total_visits').catch(() => {});
+  // 1. PŘIČTEME NÁVŠTĚVU
+  await supabase.rpc('increment_total_visits');
 
-  // 2. STÁHNEME ČLÁNKY (Jednoduše, přímo)
-  const { data: posts } = await supabase
-    .from('posts')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  // 3. STÁHNEME STATISTIKY
-  const { data: stats } = await supabase
-    .from('stats')
-    .select('value')
-    .eq('name', 'total_visits')
-    .single();
+  // 2. STÁHNEME DATA
+  const [{ data: posts }, { data: stats }] = await Promise.all([
+    supabase.from('posts').select('*').order('created_at', { ascending: false }),
+    supabase.from('stats').select('value').eq('name', 'total_visits').single()
+  ]);
 
   const celkemNavstev = stats?.value || 0;
 
@@ -63,7 +56,7 @@ export default async function Home() {
           THE HARDWARE GURU
         </div>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-            {/* TADY JSOU PŘIDANÉ ODKAZY */}
+            {/* TADY JSOU TY PŘIDANÉ ODKAZY */}
             <Link href="/sestavy" className="nav-link nav-special">PC SESTAVY</Link>
             <Link href="/slovnik" className="nav-link">SLOVNÍK</Link>
             
@@ -82,7 +75,8 @@ export default async function Home() {
             <p style={{ fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '30px', color: '#e0e0e0' }}>
                 Čau pařani! Jsem 45letý HW nadšenec, gamer a streamer. 
                 Tady najdeš vše o hardwaru, recenze her a hlavně záznamy z mých streamů. 
-                Na Kicku mi sekunduje unikátní <strong style={{color: '#66fcf1'}}>AI umělá inteligence</strong>.
+                Na Kicku mi sekunduje unikátní <strong style={{color: '#66fcf1'}}>AI umělá inteligence</strong>, která komunikuje s chatem a komentuje můj gameplay. 
+                Doraž na stream a pokcej s námi!
             </p>
             <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                 <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn">SLEDUJ STREAM (KICK)</a>
@@ -158,7 +152,7 @@ export default async function Home() {
           
           {(!posts || posts.length === 0) && (
              <div style={{gridColumn: '1/-1', textAlign: 'center', color: '#fff', padding: '50px'}}>
-                Zatím zde nejsou žádné články. Databáze je prázdná.
+                Zatím zde nejsou žádné články. Zkus spustit Cron.
              </div>
           )}
 
@@ -166,9 +160,17 @@ export default async function Home() {
       </main>
 
       <footer style={{ background: 'rgba(31, 40, 51, 0.95)', padding: '40px 20px', textAlign: 'center', borderTop: '2px solid #66fcf1', marginTop: '60px' }}>
-          <div style={{ marginBottom: '20px', color: '#66fcf1', fontWeight: 'bold' }}>
+          <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+            <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
+            <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
+            <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
+            <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="nav-link">INSTAGRAM</a>
+          </div>
+          
+          <div style={{ marginBottom: '20px', color: '#66fcf1', fontSize: '1rem', fontWeight: 'bold', letterSpacing: '1px' }}>
              WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #45a29e' }}>{celkemNavstev}</span> GURU FANOUŠKŮ 🦾
           </div>
+
           <p style={{ color: '#45a29e', opacity: 0.7, fontSize: '0.8rem' }}>© 2026 The Hardware Guru. Powered by AI & Caffeine.</p>
       </footer>
     </div>
