@@ -9,16 +9,22 @@ export default async function SestavyPage() {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. ZAPOČÍTÁME NÁVŠTĚVU (Zavoláme novou funkci)
-  await supabase.rpc('increment_stat', { stat_name: 'sestavy_views' }).catch(err => console.error(err));
+  let views = 0;
 
-  // 2. STÁHNEME DATA (Sestavy + Počet zobrazení)
+  try {
+    // 1. ZAPOČÍTÁME NÁVŠTĚVU (Bezpečně)
+    await supabase.rpc('increment_stat', { stat_name: 'sestavy_views' });
+  } catch (error) {
+    console.error("Chyba při počítání návštěvy:", error);
+  }
+
+  // 2. STÁHNEME DATA
   const [{ data: builds }, { data: stats }] = await Promise.all([
     supabase.from('pc_builds').select('*').eq('active', true).order('created_at', { ascending: false }),
     supabase.from('stats').select('value').eq('name', 'sestavy_views').single()
   ]);
 
-  const views = stats?.value || 0;
+  views = stats?.value || 0;
 
   return (
     <div style={{ 
@@ -208,48 +214,4 @@ export default async function SestavyPage() {
 
               <div className="cta-box">
                 <a href="https://kick.com/thehardwareguru" target="_blank" style={{textDecoration: 'none'}}>
-                    <div className="cta-link-text">
-                       ⚠️ CHCEŠ PC? MÁŠ PŘEDSTAVU, ALE NEVÍŠ CO A JAK? JSI NA SPRÁVNÉM MÍSTĚ!
-                    </div>
-                </a>
-
-                <div style={{ fontSize: '0.9rem', color: '#fff', marginBottom: '20px', fontWeight: 'bold', letterSpacing: '1px' }}>
-                    PODMÍNKA: 
-                    <a href="https://kick.com/thehardwareguru" target="_blank" style={{color: '#53fc18', borderBottom: '1px solid #53fc18', textDecoration: 'none', marginLeft: '5px'}}>
-                        SUBSCRIBE NA KICKU
-                    </a> 💚
-                </div>
-                
-                <a href="https://discord.com/invite/n7xThr8" target="_blank" className="cta-button">
-                  CHCI TUTO SESTAVU NA MÍRU 🛠️
-                </a>
-
-                <div className="social-row">
-                    <a href="https://kick.com/thehardwareguru" target="_blank" className="social-mini">
-                        <span style={{color: '#53fc18'}}>●</span> KICK
-                    </a>
-                    <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-mini">
-                        <span style={{color: '#ff0000'}}>●</span> YOUTUBE
-                    </a>
-                    <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="social-mini">
-                        <span style={{color: '#e1306c'}}>●</span> INSTAGRAM
-                    </a>
-                </div>
-              </div>
-
-            </div>
-          ))}
-        </div>
-
-        {(!builds || builds.length === 0) && (
-            <p style={{color: '#fff', fontSize: '1.2rem', marginTop: '50px'}}>Momentálně ladím nové sestavy. Doraž na Discord!</p>
-        )}
-
-        {/* POČÍTADLO ZOBRAZENÍ V PATIČCE */}
-        <div style={{ textAlign: 'center', marginTop: '60px', color: '#45a29e', fontSize: '0.9rem', opacity: 0.8 }}>
-            ZÁJEM O PC SESTAVY PROJEVILO JIŽ <strong style={{color: '#fff'}}>{views}</strong> GAMERŮ 🦾
-        </div>
-      </div>
-    </div>
-  );
-}
+                    <div className
