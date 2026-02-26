@@ -21,10 +21,17 @@ export default async function Home() {
 
   const celkemNavstev = stats?.value || 0;
 
+  // OPRAVENÁ FUNKCE PRO ZÍSKÁNÍ NÁHLEĎÁKU
   const getThumbnail = (post) => {
+    // 1. Priorita: Vygenerovaný obrázek z AI (DALL-E 3)
+    if (post.image_url) {
+        return post.image_url;
+    }
+    // 2. Priorita: YouTube náhledovka (pokud je to video)
     if (post.video_id && post.video_id.length > 5) {
         return `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`;
     }
+    // 3. Záloha: Výchozí obrázek, když nic jiného není
     return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop';
   };
 
@@ -132,7 +139,7 @@ export default async function Home() {
                       style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                     
-                    {/* TADY JE OPRAVENÝ ŠTÍTEK */}
+                    {/* ŠTÍTEK */}
                     <div style={{ 
                       position: 'absolute', 
                       top: '10px', 
