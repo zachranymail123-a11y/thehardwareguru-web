@@ -23,7 +23,7 @@ export async function GET() {
   const todayISO = now.toISOString().split('T')[0];
 
   try {
-    // 1. STRIKTNÍ SBĚR DAT
+    // 1. SBĚR DAT ZE SERPERU
     const sources = "site:videocardz.com OR site:techpowerup.com OR site:wccftech.com OR site:ign.com OR site:vgc.com OR site:pcgamer.com OR site:tomshardware.com";
     const [hwRaw, gameRaw] = await Promise.all([
       getRawTodayData(`${sources} hardware GPU CPU leak benchmark`),
@@ -35,14 +35,14 @@ export async function GET() {
       ...gameRaw.map(a => ({ ...a, type: 'game' }))
     ];
 
-    // 2. NAČTENÍ HISTORIE PRO KONTROLU (Posledních 48h, ať máme jistotu)
+    // 2. NAČTENÍ HISTORIE (48h) PRO TVRDOU KONTROLU DUPLICITY
     const { data: existing } = await supabase
       .from('content_plan')
       .select('title')
       .gte('release_date', new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString().split('T')[0]);
     
-    // Vytvoříme si jednoduchý blacklist klíčových slov z názvů v DB
-    const usedKey Phrases = existing ? existing.map(e => e.title.toLowerCase().substring(0, 20)) : [];
+    // Vytvoření blacklistu z existujících názvů (bez mezer v proměnné!)
+    const usedPhrases = existing ? existing.map(e => e.title.toLowerCase().substring(0, 15)) : [];
 
     let addedCount = 0;
     let log = [];
@@ -50,18 +50,19 @@ export async function GET() {
     for (const article of rawList) {
       if (addedCount >= 4) break;
 
-      const slug = article.title.toLowerCase().substring(0, 20);
+      // Unikátní otisk z anglického titulku
+      const slug = article.title.toLowerCase().substring(0, 15);
       
-      // TVRDÝ STOP PRO DUPLICITY (Porovnáváme začátek anglického titulku)
-      if (usedKey Phrases.some(p => slug.includes(p) || p.includes(slug))) continue;
+      // KONTROLA DUPLICITY PŘED VOLÁNÍM AI
+      if (usedPhrases.some(p => slug.includes(p) || p.includes(slug))) continue;
 
-      // 3. PŘEKLAD (Až když víme, že je to unikátní)
+      // 3. PŘEKLAD PŘES OPENAI
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "Jsi překladatel pro Hardware Guru. Udělej z anglického titulku úderný český název. Vrať striktně JSON: { \"title\": \"...\" }"
+            content: "Jsi překladatel pro Hardware Guru. Udělej z anglického titulku úderný český název. Vrať JSON: { \"title\": \"...\" }"
           },
           { role: "user", content: `Original: ${article.title}` }
         ],
@@ -71,7 +72,7 @@ export async function GET() {
       const processed = JSON.parse(completion.choices[0].message.content);
       const czechTitle = processed.title.trim();
 
-      // ZÁPIS DO DB
+      // ZÁPIS DO DATABÁZE
       const { data } = await supabase.from('content_plan').insert({
         title: czechTitle,
         release_date: todayISO,
@@ -81,7 +82,7 @@ export async function GET() {
 
       if (data) {
         addedCount++;
-        usedKey Phrases.push(slug); // Okamžitá aktualizace pro další iteraci
+        usedPhrases.push(slug); // Přidáme slug, aby se neopakovalo téma v rámci jednoho běhu
         log.push({ original: article.title, czech: czechTitle });
       }
     }
