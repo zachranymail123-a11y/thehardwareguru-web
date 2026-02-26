@@ -28,10 +28,7 @@ export async function GET() {
   if (fetchError) return NextResponse.json({ error: 'Chyba DB', details: fetchError.message });
   
   if (!tasks || tasks.length === 0) {
-      return NextResponse.json({ 
-          message: 'Žádné nové úkoly k vyřízení.',
-          server_time: new Date().toISOString()
-      });
+      return NextResponse.json({ message: 'Žádné nové úkoly k vyřízení.', server_time: new Date().toISOString() });
   }
 
   let results = [];
@@ -56,24 +53,38 @@ export async function GET() {
 
       await supabase.from('content_plan').update({ status: 'processing' }).eq('id', task.id);
 
-      // Research
+      // ---> VYLEPŠENÉ HLEDÁNÍ PRO HW I HRY <---
       const res = await fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q: `${task.title} review specs news`, num: 6 })
+        body: JSON.stringify({ q: `${task.title} review Metacritic IGN benchmarks specs performance`, num: 8 })
       });
       const searchResults = await res.json();
       const rawContext = JSON.stringify(searchResults.organic || []).substring(0, 6000);
 
-      // Generování textu
+      // ---> ULTIMÁTNÍ ŠÉFREDAKTOR PROMPT <---
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           { 
             role: "system", 
-            content: "Jsi The Hardware Guru. Piš ČESKY, drsně a věcně. Tvůj výstup musí být striktně ve formátu JSON. Struktura: { \"title\": \"název\", \"content\": \"HTML obsah\" }. V obsahu používej HTML tagy a pro parametry VŽDY vytvoř <table>." 
+            content: `Jsi elitní šéfredaktor herního a hardwarového magazínu The Hardware Guru. 
+Tvé úkoly a přísná pravidla:
+1. Piš VÝHRADNĚ ČESKY. I když jsou podklady v angličtině, ty je musíš perfektně přeložit.
+2. STYL: Profesionální, drsný, čtivý, pro české gamery a HW nadšence. Nejsi robot, chovej se jako zkušený novinář.
+3. ZÁKAZY: Absolutní ZÁKAZ zmiňovat Reddit, YouTube, uživatelské komentáře nebo psát fráze typu "podle vyhledávání". Text musí působit jako tvoje vlastní autorská recenze/novinka!
+4. SPECIFIKA PRO HRY: Pokud píšeš o hře, MUSÍŠ z podkladů vyčíst a uvést hodnocení velkých webů (IGN, GameSpot) nebo Metacritic skóre! Udělej jasnou sekci "Klady a Zápory".
+5. SPECIFIKA PRO HW: Pokud píšeš o hardwaru, MUSÍŠ uvést konkrétní specifikace, benchmarky, výkon a ideálně cenovku. Žádná zbytečná omáčka bez čísel.
+6. FORMÁTOVÁNÍ: ZÁKAZ jednoho bloku textu! Rozděluj text do krátkých odstavců pomocí <p>. Používej podnadpisy <h2> a <h3> pro strukturu a <strong> pro klíčové pojmy.
+7. TABULKY: Pro parametry, benchmarky nebo Klady a Zápory VŽDY vytvoř přehlednou HTML <table>.
+8. Výstup MUSÍ BÝT STRIKTNÍ JSON: { "title": "Český úderný název", "content": "Zformátovaný HTML obsah" }.` 
           },
-          { role: "user", content: `Vytvoř článek JSON: "${task.title}". Typ: ${task.type}. Info: ${rawContext}` }
+          { 
+            role: "user", 
+            content: `Napiš exkluzivní, skvěle strukturovaný článek o: "${task.title}". Typ: ${task.type}. 
+Zdrojová data (vytahej z nich hodnocení, čísla, parametry a napiš z toho brutálně dobrou recenzi/novinku v češtině, zformátovanou do krásného HTML): 
+${rawContext}` 
+          }
         ],
         response_format: { type: "json_object" }
       });
@@ -81,7 +92,7 @@ export async function GET() {
       const article = JSON.parse(completion.choices[0].message.content);
       const finalSlug = createSlug(article.title);
 
-      // ---> OPRAVENÉ ULOŽENÍ OBRÁZKU PŘES BLOB <---
+      // ---> OBRÁZEK PŘES BLOB S OCHRANOU ZNAČEK <---
       let permanentImageUrl = null;
       let imageErrorLog = null; 
       
@@ -98,13 +109,11 @@ export async function GET() {
         });
         const tempOpenAiUrl = imageResponse.data[0].url;
 
-        // TADY JE TA HLAVNÍ ZMĚNA: Stahujeme to jako 'blob'
         const imgRes = await fetch(tempOpenAiUrl);
         const imageBlob = await imgRes.blob();
         
         const fileName = `${finalSlug}-${Date.now()}.png`;
 
-        // A nahráváme imageBlob
         const { data: uploadData, error: uploadError } = await supabase
           .storage
           .from('article_images')
@@ -122,9 +131,8 @@ export async function GET() {
         imageErrorLog = imgErr.message;
         console.error("Chyba obrázku:", imgErr.message);
       }
-      // ---> KONEC ÚPRAVY <---
 
-      // Zápis nového článku
+      // ---> ULOŽENÍ DO DATABÁZE <---
       const { error: insertError } = await supabase.from('posts').insert({
         title: article.title,
         slug: finalSlug,
@@ -157,9 +165,5 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ 
-      message: 'Exekuce dokončena', 
-      processed_tasks: results,
-      server_time: new Date().toISOString()
-  });
+  return NextResponse.json({ message: 'Exekuce dokončena', processed_tasks: results, server_time: new Date().toISOString() });
 }
