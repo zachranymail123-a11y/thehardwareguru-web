@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tady jsou ty tvoje Guru styly pro články */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  background-color: #1a1a1a;
+  color: #eee;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.prose th {
+  background-color: #333;
+  color: #00ffcc;
+  text-align: left;
+  padding: 12px;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.prose td {
+  padding: 12px;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.prose blockquote {
+  background: linear-gradient(135deg, #1e1e1e 0%, #111 100%);
+  border-left: 5px solid #00ffcc;
+  margin: 30px 0;
+  padding: 20px;
+  font-style: italic;
+  font-size: 1.2rem;
+  color: #fff;
+}
+
+.prose blockquote::before {
+  content: "GURU VERDIKT";
+  display: block;
+  font-weight: bold;
+  font-size: 0.7rem;
+  color: #00ffcc;
+  margin-bottom: 10px;
+}
