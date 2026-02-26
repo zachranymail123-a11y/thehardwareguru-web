@@ -1,3 +1,5 @@
+import './globals.css'; // TADY JE TO PROPOJENÍ
+
 export const metadata = {
   title: {
     default: 'The Hardware Guru | Tech, Gaming & AI',
@@ -9,7 +11,6 @@ export const metadata = {
   creator: 'The Hardware Guru',
   metadataBase: new URL('https://www.thehardwareguru.cz'),
   
-  // Tohle zajistí hezké náhledy na Facebooku, Discordu atd.
   openGraph: {
     title: 'The Hardware Guru | Tech, Gaming & AI',
     description: 'Hardware, gaming a tech novinky na jednom místě.',
@@ -17,7 +18,7 @@ export const metadata = {
     siteName: 'The Hardware Guru',
     images: [
       {
-        url: 'https://i.postimg.cc/QdWxszv3/bg-guru.png', // Náhledový obrázek webu
+        url: 'https://i.postimg.cc/QdWxszv3/bg-guru.png',
         width: 1200,
         height: 630,
         alt: 'The Hardware Guru Banner',
@@ -27,7 +28,6 @@ export const metadata = {
     type: 'website',
   },
   
-  // Tohle je pro zobrazení na Twitteru/X
   twitter: {
     card: 'summary_large_image',
     title: 'The Hardware Guru',
@@ -35,7 +35,6 @@ export const metadata = {
     images: ['https://i.postimg.cc/QdWxszv3/bg-guru.png'],
   },
 
-  // Ikony (pokud máš faviconu, doplň cesty)
   icons: {
     icon: '/favicon.ico',
   },
@@ -44,13 +43,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="cs">
-      <body style={{ 
-        margin: 0, 
-        padding: 0, 
-        backgroundColor: '#0b0c10', 
-        color: '#c5c6c7',
-        minHeight: '100vh' 
-      }}>
+      <body>
         {children}
       </body>
     </html>
