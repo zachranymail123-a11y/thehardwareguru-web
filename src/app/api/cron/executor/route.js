@@ -14,7 +14,6 @@ function createSlug(title) {
 export async function GET() {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-  // 1. NAČTEME ROVNOU 5 ÚKOLŮ (Abychom se nezacyklili na jednom)
   const { data: tasks, error: fetchError } = await supabase
     .from('content_plan')
     .select('*')
@@ -22,19 +21,16 @@ export async function GET() {
     .order('id', { ascending: true })
     .limit(5);
 
-  if (fetchError) return NextResponse.json({ error: 'Chyba DB při čtení', details: fetchError.message });
+  if (fetchError) return NextResponse.json({ error: 'Chyba DB', details: fetchError.message });
   if (!tasks || tasks.length === 0) return NextResponse.json({ message: 'Vše hotovo, žádné nové úkoly.' });
 
   let results = [];
   let processedCount = 0;
 
-  // 2. PROJDEME JE JEDEN PO DRUHÉM
   for (const task of tasks) {
-    // Pokud už jsme v tomto běhu jeden článek úspěšně VYTVOŘILI, končíme (ať nepálíme kredity hromadně)
     if (processedCount >= 1) break; 
 
     try {
-      // A. KONTROLA DUPLICITY V POSTS
       const taskSlug = createSlug(task.title);
       const { data: existing } = await supabase
         .from('posts')
@@ -43,19 +39,11 @@ export async function GET() {
         .limit(1);
 
       if (existing && existing.length > 0) {
-        // JE TO DUPLICITA -> Označíme jako published a JEDEME DÁL
-        const { error: updateError } = await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id).select();
-        
-        results.push({ 
-          title: task.title, 
-          status: 'DUPLICITA - PŘESKOČENO', 
-          match: existing[0].title
-        });
-        continue; // Jdeme na další úkol v seznamu
+        await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
+        results.push({ title: task.title, status: 'DUPLICITA - PŘESKOČENO' });
+        continue;
       }
 
-      // B. NENÍ TO DUPLICITA -> Jdeme makat
-      // Označíme jako processing
       await supabase.from('content_plan').update({ status: 'processing' }).eq('id', task.id);
 
       // Research
@@ -67,18 +55,15 @@ export async function GET() {
       const searchResults = await res.json();
       const rawContext = JSON.stringify(searchResults.organic || []).substring(0, 6000);
 
-      // Generování
+      // Generování textu
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           { 
             role: "system", 
-            content: "Jsi The Hardware Guru. Piš ČESKY, drsně a věcně. Tvůj výstup musí být striktně ve formátu JSON. Struktura: { \"title\": \"název\", \"content\": \"HTML obsah\" }. V obsahu používej HTML tagy, pro technické parametry VŽDY vytvoř <table> a na konec dej <blockquote class='guru-verdict'> s finálním hodnocením." 
+            content: "Jsi The Hardware Guru. Piš ČESKY, drsně a věcně. Tvůj výstup musí být striktně ve formátu JSON. Struktura: { \"title\": \"název\", \"content\": \"HTML obsah\" }. V obsahu používej HTML tagy a pro parametry VŽDY vytvoř <table>." 
           },
-          { 
-            role: "user", 
-            content: `Vytvoř článek JSON: "${task.title}". Typ: ${task.type}. Info: ${rawContext}` 
-          }
+          { role: "user", content: `Vytvoř článek JSON: "${task.title}". Typ: ${task.type}. Info: ${rawContext}` }
         ],
         response_format: { type: "json_object" }
       });
@@ -86,40 +71,49 @@ export async function GET() {
       const article = JSON.parse(completion.choices[0].message.content);
       const finalSlug = createSlug(article.title);
 
-      // Zápis do posts
+      // ---> MAGIE S OBRÁZKEM (DALL-E 3) <---
+      let imageUrl = null;
+      try {
+        console.log(`Generuji obrázek pro: ${task.title}`);
+        const imageResponse = await openai.images.generate({
+          model: "dall-e-3",
+          prompt: `Create a photorealistic, dramatic, and high-quality thumbnail image for a tech and gaming magazine article titled: "${task.title}". The image must NOT contain any text, letters, or words. Style: modern, sleek, hardware/gaming focus.`,
+          n: 1,
+          size: "1024x1024",
+        });
+        imageUrl = imageResponse.data[0].url;
+      } catch (imgErr) {
+        console.error("Chyba obrázku (článek vyjde bez něj):", imgErr.message);
+      }
+      // ---> KONEC MAGIE <---
+
+      // Zápis do posts (včetně obrázku)
       const { error: insertError } = await supabase.from('posts').insert({
         title: article.title,
         slug: finalSlug,
         content: article.content,
         type: task.type,
+        image_url: imageUrl, // Ukládáme link na obrázek
         created_at: new Date().toISOString()
       });
 
       if (insertError) {
          if (insertError.code === '23505') {
             await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
-            results.push({ title: task.title, status: 'CHYBA SLUGU (DUPLICITA)', details: insertError.message });
             continue;
          }
          throw insertError;
       }
 
-      // Hotovo
       await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
-      
-      results.push({ title: article.title, status: 'SUCCESS - PUBLIKOVÁNO' });
+      results.push({ title: article.title, status: 'SUCCESS - PUBLIKOVÁNO S OBRÁZKEM' });
       processedCount++; 
 
     } catch (err) {
-      console.error(err);
-      // Pokud to selže, vrátíme status error, ať se na tom netocíme
       await supabase.from('content_plan').update({ status: 'error' }).eq('id', task.id);
       results.push({ title: task.title, status: 'CRITICAL ERROR', error: err.message });
     }
   }
 
-  return NextResponse.json({ 
-    message: 'Exekuce dokončena', 
-    processed_tasks: results 
-  });
+  return NextResponse.json({ message: 'Exekuce dokončena', processed_tasks: results });
 }
