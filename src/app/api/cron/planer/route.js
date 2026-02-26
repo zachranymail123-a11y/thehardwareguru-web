@@ -2,16 +2,14 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-// Nastavení (Environment variables musíš mít v .env)
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
-// Funkce pro hledání přes Serper
 async function searchGoogle(query) {
   const res = await fetch('https://google.serper.dev/search', {
     method: 'POST',
     headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ q: query, num: 10, tbs: 'qdr:w' }) // qdr:w = results from last week (čerstvé info)
+    body: JSON.stringify({ q: query, num: 20, tbs: 'qdr:w' }) // Zvedl jsem num na 20 výsledků
   });
   return res.json();
 }
@@ -19,53 +17,56 @@ async function searchGoogle(query) {
 export async function GET() {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-  // 1. FÁZE: TŘI NEZÁVISLÉ ZDROJE (The Triple Check)
-  // Hledáme specificky kalendáře a leaky
+  // 1. VYSAVAČ - Agresivní dotazy na seznamy
   const queries = [
-    "major pc game releases this week metacritic ign", // Mainstream + Data
-    "upcoming hardware launch dates leaks rumors videocardz", // HW Leaky
-    "game release calendar next 7 days eurogamer" // Ověření data
+    "pc games release calendar february 2026 list", // Konkrétní měsíc
+    "upcoming game releases next 7 days list",      // Nejbližší týden
+    "hardware rumors nvidia amd intel leaks this week", // HW Leaky
+    "steam upcoming releases popular list"          // Co je trendy na Steamu
   ];
 
   let rawData = "";
 
-  // Spustíme hledání paralelně pro rychlost
+  // Paralelní sosání dat
   const results = await Promise.all(queries.map(q => searchGoogle(q)));
   
-  // Slijeme výsledky do jednoho textu pro AI
   results.forEach((r, index) => {
     rawData += `\n--- SOURCE ${index + 1} (${queries[index]}) ---\n`;
     if (r.organic) {
       r.organic.forEach(item => {
-        rawData += `Title: ${item.title}\nSnippet: ${item.snippet}\nDate: ${item.date || 'N/A'}\n\n`;
+        // Bereme i datumy, pokud tam jsou
+        rawData += `Title: ${item.title}\nSnippet: ${item.snippet}\nDate info: ${item.date || 'N/A'}\n\n`;
       });
     }
   });
 
-  // 2. FÁZE: AI ANALÝZA A KŘÍŽOVÁ KONTROLA
+  // 2. TŘÍDIČKA - Mírnější pravidla
   const completion = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
       {
         role: "system",
-        content: `Jsi šéfredaktor herního webu The Hardware Guru. Tvým úkolem je naplánovat obsah na tento týden.
+        content: `Jsi šéfredaktor The Hardware Guru. Tvým úkolem je naplnit redakční plán na tento týden.
         
-        Analyzuj poskytnutá data z vyhledávání (3 různé zdroje).
-        Hledej POUZE významné hry (AAA nebo očekávané indie) a Hardware, které vychází v nejbližších 7 dnech nebo právě vyšly.
+        Zahrň VŠECHNO, o čem se mluví:
+        1. Velké hry (AAA).
+        2. Zajímavé Indie hry a AA tituly (neignoruj menší hry!).
+        3. Hardwarové novinky, leaky a spekulace (Nvidia, AMD, Intel).
+        4. Důležité patche nebo DLC do velkých her.
+
+        Pravidla:
+        - Datum vydání odhadni z kontextu (např. "comes out this Friday").
+        - Pokud datum chybí, dej zítřejší datum.
+        - Nebuď přehnaně kritický. Pokud to má název a datum, ber to.
         
-        PRAVIDLA PRO VÝBĚR:
-        1. Ignoruj DLC, malé patche a mobilní hry.
-        2. Pokud se datum vydání shoduje alespoň ve 2 zdrojích, označ to jako "verified".
-        3. Datum musí být ve formátu YYYY-MM-DD. Pokud nevíš přesný den, odhadni nejbližší pravděpodobný nebo dej zítřejší.
-        
-        Vrať JSON objekt s polem "items":
+        Vrať JSON:
         {
           "items": [
             {
-              "title": "Název hry/HW",
-              "release_date": "2026-02-28",
-              "type": "game" (nebo "hardware"),
-              "confidence": "high" (pokud je to ve více zdrojích)
+              "title": "Název",
+              "release_date": "YYYY-MM-DD",
+              "type": "game" | "hardware",
+              "confidence": "high" | "medium"
             }
           ]
         }`
@@ -77,12 +78,13 @@ export async function GET() {
 
   const plan = JSON.parse(completion.choices[0].message.content);
 
-  // 3. FÁZE: ULOŽENÍ DO DATABÁZE (Upsert)
+  // 3. ULOŽENÍ (Bereme i Medium confidence)
+  let savedCount = 0;
   if (plan.items && plan.items.length > 0) {
     for (const item of plan.items) {
-      // Vložíme jen ty s vysokou důvěrou
-      if (item.confidence === 'high') {
-        // Zkontrolujeme duplicitu podle názvu, abychom to tam necpali 2x
+      // Ukládáme i 'medium', nejen 'high', abychom měli víc materiálu
+      if (item.confidence === 'high' || item.confidence === 'medium') {
+        
         const { data: existing } = await supabase
             .from('content_plan')
             .select('id')
@@ -94,16 +96,18 @@ export async function GET() {
                 title: item.title,
                 release_date: item.release_date,
                 type: item.type,
-                status: 'planned' // Zatím jen naplánováno
+                status: 'planned'
             });
+            savedCount++;
         }
       }
     }
   }
 
   return NextResponse.json({ 
-    message: 'Planer dokončen', 
-    found_items: plan.items?.length || 0, 
+    message: 'Planer V2 dokončen', 
+    found_items_total: plan.items?.length || 0,
+    saved_new_items: savedCount,
     items: plan.items 
   });
 }
