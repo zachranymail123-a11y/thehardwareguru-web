@@ -27,7 +27,7 @@ export async function GET() {
 
   const task = allPlanned[0];
 
-  // 2. ANTI-DUPLICITA (Kontrola jestli už post neexistuje)
+  // 2. ANTI-DUPLICITA
   const { data: existing } = await supabase
     .from('posts')
     .select('id')
@@ -48,17 +48,25 @@ export async function GET() {
   const searchResults = await res.json();
   const rawContext = JSON.stringify(searchResults.organic || []).substring(0, 10000);
 
-  // 4. GENERUJEME ČLÁNEK
+  // 4. GENERUJEME ČLÁNEK (S PŘÍSNÝM HTML FORMÁTEM)
   const completion = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
       {
         role: "system",
-        content: `Jsi The Hardware Guru. Pis CESKY. Musis vratit JSON objekt: { "title": "...", "content": "HTML..." }. V instrukci je slovo json.`
+        content: `Jsi The Hardware Guru. Piš ČESKY. Vrať JSON objekt: { "title": "...", "content": "HTML..." }. 
+        
+        Pravidla pro HTML v "content":
+        - PLUSY A MÍNUSY: Udělej jako HTML tabulku <table> se dvěma sloupci (Plusy | Mínusy).
+        - SVĚTOVÉ HODNOCENÍ: Udělej jako HTML tabulku <table> (Zdroj | Hodnocení).
+        - HW NÁROKY: Udělej jako HTML tabulku <table> (Komponenta | Minimální | Doporučené).
+        - VERDIKT: Dej do <blockquote>.
+        
+        Nepoužívej Markdown (žádné # nebo **), používej jen čisté HTML tagy (h2, p, table, tr, td, ul, li).`
       },
       { 
         role: "user", 
-        content: `Vytvor recenzi na "${task.title}" z techto dat: ${rawContext}. Povinne HTML: tabulka hodnoceni, plusy/minusy, HW naroky, verdikt.` 
+        content: `Vytvoř profesionální recenzi na "${task.title}" ve formátu json z těchto dat: ${rawContext}.` 
       }
     ],
     response_format: { type: "json_object" }
