@@ -14,8 +14,7 @@ function createSlug(title) {
 export async function GET() {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-  // 1. NAJDEME ÚKOL (Opraveno: řadíme podle ID, protože created_at v plánu nemáš)
-  // Používáme ilike pro status, aby to nesežralo velké/malé písmena (PLANNED vs planned)
+  // 1. NAJDEME ÚKOL (Řadíme podle ID, filtrujeme bez ohledu na velikost písmen)
   const { data: tasks, error: fetchError } = await supabase
     .from('content_plan')
     .select('*')
@@ -54,12 +53,18 @@ export async function GET() {
     const searchResults = await res.json();
     const rawContext = JSON.stringify(searchResults.organic || []).substring(0, 8000);
 
-    // 5. GENERUJEME ČLÁNEK (Instrukce pro tabulky a Guru styl)
+    // 5. GENERUJEME ČLÁNEK (Opraveno: Explicitní zmínka JSON pro OpenAI API)
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
-        { role: "system", content: "Jsi The Hardware Guru. Piš ČESKY, drsně, věcně. Používej HTML tagy. Pro technické parametry VŽDY vytvoř <table>. Na konec dej <blockquote class='guru-verdict'> s finálním hodnocením." },
-        { role: "user", content: `Téma: "${task.title}". Typ obsahu: ${task.type}. Kontext: ${rawContext}` }
+        { 
+          role: "system", 
+          content: "Jsi The Hardware Guru. Piš ČESKY, drsně a věcně. Tvůj výstup musí být striktně ve formátu JSON. Struktura: { \"title\": \"název\", \"content\": \"HTML obsah\" }. V obsahu používej HTML tagy, pro technické parametry VŽDY vytvoř <table> a na konec dej <blockquote class='guru-verdict'> s finálním hodnocením." 
+        },
+        { 
+          role: "user", 
+          content: `Vytvoř článek ve formátu JSON o tématu: "${task.title}". Typ obsahu: ${task.type}. Data pro research: ${rawContext}` 
+        }
       ],
       response_format: { type: "json_object" }
     });
@@ -87,6 +92,7 @@ export async function GET() {
     return NextResponse.json({ status: 'SUCCESS', published: article.title });
 
   } catch (err) {
+    // Při chybě vrátíme zpět na planned
     await supabase.from('content_plan').update({ status: 'planned' }).eq('id', task.id);
     return NextResponse.json({ error: err.message });
   }
