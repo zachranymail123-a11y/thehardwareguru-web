@@ -82,15 +82,19 @@ export async function GET() {
       const article = JSON.parse(completion.choices[0].message.content);
       const finalSlug = createSlug(article.title);
 
-      // ---> NOVÉ ULOŽENÍ OBRÁZKU TRVALE K TOBĚ <---
+      // ---> OPRAVENÉ ULOŽENÍ OBRÁZKU S OBCHÁZENÍM CENZURY <---
       let permanentImageUrl = null;
+      let imageErrorLog = null; // Přidáno pro logování případné chyby
+      
       try {
         console.log(`Generuji obrázek pro: ${task.title}`);
         
-        // 1. Vygenerujeme obrázek přes DALL-E
+        // 1. Chytřejší prompt, který OpenAI "neprovalí" chráněné značky
+        const safePrompt = `Create a photorealistic, dramatic, and high-quality thumbnail image for a tech and gaming magazine article. The theme is related to: "${task.title}". IMPORTANT: Do NOT include any real-world logos, trademarked text, or specific brand names (like Sony, PlayStation, Resident Evil, etc.). Make it generic but epic. No text or words allowed.`;
+
         const imageResponse = await openai.images.generate({
           model: "dall-e-3",
-          prompt: `Create a photorealistic, dramatic, and high-quality thumbnail image for a tech and gaming magazine article titled: "${task.title}". The image must NOT contain any text, letters, or words. Style: modern, sleek, hardware/gaming focus.`,
+          prompt: safePrompt,
           n: 1,
           size: "1024x1024",
         });
@@ -119,6 +123,7 @@ export async function GET() {
         permanentImageUrl = publicUrlData.publicUrl;
 
       } catch (imgErr) {
+        imageErrorLog = imgErr.message;
         console.error("Chyba obrázku:", imgErr.message);
       }
       // ---> KONEC ÚPRAVY <---
@@ -142,7 +147,13 @@ export async function GET() {
       }
 
       await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
-      results.push({ title: article.title, status: 'SUCCESS - PUBLIKOVÁNO S TRVALÝM OBRÁZKEM' });
+      
+      // Výpis úspěchu nebo selhání obrázku přímo do prohlížeče
+      if (permanentImageUrl) {
+          results.push({ title: article.title, status: 'SUCCESS - PUBLIKOVÁNO S TRVALÝM OBRÁZKEM' });
+      } else {
+          results.push({ title: article.title, status: 'SUCCESS - VYDÁNO BEZ OBRÁZKU', image_error: imageErrorLog });
+      }
       processedCount++; 
 
     } catch (err) {
