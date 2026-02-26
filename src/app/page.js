@@ -9,24 +9,28 @@ export default async function Home() {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
+  // Inicializace s prázdným polem, aby map() dole neselhal, pokud DB nic nevrátí
   let posts = [];
   let celkemNavstev = 0;
 
   try {
-    // 1. PŘIČTEME NÁVŠTĚVU (Bezpečně)
+    // 1. PŘIČTEME NÁVŠTĚVU (Nesmí shodit web)
     await supabase.rpc('increment_total_visits').catch(() => {});
 
-    // 2. STÁHNEME DATA (Opravený dotaz na posts)
+    // 2. STÁHNEME DATA - Tady musí být ten dotaz naprosto čistý
     const [postsResult, statsResult] = await Promise.all([
       supabase.from('posts').select('*').order('created_at', { ascending: false }),
       supabase.from('stats').select('value').eq('name', 'total_visits').single()
     ]);
 
-    // TADY BYLA CHYBA - Musíme brát posts z .data
-    posts = postsResult.data || [];
+    // KLÍČOVÁ OPRAVA: Přiřazujeme data přímo z výsledku dotazu
+    if (postsResult.data) {
+      posts = postsResult.data;
+    }
+    
     celkemNavstev = statsResult.data?.value || 0;
   } catch (error) {
-    console.error("Chyba na hlavní stránce:", error);
+    console.error("Kritická chyba načítání:", error);
   }
 
   const getThumbnail = (post) => {
@@ -46,7 +50,7 @@ export default async function Home() {
     }}>
       
       <style>{`
-        .game-card { transition: all 0.3s ease; border: 1px solid #45a29e; cursor: pointer; }
+        .game-card { transition: all 0.3s ease; border: 1px solid #45a29e; cursor: pointer; background: rgba(31, 40, 51, 0.95); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; height: 100%; }
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
         .nav-link { margin: 0 15px; color: #fff; text-decoration: none; font-weight: bold; transition: color 0.3s; text-transform: uppercase; letter-spacing: 1px; display: inline-block; }
         .nav-link:hover { color: #66fcf1; text-shadow: 0 0 10px #66fcf1; }
@@ -55,8 +59,8 @@ export default async function Home() {
         .social-btn:hover { background: #66fcf1; color: #0b0c10; box-shadow: 0 0 15px #66fcf1; transform: scale(1.05); }
       `}</style>
 
-      {/* HLAVIČKA */}
-      <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: 'rgba(31, 40, 51, 0.9)', backdropFilter: 'blur(5px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 0 15px rgba(102, 252, 241, 0.3)', flexWrap: 'wrap', gap: '20px' }}>
+      {/* NAVIGACE */}
+      <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: 'rgba(31, 40, 51, 0.9)', backdropFilter: 'blur(5px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
         <div style={{ fontSize: '1.8rem', fontWeight: '900', color: '#66fcf1', letterSpacing: '2px', textShadow: '2px 2px 0px #000' }}>
           THE HARDWARE GURU
         </div>
@@ -72,7 +76,7 @@ export default async function Home() {
       <header style={{ maxWidth: '1200px', margin: '60px auto', padding: '40px', background: 'rgba(31, 40, 51, 0.95)', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap' }}>
         <div style={{ flex: '1', minWidth: '300px' }}>
             <h1 style={{ color: '#66fcf1', fontSize: '2.5rem', marginBottom: '20px', textTransform: 'uppercase', fontWeight: '900' }}>The Hardware Guru</h1>
-            <p style={{ fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '30px' }}>
+            <p style={{ fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '30px', color: '#e0e0e0' }}>
                 Čau pařani! Jsem 45letý HW nadšenec, gamer a streamer. Tady najdeš vše o hardwaru a recenze her. 
                 Na Kicku mi sekunduje unikátní <strong style={{color: '#66fcf1'}}>AI umělá inteligence</strong>.
             </p>
@@ -90,19 +94,27 @@ export default async function Home() {
         <h2 style={{ color: '#fff', textAlign: 'center', marginBottom: '40px', fontSize: '2.5rem', fontWeight: '900', textTransform: 'uppercase' }}>Nejnovější články & Videa</h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '40px' }}>
-          {posts.map((post) => (
-            <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
-              <div className="game-card" style={{ backgroundColor: 'rgba(31, 40, 51, 0.95)', borderRadius: '12px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ position: 'relative', paddingTop: '56.25%' }}>
-                  <img src={getThumbnail(post)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          {posts && posts.length > 0 ? (
+            posts.map((post) => (
+              <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
+                <div className="game-card">
+                  <div style={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden' }}>
+                    <img src={getThumbnail(post)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div style={{ padding: '25px', flex: 1 }}>
+                    <h3 style={{ color: '#fff', fontSize: '1.3rem', marginBottom: '15px', lineHeight: '1.4' }}>{post.title}</h3>
+                    <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                      {(post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 120)}...
+                    </p>
+                  </div>
                 </div>
-                <div style={{ padding: '25px', flex: 1 }}>
-                  <h3 style={{ color: '#fff', fontSize: '1.3rem', marginBottom: '15px' }}>{post.title}</h3>
-                  <p style={{ color: '#c5c6c7', fontSize: '0.95rem' }}>{(post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 120)}...</p>
-                </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            ))
+          ) : (
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', color: '#45a29e', padding: '100px 0', border: '1px dashed #45a29e', borderRadius: '8px' }}>
+                <p style={{ fontSize: '1.2rem' }}>Zatím zde nejsou žádné články. Zkus spustit Cron nebo zkontrolovat databázi.</p>
+            </div>
+          )}
         </div>
       </main>
 
