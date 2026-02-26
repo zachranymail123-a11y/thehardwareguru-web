@@ -101,6 +101,8 @@ export default async function Home() {
             </p>
             <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                 <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn">SLEDUJ STREAM (KICK)</a>
+                {/* ---> NOVÉ TLAČÍTKO YOUTUBE <--- */}
+                <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-btn">SLEDUJ NA YOUTUBE</a>
                 <a href="https://discord.com/invite/n7xThr8" target="_blank" className="social-btn">PŘIPOJ SE NA DISCORD</a>
             </div>
         </div>
@@ -177,7 +179,7 @@ export default async function Home() {
           
           {(!posts || posts.length === 0) && (
              <div style={{gridColumn: '1/-1', textAlign: 'center', color: '#fff', padding: '50px'}}>
-                Zatím zde nejsou žádné články. Zkus spustit Cron.
+               Zatím zde nejsou žádné články. Zkus spustit Cron.
              </div>
           )}
 
