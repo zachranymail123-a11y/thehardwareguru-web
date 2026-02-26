@@ -16,9 +16,11 @@ export async function generateMetadata({ params }) {
     return { title: 'Článek nenalezen | The Hardware Guru' };
   }
 
-  const imageUrl = post.video_id 
-    ? `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`
-    : 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop';
+  const imageUrl = post.image_url 
+    ? post.image_url 
+    : (post.video_id 
+        ? `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`
+        : 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop');
 
   const plainText = (post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 150) + '...';
 
@@ -67,7 +69,6 @@ export default async function ArticlePage({ params }) {
   }
 
   return (
-    // ZMĚNA: VLOŽEN TVŮJ NOVÝ ODKAZ NA POZADÍ
     <div style={{ 
         minHeight: '100vh', 
         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
@@ -86,6 +87,9 @@ export default async function ArticlePage({ params }) {
         .article-content a { color: #66fcf1; }
         .article-content h2 { color: #fff; margin-top: 30px; border-bottom: 1px solid #45a29e; padding-bottom: 10px; }
         .article-content ul { background: rgba(31, 40, 51, 0.8); padding: 20px 40px; border-radius: 10px; border-left: 4px solid #66fcf1; }
+        .article-content table { width: 100%; border-collapse: collapse; margin: 20px 0; background: rgba(31, 40, 51, 0.5); border-radius: 8px; overflow: hidden; }
+        .article-content th, .article-content td { border: 1px solid #45a29e; padding: 12px; text-align: left; }
+        .article-content th { background: #1f2833; color: #66fcf1; }
       `}</style>
 
       {/* HLAVIČKA */}
@@ -127,7 +131,7 @@ export default async function ArticlePage({ params }) {
           </div>
         )}
 
-        {/* Text článku s podkladem pro čitelnost */}
+        {/* Text článku */}
         <div 
           className="article-content"
           style={{ 
@@ -136,12 +140,13 @@ export default async function ArticlePage({ params }) {
               color: '#e0e0e0', 
               marginBottom: '80px',
               background: 'rgba(11, 12, 16, 0.7)', 
-              padding: '20px',
+              padding: '30px',
               borderRadius: '15px'
           }}
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
 
+        {/* BOX O AUTOROVI / SOCIÁLNÍ SÍTĚ */}
         <div style={{ padding: '40px', background: 'linear-gradient(145deg, rgba(31, 40, 51, 0.95), rgba(11, 12, 16, 0.95))', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '30px', flexWrap: 'wrap', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
             <div style={{ width: '150px', height: '150px', background: '#0b0c10', borderRadius: '50%', border: '3px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                 <span style={{color: '#45a29e', fontSize: '3rem', fontWeight: 'bold'}}>HG</span>
@@ -152,10 +157,12 @@ export default async function ArticlePage({ params }) {
                 </h3>
                 <p style={{ fontSize: '1rem', lineHeight: '1.6', marginBottom: '20px', color: '#c5c6c7' }}>
                     Líbil se ti článek? Jsem 45letý HW nadšenec a streamer. 
-                    Nezapomeň, že na mém <strong>KICK streamu</strong> běží unikátní AI, která reaguje na chat. 
+                    Nezapomeň, že na mém <strong>KICK streamu</strong> běží unikátní AI, která reaguje na chat a komentuje hru. 
                 </p>
-                <div>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                     <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn">SLEDOVAT NA KICKU</a>
+                    {/* NOVÉ TLAČÍTKO YOUTUBE */}
+                    <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-btn">SLEDOVAT NA YOUTUBE</a>
                     <a href="https://discord.com/invite/n7xThr8" target="_blank" className="social-btn">PŘIPOJIT SE NA DISCORD</a>
                 </div>
             </div>
@@ -171,7 +178,7 @@ export default async function ArticlePage({ params }) {
           </div>
 
           <div style={{ marginBottom: '20px', color: '#66fcf1', fontSize: '1rem', fontWeight: 'bold', letterSpacing: '1px' }}>
-             WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #45a29e' }}>{celkemNavstev}</span> GURU FANOUŠKŮ 🦾
+              WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #45a29e' }}>{celkemNavstev}</span> GURU FANOUŠKŮ 🦾
           </div>
 
           <p style={{ color: '#45a29e', opacity: 0.7, fontSize: '0.8rem' }}>© 2026 The Hardware Guru. Powered by AI & Caffeine.</p>
