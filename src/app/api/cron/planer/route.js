@@ -7,14 +7,6 @@ export const dynamic = 'force-dynamic';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
-// Pomocná funkce pro vyčištění textu na klíčová slova
-function getKeywords(text) {
-  return text.toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
-    .split(/\s+/)
-    .filter(word => word.length > 3);
-}
-
 async function getRawTodayData(query) {
   const res = await fetch('https://google.serper.dev/search', {
     method: 'POST',
@@ -31,17 +23,7 @@ export async function GET() {
   const todayISO = now.toISOString().split('T')[0];
 
   try {
-    // 1. NAČTENÍ VŠEHO DNEŠNÍHO (Tvrdá data pro srovnání)
-    const { data: existingToday } = await supabase
-      .from('content_plan')
-      .select('title')
-      .gte('release_date', todayISO);
-    
-    // Vytvoříme sadu klíčových slov ze všech dnešních článků
-    const forbiddenKeywords = new Set(
-      existingToday ? existingToday.flatMap(e => getKeywords(e.title)) : []
-    );
-
+    // 1. STRIKTNÍ SBĚR DAT
     const sources = "site:videocardz.com OR site:techpowerup.com OR site:wccftech.com OR site:ign.com OR site:vgc.com OR site:pcgamer.com OR site:tomshardware.com";
     const [hwRaw, gameRaw] = await Promise.all([
       getRawTodayData(`${sources} hardware GPU CPU leak benchmark`),
@@ -53,19 +35,27 @@ export async function GET() {
       ...gameRaw.map(a => ({ ...a, type: 'game' }))
     ];
 
+    // 2. NAČTENÍ HISTORIE PRO KONTROLU (Posledních 48h, ať máme jistotu)
+    const { data: existing } = await supabase
+      .from('content_plan')
+      .select('title')
+      .gte('release_date', new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString().split('T')[0]);
+    
+    // Vytvoříme si jednoduchý blacklist klíčových slov z názvů v DB
+    const usedKey Phrases = existing ? existing.map(e => e.title.toLowerCase().substring(0, 20)) : [];
+
     let addedCount = 0;
     let log = [];
 
     for (const article of rawList) {
       if (addedCount >= 4) break;
 
-      // 2. SÉMANTICKÁ KONTROLA ORIGINÁLU
-      const articleKeywords = getKeywords(article.title);
-      // Pokud se víc než 50% klíčových slov shodne s tím, co už máme, je to duplicita
-      const matches = articleKeywords.filter(word => forbiddenKeywords.has(word)).length;
-      if (matches > (articleKeywords.length * 0.5)) continue;
+      const slug = article.title.toLowerCase().substring(0, 20);
+      
+      // TVRDÝ STOP PRO DUPLICITY (Porovnáváme začátek anglického titulku)
+      if (usedKey Phrases.some(p => slug.includes(p) || p.includes(slug))) continue;
 
-      // 3. AI PŘEKLAD
+      // 3. PŘEKLAD (Až když víme, že je to unikátní)
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -73,21 +63,16 @@ export async function GET() {
             role: "system",
             content: "Jsi překladatel pro Hardware Guru. Udělej z anglického titulku úderný český název. Vrať striktně JSON: { \"title\": \"...\" }"
           },
-          { role: "user", content: `Original Title: ${article.title}\nSnippet: ${article.snippet}` }
+          { role: "user", content: `Original: ${article.title}` }
         ],
         response_format: { type: "json_object" }
       });
 
       const processed = JSON.parse(completion.choices[0].message.content);
       const czechTitle = processed.title.trim();
-      const czechKeywords = getKeywords(czechTitle);
-
-      // 4. POSLEDNÍ POJISTKA NA ČESKÝ NÁZEV
-      const czechMatches = czechKeywords.filter(word => forbiddenKeywords.has(word)).length;
-      if (czechMatches > (czechKeywords.length * 0.4)) continue;
 
       // ZÁPIS DO DB
-      const { data, error } = await supabase.from('content_plan').insert({
+      const { data } = await supabase.from('content_plan').insert({
         title: czechTitle,
         release_date: todayISO,
         type: article.type,
@@ -96,8 +81,7 @@ export async function GET() {
 
       if (data) {
         addedCount++;
-        // Ihned přidáme klíčová slova do blacklistu, aby další článek v cyklu nebyl stejný
-        czechKeywords.forEach(word => forbiddenKeywords.add(word));
+        usedKey Phrases.push(slug); // Okamžitá aktualizace pro další iteraci
         log.push({ original: article.title, czech: czechTitle });
       }
     }
