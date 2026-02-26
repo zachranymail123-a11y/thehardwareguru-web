@@ -9,8 +9,57 @@ export const revalidate = 0;
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
+// Nové klíče pro OneSignal (musíš je přidat do Vercelu!)
+const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID; // Toto může být i public, ale klidně dej jen ONESIGNAL_APP_ID
+const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY;
+
 function createSlug(title) {
   return title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); 
+}
+
+// Funkce pro odeslání Push notifikace
+async function sendOneSignalNotification(title, slug) {
+  if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
+    console.warn("OneSignal klíče nejsou nastaveny, notifikace se neodešle.");
+    return false;
+  }
+
+  const articleUrl = `https://www.thehardwareguru.cz/article/${slug}`; // Uprav cestu k článku, pokud ji máš na webu jinak (např. /clanek/...)
+
+  try {
+    const response = await fetch("https://api.onesignal.com/notifications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`,
+      },
+      body: JSON.stringify({
+        app_id: ONESIGNAL_APP_ID,
+        included_segments: ["Total Subscriptions"], // Pošle všem přihlášeným
+        contents: {
+          en: `Nový článek: ${title}`,
+          cs: `Nový článek: ${title}` // Pokud chceš, můžeš přidat českou mutaci
+        },
+        headings: {
+          en: "The Hardware Guru",
+          cs: "The Hardware Guru"
+        },
+        url: articleUrl, // Po kliknutí na notifikaci otevře článek
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Chyba při odesílání OneSignal notifikace:", errorData);
+      return false;
+    }
+    
+    console.log("OneSignal notifikace úspěšně odeslána pro:", title);
+    return true;
+  } catch (error) {
+    console.error("Výjimka při odesílání OneSignal notifikace:", error);
+    return false;
+  }
 }
 
 export async function GET() {
@@ -150,10 +199,14 @@ ${rawContext}`
          throw insertError;
       }
 
+      // ---> ODESLÁNÍ NOTIFIKACE (NOVÉ!) <---
+      // Článek je v DB, můžeme zařvat do světa
+      await sendOneSignalNotification(article.title, finalSlug);
+
       await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
       
       if (permanentImageUrl) {
-          results.push({ title: article.title, status: 'SUCCESS - PUBLIKOVÁNO S TRVALÝM OBRÁZKEM' });
+          results.push({ title: article.title, status: 'SUCCESS - PUBLIKOVÁNO A NOTIFIKOVÁNO' });
       } else {
           results.push({ title: article.title, status: 'SUCCESS - VYDÁNO BEZ OBRÁZKU', image_error: imageErrorLog });
       }
