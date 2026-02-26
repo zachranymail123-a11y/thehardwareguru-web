@@ -14,32 +14,32 @@ function createSlug(title) {
 export async function GET() {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-  // 1. NAJDEME ÚKOL
-  const { data: allPlanned, error: dbError } = await supabase
+  // 1. PRIORITNÍ HLEDÁNÍ RESIDENT EVILA
+  // Hledáme nejdřív RE, aby ho nic nepředběhlo
+  let { data: tasks } = await supabase
     .from('content_plan')
     .select('*')
     .eq('status', 'planned')
+    .ilike('title', '%Resident Evil%')
     .limit(1);
 
-  if (dbError || !allPlanned || allPlanned.length === 0) {
+  // Pokud Resident není, vezmeme cokoliv jiného 'planned'
+  if (!tasks || tasks.length === 0) {
+    const { data: backupTasks } = await supabase
+      .from('content_plan')
+      .select('*')
+      .eq('status', 'planned')
+      .limit(1);
+    tasks = backupTasks;
+  }
+
+  if (!tasks || tasks.length === 0) {
     return NextResponse.json({ error: 'Zadny plan k publikaci.' });
   }
 
-  const task = allPlanned[0];
+  const task = tasks[0];
 
-  // 2. ANTI-DUPLICITA
-  const { data: existing } = await supabase
-    .from('posts')
-    .select('id')
-    .ilike('title', `%${task.title}%`)
-    .limit(1);
-
-  if (existing && existing.length > 0) {
-    await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
-    return NextResponse.json({ message: `Clanok '${task.title}' uz je na webe, preskakujem.` });
-  }
-
-  // 3. HLEDÁNÍ DAT
+  // 2. HLEDÁNÍ DAT
   const res = await fetch('https://google.serper.dev/search', {
     method: 'POST',
     headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
@@ -48,26 +48,21 @@ export async function GET() {
   const searchResults = await res.json();
   const rawContext = JSON.stringify(searchResults.organic || []).substring(0, 10000);
 
-  // 4. GENERUJEME ČLÁNEK (S PŘÍSNÝM HTML FORMÁTEM)
+  // 3. GENERUJEME ČLÁNEK (S HARD HTML STRUKTUROU)
   const completion = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
       {
         role: "system",
-        content: `Jsi The Hardware Guru. Piš ČESKY. Vrať JSON objekt: { "title": "...", "content": "HTML..." }. 
+        content: `Jsi The Hardware Guru. Piš ČESKY. Vrať JSON objekt: { "title": "...", "content": "HTML..." }.
         
-        Pravidla pro HTML v "content":
-        - PLUSY A MÍNUSY: Udělej jako HTML tabulku <table> se dvěma sloupci (Plusy | Mínusy).
-        - SVĚTOVÉ HODNOCENÍ: Udělej jako HTML tabulku <table> (Zdroj | Hodnocení).
-        - HW NÁROKY: Udělej jako HTML tabulku <table> (Komponenta | Minimální | Doporučené).
-        - VERDIKT: Dej do <blockquote>.
-        
-        Nepoužívej Markdown (žádné # nebo **), používej jen čisté HTML tagy (h2, p, table, tr, td, ul, li).`
+        POVINNÁ STRUKTURA V "content":
+        - Tabulka hodnocení (<table>)
+        - Tabulka PLUSY a MÍNUSY (<table> se dvěma sloupci)
+        - Tabulka HW NÁROKŮ (<table>)
+        - Tvůj ostrý GURU VERDIKT v <blockquote>.`
       },
-      { 
-        role: "user", 
-        content: `Vytvoř profesionální recenzi na "${task.title}" ve formátu json z těchto dat: ${rawContext}.` 
-      }
+      { role: "user", content: `Vytvoř recenzi na "${task.title}" z těchto dat: ${rawContext}.` }
     ],
     response_format: { type: "json_object" }
   });
@@ -77,7 +72,7 @@ export async function GET() {
   const finalContent = article.content || "Chyba obsahu.";
   const finalSlug = createSlug(finalTitle);
 
-  // 5. ZÁPIS ČLÁNKU
+  // 4. ZÁPIS ČLÁNKU
   const { error: insertError } = await supabase.from('posts').insert({
     title: finalTitle,
     slug: finalSlug,
@@ -87,7 +82,7 @@ export async function GET() {
 
   if (insertError) return NextResponse.json({ error: 'Chyba zapisu', details: insertError });
 
-  // 6. OZNAČÍME JAKO HOTOVÉ
+  // 5. OZNAČÍME JAKO HOTOVÉ
   await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
 
   return NextResponse.json({ status: 'SUCCESS', message: `Recenze '${finalTitle}' publikovana.` });
