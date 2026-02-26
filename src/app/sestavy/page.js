@@ -9,13 +9,13 @@ export default async function SestavyPage() {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  let views = 0;
-
-  try {
-    // 1. ZAPOČÍTÁME NÁVŠTĚVU (Bezpečně)
-    await supabase.rpc('increment_stat', { stat_name: 'sestavy_views' });
-  } catch (error) {
-    console.error("Chyba při počítání návštěvy:", error);
+  // 1. BEZPEČNÉ POČÍTADLO (Opraveno)
+  // Místo .catch() použijeme standardní { error }, což neshodí aplikaci
+  const { error: rpcError } = await supabase.rpc('increment_stat', { stat_name: 'sestavy_views' });
+  
+  if (rpcError) {
+    // Jen vypíšeme chybu do konzole serveru, ale web pojede dál
+    console.error("Chyba počítadla (nevadí, web běží):", rpcError.message);
   }
 
   // 2. STÁHNEME DATA
@@ -24,7 +24,7 @@ export default async function SestavyPage() {
     supabase.from('stats').select('value').eq('name', 'sestavy_views').single()
   ]);
 
-  views = stats?.value || 0;
+  const views = stats?.value || 0;
 
   return (
     <div style={{ 
@@ -52,7 +52,6 @@ export default async function SestavyPage() {
             border-color: #66fcf1; 
         }
 
-        /* HEADER KARTY */
         .card-header {
             background: rgba(102, 252, 241, 0.05);
             padding: 25px;
@@ -62,10 +61,7 @@ export default async function SestavyPage() {
         .build-name { color: #fff; margin: 0; fontSize: 1.8rem; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; }
         .build-price { color: #66fcf1; fontSize: 1.4rem; font-weight: bold; marginTop: 10px; text-shadow: 0 0 10px rgba(102, 252, 241, 0.3); }
 
-        /* SPECIFIKACE */
-        .specs-container {
-            padding: 25px;
-        }
+        .specs-container { padding: 25px; }
         .spec-row { 
             display: grid; 
             grid-template-columns: 80px 1fr; 
@@ -77,7 +73,6 @@ export default async function SestavyPage() {
         .spec-label { color: #45a29e; font-weight: bold; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; }
         .spec-val { color: #fff; text-align: right; font-weight: 500; font-size: 1rem; }
 
-        /* POPIS (GURU VERDIKT) */
         .desc-box {
             background: rgba(0, 0, 0, 0.3);
             padding: 20px 25px;
@@ -93,7 +88,6 @@ export default async function SestavyPage() {
             margin: 0;
         }
 
-        /* CTA SEKCE (Tlačítko) */
         .cta-box {
             padding: 30px 25px; 
             background: rgba(10, 10, 10, 0.4);
@@ -127,7 +121,6 @@ export default async function SestavyPage() {
             100% { background-position: -100% 0; }
         }
 
-        /* SOCIÁLNÍ SÍTĚ */
         .social-row { 
             display: flex; 
             justify-content: center; 
@@ -177,41 +170,3 @@ export default async function SestavyPage() {
         <h1 style={{ color: '#fff', fontSize: '2.5rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '20px' }}>
           Doporučené herní sestavy <span style={{color: '#66fcf1'}}>2026</span>
         </h1>
-        
-        <div className="expert-badge">
-            🛠️ 20 LET PRAXE JAKO SERVISNÍ TECHNIK
-        </div>
-
-        <p style={{ maxWidth: '800px', margin: '0 auto 50px', fontSize: '1.1rem', color: '#c5c6c7', lineHeight: '1.6' }}>
-          Žádné marketingové kecy. Tohle jsou sestavy, které dávají smysl poměrem cena/výkon. 
-          Jako bývalý servisák kancelářské a výpočetní techniky vím, co se kazí a co drží.
-          Ceny létají nahoru dolů, proto finální doladění děláme <strong>LIVE</strong>.
-        </p>
-
-        {/* SEZNAM SESTAV - KARTY */}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {builds?.map((build) => (
-            <div key={build.id} className="build-card">
-              
-              <div className="card-header">
-                <h2 className="build-name">{build.name}</h2>
-                <div className="build-price">{build.price_range}</div>
-              </div>
-
-              <div className="specs-container">
-                <div className="spec-row"><span className="spec-label">CPU</span><span className="spec-val">{build.cpu}</span></div>
-                <div className="spec-row"><span className="spec-label">GPU</span><span className="spec-val">{build.gpu}</span></div>
-                <div className="spec-row"><span className="spec-label">RAM</span><span className="spec-val">{build.ram}</span></div>
-                <div className="spec-row"><span className="spec-label">SSD</span><span className="spec-val">{build.storage}</span></div>
-              </div>
-
-              <div className="desc-box">
-                <p className="desc-text">
-                   <span style={{color: '#66fcf1', fontWeight: 'bold', marginRight: '5px'}}>GURU VERDIKT:</span> 
-                   "{build.description}"
-                </p>
-              </div>
-
-              <div className="cta-box">
-                <a href="https://kick.com/thehardwareguru" target="_blank" style={{textDecoration: 'none'}}>
-                    <div className
