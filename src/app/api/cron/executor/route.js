@@ -82,19 +82,46 @@ export async function GET() {
       const article = JSON.parse(completion.choices[0].message.content);
       const finalSlug = createSlug(article.title);
 
-      // DALL-E 3 Generování obrázku
-      let imageUrl = null;
+      // ---> NOVÉ ULOŽENÍ OBRÁZKU TRVALE K TOBĚ <---
+      let permanentImageUrl = null;
       try {
+        console.log(`Generuji obrázek pro: ${task.title}`);
+        
+        // 1. Vygenerujeme obrázek přes DALL-E
         const imageResponse = await openai.images.generate({
           model: "dall-e-3",
           prompt: `Create a photorealistic, dramatic, and high-quality thumbnail image for a tech and gaming magazine article titled: "${task.title}". The image must NOT contain any text, letters, or words. Style: modern, sleek, hardware/gaming focus.`,
           n: 1,
           size: "1024x1024",
         });
-        imageUrl = imageResponse.data[0].url;
+        const tempOpenAiUrl = imageResponse.data[0].url;
+
+        // 2. Stáhneme ho do paměti serveru
+        const imgRes = await fetch(tempOpenAiUrl);
+        const arrayBuffer = await imgRes.arrayBuffer();
+        
+        // 3. Vytvoříme unikátní název souboru
+        const fileName = `${finalSlug}-${Date.now()}.png`;
+
+        // 4. Nahrajeme ho do tvého Supabase Bucket 'article_images'
+        const { data: uploadData, error: uploadError } = await supabase
+          .storage
+          .from('article_images')
+          .upload(fileName, arrayBuffer, {
+            contentType: 'image/png',
+            upsert: true
+          });
+
+        if (uploadError) throw uploadError;
+
+        // 5. Získáme z tvého Supabase veřejný, trvalý odkaz
+        const { data: publicUrlData } = supabase.storage.from('article_images').getPublicUrl(fileName);
+        permanentImageUrl = publicUrlData.publicUrl;
+
       } catch (imgErr) {
         console.error("Chyba obrázku:", imgErr.message);
       }
+      // ---> KONEC ÚPRAVY <---
 
       // Zápis nového článku
       const { error: insertError } = await supabase.from('posts').insert({
@@ -102,7 +129,7 @@ export async function GET() {
         slug: finalSlug,
         content: article.content,
         type: task.type,
-        image_url: imageUrl,
+        image_url: permanentImageUrl, // Ukládáme ten TRVALÝ odkaz!
         created_at: new Date().toISOString()
       });
 
@@ -115,7 +142,7 @@ export async function GET() {
       }
 
       await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
-      results.push({ title: article.title, status: 'SUCCESS - PUBLIKOVÁNO S OBRÁZKEM' });
+      results.push({ title: article.title, status: 'SUCCESS - PUBLIKOVÁNO S TRVALÝM OBRÁZKEM' });
       processedCount++; 
 
     } catch (err) {
