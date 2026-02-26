@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 
+// Vynutíme čerstvá data při každém načtení (aby byly vidět nové články z Cronu)
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -9,27 +10,25 @@ export default async function Home() {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. PŘÍMÉ NAČTENÍ ČLÁNKŮ (Žádné složité Promise.all, prostě natvrdo)
+  // 1. JEDNODUCHÉ NAČTENÍ ČLÁNKŮ (Bez žádných try-catch blokád)
   const { data: posts, error } = await supabase
     .from('posts')
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error("Chyba při stahování článků:", error);
-  }
+  if (error) console.error("Chyba DB:", error);
 
-  // 2. NAČTENÍ STATISTIK
+  // 2. JEDNODUCHÉ NAČTENÍ STATISTIK
   const { data: stats } = await supabase
     .from('stats')
     .select('value')
     .eq('name', 'total_visits')
     .single();
 
-  const celkemNavstev = stats?.value || 0;
+  // 3. PŘIČTENÍ NÁVŠTĚVY (Jediná věc v catch, protože to není kritické)
+  await supabase.rpc('increment_total_visits').catch(e => console.log('Chyba počítadla:', e));
 
-  // 3. PŘIČTENÍ NÁVŠTĚVY (Bokem, ať nebrzdí web)
-  await supabase.rpc('increment_total_visits').catch((e) => console.error(e));
+  const celkemNavstev = stats?.value || 0;
 
   const getThumbnail = (post) => {
     if (post.video_id && post.video_id.length > 5) {
@@ -94,25 +93,25 @@ export default async function Home() {
         <h2 style={{ color: '#fff', textAlign: 'center', marginBottom: '40px', fontSize: '2.5rem', fontWeight: '900', textTransform: 'uppercase' }}>Nejnovější články & Videa</h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '40px' }}>
-          {posts && posts.length > 0 ? (
-            posts.map((post) => (
-              <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
-                <div className="game-card">
-                  <div style={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden' }}>
-                    <img src={getThumbnail(post)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                  <div style={{ padding: '25px', flex: 1 }}>
-                    <h3 style={{ color: '#fff', fontSize: '1.3rem', marginBottom: '15px', lineHeight: '1.4' }}>{post.title}</h3>
-                    <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6' }}>
-                      {(post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 120)}...
-                    </p>
-                  </div>
+          {posts?.map((post) => (
+            <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
+              <div className="game-card">
+                <div style={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden' }}>
+                  <img src={getThumbnail(post)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
-              </Link>
-            ))
-          ) : (
-            <div style={{ gridColumn: '1/-1', textAlign: 'center', color: '#fff', padding: '50px' }}>
-                Žádné články nenalezeny. (Ale v DB být musí, pokud cron doběhl)
+                <div style={{ padding: '25px', flex: 1 }}>
+                  <h3 style={{ color: '#fff', fontSize: '1.3rem', marginBottom: '15px', lineHeight: '1.4' }}>{post.title}</h3>
+                  <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                    {(post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 120)}...
+                  </p>
+                </div>
+              </div>
+            </Link>
+          ))}
+          
+          {(!posts || posts.length === 0) && (
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '50px', border: '1px dashed red' }}>
+                POZOR: Databáze nevrátila žádná data. Zkontroluj RLS policies v Supabase.
             </div>
           )}
         </div>
