@@ -9,10 +9,10 @@ export default async function Home() {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. Počítadlo (tiše, bez pádu)
+  // 1. Počítadlo (bezpečně, aby neshodilo web)
   await supabase.rpc('increment_total_visits').catch(() => {});
 
-  // 2. Data - bezpečné stažení
+  // 2. Data - základní bezpečné stažení
   const { data: posts } = await supabase
     .from('posts')
     .select('*')
@@ -127,7 +127,7 @@ export default async function Home() {
           ))}
           {(!posts || posts.length === 0) && (
              <div style={{gridColumn: '1/-1', textAlign: 'center', color: '#fff', padding: '50px', border: '1px dashed #45a29e'}}>
-                Žádný obsah. Databáze je prázdná.
+                Žádný obsah. Databáze je prázdná (podle SQL). Vlož tam data.
              </div>
           )}
         </div>
