@@ -14,7 +14,7 @@ async function getTrends(query, location = "us", language = "en") {
     headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
     body: JSON.stringify({ 
       q: query, 
-      tbs: "qdr:d",
+      tbs: "qdr:d", // Striktně posledních 24 hodin
       gl: location,
       hl: language,
       num: 10 
@@ -27,25 +27,28 @@ async function getTrends(query, location = "us", language = "en") {
 export async function GET() {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const now = new Date();
+  
+  // Přidáno přesné datum pro lepší orientaci AI
+  const dateString = `${now.getDate()}. ${now.getMonth() + 1}. ${now.getFullYear()}`;
   const currentMonth = now.toLocaleString('en-US', { month: 'long' });
   const currentYear = now.getFullYear();
 
   try {
-    // ---> NOVINKA 1: ZJISTÍME, CO UŽ NA WEBU MÁME <---
-    // Vytáhneme posledních 20 naplánovaných nebo vydaných témat
-    const { data: recentPlans } = await supabase.from('content_plan').select('title').order('id', { ascending: false }).limit(20);
+    // Vytáhneme posledních 30 naplánovaných nebo vydaných témat pro kontrolu duplicit
+    const { data: recentPlans } = await supabase.from('content_plan').select('title').order('id', { ascending: false }).limit(30);
     const existingTitles = recentPlans ? recentPlans.map(p => p.title).join(' | ') : 'Zatím žádné články';
 
-    const hwQueryCZ = `hardware novinky recenze testy GPU CPU MB RAM ${currentYear}`;
+    // Agresivnější vyhledávací fráze s vynuceným aktuálním rokem a měsícem!
+    const hwQueryCZ = `hardware "právě odhaleno" OR "únik" OR "novinka" GPU CPU "${now.getMonth() + 1}/${currentYear}"`;
     const hwTrendsCZ = await getTrends(hwQueryCZ, "cz", "cs");
     
-    const hwQueryEN = `latest hardware leaks benchmarks GPU CPU MB RAM reviews ${currentMonth} ${currentYear} site:videocardz.com OR site:wccftech.com`;
+    const hwQueryEN = `breaking hardware leaks announcements GPU CPU reviews "${currentMonth} ${currentYear}" site:videocardz.com OR site:tomshardware.com`;
     const hwTrendsEN = await getTrends(hwQueryEN, "us", "en");
 
-    const gameQueryCZ = `herní recenze novinky hry ${currentYear}`;
+    const gameQueryCZ = `herní bleskovky "oznámeno" OR "vyšlo dnes" recenze "${now.getMonth() + 1}/${currentYear}"`;
     const gameTrendsCZ = await getTrends(gameQueryCZ, "cz", "cs");
 
-    const gameQueryEN = `latest AAA game reviews releases scores ${currentMonth} ${currentYear} site:ign.com OR site:gamespot.com`;
+    const gameQueryEN = `breaking AAA game news announcements leaks reviews "${currentMonth} ${currentYear}" site:ign.com OR site:insider-gaming.com`;
     const gameTrendsEN = await getTrends(gameQueryEN, "us", "en");
 
     const combinedTrends = JSON.stringify({
@@ -58,27 +61,28 @@ export async function GET() {
       messages: [
         {
           role: "system",
-          content: `Jsi šéfredaktor The Hardware Guru. Je ${now.getDate()}. ${currentMonth} ${currentYear}.
-          Máš k dispozici data z posledních 24 hodin z Česka i ze světa.
+          content: `Jsi nemilosrdný šéfredaktor bleskového zpravodajství The Hardware Guru. Přesné dnešní datum je: ${dateString}.
           
-          TVOJE PRAVIDLA:
-          1. PRIORITA: Pokud existuje ČESKÝ zdroj z posledních 24h o daném tématu, použij ho.
-          2. DOPLNĚNÍ: Pokud v Česku nic nového není, použij světové leaky.
-          3. VÝBĚR: Vyber 2x HW (GPU/CPU/MB/RAM) a 2x Hry.
-          4. ANTI-DUPLICITA (ZÁSADNÍ): Tady je seznam článků, které už na webu jsou: [ ${existingTitles} ]. NESMÍŠ vybrat žádné téma, které je stejné nebo velmi podobné těmto článkům. Vymysli úplně jiné novinky!
+          TVOJE JEDINÁ PRÁCE JE HLEDAT MEGA NOVINKY A LEAKY Z POSLEDNÍCH 24 HODIN!
           
-          Vrať striktně JSON: 
-          { "plan": [ { "title": "...", "type": "hardware", "release_date": "${now.toISOString().split('T')[0]}" } ] }
-          DŮLEŽITÉ: Do 'type' napiš VŽDY jen přesné slovo 'game' nebo 'hardware'.`
+          PRAVIDLA PŘEŽITÍ:
+          1. ZÁKAZ STARÝCH SRAČEK (KRITICKÉ): Nesmíš vybrat článek o hrách nebo HW, které už dávno vyšly. Jestli vybereš zprávu starší než 2 dny, vyhodím tě. Hledej slova jako "dnes", "včera", "právě odhaleno".
+          2. OBHÁJENÍ: U každého vybraného tématu musíš do pole 'reason' napsat, proč je to novinka PRÁVĚ Z DNEŠKA.
+          3. TÉMATA: Vyber 2x HARDWARE (leaky nových grafik, dnešní recenze) a 2x HRY (mega oznámení, recenze her co VYŠLY DNES).
+          4. ANTI-DUPLICITA: Zde jsou články, co už máme: [ ${existingTitles} ]. NESMÍŠ vybrat NIC, co se tomu jen trochu podobá!
+          
+          Vrať striktně JSON (nezapomeň na pole 'reason'!): 
+          { "plan": [ { "title": "...", "type": "hardware", "reason": "Dnes na redditu unikly specifikace...", "release_date": "${now.toISOString().split('T')[0]}" } ] }
+          DŮLEŽITÉ: Názvy článků ať jsou v češtině, úderné a clickbaitové.`
         },
-        { role: "user", content: `Data k analýze: ${combinedTrends}` }
+        { role: "user", content: `Data z internetu za posledních 24h: ${combinedTrends}` }
       ],
       response_format: { type: "json_object" }
     });
 
     const newTasks = JSON.parse(completion.choices[0].message.content).plan;
 
-    // 4. ZÁPIS DO DB S DRSNOU KONTROLOU DUPLICIT A CHYB
+    // Zápis do databáze s ochranou duplicit
     let addedCount = 0;
     let dbErrors = [];
     let insertedRows = [];
@@ -86,8 +90,6 @@ export async function GET() {
     for (const task of newTasks) {
       const safeType = task.type.includes('game') ? 'game' : 'hardware';
 
-      // ---> NOVINKA 2: TVRDÝ VYHAZOVAČ PŘED ZÁPISEM <---
-      // Podíváme se do databáze, jestli tam přesně tenhle název už náhodou není
       const { data: checkDuplicate } = await supabase
         .from('content_plan')
         .select('id')
@@ -95,11 +97,10 @@ export async function GET() {
         .limit(1);
 
       if (checkDuplicate && checkDuplicate.length > 0) {
-        dbErrors.push({ title: task.title, error_message: "ZACHYCENA DUPLICITA: Tento článek už v databázi je, zahazuji." });
-        continue; // Ukončí smyčku pro tento článek a přeskočí na další
+        dbErrors.push({ title: task.title, error_message: "DUPLICITA - Zahozeno." });
+        continue; 
       }
 
-      // Pokud jsme tady, článek je unikátní. Zapisujeme:
       const { data, error } = await supabase.from('content_plan').insert({
         title: task.title,
         release_date: task.release_date,
@@ -108,20 +109,17 @@ export async function GET() {
       }).select();
       
       if (error) {
-        dbErrors.push({ title: task.title, error_message: error.message, error_details: error.details });
+        dbErrors.push({ title: task.title, error_message: error.message });
       } else if (data && data.length > 0) {
         addedCount++;
-        insertedRows.push(data[0]);
-      } else {
-        dbErrors.push({ title: task.title, error_message: "Neznámá chyba: Supabase nevrátila data ani chybu." });
+        // Přidáme důvod do logu, ať vidíme, jak se AI obhájila
+        insertedRows.push({ ...data[0], ai_reason: task.reason }); 
       }
     }
 
-    // VYPLIVNEME ÚPLNĚ VŠECHNO NA OBRAZOVKU
     return NextResponse.json({ 
-      status: dbErrors.length > 0 ? 'DOKONCENO_S_VAROVANIM_NEBO_CHYBOU' : 'SUCCESS', 
+      status: dbErrors.length > 0 ? 'DOKONCENO_S_VAROVANIM' : 'SUCCESS', 
       added: addedCount,
-      ai_vymyslelo: newTasks,
       db_skutecne_zapsala: insertedRows,
       zahozeno_nebo_chyby: dbErrors
     });
