@@ -14,18 +14,34 @@ function createSlug(title) {
 export async function GET() {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-  // 1. NAJDEME ÚKOL
+  // 1. NAJDEME ÚKOL (Vezmeme první plánovaný)
   const { data: tasks, error: fetchError } = await supabase
     .from('content_plan')
     .select('*')
     .eq('status', 'planned')
+    .order('created_at', { ascending: true }) // Abychom nebrali náhodně
     .limit(1);
 
   if (fetchError || !tasks || tasks.length === 0) {
-    return NextResponse.json({ error: 'Zadny plan k publikaci.', details: fetchError });
+    return NextResponse.json({ error: 'Zadny plan k publikaci.' });
   }
 
   const task = tasks[0];
+
+  // --- ANTI-DUPLICITA ---
+  // Zkontrolujeme, jestli už článek o této hře náhodou nemáme v tabulce posts
+  const { data: existingPost } = await supabase
+    .from('posts')
+    .select('id')
+    .ilike('title', `%${task.title}%`)
+    .limit(1);
+
+  if (existingPost && existingPost.length > 0) {
+    // Pokud už existuje, označíme úkol jako hotový a jdeme dál
+    await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
+    return NextResponse.json({ message: `Článek '${task.title}' už existuje, přeskakuji.` });
+  }
+  // ---------------------
 
   // 2. HLEDÁNÍ DAT
   const res = await fetch('https://google.serper.dev/search', {
@@ -42,57 +58,35 @@ export async function GET() {
     messages: [
       {
         role: "system",
-        content: `Jsi The Hardware Guru, český expert. Piš VŽDY ČESKY. 
-        Musíš vrátit JSON objekt přesně v tomto formátu: 
-        { 
-          "title": "Název článku", 
-          "content": "HTML obsah (tabulky, plusy/mínusy, verdikt)" 
-        }
-        V instrukcích je formát json.`
+        content: `Jsi The Hardware Guru. Piš ČESKY. Vrať JSON: { "title": "...", "content": "HTML..." }`
       },
-      { 
-        role: "user", 
-        content: `Vytvoř profesionální českou recenzi na "${task.title}" na základě těchto dat: ${rawContext}. 
-        Obsah musí být HTML a obsahovat: 
-        1. Tabulku světových hodnocení (Web vs Známka).
-        2. Seznam ✅ PLUSŮ a ❌ MÍNUSŮ.
-        3. Tabulku HW nároků.
-        4. Ostrý GURU VERDIKT.` 
-      }
+      { role: "user", content: `Vytvoř recenzi na "${task.title}" z dat: ${rawContext}.` }
     ],
     response_format: { type: "json_object" }
   });
 
   const article = JSON.parse(completion.choices[0].message.content);
-  
-  // POJISTKA PROTI NULL VALUE (Zajišťuje, že content nebude prázdný)
   const finalTitle = article.title || task.title;
-  const finalContent = article.content || article.text || article.html || "Chyba při generování obsahu AI.";
+  const finalContent = article.content || "Chyba obsahu.";
   const finalSlug = createSlug(finalTitle);
 
   // 4. ZÁPIS ČLÁNKU
   const { error: insertError } = await supabase.from('posts').insert({
     title: finalTitle,
     slug: finalSlug,
-    content: finalContent, // Už nikdy nebude NULL
-    created_at: new Date().toISOString(),
-    video_id: null
+    content: finalContent,
+    created_at: new Date().toISOString()
   });
 
-  if (insertError) {
-    return NextResponse.json({ 
-      error: 'Chyba zapisu do posts', 
-      details: insertError,
-      tried_to_insert: { title: finalTitle, slug: finalSlug }
-    });
-  }
+  if (insertError) return NextResponse.json({ error: 'Chyba zapisu', details: insertError });
 
-  // 5. OZNAČÍME JAKO HOTOVÉ
-  await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
+  // 5. OZNAČÍME JAKO HOTOVÉ (DŮLEŽITÉ!)
+  const { error: updateError } = await supabase
+    .from('content_plan')
+    .update({ status: 'published' })
+    .eq('id', task.id);
 
-  return NextResponse.json({ 
-    status: 'SUCCESS', 
-    message: `Recenze '${finalTitle}' publikována.`,
-    slug: finalSlug
-  });
+  if (updateError) return NextResponse.json({ error: 'Chyba pri updatu statusu v planu', details: updateError });
+
+  return NextResponse.json({ status: 'SUCCESS', message: `Recenze '${finalTitle}' publikována.` });
 }
