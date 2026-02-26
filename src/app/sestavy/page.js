@@ -9,12 +9,16 @@ export default async function SestavyPage() {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Stáhneme aktivní sestavy
-  const { data: builds } = await supabase
-    .from('pc_builds')
-    .select('*')
-    .eq('active', true)
-    .order('created_at', { ascending: false });
+  // 1. ZAPOČÍTÁME NÁVŠTĚVU (Zavoláme novou funkci)
+  await supabase.rpc('increment_stat', { stat_name: 'sestavy_views' }).catch(err => console.error(err));
+
+  // 2. STÁHNEME DATA (Sestavy + Počet zobrazení)
+  const [{ data: builds }, { data: stats }] = await Promise.all([
+    supabase.from('pc_builds').select('*').eq('active', true).order('created_at', { ascending: false }),
+    supabase.from('stats').select('value').eq('name', 'sestavy_views').single()
+  ]);
+
+  const views = stats?.value || 0;
 
   return (
     <div style={{ 
@@ -183,13 +187,11 @@ export default async function SestavyPage() {
           {builds?.map((build) => (
             <div key={build.id} className="build-card">
               
-              {/* 1. HLAVIČKA: NÁZEV A CENA */}
               <div className="card-header">
                 <h2 className="build-name">{build.name}</h2>
                 <div className="build-price">{build.price_range}</div>
               </div>
 
-              {/* 2. SPECIFIKACE */}
               <div className="specs-container">
                 <div className="spec-row"><span className="spec-label">CPU</span><span className="spec-val">{build.cpu}</span></div>
                 <div className="spec-row"><span className="spec-label">GPU</span><span className="spec-val">{build.gpu}</span></div>
@@ -197,7 +199,6 @@ export default async function SestavyPage() {
                 <div className="spec-row"><span className="spec-label">SSD</span><span className="spec-val">{build.storage}</span></div>
               </div>
 
-              {/* 3. GURU POPIS (ODDĚLENÝ) */}
               <div className="desc-box">
                 <p className="desc-text">
                    <span style={{color: '#66fcf1', fontWeight: 'bold', marginRight: '5px'}}>GURU VERDIKT:</span> 
@@ -205,17 +206,13 @@ export default async function SestavyPage() {
                 </p>
               </div>
 
-              {/* 4. TLAČÍTKO A ODKAZY */}
               <div className="cta-box">
-                
-                {/* ODKAZ NA KICK (TEXT) */}
                 <a href="https://kick.com/thehardwareguru" target="_blank" style={{textDecoration: 'none'}}>
                     <div className="cta-link-text">
                        ⚠️ CHCEŠ PC? MÁŠ PŘEDSTAVU, ALE NEVÍŠ CO A JAK? JSI NA SPRÁVNÉM MÍSTĚ!
                     </div>
                 </a>
 
-                {/* PODMÍNKA SUBSCRIBE - NYNÍ KLIKATELNÁ */}
                 <div style={{ fontSize: '0.9rem', color: '#fff', marginBottom: '20px', fontWeight: 'bold', letterSpacing: '1px' }}>
                     PODMÍNKA: 
                     <a href="https://kick.com/thehardwareguru" target="_blank" style={{color: '#53fc18', borderBottom: '1px solid #53fc18', textDecoration: 'none', marginLeft: '5px'}}>
@@ -247,6 +244,11 @@ export default async function SestavyPage() {
         {(!builds || builds.length === 0) && (
             <p style={{color: '#fff', fontSize: '1.2rem', marginTop: '50px'}}>Momentálně ladím nové sestavy. Doraž na Discord!</p>
         )}
+
+        {/* POČÍTADLO ZOBRAZENÍ V PATIČCE */}
+        <div style={{ textAlign: 'center', marginTop: '60px', color: '#45a29e', fontSize: '0.9rem', opacity: 0.8 }}>
+            ZÁJEM O PC SESTAVY PROJEVILO JIŽ <strong style={{color: '#fff'}}>{views}</strong> GAMERŮ 🦾
+        </div>
       </div>
     </div>
   );
