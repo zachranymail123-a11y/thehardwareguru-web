@@ -1,6 +1,6 @@
 import './globals.css'; // TADY JE TO PROPOJENÍ
 import Script from 'next/script';
-import SestavyBubble from '@/components/SestavyBubble'; // IMPORT BUBLINY
+import SestavyBubble from '../components/SestavyBubble'; // ZMĚNA: Relativní cesta místo aliasu @
 
 export const metadata = {
   title: {
