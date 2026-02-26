@@ -7,18 +7,18 @@ export const dynamic = 'force-dynamic';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
-// Agresivní vyhledávání s důrazem na dnešní datum
-async function getDeepTrends(query) {
+async function getFreshTrends(query) {
   const res = await fetch('https://google.serper.dev/search', {
     method: 'POST',
     headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
     body: JSON.stringify({ 
       q: query, 
-      tbs: "qdr:d", // Pouze posledních 24 hodin!
+      tbs: "qdr:h12", // FILTR: POUZE POSLEDNÍCH 12 HODIN
       num: 30 
     })
   });
   const data = await res.json();
+  // Serper vrací pole 'organic', kde u každého výsledku bývá 'date' (např. "2 hours ago")
   return data.organic || [];
 }
 
@@ -34,29 +34,26 @@ export async function GET() {
     const sources = "site:videocardz.com OR site:techpowerup.com OR site:wccftech.com OR site:ign.com OR site:vgc.com OR site:pcgamer.com OR site:tomshardware.com OR site:eurogamer.net";
 
     const [hwData, gameData] = await Promise.all([
-      getDeepTrends(`${sources} hardware "leak" OR "benchmark" OR "specs" GPU CPU 2026`),
-      getDeepTrends(`${sources} game "official" OR "announcement" OR "trailer" 2026`)
+      getFreshTrends(`${sources} hardware "breaking" OR "leak" OR "benchmark" GPU CPU`),
+      getFreshTrends(`${sources} game "announced" OR "released" OR "review"`)
     ]);
-
-    const combinedContext = JSON.stringify({ hardware: hwData, gaming: gameData }).substring(0, 18000);
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: `Jsi nemilosrdný šéfredaktor The Hardware Guru. Dnes je: ${dateStr}.
+          content: `Jsi analytik technického zpravodajství. Dnes je: ${dateStr}.
+          ÚKOL: Vyber 2x HW a 2x GAME novinku, které vyšly SKUTEČNĚ DNES.
           
-          TVOJE POVINNOST:
-          1. Vyber PŘESNĚ 2x "hardware" a PŘESNĚ 2x "game".
-          2. ZÁKAZ HALUCINACÍ: Nevymýšlej si Elden Ring 2, PS6 ani nic, co není v datech.
-          3. ŽÁDNÝ STARÝ BALAST: Ryzen 8000 nebo RTX 30 jsou staré věci. Hledej RTX 50, Ryzen 9000 atd.
-          4. VERIFIKACE: Musíš uvést, ze kterého webu jsi zprávu vzal.
-          5. ANTI-DUPLICITA: Neopakuj: [ ${blacklisted} ].
+          VERIFIKAČNÍ PROTOKOL:
+          1. KONTROLA ČASU: V datech hledej časové značky (např. "2 hours ago", "4 hours ago"). Pokud je článek bez časové značky nebo starší než 12h, ignoruj ho.
+          2. ZÁKAZ RECYKLÁTŮ: Články o Mille Jovovich, starých Ryzenech nebo starých oznámeních Witcher 4 jsou zakázány.
+          3. DUPLICITA: Nekontroluj jen doslovný název, ale i téma: [ ${blacklisted} ].
           
-          Vrať JSON: { "plan": [ { "title": "Český název", "type": "hardware/game", "source": "Název webu", "reason": "Důkaz reálnosti" } ] }`
+          Vrať JSON: { "plan": [ { "title": "...", "type": "hardware/game", "age_proof": "přesná citace času z dat", "source": "web" } ] }`
         },
-        { role: "user", content: `Data: ${combinedContext}` }
+        { role: "user", content: `Čerstvá data (posledních 12h): ${JSON.stringify({ hw: hwData, game: gameData }).substring(0, 16000)}` }
       ],
       response_format: { type: "json_object" }
     });
@@ -65,17 +62,15 @@ export async function GET() {
     let addedCount = 0;
     let log = [];
 
-    // --- SEZNAM ZAKÁZANÝCH STARÝCH/LHAVÝCH TÉMAT ---
-    const forbidden = ['elden ring 2', 'ryzen 8000', 'ps6', 'rtx 30', 'milla jovovich', 'resident evil movie', 'half-life 3'];
-
     for (const task of tasks) {
-      const text = (task.title + " " + task.reason).toLowerCase();
-      
-      // Detektor lži: Pokud je to v zakázaných, jdeme dál
-      if (forbidden.some(word => text.includes(word))) continue;
+      // 1. ZPĚTNÁ KONTROLA V KÓDU: Pokud AI nenašla důkaz o čase, letí to ven
+      if (!task.age_proof || task.age_proof.toLowerCase().includes('day')) continue;
 
-      const hwSignals = ['gpu', 'cpu', 'nvidia', 'amd', 'intel', 'rtx', 'ryzen', 'benchmark', 'leak', 'specs', 'ti', 'chip', 'nm', 'vram', 'socket'];
-      const gameSignals = ['game', 'hra', 'pc', 'steam', 'ps5', 'xbox', 'playstation', 'nintendo', 'switch', 'studio', 'trailer', 'patch', 'update', 'release'];
+      const text = (task.title + " " + task.age_proof).toLowerCase();
+      
+      // 2. POJISTKA TYPU (PC/Steam = Game)
+      const hwSignals = ['gpu', 'cpu', 'nvidia', 'amd', 'intel', 'rtx', 'ryzen', 'bench', 'vram', 'ti', 'socket'];
+      const gameSignals = ['game', 'hra', 'pc', 'steam', 'ps5', 'xbox', 'nintendo', 'studio', 'patch', 'trailer'];
 
       let hwScore = hwSignals.filter(s => text.includes(s)).length;
       let gameScore = gameSignals.filter(s => text.includes(s)).length;
@@ -83,8 +78,9 @@ export async function GET() {
       let finalType = task.type.toLowerCase();
       if (hwScore > gameScore && hwScore > 0) finalType = 'hardware';
       if (gameScore > hwScore && gameScore > 0) finalType = 'game';
+      if ((text.includes('pc') || text.includes('steam')) && hwScore === 0) finalType = 'game';
 
-      // Kontrola duplicity
+      // 3. DUPLICITA
       const { data: dup } = await supabase.from('content_plan').select('id').eq('title', task.title).limit(1);
       if (dup && dup.length > 0) continue;
 
@@ -97,12 +93,11 @@ export async function GET() {
 
       if (data) {
         addedCount++;
-        log.push({ title: task.title, type: finalType, source: task.source });
+        log.push({ title: task.title, age: task.age_proof, source: task.source });
       }
     }
 
     return NextResponse.json({ status: 'DONE', added: addedCount, db_zapis: log });
-
   } catch (err) {
     return NextResponse.json({ error: err.message });
   }
