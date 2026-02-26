@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 
+// TYTO DVA ŘÁDKY JSOU KLÍČOVÉ PRO CRON - Vynutí čerstvá data při každém načtení
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -9,28 +10,31 @@ export default async function Home() {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Inicializace s prázdným polem, aby map() dole neselhal, pokud DB nic nevrátí
   let posts = [];
   let celkemNavstev = 0;
 
   try {
-    // 1. PŘIČTEME NÁVŠTĚVU (Nesmí shodit web)
+    // 1. PŘIČTEME NÁVŠTĚVU
     await supabase.rpc('increment_total_visits').catch(() => {});
 
-    // 2. STÁHNEME DATA - Tady musí být ten dotaz naprosto čistý
-    const [postsResult, statsResult] = await Promise.all([
-      supabase.from('posts').select('*').order('created_at', { ascending: false }),
-      supabase.from('stats').select('value').eq('name', 'total_visits').single()
-    ]);
+    // 2. STÁHNEME DATA - Taháme vše z tabulky posts
+    const { data: postsData, error: postsError } = await supabase
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-    // KLÍČOVÁ OPRAVA: Přiřazujeme data přímo z výsledku dotazu
-    if (postsResult.data) {
-      posts = postsResult.data;
-    }
+    const { data: statsData } = await supabase
+      .from('stats')
+      .select('value')
+      .eq('name', 'total_visits')
+      .single();
+
+    if (postsError) throw postsError;
     
-    celkemNavstev = statsResult.data?.value || 0;
+    posts = postsData || [];
+    celkemNavstev = statsData?.value || 0;
   } catch (error) {
-    console.error("Kritická chyba načítání:", error);
+    console.error("Chyba při načítání dat:", error);
   }
 
   const getThumbnail = (post) => {
@@ -73,6 +77,7 @@ export default async function Home() {
         </div>
       </nav>
 
+      {/* BIO HEADER */}
       <header style={{ maxWidth: '1200px', margin: '60px auto', padding: '40px', background: 'rgba(31, 40, 51, 0.95)', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap' }}>
         <div style={{ flex: '1', minWidth: '300px' }}>
             <h1 style={{ color: '#66fcf1', fontSize: '2.5rem', marginBottom: '20px', textTransform: 'uppercase', fontWeight: '900' }}>The Hardware Guru</h1>
@@ -90,11 +95,12 @@ export default async function Home() {
         </div>
       </header>
 
+      {/* ČLÁNKY */}
       <main style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
         <h2 style={{ color: '#fff', textAlign: 'center', marginBottom: '40px', fontSize: '2.5rem', fontWeight: '900', textTransform: 'uppercase' }}>Nejnovější články & Videa</h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '40px' }}>
-          {posts && posts.length > 0 ? (
+          {posts.length > 0 ? (
             posts.map((post) => (
               <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
                 <div className="game-card">
