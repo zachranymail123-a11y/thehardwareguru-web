@@ -7,11 +7,11 @@ export const dynamic = 'force-dynamic';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
-async function getRawTodayData(query) {
+async function getCategoryData(query) {
   const res = await fetch('https://google.serper.dev/search', {
     method: 'POST',
     headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ q: query, tbs: "qdr:h12", num: 20 })
+    body: JSON.stringify({ q: query, tbs: "qdr:h12", num: 10 })
   });
   const data = await res.json();
   return data.organic || [];
@@ -23,71 +23,61 @@ export async function GET() {
   const todayISO = now.toISOString().split('T')[0];
 
   try {
-    // 1. SBĚR DAT ZE SERPERU
-    const sources = "site:videocardz.com OR site:techpowerup.com OR site:wccftech.com OR site:ign.com OR site:vgc.com OR site:pcgamer.com OR site:tomshardware.com";
+    // 1. SBĚR DAT - STRIKTNĚ ODDĚLENÉ ZDROJE
+    const hwSources = "site:videocardz.com OR site:techpowerup.com OR site:wccftech.com";
+    const gameSources = "site:ign.com OR site:vgc.com OR site:pcgamer.com OR site:eurogamer.net";
+    
     const [hwRaw, gameRaw] = await Promise.all([
-      getRawTodayData(`${sources} hardware GPU CPU leak benchmark`),
-      getRawTodayData(`${sources} game "official" OR "announcement" OR "trailer"`)
+      getCategoryData(`${hwSources} hardware GPU CPU leak benchmark`),
+      getCategoryData(`${gameSources} game official announcement trailer news`)
     ]);
 
-    const rawList = [
-      ...hwRaw.map(a => ({ ...a, type: 'hardware' })),
-      ...gameRaw.map(a => ({ ...a, type: 'game' }))
-    ];
+    // 2. NAČTENÍ HISTORIE URL (Pojistka proti duplicitám)
+    const { data: existing } = await supabase.from('content_plan').select('source_url');
+    const usedUrls = new Set(existing ? existing.map(r => r.source_url) : []);
 
-    // 2. NAČTENÍ HISTORIE (48h) PRO TVRDOU KONTROLU DUPLICITY
-    const { data: existing } = await supabase
-      .from('content_plan')
-      .select('title')
-      .gte('release_date', new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString().split('T')[0]);
-    
-    // Vytvoření blacklistu z existujících názvů (bez mezer v proměnné!)
-    const usedPhrases = existing ? existing.map(e => e.title.toLowerCase().substring(0, 15)) : [];
-
-    let addedCount = 0;
     let log = [];
 
-    for (const article of rawList) {
-      if (addedCount >= 4) break;
+    // Funkce pro zpracování jedné kategorie
+    const processCategory = async (rawItems, type) => {
+      let count = 0;
+      for (const item of rawItems) {
+        if (count >= 2) break; // Chceme přesně 2 na kategorii
+        if (usedUrls.has(item.link)) continue; // Tvrdý stop duplicity přes URL
 
-      // Unikátní otisk z anglického titulku
-      const slug = article.title.toLowerCase().substring(0, 15);
-      
-      // KONTROLA DUPLICITY PŘED VOLÁNÍM AI
-      if (usedPhrases.some(p => slug.includes(p) || p.includes(slug))) continue;
+        // AI jen přeloží titulek, o ničem jiném nerozhoduje
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: "Jsi překladatel. Udělej z anglického titulku úderný český název. JSON: { \"title\": \"...\" }" },
+            { role: "user", content: item.title }
+          ],
+          response_format: { type: "json_object" }
+        });
 
-      // 3. PŘEKLAD PŘES OPENAI
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "Jsi překladatel pro Hardware Guru. Udělej z anglického titulku úderný český název. Vrať JSON: { \"title\": \"...\" }"
-          },
-          { role: "user", content: `Original: ${article.title}` }
-        ],
-        response_format: { type: "json_object" }
-      });
+        const czechTitle = JSON.parse(completion.choices[0].message.content).title;
 
-      const processed = JSON.parse(completion.choices[0].message.content);
-      const czechTitle = processed.title.trim();
+        const { data } = await supabase.from('content_plan').insert({
+          title: czechTitle,
+          release_date: todayISO,
+          type: type,
+          status: 'planned',
+          source_url: item.link // Ukládáme URL pro příští kontrolu
+        }).select();
 
-      // ZÁPIS DO DATABÁZE
-      const { data } = await supabase.from('content_plan').insert({
-        title: czechTitle,
-        release_date: todayISO,
-        type: article.type,
-        status: 'planned'
-      }).select();
-
-      if (data) {
-        addedCount++;
-        usedPhrases.push(slug); // Přidáme slug, aby se neopakovalo téma v rámci jednoho běhu
-        log.push({ original: article.title, czech: czechTitle });
+        if (data) {
+          usedUrls.add(item.link);
+          log.push({ title: czechTitle, type: type });
+          count++;
+        }
       }
-    }
+    };
 
-    return NextResponse.json({ status: 'DONE', added: addedCount, db_zapis: log });
+    // Spustíme obě kategorie nezávisle
+    await processCategory(hwRaw, 'hardware');
+    await processCategory(gameRaw, 'game');
+
+    return NextResponse.json({ status: 'DONE', items: log });
 
   } catch (err) {
     return NextResponse.json({ error: err.message });
