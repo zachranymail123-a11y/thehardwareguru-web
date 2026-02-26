@@ -215,9 +215,12 @@ export default async function SestavyPage() {
                     </div>
                 </a>
 
-                {/* PODMÍNKA SUBSCRIBE */}
+                {/* PODMÍNKA SUBSCRIBE - NYNÍ KLIKATELNÁ */}
                 <div style={{ fontSize: '0.9rem', color: '#fff', marginBottom: '20px', fontWeight: 'bold', letterSpacing: '1px' }}>
-                    PODMÍNKA: <span style={{color: '#53fc18', borderBottom: '1px solid #53fc18'}}>SUBSCRIBE NA KICKU</span> 💚
+                    PODMÍNKA: 
+                    <a href="https://kick.com/thehardwareguru" target="_blank" style={{color: '#53fc18', borderBottom: '1px solid #53fc18', textDecoration: 'none', marginLeft: '5px'}}>
+                        SUBSCRIBE NA KICKU
+                    </a> 💚
                 </div>
                 
                 <a href="https://discord.com/invite/n7xThr8" target="_blank" className="cta-button">
