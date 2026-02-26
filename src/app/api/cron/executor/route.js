@@ -56,7 +56,7 @@ export async function GET() {
     : `${task.title} official specs performance release date rumors`;
 
   const searchResults = await searchDetails(searchQuery);
-  const rawContext = JSON.stringify(searchResults.organic || []).substring(0, 8000); // Ořízneme, ať nepřehltíme GPT
+  const rawContext = JSON.stringify(searchResults.organic || []).substring(0, 8000); 
 
   // 3. GENERUJEME ČLÁNEK
   const completion = await openai.chat.completions.create({
@@ -76,15 +76,14 @@ export async function GET() {
   const article = JSON.parse(completion.choices[0].message.content);
   const finalSlug = createSlug(article.title);
 
-  // 4. POKUS O ZÁPIS (S VÝPISEM CHYB)
+  // 4. POKUS O ZÁPIS (UŽ BEZ DESCRIPTION)
   const insertData = {
     title: article.title,
     slug: finalSlug,
     content: article.content,
     created_at: new Date().toISOString(),
-    // Přidávám prázdné hodnoty pro sloupce, které by mohly být povinné
-    video_id: null, 
-    description: article.content.substring(0, 150).replace(/<[^>]*>?/gm, '') // Plaintext náhled
+    video_id: null
+    // Tady byl description, teď je pryč a už to nebude řvát chybu
   };
 
   const { error: insertError } = await supabase.from('posts').insert(insertData);
@@ -93,7 +92,7 @@ export async function GET() {
     return NextResponse.json({ 
         status: 'ERROR', 
         message: 'Nepodařilo se zapsat článek do DB', 
-        supabase_error: insertError, // Tady uvidíme přesný důvod
+        supabase_error: insertError, 
         data_we_tried_to_insert: insertData
     });
   }
