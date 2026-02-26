@@ -34,7 +34,7 @@ export default async function SestavyPage() {
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            margin-bottom: 50px; /* Rozestup mezi kartami */
+            margin-bottom: 50px; 
         }
         .build-card:hover { 
             transform: translateY(-5px); 
@@ -85,15 +85,17 @@ export default async function SestavyPage() {
 
         /* CTA SEKCE (Tlačítko) */
         .cta-box {
-            padding: 30px 25px; /* Více místa */
+            padding: 30px 25px; 
             background: rgba(10, 10, 10, 0.4);
             margin-top: auto; 
             text-align: center;
         }
         
-        .cta-title {
-            color: #fff; font-weight: bold; margin-bottom: 20px; font-size: 1rem; text-transform: uppercase; line-height: 1.4;
+        .cta-link-text {
+            color: #fff; font-weight: bold; margin-bottom: 10px; font-size: 1rem; text-transform: uppercase; line-height: 1.4;
+            transition: color 0.3s;
         }
+        .cta-link-text:hover { color: #53fc18; text-decoration: underline; }
 
         .cta-button { 
             display: block; width: 100%; padding: 18px; 
@@ -205,9 +207,17 @@ export default async function SestavyPage() {
 
               {/* 4. TLAČÍTKO A ODKAZY */}
               <div className="cta-box">
-                {/* TADY JE TEN NOVÝ TEXT */}
-                <div className="cta-title">
-                   ⚠️ CHCEŠ PC? MÁŠ PŘEDSTAVU, ALE NEVÍŠ CO A JAK? JSI NA SPRÁVNÉM MÍSTĚ!
+                
+                {/* ODKAZ NA KICK (TEXT) */}
+                <a href="https://kick.com/thehardwareguru" target="_blank" style={{textDecoration: 'none'}}>
+                    <div className="cta-link-text">
+                       ⚠️ CHCEŠ PC? MÁŠ PŘEDSTAVU, ALE NEVÍŠ CO A JAK? JSI NA SPRÁVNÉM MÍSTĚ!
+                    </div>
+                </a>
+
+                {/* PODMÍNKA SUBSCRIBE */}
+                <div style={{ fontSize: '0.9rem', color: '#fff', marginBottom: '20px', fontWeight: 'bold', letterSpacing: '1px' }}>
+                    PODMÍNKA: <span style={{color: '#53fc18', borderBottom: '1px solid #53fc18'}}>SUBSCRIBE NA KICKU</span> 💚
                 </div>
                 
                 <a href="https://discord.com/invite/n7xThr8" target="_blank" className="cta-button">
