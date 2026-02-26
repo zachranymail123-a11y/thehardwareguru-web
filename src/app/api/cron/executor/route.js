@@ -14,48 +14,52 @@ function createSlug(title) {
 export async function GET() {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-  // 1. NAJDEME NEJSTARŠÍ PLÁNOVANÝ ÚKOL
-  const { data: tasks } = await supabase
+  // 1. NAJDEME ÚKOL (Opraveno: řadíme podle ID, protože created_at v plánu nemáš)
+  // Používáme ilike pro status, aby to nesežralo velké/malé písmena (PLANNED vs planned)
+  const { data: tasks, error: fetchError } = await supabase
     .from('content_plan')
     .select('*')
-    .eq('status', 'planned')
-    .order('created_at', { ascending: true })
+    .ilike('status', 'planned') 
+    .order('id', { ascending: true })
     .limit(1);
 
+  if (fetchError) return NextResponse.json({ error: 'Chyba DB', details: fetchError.message });
   if (!tasks || tasks.length === 0) return NextResponse.json({ message: 'Nic k praci.' });
+  
   const task = tasks[0];
 
-  // 2. OKAMŽITÁ POJISTKA - Označíme jako processing, aby se nespustil dvakrát
+  // 2. LOCK - Označíme jako processing
   await supabase.from('content_plan').update({ status: 'processing' }).eq('id', task.id);
 
   try {
-    // 3. AGRESIVNÍ KONTROLA DUPLICITY V POSTECH
+    // 3. KONTROLA DUPLICITY V POSTECH
+    const taskSlug = createSlug(task.title);
     const { data: existing } = await supabase
       .from('posts')
       .select('id')
-      .ilike('title', `%${task.title.split(':')[0]}%`) // Kontrola i na část názvu
+      .or(`slug.eq.${taskSlug},title.ilike.%${task.title.split(':')[0]}%`)
       .limit(1);
 
     if (existing && existing.length > 0) {
       await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
-      return NextResponse.json({ message: `Stopka: '${task.title}' uz na webu je pod jinym ID.` });
+      return NextResponse.json({ message: `Přeskočeno: '${task.title}' už je na webu.` });
     }
 
     // 4. RESEARCH (SERPER)
     const res = await fetch('https://google.serper.dev/search', {
       method: 'POST',
       headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: `${task.title} review 2026 specs requirements`, num: 8 })
+      body: JSON.stringify({ q: `${task.title} tech specs review 2026`, num: 8 })
     });
     const searchResults = await res.json();
     const rawContext = JSON.stringify(searchResults.organic || []).substring(0, 8000);
 
-    // 5. GENERUJEME ČLÁNEK
+    // 5. GENERUJEME ČLÁNEK (Instrukce pro tabulky a Guru styl)
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
-        { role: "system", content: "Jsi The Hardware Guru. Piš ČESKY. Vrať JSON: { \"title\": \"...\", \"content\": \"HTML...\" }. Používej tabulky pro parametry!" },
-        { role: "user", content: `Napiš článek o "${task.title}". Typ: ${task.type}. Data: ${rawContext}` }
+        { role: "system", content: "Jsi The Hardware Guru. Piš ČESKY, drsně, věcně. Používej HTML tagy. Pro technické parametry VŽDY vytvoř <table>. Na konec dej <blockquote class='guru-verdict'> s finálním hodnocením." },
+        { role: "user", content: `Téma: "${task.title}". Typ obsahu: ${task.type}. Kontext: ${rawContext}` }
       ],
       response_format: { type: "json_object" }
     });
@@ -63,28 +67,26 @@ export async function GET() {
     const article = JSON.parse(completion.choices[0].message.content);
     const slug = createSlug(article.title);
 
-    // 6. ZÁPIS DO POSTS S OŠETŘENÍM CHYBY DUPLICITY SLUGU
+    // 6. ZÁPIS DO POSTS
     const { error: insertError } = await supabase.from('posts').insert({
       title: article.title,
       slug: slug,
       content: article.content,
-      type: task.type, // Přenášíme typ z plánu (game/hardware)
+      type: task.type,
       created_at: new Date().toISOString()
     });
 
     if (insertError && insertError.code === '23505') {
-       // Pokud slug už existuje, prostě úkol v plánu vymažeme a končíme
        await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
-       return NextResponse.json({ message: 'Slug uz existuje, ukol zrusen.' });
+       return NextResponse.json({ message: 'Slug duplicita, označeno jako hotové.' });
     }
 
-    // 7. HOTOVO - Označíme jako publikované
+    // 7. HOTOVO
     await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
 
     return NextResponse.json({ status: 'SUCCESS', published: article.title });
 
   } catch (err) {
-    // Při jakémkoliv jiném průseru vrátíme status na 'planned', abychom to neztratili
     await supabase.from('content_plan').update({ status: 'planned' }).eq('id', task.id);
     return NextResponse.json({ error: err.message });
   }
