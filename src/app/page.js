@@ -10,7 +10,7 @@ export default async function Home() {
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. PŘIČTEME NÁVŠTĚVU
+  // 1. PŘIČTEME NÁVŠTĚVU (Bezpečně)
   await supabase.rpc('increment_total_visits').catch(() => {});
 
   // 2. STÁHNEME DATA
@@ -44,6 +44,7 @@ export default async function Home() {
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
         .nav-link { margin: 0 15px; color: #fff; text-decoration: none; font-weight: bold; transition: color 0.3s; text-transform: uppercase; letter-spacing: 1px; display: inline-block; }
         .nav-link:hover { color: #66fcf1; text-shadow: 0 0 10px #66fcf1; }
+        .nav-special { color: #66fcf1 !important; border: 1px solid #66fcf1; padding: 5px 12px; border-radius: 4px; }
         .social-btn { display: inline-block; padding: 12px 25px; background: #1f2833; color: #66fcf1; border: 1px solid #45a29e; text-decoration: none; font-weight: bold; border-radius: 5px; transition: all 0.3s; text-transform: uppercase; }
         .social-btn:hover { background: #66fcf1; color: #0b0c10; box-shadow: 0 0 15px #66fcf1; transform: scale(1.05); }
         .read-more { color: #66fcf1; text-transform: uppercase; font-weight: bold; font-size: 0.9rem; letter-spacing: 1px; }
@@ -55,13 +56,9 @@ export default async function Home() {
           THE HARDWARE GURU
         </div>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-            {/* PŘIDANÉ ODKAZY DO MENU - BEZPEČNĚ */}
-            <Link href="/sestavy" className="nav-link" style={{ color: '#66fcf1', border: '1px solid #66fcf1', padding: '5px 10px', borderRadius: '4px' }}>
-                PC SESTAVY
-            </Link>
-            <Link href="/slovnik" className="nav-link">
-                SLOVNÍK
-            </Link>
+            {/* ODKAZY - JEDNODUŠE A BEZPEČNĚ */}
+            <Link href="/sestavy" className="nav-link nav-special">PC SESTAVY</Link>
+            <Link href="/slovnik" className="nav-link">SLOVNÍK</Link>
             
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
