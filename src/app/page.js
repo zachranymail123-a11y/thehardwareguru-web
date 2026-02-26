@@ -28,6 +28,22 @@ export default async function Home() {
     return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop';
   };
 
+  // POMOCNÁ FUNKCE PRO ŠTÍTEK
+  const getBadgeInfo = (post) => {
+    // 1. Priorita: Video/Shorts
+    if (post.video_id && post.video_id.length > 5) {
+      return { text: 'VIDEO / SHORT', color: '#66fcf1', textColor: '#0b0c10' };
+    }
+    // 2. Priorita: Rozlišení podle sloupce 'type' v DB nebo klíčových slov
+    const isGame = post.type === 'game' || post.title.toLowerCase().includes('recenze') || post.title.toLowerCase().includes('resident evil');
+    
+    if (isGame) {
+      return { text: 'HERNÍ NOVINKA', color: '#ff0055', textColor: '#fff' }; // Růžovo-červená pro hry
+    }
+    
+    return { text: 'HW NOVINKA', color: '#ff0000', textColor: '#fff' }; // Klasická červená pro HW
+  };
+
   return (
     <div style={{ 
         minHeight: '100vh', 
@@ -56,10 +72,8 @@ export default async function Home() {
           THE HARDWARE GURU
         </div>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-            {/* TADY JSOU TY PŘIDANÉ ODKAZY */}
             <Link href="/sestavy" className="nav-link nav-special">PC SESTAVY</Link>
             <Link href="/slovnik" className="nav-link">SLOVNÍK</Link>
-            
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
             <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
@@ -83,7 +97,6 @@ export default async function Home() {
                 <a href="https://discord.com/invite/n7xThr8" target="_blank" className="social-btn">PŘIPOJ SE NA DISCORD</a>
             </div>
         </div>
-        
         <div style={{ width: '200px', height: '200px', background: '#0b0c10', borderRadius: '50%', border: '4px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 0 20px #66fcf1' }}>
             <span style={{color: '#45a29e', fontSize: '4rem', fontWeight: 'bold'}}>HG</span>
         </div>
@@ -97,58 +110,63 @@ export default async function Home() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '40px' }}>
           
-          {posts?.map((post) => (
-            <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
-              <div className="game-card" style={{ 
-                backgroundColor: 'rgba(31, 40, 51, 0.95)', 
-                borderRadius: '12px', 
-                overflow: 'hidden', 
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.3)', 
-                cursor: 'pointer'
-              }}>
-                
-                <div style={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden', borderBottom: '2px solid #45a29e' }}>
-                  <img 
-                    src={getThumbnail(post)} 
-                    alt={post.title}
-                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
+          {posts?.map((post) => {
+            const badge = getBadgeInfo(post);
+            return (
+              <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
+                <div className="game-card" style={{ 
+                  backgroundColor: 'rgba(31, 40, 51, 0.95)', 
+                  borderRadius: '12px', 
+                  overflow: 'hidden', 
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.3)', 
+                  cursor: 'pointer'
+                }}>
                   
-                  <div style={{ 
-                    position: 'absolute', 
-                    top: '10px', 
-                    right: '10px', 
-                    background: (post.video_id && post.video_id.length > 5) ? 'rgba(102, 252, 241, 0.85)' : 'rgba(255, 0, 0, 0.85)', 
-                    color: (post.video_id && post.video_id.length > 5) ? '#0b0c10' : '#fff', 
-                    padding: '5px 12px', 
-                    borderRadius: '4px', 
-                    fontWeight: 'bold', 
-                    fontSize: '0.75rem', 
-                    border: '1px solid #66fcf1',
-                    textTransform: 'uppercase'
-                  }}>
-                    {(post.video_id && post.video_id.length > 5) ? 'VIDEO / SHORT' : 'HW NOVINKA'}
+                  <div style={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden', borderBottom: '2px solid #45a29e' }}>
+                    <img 
+                      src={getThumbnail(post)} 
+                      alt={post.title}
+                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                    
+                    {/* TADY JE OPRAVENÝ ŠTÍTEK */}
+                    <div style={{ 
+                      position: 'absolute', 
+                      top: '10px', 
+                      right: '10px', 
+                      background: badge.color, 
+                      color: badge.textColor, 
+                      padding: '5px 12px', 
+                      borderRadius: '4px', 
+                      fontWeight: 'bold', 
+                      fontSize: '0.75rem', 
+                      border: `1px solid ${badge.text === 'VIDEO / SHORT' ? '#66fcf1' : 'transparent'}`,
+                      textTransform: 'uppercase',
+                      boxShadow: '0 2px 10px rgba(0,0,0,0.5)'
+                    }}>
+                      {badge.text}
+                    </div>
+                  </div>
+                  
+                  <div style={{ padding: '25px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <h3 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '1.3rem', lineHeight: '1.4', fontWeight: 'bold' }}>
+                      {post.title}
+                    </h3>
+                    <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px', flex: 1 }}>
+                      {(post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 120)}...
+                    </p>
+                    <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: '#45a29e', fontSize: '0.85rem' }}>{post.created_at ? new Date(post.created_at).toLocaleDateString('cs-CZ') : ''}</span>
+                      <span className="read-more">ČÍST VÍCE →</span>
+                    </div>
                   </div>
                 </div>
-                
-                <div style={{ padding: '25px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <h3 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '1.3rem', lineHeight: '1.4', fontWeight: 'bold' }}>
-                    {post.title}
-                  </h3>
-                  <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px', flex: 1 }}>
-                    {(post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 120)}...
-                  </p>
-                  <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#45a29e', fontSize: '0.85rem' }}>{post.created_at ? new Date(post.created_at).toLocaleDateString('cs-CZ') : ''}</span>
-                    <span className="read-more">ČÍST VÍCE →</span>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
           
           {(!posts || posts.length === 0) && (
              <div style={{gridColumn: '1/-1', textAlign: 'center', color: '#fff', padding: '50px'}}>
@@ -168,7 +186,7 @@ export default async function Home() {
           </div>
           
           <div style={{ marginBottom: '20px', color: '#66fcf1', fontSize: '1rem', fontWeight: 'bold', letterSpacing: '1px' }}>
-             WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #45a29e' }}>{celkemNavstev}</span> GURU FANOUŠKŮ 🦾
+            WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #45a29e' }}>{celkemNavstev}</span> GURU FANOUŠKŮ 🦾
           </div>
 
           <p style={{ color: '#45a29e', opacity: 0.7, fontSize: '0.8rem' }}>© 2026 The Hardware Guru. Powered by AI & Caffeine.</p>
