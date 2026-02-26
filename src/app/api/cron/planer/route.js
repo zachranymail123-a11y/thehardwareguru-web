@@ -14,7 +14,7 @@ async function getRawTodayData(query) {
     body: JSON.stringify({ 
       q: query, 
       tbs: "qdr:h12", 
-      num: 15 // Větší vzorek pro výběr unikátů
+      num: 15 
     })
   });
   const data = await res.json();
@@ -27,6 +27,14 @@ export async function GET() {
   const todayISO = now.toISOString().split('T')[0];
 
   try {
+    // 1. NAČTENÍ VŠEHO, CO UŽ DNES V DB JE (Tvrdá pojistka proti duplicitám)
+    const { data: existingToday } = await supabase
+      .from('content_plan')
+      .select('title')
+      .gte('release_date', todayISO);
+    
+    const blacklist = existingToday ? existingToday.map(e => e.title.toLowerCase()) : [];
+
     const sources = "site:videocardz.com OR site:techpowerup.com OR site:wccftech.com OR site:ign.com OR site:vgc.com OR site:pcgamer.com OR site:tomshardware.com";
     
     const [hwRaw, gameRaw] = await Promise.all([
@@ -34,35 +42,26 @@ export async function GET() {
       getRawTodayData(`${sources} game "official" OR "announcement" OR "trailer"`)
     ]);
 
-    // Spojíme a přidáme typy
     const rawList = [
       ...hwRaw.map(a => ({ ...a, type: 'hardware' })),
       ...gameRaw.map(a => ({ ...a, type: 'game' }))
     ];
 
-    if (rawList.length === 0) return NextResponse.json({ status: 'CHYBA', message: 'Google prázdný' });
-
-    // NAČTENÍ EXISTUJÍCÍCH TITULŮ (Anglických i Českých) PRO KONTEXT
-    const { data: existing } = await supabase
-      .from('content_plan')
-      .select('title')
-      .gte('release_date', todayISO);
-    
-    const blacklistedStr = existing ? existing.map(e => e.title.toLowerCase()).join(' | ') : '';
-
     let addedCount = 0;
     let log = [];
 
     for (const article of rawList) {
-      if (addedCount >= 4) break; // Chceme 2+2
+      if (addedCount >= 4) break;
 
-      const originalTitle = article.title.toLowerCase();
+      // Kontrola, jestli už v DB není anglický originál nebo podobný název
+      const isDuplicate = blacklist.some(existing => 
+        existing.includes(article.title.toLowerCase().substring(0, 15)) || 
+        article.title.toLowerCase().includes(existing.substring(0, 15))
+      );
 
-      // 1. KONTROLA DUPLICITY ORIGINÁLU (Před překladem)
-      // Pokud už v DB máme něco s podobným názvem (nebo identickým originálem), skip.
-      if (blacklistedStr.includes(originalTitle.substring(0, 20))) continue;
+      if (isDuplicate) continue;
 
-      // 2. PŘEKLAD A FORMÁTOVÁNÍ
+      // AI PŘEKLAD
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -78,17 +77,11 @@ export async function GET() {
       const processed = JSON.parse(completion.choices[0].message.content);
       const czechTitle = processed.title.trim();
 
-      // 3. KONTROLA DUPLICITY ČESKÉHO VÝSLEDKU
-      const { data: dupCheck } = await supabase
-        .from('content_plan')
-        .select('id')
-        .ilike('title', `%${czechTitle.substring(0, 15)}%`) // Hledáme i částečnou shodu
-        .limit(1);
+      // Sekundární kontrola českého názvu
+      if (blacklist.includes(czechTitle.toLowerCase())) continue;
 
-      if (dupCheck && dupCheck.length > 0) continue;
-
-      // 4. ZÁPIS
-      const { data, error } = await supabase.from('content_plan').insert({
+      // ZÁPIS
+      const { data } = await supabase.from('content_plan').insert({
         title: czechTitle,
         release_date: todayISO,
         type: article.type,
@@ -97,6 +90,7 @@ export async function GET() {
 
       if (data) {
         addedCount++;
+        blacklist.push(czechTitle.toLowerCase());
         log.push({ original: article.title, czech: czechTitle });
       }
     }
