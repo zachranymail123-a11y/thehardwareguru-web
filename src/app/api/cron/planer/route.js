@@ -9,67 +9,44 @@ async function searchGoogle(query) {
   const res = await fetch('https://google.serper.dev/search', {
     method: 'POST',
     headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ q: query, num: 20, tbs: 'qdr:w' }) // Zvedl jsem num na 20 výsledků
+    body: JSON.stringify({ q: query, num: 20, tbs: 'qdr:w' })
   });
   return res.json();
 }
 
 export async function GET() {
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  // DŮLEŽITÉ: Používáme SERVICE_ROLE_KEY, který obchází RLS (Row Level Security)
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL, 
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
 
-  // 1. VYSAVAČ - Agresivní dotazy na seznamy
   const queries = [
-    "pc games release calendar february 2026 list", // Konkrétní měsíc
-    "upcoming game releases next 7 days list",      // Nejbližší týden
-    "hardware rumors nvidia amd intel leaks this week", // HW Leaky
-    "steam upcoming releases popular list"          // Co je trendy na Steamu
+    "pc games release calendar february 2026 list",
+    "upcoming game releases next 7 days list",
+    "hardware rumors nvidia amd intel leaks this week",
+    "steam upcoming releases popular list" 
   ];
 
   let rawData = "";
-
-  // Paralelní sosání dat
   const results = await Promise.all(queries.map(q => searchGoogle(q)));
   
   results.forEach((r, index) => {
-    rawData += `\n--- SOURCE ${index + 1} (${queries[index]}) ---\n`;
+    rawData += `\n--- SOURCE ${index + 1} ---\n`;
     if (r.organic) {
       r.organic.forEach(item => {
-        // Bereme i datumy, pokud tam jsou
-        rawData += `Title: ${item.title}\nSnippet: ${item.snippet}\nDate info: ${item.date || 'N/A'}\n\n`;
+        rawData += `Title: ${item.title}\nSnippet: ${item.snippet}\nDate: ${item.date || 'N/A'}\n\n`;
       });
     }
   });
 
-  // 2. TŘÍDIČKA - Mírnější pravidla
   const completion = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
       {
         role: "system",
-        content: `Jsi šéfredaktor The Hardware Guru. Tvým úkolem je naplnit redakční plán na tento týden.
-        
-        Zahrň VŠECHNO, o čem se mluví:
-        1. Velké hry (AAA).
-        2. Zajímavé Indie hry a AA tituly (neignoruj menší hry!).
-        3. Hardwarové novinky, leaky a spekulace (Nvidia, AMD, Intel).
-        4. Důležité patche nebo DLC do velkých her.
-
-        Pravidla:
-        - Datum vydání odhadni z kontextu (např. "comes out this Friday").
-        - Pokud datum chybí, dej zítřejší datum.
-        - Nebuď přehnaně kritický. Pokud to má název a datum, ber to.
-        
-        Vrať JSON:
-        {
-          "items": [
-            {
-              "title": "Název",
-              "release_date": "YYYY-MM-DD",
-              "type": "game" | "hardware",
-              "confidence": "high" | "medium"
-            }
-          ]
-        }`
+        content: `Jsi šéfredaktor The Hardware Guru. Naplň redakční plán.
+        Vrať JSON: { "items": [{ "title": "Název", "release_date": "YYYY-MM-DD", "type": "game" | "hardware", "confidence": "high" | "medium" }] }`
       },
       { role: "user", content: rawData }
     ],
@@ -78,36 +55,48 @@ export async function GET() {
 
   const plan = JSON.parse(completion.choices[0].message.content);
 
-  // 3. ULOŽENÍ (Bereme i Medium confidence)
   let savedCount = 0;
+  let errors = []; // Tady budeme chytat chyby
+
   if (plan.items && plan.items.length > 0) {
     for (const item of plan.items) {
-      // Ukládáme i 'medium', nejen 'high', abychom měli víc materiálu
       if (item.confidence === 'high' || item.confidence === 'medium') {
         
-        const { data: existing } = await supabase
+        // 1. Kontrola existence
+        const { data: existing, error: selectError } = await supabase
             .from('content_plan')
             .select('id')
             .eq('title', item.title)
             .single();
 
+        if (selectError && selectError.code !== 'PGRST116') { // Ignorujeme chybu "nenalezeno"
+             errors.push({ action: 'SELECT', title: item.title, msg: selectError.message });
+        }
+
         if (!existing) {
-            await supabase.from('content_plan').insert({
+            // 2. Pokus o zápis
+            const { error: insertError } = await supabase.from('content_plan').insert({
                 title: item.title,
                 release_date: item.release_date,
                 type: item.type,
                 status: 'planned'
             });
-            savedCount++;
+
+            if (insertError) {
+                // TADY CHYTÍME, PROČ SE TO NEZAPSALO
+                errors.push({ action: 'INSERT', title: item.title, msg: insertError.message, details: insertError });
+            } else {
+                savedCount++;
+            }
         }
       }
     }
   }
 
   return NextResponse.json({ 
-    message: 'Planer V2 dokončen', 
-    found_items_total: plan.items?.length || 0,
+    message: 'Planer DEBUG dokončen', 
     saved_new_items: savedCount,
+    errors: errors, // Tohle nám řekne pravdu
     items: plan.items 
   });
 }
