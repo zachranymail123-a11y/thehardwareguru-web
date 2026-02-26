@@ -7,18 +7,19 @@ export const revalidate = 0;
 export default async function Home() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. Počítadlo (bezpečně, aby neshodilo web)
+  // 1. PŘIČTEME NÁVŠTĚVU (Ošetřeno, aby neshodilo web)
   await supabase.rpc('increment_total_visits').catch(() => {});
 
-  // 2. Data - základní bezpečné stažení
+  // 2. STÁHNEME ČLÁNKY (Jednoduše, přímo)
   const { data: posts } = await supabase
     .from('posts')
     .select('*')
-    .order('created_at', { ascending: false })
-    .limit(10); 
+    .order('created_at', { ascending: false });
 
+  // 3. STÁHNEME STATISTIKY
   const { data: stats } = await supabase
     .from('stats')
     .select('value')
@@ -40,8 +41,11 @@ export default async function Home() {
         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
         color: '#c5c6c7',
         backgroundImage: "linear-gradient(rgba(11, 12, 16, 0.92), rgba(11, 12, 16, 0.85)), url('https://i.postimg.cc/QdWxszv3/bg-guru.png')",
-        backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed'
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
     }}>
+      
       <style>{`
         .game-card { transition: all 0.3s ease; border: 1px solid #45a29e; }
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
@@ -53,14 +57,16 @@ export default async function Home() {
         .read-more { color: #66fcf1; text-transform: uppercase; font-weight: bold; font-size: 0.9rem; letter-spacing: 1px; }
       `}</style>
 
-      {/* NAVIGACE */}
+      {/* HLAVIČKA */}
       <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: 'rgba(31, 40, 51, 0.9)', backdropFilter: 'blur(5px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 0 15px rgba(102, 252, 241, 0.3)', flexWrap: 'wrap', gap: '20px' }}>
         <div style={{ fontSize: '1.8rem', fontWeight: '900', color: '#66fcf1', letterSpacing: '2px', textShadow: '2px 2px 0px #000' }}>
           THE HARDWARE GURU
         </div>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {/* TADY JSOU PŘIDANÉ ODKAZY */}
             <Link href="/sestavy" className="nav-link nav-special">PC SESTAVY</Link>
             <Link href="/slovnik" className="nav-link">SLOVNÍK</Link>
+            
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
             <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
@@ -75,25 +81,28 @@ export default async function Home() {
             </h1>
             <p style={{ fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '30px', color: '#e0e0e0' }}>
                 Čau pařani! Jsem 45letý HW nadšenec, gamer a streamer. 
-                Tady najdeš vše o hardwaru, recenze her a hlavně záznamy z mých streamů.
+                Tady najdeš vše o hardwaru, recenze her a hlavně záznamy z mých streamů. 
+                Na Kicku mi sekunduje unikátní <strong style={{color: '#66fcf1'}}>AI umělá inteligence</strong>.
             </p>
             <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                 <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn">SLEDUJ STREAM (KICK)</a>
                 <a href="https://discord.com/invite/n7xThr8" target="_blank" className="social-btn">PŘIPOJ SE NA DISCORD</a>
             </div>
         </div>
+        
         <div style={{ width: '200px', height: '200px', background: '#0b0c10', borderRadius: '50%', border: '4px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 0 20px #66fcf1' }}>
             <span style={{color: '#45a29e', fontSize: '4rem', fontWeight: 'bold'}}>HG</span>
         </div>
       </header>
 
-      {/* OBSAH */}
+      {/* HLAVNÍ OBSAH */}
       <main style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
         <h2 style={{ color: '#fff', textAlign: 'center', marginBottom: '40px', fontSize: '2.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px', textShadow: '0 0 10px rgba(102, 252, 241, 0.5)' }}>
           Nejnovější články & Videa
         </h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '40px' }}>
+          
           {posts?.map((post) => (
             <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
               <div className="game-card" style={{ 
@@ -106,14 +115,35 @@ export default async function Home() {
                 boxShadow: '0 4px 6px rgba(0,0,0,0.3)', 
                 cursor: 'pointer'
               }}>
+                
                 <div style={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden', borderBottom: '2px solid #45a29e' }}>
-                  <img src={getThumbnail(post)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <div style={{ position: 'absolute', top: '10px', right: '10px', background: (post.video_id && post.video_id.length > 5) ? 'rgba(102, 252, 241, 0.85)' : 'rgba(255, 0, 0, 0.85)', color: (post.video_id && post.video_id.length > 5) ? '#0b0c10' : '#fff', padding: '5px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem', border: '1px solid #66fcf1', textTransform: 'uppercase' }}>
+                  <img 
+                    src={getThumbnail(post)} 
+                    alt={post.title}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  
+                  <div style={{ 
+                    position: 'absolute', 
+                    top: '10px', 
+                    right: '10px', 
+                    background: (post.video_id && post.video_id.length > 5) ? 'rgba(102, 252, 241, 0.85)' : 'rgba(255, 0, 0, 0.85)', 
+                    color: (post.video_id && post.video_id.length > 5) ? '#0b0c10' : '#fff', 
+                    padding: '5px 12px', 
+                    borderRadius: '4px', 
+                    fontWeight: 'bold', 
+                    fontSize: '0.75rem', 
+                    border: '1px solid #66fcf1',
+                    textTransform: 'uppercase'
+                  }}>
                     {(post.video_id && post.video_id.length > 5) ? 'VIDEO / SHORT' : 'HW NOVINKA'}
                   </div>
                 </div>
+                
                 <div style={{ padding: '25px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <h3 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '1.3rem', lineHeight: '1.4', fontWeight: 'bold' }}>{post.title}</h3>
+                  <h3 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '1.3rem', lineHeight: '1.4', fontWeight: 'bold' }}>
+                    {post.title}
+                  </h3>
                   <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px', flex: 1 }}>
                     {(post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 120)}...
                   </p>
@@ -125,11 +155,13 @@ export default async function Home() {
               </div>
             </Link>
           ))}
+          
           {(!posts || posts.length === 0) && (
-             <div style={{gridColumn: '1/-1', textAlign: 'center', color: '#fff', padding: '50px', border: '1px dashed #45a29e'}}>
-                Žádný obsah. Databáze je prázdná (podle SQL). Vlož tam data.
+             <div style={{gridColumn: '1/-1', textAlign: 'center', color: '#fff', padding: '50px'}}>
+                Zatím zde nejsou žádné články. Databáze je prázdná.
              </div>
           )}
+
         </div>
       </main>
 
