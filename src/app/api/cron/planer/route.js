@@ -7,65 +7,74 @@ export const dynamic = 'force-dynamic';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
+// Pomocná funkce pro vyhledávání
+async function getTrends(query, location = "us", language = "en") {
+  const res = await fetch('https://google.serper.dev/search', {
+    method: 'POST',
+    headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      q: query, 
+      tbs: "qdr:d", // VŽDY POSLEDNÍCH 24 HODIN
+      gl: location,
+      hl: language,
+      num: 10 
+    })
+  });
+  const data = await res.json();
+  return data.organic || [];
+}
+
 export async function GET() {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-  // 1. DYNAMICKÉ DATUM (Tady se řeší ten březen, duben...)
   const now = new Date();
-  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  const currentMonth = monthNames[now.getMonth()];
+  const currentMonth = now.toLocaleString('en-US', { month: 'long' });
   const currentYear = now.getFullYear();
-  const fullDate = `${now.getDate()}. ${currentMonth} ${currentYear}`;
 
   try {
-    // 2. CHYTRÝ VYHLEDÁVACÍ DOTAZ (Žádné natvrdo psané měsíce)
-    const searchQuery = `latest hardware leaks OR gaming reviews releases ${currentMonth} ${currentYear} site:ign.com OR site:videocardz.com OR site:wccftech.com OR site:gamespot.com`;
-
-    const searchRes = await fetch('https://google.serper.dev/search', {
-      method: 'POST',
-      headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        q: searchQuery, 
-        tbs: "qdr:d", // <--- HLÍDÁ POSLEDNÍCH 24 HODIN
-        gl: "us",
-        hl: "en",
-        num: 20 
-      })
-    });
+    // 1. KROK: HARDWARE - Nejdřív zkusíme CZ, pak Svět
+    const hwQueryCZ = `hardware novinky recenze testy GPU CPU MB RAM ${currentYear}`;
+    const hwTrendsCZ = await getTrends(hwQueryCZ, "cz", "cs");
     
-    const searchData = await searchRes.json();
-    const trends = JSON.stringify(searchData.organic || []).substring(0, 8000);
+    const hwQueryEN = `latest hardware leaks benchmarks GPU CPU MB RAM reviews ${currentMonth} ${currentYear} site:videocardz.com OR site:wccftech.com`;
+    const hwTrendsEN = await getTrends(hwQueryEN, "us", "en");
 
-    // 3. NAČTEME STÁVAJÍCÍ PLÁN
-    const { data: currentPlan } = await supabase.from('content_plan').select('title');
-    const existingTitles = currentPlan?.map(p => p.title).join(', ') || 'žádné';
+    // 2. KROK: GAMING - Nejdřív zkusíme CZ, pak Svět
+    const gameQueryCZ = `herní recenze novinky hry ${currentYear}`;
+    const gameTrendsCZ = await getTrends(gameQueryCZ, "cz", "cs");
 
-    // 4. AI ANALÝZA (Předáváme jí aktuální datum, aby věděla, co je DNES)
+    const gameQueryEN = `latest AAA game reviews releases scores ${currentMonth} ${currentYear} site:ign.com OR site:gamespot.com`;
+    const gameTrendsEN = await getTrends(gameQueryEN, "us", "en");
+
+    // Spojíme to pro AI
+    const combinedTrends = JSON.stringify({
+      hardware: { czech: hwTrendsCZ, world: hwTrendsEN },
+      gaming: { czech: gameTrendsCZ, world: gameTrendsEN }
+    }).substring(0, 15000);
+
+    // 3. AI ANALÝZA - S jasným zadáním priority
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: `Jsi šéfredaktor webu The Hardware Guru. Dnes je ${fullDate}. 
-          Tvým úkolem je vybrat 4 NEJŽHAVĚJŠÍ novinky z posledních 24 hodin.
+          content: `Jsi šéfredaktor The Hardware Guru. Je ${now.getDate()}. ${currentMonth} ${currentYear}.
+          Máš k dispozici data z posledních 24 hodin z Česka i ze světa.
           
-          STRATEGIE:
-          - 2x Hardware (leaks, benchmarks, nové CPU/GPU).
-          - 2x Gaming (čerstvé recenze, oznámení, trailery).
-          - Ignoruj staré věci, hledej jen to, co hýbe světem DNES.
-          
-          DATA Z GOOGLE: ${trends}
-          UŽ MÁME: ${existingTitles}
+          TVOJE PRAVIDLA:
+          1. PRIORITA: Pokud existuje ČESKÝ zdroj z posledních 24h o daném tématu, použij ho jako primární.
+          2. DOPLNĚNÍ: Pokud v Česku nic nového není, použij světové leaky (world data).
+          3. VÝBĚR: Vyber 2x HW (GPU/CPU/MB/RAM) a 2x Hry.
           
           Vrať JSON: { "plan": [ { "title": "...", "type": "game/hardware", "release_date": "${now.toISOString().split('T')[0]}" } ] }`
-        }
+        },
+        { role: "user", content: `Data k analýze: ${combinedTrends}` }
       ],
       response_format: { type: "json_object" }
     });
 
     const newTasks = JSON.parse(completion.choices[0].message.content).plan;
 
-    // 5. ZÁPIS DO DB
+    // 4. ZÁPIS DO DB
     let addedCount = 0;
     for (const task of newTasks) {
       const { error } = await supabase.from('content_plan').insert({
@@ -79,9 +88,9 @@ export async function GET() {
 
     return NextResponse.json({ 
       status: 'SUCCESS', 
-      added: addedCount, 
-      date: fullDate,
-      message: `Plánovač úspěšně naplněn pro ${fullDate}.` 
+      added: addedCount,
+      articles: newTasks.map(t => t.title),
+      note: "Prioritizovány české zdroje < 24h."
     });
 
   } catch (err) {
