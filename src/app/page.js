@@ -13,14 +13,14 @@ export default async function Home() {
   // 1. PŘIČTEME NÁVŠTĚVU (Bezpečně)
   await supabase.rpc('increment_total_visits').catch((e) => console.error(e));
 
-  // 2. NAČTEME ČLÁNKY (Samostatně, ať to nic nebrzdí)
+  // 2. NAČTEME ČLÁNKY
   const { data: posts, error: postsError } = await supabase
     .from('posts')
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(10); // Pro jistotu jen 10 nejnovějších
+    .limit(10); 
 
-  // 3. NAČTEME STATISTIKY (Samostatně)
+  // 3. NAČTEME STATISTIKY
   const { data: stats } = await supabase
     .from('stats')
     .select('value')
@@ -97,11 +97,11 @@ export default async function Home() {
           Nejnovější články & Videa
         </h2>
 
-        {/* DEBUGGING ERROR MESSAGE */}
+        {/* DEBUGGING ERROR MESSAGE (Opravené znaky) */}
         {postsError && (
           <div style={{ padding: '20px', background: 'rgba(255,0,0,0.2)', border: '1px solid red', color: '#fff', marginBottom: '20px' }}>
             CHYBA DATABÁZE: {postsError.message} <br/>
-            (Zkontroluj Supabase -> Settings -> API -> Project URL)
+            (Zkontroluj Supabase - Settings - API - Project URL)
           </div>
         )}
 
