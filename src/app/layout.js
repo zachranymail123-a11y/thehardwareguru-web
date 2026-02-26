@@ -1,5 +1,6 @@
 import './globals.css'; // TADY JE TO PROPOJENÍ
 import Script from 'next/script';
+import SestavyBubble from '@/components/SestavyBubble'; // IMPORT BUBLINY
 
 export const metadata = {
   title: {
@@ -58,6 +59,9 @@ export default function RootLayout({ children }) {
           `}
         </Script>
         {/* --------------------------------- */}
+
+        {/* --- GURU BUBNA NA SESTAVY --- */}
+        <SestavyBubble />
 
         {children}
       </body>
