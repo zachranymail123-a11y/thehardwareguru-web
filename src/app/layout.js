@@ -1,4 +1,5 @@
 import './globals.css'; // TADY JE TO PROPOJENÍ
+import Script from 'next/script';
 
 export const metadata = {
   title: {
@@ -44,6 +45,20 @@ export default function RootLayout({ children }) {
   return (
     <html lang="cs">
       <body>
+        {/* --- ONESIGNAL PUSH NOTIFIKACE --- */}
+        <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="beforeInteractive" />
+        <Script id="onesignal-init" strategy="lazyOnload">
+          {`
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            OneSignalDeferred.push(async function(OneSignal) {
+              await OneSignal.init({
+                appId: "1ea5ad89-5f3e-4922-b2c8-e8cd05304047",
+              });
+            });
+          `}
+        </Script>
+        {/* --------------------------------- */}
+
         {children}
       </body>
     </html>
