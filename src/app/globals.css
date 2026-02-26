@@ -1,8 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* SMAZAL JSEM TY @TAILWIND ŘÁDKY, KTERÉ HÁZELY CHYBU */
 
-/* Tady jsou ty tvoje Guru styly pro články */
 .prose table {
   width: 100%;
   border-collapse: collapse;
