@@ -1,8 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers'; // <--- TÍMHLE ZABIJEME CACHE
 import OpenAI from 'openai';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
@@ -12,6 +14,9 @@ function createSlug(title) {
 }
 
 export async function GET() {
+  // Zavoláním headers() donutíme server vždy generovat data čerstvě
+  headers(); 
+  
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
   const { data: tasks, error: fetchError } = await supabase
@@ -22,7 +27,13 @@ export async function GET() {
     .limit(5);
 
   if (fetchError) return NextResponse.json({ error: 'Chyba DB', details: fetchError.message });
-  if (!tasks || tasks.length === 0) return NextResponse.json({ message: 'Vše hotovo, žádné nové úkoly.' });
+  
+  if (!tasks || tasks.length === 0) {
+      return NextResponse.json({ 
+          message: 'Žádné nové úkoly k vyřízení.',
+          server_time: new Date().toISOString()
+      });
+  }
 
   let results = [];
   let processedCount = 0;
@@ -71,10 +82,9 @@ export async function GET() {
       const article = JSON.parse(completion.choices[0].message.content);
       const finalSlug = createSlug(article.title);
 
-      // ---> MAGIE S OBRÁZKEM (DALL-E 3) <---
+      // DALL-E 3 Generování obrázku
       let imageUrl = null;
       try {
-        console.log(`Generuji obrázek pro: ${task.title}`);
         const imageResponse = await openai.images.generate({
           model: "dall-e-3",
           prompt: `Create a photorealistic, dramatic, and high-quality thumbnail image for a tech and gaming magazine article titled: "${task.title}". The image must NOT contain any text, letters, or words. Style: modern, sleek, hardware/gaming focus.`,
@@ -83,17 +93,16 @@ export async function GET() {
         });
         imageUrl = imageResponse.data[0].url;
       } catch (imgErr) {
-        console.error("Chyba obrázku (článek vyjde bez něj):", imgErr.message);
+        console.error("Chyba obrázku:", imgErr.message);
       }
-      // ---> KONEC MAGIE <---
 
-      // Zápis do posts (včetně obrázku)
+      // Zápis nového článku
       const { error: insertError } = await supabase.from('posts').insert({
         title: article.title,
         slug: finalSlug,
         content: article.content,
         type: task.type,
-        image_url: imageUrl, // Ukládáme link na obrázek
+        image_url: imageUrl,
         created_at: new Date().toISOString()
       });
 
@@ -115,5 +124,9 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ message: 'Exekuce dokončena', processed_tasks: results });
+  return NextResponse.json({ 
+      message: 'Exekuce dokončena', 
+      processed_tasks: results,
+      server_time: new Date().toISOString()
+  });
 }
