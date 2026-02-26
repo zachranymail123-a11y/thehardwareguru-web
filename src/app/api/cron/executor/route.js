@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { headers } from 'next/headers'; // <--- TÍMHLE ZABIJEME CACHE
+import { headers } from 'next/headers'; 
 import OpenAI from 'openai';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,6 @@ function createSlug(title) {
 }
 
 export async function GET() {
-  // Zavoláním headers() donutíme server vždy generovat data čerstvě
   headers(); 
   
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -82,15 +81,14 @@ export async function GET() {
       const article = JSON.parse(completion.choices[0].message.content);
       const finalSlug = createSlug(article.title);
 
-      // ---> OPRAVENÉ ULOŽENÍ OBRÁZKU S OBCHÁZENÍM CENZURY <---
+      // ---> OPRAVENÉ ULOŽENÍ OBRÁZKU PŘES BLOB <---
       let permanentImageUrl = null;
-      let imageErrorLog = null; // Přidáno pro logování případné chyby
+      let imageErrorLog = null; 
       
       try {
         console.log(`Generuji obrázek pro: ${task.title}`);
         
-        // 1. Chytřejší prompt, který OpenAI "neprovalí" chráněné značky
-        const safePrompt = `Create a photorealistic, dramatic, and high-quality thumbnail image for a tech and gaming magazine article. The theme is related to: "${task.title}". IMPORTANT: Do NOT include any real-world logos, trademarked text, or specific brand names (like Sony, PlayStation, Resident Evil, etc.). Make it generic but epic. No text or words allowed.`;
+        const safePrompt = `Create a photorealistic, dramatic, and high-quality thumbnail image for a tech and gaming magazine article. The theme is related to: "${task.title}". IMPORTANT: Do NOT include any real-world logos, trademarked text, or specific brand names. Make it generic but epic. No text or words allowed.`;
 
         const imageResponse = await openai.images.generate({
           model: "dall-e-3",
@@ -100,25 +98,23 @@ export async function GET() {
         });
         const tempOpenAiUrl = imageResponse.data[0].url;
 
-        // 2. Stáhneme ho do paměti serveru
+        // TADY JE TA HLAVNÍ ZMĚNA: Stahujeme to jako 'blob'
         const imgRes = await fetch(tempOpenAiUrl);
-        const arrayBuffer = await imgRes.arrayBuffer();
+        const imageBlob = await imgRes.blob();
         
-        // 3. Vytvoříme unikátní název souboru
         const fileName = `${finalSlug}-${Date.now()}.png`;
 
-        // 4. Nahrajeme ho do tvého Supabase Bucket 'article_images'
+        // A nahráváme imageBlob
         const { data: uploadData, error: uploadError } = await supabase
           .storage
           .from('article_images')
-          .upload(fileName, arrayBuffer, {
+          .upload(fileName, imageBlob, {
             contentType: 'image/png',
             upsert: true
           });
 
         if (uploadError) throw uploadError;
 
-        // 5. Získáme z tvého Supabase veřejný, trvalý odkaz
         const { data: publicUrlData } = supabase.storage.from('article_images').getPublicUrl(fileName);
         permanentImageUrl = publicUrlData.publicUrl;
 
@@ -134,7 +130,7 @@ export async function GET() {
         slug: finalSlug,
         content: article.content,
         type: task.type,
-        image_url: permanentImageUrl, // Ukládáme ten TRVALÝ odkaz!
+        image_url: permanentImageUrl,
         created_at: new Date().toISOString()
       });
 
@@ -148,7 +144,6 @@ export async function GET() {
 
       await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
       
-      // Výpis úspěchu nebo selhání obrázku přímo do prohlížeče
       if (permanentImageUrl) {
           results.push({ title: article.title, status: 'SUCCESS - PUBLIKOVÁNO S TRVALÝM OBRÁZKEM' });
       } else {
