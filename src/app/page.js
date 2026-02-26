@@ -7,19 +7,26 @@ export const revalidate = 0;
 export default async function Home() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. PŘIČTEME NÁVŠTĚVU (Bezpečně)
-  await supabase.rpc('increment_total_visits').catch(() => {});
+  let posts = [];
+  let celkemNavstev = 0;
 
-  // 2. STÁHNEME DATA
-  const [{ data: posts }, { data: stats }] = await Promise.all([
-    supabase.from('posts').select('*').order('created_at', { ascending: false }),
-    supabase.from('stats').select('value').eq('name', 'total_visits').single()
-  ]);
+  try {
+    // 1. PŘIČTEME NÁVŠTĚVU (Bezpečně, chyba neshodí web)
+    await supabase.rpc('increment_total_visits').catch(() => {});
 
-  const celkemNavstev = stats?.value || 0;
+    // 2. STÁHNEME DATA
+    const [postsResult, statsResult] = await Promise.all([
+      supabase.from('posts').select('*').order('created_at', { ascending: false }),
+      supabase.from('stats').select('value').eq('name', 'total_visits').single()
+    ]);
+
+    posts = postsResult.data || [];
+    celkemNavstev = statsResult.data?.value || 0;
+  } catch (error) {
+    console.error("Chyba na hlavní stránce (Safe Mode aktivní):", error);
+  }
 
   const getThumbnail = (post) => {
     if (post.video_id && post.video_id.length > 5) {
@@ -56,10 +63,8 @@ export default async function Home() {
           THE HARDWARE GURU
         </div>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-            {/* ODKAZY - JEDNODUŠE A BEZPEČNĚ */}
             <Link href="/sestavy" className="nav-link nav-special">PC SESTAVY</Link>
             <Link href="/slovnik" className="nav-link">SLOVNÍK</Link>
-            
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
             <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="nav-link">INSTAGRAM</a>
