@@ -18,7 +18,7 @@ export async function GET() {
   const { data: tasks, error: fetchError } = await supabase
     .from('content_plan')
     .select('*')
-    .eq('status', 'planned') // Bere jen planned
+    .eq('status', 'planned') 
     .order('id', { ascending: true })
     .limit(5);
 
@@ -31,7 +31,6 @@ export async function GET() {
   // 2. PROJDEME JE JEDEN PO DRUHÉM
   for (const task of tasks) {
     // Pokud už jsme v tomto běhu jeden článek úspěšně VYTVOŘILI, končíme (ať nepálíme kredity hromadně)
-    // Pokud ale jen čistíme duplicity, jedeme dál.
     if (processedCount >= 1) break; 
 
     try {
@@ -50,8 +49,7 @@ export async function GET() {
         results.push({ 
           title: task.title, 
           status: 'DUPLICITA - PŘESKOČENO', 
-          match: existing[0].title,
-          db_update_error: updateError ? updateError.message : 'OK'
+          match: existing[0].title
         });
         continue; // Jdeme na další úkol v seznamu
       }
@@ -86,7 +84,42 @@ export async function GET() {
       });
 
       const article = JSON.parse(completion.choices[0].message.content);
-      const slug = createSlug(article.title);
+      const finalSlug = createSlug(article.title);
 
       // Zápis do posts
-      const { error: insertError } = await supabase.from('posts
+      const { error: insertError } = await supabase.from('posts').insert({
+        title: article.title,
+        slug: finalSlug,
+        content: article.content,
+        type: task.type,
+        created_at: new Date().toISOString()
+      });
+
+      if (insertError) {
+         if (insertError.code === '23505') {
+            await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
+            results.push({ title: task.title, status: 'CHYBA SLUGU (DUPLICITA)', details: insertError.message });
+            continue;
+         }
+         throw insertError;
+      }
+
+      // Hotovo
+      await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
+      
+      results.push({ title: article.title, status: 'SUCCESS - PUBLIKOVÁNO' });
+      processedCount++; 
+
+    } catch (err) {
+      console.error(err);
+      // Pokud to selže, vrátíme status error, ať se na tom netocíme
+      await supabase.from('content_plan').update({ status: 'error' }).eq('id', task.id);
+      results.push({ title: task.title, status: 'CRITICAL ERROR', error: err.message });
+    }
+  }
+
+  return NextResponse.json({ 
+    message: 'Exekuce dokončena', 
+    processed_tasks: results 
+  });
+}
