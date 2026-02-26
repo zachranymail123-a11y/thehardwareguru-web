@@ -16,7 +16,7 @@ async function getTrends(query, location = "us", language = "en") {
       tbs: "qdr:d", 
       gl: location,
       hl: language,
-      num: 10 
+      num: 12 
     })
   });
   const data = await res.json();
@@ -34,22 +34,18 @@ export async function GET() {
     const { data: recentPlans } = await supabase.from('content_plan').select('title').order('id', { ascending: false }).limit(30);
     const existingTitles = recentPlans ? recentPlans.map(p => p.title).join(' | ') : 'Zatím žádné články';
 
-    const hwQueryCZ = `hardware "právě odhaleno" OR "únik" OR "novinka" GPU CPU "${now.getMonth() + 1}/${currentYear}"`;
-    const hwTrendsCZ = await getTrends(hwQueryCZ, "cz", "cs");
-    
-    const hwQueryEN = `breaking hardware leaks announcements GPU CPU reviews "${currentMonth} ${currentYear}" site:videocardz.com OR site:tomshardware.com`;
-    const hwTrendsEN = await getTrends(hwQueryEN, "us", "en");
+    // Vyhledávání novinek
+    const hwQuery = `hardware leaks GPU CPU "právě odhaleno" OR "novinka" ${currentYear}`;
+    const gameQuery = `breaking gaming news AAA "oznámeno" OR "vyšlo dnes" release leak`;
 
-    const gameQueryCZ = `herní bleskovky "oznámeno" OR "vyšlo dnes" recenze "${now.getMonth() + 1}/${currentYear}"`;
-    const gameTrendsCZ = await getTrends(gameQueryCZ, "cz", "cs");
+    const [hwCZ, hwEN, gameCZ, gameEN] = await Promise.all([
+      getTrends(hwQuery, "cz", "cs"),
+      getTrends(hwQuery, "us", "en"),
+      getTrends(gameQuery, "cz", "cs"),
+      getTrends(gameQuery, "us", "en")
+    ]);
 
-    const gameQueryEN = `breaking AAA game news announcements leaks reviews "${currentMonth} ${currentYear}" site:ign.com OR site:insider-gaming.com`;
-    const gameTrendsEN = await getTrends(gameQueryEN, "us", "en");
-
-    const combinedTrends = JSON.stringify({
-      hardware: { czech: hwTrendsCZ, world: hwTrendsEN },
-      gaming: { czech: gameTrendsCZ, world: gameTrendsEN }
-    }).substring(0, 15000);
+    const combinedTrends = JSON.stringify({ hwCZ, hwEN, gameCZ, gameEN }).substring(0, 15000);
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -57,21 +53,9 @@ export async function GET() {
         {
           role: "system",
           content: `Jsi nemilosrdný šéfredaktor bleskového zpravodajství The Hardware Guru. Dnes je ${dateString}.
-          
-          TVOJE JEDINÁ PRÁCE JE HLEDAT MEGA NOVINKY A LEAKY Z POSLEDNÍCH 24 HODIN!
-          
-          PRAVIDLA PŘEŽITÍ:
-          1. ZÁKAZ STARÝCH SRAČEK: Vyber jen to, co se stalo DNES. Žádné staré hry!
-          2. KATEGORIE: Vyber PŘESNĚ 2x "hardware" a PŘESNĚ 2x "game". Nesmíš to splést!
-          3. ANTI-DUPLICITA: Neopakuj články: [ ${existingTitles} ].
-          
-          Vrať striktně JSON: 
-          { 
-            "plan": [ 
-              { "title": "Název článku", "type": "hardware", "reason": "Důvod proč dnes...", "release_date": "${now.toISOString().split('T')[0]}" },
-              { "title": "Název článku", "type": "game", "reason": "Důvod proč dnes...", "release_date": "${now.toISOString().split('T')[0]}" }
-            ] 
-          }`
+          Úkol: Vyber 2x "hardware" (komponenty, čipy, benchmarky) a 2x "game" (hry, konzole, studia).
+          Pravidla: Žádné staré věci. Neopakuj témata: [ ${existingTitles} ].
+          Vrať striktně JSON: { "plan": [ { "title": "...", "type": "hardware/game", "reason": "..." } ] }`
         },
         { role: "user", content: `Data: ${combinedTrends}` }
       ],
@@ -81,46 +65,46 @@ export async function GET() {
     const newTasks = JSON.parse(completion.choices[0].message.content).plan;
 
     let addedCount = 0;
-    let dbErrors = [];
-    let insertedRows = [];
+    let results = [];
 
     for (const task of newTasks) {
-      // LEPŠÍ KONTROLA TYPU
-      const rawType = task.type.toLowerCase();
-      const safeType = (rawType.includes('game') || rawType.includes('hra') || rawType.includes('hry')) ? 'game' : 'hardware';
+      // --- INTELIGENTNÍ KÓDOVÁ ROZHODOVAČKA ---
+      const textAnalysis = (task.title + " " + task.reason).toLowerCase();
+      
+      // Klíčová slova, která definují Hardware
+      const hwSignals = ['gpu', 'cpu', 'nvidia', 'amd', 'intel', 'rtx', 'ryzen', 'geforce', 'radeon', 'bench', 'ram', 'ssd', 'motherboard', 'čip', 'procesor', 'nanometr', 'nm', 'turing', 'blackwell', 'rdna'];
+      // Klíčová slova, která definují Hry
+      const gameSignals = ['game', 'hra', 'hry', 'ps5', 'xbox', 'playstation', 'nintendo', 'switch', 'sony', 'studia', 'studio', 'trailer', 'multiplayer', 'rpg', 'fps', 'remake', 'patch', 'dlc', 'plus', 'pass', 'unreal engine'];
 
-      const { data: checkDuplicate } = await supabase
-        .from('content_plan')
-        .select('id')
-        .eq('title', task.title)
-        .limit(1);
+      let hwScore = hwSignals.filter(s => textAnalysis.includes(s)).length;
+      let gameScore = gameSignals.filter(s => textAnalysis.includes(s)).length;
 
-      if (checkDuplicate && checkDuplicate.length > 0) {
-        dbErrors.push({ title: task.title, error_message: "DUPLICITA - Zahozeno." });
-        continue; 
-      }
+      // Pokud AI pošle blbost, kód ji na základě bodů opraví
+      let finalType = task.type.toLowerCase();
+      if (hwScore > gameScore && hwScore > 0) finalType = 'hardware';
+      if (gameScore > hwScore && gameScore > 0) finalType = 'game';
+      
+      // Jistota pro specifické případy (konzole nejsou hardware komponenty v našem pojetí článků)
+      if (textAnalysis.includes('ps5') || textAnalysis.includes('xbox') || textAnalysis.includes('playstation')) finalType = 'game';
+
+      // Kontrola duplicity v DB
+      const { data: duplicate } = await supabase.from('content_plan').select('id').eq('title', task.title).limit(1);
+      if (duplicate && duplicate.length > 0) continue;
 
       const { data, error } = await supabase.from('content_plan').insert({
         title: task.title,
-        release_date: task.release_date,
-        type: safeType,
+        release_date: now.toISOString().split('T')[0],
+        type: finalType,
         status: 'planned'
       }).select();
       
-      if (error) {
-        dbErrors.push({ title: task.title, error_message: error.message });
-      } else if (data && data.length > 0) {
+      if (data) {
         addedCount++;
-        insertedRows.push({ ...data[0], ai_reason: task.reason }); 
+        results.push({ title: task.title, type: finalType, ai_reason: task.reason });
       }
     }
 
-    return NextResponse.json({ 
-      status: dbErrors.length > 0 ? 'VAROVANI' : 'SUCCESS', 
-      added: addedCount,
-      db_zapis: insertedRows,
-      chyby: dbErrors
-    });
+    return NextResponse.json({ status: 'SUCCESS', added: addedCount, db_zapis: results });
 
   } catch (err) {
     return NextResponse.json({ error: 'Chyba planovace', details: err.message });
