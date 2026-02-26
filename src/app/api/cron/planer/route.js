@@ -7,15 +7,19 @@ export const dynamic = 'force-dynamic';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
+// Pomocná funkce pro vyčištění textu na klíčová slova
+function getKeywords(text) {
+  return text.toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .split(/\s+/)
+    .filter(word => word.length > 3);
+}
+
 async function getRawTodayData(query) {
   const res = await fetch('https://google.serper.dev/search', {
     method: 'POST',
     headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      q: query, 
-      tbs: "qdr:h12", 
-      num: 15 
-    })
+    body: JSON.stringify({ q: query, tbs: "qdr:h12", num: 20 })
   });
   const data = await res.json();
   return data.organic || [];
@@ -27,16 +31,18 @@ export async function GET() {
   const todayISO = now.toISOString().split('T')[0];
 
   try {
-    // 1. NAČTENÍ VŠEHO, CO UŽ DNES V DB JE (Tvrdá pojistka proti duplicitám)
+    // 1. NAČTENÍ VŠEHO DNEŠNÍHO (Tvrdá data pro srovnání)
     const { data: existingToday } = await supabase
       .from('content_plan')
       .select('title')
       .gte('release_date', todayISO);
     
-    const blacklist = existingToday ? existingToday.map(e => e.title.toLowerCase()) : [];
+    // Vytvoříme sadu klíčových slov ze všech dnešních článků
+    const forbiddenKeywords = new Set(
+      existingToday ? existingToday.flatMap(e => getKeywords(e.title)) : []
+    );
 
     const sources = "site:videocardz.com OR site:techpowerup.com OR site:wccftech.com OR site:ign.com OR site:vgc.com OR site:pcgamer.com OR site:tomshardware.com";
-    
     const [hwRaw, gameRaw] = await Promise.all([
       getRawTodayData(`${sources} hardware GPU CPU leak benchmark`),
       getRawTodayData(`${sources} game "official" OR "announcement" OR "trailer"`)
@@ -53,15 +59,13 @@ export async function GET() {
     for (const article of rawList) {
       if (addedCount >= 4) break;
 
-      // Kontrola, jestli už v DB není anglický originál nebo podobný název
-      const isDuplicate = blacklist.some(existing => 
-        existing.includes(article.title.toLowerCase().substring(0, 15)) || 
-        article.title.toLowerCase().includes(existing.substring(0, 15))
-      );
+      // 2. SÉMANTICKÁ KONTROLA ORIGINÁLU
+      const articleKeywords = getKeywords(article.title);
+      // Pokud se víc než 50% klíčových slov shodne s tím, co už máme, je to duplicita
+      const matches = articleKeywords.filter(word => forbiddenKeywords.has(word)).length;
+      if (matches > (articleKeywords.length * 0.5)) continue;
 
-      if (isDuplicate) continue;
-
-      // AI PŘEKLAD
+      // 3. AI PŘEKLAD
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -76,12 +80,14 @@ export async function GET() {
 
       const processed = JSON.parse(completion.choices[0].message.content);
       const czechTitle = processed.title.trim();
+      const czechKeywords = getKeywords(czechTitle);
 
-      // Sekundární kontrola českého názvu
-      if (blacklist.includes(czechTitle.toLowerCase())) continue;
+      // 4. POSLEDNÍ POJISTKA NA ČESKÝ NÁZEV
+      const czechMatches = czechKeywords.filter(word => forbiddenKeywords.has(word)).length;
+      if (czechMatches > (czechKeywords.length * 0.4)) continue;
 
-      // ZÁPIS
-      const { data } = await supabase.from('content_plan').insert({
+      // ZÁPIS DO DB
+      const { data, error } = await supabase.from('content_plan').insert({
         title: czechTitle,
         release_date: todayISO,
         type: article.type,
@@ -90,7 +96,8 @@ export async function GET() {
 
       if (data) {
         addedCount++;
-        blacklist.push(czechTitle.toLowerCase());
+        // Ihned přidáme klíčová slova do blacklistu, aby další článek v cyklu nebyl stejný
+        czechKeywords.forEach(word => forbiddenKeywords.add(word));
         log.push({ original: article.title, czech: czechTitle });
       }
     }
