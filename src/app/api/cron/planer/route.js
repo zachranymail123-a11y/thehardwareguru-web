@@ -31,6 +31,11 @@ export async function GET() {
   const currentYear = now.getFullYear();
 
   try {
+    // ---> NOVINKA 1: ZJISTÍME, CO UŽ NA WEBU MÁME <---
+    // Vytáhneme posledních 20 naplánovaných nebo vydaných témat
+    const { data: recentPlans } = await supabase.from('content_plan').select('title').order('id', { ascending: false }).limit(20);
+    const existingTitles = recentPlans ? recentPlans.map(p => p.title).join(' | ') : 'Zatím žádné články';
+
     const hwQueryCZ = `hardware novinky recenze testy GPU CPU MB RAM ${currentYear}`;
     const hwTrendsCZ = await getTrends(hwQueryCZ, "cz", "cs");
     
@@ -60,6 +65,7 @@ export async function GET() {
           1. PRIORITA: Pokud existuje ČESKÝ zdroj z posledních 24h o daném tématu, použij ho.
           2. DOPLNĚNÍ: Pokud v Česku nic nového není, použij světové leaky.
           3. VÝBĚR: Vyber 2x HW (GPU/CPU/MB/RAM) a 2x Hry.
+          4. ANTI-DUPLICITA (ZÁSADNÍ): Tady je seznam článků, které už na webu jsou: [ ${existingTitles} ]. NESMÍŠ vybrat žádné téma, které je stejné nebo velmi podobné těmto článkům. Vymysli úplně jiné novinky!
           
           Vrať striktně JSON: 
           { "plan": [ { "title": "...", "type": "hardware", "release_date": "${now.toISOString().split('T')[0]}" } ] }
@@ -72,16 +78,28 @@ export async function GET() {
 
     const newTasks = JSON.parse(completion.choices[0].message.content).plan;
 
-    // 4. ZÁPIS DO DB S DRSNOU KONTROLOU CHYB
+    // 4. ZÁPIS DO DB S DRSNOU KONTROLOU DUPLICIT A CHYB
     let addedCount = 0;
     let dbErrors = [];
     let insertedRows = [];
 
     for (const task of newTasks) {
-      // Pojistka, kdyby AI zase poslala nesmysl jako "game/hardware"
       const safeType = task.type.includes('game') ? 'game' : 'hardware';
 
-      // .select() vynutí vrácení reálně zapsaných dat. Pokud to nezapíše, uvidíme proč.
+      // ---> NOVINKA 2: TVRDÝ VYHAZOVAČ PŘED ZÁPISEM <---
+      // Podíváme se do databáze, jestli tam přesně tenhle název už náhodou není
+      const { data: checkDuplicate } = await supabase
+        .from('content_plan')
+        .select('id')
+        .eq('title', task.title)
+        .limit(1);
+
+      if (checkDuplicate && checkDuplicate.length > 0) {
+        dbErrors.push({ title: task.title, error_message: "ZACHYCENA DUPLICITA: Tento článek už v databázi je, zahazuji." });
+        continue; // Ukončí smyčku pro tento článek a přeskočí na další
+      }
+
+      // Pokud jsme tady, článek je unikátní. Zapisujeme:
       const { data, error } = await supabase.from('content_plan').insert({
         title: task.title,
         release_date: task.release_date,
@@ -101,11 +119,11 @@ export async function GET() {
 
     // VYPLIVNEME ÚPLNĚ VŠECHNO NA OBRAZOVKU
     return NextResponse.json({ 
-      status: dbErrors.length > 0 ? 'MAME_PROBLEM_S_DB' : 'SUCCESS', 
+      status: dbErrors.length > 0 ? 'DOKONCENO_S_VAROVANIM_NEBO_CHYBOU' : 'SUCCESS', 
       added: addedCount,
       ai_vymyslelo: newTasks,
       db_skutecne_zapsala: insertedRows,
-      db_chyby: dbErrors
+      zahozeno_nebo_chyby: dbErrors
     });
 
   } catch (err) {
