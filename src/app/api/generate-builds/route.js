@@ -10,19 +10,17 @@ export async function GET(req) {
 
   const GURU_STRICT_PROMPT = `
     Jsi "The Hardware Guru". Navrhni PŘESNĚ tyto 3 sestavy pro únor 2026. 
-    JSON STRUKTURA: {"builds": [OBJ]}
+    JSON STRUKTURA: {"builds": [{"name": "...", "price_range": "...", "cpu": "...", "gpu": "...", "ram": "...", "motherboard": "...", "storage": "...", "psu": "...", "cooler": "...", "case_name": "...", "description": "..."}]}
 
-    1. "Budget Beast" (Cena: 51 493 Kč)
-       - Ryzen 7 7700X, RTX 5070, B850 ATX, 32GB RAM, 512GB+2TB NVMe.
-    2. "Mid-range Master RTX" (Cena: 73 872 Kč)
-       - Ryzen 9 7900X3D, RTX 5070 Ti, MSI X870 PRO, 32GB RAM, 512GB+2TB (990 PRO).
-    3. "Mid-range Master Radeon" (Cena: 80 476 Kč)
-       - Ryzen 9 9900X3D, Radeon RX 9070 XT, Gigabyte X870E AORUS MASTER, 32GB RAM, 512GB+2TB (990 PRO).
+    POVINNÉ SESTAVY:
+    1. "Budget Beast" (Cena: 51 493 Kč) - Ryzen 7 7700X, RTX 5070, B850.
+    2. "Mid-range Master RTX" (Cena: 73 872 Kč) - Ryzen 9 7900X3D, RTX 5070 Ti, X870.
+    3. "Mid-range Master Radeon" (Cena: 80 476 Kč) - Ryzen 9 9900X3D, RX 9070 XT, X870E AORUS MASTER.
 
     STRIKTNÍ PRAVIDLA:
-    - Názvy MUSÍ být přesně: "Budget Beast", "Mid-range Master RTX", "Mid-range Master Radeon".
-    - Vyplň VŠECHNA pole (cpu, gpu, ram, motherboard, storage, psu, cooler, case_name).
-    - ŽÁDNÁ PRÁZDNÁ POLE. Popis: Hobby projekt, Kick Sub, Discord.
+    - Klíče "price_range", "cpu", "gpu", "ram", "motherboard", "storage", "psu", "cooler", "case_name" MUSÍ být vyplněné.
+    - Cena v price_range musí být u Budget Beast přesně 51 493 Kč, u Master RTX 73 872 Kč a u Master Radeon 80 476 Kč.
+    - Popis: Hobby projekt, Kick Sub + Discord.
   `;
 
   try {
@@ -36,46 +34,48 @@ export async function GET(req) {
     const data = JSON.parse(completion.choices[0].message.content);
     const buildsArray = data.builds || [];
 
-    const cleanBuilds = buildsArray.map(b => ({
-      name: b.name,
-      price_range: b.price_range,
-      cpu: b.cpu || "AMD AM5",
-      gpu: b.gpu || "RTX / Radeon",
-      ram: b.ram || "32GB DDR5 6000MHz",
-      motherboard: b.motherboard || "ATX Board",
-      storage: b.storage || "512GB + 2TB NVMe",
-      psu: b.psu || "Seasonic Gold",
-      cooler: b.cooler || "AIO / Cooler",
-      case_name: b.case_name || "ATX Case",
-      description: b.description || "Kontaktuj mě na Discordu (nutný Kick sub).",
-      active: true,
-      updated_at: new Date().toISOString()
-    }));
+    const cleanBuilds = buildsArray.map(b => {
+      // Záchranná síť pro ceny, aby Supabase neřvala kvůli NULL
+      let finalPrice = b.price_range || b.price || b.cena;
+      if (!finalPrice || finalPrice === null) {
+        if (b.name?.toLowerCase().includes("budget")) finalPrice = "51 493 Kč";
+        else if (b.name?.toLowerCase().includes("rtx")) finalPrice = "73 872 Kč";
+        else finalPrice = "80 476 Kč";
+      }
 
-    // 🔥 KROK 1: SMAZÁNÍ VŠEHO (Díky SQL příkazu výše už to teď projde)
+      return {
+        name: b.name || "Guru Build",
+        price_range: finalPrice,
+        cpu: b.cpu || b.processor || "AMD AM5",
+        gpu: b.gpu || "RTX / Radeon",
+        ram: b.ram || "32GB DDR5 6000MHz",
+        motherboard: b.motherboard || "AM5 ATX Board",
+        storage: b.storage || "512GB + 2TB NVMe",
+        psu: b.psu || "Seasonic Gold",
+        cooler: b.cooler || "AIO / Cooler",
+        case_name: b.case_name || "ATX Case",
+        description: b.description || "Hobby projekt. Kick sub + Discord.",
+        active: true,
+        updated_at: new Date().toISOString()
+      };
+    });
+
+    // 🔥 KROK 1: SMAZÁNÍ VŠEHO (neq 'id' s nulovým UUID je nejjistější filtr)
     const { error: deleteError } = await supabase
       .from('pc_builds')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); 
+      .neq('id', '00000000-0000-0000-0000-000000000000');
 
-    if (deleteError) {
-      console.error("Delete Error:", deleteError);
-      throw new Error("Smazání starých dat selhalo: " + deleteError.message);
-    }
+    if (deleteError) throw new Error("Delete failed: " + deleteError.message);
 
-    // 🔥 KROK 2: Vložení nových 3 kusů
-    const { error: insertError } = await supabase
-      .from('pc_builds')
-      .insert(cleanBuilds);
-
+    // 🔥 KROK 2: VLOŽENÍ ČISTÝCH DAT
+    const { error: insertError } = await supabase.from('pc_builds').insert(cleanBuilds);
     if (insertError) throw insertError;
 
-    return new Response(JSON.stringify({ 
-      message: "TABULKA VYČIŠTĚNA A NAHRÁNY JEN 3 SESTAVY!", 
-      count: cleanBuilds.length 
-    }), { status: 200 });
+    return new Response(JSON.stringify({ message: "GURU RESET HOTOV!", count: cleanBuilds.length }));
 
   } catch (err) {
+    console.error("Guru Nuclear Error:", err.message);
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
 }
