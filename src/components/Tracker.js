@@ -7,23 +7,29 @@ export default function Tracker() {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Definujeme klíče uvnitř useEffect - spustí se jen v prohlížeči
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    // Pokud klíče chybí (např. při buildu), tiše skript ukončíme
-    if (!supabaseUrl || !supabaseKey) return;
+    // 🚩 DIAGNOSTIKA 1: Kontrola klíčů
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn('📊 Tracker: Chybí NEXT_PUBLIC klíče. Pokud jsi je právě přidal do Vercelu, musíš udělat nový Deploy.');
+      return;
+    }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const track = async () => {
-      try {
-        await supabase.from('page_views').insert({ 
-          page_path: pathname 
-        });
-      } catch (error) {
-        // Chybu jen zalogujeme, aby nezhodila celý web
-        console.error('Tracking failed:', error);
+      console.log(`📊 Tracker: Zkouším zapsat návštěvu stránky: ${pathname}`);
+      
+      const { error } = await supabase
+        .from('page_views')
+        .insert({ page_path: pathname });
+
+      if (error) {
+        // 🚩 DIAGNOSTIKA 2: Chyba při zápisu (často RLS v Supabase)
+        console.error('📊 Tracker CHYBA:', error.message);
+      } else {
+        console.log('📊 Tracker: Úspěšně uloženo do databáze! ✅');
       }
     };
 
