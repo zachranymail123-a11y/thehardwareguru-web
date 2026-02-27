@@ -1,42 +1,42 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Nutíme Next.js, aby sitemapu nekachoval a generoval ji vždy čerstvou
-export const revalidate = 0;
+export const revalidate = 0; // Zabrání cachování staré sitemapy
 
 export default async function sitemap() {
-  // OPRAVA: Použití správných environmentálních proměnných
   const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL, 
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
-  
+
   const baseUrl = 'https://www.thehardwareguru.cz';
 
-  // Načteme všechno naráz
-  const [{ data: posts }, { data: wiki }] = await Promise.all([
-    supabase.from('posts').select('slug, created_at').order('created_at', { ascending: false }),
-    supabase.from('wiki').select('slug, created_at')
-  ]);
+  // 1. STATICKÉ STRÁNKY
+  const staticRoutes = [
+    { url: `${baseUrl}`, priority: 1.0 },
+    { url: `${baseUrl}/sestavy`, priority: 0.9 },
+    { url: `${baseUrl}/slovnik`, priority: 0.9 },
+  ].map((route) => ({
+    url: route.url,
+    lastModified: new Date().toISOString(),
+    priority: route.priority,
+  }));
 
-  // Články (Recenze)
-  const postUrls = posts?.map((p) => ({ 
-    url: `${baseUrl}/clanky/${p.slug}`, 
-    lastModified: p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString(), 
-    priority: 0.8 
-  })) || [];
+  // 2. DYNAMICKÉ ČLÁNKY (Předpokládám, že máš tabulku 'clanky')
+  const { data: clanky } = await supabase.from('clanky').select('slug');
+  const clankyRoutes = (clanky || []).map((clanek) => ({
+    url: `${baseUrl}/clanky/${clanek.slug}`,
+    lastModified: new Date().toISOString(), // Můžeš nahradit datem z DB, pokud máš sloupec created_at
+    priority: 0.8,
+  }));
 
-  // Slovník (Wiki)
-  const wikiUrls = wiki?.map((w) => ({ 
-    url: `${baseUrl}/slovnik/${w.slug}`, 
-    lastModified: w.created_at ? new Date(w.created_at).toISOString() : new Date().toISOString(), 
-    priority: 0.7 
-  })) || [];
+  // 3. DYNAMICKÝ SLOVNÍK (Tohle vygeneruje těch 50+ pojmů automaticky)
+  const { data: pojmy } = await supabase.from('slovnik').select('slug');
+  const slovnikRoutes = (pojmy || []).map((pojem) => ({
+    url: `${baseUrl}/slovnik/${pojem.slug}`,
+    lastModified: new Date().toISOString(),
+    priority: 0.7,
+  }));
 
-  return [
-    { url: baseUrl, lastModified: new Date().toISOString(), priority: 1 },
-    { url: `${baseUrl}/sestavy`, lastModified: new Date().toISOString(), priority: 0.9 },
-    { url: `${baseUrl}/slovnik`, lastModified: new Date().toISOString(), priority: 0.9 },
-    ...postUrls,
-    ...wikiUrls
-  ];
+  // SPOJÍME VŠECHNO DOHROMADY
+  return [...staticRoutes, ...clankyRoutes, ...slovnikRoutes];
 }
