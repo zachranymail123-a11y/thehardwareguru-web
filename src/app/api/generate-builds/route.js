@@ -8,7 +8,7 @@ import OpenAI from 'openai';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-// Přepnuto na NÁKUPY s chytrou logikou hledání NEJLEVNĚJŠÍ ceny
+// Přepnuto zpět na relevanci od Googlu. Žádné řazení od nuly, ať nám to nebere kabely!
 async function fetchRealPrices(query) {
   try {
     const response = await fetch("https://google.serper.dev/shopping", {
@@ -18,23 +18,9 @@ async function fetchRealPrices(query) {
       cache: 'no-store'
     });
     const data = await response.json();
-    
     if (data.shopping && data.shopping.length > 0) {
-      // Vytáhneme všechny položky, očistíme cenu na čisté číslo a vyfiltrujeme blbosti (pod 500 Kč)
-      const items = data.shopping.map(item => {
-        const priceStr = item.price ? item.price.toString() : "0";
-        // Odstraní desetinné čárky a nechá jen holé číslo (např. z "5 690,00 Kč" udělá 5690)
-        const priceNum = parseInt(priceStr.split(',')[0].replace(/[^\d]/g, ''), 10) || 0;
-        return { title: item.title, priceNum };
-      }).filter(item => item.priceNum > 500);
-
-      // Seřadíme od NEJLEVNĚJŠÍHO
-      items.sort((a, b) => a.priceNum - b.priceNum);
-
-      // Pošleme AI ty absolutně nejlevnější 3 varianty, co na trhu jsou
-      if (items.length > 0) {
-        return items.slice(0, 3).map(item => `${item.title}: ${item.priceNum} Kč`).join(" | ");
-      }
+      // Předhodíme AI 3 nejrelevantnější nabídky, ať si vybere tu správnou
+      return data.shopping.slice(0, 3).map(item => `${item.title}: ${item.price} Kč`).join(" | ");
     }
     return "Cena nenalezena";
   } catch (e) { 
@@ -47,7 +33,7 @@ export async function GET(req) {
   if (searchParams.get('secret') !== 'Wifik500') return new Response('Unauthorized', { status: 401 });
 
   try {
-    // 1. Získáme přesná čísla pro přesné komponenty včetně KC3000
+    // 1. Získáme přesná čísla pro přesné komponenty
     const [cpuBudget, cpuMid, gpu5070, gpu5070Ti, gpu9070XT, ramPrice, mbPrice, ssdPrice] = await Promise.all([
       fetchRealPrices("AMD Ryzen 7 7700X procesor"),
       fetchRealPrices("AMD Ryzen 7 9800X3D procesor"),
@@ -60,9 +46,9 @@ export async function GET(req) {
     ]);
 
     const GURU_FINAL_PROMPT = `
-      Jsi "The Hardware Guru". MÁŠ ZAKÁZÁNO POČÍTAT SOUČTY A VYMÝŠLET SI CENY U RAM, DESKY A SSD. 
+      Jsi "The Hardware Guru". MÁŠ ZAKÁZÁNO POČÍTAT SOUČTY. 
 
-      ŽIVÉ CENY Z TRHU (Seřazeno od nejlevnějších, vždy POUŽIJ TU NEJNIŽŠÍ CENU!):
+      ŽIVÉ CENY Z TRHU (U každého máš až 3 nabídky. Vyber tu NEJLEVNEJŠÍ REÁLNOU CENU ZA SAMOTNÝ HARDWARE. Absolutně ignoruj podezřele levné položky jako jsou kabely, chladiče, držáky nebo prázdné krabice, které se mohly připlést do vyhledávání!):
       - Ryzen 7 7700X: ${cpuBudget}
       - Ryzen 7 9800X3D: ${cpuMid}
       - RTX 5070: ${gpu5070}
@@ -78,9 +64,9 @@ export async function GET(req) {
       3. "Mid-range Master Radeon" (9800X3D, RX 9070 XT)
 
       PRAVIDLA PRO JSON:
-      - U položky "price" použij VŽDY JEN ČÍSLO.
+      - U položky "price" použij VŽDY JEN HOLÉ ČÍSLO.
       - Ostatní díly (zdroj, chladič, case) ohodnoť logickou aktuální tržní cenou.
-      - V názvech vypisuj celé jméno, nikdy nepoužívej tři tečky.
+      - V názvech nevypisuj tečky, dej tam normální text.
 
       VRAŤ PŘESNĚ TENTO JSON FORMÁT:
       {
@@ -168,7 +154,7 @@ export async function GET(req) {
     const { error: upsertError } = await supabase.from('pc_builds').upsert(finalBuilds);
     if (upsertError) throw upsertError;
 
-    return new Response(JSON.stringify({ message: "GURU UPDATE: Inteligentní vyhledávání NEJLEVNĚJŠÍCH cen nasazeno!", count: finalBuilds.length }), { status: 200 });
+    return new Response(JSON.stringify({ message: "GURU KRIZE ODVRÁCENA! Ceny opraveny.", count: finalBuilds.length }), { status: 200 });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
