@@ -30,24 +30,50 @@ export default async function SlovnikPage() {
       <style>{`
         .term-card { background: rgba(31, 40, 51, 0.6); border: 1px solid #45a29e; padding: 25px; border-radius: 12px; transition: all 0.3s ease; text-decoration: none; color: inherit; display: flex; flex-direction: column; box-sizing: border-box; min-height: 100%; }
         .term-card:hover { border-color: #66fcf1; box-shadow: 0 0 20px rgba(102, 252, 241, 0.2); transform: translateY(-5px); background: rgba(31, 40, 51, 0.8); }
-        .nav-link { margin: 0 15px; color: #fff; text-decoration: none; font-weight: bold; transition: color 0.3s; text-transform: uppercase; }
+        .nav-link { color: #fff; text-decoration: none; font-weight: bold; transition: color 0.3s; text-transform: uppercase; font-size: 0.9rem; }
         .nav-link:hover { color: #66fcf1; text-shadow: 0 0 10px #66fcf1; }
-        .social-btn { padding: 10px 20px; text-decoration: none; font-weight: 900; border-radius: 5px; text-transform: uppercase; transition: transform 0.2s; }
+        .social-btn { padding: 8px 15px; text-decoration: none; font-weight: 900; border-radius: 5px; text-transform: uppercase; transition: transform 0.2s; font-size: 0.85rem; display: inline-block; }
         .social-btn:hover { transform: scale(1.05); }
         .read-more { margin-top: 15px; color: #45a29e; font-size: 0.85rem; font-weight: 900; text-transform: uppercase; transition: color 0.3s; display: flex; alignItems: center; gap: 5px; }
         .term-card:hover .read-more { color: #66fcf1; }
+        @media (max-width: 768px) {
+          .nav-container { flex-direction: column; gap: 15px; padding: 15px !important; }
+          .social-group { justify-content: center; }
+        }
       `}</style>
 
-      <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: 'rgba(31, 40, 51, 0.9)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link href="/" style={{ textDecoration: 'none', fontSize: '1.5rem', fontWeight: '900', color: '#66fcf1' }}>THE HARDWARE GURU</Link>
-        <Link href="/" className="nav-link">ZPĚT NA WEB</Link>
+      {/* --- HORNÍ LIŠTA S ODKAZY (VŽDY VIDITELNÁ) --- */}
+      <nav className="nav-container" style={{ 
+        padding: '10px 40px', 
+        borderBottom: '2px solid #66fcf1', 
+        background: 'rgba(31, 40, 51, 0.98)', 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        position: 'sticky',
+        top: 0,
+        zIndex: 1000,
+        backdropFilter: 'blur(10px)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
+          <Link href="/" style={{ textDecoration: 'none', fontSize: '1.3rem', fontWeight: '900', color: '#66fcf1', letterSpacing: '1px' }}>THE HARDWARE GURU</Link>
+          <Link href="/" className="nav-link">ZPĚT</Link>
+        </div>
+
+        {/* SOCIÁLNÍ SÍTĚ NAHOŘE */}
+        <div className="social-group" style={{ display: 'flex', gap: '10px' }}>
+          <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ background: '#53fc18', color: '#000' }}>KICK</a>
+          <a href="https://www.youtube.com/@thehardwareguru_czech" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ background: '#ff0000', color: '#fff' }}>YOUTUBE</a>
+          <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ background: '#5865F2', color: '#fff' }}>DISCORD</a>
+        </div>
       </nav>
 
       <main style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px', flex: '1 0 auto', width: '100%', boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-            <h1 style={{ color: '#fff', fontSize: '3.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px' }}>
+            <h1 style={{ color: '#fff', fontSize: '3.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0 }}>
                 GURU HARDWARE <span style={{ color: '#66fcf1' }}>SLOVNÍK</span>
             </h1>
+            <p style={{ marginTop: '10px', color: '#45a29e', fontWeight: '600' }}>Tvé technické znalosti začínají zde.</p>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '30px', alignItems: 'stretch' }}>
@@ -56,13 +82,11 @@ export default async function SlovnikPage() {
               <h2 style={{ color: '#66fcf1', margin: '0 0 15px 0', fontSize: '1.3rem', textTransform: 'uppercase', fontWeight: '800' }}>
                 {pojem.title}
               </h2>
-              {/* OŘÍZNUTÝ TEXT S FLEX-GROW, KTERÝ ODSTRČÍ ŠIPKU DOLŮ */}
               <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6', margin: 0, flexGrow: 1 }}>
                 {pojem.description.length > 120 
                   ? pojem.description.substring(0, 120) + '...' 
                   : pojem.description}
               </p>
-              {/* VIZUÁLNÍ NÁPOVĚDA KE KLIKNUTÍ (ŠIPKA) */}
               <div className="read-more">
                 Zobrazit detail <span style={{ fontSize: '1.2rem', lineHeight: '1' }}>→</span>
               </div>
@@ -71,12 +95,32 @@ export default async function SlovnikPage() {
         </div>
       </main>
 
-      <footer style={{ padding: '40px 20px', background: 'rgba(11, 12, 16, 0.98)', borderTop: '1px solid #45a29e', textAlign: 'center', marginTop: '60px' }}>
-        <h2 style={{ color: '#66fcf1', marginBottom: '15px', textTransform: 'uppercase', fontWeight: '900' }}>O mně</h2>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
-          <a href="https://kick.com/thehardwareguru" target="_blank" rel="noreferrer" className="social-btn" style={{ background: '#53fc18', color: '#000' }}>KICK STREAM</a>
-          <a href="https://www.youtube.com/@thehardwareguru_czech" target="_blank" rel="noreferrer" className="social-btn" style={{ background: '#ff0000', color: '#fff' }}>YOUTUBE</a>
-          <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" className="social-btn" style={{ background: '#5865F2', color: '#fff' }}>DISCORD</a>
+      {/* --- SEKCE O MNĚ A SPODEK --- */}
+      <footer style={{ 
+        padding: '60px 20px', 
+        background: 'rgba(11, 12, 16, 0.98)', 
+        borderTop: '2px solid #45a29e', 
+        textAlign: 'center', 
+        marginTop: '80px' 
+      }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <h2 style={{ color: '#66fcf1', marginBottom: '20px', textTransform: 'uppercase', fontWeight: '900', fontSize: '2rem' }}>O mně</h2>
+          <p style={{ lineHeight: '1.8', fontSize: '1.1rem', marginBottom: '30px' }}>
+            Vítej ve světě <strong>The Hardware Guru</strong>! Jsem tvůj průvodce moderní technologií, hardwarem a gamingem. 
+            Moje mise je jednoduchá: pomáhat ti stavět lepší PC, chápat složité pojmy a bavit se u nejnovějších her. 
+            Najdeš mě pravidelně na streamu, kde společně řešíme vaše sestavy v reálném čase, recenzujeme novinky 
+            a tvoříme nejsilnější tech komunitu.
+          </p>
+          
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap', marginBottom: '40px' }}>
+            <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ background: '#53fc18', color: '#000', padding: '12px 25px' }}>KICK STREAM</a>
+            <a href="https://www.youtube.com/@thehardwareguru_czech" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ background: '#ff0000', color: '#fff', padding: '12px 25px' }}>YOUTUBE KANÁL</a>
+            <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ background: '#5865F2', color: '#fff', padding: '12px 25px' }}>DISCORD SERVER</a>
+          </div>
+          
+          <p style={{ fontSize: '0.8rem', color: '#45a29e' }}>
+            © {new Date().getFullYear()} THE HARDWARE GURU. Všechna práva vyhrazena.
+          </p>
         </div>
       </footer>
     </div>
