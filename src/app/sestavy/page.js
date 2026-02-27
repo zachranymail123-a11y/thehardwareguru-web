@@ -42,8 +42,8 @@ export default async function SestavyPage() {
         .build-card { border: 1px solid #45a29e; background: rgba(20, 24, 30, 0.9); display: flex; flex-direction: column; border-radius: 12px; overflow: hidden; margin-bottom: 50px; transition: transform 0.3s ease; }
         .build-card:hover { transform: scale(1.01); border-color: #66fcf1; }
         .card-header { background: rgba(102, 252, 241, 0.05); padding: 25px; border-bottom: 1px solid #45a29e; text-align: center; }
-        .specs-container { padding: 25px; }
-        .spec-row { display: grid; grid-template-columns: 80px 1fr; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .specs-container { padding: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 0 30px; }
+        .spec-row { display: grid; grid-template-columns: 110px 1fr; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.9rem; }
         .desc-box { background: rgba(0, 0, 0, 0.3); padding: 20px 25px; border-top: 1px solid rgba(69, 162, 158, 0.3); border-bottom: 1px solid rgba(69, 162, 158, 0.3); }
         .cta-box { padding: 30px 25px; background: rgba(10, 10, 10, 0.4); text-align: center; }
         .cta-button { display: block; width: 100%; padding: 18px; background: linear-gradient(90deg, #b91c1c, #ef4444, #b91c1c); color: white; font-weight: 900; text-transform: uppercase; text-decoration: none; border-radius: 6px; transition: transform 0.2s; }
@@ -57,6 +57,7 @@ export default async function SestavyPage() {
           .nav-container { flex-direction: column; gap: 15px; padding: 15px !important; }
           .social-group { justify-content: center; width: 100%; }
           .hero-title { font-size: 1.8rem !important; }
+          .specs-container { grid-template-columns: 1fr; }
         }
       `}</style>
 
@@ -85,7 +86,7 @@ export default async function SestavyPage() {
         </div>
       </nav>
 
-      <main style={{ maxWidth: '1000px', margin: '40px auto', padding: '0 20px', flex: '1 0 auto', width: '100%', boxSizing: 'border-box' }}>
+      <main style={{ maxWidth: '1100px', margin: '40px auto', padding: '0 20px', flex: '1 0 auto', width: '100%', boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <h1 className="hero-title" style={{ color: '#fff', fontSize: '2.5rem', fontWeight: '900', textTransform: 'uppercase', marginBottom: '15px', margin: 0 }}>
             Doporučené herní sestavy <span style={{color: '#66fcf1'}}>2026</span>
@@ -103,23 +104,30 @@ export default async function SestavyPage() {
                 <h2 style={{ color: '#fff', margin: 0, textTransform: 'uppercase', fontSize: '1.5rem' }}>{build.name}</h2>
                 <div style={{ color: '#66fcf1', fontSize: '1.4rem', fontWeight: 'bold' }}>{build.price_range}</div>
               </div>
+
               <div className="specs-container">
-                <div className="spec-row"><span style={{color:'#45a29e', fontWeight: 'bold'}}>CPU</span><span style={{textAlign:'right'}}>{build.cpu}</span></div>
-                <div className="spec-row"><span style={{color:'#45a29e', fontWeight: 'bold'}}>GPU</span><span style={{textAlign:'right'}}>{build.gpu}</span></div>
-                <div className="spec-row"><span style={{color:'#45a29e', fontWeight: 'bold'}}>RAM</span><span style={{textAlign:'right'}}>{build.ram}</span></div>
-                <div className="spec-row"><span style={{color:'#45a29e', fontWeight: 'bold'}}>SSD</span><span style={{textAlign:'right'}}>{build.storage}</span></div>
+                <div className="spec-row"><span style={{color:'#45a29e', fontWeight: 'bold'}}>CPU</span><span>{build.cpu}</span></div>
+                <div className="spec-row"><span style={{color:'#45a29e', fontWeight: 'bold'}}>GRAFIKA</span><span>{build.gpu}</span></div>
+                <div className="spec-row"><span style={{color:'#45a29e', fontWeight: 'bold'}}>DESKA</span><span>{build.motherboard || 'ATX AM5 Guru Standard'}</span></div>
+                <div className="spec-row"><span style={{color:'#45a29e', fontWeight: 'bold'}}>RAM</span><span>{build.ram}</span></div>
+                <div className="spec-row"><span style={{color:'#45a29e', fontWeight: 'bold'}}>SSD</span><span>{build.storage}</span></div>
+                <div className="spec-row"><span style={{color:'#45a29e', fontWeight: 'bold'}}>ZDROJ</span><span>{build.psu || 'Seasonic Gold'}</span></div>
+                <div className="spec-row"><span style={{color:'#45a29e', fontWeight: 'bold'}}>CHLAZENÍ</span><span>{build.cooler || 'Vodní AIO / PWM Fans'}</span></div>
+                <div className="spec-row"><span style={{color:'#45a29e', fontWeight: 'bold'}}>SKŘÍŇ</span><span>{build.case_name || 'ATX Airflow Case'}</span></div>
               </div>
+
               <div className="desc-box">
-                <p style={{ fontStyle: 'italic', margin: 0, lineHeight: '1.5' }}>"{build.description}"</p>
+                <p style={{ fontStyle: 'italic', margin: 0, lineHeight: '1.5', color: '#66fcf1', fontSize: '0.95rem' }}>"{build.description}"</p>
               </div>
+
               <div className="cta-box">
-                <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" style={{ color: '#fff', textDecoration: 'none', display: 'block', marginBottom: '10px', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                    ⚠️ CHCEŠ PC? MÁŠ PŘEDSTAVU, ALE NEVÍŠ CO A JAK? JSI NA SPRÁVNÉM MÍSTĚ!
-                </a>
+                <p style={{ color: '#fff', textDecoration: 'none', display: 'block', marginBottom: '10px', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                    ⚠️ REALIZACE PROBÍHÁ JAKO HOBBY PROJEKT A KOMUNITNÍ POMOC PRO DIVÁKY
+                </p>
                 <div style={{ marginBottom: '20px', fontSize: '0.95rem' }}>
-                    PODMÍNKA: <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" style={{color: '#53fc18', fontWeight: 'bold'}}>SUBSCRIBE NA KICKU</a> 💚
+                    Vše se řeší soukromě na Discordu. Podmínkou je <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" style={{color: '#53fc18', fontWeight: 'bold'}}>SUBSCRIBE NA KICKU</a> 💚
                 </div>
-                <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" className="cta-button">CHCI TUTO SESTAVU NA MÍRU 🛠️</a>
+                <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" className="cta-button">DOMLUVIT STAVBU NA DISCORDU 🛠️</a>
               </div>
             </div>
           ))}
