@@ -2,73 +2,43 @@ import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
-  const secret = searchParams.get('secret');
+  if (searchParams.get('secret') !== 'Wifik500') return new Response('Unauthorized', { status: 401 });
 
-  if (secret !== process.env.CRON_SECRET && secret !== 'Wifik500') {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
-  }
-
-  const GURU_KODEX = `
-    Jsi "The Hardware Guru". Navrhni 3 herní PC sestavy pro rok 2026.
-    
-    💰 MĚNA A CENY:
-    - Všechny ceny v poli "price_range" uváděj výhradně v ČESKÝCH KORUNÁCH (Kč).
-    - Budget: cca 25.000 - 35.000 Kč.
-    - Mid-range: cca 50.000 - 65.000 Kč.
-    - Extreme: 90.000 Kč a více.
-
-    STRIKTNÍ PRAVIDLA PRO DESKY:
-    - Budget: B850 (ATX).
-    - Mid-range: X870 (ATX).
-    - Extreme: X870E (ATX).
-    - Vždy heatsink na M.2, min. 2x M.2 a 4x SATA.
-
-    HARDWAROVÁ PRAVIDLA:
-    - CPU: AMD AM5 (9000 X3D pro Mid/Extreme, 7000 X3D pro Budget).
-    - RAM: 32GB (2x16GB) 6000MHz CL30.
-    - GPU Budget: RTX 5070 / Radeon 9070.
-    - GPU Mid/Extreme: RTX 5070 Ti / Radeon 9070 XT.
-    - PSU: Seasonic Gold (TDP + 100W rezerva).
-    - DISK: 512GB NVMe (Systém) + 2TB NVMe (Data).
-    - CASE: NZXT, Fractal, Lian Li, be quiet! (ATX, zdroj dole).
-    - CHLAZENÍ: Vodní AIO pro AM5, tiché PWM ventilátory.
-
-    POVINNÝ TEXT DO DESCRIPTION:
-    "Realizace probíhá jako hobby projekt a komunitní pomoc. Vše se řeší individuálně na Discordu. Podmínkou je Subscribe na Kicku."
-
-    VRAŤ POUZE JSON OBJEKT s klíčem "builds" (pole 3 objektů).
-  `;
+  const GURU_PROMPT = `Jsi "The Hardware Guru". Navrhni 3 herní PC (Budget, Mid, Extreme) pro rok 2026.
+    VRAŤ JSON: {"builds": [{"name": "...", "price_range": "... Kč", "cpu": "...", "gpu": "...", "ram": "...", "motherboard": "...", "storage": "...", "psu": "...", "cooler": "...", "case_name": "...", "description": "..."}]}`;
 
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
-      messages: [{ role: "system", content: GURU_KODEX }],
+      messages: [{ role: "system", content: GURU_PROMPT }],
       response_format: { type: "json_object" }
     });
 
-    const generatedData = JSON.parse(completion.choices[0].message.content);
-    let buildsArray = generatedData.builds || Object.values(generatedData).find(Array.isArray) || [];
+    const data = JSON.parse(completion.choices[0].message.content);
+    const rawBuilds = data.builds || [];
 
-    if (buildsArray.length === 0) throw new Error("AI nevrátila pole.");
+    const cleanBuilds = rawBuilds.map(b => ({
+      name: b.name || b.nazev || "Guru Sestava",
+      price_range: b.price_range || b.cena || "Cena v Kč",
+      cpu: b.cpu || b.processor || b.procesor || "AMD AM5 X3D",
+      gpu: b.gpu || b.grafika || b.vga || "RTX / Radeon",
+      ram: b.ram || b.pamet || "32GB DDR5 6000MHz CL30",
+      motherboard: b.motherboard || b.deska || b.zakladni_deska || "ATX Guru Standard",
+      storage: b.storage || b.disk || b.ssd || "512GB + 2TB NVMe",
+      psu: b.psu || b.zdroj || "Seasonic Gold",
+      cooler: b.cooler || b.chlazeni || "Vodní AIO / PWM Fans",
+      case_name: b.case_name || b.skrin || b.case || "ATX Airflow Case",
+      description: b.description || b.popis || "Realizace jako hobby projekt. Discord + Kick Sub.",
+      active: true,
+      updated_at: new Date().toISOString()
+    }));
 
-    const { error } = await supabase
-      .from('pc_builds')
-      .upsert(buildsArray.map(b => ({
-        ...b,
-        active: true,
-        updated_at: new Date().toISOString()
-      })));
-
-    if (error) throw error;
-
-    return new Response(JSON.stringify({ message: "Sestavy v Kč uloženy!", count: buildsArray.length }), { status: 200 });
+    await supabase.from('pc_builds').upsert(cleanBuilds);
+    return new Response(JSON.stringify({ message: "Sestavy vyčištěny a nahrány!", count: cleanBuilds.length }));
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
