@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 
-// Vynutíme čerstvá data při každém načtení
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -10,7 +9,7 @@ export default async function SlovnikPage() {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Načtení dat
+  // Pokus o načtení dat
   const { data: pojmy, error } = await supabase
     .from('slovnik')
     .select('*')
@@ -45,27 +44,27 @@ export default async function SlovnikPage() {
           transform: translateY(-5px);
           background: rgba(31, 40, 51, 0.8);
         }
-        .nav-link { margin: 0 15px; color: #fff; text-decoration: none; font-weight: bold; transition: color 0.3s; text-transform: uppercase; }
-        .nav-link:hover { color: #66fcf1; text-shadow: 0 0 10px #66fcf1; }
       `}</style>
 
-      <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: 'rgba(31, 40, 51, 0.9)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link href="/" style={{ textDecoration: 'none', fontSize: '1.5rem', fontWeight: '900', color: '#66fcf1' }}> THE HARDWARE GURU </Link>
-        <Link href="/" className="nav-link">ZPĚT NA WEB</Link>
+      <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: 'rgba(31, 40, 51, 0.9)', textAlign: 'center' }}>
+        <Link href="/" style={{ color: '#fff', textDecoration: 'none', fontWeight: 'bold', textTransform: 'uppercase' }}>ZPĚT NA HLAVNÍ WEB</Link>
       </nav>
 
       <main style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
         <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-            <h1 style={{ color: '#fff', fontSize: '3.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px' }}>
+            <h1 style={{ color: '#fff', fontSize: '3.5rem', fontWeight: '900', textTransform: 'uppercase' }}>
                 GURU HARDWARE <span style={{ color: '#66fcf1' }}>SLOVNÍK</span>
             </h1>
-            <p style={{ color: '#45a29e', fontSize: '1.1rem' }}> 🛠️ Dynamický seznam pojmů z tvojí databáze. </p>
+            <div style={{ color: '#66fcf1', fontWeight: 'bold', fontSize: '0.8rem', border: '1px solid #66fcf1', display: 'inline-block', padding: '2px 10px', borderRadius: '20px' }}>
+                REŽIM: DYNAMICKÁ DATABÁZE
+            </div>
         </div>
 
-        {/* CHYBOVÁ HLÁŠKA PRO LADĚNÍ */}
+        {/* LADĚNÍ CHYB */}
         {error && (
-          <div style={{ color: '#ff4444', textAlign: 'center', padding: '20px', border: '1px solid #ff4444', borderRadius: '10px', marginBottom: '20px' }}>
-            <strong>Chyba databáze:</strong> {error.message}
+          <div style={{ background: 'rgba(255,0,0,0.2)', padding: '20px', border: '1px solid red', borderRadius: '10px', marginBottom: '20px', textAlign: 'center' }}>
+            <h2 style={{ color: '#ff4444' }}>Chyba při spojení se Supabase:</h2>
+            <p>{error.message}</p>
           </div>
         )}
 
@@ -77,13 +76,13 @@ export default async function SlovnikPage() {
                   {pojem.title}
                 </h2>
                 <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6', margin: 0 }}>
-                  {pojem.description.length > 160 ? pojem.description.substring(0, 160) + '...' : pojem.description}
+                  {pojem.description}
                 </p>
               </Link>
             ))
           ) : (
             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '50px', color: '#45a29e' }}>
-                {!error && "V databázi nebyly nalezeny žádné pojmy. Zkontroluj tabulku 'slovnik'."}
+                {!error && "Databáze je prázdná nebo se tabulka nejmenuje 'slovnik'. 🛠️"}
             </div>
           )}
         </div>
