@@ -8,7 +8,7 @@ import OpenAI from 'openai';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-// Přepnuto na NÁKUPY (Shopping API) - Živé e-shopové ceny
+// Přepnuto na NÁKUPY (Shopping API) - Živé e-shopové ceny z Heureky
 async function fetchRealPrices(query) {
   try {
     const response = await fetch("https://google.serper.dev/shopping", {
@@ -39,7 +39,7 @@ export async function GET(req) {
       fetchRealPrices("NVIDIA GeForce RTX 5070 grafická karta"),
       fetchRealPrices("NVIDIA GeForce RTX 5070 Ti grafická karta"),
       fetchRealPrices("AMD Radeon RX 9070 XT grafická karta"),
-      fetchRealPrices("32GB DDR5 6000MHz CL30") // Vyhledá přesně tvoji RAM
+      fetchRealPrices("32GB DDR5 6000MHz CL30") 
     ]);
 
     const GURU_FINAL_PROMPT = `
@@ -94,7 +94,7 @@ export async function GET(req) {
     const data = JSON.parse(completion.choices[0].message.content);
     const buildsArray = data.builds || [];
 
-    // 🔥 TVRDÁ IDčka - Tímhle obejdeme ten blok v Supabase. Sestavy se budou vždy jen PŘEPISOVAT na tyto 3 pozice.
+    // 🔥 TVRDÁ IDčka pro Upsert (Sestavy se už nekupí, jen přepisují tyhle 3 řádky)
     const FIXED_IDS = {
       budget: "11111111-1111-1111-1111-111111111111",
       rtx: "22222222-2222-2222-2222-222222222222",
@@ -109,7 +109,7 @@ export async function GET(req) {
 
       const c = b.components || {};
 
-      // Získáme čistá čísla z AI. Pokud AI udělá chybu a vynechá cenu, dáme záchrannou hodnotu.
+      // Získání přesných cen (holá čísla)
       const pCpu = (c.cpu && typeof c.cpu.price === 'number') ? c.cpu.price : 5000;
       const pGpu = (c.gpu && typeof c.gpu.price === 'number') ? c.gpu.price : 15000;
       const pRam = (c.ram && typeof c.ram.price === 'number') ? c.ram.price : 3500;
@@ -119,24 +119,37 @@ export async function GET(req) {
       const pCooler = (c.cooler && typeof c.cooler.price === 'number') ? c.cooler.price : 2000;
       const pCase = (c.case_name && typeof c.case_name.price === 'number') ? c.case_name.price : 2500;
 
-      // 🔥 MATEMATIKU DĚLÁ JAVASCRIPT: Sečteme to na halíř přesně
+      // 🔥 MATEMATIKA PRO CELKOVOU CENU
       const totalSum = pCpu + pGpu + pRam + pMb + pStorage + pPsu + pCooler + pCase;
+      const roundedSum = Math.ceil(totalSum / 5000) * 5000; // Zaokrouhlení nahoru na 5000
 
-      // Funkce pro složení textu "Název (14 590 Kč)"
+      // Formátování dílů (zůstane přesná nezaokrouhlená cena z Heureky)
       const formatComp = (name, price) => `${name} (${price.toLocaleString('cs-CZ')} Kč)`;
       const getName = (obj, def) => (obj && obj.name) ? obj.name : def;
 
       return {
         id: targetId,
         name: b.name,
-        price_range: `${totalSum.toLocaleString('cs-CZ')} Kč`,
-        cpu: formatComp(getName(c.cpu, "AMD CPU"), pCpu),
+        price_range: `Orientační cena: ${roundedSum.toLocaleString('cs-CZ')} Kč`, // Vypsání celkové zaokrouhlené ceny
+        cpu: formatComp(getName(c.cpu, "AMD CPU"), pCpu), // Vypsání PŘESNÉ ceny dílu
         gpu: formatComp(getName(c.gpu, "GPU"), pGpu),
-        
-        // 🔥 TVRDÁ POJISTKA PRO RAM: AI to textově už NIKDY nezmění, doplní se jen cena
         ram: formatComp("32GB DDR5 6000MHz CL30", pRam), 
-        
         motherboard: formatComp(getName(c.motherboard, "AM5 Motherboard"), pMb),
         storage: formatComp(getName(c.storage, "512GB + 2TB NVMe"), pStorage),
         psu: formatComp(getName(c.psu, "Seasonic Gold PSU"), pPsu),
-        cooler: formatComp(getName(c.cooler, "Cooler"), pCool
+        cooler: formatComp(getName(c.cooler, "Cooler"), pCooler),
+        case_name: formatComp(getName(c.case_name, "PC Case"), pCase),
+        description: b.description || "Kdyz chce někdo levnejsi custom sestavu tak Subscribe na [Kick streamu](https://kick.com/thehardwareguru) a naslesně na [Discordu](https://discord.com/invite/n7xThr8) to doresime samozrejme. Realizace probíhá jako hobby projekt.",
+        active: true,
+        updated_at: new Date().toISOString()
+      };
+    });
+
+    const { error: upsertError } = await supabase.from('pc_builds').upsert(finalBuilds);
+    if (upsertError) throw upsertError;
+
+    return new Response(JSON.stringify({ message: "GURU MATEMATIKA APLIKOVÁNA (ZAOKROUHLENO NA 5000 NAHORU)!", count: finalBuilds.length }), { status: 200 });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+  }
+}
