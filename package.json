@@ -13,7 +13,8 @@
     "react-dom": "^18",
     "next": "14.2.3",
     "@supabase/supabase-js": "^2.39.0",
-    "openai": "^4.28.0"
+    "openai": "^4.28.0",
+    "@vercel/analytics": "latest"
   },
   "devDependencies": {
     "typescript": "^5",
