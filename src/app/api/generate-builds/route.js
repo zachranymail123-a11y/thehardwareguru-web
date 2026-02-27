@@ -10,20 +10,19 @@ export async function GET(req) {
 
   const GURU_STRICT_PROMPT = `
     Jsi "The Hardware Guru". Navrhni PŘESNĚ tyto 3 sestavy pro únor 2026. 
-    STRUKTURA JSON: {"builds": [{"name": "...", "price_range": "...", "cpu": "...", "gpu": "...", "ram": "...", "motherboard": "...", "storage": "...", "psu": "...", "cooler": "...", "case_name": "...", "description": "..."}]}
+    JSON STRUKTURA: {"builds": [OBJ]}
 
-    POVINNÉ NÁZVY A CENY (DODRŽET NA HALÉŘ):
     1. "Budget Beast" (Cena: 51 493 Kč)
+       - Ryzen 7 7700X, RTX 5070, B850 ATX, 32GB RAM, 512GB+2TB NVMe.
     2. "Mid-range Master RTX" (Cena: 73 872 Kč)
+       - Ryzen 9 7900X3D, RTX 5070 Ti, MSI X870 PRO, 32GB RAM, 512GB+2TB (990 PRO).
     3. "Mid-range Master Radeon" (Cena: 80 476 Kč)
-
-    SPECIFIKACE PRO MASTER RADEON:
-    CPU: AMD Ryzen 9 9900X3D (14 590 Kč), GPU: AMD Radeon RX 9070 XT (21 700 Kč), MB: Gigabyte X870E AORUS MASTER (11 161 Kč), RAM: 11 790 Kč, SSD (512GB+2TB): 7 498 Kč, Zdroj: 2 525 Kč, Chlazení: 6 500 Kč, Case: 4 712 Kč.
+       - Ryzen 9 9900X3D, Radeon RX 9070 XT, Gigabyte X870E AORUS MASTER, 32GB RAM, 512GB+2TB (990 PRO).
 
     STRIKTNÍ PRAVIDLA:
-    - Platforma: Vždy AM5.
-    - Klíče MUSÍ být vyplněné, žádná prázdná pole.
-    - Popis: Hobby projekt, nutný Kick Sub a Discord.
+    - Názvy MUSÍ být přesně: "Budget Beast", "Mid-range Master RTX", "Mid-range Master Radeon".
+    - Vyplň VŠECHNA pole (cpu, gpu, ram, motherboard, storage, psu, cooler, case_name).
+    - ŽÁDNÁ PRÁZDNÁ POLE. Popis: Hobby projekt, Kick Sub, Discord.
   `;
 
   try {
@@ -43,29 +42,28 @@ export async function GET(req) {
       cpu: b.cpu || "AMD AM5",
       gpu: b.gpu || "RTX / Radeon",
       ram: b.ram || "32GB DDR5 6000MHz",
-      motherboard: b.motherboard || "AM5 ATX Board",
+      motherboard: b.motherboard || "ATX Board",
       storage: b.storage || "512GB + 2TB NVMe",
       psu: b.psu || "Seasonic Gold",
       cooler: b.cooler || "AIO / Cooler",
       case_name: b.case_name || "ATX Case",
-      description: b.description || "Hobby projekt. Kick sub + Discord.",
+      description: b.description || "Kontaktuj mě na Discordu (nutný Kick sub).",
       active: true,
       updated_at: new Date().toISOString()
     }));
 
-    // 🔥 TOTÁLNÍ ČISTKA: Mazání pomocí filtru, který v Supabase sežere všechno
-    // Používáme filtr "id is not null", což v Supabase zaručeně smaže každou řádku
+    // 🔥 KROK 1: SMAZÁNÍ VŠEHO (Díky SQL příkazu výše už to teď projde)
     const { error: deleteError } = await supabase
       .from('pc_builds')
       .delete()
-      .not('id', 'is', null);
+      .neq('id', '00000000-0000-0000-0000-000000000000'); 
 
     if (deleteError) {
-      console.error("Delete failed:", deleteError);
-      throw new Error("Chyba při mazání tabulky: " + deleteError.message);
+      console.error("Delete Error:", deleteError);
+      throw new Error("Smazání starých dat selhalo: " + deleteError.message);
     }
 
-    // 🔥 KROK 2: Vložení 3 nových čistých sestav
+    // 🔥 KROK 2: Vložení nových 3 kusů
     const { error: insertError } = await supabase
       .from('pc_builds')
       .insert(cleanBuilds);
@@ -73,7 +71,7 @@ export async function GET(req) {
     if (insertError) throw insertError;
 
     return new Response(JSON.stringify({ 
-      message: "GURU RESET HOTOV - NAHRÁNY 3 SESTAVY!", 
+      message: "TABULKA VYČIŠTĚNA A NAHRÁNY JEN 3 SESTAVY!", 
       count: cleanBuilds.length 
     }), { status: 200 });
 
