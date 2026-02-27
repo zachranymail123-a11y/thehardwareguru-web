@@ -1,69 +1,74 @@
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
-// Inicializace OpenAI a Supabase
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY // Potřebujeme Service Role pro zápis
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 export async function GET(req) {
-  // Ochrana: Kontrola tajného klíče v URL, aby ti sestavy negeneroval kdokoli
   const { searchParams } = new URL(req.url);
   const secret = searchParams.get('secret');
 
-  if (secret !== process.env.CRON_SECRET) {
-    return new Response('Unauthorized', { status: 401 });
+  // Kontrola hesla (používáme tvoje Wifik500)
+  if (secret !== process.env.CRON_SECRET && secret !== 'Wifik500') {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
   }
 
   const GURU_KODEX = `
-    Jsi "The Hardware Guru", expert s 20 lety praxe. Navrhuješ PC sestavy pro rok 2026.
-    STRIKTNÍ PRAVIDLA HARDWARU:
-    1. CPU: Vždy AMD AM5 (High-end: řada 9000 X3D, Budget: řada 7000 X3D).
-    2. MB: Vždy ATX, heatsink na M.2, min. 2x M.2 slot a 4x SATA.
-    3. RAM: Vždy 32GB (2x16GB) 6000MHz CL30.
-    4. GPU: High-end (RTX 5070 Ti / Radeon 9070 XT), Budget (RTX 5070 / Radeon 9070).
-    5. PSU: Vždy Seasonic Gold (Výkon = TDP komponent + 100W rezerva).
-    6. DISK: 1x 512GB NVMe (Systém) + 1x 2TB NVMe (Data).
-    7. CASE: Kvalitní ATX, zdroj dole, značky: NZXT, Fractal Design, Lian Li, be quiet!
-    8. CHLAZENÍ: Vodní AIO pro AM5, tiché PWM ventilátory.
+    Jsi "The Hardware Guru". Navrhni 3 herní PC sestavy (Budget, Mid-range, Extreme) pro rok 2026.
+    
+    PRAVIDLA HARDWARU:
+    - CPU: AMD AM5 (9000 X3D / 7000 X3D).
+    - MB: ATX, heatsink na M.2, min. 2x M.2 a 4x SATA.
+    - RAM: 32GB (2x16GB) 6000MHz CL30.
+    - GPU: RTX 5070/Ti nebo Radeon 9070/XT.
+    - PSU: Seasonic Gold (TDP + 100W rezerva).
+    - DISK: 512GB NVMe (System) + 2TB NVMe (Data).
+    - CASE: NZXT, Fractal, Lian Li, be quiet! (ATX, zdroj dole).
 
-    KONTEXT PRO POPIS:
-    - Sestavy jsou tvé nekompromisní návrhy.
-    - Realizace probíhá jako HOBBY PROJEKT a komunitní pomoc pro diváky.
-    - Vše se řeší individuálně a soukromě na Discordu.
-    - Podmínkou pro pomoc je aktivní SUBSCRIBE na Kicku.
-
-    TVŮJ ÚKOL:
-    Vygeneruj 3 herní sestavy (Budget, Mid-range, Extreme).
-    Výstup odevzdej jako JSON pole objektů s klíči: name, price_range, cpu, gpu, ram, storage, description.
+    VRAŤ POUZE JSON OBJEKT, KTERÝ OBSAHUJE KLÍČ "builds", COŽ JE POLE 3 OBJEKTŮ.
+    Struktura objektu: name, price_range, cpu, gpu, ram, motherboard, storage, psu, cooler, case_name, description.
   `;
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o", // nebo gpt-4-turbo
+      model: "gpt-4o",
       messages: [{ role: "system", content: GURU_KODEX }],
       response_format: { type: "json_object" }
     });
 
     const generatedData = JSON.parse(completion.choices[0].message.content);
-    const builds = generatedData.builds || generatedData; // Podle toho, jak AI pole zabalí
+    
+    // 🔥 KLÍČOVÁ OPRAVA: Zajistíme, že máme pole sestav
+    let buildsArray = [];
+    if (generatedData.builds && Array.isArray(generatedData.builds)) {
+      buildsArray = generatedData.builds;
+    } else {
+      // Pokud to AI hodila do jiného klíče, zkusíme ho najít
+      const firstKey = Object.keys(generatedData).find(k => Array.isArray(generatedData[k]));
+      buildsArray = firstKey ? generatedData[firstKey] : [];
+    }
 
-    // Uložíme/Aktualizujeme sestavy v Supabase
-    // Předpokládám, že tabulka 'pc_builds' má odpovídající sloupce
+    if (buildsArray.length === 0) {
+      throw new Error("AI nevrátila platné pole sestav.");
+    }
+
+    // Zápis do Supabase - upsert teď dostane zaručeně pole
     const { error } = await supabase
       .from('pc_builds')
-      .upsert(builds.map(b => ({
+      .upsert(buildsArray.map(b => ({
         ...b,
         active: true,
-        updated_at: new Date()
+        updated_at: new Date().toISOString()
       })));
 
     if (error) throw error;
 
-    return new Response(JSON.stringify({ message: "Sestavy aktualizovány!" }), { status: 200 });
+    return new Response(JSON.stringify({ message: "Sestavy úspěšně vloženy!", count: buildsArray.length }), { status: 200 });
   } catch (err) {
+    console.error("CHYBA:", err.message);
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
 }
