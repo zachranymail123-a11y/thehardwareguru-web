@@ -28,36 +28,18 @@ export default async function SlovnikPage() {
         flexDirection: 'column'
     }}>
       <style>{`
-        .term-card { 
-          background: rgba(31, 40, 51, 0.6); 
-          border: 1px solid #45a29e; 
-          padding: 25px; 
-          border-radius: 12px; 
-          transition: all 0.3s ease;
-          text-decoration: none;
-          color: inherit;
-          display: flex;
-          flex-direction: column;
-          /* TADY JSOU OPRAVY PŘEKRÝVÁNÍ: */
-          box-sizing: border-box;
-          min-height: 100%;
-        }
-        .term-card:hover { 
-          border-color: #66fcf1; 
-          box-shadow: 0 0 20px rgba(102, 252, 241, 0.2); 
-          transform: translateY(-5px);
-          background: rgba(31, 40, 51, 0.8);
-        }
+        .term-card { background: rgba(31, 40, 51, 0.6); border: 1px solid #45a29e; padding: 25px; border-radius: 12px; transition: all 0.3s ease; text-decoration: none; color: inherit; display: flex; flex-direction: column; box-sizing: border-box; min-height: 100%; }
+        .term-card:hover { border-color: #66fcf1; box-shadow: 0 0 20px rgba(102, 252, 241, 0.2); transform: translateY(-5px); background: rgba(31, 40, 51, 0.8); }
         .nav-link { margin: 0 15px; color: #fff; text-decoration: none; font-weight: bold; transition: color 0.3s; text-transform: uppercase; }
         .nav-link:hover { color: #66fcf1; text-shadow: 0 0 10px #66fcf1; }
         .social-btn { padding: 10px 20px; text-decoration: none; font-weight: 900; border-radius: 5px; text-transform: uppercase; transition: transform 0.2s; }
         .social-btn:hover { transform: scale(1.05); }
+        .read-more { margin-top: 15px; color: #45a29e; font-size: 0.85rem; font-weight: 900; text-transform: uppercase; transition: color 0.3s; display: flex; alignItems: center; gap: 5px; }
+        .term-card:hover .read-more { color: #66fcf1; }
       `}</style>
 
       <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: 'rgba(31, 40, 51, 0.9)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link href="/" style={{ textDecoration: 'none', fontSize: '1.5rem', fontWeight: '900', color: '#66fcf1' }}>
-          THE HARDWARE GURU
-        </Link>
+        <Link href="/" style={{ textDecoration: 'none', fontSize: '1.5rem', fontWeight: '900', color: '#66fcf1' }}>THE HARDWARE GURU</Link>
         <Link href="/" className="nav-link">ZPĚT NA WEB</Link>
       </nav>
 
@@ -66,9 +48,6 @@ export default async function SlovnikPage() {
             <h1 style={{ color: '#fff', fontSize: '3.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px' }}>
                 GURU HARDWARE <span style={{ color: '#66fcf1' }}>SLOVNÍK</span>
             </h1>
-            <p style={{ color: '#45a29e', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                🛠️ Stručně a jasně vysvětlené pojmy od servisáka s 20letou praxí.
-            </p>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '30px', alignItems: 'stretch' }}>
@@ -77,12 +56,16 @@ export default async function SlovnikPage() {
               <h2 style={{ color: '#66fcf1', margin: '0 0 15px 0', fontSize: '1.3rem', textTransform: 'uppercase', fontWeight: '800' }}>
                 {pojem.title}
               </h2>
+              {/* OŘÍZNUTÝ TEXT S FLEX-GROW, KTERÝ ODSTRČÍ ŠIPKU DOLŮ */}
               <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6', margin: 0, flexGrow: 1 }}>
-                {/* ZKRÁCENO NA 120 ZNAKŮ S TEČKAMI PRO VZHLED OCHUTNÁVKY */}
                 {pojem.description.length > 120 
                   ? pojem.description.substring(0, 120) + '...' 
                   : pojem.description}
               </p>
+              {/* VIZUÁLNÍ NÁPOVĚDA KE KLIKNUTÍ (ŠIPKA) */}
+              <div className="read-more">
+                Zobrazit detail <span style={{ fontSize: '1.2rem', lineHeight: '1' }}>→</span>
+              </div>
             </Link>
           ))}
         </div>
@@ -90,9 +73,6 @@ export default async function SlovnikPage() {
 
       <footer style={{ padding: '40px 20px', background: 'rgba(11, 12, 16, 0.98)', borderTop: '1px solid #45a29e', textAlign: 'center', marginTop: '60px' }}>
         <h2 style={{ color: '#66fcf1', marginBottom: '15px', textTransform: 'uppercase', fontWeight: '900' }}>O mně</h2>
-        <p style={{ color: '#c5c6c7', maxWidth: '600px', margin: '0 auto 25px auto', lineHeight: '1.6' }}>
-          Jsem servisák s 20letou praxí a hardware nadšenec. Streamuju, testuju, opravuju a teď i trénuju AI, aby ti pomohla s výběrem toho nejlepšího železa.
-        </p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
           <a href="https://kick.com/thehardwareguru" target="_blank" rel="noreferrer" className="social-btn" style={{ background: '#53fc18', color: '#000' }}>KICK STREAM</a>
           <a href="https://youtube.com/@thehardwareguru" target="_blank" rel="noreferrer" className="social-btn" style={{ background: '#ff0000', color: '#fff' }}>YOUTUBE</a>
