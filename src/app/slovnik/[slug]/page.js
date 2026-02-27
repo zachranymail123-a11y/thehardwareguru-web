@@ -10,7 +10,7 @@ export default async function SlovnikPage() {
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 
-  // Stáhneme všechny pojmy seřazené podle abecedy
+  // Načteme pojmy z databáze
   const { data: pojmy } = await supabase
     .from('slovnik')
     .select('*')
@@ -28,54 +28,65 @@ export default async function SlovnikPage() {
     }}>
       <style>{`
         .term-card { 
-          background: rgba(31, 40, 51, 0.9); 
+          background: rgba(31, 40, 51, 0.6); 
           border: 1px solid #45a29e; 
-          padding: 20px; 
-          border-radius: 10px; 
+          padding: 25px; 
+          border-radius: 12px; 
           transition: all 0.3s ease;
           text-decoration: none;
           color: inherit;
-          display: block;
+          display: flex;
+          flex-direction: column;
         }
         .term-card:hover { 
           border-color: #66fcf1; 
-          box-shadow: 0 0 15px rgba(102, 252, 241, 0.3); 
-          transform: translateY(-3px);
+          box-shadow: 0 0 20px rgba(102, 252, 241, 0.2); 
+          transform: translateY(-5px);
+          background: rgba(31, 40, 51, 0.8);
         }
         .nav-link { margin: 0 15px; color: #fff; text-decoration: none; font-weight: bold; transition: color 0.3s; text-transform: uppercase; }
         .nav-link:hover { color: #66fcf1; text-shadow: 0 0 10px #66fcf1; }
       `}</style>
 
-      {/* HLAVIČKA */}
+      {/* NAVIGACE */}
       <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: 'rgba(31, 40, 51, 0.9)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Link href="/" style={{ textDecoration: 'none', fontSize: '1.5rem', fontWeight: '900', color: '#66fcf1' }}>
           THE HARDWARE GURU
         </Link>
-        <Link href="/" className="nav-link">Zpět na hlavní web</Link>
+        <Link href="/" className="nav-link">ZPĚT NA WEB</Link>
       </nav>
 
-      <main style={{ maxWidth: '1000px', margin: '60px auto', padding: '0 20px' }}>
-        <h1 style={{ color: '#fff', fontSize: '3rem', textAlign: 'center', marginBottom: '10px', fontWeight: '900', textShadow: '0 0 10px #66fcf1' }}>
-          GURU SLOVNÍK
-        </h1>
-        <p style={{ textAlign: 'center', color: '#45a29e', marginBottom: '50px', fontSize: '1.2rem' }}>
-          Všechny HW a gaming pojmy, kterým jsi doteď nerozuměl, na jednom místě.
-        </p>
+      <main style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
+        {/* TVŮJ PŮVODNÍ NADPIS A PODNADPIS */}
+        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
+            <h1 style={{ color: '#fff', fontSize: '3.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px' }}>
+                GURU HARDWARE <span style={{ color: '#66fcf1' }}>SLOVNÍK</span>
+            </h1>
+            <p style={{ color: '#45a29e', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                🛠️ Stručně a jasně vysvětlené pojmy od servisáka s 20letou praxí.
+            </p>
+        </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+        {/* DYNAMICKÁ MŘÍŽKA */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '25px' }}>
           {pojmy?.map((pojem) => (
             <Link key={pojem.id} href={`/slovnik/${pojem.slug}`} className="term-card">
-              <h2 style={{ color: '#66fcf1', margin: '0 0 10px 0', fontSize: '1.4rem' }}>{pojem.title}</h2>
-              <p style={{ color: '#c5c6c7', fontSize: '0.9rem', lineHeight: '1.4' }}>
-                {pojem.description.substring(0, 100)}...
+              <h2 style={{ color: '#66fcf1', margin: '0 0 15px 0', fontSize: '1.3rem', textTransform: 'uppercase', fontWeight: '800' }}>
+                {pojem.title}
+              </h2>
+              <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6', margin: 0 }}>
+                {pojem.description.length > 150 
+                  ? pojem.description.substring(0, 150) + '...' 
+                  : pojem.description}
               </p>
-              <div style={{ marginTop: '15px', color: '#45a29e', fontSize: '0.8rem', fontWeight: 'bold' }}>ZJISTIT VÍCE →</div>
             </Link>
           ))}
         </div>
 
         {(!pojmy || pojmy.length === 0) && (
-          <p style={{ textAlign: 'center', padding: '50px' }}>Slovník se právě krmí daty. Zkus to za chvilku!</p>
+          <div style={{ textAlign: 'center', padding: '100px', color: '#45a29e' }}>
+            Slovník je momentálně v údržbě... 🛠️
+          </div>
         )}
       </main>
     </div>
