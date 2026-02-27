@@ -8,65 +8,22 @@ import OpenAI from 'openai';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-// Přepnuto zpět na relevanci od Googlu. Žádné řazení od nuly, ať nám to nebere kabely!
-async function fetchRealPrices(query) {
-  try {
-    const response = await fetch("https://google.serper.dev/shopping", {
-      method: "POST",
-      headers: { "X-API-KEY": process.env.SERPER_API_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ q: query, gl: "cz", hl: "cs" }),
-      cache: 'no-store'
-    });
-    const data = await response.json();
-    if (data.shopping && data.shopping.length > 0) {
-      // Předhodíme AI 3 nejrelevantnější nabídky, ať si vybere tu správnou
-      return data.shopping.slice(0, 3).map(item => `${item.title}: ${item.price} Kč`).join(" | ");
-    }
-    return "Cena nenalezena";
-  } catch (e) { 
-    return "Chyba API"; 
-  }
-}
-
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   if (searchParams.get('secret') !== 'Wifik500') return new Response('Unauthorized', { status: 401 });
 
   try {
-    // 1. Získáme přesná čísla pro přesné komponenty
-    const [cpuBudget, cpuMid, gpu5070, gpu5070Ti, gpu9070XT, ramPrice, mbPrice, ssdPrice] = await Promise.all([
-      fetchRealPrices("AMD Ryzen 7 7700X procesor"),
-      fetchRealPrices("AMD Ryzen 7 9800X3D procesor"),
-      fetchRealPrices("NVIDIA GeForce RTX 5070 grafická karta"),
-      fetchRealPrices("NVIDIA GeForce RTX 5070 Ti grafická karta"),
-      fetchRealPrices("AMD Radeon RX 9070 XT grafická karta"),
-      fetchRealPrices("Kingston Fury Beast DDR5 32GB 6000MHz CL30 2x16GB"),
-      fetchRealPrices("Gigabyte X870E AORUS ELITE WIFI7"),
-      fetchRealPrices("Kingston KC3000 2048GB SSD")
-    ]);
-
     const GURU_FINAL_PROMPT = `
-      Jsi "The Hardware Guru". MÁŠ ZAKÁZÁNO POČÍTAT SOUČTY. 
-
-      ŽIVÉ CENY Z TRHU (U každého máš až 3 nabídky. Vyber tu NEJLEVNEJŠÍ REÁLNOU CENU ZA SAMOTNÝ HARDWARE. Absolutně ignoruj podezřele levné položky jako jsou kabely, chladiče, držáky nebo prázdné krabice, které se mohly připlést do vyhledávání!):
-      - Ryzen 7 7700X: ${cpuBudget}
-      - Ryzen 7 9800X3D: ${cpuMid}
-      - RTX 5070: ${gpu5070}
-      - RTX 5070 Ti: ${gpu5070Ti}
-      - RX 9070 XT: ${gpu9070XT}
-      - RAM (Kingston): ${ramPrice}
-      - Motherboard (Gigabyte): ${mbPrice}
-      - SSD (Kingston KC3000): ${ssdPrice}
+      Jsi "The Hardware Guru". Navrhni 3 herní PC sestavy.
+      ZAKAZUJI TI PSÁT JAKÉKOLIV CENY. Tvojí jedinou prací je vypsat přesné a celé názvy komponentů.
 
       TVÉ 3 SESTAVY:
-      1. "Budget Beast" (7700X, RTX 5070)
-      2. "Mid-range Master RTX" (9800X3D, RTX 5070 Ti)
-      3. "Mid-range Master Radeon" (9800X3D, RX 9070 XT)
+      1. "Budget Beast" (CPU: AMD Ryzen 7 7700X, GPU: RTX 5070)
+      2. "Mid-range Master RTX" (CPU: AMD Ryzen 7 9800X3D, GPU: RTX 5070 Ti)
+      3. "Mid-range Master Radeon" (CPU: AMD Ryzen 7 9800X3D, GPU: RX 9070 XT)
 
-      PRAVIDLA PRO JSON:
-      - U položky "price" použij VŽDY JEN HOLÉ ČÍSLO.
-      - Ostatní díly (zdroj, chladič, case) ohodnoť logickou aktuální tržní cenou.
-      - V názvech nevypisuj tečky, dej tam normální text.
+      PRAVIDLA PRO JSON (NEPOUŽÍVEJ TŘI TEČKY V NÁZVECH! VYPISUJ CELÁ JMÉNA!):
+      - U grafiky, zdroje, chladiče a skříně vypiš prostě jen normální název produktu.
 
       VRAŤ PŘESNĚ TENTO JSON FORMÁT:
       {
@@ -74,14 +31,14 @@ export async function GET(req) {
           {
             "name": "Celý Název Sestavy",
             "components": {
-              "cpu": {"name": "Celý název procesoru", "price": 10000},
-              "gpu": {"name": "Celý název grafiky", "price": 15000},
-              "ram": {"name": "Kingston", "price": 3000},
-              "motherboard": {"name": "Gigabyte", "price": 7000},
-              "storage": {"name": "Kingston SSD", "price": 3500},
-              "psu": {"name": "Seasonic Focus GX 850W", "price": 3000},
-              "cooler": {"name": "Arctic Liquid Freezer III 360", "price": 2000},
-              "case_name": {"name": "Lian Li Lancool 216", "price": 2500}
+              "cpu": {"name": "Celý název procesoru"},
+              "gpu": {"name": "Celý název grafiky"},
+              "ram": {"name": "RAM"},
+              "motherboard": {"name": "Deska"},
+              "storage": {"name": "SSD"},
+              "psu": {"name": "Seasonic Focus GX 850W"},
+              "cooler": {"name": "Arctic Liquid Freezer III 360"},
+              "case_name": {"name": "Lian Li Lancool 216"}
             }
           }
         ]
@@ -98,6 +55,7 @@ export async function GET(req) {
     const data = JSON.parse(completion.choices[0].message.content);
     const buildsArray = data.builds || [];
 
+    // Pevná IDčka, takže sestavy se nekupí, ale elegantně se přepisují
     const FIXED_IDS = {
       budget: "11111111-1111-1111-1111-111111111111",
       rtx: "22222222-2222-2222-2222-222222222222",
@@ -111,41 +69,28 @@ export async function GET(req) {
       else if (b.name.includes("Radeon")) targetId = FIXED_IDS.radeon;
 
       const c = b.components || {};
-
-      const pCpu = (c.cpu && typeof c.cpu.price === 'number') ? c.cpu.price : 5000;
-      const pGpu = (c.gpu && typeof c.gpu.price === 'number') ? c.gpu.price : 15000;
-      const pRam = (c.ram && typeof c.ram.price === 'number') ? c.ram.price : 3200;
-      const pMb = (c.motherboard && typeof c.motherboard.price === 'number') ? c.motherboard.price : 7500;
-      const pStorage = (c.storage && typeof c.storage.price === 'number') ? c.storage.price : 3500;
-      const pPsu = (c.psu && typeof c.psu.price === 'number') ? c.psu.price : 2500;
-      const pCooler = (c.cooler && typeof c.cooler.price === 'number') ? c.cooler.price : 2000;
-      const pCase = (c.case_name && typeof c.case_name.price === 'number') ? c.case_name.price : 2500;
-
-      // Součet a zaokrouhlení na nejbližších 5000 Kč nahoru
-      const totalSum = pCpu + pGpu + pRam + pMb + pStorage + pPsu + pCooler + pCase;
-      const roundedSum = Math.ceil(totalSum / 5000) * 5000;
-
-      const formatComp = (name, price) => `${name} (${price.toLocaleString('cs-CZ')} Kč)`;
       const getName = (obj, def) => (obj && obj.name) ? obj.name : def;
 
-      const cleanDescription = "Když chce někdo levnější custom sestavu, ať dá Subscribe na Kick streamu a následně to pořešíme na Discordu. Realizace probíhá jako hobby projekt.";
+      // Univerzální texty nahrazující problémové ceny
+      const customPriceRange = "Cena dle aktuálního trhu";
+      const customDescription = "Ceny hardwaru se mění každý den, takže se celková částka odvíjí od data, kdy sestavu navrhujeme. Bližší dohodu a přesnou kalkulaci pořešíme společně – stačí hodit Subscribe na Kick streamu a napsat mi na Discord. Realizace probíhá jako hobby projekt.";
 
       return {
         id: targetId,
         name: b.name,
-        price_range: `Orientační cena: ${roundedSum.toLocaleString('cs-CZ')} Kč`,
-        cpu: formatComp(getName(c.cpu, "AMD CPU"), pCpu),
-        gpu: formatComp(getName(c.gpu, "GPU"), pGpu),
+        price_range: customPriceRange,
+        cpu: getName(c.cpu, "AMD CPU"),
+        gpu: getName(c.gpu, "GPU"),
         
-        // 🔥 TVRDÉ ZÁMKY HW
-        ram: formatComp("Kingston Fury Beast DDR5 32GB 6000MHz CL30 (2x16GB)", pRam), 
-        motherboard: formatComp("Gigabyte X870E AORUS ELITE WIFI7", pMb),
-        storage: formatComp("Kingston KC3000 2048GB", pStorage),
+        // 🔥 TVRDÉ ZÁMKY HW (Sjednocený základ u všech sestav)
+        ram: "Kingston Fury Beast DDR5 32GB 6000MHz CL30 (2x16GB)", 
+        motherboard: "Gigabyte X870E AORUS ELITE WIFI7",
+        storage: "Kingston KC3000 2048GB",
         
-        psu: formatComp(getName(c.psu, "Seasonic 850W Gold PSU"), pPsu),
-        cooler: formatComp(getName(c.cooler, "Chladič"), pCooler),
-        case_name: formatComp(getName(c.case_name, "PC Skříň"), pCase),
-        description: cleanDescription,
+        psu: getName(c.psu, "Seasonic 850W Gold PSU"),
+        cooler: getName(c.cooler, "Chladič"),
+        case_name: getName(c.case_name, "PC Skříň"),
+        description: customDescription,
         active: true,
         updated_at: new Date().toISOString()
       };
@@ -154,7 +99,7 @@ export async function GET(req) {
     const { error: upsertError } = await supabase.from('pc_builds').upsert(finalBuilds);
     if (upsertError) throw upsertError;
 
-    return new Response(JSON.stringify({ message: "GURU KRIZE ODVRÁCENA! Ceny opraveny.", count: finalBuilds.length }), { status: 200 });
+    return new Response(JSON.stringify({ message: "GURU UPDATE: Ceny odstraněny, komponenty a texty sjednoceny!", count: finalBuilds.length }), { status: 200 });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
