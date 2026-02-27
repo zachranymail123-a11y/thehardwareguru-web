@@ -1,6 +1,7 @@
-import './globals.css'; // TADY JE TO PROPOJENÍ
+import './globals.css'; 
 import Script from 'next/script';
-import SestavyBubble from '../components/SestavyBubble'; // ZMĚNA: Relativní cesta místo aliasu @
+import SestavyBubble from '../components/SestavyBubble'; 
+import { Analytics } from '@vercel/analytics/react'; // TADY JE IMPORT ANALYTIKY
 
 export const metadata = {
   title: {
@@ -64,6 +65,9 @@ export default function RootLayout({ children }) {
         <SestavyBubble />
 
         {children}
+
+        {/* --- VERCEL ANALYTICS (MĚŘÁK NÁVŠTĚVNOSTI) --- */}
+        <Analytics />
       </body>
     </html>
   )
