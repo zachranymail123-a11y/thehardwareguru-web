@@ -1,46 +1,64 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 
-// Zákaz cachování - Vercel musí pokaždé do DB
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
-export default async function SlovnikPage() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+export async function generateMetadata({ params }) {
+  const { slug } = params;
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const { data: term } = await supabase.from('slovnik').select('*').eq('slug', slug).single();
+  if (!term) return { title: 'Pojem nenalezen | The Hardware Guru' };
+  return { title: `${term.title} – Co to je? | Slovník Guru` };
+}
 
-  const { data: pojmy, error } = await supabase
-    .from('slovnik')
-    .select('*')
-    .order('title', { ascending: true });
+export default async function DictionaryTermPage({ params }) {
+  const { slug } = params;
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+  const { data: term } = await supabase.from('slovnik').select('*').eq('slug', slug).single();
+
+  if (!term) {
+    return (
+      <div style={{ color: '#fff', padding: '100px', textAlign: 'center', background: '#0b0c10', minHeight: '100vh' }}>
+        <h1>Pojem ve slovníku neexistuje 🧩</h1>
+        <Link href="/slovnik" style={{ color: '#66fcf1' }}>Zpět do slovníku</Link>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0b0c10', color: '#c5c6c7', fontFamily: 'sans-serif', padding: '40px' }}>
-      
-      {/* TATO LIŠTA TI ŘEKNE, JESTLI KOUKÁŠ NA NOVOU VERZI */}
-      <div style={{ background: 'yellow', color: 'black', padding: '10px', textAlign: 'center', fontWeight: 'bold', marginBottom: '20px' }}>
-        AKTIVNÍ DYNAMICKÁ VERZE (Načteno z DB: {pojmy?.length || 0} pojmů)
-      </div>
+    <div style={{ 
+        minHeight: '100vh', 
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        color: '#c5c6c7',
+        backgroundImage: "linear-gradient(rgba(11, 12, 16, 0.95), rgba(11, 12, 16, 0.9)), url('https://i.postimg.cc/QdWxszv3/bg-guru.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+    }}>
+      <style>{`
+        .nav-link { margin: 0 15px; color: #fff; text-decoration: none; font-weight: bold; transition: color 0.3s; text-transform: uppercase; }
+        .nav-link:hover { color: #66fcf1; text-shadow: 0 0 10px #66fcf1; }
+        .back-btn { display: inline-block; margin-bottom: 20px; color: #66fcf1; text-decoration: none; font-weight: bold; }
+        .term-container { background: rgba(31, 40, 51, 0.8); border: 1px solid #45a29e; padding: 40px; border-radius: 15px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+      `}</style>
 
-      <nav style={{ marginBottom: '40px' }}>
-        <Link href="/" style={{ color: '#66fcf1', textDecoration: 'none' }}>← ZPĚT NA WEB</Link>
+      <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: 'rgba(31, 40, 51, 0.9)', textAlign: 'center' }}>
+        <Link href="/" className="nav-link">Zpět na hlavní web</Link>
+        <Link href="/slovnik" className="nav-link" style={{color: '#66fcf1'}}>Slovník pojmů</Link>
       </nav>
 
-      <h1 style={{ color: '#fff', fontSize: '3rem', marginBottom: '40px' }}>GURU SLOVNÍK</h1>
-
-      {error && <p style={{ color: 'red' }}>Chyba: {error.message}</p>}
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-        {pojmy?.map((p) => (
-          <Link key={p.id} href={`/slovnik/${p.slug}`} style={{ border: '1px solid #45a29e', padding: '20px', borderRadius: '10px', textDecoration: 'none', color: 'inherit' }}>
-            <h2 style={{ color: '#66fcf1', margin: '0 0 10px 0' }}>{p.title}</h2>
-            <p style={{ fontSize: '0.9rem' }}>{p.description.substring(0, 100)}...</p>
-          </Link>
-        ))}
-      </div>
-
-      {(!pojmy || pojmy.length === 0) && <p>V databázi nic není. Zkontroluj tabulku 'slovnik'!</p>}
+      <main style={{ maxWidth: '800px', margin: '60px auto', padding: '0 20px' }}>
+        <Link href="/slovnik" className="back-btn">← Zpět do seznamu pojmů</Link>
+        <div className="term-container">
+          <h1 style={{ color: '#66fcf1', fontSize: '2.5rem', marginBottom: '20px', textTransform: 'uppercase', fontWeight: '900' }}>
+            {term.title}
+          </h1>
+          <div style={{ fontSize: '1.2rem', lineHeight: '1.8', color: '#e0e0e0' }}>
+            {term.description}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
