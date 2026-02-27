@@ -8,7 +8,7 @@ import OpenAI from 'openai';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-// Přepnuto na NÁKUPY (Shopping API) - Vrací přesné a živé ceny, ne textové bláboly!
+// Přepnuto na NÁKUPY (Shopping API) - Živé e-shopové ceny
 async function fetchRealPrices(query) {
   try {
     const response = await fetch("https://google.serper.dev/shopping", {
@@ -19,8 +19,7 @@ async function fetchRealPrices(query) {
     });
     const data = await response.json();
     if (data.shopping && data.shopping.length > 0) {
-      // Vezme 3 nejlevnější reálné nabídky
-      return data.shopping.slice(0, 3).map(item => `${item.title} = ${item.price} Kč`).join(" | ");
+      return data.shopping.slice(0, 2).map(item => `${item.title}: ${item.price} Kč`).join(" | ");
     }
     return "Cena nenalezena";
   } catch (e) { 
@@ -33,40 +32,56 @@ export async function GET(req) {
   if (searchParams.get('secret') !== 'Wifik500') return new Response('Unauthorized', { status: 401 });
 
   try {
-    // 1. Získáme ŽIVÁ čísla z nákupů (bude to trvat pár vteřin)
-    const [price7700X, price5070, price9800X3D, price5070Ti, price9070XT] = await Promise.all([
+    // 1. Získáme ŽIVÁ čísla z nákupů včetně RAM
+    const [cpuBudget, cpuMid, gpu5070, gpu5070Ti, gpu9070XT, ramPrice] = await Promise.all([
       fetchRealPrices("AMD Ryzen 7 7700X procesor"),
-      fetchRealPrices("NVIDIA GeForce RTX 5070 grafická karta"),
       fetchRealPrices("AMD Ryzen 7 9800X3D procesor"),
+      fetchRealPrices("NVIDIA GeForce RTX 5070 grafická karta"),
       fetchRealPrices("NVIDIA GeForce RTX 5070 Ti grafická karta"),
-      fetchRealPrices("AMD Radeon RX 9070 XT grafická karta")
+      fetchRealPrices("AMD Radeon RX 9070 XT grafická karta"),
+      fetchRealPrices("32GB DDR5 6000MHz CL30") // Vyhledá přesně tvoji RAM
     ]);
 
     const GURU_FINAL_PROMPT = `
-      Jsi "The Hardware Guru". Tvůj úkol je vzít aktuální ceny a poskládat 3 sestavy.
+      Jsi "The Hardware Guru". 
+      MÁŠ ZAKÁZÁNO POČÍTAT SOUČTY. TO UDĚLÁ MUJ SKRIPT. Tvojí jedinou prací je vypsat komponenty a přiřadit k nim cenu jako HOLÉ ČÍSLO.
 
-      AKTUÁLNÍ ŽIVÉ CENY Z TRHU:
-      - Ryzen 7 7700X: ${price7700X}
-      - RTX 5070: ${price5070}
-      - Ryzen 7 9800X3D: ${price9800X3D}
-      - RTX 5070 Ti: ${price5070Ti}
-      - RX 9070 XT: ${price9070XT}
+      ŽIVÉ CENY Z TRHU (Použij tyto jako základ):
+      - Ryzen 7 7700X: ${cpuBudget}
+      - Ryzen 7 9800X3D: ${cpuMid}
+      - RTX 5070: ${gpu5070}
+      - RTX 5070 Ti: ${gpu5070Ti}
+      - RX 9070 XT: ${gpu9070XT}
+      - RAM: ${ramPrice}
 
-      TVÉ 3 SESTAVY (DODRŽ HARDWARE):
-      1. "Budget Beast": CPU AMD Ryzen 7 7700X, GPU RTX 5070, MB B850.
-      2. "Mid-range Master RTX": CPU AMD Ryzen 7 9800X3D, GPU RTX 5070 Ti, MB X870.
-      3. "Mid-range Master Radeon": CPU AMD Ryzen 7 9800X3D, GPU RX 9070 XT, MB X870E AORUS MASTER.
+      TVÉ 3 SESTAVY:
+      1. "Budget Beast" (7700X, RTX 5070, B850)
+      2. "Mid-range Master RTX" (9800X3D, RTX 5070 Ti, X870)
+      3. "Mid-range Master Radeon" (9800X3D, RX 9070 XT, X870E AORUS MASTER)
 
-      KRITICKÁ PRAVIDLA PRO MATEMATIKU:
-      1. RAM VŽDY: "32GB DDR5 6000MHz CL30" (ZAKAZUJI 5600MHz!).
-      2. Z tržních dat vyber tu NEJNIŽŠÍ REÁLNOU CENU pro daný díl.
-      3. Do ZÁVORKY u každého dílu napiš částku, kterou jsi použil (např. "AMD Ryzen 7 9800X3D (14 500 Kč)"). Ostatní díly (MB, RAM, SSD, zdroj) ohodnoť logickou aktuální tržní cenou a taky je napiš do závorky.
-      4. "price_range" MUSÍ BÝT PŘESNÝ SOUČET VŠECH ZÁVOREK!!!
+      PRAVIDLA:
+      - U položky "price" použij VŽDY JEN ČÍSLO (např. 14590, bez "Kč" a mezer).
+      - Pokud nemáš cenu z dat nahoře (např. pro desku nebo zdroj), odhadni reálnou dnešní cenu jako číslo.
 
-      POPIS:
-      "Kdyz chce někdo levnejsi custom sestavu tak Subscribe na [Kick streamu](https://kick.com/thehardwareguru) a naslesně na [Discordu](https://discord.com/invite/n7xThr8) to doresime samozrejme. Realizace probíhá jako hobby projekt."
-
-      JSON STRUKTURA: {"builds": [{"name": "...", "price_range": "...", "cpu": "...", "gpu": "...", "ram": "...", "motherboard": "...", "storage": "...", "psu": "...", "cooler": "...", "case_name": "...", "description": "..."}]}
+      VRAŤ PŘESNĚ TENTO JSON FORMÁT (dodrž přesně tuto strukturu objektů!):
+      {
+        "builds": [
+          {
+            "name": "Název sestavy",
+            "components": {
+              "cpu": {"name": "AMD Ryzen...", "price": 10000},
+              "gpu": {"name": "RTX...", "price": 15000},
+              "ram": {"name": "32GB DDR5", "price": 3500},
+              "motherboard": {"name": "Deska...", "price": 4000},
+              "storage": {"name": "512GB + 2TB NVMe", "price": 5000},
+              "psu": {"name": "Seasonic Gold...", "price": 2500},
+              "cooler": {"name": "Chladič...", "price": 2000},
+              "case_name": {"name": "Skříň...", "price": 2500}
+            },
+            "description": "Kdyz chce někdo levnejsi custom sestavu tak Subscribe na [Kick streamu](https://kick.com/thehardwareguru) a naslesně na [Discordu](https://discord.com/invite/n7xThr8) to doresime samozrejme. Realizace probíhá jako hobby projekt."
+          }
+        ]
+      }
     `;
 
     const completion = await openai.chat.completions.create({
@@ -79,7 +94,7 @@ export async function GET(req) {
     const data = JSON.parse(completion.choices[0].message.content);
     const buildsArray = data.builds || [];
 
-    // 🔥 TVRDÁ IDčka - Tohle navždy vyřeší problém s mazáním
+    // 🔥 TVRDÁ IDčka - Tímhle obejdeme ten blok v Supabase. Sestavy se budou vždy jen PŘEPISOVAT na tyto 3 pozice.
     const FIXED_IDS = {
       budget: "11111111-1111-1111-1111-111111111111",
       rtx: "22222222-2222-2222-2222-222222222222",
@@ -92,30 +107,36 @@ export async function GET(req) {
       else if (b.name.includes("RTX")) targetId = FIXED_IDS.rtx;
       else if (b.name.includes("Radeon")) targetId = FIXED_IDS.radeon;
 
+      const c = b.components || {};
+
+      // Získáme čistá čísla z AI. Pokud AI udělá chybu a vynechá cenu, dáme záchrannou hodnotu.
+      const pCpu = (c.cpu && typeof c.cpu.price === 'number') ? c.cpu.price : 5000;
+      const pGpu = (c.gpu && typeof c.gpu.price === 'number') ? c.gpu.price : 15000;
+      const pRam = (c.ram && typeof c.ram.price === 'number') ? c.ram.price : 3500;
+      const pMb = (c.motherboard && typeof c.motherboard.price === 'number') ? c.motherboard.price : 4000;
+      const pStorage = (c.storage && typeof c.storage.price === 'number') ? c.storage.price : 4500;
+      const pPsu = (c.psu && typeof c.psu.price === 'number') ? c.psu.price : 2500;
+      const pCooler = (c.cooler && typeof c.cooler.price === 'number') ? c.cooler.price : 2000;
+      const pCase = (c.case_name && typeof c.case_name.price === 'number') ? c.case_name.price : 2500;
+
+      // 🔥 MATEMATIKU DĚLÁ JAVASCRIPT: Sečteme to na halíř přesně
+      const totalSum = pCpu + pGpu + pRam + pMb + pStorage + pPsu + pCooler + pCase;
+
+      // Funkce pro složení textu "Název (14 590 Kč)"
+      const formatComp = (name, price) => `${name} (${price.toLocaleString('cs-CZ')} Kč)`;
+      const getName = (obj, def) => (obj && obj.name) ? obj.name : def;
+
       return {
-        id: targetId, // Vynucení přepsání na stejném místě
+        id: targetId,
         name: b.name,
-        price_range: b.price_range,
-        cpu: b.cpu,
-        gpu: b.gpu,
-        ram: "32GB DDR5 6000MHz CL30", // Tvrdá pojistka
-        motherboard: b.motherboard,
-        storage: b.storage,
-        psu: b.psu,
-        cooler: b.cooler,
-        case_name: b.case_name,
-        description: b.description,
-        active: true,
-        updated_at: new Date().toISOString()
-      };
-    });
-
-    // 🔥 Místo INSERT a DELETE používáme UPSERT (Přepsání existujícího ID)
-    const { error: upsertError } = await supabase.from('pc_builds').upsert(finalBuilds);
-    if (upsertError) throw upsertError;
-
-    return new Response(JSON.stringify({ message: "GURU OVERRIDE ÚSPĚŠNÝ! Ceny z Nákupů aplikovány.", count: finalBuilds.length }), { status: 200 });
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
-  }
-}
+        price_range: `${totalSum.toLocaleString('cs-CZ')} Kč`,
+        cpu: formatComp(getName(c.cpu, "AMD CPU"), pCpu),
+        gpu: formatComp(getName(c.gpu, "GPU"), pGpu),
+        
+        // 🔥 TVRDÁ POJISTKA PRO RAM: AI to textově už NIKDY nezmění, doplní se jen cena
+        ram: formatComp("32GB DDR5 6000MHz CL30", pRam), 
+        
+        motherboard: formatComp(getName(c.motherboard, "AM5 Motherboard"), pMb),
+        storage: formatComp(getName(c.storage, "512GB + 2TB NVMe"), pStorage),
+        psu: formatComp(getName(c.psu, "Seasonic Gold PSU"), pPsu),
+        cooler: formatComp(getName(c.cooler, "Cooler"), pCool
