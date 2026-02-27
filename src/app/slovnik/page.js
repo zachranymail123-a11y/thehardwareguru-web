@@ -38,9 +38,9 @@ export default async function SlovnikPage() {
           color: inherit;
           display: flex;
           flex-direction: column;
-          /* TADY JE TA OPRAVA PŘETÉKÁNÍ: */
+          /* TADY JSOU OPRAVY PŘEKRÝVÁNÍ: */
           box-sizing: border-box;
-          min-height: 100%; 
+          min-height: 100%;
         }
         .term-card:hover { 
           border-color: #66fcf1; 
@@ -61,7 +61,6 @@ export default async function SlovnikPage() {
         <Link href="/" className="nav-link">ZPĚT NA WEB</Link>
       </nav>
 
-      {/* Přidán boxSizing i na main, pro jistotu */}
       <main style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px', flex: '1 0 auto', width: '100%', boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center', marginBottom: '60px' }}>
             <h1 style={{ color: '#fff', fontSize: '3.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px' }}>
@@ -72,16 +71,17 @@ export default async function SlovnikPage() {
             </p>
         </div>
 
-        {/* Zvětšil jsem 'gap' na 30px pro lepší dýchání boxů */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '30px', alignItems: 'stretch' }}>
           {pojmy?.map((pojem) => (
             <Link key={pojem.id} href={`/slovnik/${pojem.slug}`} className="term-card">
               <h2 style={{ color: '#66fcf1', margin: '0 0 15px 0', fontSize: '1.3rem', textTransform: 'uppercase', fontWeight: '800' }}>
                 {pojem.title}
               </h2>
-              {/* Odstraněno ořezávání (...), takže teď hezky uvidíš celé texty */}
               <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6', margin: 0, flexGrow: 1 }}>
-                {pojem.description}
+                {/* ZKRÁCENO NA 120 ZNAKŮ S TEČKAMI PRO VZHLED OCHUTNÁVKY */}
+                {pojem.description.length > 120 
+                  ? pojem.description.substring(0, 120) + '...' 
+                  : pojem.description}
               </p>
             </Link>
           ))}
