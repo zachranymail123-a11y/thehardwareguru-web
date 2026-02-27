@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 
+// Toto zajistí, že Next.js nebude stránku cachovat a pokaždé si sáhne pro čerstvá data
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -10,7 +11,7 @@ export default async function SlovnikPage() {
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 
-  // Načteme pojmy z databáze
+  // Načteme pojmy z databáze a seřadíme je abecedně
   const { data: pojmy } = await supabase
     .from('slovnik')
     .select('*')
@@ -21,7 +22,7 @@ export default async function SlovnikPage() {
         minHeight: '100vh', 
         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
         color: '#c5c6c7',
-        backgroundImage: "linear-gradient(rgba(11, 12, 16, 0.92), rgba(11, 12, 16, 0.85)), url('https://i.postimg.cc/QdWxszv3/bg-guru.png')",
+        backgroundImage: "linear-gradient(rgba(11, 12, 16, 0.95), rgba(11, 12, 16, 0.9)), url('https://i.postimg.cc/QdWxszv3/bg-guru.png')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
@@ -37,6 +38,7 @@ export default async function SlovnikPage() {
           color: inherit;
           display: flex;
           flex-direction: column;
+          height: 100%;
         }
         .term-card:hover { 
           border-color: #66fcf1; 
@@ -57,7 +59,6 @@ export default async function SlovnikPage() {
       </nav>
 
       <main style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
-        {/* TVŮJ PŮVODNÍ NADPIS A PODNADPIS */}
         <div style={{ textAlign: 'center', marginBottom: '60px' }}>
             <h1 style={{ color: '#fff', fontSize: '3.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px' }}>
                 GURU HARDWARE <span style={{ color: '#66fcf1' }}>SLOVNÍK</span>
@@ -67,27 +68,27 @@ export default async function SlovnikPage() {
             </p>
         </div>
 
-        {/* DYNAMICKÁ MŘÍŽKA */}
+        {/* TADY SE DĚJE TA MAGIE - Mřížka se tvoří dynamicky z databáze */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '25px' }}>
-          {pojmy?.map((pojem) => (
-            <Link key={pojem.id} href={`/slovnik/${pojem.slug}`} className="term-card">
-              <h2 style={{ color: '#66fcf1', margin: '0 0 15px 0', fontSize: '1.3rem', textTransform: 'uppercase', fontWeight: '800' }}>
-                {pojem.title}
-              </h2>
-              <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6', margin: 0 }}>
-                {pojem.description.length > 150 
-                  ? pojem.description.substring(0, 150) + '...' 
-                  : pojem.description}
-              </p>
-            </Link>
-          ))}
+          {pojmy && pojmy.length > 0 ? (
+            pojmy.map((pojem) => (
+              <Link key={pojem.id} href={`/slovnik/${pojem.slug}`} className="term-card">
+                <h2 style={{ color: '#66fcf1', margin: '0 0 15px 0', fontSize: '1.3rem', textTransform: 'uppercase', fontWeight: '800' }}>
+                  {pojem.title}
+                </h2>
+                <p style={{ color: '#c5c6c7', fontSize: '0.95rem', lineHeight: '1.6', margin: 0 }}>
+                  {pojem.description.length > 160 
+                    ? pojem.description.substring(0, 160) + '...' 
+                    : pojem.description}
+                </p>
+              </Link>
+            ))
+          ) : (
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '50px', color: '#45a29e' }}>
+                Zatím tu žádné pojmy nejsou. Nakrm databázi v Supabase! 🛠️
+            </div>
+          )}
         </div>
-
-        {(!pojmy || pojmy.length === 0) && (
-          <div style={{ textAlign: 'center', padding: '100px', color: '#45a29e' }}>
-            Slovník je momentálně v údržbě... 🛠️
-          </div>
-        )}
       </main>
     </div>
   );
