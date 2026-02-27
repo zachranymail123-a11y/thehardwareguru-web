@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
+// TENTO ŘÁDEK DONUTÍ VERCEL VŽDY NAČÍST AKTUÁLNÍ DLOUHÝ TEXT Z DATABÁZE
+export const revalidate = 0; 
 
 export async function generateMetadata({ params }) {
   const { slug } = params;
@@ -58,7 +60,6 @@ export default async function DictionaryTermPage({ params }) {
           <h1 style={{ color: '#66fcf1', fontSize: '2.5rem', marginBottom: '20px', textTransform: 'uppercase', fontWeight: '900' }}>
             {term.title}
           </h1>
-          {/* TADY JE PŘIDANÝ whiteSpace: 'pre-wrap' PRO ODSTAVCE */}
           <div style={{ fontSize: '1.2rem', lineHeight: '1.8', color: '#e0e0e0', whiteSpace: 'pre-wrap' }}>
             {term.description}
           </div>
