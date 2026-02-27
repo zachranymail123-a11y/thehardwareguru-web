@@ -21,34 +21,21 @@ export default async function Home() {
 
   const celkemNavstev = stats?.value || 0;
 
-  // OPRAVENÁ FUNKCE PRO ZÍSKÁNÍ NÁHLEĎÁKU
   const getThumbnail = (post) => {
-    // 1. Priorita: Vygenerovaný obrázek z AI (DALL-E 3)
-    if (post.image_url) {
-        return post.image_url;
-    }
-    // 2. Priorita: YouTube náhledovka (pokud je to video)
+    if (post.image_url) return post.image_url;
     if (post.video_id && post.video_id.length > 5) {
         return `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`;
     }
-    // 3. Záloha: Výchozí obrázek, když nic jiného není
     return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop';
   };
 
-  // POMOCNÁ FUNKCE PRO ŠTÍTEK
   const getBadgeInfo = (post) => {
-    // 1. Priorita: Video/Shorts
     if (post.video_id && post.video_id.length > 5) {
       return { text: 'VIDEO / SHORT', color: '#66fcf1', textColor: '#0b0c10' };
     }
-    // 2. Priorita: Rozlišení podle sloupce 'type' v DB nebo klíčových slov
     const isGame = post.type === 'game' || post.title.toLowerCase().includes('recenze') || post.title.toLowerCase().includes('resident evil');
-    
-    if (isGame) {
-      return { text: 'HERNÍ NOVINKA', color: '#ff0055', textColor: '#fff' }; // Růžovo-červená pro hry
-    }
-    
-    return { text: 'HW NOVINKA', color: '#ff0000', textColor: '#fff' }; // Klasická červená pro HW
+    if (isGame) return { text: 'HERNÍ NOVINKA', color: '#ff0055', textColor: '#fff' };
+    return { text: 'HW NOVINKA', color: '#ff0000', textColor: '#fff' };
   };
 
   return (
@@ -71,6 +58,22 @@ export default async function Home() {
         .social-btn { display: inline-block; padding: 12px 25px; background: #1f2833; color: #66fcf1; border: 1px solid #45a29e; text-decoration: none; font-weight: bold; border-radius: 5px; transition: all 0.3s; text-transform: uppercase; }
         .social-btn:hover { background: #66fcf1; color: #0b0c10; box-shadow: 0 0 15px #66fcf1; transform: scale(1.05); }
         .read-more { color: #66fcf1; text-transform: uppercase; font-weight: bold; font-size: 0.9rem; letter-spacing: 1px; }
+        .feature-box { 
+          background: rgba(31, 40, 51, 0.7); 
+          border: 1px solid #45a29e; 
+          padding: 25px; 
+          border-radius: 12px; 
+          text-align: center; 
+          text-decoration: none; 
+          color: inherit; 
+          transition: all 0.3s;
+        }
+        .feature-box:hover { 
+          border-color: #66fcf1; 
+          background: rgba(31, 40, 51, 0.9); 
+          transform: translateY(-5px); 
+          box-shadow: 0 0 20px rgba(102, 252, 241, 0.2);
+        }
       `}</style>
 
       {/* HLAVIČKA */}
@@ -81,6 +84,8 @@ export default async function Home() {
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
             <Link href="/sestavy" className="nav-link nav-special">PC SESTAVY</Link>
             <Link href="/slovnik" className="nav-link">SLOVNÍK</Link>
+            {/* NOVÝ ODKAZ V NAVIGACI */}
+            <Link href="/rady" className="nav-link" style={{color: '#66fcf1'}}>PRAKTICKÉ RADY</Link>
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
             <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
@@ -88,26 +93,43 @@ export default async function Home() {
       </nav>
 
       {/* BIO */}
-      <header style={{ maxWidth: '1200px', margin: '60px auto', padding: '40px', background: 'linear-gradient(145deg, rgba(31, 40, 51, 0.95), rgba(11, 12, 16, 0.95))', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
+      <header style={{ maxWidth: '1200px', margin: '40px auto', padding: '40px', background: 'linear-gradient(145deg, rgba(31, 40, 51, 0.95), rgba(11, 12, 16, 0.95))', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
         <div style={{ flex: '1', minWidth: '300px' }}>
-            <h1 style={{ color: '#66fcf1', fontSize: '2.5rem', marginBottom: '20px', textTransform: 'uppercase', fontWeight: '900', textShadow: '0 0 10px rgba(102, 252, 241, 0.3)' }}>
+            <h1 style={{ color: '#66fcf1', fontSize: '2.5rem', marginBottom: '10px', textTransform: 'uppercase', fontWeight: '900' }}>
                 The Hardware Guru
             </h1>
-            <p style={{ fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '30px', color: '#e0e0e0' }}>
-                Čau pařani! Jsem 45letý HW nadšenec, gamer a streamer. 
-                Tady najdeš vše o hardwaru, recenze her a hlavně záznamy z mých streamů. 
-                Na Kicku mi sekunduje unikátní <strong style={{color: '#66fcf1'}}>AI umělá inteligence</strong>, která komunikuje s chatem a komentuje můj gameplay. 
-                Doraž na stream a pokcej s námi!
+            <p style={{ fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '25px', color: '#e0e0e0' }}>
+                Čau pařani! Jsem 45letý HW nadšenec a servisák s 20letou praxí. 
+                Na Kicku mi sekunduje unikátní <strong style={{color: '#66fcf1'}}>AI inteligence</strong>. 
+                Doraž na stream, mrkni na vyladěné sestavy nebo si nechej poradit v sekci praktických návodů.
             </p>
+            
+            {/* HLAVNÍ ROZCESTNÍK - DLAŽDICE */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+                <Link href="/sestavy" className="feature-box">
+                    <div style={{fontSize: '2rem', marginBottom: '10px'}}>🖥️</div>
+                    <h4 style={{color: '#66fcf1', margin: '0 0 5px 0'}}>PC SESTAVY</h4>
+                    <p style={{fontSize: '0.85rem', margin: 0}}>Nejlepší poměr cena/výkon</p>
+                </Link>
+                <Link href="/slovnik" className="feature-box">
+                    <div style={{fontSize: '2rem', marginBottom: '10px'}}>📖</div>
+                    <h4 style={{color: '#66fcf1', margin: '0 0 5px 0'}}>HW SLOVNÍK</h4>
+                    <p style={{fontSize: '0.85rem', margin: 0}}>Pojmy vysvětlené lidsky</p>
+                </Link>
+                <Link href="/rady" className="feature-box">
+                    <div style={{fontSize: '2rem', marginBottom: '10px'}}>🛠️</div>
+                    <h4 style={{color: '#66fcf1', margin: '0 0 5px 0'}}>PRAKTICKÉ RADY</h4>
+                    <p style={{fontSize: '0.85rem', margin: 0}}>Servisní tipy a diagnostika</p>
+                </Link>
+            </div>
+
             <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn">SLEDUJ STREAM (KICK)</a>
-                {/* ---> NOVÉ TLAČÍTKO YOUTUBE <--- */}
-                <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-btn">SLEDUJ NA YOUTUBE</a>
-                <a href="https://discord.com/invite/n7xThr8" target="_blank" className="social-btn">PŘIPOJ SE NA DISCORD</a>
+                <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn">KICK STREAM</a>
+                <a href="https://discord.com/invite/n7xThr8" target="_blank" className="social-btn">DISCORD</a>
             </div>
         </div>
-        <div style={{ width: '200px', height: '200px', background: '#0b0c10', borderRadius: '50%', border: '4px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 0 20px #66fcf1' }}>
-            <span style={{color: '#45a29e', fontSize: '4rem', fontWeight: 'bold'}}>HG</span>
+        <div style={{ width: '180px', height: '180px', background: '#0b0c10', borderRadius: '50%', border: '4px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 0 20px #66fcf1' }}>
+            <span style={{color: '#45a29e', fontSize: '3.5rem', fontWeight: 'bold'}}>HG</span>
         </div>
       </header>
 
@@ -118,7 +140,6 @@ export default async function Home() {
         </h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '40px' }}>
-          
           {posts?.map((post) => {
             const badge = getBadgeInfo(post);
             return (
@@ -133,15 +154,12 @@ export default async function Home() {
                   boxShadow: '0 4px 6px rgba(0,0,0,0.3)', 
                   cursor: 'pointer'
                 }}>
-                  
                   <div style={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden', borderBottom: '2px solid #45a29e' }}>
                     <img 
                       src={getThumbnail(post)} 
                       alt={post.title}
                       style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
                     />
-                    
-                    {/* ŠTÍTEK */}
                     <div style={{ 
                       position: 'absolute', 
                       top: '10px', 
@@ -152,7 +170,6 @@ export default async function Home() {
                       borderRadius: '4px', 
                       fontWeight: 'bold', 
                       fontSize: '0.75rem', 
-                      border: `1px solid ${badge.text === 'VIDEO / SHORT' ? '#66fcf1' : 'transparent'}`,
                       textTransform: 'uppercase',
                       boxShadow: '0 2px 10px rgba(0,0,0,0.5)'
                     }}>
@@ -176,13 +193,6 @@ export default async function Home() {
               </Link>
             );
           })}
-          
-          {(!posts || posts.length === 0) && (
-             <div style={{gridColumn: '1/-1', textAlign: 'center', color: '#fff', padding: '50px'}}>
-               Zatím zde nejsou žádné články. Zkus spustit Cron.
-             </div>
-          )}
-
         </div>
       </main>
 
@@ -191,10 +201,9 @@ export default async function Home() {
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
             <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
-            <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="nav-link">INSTAGRAM</a>
           </div>
           
-          <div style={{ marginBottom: '20px', color: '#66fcf1', fontSize: '1rem', fontWeight: 'bold', letterSpacing: '1px' }}>
+          <div style={{ marginBottom: '20px', color: '#66fcf1', fontSize: '1rem', fontWeight: 'bold' }}>
             WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #45a29e' }}>{celkemNavstev}</span> GURU FANOUŠKŮ 🦾
           </div>
 
