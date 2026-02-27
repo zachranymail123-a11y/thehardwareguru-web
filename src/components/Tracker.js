@@ -10,51 +10,40 @@ export default function Tracker() {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    // 🚩 DIAGNOSTIKA: Kontrola klíčů
-    if (!supabaseUrl || !supabaseKey) {
-      console.warn('📊 Tracker: Chybí NEXT_PUBLIC klíče. Udělej Redeploy ve Vercelu.');
-      return;
-    }
-
+    if (!supabaseUrl || !supabaseKey) return;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // --- 1. SLEDOVÁNÍ NÁVŠTĚVY STRÁNKY ---
     const trackVisit = async () => {
-      console.log(`📊 Tracker: Zápis návštěvy: ${pathname}`);
-      const { error } = await supabase.from('page_views').insert({ page_path: pathname });
-      if (error) console.error('📊 Tracker CHYBA:', error.message);
-      else console.log('📊 Tracker: Stránka uložena ✅');
+      await supabase.from('page_views').insert({ page_path: pathname });
     };
-
     trackVisit();
 
-    // --- 2. SLEDOVÁNÍ EXTERNÍCH KLIKŮ (Kick / YouTube) ---
-    const handleExternalClick = async (e) => {
+    // --- 2. SLEDOVÁNÍ EXTERNÍCH KLIKŮ (KICK, YT, DISCORD) ---
+    const handleExternalClick = (e) => {
+      // Hledáme odkaz, i když uživatel klikne na ikonu uvnitř odkazu
       const link = e.target.closest('a');
       if (!link) return;
 
-      const url = link.href;
+      const url = link.href.toLowerCase();
       let label = '';
 
-      if (url.includes('kick.com')) {
-        label = 'ODCHOD: Kick';
-      } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        label = 'ODCHOD: YouTube';
-      }
+      if (url.includes('kick.com')) label = 'ODCHOD: Kick';
+      else if (url.includes('youtube.com') || url.includes('youtu.be')) label = 'ODCHOD: YouTube';
+      else if (url.includes('discord.com') || url.includes('discord.gg')) label = 'ODCHOD: Discord';
 
       if (label) {
-        console.log(`📊 Tracker: Zápis prokliku na: ${label}`);
-        const { error } = await supabase.from('page_views').insert({ page_path: label });
-        if (error) console.error('📊 Tracker CHYBA (Click):', error.message);
-        else console.log(`📊 Tracker: ${label} uložen ✅`);
+        // Tady nepoužíváme "await", aby se skript nezdržoval a hned střílel data
+        supabase.from('page_views').insert({ page_path: label }).then(() => {
+          console.log(`📊 Tracker: Proklik na ${label} zapsán.`);
+        });
       }
     };
 
-    // Aktivace odposlechu kliknutí na celém webu
-    window.addEventListener('click', handleExternalClick);
+    // "mousedown" je mnohem rychlejší než "click" – získáme drahocenné milisekundy
+    window.addEventListener('mousedown', handleExternalClick);
 
-    // Úklid při opuštění komponenty
-    return () => window.removeEventListener('click', handleExternalClick);
+    return () => window.removeEventListener('mousedown', handleExternalClick);
   }, [pathname]);
 
   return null;
