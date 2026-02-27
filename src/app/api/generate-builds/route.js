@@ -8,7 +8,7 @@ import OpenAI from 'openai';
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-// Přepnuto na NÁKUPY (Shopping API) - Živé e-shopové ceny z Heureky
+// Přepnuto na NÁKUPY s chytrou logikou hledání NEJLEVNĚJŠÍ ceny
 async function fetchRealPrices(query) {
   try {
     const response = await fetch("https://google.serper.dev/shopping", {
@@ -18,8 +18,23 @@ async function fetchRealPrices(query) {
       cache: 'no-store'
     });
     const data = await response.json();
+    
     if (data.shopping && data.shopping.length > 0) {
-      return data.shopping.slice(0, 2).map(item => `${item.title}: ${item.price} Kč`).join(" | ");
+      // Vytáhneme všechny položky, očistíme cenu na čisté číslo a vyfiltrujeme blbosti (pod 500 Kč)
+      const items = data.shopping.map(item => {
+        const priceStr = item.price ? item.price.toString() : "0";
+        // Odstraní desetinné čárky a nechá jen holé číslo (např. z "5 690,00 Kč" udělá 5690)
+        const priceNum = parseInt(priceStr.split(',')[0].replace(/[^\d]/g, ''), 10) || 0;
+        return { title: item.title, priceNum };
+      }).filter(item => item.priceNum > 500);
+
+      // Seřadíme od NEJLEVNĚJŠÍHO
+      items.sort((a, b) => a.priceNum - b.priceNum);
+
+      // Pošleme AI ty absolutně nejlevnější 3 varianty, co na trhu jsou
+      if (items.length > 0) {
+        return items.slice(0, 3).map(item => `${item.title}: ${item.priceNum} Kč`).join(" | ");
+      }
     }
     return "Cena nenalezena";
   } catch (e) { 
@@ -41,13 +56,13 @@ export async function GET(req) {
       fetchRealPrices("AMD Radeon RX 9070 XT grafická karta"),
       fetchRealPrices("Kingston Fury Beast DDR5 32GB 6000MHz CL30 2x16GB"),
       fetchRealPrices("Gigabyte X870E AORUS ELITE WIFI7"),
-      fetchRealPrices("Kingston KC3000 2048GB SSD") // Nový dotaz přesně na tvůj SSD
+      fetchRealPrices("Kingston KC3000 2048GB SSD")
     ]);
 
     const GURU_FINAL_PROMPT = `
       Jsi "The Hardware Guru". MÁŠ ZAKÁZÁNO POČÍTAT SOUČTY A VYMÝŠLET SI CENY U RAM, DESKY A SSD. 
 
-      ŽIVÉ CENY Z TRHU:
+      ŽIVÉ CENY Z TRHU (Seřazeno od nejlevnějších, vždy POUŽIJ TU NEJNIŽŠÍ CENU!):
       - Ryzen 7 7700X: ${cpuBudget}
       - Ryzen 7 9800X3D: ${cpuMid}
       - RTX 5070: ${gpu5070}
@@ -62,9 +77,10 @@ export async function GET(req) {
       2. "Mid-range Master RTX" (9800X3D, RTX 5070 Ti)
       3. "Mid-range Master Radeon" (9800X3D, RX 9070 XT)
 
-      PRAVIDLA PRO JSON (NEPOUŽÍVEJ TŘI TEČKY V NÁZVECH! VYPISUJ CELÁ JMÉNA!):
+      PRAVIDLA PRO JSON:
       - U položky "price" použij VŽDY JEN ČÍSLO.
       - Ostatní díly (zdroj, chladič, case) ohodnoť logickou aktuální tržní cenou.
+      - V názvech vypisuj celé jméno, nikdy nepoužívej tři tečky.
 
       VRAŤ PŘESNĚ TENTO JSON FORMÁT:
       {
@@ -135,7 +151,7 @@ export async function GET(req) {
         cpu: formatComp(getName(c.cpu, "AMD CPU"), pCpu),
         gpu: formatComp(getName(c.gpu, "GPU"), pGpu),
         
-        // 🔥 TVRDÉ ZÁMKY HW - Tyhle tři věci se už nikdy nezmění
+        // 🔥 TVRDÉ ZÁMKY HW
         ram: formatComp("Kingston Fury Beast DDR5 32GB 6000MHz CL30 (2x16GB)", pRam), 
         motherboard: formatComp("Gigabyte X870E AORUS ELITE WIFI7", pMb),
         storage: formatComp("Kingston KC3000 2048GB", pStorage),
@@ -152,7 +168,7 @@ export async function GET(req) {
     const { error: upsertError } = await supabase.from('pc_builds').upsert(finalBuilds);
     if (upsertError) throw upsertError;
 
-    return new Response(JSON.stringify({ message: "GURU UPDATE: Nový HW a SSD KC3000 aplikován!", count: finalBuilds.length }), { status: 200 });
+    return new Response(JSON.stringify({ message: "GURU UPDATE: Inteligentní vyhledávání NEJLEVNĚJŠÍCH cen nasazeno!", count: finalBuilds.length }), { status: 200 });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
