@@ -12,18 +12,13 @@ export async function GET(req) {
     Jsi "The Hardware Guru". Navrhni PŘESNĚ tyto 3 sestavy pro únor 2026. 
     STRUKTURA JSON: {"builds": [{"name": "...", "price_range": "...", "cpu": "...", "gpu": "...", "ram": "...", "motherboard": "...", "storage": "...", "psu": "...", "cooler": "...", "case_name": "...", "description": "..."}]}
 
-    POVINNÉ NÁZVY A CENY:
+    POVINNÉ NÁZVY A CENY (DODRŽET NA HALÉŘ):
     1. "Budget Beast" (Cena: 51 493 Kč)
     2. "Mid-range Master RTX" (Cena: 73 872 Kč)
     3. "Mid-range Master Radeon" (Cena: 80 476 Kč)
 
-    HARDWARE PRO MID-RANGE MASTER RADEON (80 476 Kč):
-    - CPU: AMD Ryzen 9 9900X3D (14 590 Kč)
-    - GPU: AMD Radeon RX 9070 XT (21 700 Kč)
-    - MB: Gigabyte X870E AORUS MASTER (11 161 Kč)
-    - RAM: 32GB DDR5-6000 CL30 (11 790 Kč)
-    - SSD: 512GB OS (1 999 Kč) + 2TB DATA (5 499 Kč)
-    - Ostatní: Seasonic 850W (2 525 Kč), Corsair iCUE H150i (6 500 Kč), Lian Li O11 (4 712 Kč).
+    SPECIFIKACE PRO MASTER RADEON:
+    CPU: AMD Ryzen 9 9900X3D (14 590 Kč), GPU: AMD Radeon RX 9070 XT (21 700 Kč), MB: Gigabyte X870E AORUS MASTER (11 161 Kč), RAM: 11 790 Kč, SSD (512GB+2TB): 7 498 Kč, Zdroj: 2 525 Kč, Chlazení: 6 500 Kč, Case: 4 712 Kč.
 
     STRIKTNÍ PRAVIDLA:
     - Platforma: Vždy AM5.
@@ -47,7 +42,7 @@ export async function GET(req) {
       price_range: b.price_range,
       cpu: b.cpu || "AMD AM5",
       gpu: b.gpu || "RTX / Radeon",
-      ram: b.ram || "32GB DDR5 6000MHz CL30",
+      ram: b.ram || "32GB DDR5 6000MHz",
       motherboard: b.motherboard || "AM5 ATX Board",
       storage: b.storage || "512GB + 2TB NVMe",
       psu: b.psu || "Seasonic Gold",
@@ -58,13 +53,17 @@ export async function GET(req) {
       updated_at: new Date().toISOString()
     }));
 
-    // 🔥 KROK 1: Totální smazání tabulky (neq 'id' s nulovým UUID smaže vše)
+    // 🔥 TOTÁLNÍ ČISTKA: Mazání pomocí filtru, který v Supabase sežere všechno
+    // Používáme filtr "id is not null", což v Supabase zaručeně smaže každou řádku
     const { error: deleteError } = await supabase
       .from('pc_builds')
       .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000');
+      .not('id', 'is', null);
 
-    if (deleteError) throw new Error("Chyba při mazání: " + deleteError.message);
+    if (deleteError) {
+      console.error("Delete failed:", deleteError);
+      throw new Error("Chyba při mazání tabulky: " + deleteError.message);
+    }
 
     // 🔥 KROK 2: Vložení 3 nových čistých sestav
     const { error: insertError } = await supabase
@@ -73,7 +72,11 @@ export async function GET(req) {
 
     if (insertError) throw insertError;
 
-    return new Response(JSON.stringify({ message: "TABULKA RESETOVÁNA A SESTAVY NAHRÁNY!", count: cleanBuilds.length }));
+    return new Response(JSON.stringify({ 
+      message: "GURU RESET HOTOV - NAHRÁNY 3 SESTAVY!", 
+      count: cleanBuilds.length 
+    }), { status: 200 });
+
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500 });
   }
