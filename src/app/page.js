@@ -56,7 +56,7 @@ export default async function Home() {
         .nav-link:hover { color: #66fcf1; text-shadow: 0 0 10px #66fcf1; }
         .nav-special { color: #66fcf1 !important; border: 1px solid #66fcf1; padding: 5px 12px; border-radius: 4px; }
         .social-btn { display: inline-block; padding: 12px 25px; background: #1f2833; color: #66fcf1; border: 1px solid #45a29e; text-decoration: none; font-weight: bold; border-radius: 5px; transition: all 0.3s; text-transform: uppercase; }
-        .social-btn:hover { background: #66fcf1; color: #0b0c10; box-shadow: 0 0 15px #66fcf1; transform: scale(1.05); }
+        .social-btn:hover { box-shadow: 0 0 15px currentColor; transform: scale(1.05); }
         .read-more { color: #66fcf1; text-transform: uppercase; font-weight: bold; font-size: 0.9rem; letter-spacing: 1px; }
         .feature-box { 
           background: rgba(31, 40, 51, 0.7); 
@@ -84,7 +84,6 @@ export default async function Home() {
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
             <Link href="/sestavy" className="nav-link nav-special">PC SESTAVY</Link>
             <Link href="/slovnik" className="nav-link">SLOVNÍK</Link>
-            {/* NOVÝ ODKAZ V NAVIGACI */}
             <Link href="/rady" className="nav-link" style={{color: '#66fcf1'}}>PRAKTICKÉ RADY</Link>
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
@@ -92,7 +91,7 @@ export default async function Home() {
         </div>
       </nav>
 
-      {/* BIO */}
+      {/* BIO SEKCE */}
       <header style={{ maxWidth: '1200px', margin: '40px auto', padding: '40px', background: 'linear-gradient(145deg, rgba(31, 40, 51, 0.95), rgba(11, 12, 16, 0.95))', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
         <div style={{ flex: '1', minWidth: '300px' }}>
             <h1 style={{ color: '#66fcf1', fontSize: '2.5rem', marginBottom: '10px', textTransform: 'uppercase', fontWeight: '900' }}>
@@ -123,8 +122,10 @@ export default async function Home() {
                 </Link>
             </div>
 
+            {/* TLAČÍTKA SOCIÁLNÍCH SÍTÍ - OPRAVENÉ POŘADÍ A BARVY */}
             <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn">KICK STREAM</a>
+                <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn" style={{ background: '#53fc18', color: '#0b0c10', border: 'none' }}>KICK STREAM</a>
+                <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-btn" style={{ background: '#ff0000', color: '#fff', border: 'none' }}>YOUTUBE</a>
                 <a href="https://discord.com/invite/n7xThr8" target="_blank" className="social-btn">DISCORD</a>
             </div>
         </div>
@@ -133,7 +134,7 @@ export default async function Home() {
         </div>
       </header>
 
-      {/* HLAVNÍ OBSAH */}
+      {/* HLAVNÍ OBSAH - ČLÁNKY */}
       <main style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
         <h2 style={{ color: '#fff', textAlign: 'center', marginBottom: '40px', fontSize: '2.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px', textShadow: '0 0 10px rgba(102, 252, 241, 0.5)' }}>
           Nejnovější články & Videa
@@ -196,6 +197,7 @@ export default async function Home() {
         </div>
       </main>
 
+      {/* PATIČKA */}
       <footer style={{ background: 'rgba(31, 40, 51, 0.95)', padding: '40px 20px', textAlign: 'center', borderTop: '2px solid #66fcf1', marginTop: '60px' }}>
           <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
