@@ -1,7 +1,8 @@
 import './globals.css'; 
 import Script from 'next/script';
 import SestavyBubble from '../components/SestavyBubble'; 
-import { Analytics } from '@vercel/analytics/react'; // TADY JE IMPORT ANALYTIKY
+import Tracker from '../components/Tracker'; // PŘIDÁNO: Tvůj live sledovač
+import { Analytics } from '@vercel/analytics/react';
 
 export const metadata = {
   title: {
@@ -47,6 +48,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="cs">
       <body>
+        {/* --- LIVE TRACKING (SUPABASE) --- */}
+        <Tracker />
+
         {/* --- ONESIGNAL PUSH NOTIFIKACE --- */}
         <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="beforeInteractive" />
         <Script id="onesignal-init" strategy="lazyOnload">
@@ -66,7 +70,7 @@ export default function RootLayout({ children }) {
 
         {children}
 
-        {/* --- VERCEL ANALYTICS (MĚŘÁK NÁVŠTĚVNOSTI) --- */}
+        {/* --- VERCEL ANALYTICS --- */}
         <Analytics />
       </body>
     </html>
