@@ -13,6 +13,7 @@ export default async function sitemap() {
   const staticRoutes = [
     { url: `${baseUrl}`, priority: 1.0 },
     { url: `${baseUrl}/sestavy`, priority: 0.9 },
+    { url: `${baseUrl}/moje-pc`, priority: 0.9 }, // 💻 TADY JE PŘIDANÝ TVŮJ STROJ
     { url: `${baseUrl}/slovnik`, priority: 0.9 },
     { url: `${baseUrl}/rady`, priority: 0.9 },
   ].map((route) => ({
