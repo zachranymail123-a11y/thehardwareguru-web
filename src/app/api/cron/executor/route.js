@@ -12,18 +12,18 @@ const SERPER_API_KEY = process.env.SERPER_API_KEY;
 const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
 const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY;
 
-// FALLBACK OBRÁZEK (Aby Make.com nikdy nedostal prázdnou hodnotu)
-const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1000';
-
 function createSlug(title) {
   return title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); 
 }
 
 async function sendOneSignalNotification(title, slug) {
-  if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) return false;
-  const articleUrl = `https://www.thehardwareguru.cz/clanky/${slug}`;
+  if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
+    console.warn("OneSignal klíče nejsou nastaveny, notifikace se neodešle.");
+    return false;
+  }
+  const articleUrl = `https://www.thehardwareguru.cz/article/${slug}`;
   try {
-    await fetch("https://api.onesignal.com/notifications", {
+    const response = await fetch("https://api.onesignal.com/notifications", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -32,13 +32,16 @@ async function sendOneSignalNotification(title, slug) {
       body: JSON.stringify({
         app_id: ONESIGNAL_APP_ID,
         included_segments: ["Total Subscriptions"],
-        contents: { cs: `Nový článek: ${title}` },
-        headings: { cs: "The Hardware Guru 🦾" },
+        contents: { en: `Nový článek: ${title}`, cs: `Nový článek: ${title}` },
+        headings: { en: "The Hardware Guru", cs: "The Hardware Guru" },
         url: articleUrl,
       }),
     });
-    return true;
-  } catch (error) { return false; }
+    return response.ok;
+  } catch (error) {
+    console.error("Výjimka OneSignal:", error);
+    return false;
+  }
 }
 
 export async function GET() {
@@ -50,82 +53,105 @@ export async function GET() {
     .select('*')
     .eq('status', 'planned') 
     .order('id', { ascending: true })
-    .limit(1); // Zpracováváme po jednom, aby to timeout nezhodil
+    .limit(5);
 
-  if (fetchError || !tasks?.length) return NextResponse.json({ message: 'Nic k práci.' });
+  if (fetchError) return NextResponse.json({ error: 'Chyba DB', details: fetchError.message });
+  if (!tasks || tasks.length === 0) return NextResponse.json({ message: 'Žádné nové úkoly.' });
 
-  const task = tasks[0];
-  try {
-    await supabase.from('content_plan').update({ status: 'processing' }).eq('id', task.id);
+  let results = [];
+  let processedCount = 0;
 
-    // SEARCH
-    const res = await fetch('https://google.serper.dev/search', {
-      method: 'POST',
-      headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: `${task.title} review benchmarks specs`, num: 8 })
-    });
-    const searchResults = await res.json();
-    const rawContext = JSON.stringify(searchResults.organic || []).substring(0, 6000);
+  for (const task of tasks) {
+    if (processedCount >= 1) break; 
 
-    // AI GENERACE (Přidán požadavek na YouTube URL)
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { 
-          role: "system", 
-          content: `Jsi elitní šéfredaktor The Hardware Guru. Piš drsně, česky, HTML formát (<p>, <h2>, <table>). 
-          Výstup MUSÍ BÝT JSON: { "title": "...", "content": "...", "youtube_url": "odkaz na youtube video k tématu pokud existuje v podkladech, jinak null" }.` 
-        },
-        { role: "user", content: `Téma: ${task.title}. Data: ${rawContext}` }
-      ],
-      response_format: { type: "json_object" }
-    });
-
-    const article = JSON.parse(completion.choices[0].message.content);
-    const finalSlug = createSlug(article.title);
-
-    // IMAGE GENERACE
-    let permanentImageUrl = DEFAULT_IMAGE; // Defaultní hodnota
     try {
-      const imageResponse = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: `Epic high-tech gaming thumbnail for: ${task.title}. No text, no logos.`,
-        n: 1,
-        size: "1024x1024",
+      const taskSlug = createSlug(task.title);
+      const { data: existing } = await supabase.from('posts').select('id, title').or(`slug.eq.${taskSlug},title.ilike.%${task.title.split(':')[0]}%`).limit(1);
+
+      if (existing && existing.length > 0) {
+        await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
+        results.push({ title: task.title, status: 'DUPLICITA' });
+        continue;
+      }
+
+      await supabase.from('content_plan').update({ status: 'processing' }).eq('id', task.id);
+
+      const res = await fetch('https://google.serper.dev/search', {
+        method: 'POST',
+        headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q: `${task.title} review Metacritic IGN benchmarks youtube video`, num: 10 })
       });
-      
-      const imgRes = await fetch(imageResponse.data[0].url);
-      const imageBlob = await imgRes.blob();
-      const fileName = `${finalSlug}-${Date.now()}.png`;
+      const searchResults = await res.json();
+      const rawContext = JSON.stringify(searchResults.organic || []).substring(0, 6000);
 
-      await supabase.storage.from('article_images').upload(fileName, imageBlob, { contentType: 'image/png' });
-      const { data: publicUrlData } = supabase.storage.from('article_images').getPublicUrl(fileName);
-      permanentImageUrl = publicUrlData.publicUrl;
-    } catch (imgErr) {
-      console.error("DALL-E selhal, používám default.");
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { 
+            role: "system", 
+            content: `Jsi elitní šéfredaktor The Hardware Guru. Piš VÝHRADNĚ ČESKY. Styl: drsný, profesionální. 
+            ZÁKAZ zmiňovat Reddit nebo fráze "podle vyhledávání". 
+            Výstup MUSÍ BÝT STRIKTNÍ JSON: { 
+              "title": "Český název", 
+              "content": "HTML obsah", 
+              "youtube_url": "Najdi v datech relevantní YouTube link k tomuto tématu (např. youtube.com/watch?v=...), pokud tam není, dej null" 
+            }.` 
+          },
+          { 
+            role: "user", 
+            content: `Napiš článek o: "${task.title}". Typ: ${task.type}. Data: ${rawContext}` 
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const article = JSON.parse(completion.choices[0].message.content);
+      const finalSlug = createSlug(article.title);
+
+      // OBRÁZEK
+      let permanentImageUrl = null;
+      try {
+        const imageResponse = await openai.images.generate({
+          model: "dall-e-3",
+          prompt: `Epic tech magazine thumbnail for: ${task.title}. Photorealistic, no text.`,
+          n: 1, size: "1024x1024",
+        });
+        const imgRes = await fetch(imageResponse.data[0].url);
+        const imageBlob = await imgRes.blob();
+        const fileName = `${finalSlug}-${Date.now()}.png`;
+        await supabase.storage.from('article_images').upload(fileName, imageBlob, { contentType: 'image/png', upsert: true });
+        permanentImageUrl = supabase.storage.from('article_images').getPublicUrl(fileName).data.publicUrl;
+      } catch (imgErr) {
+        console.error("Chyba obrázku:", imgErr.message);
+      }
+
+      // ---> ULOŽENÍ DO DATABÁZE SE VŠEMI SLOUPCI <---
+      const { error: insertError } = await supabase.from('posts').insert({
+        title: article.title,
+        slug: finalSlug,
+        content: article.content,
+        type: task.type,
+        image_url: permanentImageUrl,
+        youtube_url: article.youtube_url, // PŘIDÁNO
+        created_at: new Date().toISOString()
+      });
+
+      if (insertError) {
+         if (insertError.code === '23505') continue;
+         throw insertError;
+      }
+
+      await sendOneSignalNotification(article.title, finalSlug);
+      await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
+
+      results.push({ title: article.title, status: 'SUCCESS', youtube: article.youtube_url });
+      processedCount++; 
+
+    } catch (err) {
+      await supabase.from('content_plan').update({ status: 'error' }).eq('id', task.id);
+      results.push({ title: task.title, status: 'ERROR', error: err.message });
     }
-
-    // ---> TADY JE TA OPRAVA: INSERT DO DATABÁZE SE VŠEMI SLOUPCI <---
-    const { error: insertError } = await supabase.from('posts').insert({
-      title: article.title,
-      slug: finalSlug,
-      content: article.content,
-      type: task.type,
-      image_url: permanentImageUrl, // Už nikdy nebude NULL díky DEFAULT_IMAGE
-      youtube_url: article.youtube_url || null, // Přidán nový sloupec
-      created_at: new Date().toISOString()
-    });
-
-    if (insertError) throw insertError;
-
-    // NOTIFIKACE A FINISH
-    await sendOneSignalNotification(article.title, finalSlug);
-    await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
-
-    return NextResponse.json({ status: 'SUCCESS', title: article.title });
-
-  } catch (err) {
-    await supabase.from('content_plan').update({ status: 'error' }).eq('id', task.id);
-    return NextResponse.json({ status: 'ERROR', message: err.message }, { status: 500 });
   }
+
+  return NextResponse.json({ processed_tasks: results });
 }
