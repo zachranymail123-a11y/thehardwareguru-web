@@ -83,6 +83,8 @@ export default async function Home() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
             <Link href="/sestavy" className="nav-link nav-special">PC SESTAVY</Link>
+            {/* PŘIDANÝ ODKAZ DO NAVIGACE */}
+            <Link href="/moje-pc" className="nav-link" style={{color: '#ff0055'}}>MŮJ PC</Link>
             <Link href="/slovnik" className="nav-link">SLOVNÍK</Link>
             <Link href="/rady" className="nav-link" style={{color: '#66fcf1'}}>PRAKTICKÉ RADY</Link>
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
@@ -103,13 +105,21 @@ export default async function Home() {
                 Doraž na stream, mrkni na vyladěné sestavy nebo si nechej poradit v sekci praktických návodů.
             </p>
             
-            {/* HLAVNÍ ROZCESTNÍK - DLAŽDICE */}
+            {/* HLAVNÍ ROZCESTNÍK - DLAŽDICE S PŘIDANÝM TVÝM BUILDEM */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
                 <Link href="/sestavy" className="feature-box">
                     <div style={{fontSize: '2rem', marginBottom: '10px'}}>🖥️</div>
                     <h4 style={{color: '#66fcf1', margin: '0 0 5px 0'}}>PC SESTAVY</h4>
                     <p style={{fontSize: '0.85rem', margin: 0}}>Nejlepší poměr cena/výkon</p>
                 </Link>
+                
+                {/* NOVÁ DLAŽDICE PRO TVŮJ PC */}
+                <Link href="/moje-pc" className="feature-box" style={{ borderColor: '#ff0055' }}>
+                    <div style={{fontSize: '2rem', marginBottom: '10px'}}>💻</div>
+                    <h4 style={{color: '#ff0055', margin: '0 0 5px 0'}}>NA ČEM JEDU JÁ?</h4>
+                    <p style={{fontSize: '0.85rem', margin: 0}}>Můj dual-GPU build</p>
+                </Link>
+
                 <Link href="/slovnik" className="feature-box">
                     <div style={{fontSize: '2rem', marginBottom: '10px'}}>📖</div>
                     <h4 style={{color: '#66fcf1', margin: '0 0 5px 0'}}>HW SLOVNÍK</h4>
