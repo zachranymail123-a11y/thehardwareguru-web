@@ -2,6 +2,7 @@ import './globals.css';
 import Script from 'next/script';
 import SestavyBubble from '../components/SestavyBubble'; 
 import Tracker from '../components/Tracker'; 
+import SocialTracker from '../components/SocialTracker'; // PŘIDÁNO
 import { Analytics } from '@vercel/analytics/react';
 
 export const metadata = {
@@ -22,7 +23,7 @@ export const metadata = {
     siteName: 'The Hardware Guru',
     images: [
       {
-        url: '/bg-guru.png', // ZMĚNA: Takhle se odkazuje na fotku ve složce /public
+        url: '/bg-guru.png',
         width: 1200,
         height: 630,
         alt: 'The Hardware Guru Banner',
@@ -36,7 +37,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'The Hardware Guru',
     description: 'Tech, Gaming & AI novinky.',
-    images: ['/bg-guru.png'], // ZMĚNA: Lokální cesta
+    images: ['/bg-guru.png'],
   },
 
   icons: {
@@ -45,7 +46,6 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
-  // PŘIDÁNO: Strukturovaná data pro Google (JSON-LD)
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -63,10 +63,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="cs">
       <body>
+        {/* --- GLOBÁLNÍ SLEDOVÁNÍ KLIKŮ (KICK, YT, DISCORD) --- */}
+        <SocialTracker /> 
+
         {/* --- LIVE TRACKING (SUPABASE) --- */}
         <Tracker />
 
-        {/* --- ONESIGNAL PUSH NOTIFIKACE (OPRAVENO NAČÍTÁNÍ) --- */}
+        {/* --- ONESIGNAL --- */}
         <Script 
           src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" 
           strategy="afterInteractive" 
@@ -81,20 +84,16 @@ export default function RootLayout({ children }) {
             });
           `}
         </Script>
-        {/* --------------------------------- */}
 
-        {/* PŘIDÁNO: Neviditelný kód pro lepší Google SEO */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
 
-        {/* --- GURU BUBNA NA SESTAVY --- */}
         <SestavyBubble />
 
         {children}
 
-        {/* --- VERCEL ANALYTICS --- */}
         <Analytics />
       </body>
     </html>
