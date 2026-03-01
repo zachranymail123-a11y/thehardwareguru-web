@@ -3,6 +3,14 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
+// POMOCNÁ FUNKCE PRO VYTĚŽENÍ ID Z YOUTUBE ODKAZU
+function extractYoutubeId(url) {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+}
+
 export async function generateMetadata({ params }) {
   const { slug } = params;
   const supabase = createClient(
@@ -16,27 +24,37 @@ export async function generateMetadata({ params }) {
     return { title: 'Článek nenalezen | The Hardware Guru' };
   }
 
+  // Získáme YouTube ID ze starého sloupce nebo z nového youtube_url
+  const ytId = post.video_id || extractYoutubeId(post.youtube_url);
+
   const imageUrl = post.image_url 
     ? post.image_url 
-    : (post.video_id 
-        ? `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`
+    : (ytId 
+        ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`
         : 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop');
 
-  const plainText = (post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 150) + '...';
+  // POUŽIJEME NOVÉ SEO POLE NEBO FALLBACK NA TEXT
+  const seoDescription = post.seo_description || (post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 150) + '...';
+  
+  // ZPRACUJEME KLÍČOVÁ SLOVA PRO GOOGLE
+  const seoKeywords = post.seo_keywords 
+    ? post.seo_keywords.split(',').map(k => k.trim()) 
+    : ['hardware', 'gaming', 'pc', 'guru', 'recenze'];
 
   return {
     title: `${post.title} | The Hardware Guru`,
-    description: plainText,
+    description: seoDescription,
+    keywords: seoKeywords,
     openGraph: {
       title: post.title,
-      description: plainText,
+      description: seoDescription,
       images: [{ url: imageUrl }],
       type: 'article',
     },
     twitter: {
       card: 'summary_large_image',
       title: post.title,
-      description: plainText,
+      description: seoDescription,
       images: [imageUrl],
     },
   };
@@ -67,6 +85,9 @@ export default async function ArticlePage({ params }) {
       </div>
     );
   }
+
+  // Identifikace YouTube videa pro přehrávač
+  const finalYoutubeId = post.video_id || extractYoutubeId(post.youtube_url);
 
   return (
     <div style={{ 
@@ -117,12 +138,13 @@ export default async function ArticlePage({ params }) {
           Publikováno: {new Date(post.created_at).toLocaleDateString('cs-CZ')}
         </div>
 
-        {post.video_id && (
+        {/* YOUTUBE PŘEHRÁVAČ */}
+        {finalYoutubeId && (
           <div style={{ marginBottom: '50px', borderRadius: '15px', overflow: 'hidden', border: '2px solid #45a29e', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
             <iframe
               width="100%"
               height="500"
-              src={`https://www.youtube.com/embed/${post.video_id}`}
+              src={`https://www.youtube.com/embed/${finalYoutubeId}`}
               title="YouTube video player"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -161,7 +183,6 @@ export default async function ArticlePage({ params }) {
                 </p>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                     <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn">SLEDOVAT NA KICKU</a>
-                    {/* NOVÉ TLAČÍTKO YOUTUBE */}
                     <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-btn">SLEDOVAT NA YOUTUBE</a>
                     <a href="https://discord.com/invite/n7xThr8" target="_blank" className="social-btn">PŘIPOJIT SE NA DISCORD</a>
                 </div>
