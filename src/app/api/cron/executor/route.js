@@ -11,6 +11,7 @@ const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
 const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
 const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY;
+const MAKE_WEBHOOK_URL = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL; // Načtení URL pro Make
 
 function createSlug(title) {
   return title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); 
@@ -125,20 +126,38 @@ export async function GET() {
         console.error("Chyba obrázku:", imgErr.message);
       }
 
-      // ---> ULOŽENÍ DO DATABÁZE SE VŠEMI SLOUPCI <---
+      // ULOŽENÍ DO DATABÁZE
       const { error: insertError } = await supabase.from('posts').insert({
         title: article.title,
         slug: finalSlug,
         content: article.content,
         type: task.type,
         image_url: permanentImageUrl,
-        youtube_url: article.youtube_url, // PŘIDÁNO
+        youtube_url: article.youtube_url,
         created_at: new Date().toISOString()
       });
 
       if (insertError) {
-         if (insertError.code === '23505') continue;
-         throw insertError;
+          if (insertError.code === '23505') continue;
+          throw insertError;
+      }
+
+      // --- ODESLÁNÍ DO MAKE.COM (TOHLE TAM CHYBĚLO) ---
+      if (MAKE_WEBHOOK_URL) {
+        try {
+          await fetch(MAKE_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: article.title,
+              image_url: permanentImageUrl,
+              slug: finalSlug
+            }),
+          });
+          console.log("Data úspěšně odeslána do Make.com");
+        } catch (makeErr) {
+          console.error("Chyba odesílání do Make:", makeErr.message);
+        }
       }
 
       await sendOneSignalNotification(article.title, finalSlug);
