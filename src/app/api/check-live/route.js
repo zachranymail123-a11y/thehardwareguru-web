@@ -6,6 +6,8 @@ export async function GET() {
   const kickChannel = 'TheHardwareGuru';
   const ytChannelId = process.env.YOUTUBE_CHANNEL_ID;
   const ytApiKey = process.env.YOUTUBE_API_KEY;
+  // Načtení tvého Make.com webhooku přesně podle tvého Vercel nastavení
+  const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL; 
 
   try {
     let kickLive = false;
@@ -45,19 +47,19 @@ export async function GET() {
       }
     }
 
-    // --- 3. VYTVOŘENÍ ČLÁNKU ---
+    // --- 3. VYTVOŘENÍ ČLÁNKU A ODESLÁNÍ NA MAKE ---
     const { data: tracker } = await supabase.from('stream_tracker').select('*').single();
     const isAnywhereLive = kickLive || ytLive;
     
-    // Vygenerujeme unikátní ID pro tento konkrétní multistream
     const currentStreamId = ytVideoId ? `yt-${ytVideoId}` : (kickLive ? `kick-${Date.now()}` : null);
 
-    // Pokud jsi live a ID se neshoduje s tím, co už máme v databázi uložené
     if (isAnywhereLive && tracker.last_stream_id !== currentStreamId) {
       
       const postTitle = `🔴 MULTISTREAM: ${streamTitle}`;
       const postSlug = `live-multistream-${Date.now()}`;
+      const postDescription = `Připojte se k multistreamu The Hardware Guru: ${streamTitle}.`;
       
+      // 1. Zápis do Supabase
       const { error: postError } = await supabase.from('posts').insert([{
         title: postTitle,
         content: `
@@ -75,27 +77,46 @@ export async function GET() {
         video_id: ytVideoId,
         type: 'game',
         created_at: new Date().toISOString(),
-        seo_description: `Připojte se k multistreamu The Hardware Guru: ${streamTitle}.`
+        seo_description: postDescription
       }]);
 
       if (postError) throw postError;
 
-      // Zápis do trackeru, aby to nespamovalo další články pro ten samý stream
+      // 2. Aktualizace trackeru
       await supabase.from('stream_tracker').update({ 
         is_live: true, 
         last_stream_id: currentStreamId 
       }).eq('id', 1);
 
-      return new Response('Multistream článek úspěšně publikován!', { status: 200 });
+      // 3. ODESLÁNÍ NA MAKE.COM
+      if (makeWebhookUrl) {
+        try {
+          await fetch(makeWebhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: postTitle,
+              url: `https://www.thehardwareguru.cz/${postSlug}`,
+              image_url: thumbUrl,
+              description: postDescription,
+              type: 'game'
+            })
+          });
+          console.log("Úspěšně odesláno na Make.com");
+        } catch (makeError) {
+          console.error("Make.com neodpovídá:", makeError);
+        }
+      }
+
+      return new Response('Multistream článek publikován a odeslán na Make!', { status: 200 });
     }
 
-    // Reset trackeru, když vypneš oba streamy
     if (!isAnywhereLive && tracker.is_live) {
       await supabase.from('stream_tracker').update({ is_live: false }).eq('id', 1);
       return new Response('Stream ukončen, tracker resetován.', { status: 200 });
     }
 
-    return new Response('Vše zkontrolováno, stav beze změny (článek už existuje nebo jsi offline).', { status: 200 });
+    return new Response('Vše zkontrolováno, stav beze změny.', { status: 200 });
 
   } catch (err) {
     return new Response('Chyba: ' + err.message, { status: 500 });
