@@ -1,18 +1,15 @@
 'use client';
 
-// Tento řádek je kritický - říká Next.js, aby se nesnažil o statický build této stránky
 export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect } from 'react';
-import { Activity, Youtube, MessageSquare, Play, RefreshCw, Users, Eye } from 'lucide-react';
+import { Activity, Youtube, MessageSquare, Play, RefreshCw, Users, Eye, Layout, TrendingUp } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-// --- NEPRŮSTŘELNÁ INICIALIZACE ---
+// --- BEZPEČNÁ INICIALIZACE ---
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Klienta vytvoříme JEN pokud máme validní URL. Pokud ne (třeba při buildu), 
-// necháme tam null, aby knihovna nehodila ten tvůj "Invalid URL" error.
 const supabase = (supabaseUrl && supabaseUrl.startsWith('http')) 
   ? createClient(supabaseUrl, supabaseKey) 
   : null;
@@ -22,25 +19,42 @@ export default function AdminMonitor() {
     youtube: 0,
     kick: 0,
     discord: 0,
+    totalViews: 0,
+    topPages: [],
     activeNow: 0,
     loading: true
   });
 
   const fetchRealStats = async () => {
-    // Pokud supabase klient není (např. vteřinu při buildu), tak nic neděláme
     if (!supabase) return;
-
     setStats(prev => ({ ...prev, loading: true }));
     
     try {
+      // 1. Prokliky na sociální sítě
       const { count: ytCount } = await supabase.from('click_stats').select('*', { count: 'exact', head: true }).eq('platform', 'youtube');
       const { count: kickCount } = await supabase.from('click_stats').select('*', { count: 'exact', head: true }).eq('platform', 'kick');
       const { count: dcCount } = await supabase.from('click_stats').select('*', { count: 'exact', head: true }).eq('platform', 'discord');
+
+      // 2. Celková návštěvnost (všechny záznamy v page_views)
+      const { count: totalViews } = await supabase.from('page_views').select('*', { count: 'exact', head: true });
+
+      // 3. Nejsledovanější stránky (analýza cest)
+      const { data: viewsData } = await supabase.from('page_views').select('path');
+      const pathCounts = viewsData.reduce((acc, curr) => {
+        acc[curr.path] = (acc[curr.path] || 0) + 1;
+        return acc;
+      }, {});
+      
+      const sortedPages = Object.entries(pathCounts)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5); // Top 5 stránek
 
       setStats({
         youtube: ytCount || 0,
         kick: kickCount || 0,
         discord: dcCount || 0,
+        totalViews: totalViews || 0,
+        topPages: sortedPages,
         activeNow: Math.floor(Math.random() * 5) + 1,
         loading: false
       });
@@ -62,11 +76,12 @@ export default function AdminMonitor() {
     wrapper: { minHeight: '100vh', backgroundColor: '#050505', color: '#f4f4f5', fontFamily: 'sans-serif', paddingBottom: '40px' },
     nav: { borderBottom: '1px solid #27272a', backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', position: 'sticky', top: 0, zIndex: 50, padding: '15px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     container: { maxWidth: '1200px', margin: '0 auto', padding: '24px' },
-    grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '32px' },
+    grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '32px' },
     card: { backgroundColor: '#09090b', border: '1px solid #27272a', padding: '24px', borderRadius: '16px', position: 'relative', overflow: 'hidden' },
     title: { color: '#71717a', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '10px', display: 'block' },
     value: { fontSize: '42px', fontWeight: '900', color: '#fff', margin: '5px 0' },
-    badge: { color: '#10b981', fontSize: '11px', border: '1px solid #064e3b', padding: '4px 12px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }
+    badge: { color: '#10b981', fontSize: '11px', border: '1px solid #064e3b', padding: '4px 12px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' },
+    pageItem: { display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #18181b' }
   };
 
   return (
@@ -74,12 +89,12 @@ export default function AdminMonitor() {
       <nav style={s.nav}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ backgroundColor: '#2563eb', padding: '6px', borderRadius: '8px' }}><Activity size={20} color="white" /></div>
-          <span style={{ fontSize: '20px', fontWeight: '900', color: '#fff', letterSpacing: '-0.02em' }}>GURU <span style={{ color: '#3b82f6' }}>LIVE</span> MONITOR</span>
+          <span style={{ fontSize: '20px', fontWeight: '900', color: '#fff' }}>GURU <span style={{ color: '#3b82f6' }}>INSIGHTS</span></span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <div style={s.badge}>
             <span style={{ width: '8px', height: '8px', backgroundColor: '#10b981', borderRadius: '50%' }}></span> 
-            SYSTEM LIVE
+            LIVE DATA
           </div>
           <button onClick={fetchRealStats} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#71717a' }}>
             <RefreshCw size={20} className={stats.loading ? 'animate-spin' : ''} />
@@ -88,58 +103,66 @@ export default function AdminMonitor() {
       </nav>
 
       <main style={s.container}>
-        {!supabase && (
-          <div style={{ padding: '20px', backgroundColor: '#450a0a', border: '1px solid #ef4444', borderRadius: '12px', color: '#fca5a5', marginBottom: '24px' }}>
-            <strong>POZOR:</strong> Supabase URL není správně načtená. Zkontroluj Environment Variables ve Vercelu.
-          </div>
-        )}
-
+        {/* TOP STATS */}
         <div style={s.grid}>
-          <div style={{ ...s.card, borderTop: '4px solid #ff0000' }}>
-            <span style={s.title}>YouTube Prokliky</span>
+          <div style={{ ...s.card, borderLeft: '4px solid #3b82f6' }}>
+            <span style={s.title}>Celková návštěvnost</span>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={s.value}>{stats.youtube}</div>
-              <Youtube color="#ff0000" size={48} style={{ opacity: 0.2 }} />
+              <div style={s.value}>{stats.totalViews}</div>
+              <Eye color="#3b82f6" size={48} style={{ opacity: 0.2 }} />
             </div>
+            <div style={{ color: '#71717a', fontSize: '13px' }}>Všechna zobrazení stránek</div>
           </div>
 
-          <div style={{ ...s.card, borderTop: '4px solid #53fc18' }}>
-            <span style={s.title}>Kick Prokliky</span>
+          <div style={{ ...s.card, borderLeft: '4px solid #a855f7' }}>
+            <span style={s.title}>Celkové prokliky</span>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={s.value}>{stats.kick}</div>
-              <Play color="#53fc18" size={48} style={{ opacity: 0.2 }} />
+              <div style={s.value}>{stats.youtube + stats.kick + stats.discord}</div>
+              <TrendingUp color="#a855f7" size={48} style={{ opacity: 0.2 }} />
             </div>
-          </div>
-
-          <div style={{ ...s.card, borderTop: '4px solid #5865F2' }}>
-            <span style={s.title}>Discord Komunita</span>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={s.value}>{stats.discord}</div>
-              <MessageSquare color="#5865F2" size={48} style={{ opacity: 0.2 }} />
-            </div>
+            <div style={{ color: '#71717a', fontSize: '13px' }}>Kliknutí na sociální sítě</div>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-          <div style={{ ...s.card, display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ backgroundColor: '#3b82f61a', padding: '15px', borderRadius: '12px' }}><Users color="#3b82f6" /></div>
-            <div>
-              <div style={s.title}>Aktivní uživatelé</div>
-              <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{stats.activeNow}</div>
+        {/* DETAILS GRID */}
+        <div style={{ ...s.grid, gridTemplateColumns: '1fr 1fr' }}>
+          
+          {/* TOP PAGES LIST */}
+          <div style={s.card}>
+            <span style={{ ...s.title, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Layout size={16} /> Nejsledovanější sekce
+            </span>
+            {stats.topPages.length > 0 ? stats.topPages.map(([path, count], i) => (
+              <div key={i} style={s.pageItem}>
+                <span style={{ fontFamily: 'monospace', color: '#3b82f6' }}>{path}</span>
+                <span style={{ fontWeight: 'bold' }}>{count}x</span>
+              </div>
+            )) : <div style={{ color: '#71717a' }}>Zatím žádná data...</div>}
+          </div>
+
+          {/* SOCIALS BREAKDOWN */}
+          <div style={s.card}>
+            <span style={{ ...s.title, marginBottom: '20px' }}>Detail prokliků</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><Youtube color="#ff0000" size={18} /> <span style={{ fontWeight: 'bold' }}>YouTube</span></div>
+                  <span>{stats.youtube}</span>
+               </div>
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><Play color="#53fc18" size={18} /> <span style={{ fontWeight: 'bold' }}>Kick</span></div>
+                  <span>{stats.kick}</span>
+               </div>
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><MessageSquare color="#5865F2" size={18} /> <span style={{ fontWeight: 'bold' }}>Discord</span></div>
+                  <span>{stats.discord}</span>
+               </div>
             </div>
           </div>
-          <div style={{ ...s.card, display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ backgroundColor: '#10b9811a', padding: '15px', borderRadius: '12px' }}><Eye color="#10b981" /></div>
-            <div>
-              <div style={s.title}>Status Sledování</div>
-              <div style={{ fontSize: '14px', color: '#10b981', fontWeight: 'bold' }}>SBĚR DAT AKTIVNÍ</div>
-            </div>
-          </div>
+
         </div>
       </main>
 
       <style jsx global>{`
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
         .animate-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
