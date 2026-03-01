@@ -6,17 +6,30 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Klienta vytvoříme JEN pokud máme validní URL začínající http. 
-// Tím zabráníme chybě "Invalid supabaseUrl" během buildu na Vercelu.
+// Klienta vytvoříme JEN pokud máme validní URL začínající http.
 const supabase = (supabaseUrl && supabaseUrl.startsWith('http')) 
   ? createClient(supabaseUrl, supabaseKey) 
   : null;
 
 export default function SocialTracker() {
   useEffect(() => {
-    // Pokud supabase klient neexistuje (špatná URL nebo build), nic neděláme
     if (!supabase) return;
 
+    // --- 1. ZÁPIS NÁVŠTĚVY STRÁNKY ---
+    // Tento kód se spustí hned při načtení jakékoli stránky
+    const recordPageView = async () => {
+      try {
+        await supabase.from('page_views').insert([{ 
+          path: window.location.pathname 
+        }]);
+      } catch (err) {
+        console.error('Chyba při zápisu návštěvy:', err);
+      }
+    };
+
+    recordPageView();
+
+    // --- 2. SLEDOVÁNÍ KLIKŮ NA SOCIÁLNÍ SÍTĚ ---
     const handleGlobalClick = async (e) => {
       const link = e.target.closest('a');
       if (!link) return;
@@ -30,7 +43,6 @@ export default function SocialTracker() {
 
       if (platform) {
         try {
-          // Zapíšeme proklik do tabulky, kterou jsi vytvořil v SQL Editoru
           await supabase.from('click_stats').insert([{ platform }]);
           console.log(`Klik na ${platform} uložen.`);
         } catch (error) {
@@ -43,5 +55,5 @@ export default function SocialTracker() {
     return () => window.removeEventListener('click', handleGlobalClick);
   }, []);
 
-  return null;
+  return null; 
 }
