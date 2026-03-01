@@ -1,5 +1,6 @@
 'use client';
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation'; // DŮLEŽITÉ: Sleduje změny URL
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -10,28 +11,35 @@ const supabase = (supabaseUrl && supabaseUrl.startsWith('http'))
   : null;
 
 export default function SocialTracker() {
-  useEffect(() => {
-    // Kontrola inicializace
-    if (!supabase) {
-      console.error("TRACKER: Supabase není připojen. Zkontroluj proměnné ve Vercelu.");
-      return;
-    }
+  const pathname = usePathname(); // Získáme aktuální cestu (např. /moje-pc)
 
-    // 1. ZÁPIS NÁVŠTĚVY STRÁNKY
+  // 1. SLEDOVÁNÍ NÁVŠTĚV STRÁNEK (Spustí se při každé změně URL)
+  useEffect(() => {
+    if (!supabase) return;
+
     const recordPageView = async () => {
-      const path = window.location.pathname;
-      const { error } = await supabase.from('page_views').insert([{ path }]);
-      
-      if (error) {
-        console.error("TRACKER ERROR (návštěva):", error.message);
-      } else {
-        console.log("TRACKER OK: Návštěva zapsána:", path);
+      try {
+        const { error } = await supabase.from('page_views').insert([{ 
+          path: pathname // Zapíše cestu, kde zrovna jsi
+        }]);
+        
+        if (error) {
+          console.error("TRACKER ERROR (návštěva):", error.message);
+        } else {
+          console.log("TRACKER OK: Návštěva zapsána:", pathname);
+        }
+      } catch (err) {
+        console.error('Chyba zápisu návštěvy:', err);
       }
     };
 
     recordPageView();
+  }, [pathname]); // PŘIDÁNO: useEffect reaguje na každou změnu adresy
 
-    // 2. SLEDOVÁNÍ KLIKŮ
+  // 2. SLEDOVÁNÍ KLIKŮ (Stačí nastavit jednou při mountu)
+  useEffect(() => {
+    if (!supabase) return;
+
     const handleGlobalClick = async (e) => {
       const link = e.target.closest('a');
       if (!link) return;
@@ -44,11 +52,15 @@ export default function SocialTracker() {
       if (url.includes('discord.gg') || url.includes('discord.com')) platform = 'discord';
 
       if (platform) {
-        const { error } = await supabase.from('click_stats').insert([{ platform }]);
-        if (error) {
-          console.error(`TRACKER ERROR (proklik ${platform}):`, error.message);
-        } else {
-          console.log(`TRACKER OK: Proklik na ${platform} uložen.`);
+        try {
+          const { error } = await supabase.from('click_stats').insert([{ platform }]);
+          if (error) {
+            console.error(`TRACKER ERROR (proklik ${platform}):`, error.message);
+          } else {
+            console.log(`TRACKER OK: Proklik na ${platform} uložen.`);
+          }
+        } catch (error) {
+          console.error('Chyba při ukládání prokliku:', error);
         }
       }
     };
