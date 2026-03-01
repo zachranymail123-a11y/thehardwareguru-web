@@ -1,16 +1,14 @@
 import { ImageResponse } from 'next/og';
 
-export const runtime = 'edge'; // Běží na superrychlých Edge serverech Vercelu
+export const runtime = 'edge';
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     
-    // Vytáhneme nadpis a obrázek z URL adresy
     const title = searchParams.get('title') || 'Novinky ze světa hardwaru';
     let bg = searchParams.get('bg');
 
-    // Pokud AI nevygenerovala obrázek, hodíme tam tvůj default
     if (!bg || bg === 'null') {
       bg = 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=1200&q=80';
     }
@@ -24,13 +22,23 @@ export async function GET(request) {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'flex-end',
-            padding: '80px',
-            backgroundImage: `url(${bg})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            position: 'relative',
           }}
         >
-          {/* Tmavý gradient přes obrázek, aby byl bílý text vždycky čitelný */}
+          {/* BEZPEČNÉ POZADÍ (Fyzický obrázek místo CSS backgroundImage) */}
+          <img
+            src={bg}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+
+          {/* ZTMAVOVACÍ PŘECHOD (Pro lepší čitelnost textu) */}
           <div
             style={{
               position: 'absolute',
@@ -38,14 +46,20 @@ export async function GET(request) {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundImage: 'linear-gradient(to top, rgba(11,12,16, 0.95) 0%, rgba(11,12,16, 0.5) 50%, rgba(11,12,16, 0.1) 100%)',
+              backgroundImage: 'linear-gradient(to bottom, transparent, rgba(11, 12, 16, 0.95))',
             }}
           />
 
-          {/* Vrstva s textem */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            
-            {/* Značka */}
+          {/* OBSAHOVÁ VRSTVA */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start', // Správná náhrada za fit-content
+              padding: '80px',
+              zIndex: 10,
+            }}
+          >
             <div
               style={{
                 backgroundColor: '#ff0055',
@@ -56,33 +70,30 @@ export async function GET(request) {
                 fontWeight: 'bold',
                 textTransform: 'uppercase',
                 letterSpacing: '2px',
-                width: 'fit-content',
+                marginBottom: '20px',
               }}
             >
               The Hardware Guru
             </div>
 
-            {/* Hlavní nadpis článku */}
             <div
               style={{
                 fontSize: 64,
                 fontWeight: 900,
                 color: 'white',
                 lineHeight: 1.1,
-                textShadow: '0 4px 20px rgba(0,0,0,0.8)',
                 fontFamily: 'sans-serif',
+                marginBottom: '20px',
               }}
             >
               {title}
             </div>
-            
-            {/* Guru neonová linka */}
-            <div 
+
+            <div
               style={{
                 width: '150px',
                 height: '8px',
                 backgroundColor: '#66fcf1',
-                marginTop: '10px'
               }}
             />
           </div>
@@ -90,10 +101,10 @@ export async function GET(request) {
       ),
       {
         width: 1200,
-        height: 630, // Standardní rozměr pro sociální sítě
+        height: 630,
       }
     );
   } catch (e) {
-    return new Response(`Nepodařilo se vygenerovat obrázek`, { status: 500 });
+    return new Response(`Nepodařilo se vygenerovat obrázek: ${e.message}`, { status: 500 });
   }
 }
