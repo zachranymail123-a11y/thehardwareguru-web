@@ -1,7 +1,7 @@
 import './globals.css'; 
 import Script from 'next/script';
 import SestavyBubble from '../components/SestavyBubble'; 
-import Tracker from '../components/Tracker'; // PŘIDÁNO: Tvůj live sledovač
+import Tracker from '../components/Tracker'; 
 import { Analytics } from '@vercel/analytics/react';
 
 export const metadata = {
@@ -22,7 +22,7 @@ export const metadata = {
     siteName: 'The Hardware Guru',
     images: [
       {
-        url: 'https://i.postimg.cc/QdWxszv3/bg-guru.png',
+        url: '/bg-guru.png', // ZMĚNA: Takhle se odkazuje na fotku ve složce /public
         width: 1200,
         height: 630,
         alt: 'The Hardware Guru Banner',
@@ -36,7 +36,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'The Hardware Guru',
     description: 'Tech, Gaming & AI novinky.',
-    images: ['https://i.postimg.cc/QdWxszv3/bg-guru.png'],
+    images: ['/bg-guru.png'], // ZMĚNA: Lokální cesta
   },
 
   icons: {
@@ -45,14 +45,32 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
+  // PŘIDÁNO: Strukturovaná data pro Google (JSON-LD)
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'The Hardware Guru',
+    url: 'https://www.thehardwareguru.cz',
+    logo: 'https://www.thehardwareguru.cz/bg-guru.png',
+    sameAs: [
+      'https://youtube.com/@TheHardwareGuru_Czech',
+      'https://kick.com/TheHardwareGuru',
+      'https://discord.gg/TheHardwareGuru',
+      'https://www.instagram.com/thehardwareguru_czech'
+    ]
+  };
+
   return (
     <html lang="cs">
       <body>
         {/* --- LIVE TRACKING (SUPABASE) --- */}
         <Tracker />
 
-        {/* --- ONESIGNAL PUSH NOTIFIKACE --- */}
-        <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="beforeInteractive" />
+        {/* --- ONESIGNAL PUSH NOTIFIKACE (OPRAVENO NAČÍTÁNÍ) --- */}
+        <Script 
+          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" 
+          strategy="afterInteractive" 
+        />
         <Script id="onesignal-init" strategy="lazyOnload">
           {`
             window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -64,6 +82,12 @@ export default function RootLayout({ children }) {
           `}
         </Script>
         {/* --------------------------------- */}
+
+        {/* PŘIDÁNO: Neviditelný kód pro lepší Google SEO */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
 
         {/* --- GURU BUBNA NA SESTAVY --- */}
         <SestavyBubble />
