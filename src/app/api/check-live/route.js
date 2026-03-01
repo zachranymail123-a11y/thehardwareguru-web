@@ -6,7 +6,6 @@ export async function GET() {
   const kickChannel = 'TheHardwareGuru';
   const ytChannelId = process.env.YOUTUBE_CHANNEL_ID;
   const ytApiKey = process.env.YOUTUBE_API_KEY;
-  // Načtení tvého Make.com webhooku přesně podle tvého Vercel nastavení
   const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL; 
 
   try {
@@ -55,7 +54,8 @@ export async function GET() {
 
     if (isAnywhereLive && tracker.last_stream_id !== currentStreamId) {
       
-      const postTitle = `🔴 MULTISTREAM: ${streamTitle}`;
+      // OPRAVA CHYBY S DUPLIKÁTNÍM NÁZVEM: Přidáno unikátní číslo
+      const postTitle = `🔴 MULTISTREAM: ${streamTitle} #${Math.floor(Math.random() * 10000)}`;
       const postSlug = `live-multistream-${Date.now()}`;
       const postDescription = `Připojte se k multistreamu The Hardware Guru: ${streamTitle}.`;
       
@@ -67,13 +67,13 @@ export async function GET() {
           <p>Právě vysílám multistream: <strong>${streamTitle}</strong>.</p>
           <p>Vyber si svou oblíbenou platformu a doraž:</p>
           <ul>
-            ${kickLive ? `<li><a href="https://kick.com/${kickChannel}">Sledovat na KICKU</a></li>` : ''}
-            ${ytLive ? `<li><a href="https://www.youtube.com/watch?v=${ytVideoId}">Sledovat na YOUTUBE</a></li>` : ''}
+            <li><a href="https://kick.com/${kickChannel}">Sledovat na KICKU</a></li>
+            <li><a href="https://www.youtube.com/@TheHardwareGuru_Czech">Sledovat na YOUTUBE</a></li>
           </ul>
         `,
         slug: postSlug,
         image_url: thumbUrl,
-        youtube_url: ytLive ? `https://www.youtube.com/watch?v=${ytVideoId}` : null,
+        youtube_url: 'https://www.youtube.com/@TheHardwareGuru_Czech',
         video_id: ytVideoId,
         type: 'game',
         created_at: new Date().toISOString(),
@@ -102,7 +102,6 @@ export async function GET() {
               type: 'game'
             })
           });
-          console.log("Úspěšně odesláno na Make.com");
         } catch (makeError) {
           console.error("Make.com neodpovídá:", makeError);
         }
