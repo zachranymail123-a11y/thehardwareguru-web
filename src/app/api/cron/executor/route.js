@@ -11,7 +11,7 @@ const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
 const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
 const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY;
-const MAKE_WEBHOOK_URL = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL; // Načtení URL pro Make
+const MAKE_WEBHOOK_URL = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL;
 
 function createSlug(title) {
   return title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); 
@@ -19,10 +19,11 @@ function createSlug(title) {
 
 async function sendOneSignalNotification(title, slug) {
   if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
-    console.warn("OneSignal klíče nejsou nastaveny, notifikace se neodešle.");
+    console.warn("OneSignal klíče nejsou nastaveny.");
     return false;
   }
-  const articleUrl = `https://www.thehardwareguru.cz/article/${slug}`;
+  // OPRAVENO: Cesta změněna na /clanky/
+  const articleUrl = `https://www.thehardwareguru.cz/clanky/${slug}`;
   try {
     const response = await fetch("https://api.onesignal.com/notifications", {
       method: "POST",
@@ -80,7 +81,7 @@ export async function GET() {
       const res = await fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q: `${task.title} review Metacritic IGN benchmarks youtube video`, num: 10 })
+        body: JSON.stringify({ q: `${task.title} review benchmarks youtube video`, num: 10 })
       });
       const searchResults = await res.json();
       const rawContext = JSON.stringify(searchResults.organic || []).substring(0, 6000);
@@ -91,17 +92,13 @@ export async function GET() {
           { 
             role: "system", 
             content: `Jsi elitní šéfredaktor The Hardware Guru. Piš VÝHRADNĚ ČESKY. Styl: drsný, profesionální. 
-            ZÁKAZ zmiňovat Reddit nebo fráze "podle vyhledávání". 
             Výstup MUSÍ BÝT STRIKTNÍ JSON: { 
               "title": "Český název", 
               "content": "HTML obsah", 
-              "youtube_url": "Najdi v datech relevantní YouTube link k tomuto tématu (např. youtube.com/watch?v=...), pokud tam není, dej null" 
+              "youtube_url": "link" 
             }.` 
           },
-          { 
-            role: "user", 
-            content: `Napiš článek o: "${task.title}". Typ: ${task.type}. Data: ${rawContext}` 
-          }
+          { role: "user", content: `Napiš článek o: "${task.title}". Data: ${rawContext}` }
         ],
         response_format: { type: "json_object" }
       });
@@ -109,12 +106,11 @@ export async function GET() {
       const article = JSON.parse(completion.choices[0].message.content);
       const finalSlug = createSlug(article.title);
 
-      // OBRÁZEK
       let permanentImageUrl = null;
       try {
         const imageResponse = await openai.images.generate({
           model: "dall-e-3",
-          prompt: `Epic tech magazine thumbnail for: ${task.title}. Photorealistic, no text.`,
+          prompt: `Epic tech magazine thumbnail for: ${article.title}. Photorealistic, no text.`,
           n: 1, size: "1024x1024",
         });
         const imgRes = await fetch(imageResponse.data[0].url);
@@ -126,44 +122,41 @@ export async function GET() {
         console.error("Chyba obrázku:", imgErr.message);
       }
 
-      // ULOŽENÍ DO DATABÁZE
-      const { error: insertError } = await supabase.from('posts').insert({
+      // ULOŽENÍ DO POSTS
+      await supabase.from('posts').insert({
         title: article.title,
         slug: finalSlug,
         content: article.content,
-        type: task.type,
+        type: task.type || 'hardware',
         image_url: permanentImageUrl,
         youtube_url: article.youtube_url,
         created_at: new Date().toISOString()
       });
 
-      if (insertError) {
-          if (insertError.code === '23505') continue;
-          throw insertError;
-      }
-
-      // --- ODESLÁNÍ DO MAKE.COM (TOHLE TAM CHYBĚLO) ---
+      // ODESLÁNÍ DO MAKE.COM
       if (MAKE_WEBHOOK_URL) {
-        try {
-          await fetch(MAKE_WEBHOOK_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              title: article.title,
-              image_url: permanentImageUrl,
-              slug: finalSlug
-            }),
-          });
-          console.log("Data úspěšně odeslána do Make.com");
-        } catch (makeErr) {
-          console.error("Chyba odesílání do Make:", makeErr.message);
-        }
+        await fetch(MAKE_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: article.title,
+            image_url: permanentImageUrl,
+            slug: finalSlug, // KLÍČOVÉ PRO FACEBOOK/REDDIT
+            content: article.content.replace(/<[^>]*>?/gm, '').substring(0, 300) // Čistý text bez HTML
+          }),
+        });
       }
 
       await sendOneSignalNotification(article.title, finalSlug);
       await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
 
-      results.push({ title: article.title, status: 'SUCCESS', youtube: article.youtube_url });
+      // OPRAVENO: Přidán slug do výsledného JSONu pro kontrolu
+      results.push({ 
+        title: article.title, 
+        status: 'SUCCESS', 
+        slug: finalSlug, 
+        youtube: article.youtube_url 
+      });
       processedCount++; 
 
     } catch (err) {
