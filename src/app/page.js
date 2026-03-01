@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
+import Image from 'next/image'; // PŘIDÁNO: Optimalizované obrázky od Next.js
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -13,9 +14,9 @@ export default async function Home() {
   // 1. PŘIČTEME NÁVŠTĚVU
   await supabase.rpc('increment_total_visits');
 
-  // 2. STÁHNEME DATA
+  // 2. STÁHNEME DATA (OPRAVA: Limitováno na 15 nejnovějších článků pro extrémní rychlost)
   const [{ data: posts }, { data: stats }] = await Promise.all([
-    supabase.from('posts').select('*').order('created_at', { ascending: false }),
+    supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(15),
     supabase.from('stats').select('value').eq('name', 'total_visits').single()
   ]);
 
@@ -43,7 +44,7 @@ export default async function Home() {
         minHeight: '100vh', 
         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
         color: '#c5c6c7',
-        backgroundImage: "linear-gradient(rgba(11, 12, 16, 0.92), rgba(11, 12, 16, 0.85)), url('https://i.postimg.cc/QdWxszv3/bg-guru.png')",
+        backgroundImage: "linear-gradient(rgba(11, 12, 16, 0.92), rgba(11, 12, 16, 0.85)), url('/bg-guru.png')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
@@ -83,13 +84,12 @@ export default async function Home() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
             <Link href="/sestavy" className="nav-link nav-special">PC SESTAVY</Link>
-            {/* PŘIDANÝ ODKAZ DO NAVIGACE */}
             <Link href="/moje-pc" className="nav-link" style={{color: '#ff0055'}}>MŮJ PC</Link>
             <Link href="/slovnik" className="nav-link">SLOVNÍK</Link>
             <Link href="/rady" className="nav-link" style={{color: '#66fcf1'}}>PRAKTICKÉ RADY</Link>
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
-            <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
+            <a href="https://discord.gg/TheHardwareGuru" target="_blank" className="nav-link">DISCORD</a>
         </div>
       </nav>
 
@@ -105,7 +105,6 @@ export default async function Home() {
                 Doraž na stream, mrkni na vyladěné sestavy nebo si nechej poradit v sekci praktických návodů.
             </p>
             
-            {/* HLAVNÍ ROZCESTNÍK - DLAŽDICE S PŘIDANÝM TVÝM BUILDEM */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
                 <Link href="/sestavy" className="feature-box">
                     <div style={{fontSize: '2rem', marginBottom: '10px'}}>🖥️</div>
@@ -113,7 +112,6 @@ export default async function Home() {
                     <p style={{fontSize: '0.85rem', margin: 0}}>Nejlepší poměr cena/výkon</p>
                 </Link>
                 
-                {/* NOVÁ DLAŽDICE PRO TVŮJ PC */}
                 <Link href="/moje-pc" className="feature-box" style={{ borderColor: '#ff0055' }}>
                     <div style={{fontSize: '2rem', marginBottom: '10px'}}>💻</div>
                     <h4 style={{color: '#ff0055', margin: '0 0 5px 0'}}>NA ČEM JEDU JÁ?</h4>
@@ -132,11 +130,10 @@ export default async function Home() {
                 </Link>
             </div>
 
-            {/* TLAČÍTKA SOCIÁLNÍCH SÍTÍ - OPRAVENÉ POŘADÍ A BARVY */}
             <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
                 <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn" style={{ background: '#53fc18', color: '#0b0c10', border: 'none' }}>KICK STREAM</a>
                 <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-btn" style={{ background: '#ff0000', color: '#fff', border: 'none' }}>YOUTUBE</a>
-                <a href="https://discord.com/invite/n7xThr8" target="_blank" className="social-btn">DISCORD</a>
+                <a href="https://discord.gg/TheHardwareGuru" target="_blank" className="social-btn">DISCORD</a>
             </div>
         </div>
         <div style={{ width: '180px', height: '180px', background: '#0b0c10', borderRadius: '50%', border: '4px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 0 20px #66fcf1' }}>
@@ -165,11 +162,14 @@ export default async function Home() {
                   boxShadow: '0 4px 6px rgba(0,0,0,0.3)', 
                   cursor: 'pointer'
                 }}>
+                  {/* OPRAVA: Použití optimalizované Image komponenty */}
                   <div style={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden', borderBottom: '2px solid #45a29e' }}>
-                    <img 
+                    <Image 
                       src={getThumbnail(post)} 
                       alt={post.title}
-                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      style={{ objectFit: 'cover' }}
                     />
                     <div style={{ 
                       position: 'absolute', 
@@ -182,7 +182,8 @@ export default async function Home() {
                       fontWeight: 'bold', 
                       fontSize: '0.75rem', 
                       textTransform: 'uppercase',
-                      boxShadow: '0 2px 10px rgba(0,0,0,0.5)'
+                      boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+                      zIndex: 10
                     }}>
                       {badge.text}
                     </div>
@@ -212,7 +213,7 @@ export default async function Home() {
           <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
-            <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
+            <a href="https://discord.gg/TheHardwareGuru" target="_blank" className="nav-link">DISCORD</a>
           </div>
           
           <div style={{ marginBottom: '20px', color: '#66fcf1', fontSize: '1rem', fontWeight: 'bold' }}>
