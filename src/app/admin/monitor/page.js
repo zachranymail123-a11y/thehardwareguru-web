@@ -1,16 +1,21 @@
 'use client';
 
-// TENTO ŘÁDEK OPRAVÍ TVŮJ BUILD ERROR NA VERCELU
+// Tento řádek je kritický - říká Next.js, aby se nesnažil o statický build této stránky
 export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect } from 'react';
 import { Activity, Youtube, MessageSquare, Play, RefreshCw, Users, Eye } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-// Používáme proměnné prostředí. Pokud nejsou nastavené, použije se placeholder, aby build nespadl.
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-url.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// --- NEPRŮSTŘELNÁ INICIALIZACE ---
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+// Klienta vytvoříme JEN pokud máme validní URL. Pokud ne (třeba při buildu), 
+// necháme tam null, aby knihovna nehodila ten tvůj "Invalid URL" error.
+const supabase = (supabaseUrl && supabaseUrl.startsWith('http')) 
+  ? createClient(supabaseUrl, supabaseKey) 
+  : null;
 
 export default function AdminMonitor() {
   const [stats, setStats] = useState({
@@ -22,8 +27,8 @@ export default function AdminMonitor() {
   });
 
   const fetchRealStats = async () => {
-    // Pokud máme jen placeholder, nebudeme se ptát databáze
-    if (supabaseUrl.includes('placeholder')) return;
+    // Pokud supabase klient není (např. vteřinu při buildu), tak nic neděláme
+    if (!supabase) return;
 
     setStats(prev => ({ ...prev, loading: true }));
     
@@ -46,9 +51,11 @@ export default function AdminMonitor() {
   };
 
   useEffect(() => {
-    fetchRealStats();
-    const interval = setInterval(fetchRealStats, 30000);
-    return () => clearInterval(interval);
+    if (supabase) {
+      fetchRealStats();
+      const interval = setInterval(fetchRealStats, 30000);
+      return () => clearInterval(interval);
+    }
   }, []);
 
   const s = {
@@ -81,6 +88,12 @@ export default function AdminMonitor() {
       </nav>
 
       <main style={s.container}>
+        {!supabase && (
+          <div style={{ padding: '20px', backgroundColor: '#450a0a', border: '1px solid #ef4444', borderRadius: '12px', color: '#fca5a5', marginBottom: '24px' }}>
+            <strong>POZOR:</strong> Supabase URL není správně načtená. Zkontroluj Environment Variables ve Vercelu.
+          </div>
+        )}
+
         <div style={s.grid}>
           <div style={{ ...s.card, borderTop: '4px solid #ff0000' }}>
             <span style={s.title}>YouTube Prokliky</span>
@@ -88,7 +101,6 @@ export default function AdminMonitor() {
               <div style={s.value}>{stats.youtube}</div>
               <Youtube color="#ff0000" size={48} style={{ opacity: 0.2 }} />
             </div>
-            <div style={{ color: '#71717a', fontSize: '13px' }}>Celkový zájem z webu</div>
           </div>
 
           <div style={{ ...s.card, borderTop: '4px solid #53fc18' }}>
@@ -97,7 +109,6 @@ export default function AdminMonitor() {
               <div style={s.value}>{stats.kick}</div>
               <Play color="#53fc18" size={48} style={{ opacity: 0.2 }} />
             </div>
-            <div style={{ color: '#71717a', fontSize: '13px' }}>Návštěvnost streamu</div>
           </div>
 
           <div style={{ ...s.card, borderTop: '4px solid #5865F2' }}>
@@ -106,7 +117,6 @@ export default function AdminMonitor() {
               <div style={s.value}>{stats.discord}</div>
               <MessageSquare color="#5865F2" size={48} style={{ opacity: 0.2 }} />
             </div>
-            <div style={{ color: '#71717a', fontSize: '13px' }}>Nové vstupy do komunity</div>
           </div>
         </div>
 
