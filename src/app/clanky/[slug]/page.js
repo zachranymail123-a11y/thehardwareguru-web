@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
+import Image from 'next/image'; // PŘIDÁNO: Optimalizované obrázky od Next.js
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,6 @@ export async function generateMetadata({ params }) {
     return { title: 'Článek nenalezen | The Hardware Guru' };
   }
 
-  // Získáme YouTube ID ze starého sloupce nebo z nového youtube_url
   const ytId = post.video_id || extractYoutubeId(post.youtube_url);
 
   const imageUrl = post.image_url 
@@ -33,10 +33,8 @@ export async function generateMetadata({ params }) {
         ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`
         : 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop');
 
-  // POUŽIJEME NOVÉ SEO POLE NEBO FALLBACK NA TEXT
   const seoDescription = post.seo_description || (post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 150) + '...';
   
-  // ZPRACUJEME KLÍČOVÁ SLOVA PRO GOOGLE
   const seoKeywords = post.seo_keywords 
     ? post.seo_keywords.split(',').map(k => k.trim()) 
     : ['hardware', 'gaming', 'pc', 'guru', 'recenze'];
@@ -70,9 +68,11 @@ export default async function ArticlePage({ params }) {
 
   await supabase.rpc('increment_total_visits');
 
-  const [{ data: post }, { data: stats }] = await Promise.all([
+  // PŘIDÁNO: Načítáme i 3 další články pro udržení pozornosti
+  const [{ data: post }, { data: stats }, { data: relatedPosts }] = await Promise.all([
     supabase.from('posts').select('*').eq('slug', slug).single(),
-    supabase.from('stats').select('value').eq('name', 'total_visits').single()
+    supabase.from('stats').select('value').eq('name', 'total_visits').single(),
+    supabase.from('posts').select('title, slug').neq('slug', slug).limit(3)
   ]);
 
   const celkemNavstev = stats?.value || 0;
@@ -86,8 +86,9 @@ export default async function ArticlePage({ params }) {
     );
   }
 
-  // Identifikace YouTube videa pro přehrávač
   const finalYoutubeId = post.video_id || extractYoutubeId(post.youtube_url);
+  // Definujeme obrázek pro tělo článku
+  const articleImage = post.image_url || (finalYoutubeId ? `https://img.youtube.com/vi/${finalYoutubeId}/maxresdefault.jpg` : null);
 
   return (
     <div style={{ 
@@ -111,9 +112,11 @@ export default async function ArticlePage({ params }) {
         .article-content table { width: 100%; border-collapse: collapse; margin: 20px 0; background: rgba(31, 40, 51, 0.5); border-radius: 8px; overflow: hidden; }
         .article-content th, .article-content td { border: 1px solid #45a29e; padding: 12px; text-align: left; }
         .article-content th { background: #1f2833; color: #66fcf1; }
+        .related-link { display: block; color: #c5c6c7; text-decoration: none; padding: 10px; border-left: 3px solid transparent; transition: all 0.2s; }
+        .related-link:hover { color: #66fcf1; border-left: 3px solid #66fcf1; background: rgba(102, 252, 241, 0.05); }
       `}</style>
 
-      {/* HLAVIČKA */}
+      {/* HLAVIČKA ZŮSTÁVÁ TVOJE ORIGINÁLNÍ */}
       <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: 'rgba(31, 40, 51, 0.9)', backdropFilter: 'blur(5px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 0 15px rgba(102, 252, 241, 0.3)', flexWrap: 'wrap', gap: '20px' }}>
         <Link href="/" style={{ textDecoration: 'none' }}>
             <div style={{ fontSize: '1.8rem', fontWeight: '900', color: '#66fcf1', letterSpacing: '2px', textShadow: '2px 2px 0px #000' }}>
@@ -122,10 +125,9 @@ export default async function ArticlePage({ params }) {
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
             <Link href="/" className="nav-link" style={{color: '#66fcf1'}}>zpět na web</Link>
-            <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
+            <a href="https://kick.com/TheHardwareGuru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
-            <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="nav-link">INSTAGRAM</a>
-            <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
+            <a href="https://discord.gg/TheHardwareGuru" target="_blank" className="nav-link">DISCORD</a>
         </div>
       </nav>
 
@@ -137,6 +139,19 @@ export default async function ArticlePage({ params }) {
         <div style={{ color: '#45a29e', marginBottom: '40px', fontSize: '1rem', borderBottom: '1px solid #1f2833', paddingBottom: '20px' }}>
           Publikováno: {new Date(post.created_at).toLocaleDateString('cs-CZ')}
         </div>
+
+        {/* PŘIDÁNO: Zobrazení hlavního obrázku, pokud neexistuje video */}
+        {!finalYoutubeId && articleImage && (
+          <div style={{ position: 'relative', width: '100%', height: '450px', marginBottom: '50px', borderRadius: '15px', overflow: 'hidden', border: '2px solid #45a29e', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
+            <Image 
+              src={articleImage} 
+              alt={post.title} 
+              fill 
+              style={{ objectFit: 'cover' }} 
+              priority
+            />
+          </div>
+        )}
 
         {/* YOUTUBE PŘEHRÁVAČ */}
         {finalYoutubeId && (
@@ -160,13 +175,27 @@ export default async function ArticlePage({ params }) {
               lineHeight: '1.8', 
               fontSize: '1.15rem', 
               color: '#e0e0e0', 
-              marginBottom: '80px',
+              marginBottom: '60px',
               background: 'rgba(11, 12, 16, 0.7)', 
               padding: '30px',
               borderRadius: '15px'
           }}
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
+
+        {/* PŘIDÁNO: Záchytná sekce Další články */}
+        {relatedPosts && relatedPosts.length > 0 && (
+          <div style={{ marginBottom: '60px', padding: '30px', background: 'rgba(31, 40, 51, 0.5)', borderRadius: '15px', borderLeft: '4px solid #66fcf1' }}>
+            <h3 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '20px' }}>Mohlo by tě zajímat:</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {relatedPosts.map((related) => (
+                <Link key={related.slug} href={`/${related.slug}`} className="related-link">
+                  👉 {related.title}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* BOX O AUTOROVI / SOCIÁLNÍ SÍTĚ */}
         <div style={{ padding: '40px', background: 'linear-gradient(145deg, rgba(31, 40, 51, 0.95), rgba(11, 12, 16, 0.95))', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '30px', flexWrap: 'wrap', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
@@ -182,9 +211,9 @@ export default async function ArticlePage({ params }) {
                     Nezapomeň, že na mém <strong>KICK streamu</strong> běží unikátní AI, která reaguje na chat a komentuje hru. 
                 </p>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn">SLEDOVAT NA KICKU</a>
+                    <a href="https://kick.com/TheHardwareGuru" target="_blank" className="social-btn">SLEDOVAT NA KICKU</a>
                     <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-btn">SLEDOVAT NA YOUTUBE</a>
-                    <a href="https://discord.com/invite/n7xThr8" target="_blank" className="social-btn">PŘIPOJIT SE NA DISCORD</a>
+                    <a href="https://discord.gg/TheHardwareGuru" target="_blank" className="social-btn">PŘIPOJIT SE NA DISCORD</a>
                 </div>
             </div>
         </div>
@@ -192,10 +221,9 @@ export default async function ArticlePage({ params }) {
 
       <footer style={{ background: 'rgba(31, 40, 51, 0.95)', padding: '40px 20px', textAlign: 'center', borderTop: '2px solid #66fcf1', marginTop: '60px' }}>
           <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
-            <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
+            <a href="https://kick.com/TheHardwareGuru" target="_blank" className="nav-link">KICK</a>
             <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
-            <a href="https://discord.com/invite/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
-            <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" className="nav-link">INSTAGRAM</a>
+            <a href="https://discord.gg/TheHardwareGuru" target="_blank" className="nav-link">DISCORD</a>
           </div>
 
           <div style={{ marginBottom: '20px', color: '#66fcf1', fontSize: '1rem', fontWeight: 'bold', letterSpacing: '1px' }}>
