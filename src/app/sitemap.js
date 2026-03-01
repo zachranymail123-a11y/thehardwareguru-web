@@ -13,7 +13,7 @@ export default async function sitemap() {
   const staticRoutes = [
     { url: `${baseUrl}`, priority: 1.0 },
     { url: `${baseUrl}/sestavy`, priority: 0.9 },
-    { url: `${baseUrl}/moje-pc`, priority: 0.9 }, // 💻 TADY JE PŘIDANÝ TVŮJ STROJ
+    { url: `${baseUrl}/moje-pc`, priority: 0.9 },
     { url: `${baseUrl}/slovnik`, priority: 0.9 },
     { url: `${baseUrl}/rady`, priority: 0.9 },
   ].map((route) => ({
@@ -24,27 +24,33 @@ export default async function sitemap() {
 
   // 2. DYNAMICKÉ ČLÁNKY (/clanky/...)
   const { data: clanky } = await supabase.from('posts').select('slug');
-  const clankyRoutes = (clanky || []).map((clanek) => ({
-    url: `${baseUrl}/clanky/${clanek.slug}`,
-    lastModified: new Date().toISOString(),
-    priority: 0.8,
-  }));
+  const clankyRoutes = (clanky || [])
+    .filter((clanek) => clanek.slug) // PŘIDÁNO: Zabrání generování /clanky/null
+    .map((clanek) => ({
+      url: `${baseUrl}/clanky/${clanek.slug}`,
+      lastModified: new Date().toISOString(),
+      priority: 0.8,
+    }));
 
   // 3. DYNAMICKÝ SLOVNÍK (/slovnik/...)
   const { data: pojmy } = await supabase.from('slovnik').select('slug');
-  const slovnikRoutes = (pojmy || []).map((pojem) => ({
-    url: `${baseUrl}/slovnik/${pojem.slug}`,
-    lastModified: new Date().toISOString(),
-    priority: 0.7,
-  }));
+  const slovnikRoutes = (pojmy || [])
+    .filter((pojem) => pojem.slug) // PŘIDÁNO: Ochrana proti null
+    .map((pojem) => ({
+      url: `${baseUrl}/slovnik/${pojem.slug}`,
+      lastModified: new Date().toISOString(),
+      priority: 0.7,
+    }));
 
   // 4. DYNAMICKÉ RADY (/rady/...)
   const { data: rady } = await supabase.from('rady').select('slug');
-  const radyRoutes = (rady || []).map((rada) => ({
-    url: `${baseUrl}/rady/${rada.slug}`,
-    lastModified: new Date().toISOString(),
-    priority: 0.8,
-  } ));
+  const radyRoutes = (rady || [])
+    .filter((rada) => rada.slug) // PŘIDÁNO: Ochrana proti null
+    .map((rada) => ({
+      url: `${baseUrl}/rady/${rada.slug}`,
+      lastModified: new Date().toISOString(),
+      priority: 0.8,
+    }));
 
   // SPOJÍME VŠECHNY CESTY DO JEDNOHO VELKÉHO SEZNAMU PRO GOOGLE
   return [...staticRoutes, ...clankyRoutes, ...slovnikRoutes, ...radyRoutes];
