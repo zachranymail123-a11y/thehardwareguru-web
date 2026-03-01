@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import Image from 'next/image'; // PŘIDÁNO: Optimalizované obrázky od Next.js
+import Image from 'next/image';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,7 +68,6 @@ export default async function ArticlePage({ params }) {
 
   await supabase.rpc('increment_total_visits');
 
-  // PŘIDÁNO: Načítáme i 3 další články pro udržení pozornosti
   const [{ data: post }, { data: stats }, { data: relatedPosts }] = await Promise.all([
     supabase.from('posts').select('*').eq('slug', slug).single(),
     supabase.from('stats').select('value').eq('name', 'total_visits').single(),
@@ -87,7 +86,6 @@ export default async function ArticlePage({ params }) {
   }
 
   const finalYoutubeId = post.video_id || extractYoutubeId(post.youtube_url);
-  // Definujeme obrázek pro tělo článku
   const articleImage = post.image_url || (finalYoutubeId ? `https://img.youtube.com/vi/${finalYoutubeId}/maxresdefault.jpg` : null);
 
   return (
@@ -116,7 +114,6 @@ export default async function ArticlePage({ params }) {
         .related-link:hover { color: #66fcf1; border-left: 3px solid #66fcf1; background: rgba(102, 252, 241, 0.05); }
       `}</style>
 
-      {/* HLAVIČKA ZŮSTÁVÁ TVOJE ORIGINÁLNÍ */}
       <nav style={{ padding: '20px 40px', borderBottom: '2px solid #66fcf1', background: 'rgba(31, 40, 51, 0.9)', backdropFilter: 'blur(5px)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 0 15px rgba(102, 252, 241, 0.3)', flexWrap: 'wrap', gap: '20px' }}>
         <Link href="/" style={{ textDecoration: 'none' }}>
             <div style={{ fontSize: '1.8rem', fontWeight: '900', color: '#66fcf1', letterSpacing: '2px', textShadow: '2px 2px 0px #000' }}>
@@ -140,7 +137,6 @@ export default async function ArticlePage({ params }) {
           Publikováno: {new Date(post.created_at).toLocaleDateString('cs-CZ')}
         </div>
 
-        {/* PŘIDÁNO: Zobrazení hlavního obrázku, pokud neexistuje video */}
         {!finalYoutubeId && articleImage && (
           <div style={{ position: 'relative', width: '100%', height: '450px', marginBottom: '50px', borderRadius: '15px', overflow: 'hidden', border: '2px solid #45a29e', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
             <Image 
@@ -153,7 +149,6 @@ export default async function ArticlePage({ params }) {
           </div>
         )}
 
-        {/* YOUTUBE PŘEHRÁVAČ */}
         {finalYoutubeId && (
           <div style={{ marginBottom: '50px', borderRadius: '15px', overflow: 'hidden', border: '2px solid #45a29e', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
             <iframe
@@ -168,7 +163,6 @@ export default async function ArticlePage({ params }) {
           </div>
         )}
 
-        {/* Text článku */}
         <div 
           className="article-content"
           style={{ 
@@ -183,13 +177,13 @@ export default async function ArticlePage({ params }) {
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
 
-        {/* PŘIDÁNO: Záchytná sekce Další články */}
+        {/* OPRAVENÁ SEKCE: Přidáno /clanky/ před slug */}
         {relatedPosts && relatedPosts.length > 0 && (
           <div style={{ marginBottom: '60px', padding: '30px', background: 'rgba(31, 40, 51, 0.5)', borderRadius: '15px', borderLeft: '4px solid #66fcf1' }}>
             <h3 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '20px' }}>Mohlo by tě zajímat:</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {relatedPosts.map((related) => (
-                <Link key={related.slug} href={`/${related.slug}`} className="related-link">
+                <Link key={related.slug} href={`/clanky/${related.slug}`} className="related-link">
                   👉 {related.title}
                 </Link>
               ))}
@@ -197,7 +191,6 @@ export default async function ArticlePage({ params }) {
           </div>
         )}
 
-        {/* BOX O AUTOROVI / SOCIÁLNÍ SÍTĚ */}
         <div style={{ padding: '40px', background: 'linear-gradient(145deg, rgba(31, 40, 51, 0.95), rgba(11, 12, 16, 0.95))', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '30px', flexWrap: 'wrap', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
             <div style={{ width: '150px', height: '150px', background: '#0b0c10', borderRadius: '50%', border: '3px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                 <span style={{color: '#45a29e', fontSize: '3rem', fontWeight: 'bold'}}>HG</span>
