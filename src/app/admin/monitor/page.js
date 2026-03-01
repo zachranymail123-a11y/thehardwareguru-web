@@ -1,11 +1,15 @@
 'use client';
+
+// TENTO ŘÁDEK OPRAVÍ TVŮJ BUILD ERROR NA VERCELU
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect } from 'react';
 import { Activity, Youtube, MessageSquare, Play, RefreshCw, Users, Eye } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-// --- TADY DOPLŇ SVÉ ÚDAJE ZE SUPABASE ---
-const supabaseUrl = 'TVOJE_SUPABASE_URL';
-const supabaseKey = 'TVŮJ_ANON_KEY';
+// Používáme proměnné prostředí. Pokud nejsou nastavené, použije se placeholder, aby build nespadl.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-url.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function AdminMonitor() {
@@ -13,37 +17,43 @@ export default function AdminMonitor() {
     youtube: 0,
     kick: 0,
     discord: 0,
-    activeNow: 3, // Tady můžeš nechat simulaci nebo napojit na real-time
+    activeNow: 0,
     loading: true
   });
 
   const fetchRealStats = async () => {
+    // Pokud máme jen placeholder, nebudeme se ptát databáze
+    if (supabaseUrl.includes('placeholder')) return;
+
     setStats(prev => ({ ...prev, loading: true }));
     
-    // Načtení reálných dat z tabulky click_stats
-    const { count: ytCount } = await supabase.from('click_stats').select('*', { count: 'exact', head: true }).eq('platform', 'youtube');
-    const { count: kickCount } = await supabase.from('click_stats').select('*', { count: 'exact', head: true }).eq('platform', 'kick');
-    const { count: dcCount } = await supabase.from('click_stats').select('*', { count: 'exact', head: true }).eq('platform', 'discord');
+    try {
+      const { count: ytCount } = await supabase.from('click_stats').select('*', { count: 'exact', head: true }).eq('platform', 'youtube');
+      const { count: kickCount } = await supabase.from('click_stats').select('*', { count: 'exact', head: true }).eq('platform', 'kick');
+      const { count: dcCount } = await supabase.from('click_stats').select('*', { count: 'exact', head: true }).eq('platform', 'discord');
 
-    setStats({
-      youtube: ytCount || 0,
-      kick: kickCount || 0,
-      discord: dcCount || 0,
-      activeNow: Math.floor(Math.random() * 5) + 1, // Jen pro vizuální efekt "života"
-      loading: false
-    });
+      setStats({
+        youtube: ytCount || 0,
+        kick: kickCount || 0,
+        discord: dcCount || 0,
+        activeNow: Math.floor(Math.random() * 5) + 1,
+        loading: false
+      });
+    } catch (err) {
+      console.error("Chyba při načítání dat:", err);
+      setStats(prev => ({ ...prev, loading: false }));
+    }
   };
 
   useEffect(() => {
     fetchRealStats();
-    // Automatické osvěžení každých 30 sekund
     const interval = setInterval(fetchRealStats, 30000);
     return () => clearInterval(interval);
   }, []);
 
   const s = {
     wrapper: { minHeight: '100vh', backgroundColor: '#050505', color: '#f4f4f5', fontFamily: 'sans-serif', paddingBottom: '40px' },
-    nav: { borderBottom: '1px solid #27272a', backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', sticky: 'top', padding: '15px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    nav: { borderBottom: '1px solid #27272a', backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', position: 'sticky', top: 0, zIndex: 50, padding: '15px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     container: { maxWidth: '1200px', margin: '0 auto', padding: '24px' },
     grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '32px' },
     card: { backgroundColor: '#09090b', border: '1px solid #27272a', padding: '24px', borderRadius: '16px', position: 'relative', overflow: 'hidden' },
@@ -61,7 +71,7 @@ export default function AdminMonitor() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <div style={s.badge}>
-            <span style={{ width: '8px', height: '8px', backgroundColor: '#10b981', borderRadius: '50%', animation: 'pulse 2s infinite' }}></span> 
+            <span style={{ width: '8px', height: '8px', backgroundColor: '#10b981', borderRadius: '50%' }}></span> 
             SYSTEM LIVE
           </div>
           <button onClick={fetchRealStats} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#71717a' }}>
@@ -71,40 +81,35 @@ export default function AdminMonitor() {
       </nav>
 
       <main style={s.container}>
-        {/* HLAVNÍ STATISTIKY PROKLIKŮ */}
         <div style={s.grid}>
-          {/* YOUTUBE */}
           <div style={{ ...s.card, borderTop: '4px solid #ff0000' }}>
             <span style={s.title}>YouTube Prokliky</span>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={s.value}>{stats.youtube}</div>
-              <Youtube color="#ff0000" size={48} opacity={0.2} />
+              <Youtube color="#ff0000" size={48} style={{ opacity: 0.2 }} />
             </div>
             <div style={{ color: '#71717a', fontSize: '13px' }}>Celkový zájem z webu</div>
           </div>
 
-          {/* KICK */}
           <div style={{ ...s.card, borderTop: '4px solid #53fc18' }}>
             <span style={s.title}>Kick Prokliky</span>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={s.value}>{stats.kick}</div>
-              <Play color="#53fc18" size={48} opacity={0.2} />
+              <Play color="#53fc18" size={48} style={{ opacity: 0.2 }} />
             </div>
             <div style={{ color: '#71717a', fontSize: '13px' }}>Návštěvnost streamu</div>
           </div>
 
-          {/* DISCORD */}
           <div style={{ ...s.card, borderTop: '4px solid #5865F2' }}>
             <span style={s.title}>Discord Komunita</span>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={s.value}>{stats.discord}</div>
-              <MessageSquare color="#5865F2" size={48} opacity={0.2} />
+              <MessageSquare color="#5865F2" size={48} style={{ opacity: 0.2 }} />
             </div>
             <div style={{ color: '#71717a', fontSize: '13px' }}>Nové vstupy do komunity</div>
           </div>
         </div>
 
-        {/* DOPLŇKOVÉ INFO */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
           <div style={{ ...s.card, display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div style={{ backgroundColor: '#3b82f61a', padding: '15px', borderRadius: '12px' }}><Users color="#3b82f6" /></div>
@@ -124,18 +129,9 @@ export default function AdminMonitor() {
       </main>
 
       <style jsx global>{`
-        @keyframes pulse {
-          0% { opacity: 1; }
-          50% { opacity: 0.4; }
-          100% { opacity: 1; }
-        }
-        .animate-spin {
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        .animate-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
     </div>
   );
