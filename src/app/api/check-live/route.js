@@ -74,7 +74,6 @@ export async function GET() {
         youtube_url: ytLive ? `https://www.youtube.com/watch?v=${ytVideoId}` : null,
         video_id: ytVideoId,
         type: 'game',
-        published: true,
         created_at: new Date().toISOString(),
         seo_description: `Připojte se k multistreamu The Hardware Guru: ${streamTitle}.`
       }]);
