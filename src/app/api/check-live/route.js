@@ -24,7 +24,7 @@ export async function GET() {
       const kickData = await kickRes.json();
       if (kickData.livestream) {
         kickLive = true;
-        streamTitle = kickData.livestream.session_title;
+        streamTitle = kickData.livestream.session_title || 'Live Stream';
         // Kick fotku si uložíme jen jako zálohu, kdyby náhodou YT nejel
         thumbUrl = kickData.livestream.thumbnail?.url || thumbUrl;
       }
@@ -43,11 +43,10 @@ export async function GET() {
         if (ytData.items && ytData.items.length > 0) {
           ytLive = true;
           ytVideoId = ytData.items[0].id.videoId;
-          if (!streamTitle) streamTitle = ytData.items[0].snippet.title;
+          if (!streamTitle || streamTitle === 'Live Stream') streamTitle = ytData.items[0].snippet.title;
           
-          // OPRAVA: Tady natvrdo přepíšeme fotku na YouTube formát!
-          // Kick blokuje boty, takže tohle zachrání Buffer, Instagram i Telegram.
-          thumbUrl = `https://img.youtube.com/vi/${ytVideoId}/maxresdefault.jpg`;
+          // OPRAVA 1: Používáme hqdefault.jpg pro 100% jistotu, že fotka existuje okamžitě
+          thumbUrl = `https://img.youtube.com/vi/${ytVideoId}/hqdefault.jpg`;
         }
       }
     } catch (e) {
@@ -58,7 +57,10 @@ export async function GET() {
     const { data: tracker } = await supabase.from('stream_tracker').select('*').single();
     const isAnywhereLive = kickLive || ytLive;
     
-    const currentStreamId = ytVideoId ? `yt-${ytVideoId}` : (kickLive ? `kick-${Date.now()}` : null);
+    // OPRAVA 2: Kick ID se už nemění každou milisekundu, bere se z názvu streamu (bez mezer)
+    const currentStreamId = ytVideoId 
+      ? `yt-${ytVideoId}` 
+      : (kickLive ? `kick-${streamTitle.replace(/\s+/g, '')}` : null);
 
     if (isAnywhereLive && tracker.last_stream_id !== currentStreamId) {
       
@@ -105,7 +107,7 @@ export async function GET() {
             body: JSON.stringify({
               title: postTitle,
               url: `https://www.thehardwareguru.cz/${postSlug}`,
-              image_url: thumbUrl, // <-- Nyní se sem do Make pošle čistá YT fotka
+              image_url: thumbUrl, // <-- Odesílá se čistá YT fotka
               description: postDescription,
               type: 'game'
             })
