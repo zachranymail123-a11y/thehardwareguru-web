@@ -55,21 +55,31 @@ export async function GET() {
       console.log("YouTube parse chyba", e);
     }
 
-    // --- 3. VYTVOŘENÍ ČLÁNKU A ODESLÁNÍ NA MAKE ---
+    // --- 3. LOGIKA ROZHODOVÁNÍ (ZÁMEK PROTI DUPLICITÁM) ---
     const { data: tracker } = await supabase.from('stream_tracker').select('*').single();
     const isAnywhereLive = kickLive || ytLive;
     
+    // Unikátní ID z YouTube má přednost, jinak bereme unikátní ID z Kicku.
+    // Pokud nemáme ani jedno, nepoužíváme náhradní názvy, aby se ID neměnilo v čase.
     const currentStreamId = ytVideoId 
       ? `yt-${ytVideoId}` 
-      : (kickLive ? `kick-${kickStreamId || streamTitle.replace(/\s+/g, '')}` : null);
+      : (kickLive && kickStreamId ? `kick-${kickStreamId}` : null);
 
-    if (isAnywhereLive && tracker.last_stream_id !== currentStreamId) {
+    // PODMÍNKA: Musíme být live, musíme mít ID a HLAVNĚ v databázi musí svítit, že jsme byli OFFLINE (is_live: false)
+    if (isAnywhereLive && currentStreamId && !tracker.is_live) {
       
-      const postTitle = `🔴 MULTISTREAM: ${streamTitle} #${Math.floor(Math.random() * 10000)}`;
+      // 1. OKAMŽITĚ ZAMKNEME TRACKER v databázi
+      // Děláme to jako první věc, aby případný druhý souběžný proces narazil na "is_live: true" a skončil.
+      await supabase.from('stream_tracker').update({ 
+        is_live: true, 
+        last_stream_id: currentStreamId 
+      }).eq('id', 1);
+
+      const postTitle = `🔴 MULTISTREAM: ${streamTitle}`;
       const postSlug = `live-multistream-${Date.now()}`;
       const postDescription = `Připojte se k multistreamu The Hardware Guru: ${streamTitle}.`;
       
-      // 1. Zápis do Supabase (AWAIT - čekáme, až se to zapíše!)
+      // 2. Zápis článku do Supabase
       const { error: postError } = await supabase.from('posts').insert([{
         title: postTitle,
         content: `
@@ -92,16 +102,10 @@ export async function GET() {
 
       if (postError) throw postError;
 
-      // 2. Aktualizace trackeru (AWAIT - čekáme na update)
-      await supabase.from('stream_tracker').update({ 
-        is_live: true, 
-        last_stream_id: currentStreamId 
-      }).eq('id', 1);
-
-      // --- FIX: PAUZA 2 VTEŘINY, ABY SUPABASE STIHLA ČLÁNEK ZVEŘEJNIT ---
+      // 3. FIX: PAUZA 2 VTEŘINY, ABY SUPABASE STIHLA ČLÁNEK ZVEŘEJNIT
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // 3. ODESLÁNÍ NA MAKE.COM (Až když článek 100% existuje)
+      // 4. ODESLÁNÍ NA MAKE.COM
       if (makeWebhookUrl) {
         try {
           await fetch(makeWebhookUrl, {
@@ -120,15 +124,16 @@ export async function GET() {
         }
       }
 
-      return new Response('Multistream článek publikován a odeslán na Make!', { status: 200 });
+      return new Response('Stream zahájen a odeslán na sítě jen jednou.', { status: 200 });
     }
 
+    // Pokud už nikde stream neběží, ale v databázi svítí "is_live: true", resetujeme to na offline
     if (!isAnywhereLive && tracker.is_live) {
       await supabase.from('stream_tracker').update({ is_live: false }).eq('id', 1);
-      return new Response('Stream ukončen, tracker resetován.', { status: 200 });
+      return new Response('Stream ukončen, tracker resetován do stavu Offline.', { status: 200 });
     }
 
-    return new Response('Vše zkontrolováno, stav beze změny.', { status: 200 });
+    return new Response('Vše v pořádku. Buď už jsi nahlášen jako Live, nebo jsi stále Offline.', { status: 200 });
 
   } catch (err) {
     return new Response('Chyba: ' + err.message, { status: 500 });
