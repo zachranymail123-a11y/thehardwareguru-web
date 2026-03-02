@@ -11,7 +11,8 @@ async function getCategoryData(query) {
   const res = await fetch('https://google.serper.dev/search', {
     method: 'POST',
     headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ q: query, tbs: "qdr:h12", num: 10 })
+    // "qdr:d" (24 hodin), "sbd:1" (striktně seřazeno od nejnovějšího)
+    body: JSON.stringify({ q: query, tbs: "qdr:d,sbd:1", num: 10 })
   });
   const data = await res.json();
   return data.organic || [];
