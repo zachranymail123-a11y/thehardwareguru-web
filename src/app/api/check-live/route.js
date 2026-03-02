@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-// TÍMTO NEXT.JS ZAKÁŽEME UKLÁDÁNÍ DO PAMĚTI (FIX PRO VERCEL BUILD ERROR)
 export const dynamic = 'force-dynamic';
+export const revalidate = 0; // Totální zákaz cache na úrovni Next.js
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
@@ -10,6 +10,7 @@ export async function GET() {
   const ytChannelId = process.env.YOUTUBE_CHANNEL_ID;
   const ytApiKey = process.env.YOUTUBE_API_KEY;
   const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL; 
+  const nowTs = Date.now(); // Pro totální promazání cache
 
   try {
     let kickLive = false;
@@ -19,28 +20,34 @@ export async function GET() {
     let kickStreamId = null;
     let thumbUrl = 'https://www.thehardwareguru.cz/bg-guru.png';
 
-    // --- 1. KONTROLA KICKU ---
+    // --- 1. KONTROLA KICKU (Agresivní cache busting) ---
     try {
-      const kickRes = await fetch(`https://kick.com/api/v1/channels/${kickChannel}`, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36' },
+      const kickRes = await fetch(`https://kick.com/api/v1/channels/${kickChannel}?t=${nowTs}`, {
+        headers: { 
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        },
         cache: 'no-store'
       });
-      const kickData = await kickRes.json();
-      if (kickData.livestream) {
-        kickLive = true;
-        kickStreamId = kickData.livestream.id;
-        streamTitle = kickData.livestream.session_title || 'Live Stream';
-        thumbUrl = kickData.livestream.thumbnail?.url || thumbUrl;
+      if (kickRes.ok) {
+        const kickData = await kickRes.json();
+        if (kickData.livestream) {
+          kickLive = true;
+          kickStreamId = kickData.livestream.id;
+          streamTitle = kickData.livestream.session_title || 'Live Stream';
+          thumbUrl = kickData.livestream.thumbnail?.url || thumbUrl;
+        }
       }
     } catch (e) {
-      console.log("Kick parse chyba, pokračujeme na YT");
+      console.log("Kick API nedostupné, jedeme dál...");
     }
 
-    // --- 2. KONTROLA YOUTUBE ---
+    // --- 2. KONTROLA YOUTUBE (Agresivní cache busting) ---
     try {
       if (ytApiKey && ytChannelId) {
         const ytRes = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${ytChannelId}&type=video&eventType=live&key=${ytApiKey}`,
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${ytChannelId}&type=video&eventType=live&key=${ytApiKey}&t=${nowTs}`,
           { cache: 'no-store' }
         );
         const ytData = await ytRes.json();
@@ -52,90 +59,78 @@ export async function GET() {
         }
       }
     } catch (e) {
-      console.log("YouTube parse chyba", e);
+      console.log("YouTube API error:", e);
     }
 
-    // --- 3. LOGIKA ROZHODOVÁNÍ (ZÁMEK PROTI DUPLICITÁM) ---
-    const { data: tracker } = await supabase.from('stream_tracker').select('*').single();
+    // --- 3. DATABÁZOVÝ ZÁMEK (Ten nejdůležitější krok) ---
+    const { data: tracker, error: trackerError } = await supabase.from('stream_tracker').select('*').single();
+    if (trackerError) throw new Error("Nelze načíst stream_tracker");
+
     const isAnywhereLive = kickLive || ytLive;
     
-    // Unikátní ID z YouTube má přednost, jinak bereme unikátní ID z Kicku.
-    // Pokud nemáme ani jedno, nepoužíváme náhradní názvy, aby se ID neměnilo v čase.
+    // Unikátní ID streamu (pokud běží oboje, bereme YT jako stabilnější)
     const currentStreamId = ytVideoId 
       ? `yt-${ytVideoId}` 
       : (kickLive && kickStreamId ? `kick-${kickStreamId}` : null);
 
-    // PODMÍNKA: Musíme být live, musíme mít ID a HLAVNĚ v databázi musí svítit, že jsme byli OFFLINE (is_live: false)
+    // LOGIKA PRO ODESLÁNÍ: Musí být live, mít ID a v DB musí být "OFFLINE"
     if (isAnywhereLive && currentStreamId && !tracker.is_live) {
       
-      // 1. OKAMŽITĚ ZAMKNEME TRACKER v databázi
-      // Děláme to jako první věc, aby případný druhý souběžný proces narazil na "is_live: true" a skončil.
-      await supabase.from('stream_tracker').update({ 
+      // A) OKAMŽITÝ ZÁMEK - nejdřív zapíšeme "jsem live", pak teprve děláme zbytek
+      const { error: lockError } = await supabase.from('stream_tracker').update({ 
         is_live: true, 
         last_stream_id: currentStreamId 
       }).eq('id', 1);
 
-      const postTitle = `🔴 MULTISTREAM: ${streamTitle}`;
-      const postSlug = `live-multistream-${Date.now()}`;
-      const postDescription = `Připojte se k multistreamu The Hardware Guru: ${streamTitle}.`;
+      if (lockError) throw new Error("Selhalo zamknutí databáze!");
+
+      const postTitle = `🔴 GURU JE LIVE: ${streamTitle}`;
+      const postSlug = `live-${currentStreamId}-${nowTs}`;
+      const postDescription = `Právě vysílám na Kicku a YouTube: ${streamTitle}. Doražte!`;
       
-      // 2. Zápis článku do Supabase
+      // B) Zápis článku
       const { error: postError } = await supabase.from('posts').insert([{
         title: postTitle,
-        content: `
-          <h1>Guru je LIVE na všech frontách!</h1>
-          <p>Právě vysílám multistream: <strong>${streamTitle}</strong>.</p>
-          <p>Vyber si svou oblíbenou platformu a doraž:</p>
-          <ul>
-            <li><a href="https://kick.com/${kickChannel}">Sledovat na KICKU</a></li>
-            <li><a href="https://www.youtube.com/@TheHardwareGuru_Czech">Sledovat na YOUTUBE</a></li>
-          </ul>
-        `,
+        content: `<h1>Hardwarový nářez je LIVE!</h1><p>Právě streamujeme: <strong>${streamTitle}</strong>.</p><p><a href="https://kick.com/${kickChannel}">Sledovat na KICKU</a> | <a href="https://www.youtube.com/@TheHardwareGuru_Czech">Sledovat na YOUTUBE</a></p>`,
         slug: postSlug,
         image_url: thumbUrl,
-        youtube_url: 'https://www.youtube.com/@TheHardwareGuru_Czech',
+        youtube_url: ytVideoId ? `https://www.youtube.com/watch?v=${ytVideoId}` : 'https://kick.com/TheHardwareGuru',
         video_id: ytVideoId,
         type: 'game',
         created_at: new Date().toISOString(),
         seo_description: postDescription
       }]);
 
-      if (postError) throw postError;
+      if (postError) console.error("Článek se nevytvořil, ale sítě zkusíme odeslat...");
 
-      // 3. FIX: PAUZA 2 VTEŘINY, ABY SUPABASE STIHLA ČLÁNEK ZVEŘEJNIT
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // 4. ODESLÁNÍ NA MAKE.COM
+      // C) ODESLÁNÍ NA MAKE.COM (Jen jednou díky zámku nahoře)
       if (makeWebhookUrl) {
-        try {
-          await fetch(makeWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              title: postTitle,
-              url: `https://www.thehardwareguru.cz/clanky/${postSlug}`,
-              image_url: thumbUrl,
-              description: postDescription,
-              type: 'game'
-            })
-          });
-        } catch (makeError) {
-          console.error("Make.com neodpovídá:", makeError);
-        }
+        await fetch(makeWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: postTitle,
+            url: `https://www.thehardwareguru.cz/clanky/${postSlug}`,
+            image_url: thumbUrl,
+            description: postDescription,
+            type: 'live' // Důležité pro filtry v Make
+          })
+        });
       }
 
-      return new Response('Stream zahájen a odeslán na sítě jen jednou.', { status: 200 });
+      return new Response('Live detekován a odeslán.', { status: 200 });
     }
 
-    // Pokud už nikde stream neběží, ale v databázi svítí "is_live: true", resetujeme to na offline
+    // RESET: Pokud nikde nevidíme stream, ale v DB visí "Live", přepneme na offline
     if (!isAnywhereLive && tracker.is_live) {
       await supabase.from('stream_tracker').update({ is_live: false }).eq('id', 1);
-      return new Response('Stream ukončen, tracker resetován do stavu Offline.', { status: 200 });
+      return new Response('Stream ukončen, tracker vyčištěn.', { status: 200 });
     }
 
-    return new Response('Vše v pořádku. Buď už jsi nahlášen jako Live, nebo jsi stále Offline.', { status: 200 });
+    return new Response('Stav se nezměnil (buď pořád Live, nebo pořád Offline).', { status: 200 });
 
   } catch (err) {
+    console.error("Kritická chyba API:", err.message);
     return new Response('Chyba: ' + err.message, { status: 500 });
   }
 }
