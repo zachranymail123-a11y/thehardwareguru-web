@@ -176,3 +176,4 @@ export async function GET() {
 
   return NextResponse.json({ processed_tasks: results });
 }
+// vynuceny push pro vercel deploy
