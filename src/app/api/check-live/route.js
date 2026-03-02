@@ -16,15 +16,16 @@ export async function GET() {
     let thumbUrl = 'https://www.thehardwareguru.cz/bg-guru.png';
 
     // --- 1. KONTROLA KICKU ---
-    const kickRes = await fetch(`https://kick.com/api/v1/channels/${kickChannel}`, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36' },
-      cache: 'no-store'
-    });
     try {
+      const kickRes = await fetch(`https://kick.com/api/v1/channels/${kickChannel}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36' },
+        cache: 'no-store'
+      });
       const kickData = await kickRes.json();
       if (kickData.livestream) {
         kickLive = true;
         streamTitle = kickData.livestream.session_title;
+        // Kick fotku si uložíme jen jako zálohu, kdyby náhodou YT nejel
         thumbUrl = kickData.livestream.thumbnail?.url || thumbUrl;
       }
     } catch (e) {
@@ -32,18 +33,25 @@ export async function GET() {
     }
 
     // --- 2. KONTROLA YOUTUBE ---
-    if (ytApiKey && ytChannelId) {
-      const ytRes = await fetch(
-        `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${ytChannelId}&type=video&eventType=live&key=${ytApiKey}`,
-        { cache: 'no-store' }
-      );
-      const ytData = await ytRes.json();
-      if (ytData.items && ytData.items.length > 0) {
-        ytLive = true;
-        ytVideoId = ytData.items[0].id.videoId;
-        if (!streamTitle) streamTitle = ytData.items[0].snippet.title;
-        if (thumbUrl.includes('bg-guru.png')) thumbUrl = ytData.items[0].snippet.thumbnails.high?.url;
+    try {
+      if (ytApiKey && ytChannelId) {
+        const ytRes = await fetch(
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${ytChannelId}&type=video&eventType=live&key=${ytApiKey}`,
+          { cache: 'no-store' }
+        );
+        const ytData = await ytRes.json();
+        if (ytData.items && ytData.items.length > 0) {
+          ytLive = true;
+          ytVideoId = ytData.items[0].id.videoId;
+          if (!streamTitle) streamTitle = ytData.items[0].snippet.title;
+          
+          // OPRAVA: Tady natvrdo přepíšeme fotku na YouTube formát!
+          // Kick blokuje boty, takže tohle zachrání Buffer, Instagram i Telegram.
+          thumbUrl = `https://img.youtube.com/vi/${ytVideoId}/maxresdefault.jpg`;
+        }
       }
+    } catch (e) {
+      console.log("YouTube parse chyba", e);
     }
 
     // --- 3. VYTVOŘENÍ ČLÁNKU A ODESLÁNÍ NA MAKE ---
@@ -54,7 +62,7 @@ export async function GET() {
 
     if (isAnywhereLive && tracker.last_stream_id !== currentStreamId) {
       
-      // OPRAVA CHYBY S DUPLIKÁTNÍM NÁZVEM: Přidáno unikátní číslo
+      // Přidáno unikátní číslo proti duplikátům
       const postTitle = `🔴 MULTISTREAM: ${streamTitle} #${Math.floor(Math.random() * 10000)}`;
       const postSlug = `live-multistream-${Date.now()}`;
       const postDescription = `Připojte se k multistreamu The Hardware Guru: ${streamTitle}.`;
@@ -97,7 +105,7 @@ export async function GET() {
             body: JSON.stringify({
               title: postTitle,
               url: `https://www.thehardwareguru.cz/${postSlug}`,
-              image_url: thumbUrl,
+              image_url: thumbUrl, // <-- Nyní se sem do Make pošle čistá YT fotka
               description: postDescription,
               type: 'game'
             })
