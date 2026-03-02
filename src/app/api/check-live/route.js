@@ -16,7 +16,7 @@ export async function GET() {
     let ytLive = false;
     let streamTitle = '';
     let ytVideoId = null;
-    let kickStreamId = null; // <-- PŘIDÁNO: Proměnná pro uložení unikátního ID relace na Kicku
+    let kickStreamId = null;
     let thumbUrl = 'https://www.thehardwareguru.cz/bg-guru.png';
 
     // --- 1. KONTROLA KICKU ---
@@ -28,9 +28,8 @@ export async function GET() {
       const kickData = await kickRes.json();
       if (kickData.livestream) {
         kickLive = true;
-        kickStreamId = kickData.livestream.id; // <-- PŘIDÁNO: Kick vygeneruje nové číslo pro každý start OBS!
+        kickStreamId = kickData.livestream.id;
         streamTitle = kickData.livestream.session_title || 'Live Stream';
-        // Kick fotku si uložíme jen jako zálohu, kdyby náhodou YT nejel
         thumbUrl = kickData.livestream.thumbnail?.url || thumbUrl;
       }
     } catch (e) {
@@ -49,8 +48,6 @@ export async function GET() {
           ytLive = true;
           ytVideoId = ytData.items[0].id.videoId;
           if (!streamTitle || streamTitle === 'Live Stream') streamTitle = ytData.items[0].snippet.title;
-          
-          // OPRAVA 1: Používáme hqdefault.jpg pro 100% jistotu, že fotka existuje okamžitě
           thumbUrl = `https://img.youtube.com/vi/${ytVideoId}/hqdefault.jpg`;
         }
       }
@@ -62,19 +59,17 @@ export async function GET() {
     const { data: tracker } = await supabase.from('stream_tracker').select('*').single();
     const isAnywhereLive = kickLive || ytLive;
     
-    // OPRAVA 2: Databáze se už neřídí názvem, ale unikátním ID, které se při každém novém startu streamu změní.
     const currentStreamId = ytVideoId 
       ? `yt-${ytVideoId}` 
       : (kickLive ? `kick-${kickStreamId || streamTitle.replace(/\s+/g, '')}` : null);
 
     if (isAnywhereLive && tracker.last_stream_id !== currentStreamId) {
       
-      // Přidáno unikátní číslo proti duplikátům
       const postTitle = `🔴 MULTISTREAM: ${streamTitle} #${Math.floor(Math.random() * 10000)}`;
       const postSlug = `live-multistream-${Date.now()}`;
       const postDescription = `Připojte se k multistreamu The Hardware Guru: ${streamTitle}.`;
       
-      // 1. Zápis do Supabase
+      // 1. Zápis do Supabase (AWAIT - čekáme, až se to zapíše!)
       const { error: postError } = await supabase.from('posts').insert([{
         title: postTitle,
         content: `
@@ -97,13 +92,16 @@ export async function GET() {
 
       if (postError) throw postError;
 
-      // 2. Aktualizace trackeru
+      // 2. Aktualizace trackeru (AWAIT - čekáme na update)
       await supabase.from('stream_tracker').update({ 
         is_live: true, 
         last_stream_id: currentStreamId 
       }).eq('id', 1);
 
-      // 3. ODESLÁNÍ NA MAKE.COM
+      // --- FIX: PAUZA 2 VTEŘINY, ABY SUPABASE STIHLA ČLÁNEK ZVEŘEJNIT ---
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // 3. ODESLÁNÍ NA MAKE.COM (Až když článek 100% existuje)
       if (makeWebhookUrl) {
         try {
           await fetch(makeWebhookUrl, {
@@ -111,8 +109,8 @@ export async function GET() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               title: postTitle,
-              url: `https://www.thehardwareguru.cz/${postSlug}`,
-              image_url: thumbUrl, // <-- Odesílá se čistá YT fotka
+              url: `https://www.thehardwareguru.cz/clanky/${postSlug}`,
+              image_url: thumbUrl,
               description: postDescription,
               type: 'game'
             })
