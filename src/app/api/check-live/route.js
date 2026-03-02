@@ -13,6 +13,7 @@ export async function GET() {
     let ytLive = false;
     let streamTitle = '';
     let ytVideoId = null;
+    let kickStreamId = null; // <-- PŘIDÁNO: Proměnná pro uložení unikátního ID relace na Kicku
     let thumbUrl = 'https://www.thehardwareguru.cz/bg-guru.png';
 
     // --- 1. KONTROLA KICKU ---
@@ -24,6 +25,7 @@ export async function GET() {
       const kickData = await kickRes.json();
       if (kickData.livestream) {
         kickLive = true;
+        kickStreamId = kickData.livestream.id; // <-- PŘIDÁNO: Kick vygeneruje nové číslo pro každý start OBS!
         streamTitle = kickData.livestream.session_title || 'Live Stream';
         // Kick fotku si uložíme jen jako zálohu, kdyby náhodou YT nejel
         thumbUrl = kickData.livestream.thumbnail?.url || thumbUrl;
@@ -57,10 +59,10 @@ export async function GET() {
     const { data: tracker } = await supabase.from('stream_tracker').select('*').single();
     const isAnywhereLive = kickLive || ytLive;
     
-    // OPRAVA 2: Kick ID se už nemění každou milisekundu, bere se z názvu streamu (bez mezer)
+    // OPRAVA 2: Databáze se už neřídí názvem, ale unikátním ID, které se při každém novém startu streamu změní.
     const currentStreamId = ytVideoId 
       ? `yt-${ytVideoId}` 
-      : (kickLive ? `kick-${streamTitle.replace(/\s+/g, '')}` : null);
+      : (kickLive ? `kick-${kickStreamId || streamTitle.replace(/\s+/g, '')}` : null);
 
     if (isAnywhereLive && tracker.last_stream_id !== currentStreamId) {
       
