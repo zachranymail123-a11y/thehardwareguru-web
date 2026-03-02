@@ -22,18 +22,25 @@ export async function GET() {
   const now = new Date();
   const todayISO = now.toISOString().split('T')[0];
 
+  // Diagnostický objekt
+  let debug = {
+    game: { found: 0, after_duplicate_filter: 0 },
+    hw: { found: 0, after_duplicate_filter: 0 },
+    errors: []
+  };
+
   try {
-    // 1. ČISTÉ DOTAZY PRO TVOJE ZDROJE
     const gameSources = "(site:games.tiscali.cz OR site:indian-tv.cz OR site:eurogamer.net)";
     const hwSources = "(site:guru3d.com OR site:pctuning.cz OR site:tomshardware.com)";
     
-    // Zjednodušená klíčová slova pro lepší hit-rate
     const [gameRaw, hwRaw] = await Promise.all([
-      getCategoryData(`${gameSources} hry news`),
-      getCategoryData(`${hwSources} hardware news`)
+      getCategoryData(`${gameSources} news`),
+      getCategoryData(`${hwSources} news`)
     ]);
 
-    // 2. KONTROLA DUPLICIT (Správně podle tvé DB - source_url)
+    debug.game.found = gameRaw.length;
+    debug.hw.found = hwRaw.length;
+
     const { data: existing } = await supabase.from('content_plan').select('source_url');
     const usedUrls = new Set(existing ? existing.map(r => r.source_url) : []);
 
@@ -41,36 +48,43 @@ export async function GET() {
 
     const processCategory = async (rawItems, type) => {
       let count = 0;
-      for (const item of rawItems) {
+      let validForProcessing = rawItems.filter(item => !usedUrls.has(item.link));
+      
+      if (type === 'game') debug.game.after_duplicate_filter = validForProcessing.length;
+      if (type === 'hardware') debug.hw.after_duplicate_filter = validForProcessing.length;
+
+      for (const item of validForProcessing) {
         if (count >= 3) break; 
-        
-        // Zde musí být item.link (to co vrací Serper)
-        if (usedUrls.has(item.link)) continue; 
 
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [
-            { role: "system", content: "Jsi překladatel. Udělej z titulku úderný český název. JSON: { \"title\": \"...\" }" },
-            { role: "user", content: item.title }
-          ],
-          response_format: { type: "json_object" }
-        });
+        try {
+          const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+              { role: "system", content: "Jsi překladatel. Udělej z titulku úderný český název. JSON: { \"title\": \"...\" }" },
+              { role: "user", content: item.title }
+            ],
+            response_format: { type: "json_object" }
+          });
 
-        const czechTitle = JSON.parse(completion.choices[0].message.content).title;
+          const czechTitle = JSON.parse(completion.choices[0].message.content).title;
 
-        // Vkládáme do tvého sloupce source_url
-        const { data, error } = await supabase.from('content_plan').insert({
-          title: czechTitle,
-          release_date: todayISO,
-          type: type,
-          status: 'planned',
-          source_url: item.link 
-        }).select();
+          const { data, error } = await supabase.from('content_plan').insert({
+            title: czechTitle,
+            release_date: todayISO,
+            type: type,
+            status: 'planned',
+            source_url: item.link 
+          }).select();
 
-        if (data) {
-          usedUrls.add(item.link);
-          log.push({ title: czechTitle, type: type });
-          count++;
+          if (data) {
+            usedUrls.add(item.link);
+            log.push({ title: czechTitle, type: type });
+            count++;
+          } else if (error) {
+            debug.errors.push(`DB Error (${type}): ${error.message}`);
+          }
+        } catch (e) {
+          debug.errors.push(`AI Error (${type}): ${e.message}`);
         }
       }
     };
@@ -78,9 +92,13 @@ export async function GET() {
     await processCategory(gameRaw, 'game');
     await processCategory(hwRaw, 'hardware');
 
-    return NextResponse.json({ status: 'DONE', items: log });
+    return NextResponse.json({ 
+      status: 'DONE', 
+      debug: debug,
+      items: log 
+    });
 
   } catch (err) {
-    return NextResponse.json({ error: err.message });
+    return NextResponse.json({ error: err.message, debug: debug });
   }
 }
