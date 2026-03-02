@@ -11,7 +11,6 @@ async function getCategoryData(query) {
   const res = await fetch('https://google.serper.dev/search', {
     method: 'POST',
     headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
-    // qdr:d (24h), sbd:1 (seřazeno od nejnovějšího)
     body: JSON.stringify({ q: query, tbs: "qdr:d,sbd:1", num: 15 })
   });
   const data = await res.json();
@@ -24,32 +23,34 @@ export async function GET() {
   const todayISO = now.toISOString().split('T')[0];
 
   try {
-    // 1. TVOJE EXKLUZIVNÍ ZDROJE
-    const gameSources = "site:games.tiscali.cz OR site:indian-tv.cz OR site:eurogamer.net";
-    const hwSources = "site:guru3d.com OR site:pctuning.cz OR site:tomshardware.com";
+    // 1. ČISTÉ DOTAZY PRO TVOJE ZDROJE
+    const gameSources = "(site:games.tiscali.cz OR site:indian-tv.cz OR site:eurogamer.net)";
+    const hwSources = "(site:guru3d.com OR site:pctuning.cz OR site:tomshardware.com)";
     
+    // Zjednodušená klíčová slova pro lepší hit-rate
     const [gameRaw, hwRaw] = await Promise.all([
-      getCategoryData(`${gameSources} novinky hry trailer announcement`),
-      getCategoryData(`${hwSources} hardware GPU CPU leak benchmark news`)
+      getCategoryData(`${gameSources} hry news`),
+      getCategoryData(`${hwSources} hardware news`)
     ]);
 
-    // 2. NAČTENÍ HISTORIE (Pojistka proti duplicitám)
+    // 2. KONTROLA DUPLICIT (Správně podle tvé DB - source_url)
     const { data: existing } = await supabase.from('content_plan').select('source_url');
     const usedUrls = new Set(existing ? existing.map(r => r.source_url) : []);
 
     let log = [];
 
-    // Funkce pro zpracování (změněno na limit 3)
     const processCategory = async (rawItems, type) => {
       let count = 0;
       for (const item of rawItems) {
-        if (count >= 3) break; // TEĎ CHCEME 3 NA KATEGORII
-        if (usedUrls.has(item.link)) continue;
+        if (count >= 3) break; 
+        
+        // Zde musí být item.link (to co vrací Serper)
+        if (usedUrls.has(item.link)) continue; 
 
         const completion = await openai.chat.completions.create({
           model: "gpt-4o",
           messages: [
-            { role: "system", content: "Jsi překladatel. Udělej z titulku úderný český název pro hardware/herní web. JSON: { \"title\": \"...\" }" },
+            { role: "system", content: "Jsi překladatel. Udělej z titulku úderný český název. JSON: { \"title\": \"...\" }" },
             { role: "user", content: item.title }
           ],
           response_format: { type: "json_object" }
@@ -57,12 +58,13 @@ export async function GET() {
 
         const czechTitle = JSON.parse(completion.choices[0].message.content).title;
 
-        const { data } = await supabase.from('content_plan').insert({
+        // Vkládáme do tvého sloupce source_url
+        const { data, error } = await supabase.from('content_plan').insert({
           title: czechTitle,
           release_date: todayISO,
           type: type,
           status: 'planned',
-          source_url: item.link
+          source_url: item.link 
         }).select();
 
         if (data) {
