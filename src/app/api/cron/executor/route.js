@@ -11,7 +11,9 @@ const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
 const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
 const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY;
-const MAKE_WEBHOOK_URL = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL;
+
+// NOVÁ PROMĚNNÁ VÝHRADNĚ PRO ČLÁNKY!
+const MAKE_ARTICLE_WEBHOOK_URL = process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL;
 
 function createSlug(title) {
   return title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); 
@@ -22,7 +24,6 @@ async function sendOneSignalNotification(title, slug) {
     console.warn("OneSignal klíče nejsou nastaveny.");
     return false;
   }
-  // OPRAVENO: Cesta změněna na /clanky/
   const articleUrl = `https://www.thehardwareguru.cz/clanky/${slug}`;
   try {
     const response = await fetch("https://api.onesignal.com/notifications", {
@@ -133,24 +134,32 @@ export async function GET() {
         created_at: new Date().toISOString()
       });
 
-      // ODESLÁNÍ DO MAKE.COM
-      if (MAKE_WEBHOOK_URL) {
-        await fetch(MAKE_WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: article.title,
-            image_url: permanentImageUrl,
-            slug: finalSlug, // KLÍČOVÉ PRO FACEBOOK/REDDIT
-            content: article.content.replace(/<[^>]*>?/gm, '').substring(0, 300) // Čistý text bez HTML
-          }),
-        });
+      // NOVÝ BLOK: ODESLÁNÍ DO MAKE.COM SPECIFICKY PRO ČLÁNKY
+      if (MAKE_ARTICLE_WEBHOOK_URL) {
+        try {
+          // Vytvoření čistého popisku (odstraní HTML tagy a zkrátí na 250 znaků s tečkami na konci)
+          const cleanDescription = article.content.replace(/<[^>]*>?/gm, '').substring(0, 250).trim() + "...";
+          const fullArticleUrl = `https://www.thehardwareguru.cz/clanky/${finalSlug}`;
+
+          await fetch(MAKE_ARTICLE_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: article.title,
+              url: fullArticleUrl,
+              image_url: permanentImageUrl,
+              description: cleanDescription,
+              type: task.type || 'article'
+            }),
+          });
+        } catch (makeError) {
+          console.error("Chyba při odesílání do Make:", makeError);
+        }
       }
 
       await sendOneSignalNotification(article.title, finalSlug);
       await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
 
-      // OPRAVENO: Přidán slug do výsledného JSONu pro kontrolu
       results.push({ 
         title: article.title, 
         status: 'SUCCESS', 
