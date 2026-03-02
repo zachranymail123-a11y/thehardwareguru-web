@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
+// TÍMTO NEXT.JS ZAKÁŽEME UKLÁDÁNÍ DO PAMĚTI (FIX PRO VERCEL BUILD ERROR)
+export const dynamic = 'force-dynamic';
+
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 export async function GET() {
