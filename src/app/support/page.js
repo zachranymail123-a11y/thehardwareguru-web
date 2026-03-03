@@ -4,83 +4,81 @@ export default function SupportPage() {
   const stripeLink = "https://buy.stripe.com/5kQdR900Nc115tSbTD9EI00";
   const revolutTag = "thehardwareguru";
 
+  const containerStyle = {
+    backgroundColor: '#0a0b0d',
+    color: '#ffffff',
+    minHeight: '100-screen',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    padding: '60px 20px',
+    fontFamily: 'sans-serif'
+  };
+
+  const cardStyle = {
+    background: '#111318',
+    border: '1px solid #3b0764',
+    borderRadius: '24px',
+    padding: '40px',
+    maxWidth: '500px',
+    width: '100%',
+    boxShadow: '0 0 40px rgba(139, 92, 246, 0.15)',
+    textAlign: 'center'
+  };
+
+  const buttonStyle = (isRevolut) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '12px',
+    padding: '18px',
+    borderRadius: '16px',
+    textDecoration: 'none',
+    fontWeight: 'bold',
+    fontSize: '18px',
+    transition: '0.3s',
+    marginBottom: '15px',
+    backgroundColor: isRevolut ? '#0075eb' : '#ffffff',
+    color: isRevolut ? '#ffffff' : '#000000',
+    boxShadow: isRevolut ? '0 4px 15px rgba(0, 117, 235, 0.3)' : 'none'
+  });
+
   return (
-    <div className="min-h-screen bg-[#0a0b0d] text-white font-sans selection:bg-purple-500/30">
-      {/* Hlavní kontejner */}
-      <main className="max-w-4xl mx-auto px-6 py-20 flex flex-col items-center">
-        
-        {/* Nadpis a Úvod */}
-        <div className="text-center mb-16 space-y-4">
-          <div className="inline-block px-4 py-1 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-400 text-sm font-bold uppercase tracking-widest mb-4">
-            Podpora projektu
-          </div>
-          <h1 className="text-5xl md:text-7xl font-black tracking-tighter bg-gradient-to-b from-white to-gray-500 bg-clip-text text-transparent">
-            KRMÍŠ TENHLE STROJ
-          </h1>
-          <p className="max-w-xl mx-auto text-gray-400 text-lg md:text-xl leading-relaxed italic">
-            "Podpoř TheHardwareGuru! 🚀 Každý dar jde na hosting, Vercel a doménu. 
-            Díky tobě udržíme web online 24/7."
-          </p>
+    <div style={containerStyle}>
+      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <h2 style={{ color: '#a855f7', fontSize: '14px', letterSpacing: '3px', fontWeight: 'bold' }}>PODPORA PROJEKTU</h2>
+        <h1 style={{ fontSize: '48px', fontWeight: '900', margin: '10px 0', letterSpacing: '-2px' }}>KRMÍŠ TENHLE STROJ</h1>
+        <p style={{ color: '#9ca3af', maxWidth: '400px', margin: '0 auto', fontStyle: 'italic', lineHeight: '1.6' }}>
+          "Podpoř TheHardwareGuru! 🚀 Každý dar jde na hosting, Vercel a doménu. Díky tobě udržíme web online 24/7."
+        </p>
+      </div>
+
+      <div style={cardStyle}>
+        <div style={{ marginBottom: '30px' }}>
+          <a href={stripeLink} style={buttonStyle(false)}>
+            <span>💳</span> Platební karta
+          </a>
+          <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '-10px' }}>Apple Pay, Google Pay, Karty</p>
         </div>
 
-        {/* Karta s možnostmi platby */}
-        <div className="w-full max-w-2xl bg-[#111318] border border-white/5 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden group">
-          {/* Efekt záře na pozadí */}
-          <div className="absolute -top-24 -left-24 w-48 h-48 bg-purple-600/20 blur-[100px] rounded-full group-hover:bg-purple-600/30 transition-all duration-700"></div>
-          
-          <div className="relative z-10 flex flex-col gap-6">
-            
-            {/* Možnost 1: Stripe (Karty) */}
-            <a 
-              href={stripeLink}
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center justify-between bg-white text-black p-6 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-[0_10px_20px_rgba(255,255,255,0.05)]"
-            >
-              <div className="flex items-center gap-4">
-                <span className="text-3xl">💳</span>
-                <div className="text-left">
-                  <div className="font-black uppercase leading-none">Platební karta</div>
-                  <div className="text-xs opacity-60">Apple Pay, Google Pay, Karty</div>
-                </div>
-              </div>
-              <span className="text-2xl font-light">→</span>
-            </a>
-
-            <div className="flex items-center gap-4 py-2">
-              <div className="h-[1px] flex-1 bg-white/10"></div>
-              <span className="text-[10px] text-white/20 font-bold uppercase tracking-widest">Nebo</span>
-              <div className="h-[1px] flex-1 bg-white/10"></div>
-            </div>
-
-            {/* Možnost 2: Revolut */}
-            <a 
-              href={`https://revolut.me/${revolutTag}`}
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center justify-between bg-[#0075eb] text-white p-6 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-[0_10px_20px_rgba(0,117,235,0.2)]"
-            >
-              <div className="flex items-center gap-4">
-                <div className="bg-white text-[#0075eb] rounded-full w-10 h-10 flex items-center justify-center font-black text-xl">R</div>
-                <div className="text-left">
-                  <div className="font-black uppercase leading-none">Revolut Me</div>
-                  <div className="text-xs text-blue-100/60 text-left italic lowercase">@{revolutTag}</div>
-                </div>
-              </div>
-              <span className="text-2xl font-light">→</span>
-            </a>
-
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', opacity: '0.3' }}>
+          <div style={{ height: '1px', flex: 1, backgroundColor: '#ffffff' }}></div>
+          <span style={{ fontSize: '10px', fontWeight: 'bold' }}>NEBO</span>
+          <div style={{ height: '1px', flex: 1, backgroundColor: '#ffffff' }}></div>
         </div>
 
-        {/* Footer info */}
-        <div className="mt-12 text-center">
-          <p className="text-gray-600 text-[10px] uppercase tracking-[0.3em] font-bold">
-            Fixní náklady: Vercel Hosting • Database • Domain Auto-scripts
-          </p>
+        <div>
+          <a href={`https://revolut.me/${revolutTag}`} style={buttonStyle(true)}>
+            <span style={{ background: '#fff', color: '#0075eb', width: '24px', height: '24px', borderRadius: '50%', fontSize: '14px', display: 'flex', alignItems: 'center', justifySelf: 'center', justifyContent: 'center' }}>R</span> 
+            Revolut Me
+          </a>
+          <p style={{ fontSize: '12px', color: '#60a5fa' }}>@{revolutTag}</p>
         </div>
+      </div>
 
-      </main>
+      <div style={{ marginTop: '50px', fontSize: '10px', color: '#4b5563', letterSpacing: '2px', fontWeight: 'bold' }}>
+        FIXNÍ NÁKLADY: VERCEL HOSTING • DATABASE • DOMAIN AUTO-SCRIPTS
+      </div>
     </div>
   );
 }
