@@ -23,7 +23,6 @@ export default async function Home() {
 
   const celkemNavstev = stats?.value || 0;
 
-  // AGRESIVNÍ FALLBACK PRO OBRÁZKY: Pokud URL nezačíná na http, okamžitě dává hardware fallback
   const getSafeImage = (url) => {
     if (!url || typeof url !== 'string' || !url.startsWith('http')) {
       return 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000&auto=format&fit=crop';
@@ -75,6 +74,33 @@ export default async function Home() {
           box-shadow: 0 0 30px rgba(168, 85, 247, 0.4); 
           border-color: #a855f7; 
         }
+
+        /* ANIMOVANÝ NOVINKA ŠTÍTEK */
+        @keyframes pulse-new {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.05); opacity: 0.8; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .new-badge {
+          position: absolute;
+          top: 15px;
+          left: 15px;
+          background: #a855f7;
+          color: #fff;
+          padding: 4px 12px;
+          border-radius: 8px;
+          font-size: 11px;
+          font-weight: 900;
+          z-index: 10;
+          animation: pulse-new 2s infinite ease-in-out;
+          box-shadow: 0 0 15px rgba(168, 85, 247, 0.6);
+          letter-spacing: 1px;
+        }
+
+        .latest-glow {
+          box-shadow: 0 0 25px rgba(168, 85, 247, 0.3);
+          border-color: rgba(168, 85, 247, 0.6) !important;
+        }
         
         .nav-link { margin: 0 15px; color: #fff; text-decoration: none; font-weight: bold; transition: color 0.3s; text-transform: uppercase; letter-spacing: 1px; display: inline-block; }
         .nav-link:hover { color: #66fcf1; text-shadow: 0 0 10px #66fcf1; }
@@ -113,37 +139,41 @@ export default async function Home() {
         </div>
       </header>
 
-      {/* --- SEKCE GURU TIPY & TRIKY (OPRAVENÁ S GLOW EFEKTEM) --- */}
+      {/* --- SEKCE GURU TIPY & TRIKY (S ANIMOVANOU NOVINKOU) --- */}
       <section style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
           <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0 }}>GURU <span style={{ color: '#a855f7' }}>TIPY & TRIKY</span></h2>
           <Link href="/tipy" style={{ color: '#a855f7', fontWeight: 'bold', textDecoration: 'none', fontSize: '14px' }}>ZOBRAZIT VŠECHNY →</Link>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px' }}>
-          {nejnovejsiTipy?.map((tip) => (
-            <Link href={`/tipy/${tip.slug}`} key={tip.id} className="tip-card" style={{ textDecoration: 'none', borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ position: 'relative', height: '220px', width: '100%', background: '#0b0c10' }}>
-                <img 
-                  src={getSafeImage(tip.image_url)} 
-                  alt={tip.title} 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-                {tip.youtube_id && (
-                  <div style={{ position: 'absolute', top: '15px', right: '15px', background: '#ff0000', padding: '5px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', zIndex: 5, boxShadow: '0 0 10px rgba(255,0,0,0.5)' }}>
-                    <Play size={12} fill="#fff" /> VIDEO
-                  </div>
-                )}
-              </div>
-              <div style={{ padding: '25px', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                <span style={{ color: '#a855f7', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>{tip.category}</span>
-                <h3 style={{ fontSize: '20px', fontWeight: '900', margin: '12px 0', color: '#fff' }}>{tip.title}</h3>
-                <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '20px' }}>{tip.description}</p>
-                <div style={{ color: '#a855f7', fontWeight: 'bold', fontSize: '13px', marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  OTEVŘÍT NÁVOD <ChevronRight size={16} />
+          {nejnovejsiTipy?.map((tip, index) => {
+            const isLatest = index === 0;
+            return (
+              <Link href={`/tipy/${tip.slug}`} key={tip.id} className={`tip-card ${isLatest ? 'latest-glow' : ''}`} style={{ textDecoration: 'none', borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                <div style={{ position: 'relative', height: '220px', width: '100%', background: '#0b0c10' }}>
+                  {isLatest && <div className="new-badge">NOVINKA 🔥</div>}
+                  <img 
+                    src={getSafeImage(tip.image_url)} 
+                    alt={tip.title} 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  {tip.youtube_id && (
+                    <div style={{ position: 'absolute', top: '15px', right: '15px', background: '#ff0000', padding: '5px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', zIndex: 5, boxShadow: '0 0 10px rgba(255,0,0,0.5)' }}>
+                      <Play size={12} fill="#fff" /> VIDEO
+                    </div>
+                  )}
                 </div>
-              </div>
-            </Link>
-          ))}
+                <div style={{ padding: '25px', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ color: '#a855f7', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>{tip.category}</span>
+                  <h3 style={{ fontSize: '20px', fontWeight: '900', margin: '12px 0', color: '#fff' }}>{tip.title}</h3>
+                  <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '20px' }}>{tip.description}</p>
+                  <div style={{ color: '#a855f7', fontWeight: 'bold', fontSize: '13px', marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    OTEVŘÍT NÁVOD <ChevronRight size={16} />
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -184,11 +214,8 @@ export default async function Home() {
           <div style={{ marginBottom: '20px', color: '#66fcf1', fontSize: '1rem', fontWeight: 'bold' }}>
             WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #45a29e' }}>{celkemNavstev}</span> GURU FANOUŠKŮ 🦾
           </div>
-          <p style={{ color: '#45a29e', opacity: 0.7, fontSize: '0.8rem' }}>© 2026 The Hardware Guru. Powered by AI & Caffeine.</p>
+          <p style={{ color: '#45a29e', opacity: 0.7, fontSize: '0.8rem' }}>© {new Date().getFullYear()} The Hardware Guru. Powered by AI & Caffeine.</p>
       </footer>
     </div>
   );
 }
-
-const navLinkStyle = { color: '#fff', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' };
-const socialBtnStyle = (color, isSup = false) => ({ color, textDecoration: 'none', fontWeight: 'bold', fontSize: '11px', border: `1px solid ${color}`, padding: '8px 16px', borderRadius: '12px', background: isSup ? `${color}1a` : 'transparent' });
