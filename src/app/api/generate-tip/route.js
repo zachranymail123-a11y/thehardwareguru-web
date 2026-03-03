@@ -105,13 +105,13 @@ export async function GET() {
     const fileName = `tip-${Date.now()}.png`;
 
     const { data: storageData, error: storageError } = await supabase.storage
-      .from('clanky-images')
+      .from('article_images') // OPRAVENO: Název bucketu
       .upload(fileName, buffer, { contentType: 'image/png' });
 
     if (storageError) throw storageError;
 
     const { data: publicUrlData } = supabase.storage
-      .from('clanky-images')
+      .from('article_images') // OPRAVENO: Název bucketu
       .getPublicUrl(fileName);
 
     finalImageUrl = publicUrlData.publicUrl;
