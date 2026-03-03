@@ -20,8 +20,7 @@ const RSS_ZDROJE = [
 
 export async function POST() {
   try {
-    // --- KROK 1: CHYTRÉ HLEDÁNÍ NOVÉHO ČLÁNKU (Přeskakování duplikátů) ---
-    // Zamícháme zdroje, ať nezačínáme vždycky stejným webem
+    // --- KROK 1: CHYTRÉ HLEDÁNÍ NOVÉHO ČLÁNKU ---
     const zamichaneZdroje = RSS_ZDROJE.sort(() => 0.5 - Math.random());
     
     let novyClanek = null;
@@ -30,7 +29,7 @@ export async function POST() {
 
     for (const zdroj of zamichaneZdroje) {
       const feed = await parser.parseURL(zdroj);
-      const clanek = feed.items[0]; // Vezmeme nejnovější
+      const clanek = feed.items[0]; 
       
       if (!clanek) continue;
 
@@ -43,15 +42,13 @@ export async function POST() {
         .single();
 
       if (!existujiciTip) {
-        // Našli jsme článek, který v databázi NENÍ!
         novyClanek = clanek;
         pouzityZdroj = zdroj;
         checkSlug = slug;
-        break; // Ukončíme hledání a jdeme tvořit
+        break; 
       }
     }
 
-    // Pokud smyčka dojela a nenašla nic nového na žádném webu
     if (!novyClanek) {
       return NextResponse.json({ 
         success: true, 
@@ -72,72 +69,11 @@ export async function POST() {
       {
         "title": "Úderný titulek s emoji",
         "description": "Text tipu (max 3 věty, praktické kroky)",
-        "category": "HARDWARE, SOFTWARE, nebo AI"
+        "category": "Vyber jednu: HARDWARE, SOFTWARE, AI"
       }
     `;
 
     const aiTextResponse = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "user", content: textPrompt }],
-      response_format: { type: "json_object" }
-    });
-
-    const vygenerovanyTipText = JSON.parse(aiTextResponse.choices[0].message.content);
-
-    // --- KROK 3: SKUTEČNÉ VYHLEDÁVÁNÍ NA YOUTUBE ---
-    let realneYoutubeId = null;
-    if (process.env.YOUTUBE_API_KEY) {
-      try {
-        const query = encodeURIComponent(`${vygenerovanyTipText.title} hardware tutorial`);
-        const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${query}&type=video&key=${process.env.YOUTUBE_API_KEY}`);
-        const ytData = await ytRes.json();
-        
-        if (ytData.items && ytData.items.length > 0) {
-          realneYoutubeId = ytData.items[0].id.videoId;
-        }
-      } catch (err) {
-        console.error("Chyba při hledání na YouTube:", err);
-      }
-    }
-
-    // --- KROK 4: VOLÁNÍ AI PRO UNIKÁTNÍ OBRÁZEK ---
-    const imagePrompt = `
-      A futuristic cyberpunk illustration of a hardware component related to: "${vygenerovanyTipText.title}". 
-      Use glowing neon purple and green lighting on a dark background. Photorealistic, 8k resolution, highly detailed, without any text.
-    `;
-
-    const aiImageResponse = await openai.images.generate({
-      model: "dall-e-3",
-      prompt: imagePrompt,
-      n: 1,
-      size: "1024x1024",
-    });
-
-    // --- KROK 5: ULOŽENÍ DO SUPABASE ---
-    const finalniTip = {
-      title: vygenerovanyTipText.title,
-      description: vygenerovanyTipText.description,
-      category: vygenerovanyTipText.category,
-      image_url: aiImageResponse.data[0].url,
-      youtube_id: realneYoutubeId, // Skutečné ID z YouTube API
-      slug: checkSlug 
-    };
-
-    const { data, error } = await supabase
-      .from('tipy')
-      .insert([finalniTip])
-      .select();
-
-    if (error) throw error;
-
-    return NextResponse.json({ 
-      success: true, 
-      zdroj_puvodni_clanek: novyClanek.title, 
-      tip: data[0] 
-    });
-
-  } catch (error) {
-    console.error("Chyba generátoru:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
+      response_format
