@@ -15,7 +15,8 @@
     "@supabase/supabase-js": "^2.39.0",
     "openai": "^4.28.0",
     "@vercel/analytics": "latest",
-    "lucide-react": "^0.428.0"
+    "lucide-react": "^0.428.0",
+    "rss-parser": "^3.13.0"
   },
   "devDependencies": {
     "typescript": "^5",
