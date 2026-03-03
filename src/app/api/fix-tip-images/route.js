@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
+// Vynutíme Node.js runtime pro delší operace
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const supabase = createClient(
@@ -10,26 +12,28 @@ const supabase = createClient(
 );
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-export async function GET() {
+export async function GET(request) {
   try {
-    // 1. Najdeme tipy, které mají obrázek z OpenAI (vypršený) nebo fallback
-    // Hledáme adresy obsahující 'openai' nebo 'unsplash'
+    // 1. Najdeme tipy k opravě
     const { data: tipyKeZmene, error: fetchError } = await supabase
       .from('tipy')
       .select('id, title, image_url')
       .or('image_url.ilike.%openai%,image_url.ilike.%unsplash%');
 
-    if (fetchError) throw fetchError;
+    if (fetchError) {
+        console.error("Supabase Fetch Error:", fetchError);
+        return NextResponse.json({ error: fetchError.message }, { status: 500 });
+    }
+
     if (!tipyKeZmene || tipyKeZmene.length === 0) {
-      return NextResponse.json({ message: "Žádné tipy k opravě nebyly nalezeny." });
+      return NextResponse.json({ message: "Všechny obrázky jsou v pořádku. Žádná práce pro Guru!" });
     }
 
     const vysledky = [];
 
-    // 2. Projdeme nalezené tipy a vygenerujeme jim nové obrázky
     for (const tip of tipyKeZmene) {
       try {
-        console.log(`Opravuji obrázek pro: ${tip.title}`);
+        console.log(`Generuji nový trvalý obrázek pro: ${tip.title}`);
 
         const aiImageResponse = await openai.images.generate({
           model: "dall-e-3",
@@ -39,14 +43,15 @@ export async function GET() {
         
         const tempImageUrl = aiImageResponse.data[0].url;
 
-        // Stáhnout a nahrát do Supabase
+        // Stažení
         const imageRes = await fetch(tempImageUrl);
         const buffer = Buffer.from(await imageRes.arrayBuffer());
         const fileName = `fixed-tip-${tip.id}-${Date.now()}.png`;
 
-        const { data: storageData, error: storageError } = await supabase.storage
+        // Upload do storage
+        const { error: storageError } = await supabase.storage
           .from('clanky-images')
-          .upload(fileName, buffer, { contentType: 'image/png' });
+          .upload(fileName, buffer, { contentType: 'image/png', upsert: true });
 
         if (storageError) throw storageError;
 
@@ -56,7 +61,7 @@ export async function GET() {
 
         const finalImageUrl = publicUrlData.publicUrl;
 
-        // 3. Update v databázi
+        // Update DB
         const { error: updateError } = await supabase
           .from('tipy')
           .update({ image_url: finalImageUrl })
@@ -64,18 +69,20 @@ export async function GET() {
 
         if (updateError) throw updateError;
 
-        vysledky.push({ id: tip.id, status: 'Opraveno', url: finalImageUrl });
+        vysledky.push({ title: tip.title, status: 'Success' });
       } catch (err) {
-        vysledky.push({ id: tip.id, status: 'Chyba', error: err.message });
+        console.error(`Chyba u tipu ${tip.id}:`, err.message);
+        vysledky.push({ title: tip.title, status: 'Failed', error: err.message });
       }
     }
 
     return NextResponse.json({ 
-      message: `Zpracování dokončeno. Celkem nalezeno: ${tipyKeZmene.length}`,
-      detaily: vysledky 
-    });
+      processed: vysledky.length,
+      details: vysledky 
+    }, { status: 200 });
 
   } catch (error) {
+    console.error("Global Error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
