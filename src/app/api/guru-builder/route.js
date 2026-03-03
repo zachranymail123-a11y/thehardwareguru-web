@@ -5,7 +5,7 @@ import OpenAI from 'openai';
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// 1. TVOJE PEVNÁ MINIMÁLNÍ SESTAVA A ODKAZY
+// 1. TVOJE PEVNÁ MINIMÁLNÍ SESTAVA (Přesné ceny a odkazy od tebe)
 const baseBuild = {
   GPU: { name: 'GIGABYTE GeForce RTX 5070 EAGLE OC 12G', price: 16500, link: 'https://www.alza.cz/gigabyte-geforce-rtx-5070-eagle-oc-12g-d12815107.htm?o=6', power: 250 },
   CPU: { name: 'AMD Ryzen 7 7700', price: 6000, link: 'https://www.alza.cz/amd-ryzen-7-7700-d7612606.htm?o=1', power: 65 },
@@ -14,7 +14,14 @@ const baseBuild = {
   SSD: { name: 'Samsung 990 PRO 2TB', price: 4500, link: 'https://www.alza.cz/samsung-990-pro-2tb-d7516910.htm?o=1', power: 0 }
 };
 
-// 2. PEVNÝ KATALOG UPGRADŮ PRO DRAŽŠÍ SESTAVY
+// 2. PEVNÉ ZDROJE PRO VÝPOČET
+const psus = [
+  { name: 'Seasonic Core GX-650 ATX 3.1', price: 2000, link: 'https://www.alza.cz/seasonic-core-gx-650-atx-3-2024-d12744103.htm?o=2', capacity: 650 },
+  { name: 'Seasonic Focus GX-850 ATX 3.0', price: 3500, link: 'https://www.alza.cz/seasonic-focus-gx-850-atx-3-0-d7943936.htm', capacity: 850 },
+  { name: 'Seasonic Vertex GX-1000 ATX 3.0', price: 5000, link: 'https://www.alza.cz/seasonic-vertex-gx-1000-d7600109.htm', capacity: 1000 }
+];
+
+// 3. PEVNÝ KATALOG UPGRADŮ PRO DRAŽŠÍ SESTAVY
 const upgrades = {
   GPU: [
     { name: 'GIGABYTE GeForce RTX 5080 GAMING OC 16G', price: 32000, link: 'https://www.alza.cz/graficke-karty-nvidia-geforce-rtx-5080/18810050.htm', power: 320 },
@@ -30,13 +37,6 @@ const upgrades = {
     { name: 'Patriot Viper Venom 64GB KIT DDR5 6000MHz CL30', price: 5500, link: 'https://www.alza.cz/patriot-viper-venom-64gb-kit-ddr5-6000mhz-cl30-d12440051.htm', power: 0 }
   ]
 };
-
-// 3. PEVNÉ ZDROJE PRO VÝPOČET
-const psus = [
-  { name: 'Seasonic Core GX-650 ATX 3.1', price: 2000, link: 'https://www.alza.cz/seasonic-core-gx-650-atx-3-2024-d12744103.htm?o=2', capacity: 650 },
-  { name: 'Seasonic Focus GX-850 ATX 3.0', price: 3500, link: 'https://www.alza.cz/seasonic-focus-gx-850-atx-3-0-d7943936.htm', capacity: 850 },
-  { name: 'Seasonic Vertex GX-1000 ATX 3.0', price: 5000, link: 'https://www.alza.cz/seasonic-vertex-gx-1000-d7600109.htm', capacity: 1000 }
-];
 
 export async function POST(req) {
   try {
@@ -54,7 +54,7 @@ export async function POST(req) {
     
     // 1. GRAFIKA
     for (let i = upgrades.GPU.length - 1; i >= 0; i--) {
-      let costDiff = upgrades.GPU[i].price - currentBuild.GPU.price;
+      let costDiff = upgrades.GPU[i].price - baseBuild.GPU.price;
       if (budgetLeft >= costDiff) {
         currentBuild.GPU = upgrades.GPU[i];
         budgetLeft -= costDiff;
@@ -64,7 +64,7 @@ export async function POST(req) {
 
     // 2. PROCESOR
     for (let i = upgrades.CPU.length - 1; i >= 0; i--) {
-      let costDiff = upgrades.CPU[i].price - currentBuild.CPU.price;
+      let costDiff = upgrades.CPU[i].price - baseBuild.CPU.price;
       if (budgetLeft >= costDiff) {
         currentBuild.CPU = upgrades.CPU[i];
         budgetLeft -= costDiff;
@@ -74,7 +74,7 @@ export async function POST(req) {
 
     // 3. ZÁKLADNÍ DESKA
     for (let i = upgrades.MB.length - 1; i >= 0; i--) {
-      let costDiff = upgrades.MB[i].price - currentBuild.MB.price;
+      let costDiff = upgrades.MB[i].price - baseBuild.MB.price;
       if (budgetLeft >= costDiff) {
         currentBuild.MB = upgrades.MB[i];
         budgetLeft -= costDiff;
@@ -84,7 +84,7 @@ export async function POST(req) {
 
     // 4. PAMĚTI (KAPACITA)
     for (let i = upgrades.RAM.length - 1; i >= 0; i--) {
-      let costDiff = upgrades.RAM[i].price - currentBuild.RAM.price;
+      let costDiff = upgrades.RAM[i].price - baseBuild.RAM.price;
       if (budgetLeft >= costDiff) {
         currentBuild.RAM = upgrades.RAM[i];
         budgetLeft -= costDiff;
@@ -92,16 +92,16 @@ export async function POST(req) {
       }
     }
 
-    // 5. VÝPOČET ZDROJE (TDP + TGP + 100W)
+    // 5. VÝPOČET ZDROJE (Max TDP CPU + Max TGP GPU + 100W)
     const requiredPower = currentBuild.CPU.power + currentBuild.GPU.power + 100;
     let selectedPSU = psus[0]; // Výchozí 650W
 
-    for (const psu of psus) {
-      if (psu.capacity >= requiredPower) {
-        selectedPSU = psu;
-        break; // Najde první, který kapacitně stačí
-      }
+    if (requiredPower > 850) {
+      selectedPSU = psus[2]; // 1000W
+    } else if (requiredPower > 650) {
+      selectedPSU = psus[1]; // 850W
     }
+    
     currentBuild.PSU = selectedPSU;
 
     // KONEČNÝ SOUČET
@@ -121,7 +121,7 @@ export async function POST(req) {
     const prompt = `
       Napiš krátký, úderný komentář (max 2 věty) pro hotovou herní PC sestavu.
       Vybrali jsme: ${currentBuild.GPU.name} a ${currentBuild.CPU.name}.
-      Napiš to sebevědomě ve stylu "The Hardware Guru". Žádné odhady cen.
+      Napiš to sebevědomě ve stylu "The Hardware Guru".
       Vrať pouze čistý text.
     `;
 
@@ -132,7 +132,7 @@ export async function POST(req) {
 
     const explanation = aiRes.choices[0].message.content.trim();
 
-    // ULOŽENÍ
+    // ULOŽENÍ DO SUPABASE
     const slug = `guru-sestava-${budget}-${Date.now()}`;
     const { data, error } = await supabase.from('sestavy').insert([{
       title: `Guru Herní Mašina za ${finalTotal.toLocaleString()} Kč`,
