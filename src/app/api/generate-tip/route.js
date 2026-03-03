@@ -83,30 +83,29 @@ export async function GET() {
     let realneYoutubeId = null;
     try {
       const query = encodeURIComponent(`${vygenerovanyTipText.title} hardware tutorial`);
-      const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${query}&type=video&key=${process.env.YOUTUBE_API_KEY}`);
+      const ytRes = await fetch(`https://www.googleapis.com/googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${query}&type=video&key=${process.env.YOUTUBE_API_KEY}`);
       const ytData = await ytRes.json();
       if (ytData.items?.length > 0) realneYoutubeId = ytData.items[0].id.videoId;
     } catch (err) {}
 
-    // --- GENEROVÁNÍ A TRVALÉ ULOŽENÍ OBRÁZKU ---
-    let finalImageUrl = 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000&auto=format&fit=crop';
+    // --- GENEROVÁNÍ OBRÁZKU (BEZ HNUSNÝCH FALLBACKŮ) ---
+    let finalImageUrl = null;
     try {
       const aiImageResponse = await openai.images.generate({
         model: "dall-e-3",
-        prompt: `Professional high-tech hardware photography: ${vygenerovanyTipText.title}. Violet and cyan cinematic lighting, focus on detail, 8k.`,
+        prompt: `Professional high-tech hardware photography: ${vygenerovanyTipText.title}. Violet and cyan cinematic lighting, focus on detail, 8k. NO TEXT IN IMAGE.`,
         n: 1, size: "1024x1024",
       });
       
       const tempImageUrl = aiImageResponse.data[0].url;
 
-      // Stáhnutí z OpenAI a nahrání do Supabase
       const imageRes = await fetch(tempImageUrl);
       const buffer = Buffer.from(await imageRes.arrayBuffer());
       const fileName = `tip-${Date.now()}.png`;
 
-      const { data: storageData, error: storageError } = await supabase.storage
+      const { error: storageError } = await supabase.storage
         .from('clanky-images')
-        .upload(fileName, buffer, { contentType: 'image/png' });
+        .upload(fileName, buffer, { contentType: 'image/png', upsert: true });
 
       if (storageError) throw storageError;
 
@@ -116,7 +115,9 @@ export async function GET() {
 
       finalImageUrl = publicUrlData.publicUrl;
     } catch (err) { 
-      console.error("DALL-E nebo Storage selhal:", err); 
+      console.error("DALL-E selhal, nebudeme ukládat hnusy:", err.message);
+      // Pokud nemáme obrázek, tak radši failneme celý GET, ať se neuloží článek bez fotky
+      throw new Error(`Kritická chyba generování obrázku: ${err.message}`);
     }
 
     const finalniTip = {
@@ -129,7 +130,6 @@ export async function GET() {
       slug: checkSlug 
     };
 
-    // ULOŽENÍ DO DATABÁZE
     const { data, error } = await supabase.from('tipy').insert([finalniTip]).select();
     if (error) throw error;
 
@@ -144,23 +144,18 @@ export async function GET() {
             title: data[0].title,
             description: data[0].description,
             category: data[0].category,
-            image_url: data[0].image_url, // Teď už trvalá URL ze Supabase
+            image_url: data[0].image_url,
             article_url: `https://www.thehardwareguru.cz/tipy/${data[0].slug}`,
             youtube_id: data[0].youtube_id
           })
         });
       }
-    } catch (makeError) {
-      console.error("Chyba při odesílání do Make:", makeError);
-    }
+    } catch (makeError) { console.error("Make Error:", makeError); }
 
-    return NextResponse.json({ 
-      success: true, 
-      tip: data[0],
-      make_url_nacteno: process.env.MAKE_WEBHOOK_URL ? "ANO" : "NE"
-    });
+    return NextResponse.json({ success: true, tip: data[0] });
 
   } catch (error) {
+    console.error("Generování selhalo:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
