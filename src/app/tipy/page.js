@@ -1,7 +1,11 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Home, Lightbulb, Book, PenTool } from 'lucide-react';
+import { Home, Lightbulb, Book, PenTool, Newspaper } from 'lucide-react';
+import Link from 'next/link';
+
+// Vynutíme čerstvá data při každém načtení (opraví ty černé obrázky)
+export const revalidate = 0;
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -40,24 +44,25 @@ export default function TipyPage() {
       minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif', padding: '0 0 40px 0' 
     }}>
       
-      {/* HLAVNÍ NAVIGACE WEBU */}
+      {/* HLAVNÍ NAVIGACE (Zlatý styl) */}
       <nav style={{ 
         display: 'flex', 
         justifyContent: 'center', 
         gap: '25px', 
         padding: '20px', 
-        background: 'rgba(0,0,0,0.5)', 
+        background: 'rgba(0,0,0,0.7)', 
         backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid rgba(168, 85, 247, 0.2)',
+        borderBottom: '1px solid rgba(234, 179, 8, 0.2)',
         position: 'sticky',
         top: 0,
         zIndex: 100,
         flexWrap: 'wrap'
       }}>
-        <a href="/" style={navItemStyle}><Home size={18} /> HOMEPAGE</a>
-        <a href="/tipy" style={{...navItemStyle, color: '#a855f7'}}><Lightbulb size={18} /> TIPY</a>
-        <a href="/slovnik" style={navItemStyle}><Book size={18} /> SLOVNÍK</a>
-        <a href="/rady" style={navItemStyle}><PenTool size={18} /> PRAKTICKÉ RADY</a>
+        <Link href="/" style={navItemStyle}><Home size={18} /> HOMEPAGE</Link>
+        <Link href="/clanky" style={navItemStyle}><Newspaper size={18} /> ČLÁNKY</Link>
+        <Link href="/tipy" style={{...navItemStyle, color: '#eab308'}}><Lightbulb size={18} /> TIPY</Link>
+        <Link href="/slovnik" style={navItemStyle}><Book size={18} /> SLOVNÍK</Link>
+        <Link href="/rady" style={navItemStyle}><PenTool size={18} /> PRAKTICKÉ RADY</Link>
       </nav>
 
       <div style={{ padding: '40px 20px' }}>
@@ -66,10 +71,10 @@ export default function TipyPage() {
           <a href="https://kick.com/TheHardwareGuru" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#53fc18')}>KICK</a>
           <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#ff0000')}>YOUTUBE</a>
           <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#5865F2')}>DISCORD</a>
-          <a href="/support" style={socialBtnStyle('#eab308', true)}>SUPPORT</a>
+          <Link href="/support" style={socialBtnStyle('#eab308', true)}>SUPPORT</Link>
         </div>
 
-        {/* SEARCH BOX */}
+        {/* SEARCH BOX (Zlatý glow) */}
         <div style={{ maxWidth: '600px', margin: '0 auto 60px auto' }}>
           <input 
             type="text" 
@@ -78,9 +83,9 @@ export default function TipyPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               width: '100%', padding: '18px 25px', borderRadius: '20px',
-              background: 'rgba(17, 19, 24, 0.9)', border: '2px solid #a855f7',
+              background: 'rgba(17, 19, 24, 0.9)', border: '2px solid #eab308',
               color: '#fff', fontSize: '16px', outline: 'none',
-              boxShadow: '0 0 25px rgba(168, 85, 247, 0.2)'
+              boxShadow: '0 0 25px rgba(234, 179, 8, 0.15)'
             }}
           />
         </div>
@@ -91,21 +96,21 @@ export default function TipyPage() {
             filteredTipy.map((tip) => (
             <article key={tip.id} style={{
               background: 'rgba(17, 19, 24, 0.85)', backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '28px', overflow: 'hidden',
+              border: '1px solid rgba(234, 179, 8, 0.2)', borderRadius: '28px', overflow: 'hidden',
               display: 'flex', flexDirection: 'column', transition: 'transform 0.2s ease'
             }}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
-              <a href={`/tipy/${tip.slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+              <Link href={`/tipy/${tip.slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                 <img src={tip.image_url} alt={tip.title} style={{ width: '100%', height: '220px', objectFit: 'cover' }} />
                 <div style={{ padding: '25px', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                  <span style={{ color: '#a855f7', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>{tip.category}</span>
+                  <span style={{ color: '#eab308', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>{tip.category}</span>
                   <h2 style={{ fontSize: '24px', fontWeight: '900', margin: '12px 0' }}>{tip.title}</h2>
                   <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '20px', flexGrow: 1 }}>{tip.description}</p>
-                  <div style={{ color: '#a855f7', fontWeight: 'bold', fontSize: '14px', marginBottom: tip.youtube_id ? '20px' : '0' }}>Číst celý návod →</div>
+                  <div style={{ color: '#eab308', fontWeight: 'bold', fontSize: '14px', marginBottom: tip.youtube_id ? '20px' : '0' }}>Číst celý návod →</div>
                 </div>
-              </a>
+              </Link>
               
               {tip.youtube_id && (
                 <div style={{ padding: '0 25px 25px 25px' }}>
@@ -114,16 +119,6 @@ export default function TipyPage() {
                     target="_blank" 
                     rel="noopener noreferrer"
                     style={youtubeBtnStyle}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(255, 0, 0, 0.2)';
-                      e.currentTarget.style.border = '1px solid rgba(255, 0, 0, 0.6)';
-                      e.currentTarget.style.boxShadow = '0 0 15px rgba(255, 0, 0, 0.3)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgba(255, 0, 0, 0.1)';
-                      e.currentTarget.style.border = '1px solid rgba(255, 0, 0, 0.3)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
                   >
                     <span style={{ color: '#ff0000', fontSize: '18px' }}>▶</span>
                     <span style={{ fontSize: '13px' }}>Přehrát Video Návod</span>
