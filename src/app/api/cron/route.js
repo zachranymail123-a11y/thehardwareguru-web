@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // <--- PŘIDANÝ ŘÁDEK PRO PRODLOUŽENÍ ČASU NA 60 VTEŘIN
 
 export async function GET() {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
