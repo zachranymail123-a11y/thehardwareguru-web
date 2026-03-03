@@ -18,7 +18,8 @@ const RSS_ZDROJE = [
   "https://www.makeuseof.com/feed/category/diy/"  
 ];
 
-export async function POST() {
+// ZMĚNĚNO NA GET: Teď to půjde spustit normálně z prohlížeče!
+export async function GET() {
   try {
     // --- KROK 1: CHYTRÉ HLEDÁNÍ NOVÉHO ČLÁNKU ---
     const zamichaneZdroje = RSS_ZDROJE.sort(() => 0.5 - Math.random());
