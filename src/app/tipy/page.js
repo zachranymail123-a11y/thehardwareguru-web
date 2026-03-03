@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Home, Lightbulb, Book, PenTool, Newspaper } from 'lucide-react';
 import Link from 'next/link';
 
-// Oprava: Pro klientské komponenty používáme force-dynamic místo revalidate
+// Oprava: Pro klientské komponenty používáme force-dynamic pro zajištění čerstvých dat bez chyb při buildu
 export const dynamic = 'force-dynamic';
 
 const supabase = createClient(
@@ -44,7 +44,7 @@ export default function TipyPage() {
       minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif', padding: '0 0 40px 0' 
     }}>
       
-      {/* HLAVNÍ NAVIGACE (Zlatý styl) */}
+      {/* HLAVNÍ NAVIGACE (Zlatý Guru styl) */}
       <nav style={{ 
         display: 'flex', 
         justifyContent: 'center', 
