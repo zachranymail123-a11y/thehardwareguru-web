@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Home, Lightbulb, Book, PenTool, Newspaper } from 'lucide-react';
 import Link from 'next/link';
 
-// Oprava: Pro klientské komponenty používáme force-dynamic pro zajištění čerstvých dat bez chyb při buildu
+// Vynutíme dynamické vykreslování pro zajištění čerstvých dat
 export const dynamic = 'force-dynamic';
 
 const supabase = createClient(
@@ -103,7 +103,12 @@ export default function TipyPage() {
             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
               <Link href={`/tipy/${tip.slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                <img src={tip.image_url} alt={tip.title} style={{ width: '100%', height: '220px', objectFit: 'cover' }} />
+                {/* Přidán Cache Buster (?t=...) pro vynucení načtení opravených obrázků */}
+                <img 
+                  src={`${tip.image_url}?t=${new Date().getTime()}`} 
+                  alt={tip.title} 
+                  style={{ width: '100%', height: '220px', objectFit: 'cover' }} 
+                />
                 <div style={{ padding: '25px', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                   <span style={{ color: '#eab308', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>{tip.category}</span>
                   <h2 style={{ fontSize: '24px', fontWeight: '900', margin: '12px 0' }}>{tip.title}</h2>
