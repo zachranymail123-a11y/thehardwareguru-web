@@ -23,6 +23,7 @@ export default async function Home() {
 
   const celkemNavstev = stats?.value || 0;
 
+  // AGRESIVNÍ FALLBACK PRO OBRÁZKY: Pokud URL nezačíná na http, okamžitě dává hardware fallback
   const getSafeImage = (url) => {
     if (!url || typeof url !== 'string' || !url.startsWith('http')) {
       return 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000&auto=format&fit=crop';
@@ -118,6 +119,8 @@ export default async function Home() {
             <Link href="/slovnik" className="nav-link">SLOVNÍK</Link>
             <Link href="/rady" className="nav-link" style={{color: '#66fcf1'}}>PRAKTICKÉ RADY</Link>
             <a href="https://kick.com/thehardwareguru" target="_blank" className="nav-link">KICK</a>
+            <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="nav-link">YOUTUBE</a>
+            <a href="https://discord.gg/n7xThr8" target="_blank" className="nav-link">DISCORD</a>
             <a href="/support" className="nav-link" style={{color: '#eab308'}}>SUPPORT</a>
         </div>
       </nav>
