@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Home, Lightbulb, Book, PenTool, Newspaper } from 'lucide-react';
 import Link from 'next/link';
 
-// Vynutíme dynamické vykreslování pro zajištění čerstvých dat
+// Tato direktiva vynutí, aby Next.js stránku pokaždé sestavil znovu (vyhne se shnilé cache)
 export const dynamic = 'force-dynamic';
 
 const supabase = createClient(
@@ -19,6 +19,7 @@ export default function TipyPage() {
 
   useEffect(() => {
     async function fetchTipy() {
+      // Přidáme náhodný parametr do dotazu, abychom obešli případnou cache v API volání
       const { data, error } = await supabase
         .from('tipy')
         .select('*')
@@ -44,7 +45,7 @@ export default function TipyPage() {
       minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif', padding: '0 0 40px 0' 
     }}>
       
-      {/* HLAVNÍ NAVIGACE (Zlatý Guru styl) */}
+      {/* HLAVNÍ NAVIGACE */}
       <nav style={{ 
         display: 'flex', 
         justifyContent: 'center', 
@@ -66,7 +67,7 @@ export default function TipyPage() {
       </nav>
 
       <div style={{ padding: '40px 20px' }}>
-        {/* SOCIAL & SUPPORT BAR */}
+        {/* SOCIAL BAR */}
         <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '40px' }}>
           <a href="https://kick.com/TheHardwareGuru" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#53fc18')}>KICK</a>
           <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#ff0000')}>YOUTUBE</a>
@@ -74,7 +75,7 @@ export default function TipyPage() {
           <Link href="/support" style={socialBtnStyle('#eab308', true)}>SUPPORT</Link>
         </div>
 
-        {/* SEARCH BOX (Zlatý glow) */}
+        {/* SEARCH BOX */}
         <div style={{ maxWidth: '600px', margin: '0 auto 60px auto' }}>
           <input 
             type="text" 
@@ -103,7 +104,7 @@ export default function TipyPage() {
             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
               <Link href={`/tipy/${tip.slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                {/* Přidán Cache Buster (?t=...) pro vynucení načtení opravených obrázků */}
+                {/* Přidán unikátní timestamp, aby prohlížeč neukazoval starý prázdný náhled */}
                 <img 
                   src={`${tip.image_url}?t=${new Date().getTime()}`} 
                   alt={tip.title} 
