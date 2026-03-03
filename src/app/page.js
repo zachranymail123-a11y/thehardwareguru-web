@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Lightbulb, ChevronRight, Play } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -24,9 +23,11 @@ export default async function Home() {
 
   const celkemNavstev = stats?.value || 0;
 
-  // Pomocná funkce pro zajištění funkčního obrázku
+  // AGRESIVNÍ FALLBACK PRO OBRÁZKY: Pokud URL nezačíná na http, okamžitě dává hardware fallback
   const getSafeImage = (url) => {
-    if (!url || url === "" || url === "null") return 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000&auto=format&fit=crop';
+    if (!url || typeof url !== 'string' || !url.startsWith('http')) {
+      return 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000&auto=format&fit=crop';
+    }
     return url;
   };
 
@@ -61,8 +62,20 @@ export default async function Home() {
       <style>{`
         .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); }
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
-        .tip-card { transition: all 0.3s ease; border: 1px solid rgba(168, 85, 247, 0.2); background: rgba(17, 19, 24, 0.8); }
-        .tip-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); border-color: #a855f7; }
+        
+        /* GURU GLOW EFEKT PRO TIPY */
+        .tip-card { 
+          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+          border: 1px solid rgba(168, 85, 247, 0.3); 
+          background: rgba(17, 19, 24, 0.85); 
+          backdrop-filter: blur(10px);
+        }
+        .tip-card:hover { 
+          transform: translateY(-8px) scale(1.02); 
+          box-shadow: 0 0 30px rgba(168, 85, 247, 0.4); 
+          border-color: #a855f7; 
+        }
+        
         .nav-link { margin: 0 15px; color: #fff; text-decoration: none; font-weight: bold; transition: color 0.3s; text-transform: uppercase; letter-spacing: 1px; display: inline-block; }
         .nav-link:hover { color: #66fcf1; text-shadow: 0 0 10px #66fcf1; }
         .nav-special { color: #66fcf1 !important; border: 1px solid #66fcf1; padding: 5px 12px; border-radius: 4px; }
@@ -100,7 +113,7 @@ export default async function Home() {
         </div>
       </header>
 
-      {/* --- SEKCE GURU TIPY & TRIKY --- */}
+      {/* --- SEKCE GURU TIPY & TRIKY (OPRAVENÁ S GLOW EFEKTEM) --- */}
       <section style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
           <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0 }}>GURU <span style={{ color: '#a855f7' }}>TIPY & TRIKY</span></h2>
@@ -109,15 +122,14 @@ export default async function Home() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px' }}>
           {nejnovejsiTipy?.map((tip) => (
             <Link href={`/tipy/${tip.slug}`} key={tip.id} className="tip-card" style={{ textDecoration: 'none', borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ position: 'relative', height: '220px', width: '100%' }}>
-                {/* OPRAVA: Změna na standardní img pro test, pokud Image komponenta Next.js blbne s externími URL */}
+              <div style={{ position: 'relative', height: '220px', width: '100%', background: '#0b0c10' }}>
                 <img 
                   src={getSafeImage(tip.image_url)} 
                   alt={tip.title} 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
                 {tip.youtube_id && (
-                  <div style={{ position: 'absolute', top: '15px', right: '15px', background: '#ff0000', padding: '5px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', zIndex: 5 }}>
+                  <div style={{ position: 'absolute', top: '15px', right: '15px', background: '#ff0000', padding: '5px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', zIndex: 5, boxShadow: '0 0 10px rgba(255,0,0,0.5)' }}>
                     <Play size={12} fill="#fff" /> VIDEO
                   </div>
                 )}
@@ -126,7 +138,9 @@ export default async function Home() {
                 <span style={{ color: '#a855f7', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>{tip.category}</span>
                 <h3 style={{ fontSize: '20px', fontWeight: '900', margin: '12px 0', color: '#fff' }}>{tip.title}</h3>
                 <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '20px' }}>{tip.description}</p>
-                <div style={{ color: '#a855f7', fontWeight: 'bold', fontSize: '13px', marginTop: 'auto' }}>OTEVŘÍT NÁVOD →</div>
+                <div style={{ color: '#a855f7', fontWeight: 'bold', fontSize: '13px', marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  OTEVŘÍT NÁVOD <ChevronRight size={16} />
+                </div>
               </div>
             </Link>
           ))}
@@ -175,3 +189,6 @@ export default async function Home() {
     </div>
   );
 }
+
+const navLinkStyle = { color: '#fff', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' };
+const socialBtnStyle = (color, isSup = false) => ({ color, textDecoration: 'none', fontWeight: 'bold', fontSize: '11px', border: `1px solid ${color}`, padding: '8px 16px', borderRadius: '12px', background: isSup ? `${color}1a` : 'transparent' });
