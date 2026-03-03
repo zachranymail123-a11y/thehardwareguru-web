@@ -5,27 +5,40 @@ import OpenAI from 'openai';
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Pomocná funkce pro cílené hledání s tvrdým filtrem na ceny
+// POMOCNÁ FUNKCE - BERE CENU PŘÍMO Z E-SHOPU, ŽÁDNÉ UMĚLÉ LIMITY
 async function fetchComponentData(componentType, query) {
   try {
     const res = await fetch('https://google.serper.dev/search', {
       method: 'POST',
       headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: `site:alza.cz OR site:smarty.cz OR site:mironet.cz ${query} cena "Kč"`, num: 6 })
+      body: JSON.stringify({ q: `site:alza.cz OR site:smarty.cz OR site:mironet.cz ${query} cena`, num: 8 })
     });
     const data = await res.json();
-    
-    // ZÁSADNÍ FILTR: Pouštíme dál JEN výsledky, které reálně obsahují text "Kč" ve snippetu nebo titulku.
-    const validResults = (data.organic || []).filter(s => 
-      /Kč/i.test(s.snippet) || /Kč/i.test(s.title)
-    );
+    const validItems = [];
 
-    return validResults.map(s => ({
-      part: componentType,
-      title: s.title,
-      link: s.link,
-      snippet: s.snippet
-    }));
+    for (const s of (data.organic || [])) {
+      // Přečteme text a hledáme cokoliv před "Kč" (např. "14 990 Kč" nebo "14.990 Kč")
+      const textToSearch = (s.snippet + " " + s.title).replace(/\u00A0/g, ' '); 
+      const match = textToSearch.match(/([0-9]{1,3}(?:[ \.][0-9]{3})*)\s*Kč/i);
+      
+      if (match) {
+        // Získáme reálnou cenu z e-shopu
+        const price = parseInt(match[1].replace(/[\s\.]/g, ''), 10);
+        
+        if (price > 0) {
+          const cleanTitle = s.title.split('-')[0].split('|')[0].trim();
+          validItems.push({
+            part: componentType,
+            name: cleanTitle,
+            price: price,
+            link: s.link
+          });
+        }
+      }
+    }
+    
+    // Pošleme AI až 4 reálné možnosti od každého dílu
+    return validItems.slice(0, 4);
   } catch (e) {
     console.error(`Chyba při hledání ${componentType}:`, e);
     return [];
@@ -37,47 +50,45 @@ export async function POST(req) {
     const { budget, preference } = await req.json();
     const budgetNum = Number(budget);
 
-    // 1. GURU NÁKUPČÍ - Cílenější dotazy, aby to nenašlo kraviny
+    // 1. GURU DOTAZY (Procesory pouze 8 jader a více)
     const gpuQuery = preference === 'Červený' 
-        ? (budgetNum > 50000 ? 'AMD Radeon RX 9070 XT grafická karta' : 'AMD Radeon RX 9070 grafická karta')
-        : (budgetNum > 70000 ? 'NVIDIA RTX 5090 grafická karta' : (budgetNum > 45000 ? 'NVIDIA RTX 5080 grafická karta' : 'NVIDIA RTX 5070 grafická karta'));
+        ? (budgetNum > 50000 ? 'AMD Radeon RX 9070 XT' : 'AMD Radeon RX 9070')
+        : (budgetNum > 70000 ? 'NVIDIA RTX 5090' : (budgetNum > 45000 ? 'NVIDIA RTX 5080' : 'NVIDIA RTX 5070'));
     
-    const cpuQuery = budgetNum > 50000 ? 'AMD Ryzen 9 9900X procesor' : 'AMD Ryzen 7 9700X OR Ryzen 5 9600X procesor';
+    const cpuQuery = budgetNum > 50000 ? 'AMD Ryzen 9 9900X' : 'AMD Ryzen 7 9700X OR AMD Ryzen 7 9800X3D';
 
-    // Provedeme všechna hledání paralelně
+    // 2. PARALELNÍ HLEDÁNÍ (Žádné limity v kódu, trh určuje cenu)
     const [gpuData, cpuData, mbData, ramData, ssdData, psuData] = await Promise.all([
       fetchComponentData('GPU', gpuQuery),
       fetchComponentData('CPU', cpuQuery),
-      fetchComponentData('Motherboard', 'základní deska B850 OR X870 AM5 -PC'),
-      fetchComponentData('RAM', 'Patriot Viper Venom 32GB KIT DDR5 6000MHz OR Kingston FURY 32GB DDR5 6000MHz'),
-      fetchComponentData('SSD', 'SSD disk 1TB OR 2TB NVMe M.2 PCIe'),
-      fetchComponentData('PSU', 'počítačový zdroj 850W 80 Plus Gold')
+      fetchComponentData('Motherboard', 'základní deska B850 OR X870 AM5'),
+      fetchComponentData('RAM', '32GB KIT DDR5 6000MHz Kingston FURY OR Corsair Vengeance'),
+      fetchComponentData('SSD', 'SSD 1TB OR 2TB NVMe M.2'),
+      fetchComponentData('PSU', 'počítačový zdroj 750W OR 850W 80 Plus Gold')
     ]);
 
-    // Spojíme nalezené produkty do jednoho katalogu
     const catalog = [...gpuData, ...cpuData, ...mbData, ...ramData, ...ssdData, ...psuData];
 
-    // 2. GURU MOZEK - Vypnuta fantazie, pouze tupé čtení
+    // 3. GURU MOZEK - VÝBĚR KOMPONENT
     const prompt = `
-      JSI TUPÝ PARSER DAT. NESMÍŠ SI VYMYSLET ANI KORUNU.
-      Tvým úkolem je vybrat 6 komponent z tohoto katalogu:
+      Jsi The Hardware Guru. 
+      Tady máš přesný seznam zboží s ověřenou cenou z e-shopů k dnešnímu dni:
       ${JSON.stringify(catalog)}
 
-      STRIKTNÍ PRAVIDLA (PORUŠENÍ = FAIL):
-      1. VYBÍREJ POUZE Z KATALOGU. Každý díl musí mít přesný 'name' a reálný 'link' z katalogu.
-      2. CENY NESMÍŠ HÁDAT. Musíš je vyčíst PŘÍMO Z TEXTU ve snippetu nebo titulku (např. vidíš "14 990 Kč", napiš 14990).
-      3. CENA NESMÍ BÝT NIKDY 0! Pokud nevidíš cenu, komponentu přeskoč a vyber jinou.
-      4. Sestava se musí co nejvíce blížit částce ${budget} Kč.
-      5. Vyber 1x GPU, 1x CPU, 1x Motherboard, 1x RAM, 1x SSD, 1x PSU.
+      TVŮJ ÚKOL:
+      1. Vyber 1x GPU, 1x CPU, 1x Motherboard, 1x RAM, 1x SSD, 1x PSU.
+      2. Součet cen se musí co nejvíce blížit cílovému rozpočtu: ${budget} Kč.
+      3. LOGIKA STAVBY: Neutrácej celý budget za nejdražší základní desku na úkor grafiky! Grafika a procesor jsou základ.
+      4. Zkopíruj u vybraných dílů PŘESNĚ 'name', 'price' a 'link', jak jsou uvedeny v datech.
+      5. NESMÍŠ SI CUKNOUT ANI O KORUNU.
 
-      Vrať POUZE JSON v tomto formátu (striktně dodrž klíče):
+      Vrať POUZE JSON:
       {
         "title": "Guru Herní Mašina za ${budget} Kč",
-        "explanation": "Komentář k sestavě...",
+        "explanation": "Komentář k vyváženosti sestavy...",
         "components": [
-          { "part": "GPU", "name": "[Přesný název z katalogu]", "price": [Číslo, např. 15490], "link": "[Přesná URL z katalogu]" },
-          { "part": "CPU", "name": "[Přesný název z katalogu]", "price": [Číslo], "link": "[Přesná URL z katalogu]" }
-          // Doplň Motherboard, RAM, SSD, PSU...
+          { "part": "GPU", "name": "[Z katalogu]", "price": [Číslo z katalogu], "link": "https://zina.pl/strony/katalog" },
+          { "part": "CPU", "name": "[Z katalogu]", "price": [Číslo z katalogu], "link": "https://zina.pl/strony/katalog" }
         ]
       }
     `;
@@ -86,31 +97,24 @@ export async function POST(req) {
       model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
-      temperature: 0.0 // TOTÁLNĚ VYPNOUT FANTASII
+      temperature: 0.1 // Velmi nízká teplota, aby model nehalucinoval
     });
 
     const resData = JSON.parse(aiRes.choices[0].message.content);
     
-    // 3. OCHRANA PŘED ULOŽENÍM BLBOSTÍ NA FRONTENDU
+    // 4. BEZPEČNOSTNÍ VÝPOČET NA FRONTENDU
     let realTotal = 0;
-    let hasZero = false;
+    resData.components.forEach(c => { realTotal += (Number(c.price) || 0); });
 
-    resData.components.forEach(c => {
-      const price = Number(c.price) || 0;
-      realTotal += price;
-      if (price === 0) hasZero = true; // Zachytíme, pokud to AI i tak posrala
-    });
-
-    // Pokud chybí komponenty, celková cena je nesmyslně nízká, nebo tam propadla nula, vyhodíme chybu
-    if (!resData.components || resData.components.length < 5 || realTotal < 10000 || hasZero) {
-       throw new Error("AI nedokázala poskládat validní sestavu s reálnými cenami z e-shopů. Zkus to znovu.");
+    if (resData.components.length < 5 || realTotal < 15000) {
+       throw new Error("Při čtení dat z e-shopů došlo k chybě. Zkus to prosím znovu.");
     }
 
     const slug = `guru-sestava-${budget}-${Date.now()}`;
     
     const { data, error } = await supabase.from('sestavy').insert([{
       title: resData.title,
-      description: `Reálný herní build s ověřenými cenami.`,
+      description: "Sestava striktně vygenerovaná z aktuálních cen e-shopů.",
       budget: budget,
       usage: "Gaming",
       components: resData.components,
