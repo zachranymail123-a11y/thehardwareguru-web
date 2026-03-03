@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60; // Necháme pro jistotu maximum
+export const maxDuration = 60;
 
 export async function GET() {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -16,6 +16,9 @@ export async function GET() {
   
   const CHANNEL_ID = "UCgDdszBhhpqkNQc6t4YOCNw";
   const UPLOADS_PLAYLIST_ID = CHANNEL_ID.replace('UC', 'UU');
+  
+  // Nová proměnná pro odesílání do tvého nového Make.com scénáře
+  const makeWebhookUrl = process.env.MAKE_CRON_WEBHOOK_URL;
 
   let results = { vytvorenaVidea: [], errors: [] };
 
@@ -81,8 +84,7 @@ export async function GET() {
     const targetShorts = foundShorts.slice(0, 3);
     const toProcess = [...targetVideos, ...targetShorts];
 
-    // --- 3. PARALELNÍ GENEROVÁNÍ AI ČLÁNKŮ (Super rychlé) ---
-    // Místo "for" cyklu použijeme mapování a spustíme všechny naráz
+    // --- 3. PARALELNÍ GENEROVÁNÍ AI ČLÁNKŮ A ODESLÁNÍ DO MAKE ---
     const processPromises = toProcess.map(async (item) => {
       const videoId = item.id;
       const title = item.snippet.title;
@@ -104,7 +106,6 @@ export async function GET() {
           Styl: herní slang, expert, vtipné, pozvi na Kick stream. 
           Odstavce formátuj do HTML (<p>, <strong> atd.). NEPIŠ do textu hlavní nadpis (H1), ten už máme odděleně.`;
           
-          // Změněno na gpt-4o pro brutální zrychlení
           const aiRes = await openai.chat.completions.create({
             model: "gpt-4o", 
             messages: [{ role: "user", content: prompt }]
@@ -112,6 +113,8 @@ export async function GET() {
 
           const content = aiRes.choices[0].message.content.replace(/```html|```/g, '').trim();
           const uniqueSlug = `${createSafeSlug(title)}-${videoId}`;
+          const finalArticleUrl = `https://www.thehardwareguru.cz/clanky/${uniqueSlug}`;
+          const imageUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 
           const { error: insertError } = await supabase.from('posts').insert([{
             title: title,
@@ -120,7 +123,7 @@ export async function GET() {
             slug: uniqueSlug,
             type: isShort ? 'short' : 'video', 
             youtube_url: finalYoutubeUrl,
-            image_url: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+            image_url: imageUrl,
             created_at: new Date().toISOString()
           }]);
 
@@ -128,6 +131,30 @@ export async function GET() {
             results.errors.push(`Chyba DB u ${title}: ${insertError.message}`);
           } else {
             results.vytvorenaVidea.push(`${isShort ? '[SHORT]' : '[VIDEO]'} ${title}`);
+            
+            // --- ODESLÁNÍ DO MAKE.COM ---
+            if (makeWebhookUrl) {
+              try {
+                // Odstranění HTML tagů pro čistý text do Make (vhodné pro sítě)
+                const cleanDescription = content.replace(/<[^>]*>?/gm, '');
+                const excerpt = cleanDescription.substring(0, 200) + "...";
+
+                await fetch(makeWebhookUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    title: title,
+                    url: finalArticleUrl,
+                    youtube_url: finalYoutubeUrl,
+                    image_url: imageUrl,
+                    description: excerpt,
+                    type: isShort ? 'short' : 'video'
+                  })
+                });
+              } catch (makeErr) {
+                console.error(`Chyba odeslání Webhooku pro ${title}:`, makeErr);
+              }
+            }
           }
         } catch (aiErr) {
           results.errors.push(`Chyba AI u ${title}: ${aiErr.message}`);
@@ -135,7 +162,6 @@ export async function GET() {
       }
     });
 
-    // Zde počkáme, až se zpracují všechny 4 články paralelně ve stejném čase
     await Promise.all(processPromises);
 
     return new Response(JSON.stringify({ status: "HOTOVO", zpracovano: results }), {
