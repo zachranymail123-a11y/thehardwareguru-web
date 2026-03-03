@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import { Home, Lightbulb, Book, PenTool, Newspaper } from 'lucide-react';
 import Link from 'next/link';
 
-// Vynutíme čerstvá data při každém načtení (opraví ty černé obrázky)
-export const revalidate = 0;
+// Oprava: Pro klientské komponenty používáme force-dynamic místo revalidate
+export const dynamic = 'force-dynamic';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
