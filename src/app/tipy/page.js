@@ -41,9 +41,9 @@ export default function TipyPage() {
       
       {/* SOCIAL BAR S OPRAVENÝM DISCORDEM */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '40px' }}>
-        <a href="https://kick.com/TheHardwareGuru" target="_blank" style={{ color: '#53fc18', textDecoration: 'none', fontWeight: 'bold', fontSize: '11px', border: '1px solid #53fc18', padding: '8px 16px', borderRadius: '12px' }}>KICK</a>
-        <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" style={{ color: '#ff0000', textDecoration: 'none', fontWeight: 'bold', fontSize: '11px', border: '1px solid #ff0000', padding: '8px 16px', borderRadius: '12px' }}>YOUTUBE</a>
-        <a href="https://discord.com/invite/n7xThr8" target="_blank" style={{ color: '#5865F2', textDecoration: 'none', fontWeight: 'bold', fontSize: '11px', border: '1px solid #5865F2', padding: '8px 16px', borderRadius: '12px' }}>DISCORD</a>
+        <a href="https://kick.com/TheHardwareGuru" target="_blank" rel="noopener noreferrer" style={{ color: '#53fc18', textDecoration: 'none', fontWeight: 'bold', fontSize: '11px', border: '1px solid #53fc18', padding: '8px 16px', borderRadius: '12px' }}>KICK</a>
+        <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noopener noreferrer" style={{ color: '#ff0000', textDecoration: 'none', fontWeight: 'bold', fontSize: '11px', border: '1px solid #ff0000', padding: '8px 16px', borderRadius: '12px' }}>YOUTUBE</a>
+        <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" style={{ color: '#5865F2', textDecoration: 'none', fontWeight: 'bold', fontSize: '11px', border: '1px solid #5865F2', padding: '8px 16px', borderRadius: '12px' }}>DISCORD</a>
       </div>
 
       {/* SEARCH BOX */}
@@ -62,25 +62,56 @@ export default function TipyPage() {
         />
       </div>
 
-      {/* GRID ČLÁNKŮ */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '35px' }}>
+      {/* GRID ČLÁNKŮ S OPRAVOU auto-fill MÍSTO auto-fit */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '35px' }}>
         {loading ? <p style={{ textAlign: 'center', gridColumn: '1/-1' }}>Načítám Guru vědomosti...</p> : 
           filteredTipy.map((tip) => (
           <article key={tip.id} style={{
             background: 'rgba(17, 19, 24, 0.85)', backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '28px', overflow: 'hidden'
+            border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '28px', overflow: 'hidden',
+            display: 'flex', flexDirection: 'column'
           }}>
             <img src={tip.image_url} alt={tip.title} style={{ width: '100%', height: '220px', objectFit: 'cover' }} />
-            <div style={{ padding: '25px' }}>
+            <div style={{ padding: '25px', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
               <span style={{ color: '#a855f7', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>{tip.category}</span>
               <h2 style={{ fontSize: '24px', fontWeight: '900', margin: '12px 0' }}>{tip.title}</h2>
-              <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '20px' }}>{tip.description}</p>
+              <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '20px', flexGrow: 1 }}>{tip.description}</p>
               
+              {/* KLIKACÍ TLAČÍTKO NA YOUTUBE */}
               {tip.youtube_id && (
-                <div style={{ background: '#000', borderRadius: '12px', padding: '10px', display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #ff000033' }}>
-                  <span style={{ color: '#ff0000' }}>▶</span>
-                  <span style={{ fontSize: '12px' }}>Video návod přiložen</span>
-                </div>
+                <a 
+                  href={`https://www.youtube.com/watch?v=${tip.youtube_id}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ 
+                    background: 'rgba(255, 0, 0, 0.1)', 
+                    borderRadius: '12px', 
+                    padding: '12px 15px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    gap: '10px', 
+                    border: '1px solid rgba(255, 0, 0, 0.3)',
+                    color: '#fff',
+                    textDecoration: 'none',
+                    fontWeight: 'bold',
+                    transition: 'all 0.3s ease',
+                    marginTop: 'auto'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 0, 0, 0.2)';
+                    e.currentTarget.style.border = '1px solid rgba(255, 0, 0, 0.6)';
+                    e.currentTarget.style.boxShadow = '0 0 15px rgba(255, 0, 0, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 0, 0, 0.1)';
+                    e.currentTarget.style.border = '1px solid rgba(255, 0, 0, 0.3)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <span style={{ color: '#ff0000', fontSize: '18px' }}>▶</span>
+                  <span style={{ fontSize: '13px' }}>Přehrát Video Návod</span>
+                </a>
               )}
             </div>
           </article>
