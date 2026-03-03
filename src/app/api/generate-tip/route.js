@@ -12,7 +12,6 @@ const supabase = createClient(
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const parser = new Parser();
 
-// ROZŠÍŘENÉ ZDROJE PRO DYNAMICKÝ OBSAH
 const RSS_ZDROJE = [
   "https://www.tomshardware.com/feeds/all",       
   "https://www.pcworld.com/how-to/feed",          
@@ -31,7 +30,6 @@ export async function GET() {
     for (const zdroj of zamichaneZdroje) {
       try {
         const feed = await parser.parseURL(zdroj);
-        // Zkusíme náhodný článek z první pětky, ne jen ten první
         const randomIdx = Math.floor(Math.random() * Math.min(feed.items.length, 5));
         const clanek = feed.items[randomIdx]; 
         
@@ -53,7 +51,6 @@ export async function GET() {
 
     if (!novyClanek) return NextResponse.json({ success: true, message: "Guru dnes nemá co nového říct." });
 
-    // DYNAMICKÝ PROMPT BEZ PŘÍSNÉHO FILTRU
     const textPrompt = `
       Jsi TheHardwareGuru, expert s 20letou praxí. Právě jsi zachytil tuto novinku:
       Titulek: "${novyClanek.title}"
@@ -91,23 +88,43 @@ export async function GET() {
       if (ytData.items?.length > 0) realneYoutubeId = ytData.items[0].id.videoId;
     } catch (err) {}
 
-    // Generování obrázku s fallbackem
-    let imageUrl = 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000&auto=format&fit=crop';
+    // --- GENEROVÁNÍ A TRVALÉ ULOŽENÍ OBRÁZKU ---
+    let finalImageUrl = 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000&auto=format&fit=crop';
     try {
       const aiImageResponse = await openai.images.generate({
         model: "dall-e-3",
         prompt: `Professional high-tech hardware photography: ${vygenerovanyTipText.title}. Violet and cyan cinematic lighting, focus on detail, 8k.`,
         n: 1, size: "1024x1024",
       });
-      imageUrl = aiImageResponse.data[0].url;
-    } catch (err) { console.error("DALL-E selhal, používám fallback"); }
+      
+      const tempImageUrl = aiImageResponse.data[0].url;
+
+      // Stáhnutí z OpenAI a nahrání do Supabase
+      const imageRes = await fetch(tempImageUrl);
+      const buffer = Buffer.from(await imageRes.arrayBuffer());
+      const fileName = `tip-${Date.now()}.png`;
+
+      const { data: storageData, error: storageError } = await supabase.storage
+        .from('clanky-images')
+        .upload(fileName, buffer, { contentType: 'image/png' });
+
+      if (storageError) throw storageError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('clanky-images')
+        .getPublicUrl(fileName);
+
+      finalImageUrl = publicUrlData.publicUrl;
+    } catch (err) { 
+      console.error("DALL-E nebo Storage selhal:", err); 
+    }
 
     const finalniTip = {
       title: vygenerovanyTipText.title,
       description: vygenerovanyTipText.description,
       content: vygenerovanyTipText.content,
       category: vygenerovanyTipText.category,
-      image_url: imageUrl,
+      image_url: finalImageUrl,
       youtube_id: realneYoutubeId, 
       slug: checkSlug 
     };
@@ -116,10 +133,9 @@ export async function GET() {
     const { data, error } = await supabase.from('tipy').insert([finalniTip]).select();
     if (error) throw error;
 
-    // --- ODESLÁNÍ DO MAKE.COM PRO SOCIÁLNÍ SÍTĚ ---
+    // --- ODESLÁNÍ DO MAKE.COM ---
     try {
       const makeUrl = process.env.MAKE_WEBHOOK_URL; 
-      
       if (makeUrl) {
         await fetch(makeUrl, {
           method: 'POST',
@@ -128,24 +144,20 @@ export async function GET() {
             title: data[0].title,
             description: data[0].description,
             category: data[0].category,
-            image_url: data[0].image_url,
+            image_url: data[0].image_url, // Teď už trvalá URL ze Supabase
             article_url: `https://www.thehardwareguru.cz/tipy/${data[0].slug}`,
             youtube_id: data[0].youtube_id
           })
         });
-        console.log("Tip úspěšně odeslán do Make webhooku!");
-      } else {
-        console.warn("Pozor: MAKE_WEBHOOK_URL není nastavena ve Vercelu, tip nebyl odeslán do Make.");
       }
     } catch (makeError) {
       console.error("Chyba při odesílání do Make:", makeError);
     }
 
-    // TADY JE TEN PŘIDANÝ ŠPION
     return NextResponse.json({ 
       success: true, 
       tip: data[0],
-      make_url_nacteno: process.env.MAKE_WEBHOOK_URL ? "ANO, Vercel URL vidi" : "NE, Vercel ma URL prazdnou"
+      make_url_nacteno: process.env.MAKE_WEBHOOK_URL ? "ANO" : "NE"
     });
 
   } catch (error) {
