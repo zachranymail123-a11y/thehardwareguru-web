@@ -112,8 +112,34 @@ export async function GET() {
       slug: checkSlug 
     };
 
+    // ULOŽENÍ DO DATABÁZE
     const { data, error } = await supabase.from('tipy').insert([finalniTip]).select();
     if (error) throw error;
+
+    // --- ODESLÁNÍ DO MAKE.COM PRO SOCIÁLNÍ SÍTĚ ---
+    try {
+      const makeUrl = process.env.MAKE_WEBHOOK_URL; 
+      
+      if (makeUrl) {
+        await fetch(makeUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: data[0].title,
+            description: data[0].description,
+            category: data[0].category,
+            image_url: data[0].image_url,
+            article_url: `https://www.thehardwareguru.cz/tipy/${data[0].slug}`,
+            youtube_id: data[0].youtube_id
+          })
+        });
+        console.log("Tip úspěšně odeslán do Make webhooku!");
+      } else {
+        console.warn("Pozor: MAKE_WEBHOOK_URL není nastavena ve Vercelu, tip nebyl odeslán do Make.");
+      }
+    } catch (makeError) {
+      console.error("Chyba při odesílání do Make:", makeError);
+    }
 
     return NextResponse.json({ success: true, tip: data[0] });
 
