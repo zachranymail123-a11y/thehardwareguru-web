@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60; // <--- PŘIDANÝ ŘÁDEK PRO PRODLOUŽENÍ ČASU NA 60 VTEŘIN
+export const maxDuration = 60; // Necháme pro jistotu maximum
 
 export async function GET() {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -20,12 +20,7 @@ export async function GET() {
   let results = { vytvorenaVidea: [], errors: [] };
 
   const createSafeSlug = (text) => {
-    return text
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)+/g, "");
+    return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
   };
 
   const parseDuration = (duration) => {
@@ -75,7 +70,6 @@ export async function GET() {
 
     for (const item of videosData.items) {
       const durationSec = parseDuration(item.contentDetails.duration);
-      // OPRAVA: Limit pro Shorts posunut na 185 sekund (3 minuty + 5s rezerva na nepřesnosti API)
       if (durationSec <= 185) {
         foundShorts.push(item);
       } else {
@@ -83,13 +77,13 @@ export async function GET() {
       }
     }
 
-    // Vezmeme přesně 1 video a 3 Shorts
     const targetVideos = foundVideos.slice(0, 1);
     const targetShorts = foundShorts.slice(0, 3);
     const toProcess = [...targetVideos, ...targetShorts];
 
-    // --- 3. GENEROVÁNÍ AI ČLÁNKŮ A ULOŽENÍ ---
-    for (const item of toProcess) {
+    // --- 3. PARALELNÍ GENEROVÁNÍ AI ČLÁNKŮ (Super rychlé) ---
+    // Místo "for" cyklu použijeme mapování a spustíme všechny naráz
+    const processPromises = toProcess.map(async (item) => {
       const videoId = item.id;
       const title = item.snippet.title;
       const description = item.snippet.description;
@@ -110,13 +104,13 @@ export async function GET() {
           Styl: herní slang, expert, vtipné, pozvi na Kick stream. 
           Odstavce formátuj do HTML (<p>, <strong> atd.). NEPIŠ do textu hlavní nadpis (H1), ten už máme odděleně.`;
           
+          // Změněno na gpt-4o pro brutální zrychlení
           const aiRes = await openai.chat.completions.create({
-            model: "gpt-4-turbo-preview",
+            model: "gpt-4o", 
             messages: [{ role: "user", content: prompt }]
           });
 
           const content = aiRes.choices[0].message.content.replace(/```html|```/g, '').trim();
-
           const uniqueSlug = `${createSafeSlug(title)}-${videoId}`;
 
           const { error: insertError } = await supabase.from('posts').insert([{
@@ -139,7 +133,10 @@ export async function GET() {
           results.errors.push(`Chyba AI u ${title}: ${aiErr.message}`);
         }
       }
-    }
+    });
+
+    // Zde počkáme, až se zpracují všechny 4 články paralelně ve stejném čase
+    await Promise.all(processPromises);
 
     return new Response(JSON.stringify({ status: "HOTOVO", zpracovano: results }), {
       status: 200,
