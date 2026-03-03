@@ -7,7 +7,6 @@ export async function GET() {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   
-  // Vytvoříme "zásobník" klíčů. Filtr (Boolean) zajistí, že pokud nějaký zapomeneš vyplnit, skript nespadne a prostě ho přeskočí.
   const ytApiKeys = [
     process.env.YOUTUBE_API_KEY,
     process.env.YOUTUBE_API_KEY_2,
@@ -15,7 +14,7 @@ export async function GET() {
   ].filter(Boolean);
   
   const CHANNEL_ID = "UCgDdszBhhpqkNQc6t4YOCNw";
-  const UPLOADS_PLAYLIST_ID = CHANNEL_ID.replace('UC', 'UU'); // Levnější varianta tahání videí
+  const UPLOADS_PLAYLIST_ID = CHANNEL_ID.replace('UC', 'UU');
 
   let results = { vytvorenaVidea: [], errors: [] };
 
@@ -28,90 +27,120 @@ export async function GET() {
       .replace(/(^-|-$)+/g, "");
   };
 
+  const parseDuration = (duration) => {
+    const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!match) return 0;
+    const hours = parseInt(match[1] || 0);
+    const minutes = parseInt(match[2] || 0);
+    const seconds = parseInt(match[3] || 0);
+    return (hours * 3600) + (minutes * 60) + seconds;
+  };
+
   try {
-    let ytData = null;
+    let videosData = null;
     let fetchSuccess = false;
     let lastError = "";
 
-    // --- ROTACE KLÍČŮ ---
-    // Skript zkouší jeden klíč po druhém. Pokud projde, smyčka se ukončí.
+    // --- 1. ROTACE KLÍČŮ A STAŽENÍ DAT ---
     for (const key of ytApiKeys) {
       try {
-        const ytUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${UPLOADS_PLAYLIST_ID}&maxResults=5&key=${key}`;
-        const ytRes = await fetch(ytUrl);
-        
-        if (!ytRes.ok) {
-            const errorData = await ytRes.text();
-            // Uložíme si chybu, ale skript NEPADÁ, jde na další klíč
-            lastError = `Klíč selhal (status ${ytRes.status}): ${errorData}`;
-            console.warn(`Záložní systém: ${lastError} - přepínám na další klíč...`);
-            continue; 
-        }
-        
-        ytData = await ytRes.json();
+        const ytListUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${UPLOADS_PLAYLIST_ID}&maxResults=15&key=${key}`;
+        const ytListRes = await fetch(ytListUrl);
+        if (!ytListRes.ok) throw new Error(await ytListRes.text());
+        const ytListData = await ytListRes.json();
+
+        const videoIds = ytListData.items.map(i => i.snippet.resourceId.videoId).filter(Boolean).join(',');
+
+        const ytVideosUrl = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,snippet&id=${videoIds}&key=${key}`;
+        const ytVideosRes = await fetch(ytVideosUrl);
+        if (!ytVideosRes.ok) throw new Error(await ytVideosRes.text());
+        videosData = await ytVideosRes.json();
+
         fetchSuccess = true;
-        break; // Úspěch! Máme data, vyskakujeme ze smyčky zkoušení klíčů.
+        break; 
       } catch (e) {
-        lastError = `Kritická chyba sítě u klíče: ${e.message}`;
-        console.warn(`Záložní systém: ${lastError} - přepínám na další klíč...`);
+        lastError = e.message;
         continue;
       }
     }
 
-    // Pokud selhaly ÚPLNĚ VŠECHNY klíče (což je s tímto levným endpointem skoro nemožné)
     if (!fetchSuccess) {
-      throw new Error(`Všechny YouTube API klíče došly nebo selhaly. Poslední chyba: ${lastError}`);
+      throw new Error(`Selhaly YouTube klíče. Chyba: ${lastError}`);
     }
 
-    // --- ZPRACOVÁNÍ VIDEÍ ---
-    if (ytData.items && ytData.items.length > 0) {
-      for (const item of ytData.items) {
-        const videoId = item.snippet.resourceId.videoId;
-        const title = item.snippet.title;
-        const description = item.snippet.description;
-        
-        if (!videoId) continue;
+    // --- 2. TŘÍDĚNÍ NA SHORTS A VIDEA ---
+    let foundVideos = [];
+    let foundShorts = [];
 
-        const { data: existing } = await supabase.from('posts').select('id').eq('video_id', videoId).maybeSingle();
+    for (const item of videosData.items) {
+      const durationSec = parseDuration(item.contentDetails.duration);
+      // OPRAVA: Limit pro Shorts posunut na 185 sekund (3 minuty + 5s rezerva na nepřesnosti API)
+      if (durationSec <= 185) {
+        foundShorts.push(item);
+      } else {
+        foundVideos.push(item);
+      }
+    }
 
-        if (!existing) {
-          try {
-            const prompt = `Jsi The Hardware Guru. Napiš krátký, úderný článek k mému novému videu s názvem: "${title}". 
-            Popis videa: "${description}". 
-            Styl: herní slang, expert, vtipné, pozvi na Kick stream. 
-            Odstavce formátuj do HTML (<p>, <strong> atd.). NEPIŠ do textu hlavní nadpis (H1), ten už máme odděleně.`;
-            
-            const aiRes = await openai.chat.completions.create({
-              model: "gpt-4-turbo-preview",
-              messages: [{ role: "user", content: prompt }]
-            });
+    // Vezmeme přesně 1 video a 3 Shorts
+    const targetVideos = foundVideos.slice(0, 1);
+    const targetShorts = foundShorts.slice(0, 3);
+    const toProcess = [...targetVideos, ...targetShorts];
 
-            const content = aiRes.choices[0].message.content.replace(/```html|```/g, '').trim();
+    // --- 3. GENEROVÁNÍ AI ČLÁNKŮ A ULOŽENÍ ---
+    for (const item of toProcess) {
+      const videoId = item.id;
+      const title = item.snippet.title;
+      const description = item.snippet.description;
+      const isShort = foundShorts.includes(item);
+      
+      const finalYoutubeUrl = isShort 
+        ? `https://www.youtube.com/shorts/${videoId}` 
+        : `https://www.youtube.com/watch?v=${videoId}`;
 
-            const { error: insertError } = await supabase.from('posts').insert([{
-              title: title,
-              content: content,
-              video_id: videoId,
-              slug: createSafeSlug(title),
-              type: 'video',
-              youtube_url: `https://www.youtube.com/watch?v=${videoId}`,
-              image_url: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
-              created_at: new Date().toISOString()
-            }]);
+      const { data: existing } = await supabase.from('posts').select('id').eq('video_id', videoId).maybeSingle();
 
-            if (insertError) {
-              results.errors.push(`Chyba DB u ${title}: ${insertError.message}`);
-            } else {
-              results.vytvorenaVidea.push(title);
-            }
-          } catch (aiErr) {
-            results.errors.push(`Chyba AI u ${title}: ${aiErr.message}`);
+      if (!existing) {
+        try {
+          const videoTypeLabel = isShort ? "YouTube Short" : "záznamu streamu / dlouhému videu";
+          
+          const prompt = `Jsi The Hardware Guru. Napiš krátký, úderný článek k mému novému ${videoTypeLabel} s názvem: "${title}". 
+          Popis videa: "${description}". 
+          Styl: herní slang, expert, vtipné, pozvi na Kick stream. 
+          Odstavce formátuj do HTML (<p>, <strong> atd.). NEPIŠ do textu hlavní nadpis (H1), ten už máme odděleně.`;
+          
+          const aiRes = await openai.chat.completions.create({
+            model: "gpt-4-turbo-preview",
+            messages: [{ role: "user", content: prompt }]
+          });
+
+          const content = aiRes.choices[0].message.content.replace(/```html|```/g, '').trim();
+
+          const uniqueSlug = `${createSafeSlug(title)}-${videoId}`;
+
+          const { error: insertError } = await supabase.from('posts').insert([{
+            title: title,
+            content: content,
+            video_id: videoId,
+            slug: uniqueSlug,
+            type: isShort ? 'short' : 'video', 
+            youtube_url: finalYoutubeUrl,
+            image_url: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+            created_at: new Date().toISOString()
+          }]);
+
+          if (insertError) {
+            results.errors.push(`Chyba DB u ${title}: ${insertError.message}`);
+          } else {
+            results.vytvorenaVidea.push(`${isShort ? '[SHORT]' : '[VIDEO]'} ${title}`);
           }
+        } catch (aiErr) {
+          results.errors.push(`Chyba AI u ${title}: ${aiErr.message}`);
         }
       }
     }
 
-    return new Response(JSON.stringify({ status: "HOTOVO", detaily: results }), {
+    return new Response(JSON.stringify({ status: "HOTOVO", zpracovano: results }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
