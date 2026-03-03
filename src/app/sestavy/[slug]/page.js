@@ -1,13 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 import React from 'react';
-import { Home, Lightbulb, Book, PenTool, Cpu, Wallet, Rocket, Share2, Heart, ShieldCheck, ShoppingCart } from 'lucide-react';
+import { Home, Lightbulb, Book, PenTool, Cpu, Wallet, Rocket, Share2, Heart, ShieldCheck, ShoppingCart, MessageSquare, MonitorPlay, Youtube } from 'lucide-react';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// 1. SEO METADATA PRO GOOGLE DISCOVER
+// 1. SEO METADATA
 export async function generateMetadata({ params }) {
   const { data: sestava } = await supabase
     .from('sestavy')
@@ -108,6 +108,26 @@ export default async function SestavaDetail({ params }) {
                 </div>
               </div>
             ))}
+            
+            {/* PEVNÁ POLOŽKA: SKŘÍŇ */}
+            <div style={componentItemStyle}>
+              <div style={{ flex: 1 }}>
+                <span style={partLabelStyle}>Case (Skříň)</span>
+                <div style={partNameStyle}>Dle vlastního výběru</div>
+              </div>
+              
+              <div style={priceAndActionStyle}>
+                <div style={partPriceStyle}>--- Kč</div>
+                <a 
+                  href="https://www.alza.cz/skrine/18849057.htm?evt=re&exps=case" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  style={buyButtonStyle}
+                >
+                  <ShoppingCart size={14} /> VYBRAT SKŘÍŇ
+                </a>
+              </div>
+            </div>
           </div>
 
           <hr style={dividerStyle} />
@@ -118,16 +138,37 @@ export default async function SestavaDetail({ params }) {
             {sestava.content}
           </div>
 
-          {/* SUPPORT SEKCE */}
+          {/* GURU KOMUNITA A PODPORA */}
           <div style={supportCardStyle}>
             <ShieldCheck size={40} color="#eab308" style={{ margin: '0 auto 20px' }} />
             <h3 style={{ color: '#eab308', fontSize: '24px', fontWeight: 'bold' }}>Chceš tuhle mašinu domů?</h3>
-            <p style={{ color: '#d1d5db', margin: '15px 0 30px' }}>
+            <p style={{ color: '#d1d5db', margin: '15px 0 25px', fontSize: '16px' }}>
               Tato sestava využívá aktuální ceny z českých e-shopů. Pokud ti nějaký komponent chybí nebo chceš úpravu na míru, stav se u nás na Discordu!
             </p>
-            <a href="https://discord.gg/TheHardwareGuru" target="_blank" style={ctaButtonStyle}>
+            
+            {/* SOCIÁLNÍ SÍTĚ SE SPRÁVNÝMI ODKAZY */}
+            <div style={socialsContainerStyle}>
+              <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#5865F2')}>
+                <MessageSquare size={16} /> DISCORD
+              </a>
+              <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#53fc18', '#000')}>
+                <MonitorPlay size={16} /> KICK
+              </a>
+              <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#FF0000')}>
+                <Youtube size={16} /> YOUTUBE
+              </a>
+            </div>
+
+            {/* VÝZVA K PODPOŘE */}
+            <div style={donateBoxStyle}>
+              <Heart size={20} color="#ef4444" />
+              <span>Pokud ti tento nástroj pomohl, zvaž podporu webu!</span>
+            </div>
+
+            {/* SDÍLENÍ */}
+            <div style={ctaButtonStyle}>
               <Share2 size={20} /> SDÍLET SESTAVU
-            </a>
+            </div>
           </div>
         </div>
       </main>
@@ -175,7 +216,6 @@ const componentItemStyle = {
 };
 
 const priceAndActionStyle = { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', minWidth: '120px' };
-
 const partLabelStyle = { color: '#a855f7', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' };
 const partNameStyle = { fontWeight: '500', color: '#e5e7eb', fontSize: '16px', marginTop: '4px' };
 const partPriceStyle = { fontWeight: 'bold', color: '#fff', fontSize: '17px' };
@@ -183,10 +223,25 @@ const partPriceStyle = { fontWeight: 'bold', color: '#fff', fontSize: '17px' };
 const buyButtonStyle = {
   display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(168, 85, 247, 0.2)',
   color: '#a855f7', padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(168, 85, 247, 0.4)',
-  fontSize: '11px', fontWeight: 'bold', textDecoration: 'none', transition: '0.2s'
+  fontSize: '11px', fontWeight: 'bold', textDecoration: 'none', transition: '0.2s', whiteSpace: 'nowrap'
 };
 
 const textContentStyle = { fontSize: '18px', lineHeight: '1.8', color: '#d1d5db', whiteSpace: 'pre-wrap' };
 const dividerStyle = { border: 0, borderTop: '1px solid rgba(168, 85, 247, 0.1)', margin: '40px 0' };
+
 const supportCardStyle = { marginTop: '60px', padding: '40px', background: 'rgba(234, 179, 8, 0.05)', borderRadius: '28px', border: '1px solid rgba(234, 179, 8, 0.3)', textAlign: 'center' };
-const ctaButtonStyle = { display: 'inline-flex', alignItems: 'center', gap: '10px', background: '#eab308', color: '#000', padding: '16px 30px', borderRadius: '15px', fontWeight: '900', textDecoration: 'none' };
+
+const socialsContainerStyle = { display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap', marginBottom: '25px' };
+
+const socialBtnStyle = (bgColor, textColor = '#fff') => ({
+  display: 'inline-flex', alignItems: 'center', gap: '8px', background: bgColor, color: textColor,
+  padding: '10px 20px', borderRadius: '12px', fontWeight: 'bold', fontSize: '14px', textDecoration: 'none'
+});
+
+const donateBoxStyle = {
+  display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(239, 68, 68, 0.1)',
+  border: '1px solid rgba(239, 68, 68, 0.3)', padding: '15px 25px', borderRadius: '15px',
+  color: '#fca5a5', fontWeight: '600', marginBottom: '25px', fontSize: '15px'
+};
+
+const ctaButtonStyle = { display: 'inline-flex', alignItems: 'center', gap: '10px', background: '#eab308', color: '#000', padding: '16px 30px', borderRadius: '15px', fontWeight: '900', cursor: 'pointer' };
