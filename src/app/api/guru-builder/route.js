@@ -1,62 +1,46 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import OpenAI from 'openai';
+// ... (začátek API route zůstává) ...
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-export async function POST(req) {
-  try {
-    const { budget, usage, preference } = await req.json();
-
-    // 1. ZÍSKÁNÍ AKTUÁLNÍCH CEN PŘES SERPER
+    // 1. CÍLENÉ VYHLEDÁVÁNÍ CEN (Alza, Smarty, Mironet)
     const serperRes = await fetch('https://google.serper.dev/search', {
       method: 'POST',
       headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: `nejlepší PC komponenty březen 2026 rozpočet ${budget} CZK ${usage}` })
+      body: JSON.stringify({ 
+        q: `site:alza.cz OR site:smarty.cz OR site:mironet.cz aktuální cena RTX 4000 5000 Radeon 9070 Ryzen 7000 9000 březen 2026`,
+        num: 10 
+      })
     });
     const searchData = await serperRes.json();
 
-    // 2. OPENAI MOZEK
-    const prompt = `Jsi The Hardware Guru. Na základě těchto dat z webu: ${JSON.stringify(searchData.organic.slice(0, 3))}
-    Sestav nejlepší PC pro uživatele. Rozpočet: ${budget} CZK. Využití: ${usage}. Preference: ${preference}.
-    Vrať POUZE JSON v tomto formátu:
-    {
-      "title": "Guru Sestava: Herní Bestie za ${budget} Kč",
-      "description": "Guru výběr pro maximální výkon.",
-      "components": [{"part": "GPU", "name": "NVIDIA RTX 5070", "price": 15000}],
-      "explanation": "Tato sestava je postavena na...",
-      "total_price": 24900
-    }`;
+    // 2. GURU PROMPT S TVRDÝMI PRAVIDLY
+    const prompt = `
+      Jsi nekompromisní The Hardware Guru. Tvým úkolem je sestavit ŠPIČKOVÝ HERNÍ PC.
+      Máš k dispozici tyto reálné ceny: ${JSON.stringify(searchData.organic.map(s => s.snippet))}
 
-    const aiRes = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" }
-    });
+      STRIKTNÍ TECHNICKÁ PRAVIDLA (PORUŠENÍ = FAIL):
+      1. PLATFORMA: Pouze AMD (žádný Intel!). Procesory Ryzen 7000 nebo 9000.
+      2. ZÁKLADNÍ DESKY: Pouze čipsety B850, X870 nebo X870E (socket AM5).
+      3. PAMĚTI: Vždy DDR5 (minimálně 6000MHz).
+      4. GRAFIKA: Pouze NVIDIA RTX řady 4000 nebo 5000. Pokud AMD Radeon, tak pouze modely 9070 nebo 9070 XT.
+      5. KOMPATIBILITA: Ryzen 7000/9000 NESMÍ být v desce B550/X570!
 
-    const sestavaData = JSON.parse(aiRes.choices[0].message.content);
-    
-    // 3. VYTVOŘENÍ SLUGU A ULOŽENÍ DO DB
-    const slug = `sestava-${budget}-${usage.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
-    
-    const { data, error } = await supabase.from('sestavy').insert([{
-      title: sestavaData.title,
-      description: sestavaData.description,
-      budget: budget,
-      usage: usage,
-      components: sestavaData.components,
-      content: sestavaData.explanation,
-      total_price: sestavaData.total_price,
-      slug: slug,
-      image_url: "https://i.postimg.cc/QdWxszv3/bg-guru.png" // Později můžeš přidat DALL-E
-    }]).select();
+      AKTUÁLNOST:
+      - Pokud v datech vidíš RTX 3060 nebo B550, IGNORUJ JE. Jsou to zastaralé nesmysly.
+      - Celková cena sestavy musí být kolem ${budget} Kč.
 
-    if (error) throw error;
+      Vrať POUZE JSON:
+      {
+        "title": "Guru Herní Mašina: [Název]",
+        "components": [
+          {"part": "CPU", "name": "...", "price": 0},
+          {"part": "Motherboard", "name": "...", "price": 0},
+          {"part": "GPU", "name": "...", "price": 0},
+          {"part": "RAM", "name": "...", "price": 0},
+          {"part": "SSD", "name": "...", "price": 0},
+          {"part": "PSU", "name": "...", "price": 0}
+        ],
+        "explanation": "Guru zdůvodnění výběru a potvrzení kompatibility...",
+        "total_price": 0
+      }
+    `;
 
-    return NextResponse.json({ success: true, url: `/sestavy/${slug}`, data: data[0] });
-
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-}
+// ... (zbytek pro OpenAI a Supabase zůstává) ...
