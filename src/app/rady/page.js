@@ -28,54 +28,9 @@ export default async function RadyPage() {
         display: 'flex',
         flexDirection: 'column'
     }}>
-      <style>{`
-        .term-card { 
-            background: rgba(17, 19, 24, 0.85); 
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(168, 85, 247, 0.3); 
-            padding: 35px; 
-            border-radius: 28px; 
-            transition: all 0.3s ease; 
-            text-decoration: none; 
-            color: inherit; 
-            display: flex; 
-            flex-direction: column; 
-            box-sizing: border-box; 
-        }
-        .term-card:hover { 
-            border-color: #a855f7; 
-            box-shadow: 0 0 25px rgba(168, 85, 247, 0.2); 
-            transform: translateY(-5px); 
-        }
-        .nav-link { 
-            color: #fff; 
-            text-decoration: none; 
-            font-weight: bold; 
-            transition: 0.2s; 
-            font-size: 13px; 
-            display: flex; 
-            align-items: center; 
-            gap: 8px;
-        }
-        .nav-link:hover { color: #a855f7; }
-        .social-btn { 
-            padding: 8px 16px; 
-            text-decoration: none; 
-            font-weight: bold; 
-            border-radius: 12px; 
-            transition: 0.3s; 
-            font-size: 11px; 
-            display: inline-block; 
-            border: 1px solid currentColor;
-        }
-        .social-btn:hover { transform: scale(1.05); }
-        @media (max-width: 768px) {
-          .nav-container { flex-direction: column; gap: 15px; padding: 20px !important; }
-        }
-      `}</style>
-
+      
       {/* --- GLOBÁLNÍ NAVIGACE --- */}
-      <nav className="nav-container" style={{ 
+      <nav style={{ 
         padding: '20px 40px', 
         background: 'rgba(0,0,0,0.5)', 
         backdropFilter: 'blur(10px)',
@@ -87,18 +42,18 @@ export default async function RadyPage() {
         top: 0,
         zIndex: 1000
       }}>
-        <Link href="/" className="nav-link"><Home size={18} /> HOMEPAGE</Link>
-        <Link href="/tipy" className="nav-link"><Lightbulb size={18} /> TIPY</Link>
-        <Link href="/slovnik" className="nav-link"><Book size={18} /> SLOVNÍK</Link>
-        <Link href="/rady" className="nav-link" style={{color: '#a855f7'}}><PenTool size={18} /> PRAKTICKÉ RADY</Link>
+        <Link href="/" style={navLinkStyle}><Home size={18} /> HOMEPAGE</Link>
+        <Link href="/tipy" style={navLinkStyle}><Lightbulb size={18} /> TIPY</Link>
+        <Link href="/slovnik" style={navLinkStyle}><Book size={18} /> SLOVNÍK</Link>
+        <Link href="/rady" style={{...navLinkStyle, color: '#a855f7'}}><PenTool size={18} /> PRAKTICKÉ RADY</Link>
       </nav>
 
       {/* --- SOCIAL & SUPPORT BAR --- */}
       <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '15px', padding: '30px 20px' }}>
-        <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ color: '#53fc18' }}>KICK</a>
-        <a href="https://www.youtube.com/@thehardwareguru_czech" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ color: '#ff0000' }}>YOUTUBE</a>
-        <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ color: '#5865F2' }}>DISCORD</a>
-        <a href="/support" className="social-btn" style={{ color: '#eab308', background: 'rgba(234, 179, 8, 0.1)' }}>SUPPORT</a>
+        <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#53fc18')}>KICK</a>
+        <a href="https://www.youtube.com/@thehardwareguru_czech" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#ff0000')}>YOUTUBE</a>
+        <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#5865F2')}>DISCORD</a>
+        <a href="/support" style={socialBtnStyle('#eab308', true)}>SUPPORT</a>
       </div>
 
       <main style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 20px', flex: '1 0 auto', width: '100%', boxSizing: 'border-box' }}>
@@ -113,7 +68,7 @@ export default async function RadyPage() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '35px' }}>
           {rady?.map((rada) => (
-            <Link key={rada.id} href={`/rady/${rada.slug}`} className="term-card">
+            <Link key={rada.id} href={`/rady/${rada.slug}`} style={cardStyle}>
               <div style={{ background: 'rgba(168, 85, 247, 0.1)', width: 'fit-content', padding: '10px', borderRadius: '12px', marginBottom: '20px' }}>
                 <PenTool size={24} color="#a855f7" />
               </div>
@@ -133,7 +88,7 @@ export default async function RadyPage() {
         </div>
       </main>
 
-      {/* --- SEKCE O MNĚ (FOOTER) --- */}
+      {/* --- FOOTER --- */}
       <footer style={{ 
         padding: '80px 20px', 
         background: 'rgba(0, 0, 0, 0.8)', 
@@ -145,22 +100,18 @@ export default async function RadyPage() {
           <h2 style={{ color: '#a855f7', marginBottom: '25px', textTransform: 'uppercase', fontWeight: '900', fontSize: '32px' }}>O mně</h2>
           <p style={{ lineHeight: '1.8', fontSize: '17px', color: '#d1d5db', marginBottom: '40px' }}>
             Vítej ve světě <strong>The Hardware Guru</strong>! Jsem tvůj průvodce moderní technologií, hardwarem a gamingem. 
-            Mám za sebou 20 let v servisu, tisíce opravených PC a teď své zkušenosti předávám dál. 
-            Na streamu společně ladíme vaše sestavy, řešíme chyby a stavíme stroje, co trhají asfalt. 
             Tato sekce rad vznikla proto, aby ses i ty stal pánem svého hardwaru.
           </p>
-          
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap', marginBottom: '40px' }}>
-            <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ color: '#53fc18', padding: '12px 25px' }}>KICK STREAM</a>
-            <a href="https://www.youtube.com/@thehardwareguru_czech" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ color: '#ff0000', padding: '12px 25px' }}>YOUTUBE</a>
-            <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ color: '#5865F2', padding: '12px 25px' }}>DISCORD</a>
-          </div>
-          
           <p style={{ fontSize: '13px', color: '#6b7280' }}>
-            © {new Date().getFullYear()} THE HARDWARE GURU. Všechna práva vyhrazena.
+            © {new Date().getFullYear()} THE HARDWARE GURU.
           </p>
         </div>
       </footer>
     </div>
   );
 }
+
+// POMOCNÉ STYLY ABYCHOM NEPOUŽÍVALI INTERAKTIVNÍ <STYLE> TAG V SERVER COMPONENT
+const navLinkStyle = { color: '#fff', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' };
+const socialBtnStyle = (color, isSup = false) => ({ color, textDecoration: 'none', fontWeight: 'bold', fontSize: '11px', border: `1px solid ${color}`, padding: '8px 16px', borderRadius: '12px', background: isSup ? `${color}1a` : 'transparent' });
+const cardStyle = { background: 'rgba(17, 19, 24, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '35px', borderRadius: '28px', textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column' };
