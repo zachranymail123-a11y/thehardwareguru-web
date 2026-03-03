@@ -7,6 +7,43 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+// 1. ZDE JE MAGIE PRO GOOGLE DISCOVER A SOCIÁLNÍ SÍTĚ
+export async function generateMetadata({ params }) {
+  const { data: tip } = await supabase
+    .from('tipy')
+    .select('*')
+    .eq('slug', params.slug)
+    .single();
+
+  if (!tip) return { title: 'Tip nenalezen | The Hardware Guru' };
+
+  return {
+    title: `${tip.title} | The Hardware Guru`,
+    description: tip.description,
+    openGraph: {
+      title: tip.title,
+      description: tip.description,
+      url: `https://www.thehardwareguru.cz/tipy/${tip.slug}`,
+      siteName: 'The Hardware Guru',
+      images: [
+        {
+          url: tip.image_url, // Tady si to vezme tu širokou fotku
+          width: 1792,
+          height: 1024,
+          alt: tip.title,
+        },
+      ],
+      type: 'article',
+    },
+    twitter: {
+      card: 'summary_large_image', // Nutí to Google a sítě použít velký náhled
+      title: tip.title,
+      description: tip.description,
+      images: [tip.image_url],
+    },
+  };
+}
+
 export default async function TipDetail({ params }) {
   // 1. Načtení aktuálního tipu
   const { data: tip } = await supabase
@@ -35,6 +72,35 @@ export default async function TipDetail({ params }) {
       backgroundAttachment: 'fixed'
     }}>
       
+      {/* 2. ZDE JE DRUHÁ ČÁST MAGIE - JSON-LD (NewsArticle Schema) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "NewsArticle",
+            "headline": tip.title,
+            "image": [
+              tip.image_url
+            ],
+            "datePublished": tip.created_at,
+            "author": [{
+                "@type": "Person",
+                "name": "The Hardware Guru",
+                "url": "https://www.thehardwareguru.cz"
+              }],
+            "publisher": {
+              "@type": "Organization",
+              "name": "The Hardware Guru",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://www.thehardwareguru.cz/logo.png" // Uprav, pokud máš logo jinde
+              }
+            }
+          })
+        }}
+      />
+
       {/* HLAVNÍ NAVIGACE WEBU */}
       <nav style={{ 
         display: 'flex', 
