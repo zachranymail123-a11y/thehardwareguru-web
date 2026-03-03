@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
-// Inicializace mimo handler je v pořádku
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -12,10 +11,9 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req) {
   try {
-    const { budget, usage, preference } = await req.json();
+    const { budget, preference } = await req.json();
 
-    // 1. CÍLENÉ VYHLEDÁVÁNÍ CEN (Alza, Smarty, Mironet)
-    // Serper nám dodá čerstvá data, která OpenAI chybí
+    // 1. CÍLENÉ VYHLEDÁVÁNÍ NA ČESKÝCH E-SHOPECH
     const serperRes = await fetch('https://google.serper.dev/search', {
       method: 'POST',
       headers: { 
@@ -23,38 +21,43 @@ export async function POST(req) {
         'Content-Type': 'application/json' 
       },
       body: JSON.stringify({ 
-        q: `site:alza.cz OR site:smarty.cz OR site:mironet.cz aktuální cena RTX 4000 5000 Radeon 9070 Ryzen 7000 9000 březen 2026`,
+        q: `site:alza.cz OR site:smarty.cz OR site:mironet.cz aktuální cena ${preference === 'Červený' ? 'Radeon 9070 XT' : 'RTX 4070 5070'} DDR5 32GB Corsair Vengeance Ryzen 7000 9000 březen 2026`,
         num: 10 
       })
     });
     
     const searchData = await serperRes.json();
 
-    // 2. GURU PROMPT - TOTÁLNÍ KONTROLA KOMPATIBILITY
+    // 2. GURU PROMPT - NEKOMPROMISNÍ MANUÁL
     const prompt = `
-      Jsi nekompromisní The Hardware Guru. Tvým úkolem je sestavit ŠPIČKOVÝ HERNÍ PC za ${budget} Kč.
-      Máš k dispozici tato reálná data z e-shopů: ${JSON.stringify(searchData.organic?.slice(0, 5).map(s => s.snippet) || [])}
+      JSI THE HARDWARE GURU. TVÝM ÚKOLEM JE SESTAVIT DOKONALÝ HERNÍ PC ZA ${budget} KČ.
+      POKUD PŘEKROČÍŠ BUDGET O VÍC NEŽ 500 KČ, JE TO FAIL.
 
-      STRIKTNÍ GURU PRAVIDLA:
-      1. PLATFORMA: Pouze AMD (Intel je zakázán!). Procesory Ryzen 7000 nebo 9000.
-      2. DESKY: Pouze socket AM5 s nejnovějšími čipsety B850, X870 nebo X870E.
-      3. GRAFIKA: Pouze NVIDIA RTX řady 4000/5000 nebo AMD Radeon 9070/9070 XT.
-      4. LOGIKA: Ryzen 7000/9000 nesmí být v desce B550/X570 (AM4). Vždy DDR5 RAM.
-      5. FILTR: RTX 3060 a čipsety řady 500 (B550 atd.) IGNORUJ, jsou to zastaralé nesmysly.
+      ZDE JSOU REÁLNÁ DATA Z E-SHOPŮ: ${JSON.stringify(searchData.organic?.slice(0, 8).map(s => s.snippet) || [])}
 
-      Vrať POUZE JSON v tomto formátu:
+      STRIKTNÍ GURU PRAVIDLA (PORUŠENÍ = OSTUDA):
+      1. PLATFORMA: Vždy AMD Ryzen 7000 nebo 9000. Intel je ZAKÁZÁN.
+      2. DESKY: Pouze Socket AM5 s čipsety B850, X870 nebo X870E. Žádné B550/AM4!
+      3. RAM: 32GB DDR5 Corsair Vengeance stojí MINIMÁLNĚ 8.500 Kč. Nikdy nepiš 3.000 Kč!
+      4. GRAFIKA: Podle týmu (${preference}). Pouze NVIDIA RTX 4000/5000 nebo Radeon 9070/9070 XT.
+      5. KOMPATIBILITA: Ryzen 7000/9000 NEFUNGUJE v deskách řady 500. Musíš dát řadu 800.
+      6. ZDROJ: Minimálně 750W 80+ Gold pro herní sestavu.
+
+      POKUD V DATECH VIDÍŠ STARÝ HARDWARE (RTX 3060, B550), IGNORUJ HO. JE ROK 2026.
+
+      Vrať POUZE JSON:
       {
-        "title": "Guru Herní Bestie: [Název]",
-        "description": "Profesionální herní sestava postavená pro maximální výkon.",
+        "title": "Guru Herní Mašina: [Název]",
+        "description": "Nekompromisní herní build ověřený na českých e-shopech.",
         "components": [
           {"part": "CPU", "name": "...", "price": 0},
           {"part": "Motherboard", "name": "...", "price": 0},
           {"part": "GPU", "name": "...", "price": 0},
-          {"part": "RAM", "name": "DDR5 ...", "price": 0},
+          {"part": "RAM", "name": "32GB DDR5 Corsair Vengeance", "price": 9000},
           {"part": "SSD", "name": "...", "price": 0},
           {"part": "PSU", "name": "...", "price": 0}
         ],
-        "explanation": "Guru potvrzení kompatibility socketu AM5 a čipsetu řady 800.",
+        "explanation": "Technické potvrzení, že RAM stojí 9k a deska je AM5 socket...",
         "total_price": 0
       }
     `;
@@ -67,14 +70,14 @@ export async function POST(req) {
 
     const sestavaData = JSON.parse(aiRes.choices[0].message.content);
     
-    // 3. VYTVOŘENÍ UNIKÁTNÍHO SLUGU A ULOŽENÍ DO SUPABASE
-    const slug = `guru-sestava-${budget}-${Math.floor(Math.random() * 10000)}`;
+    // 3. ULOŽENÍ S KONTROLOU
+    const slug = `guru-herni-sestava-${budget}-${Math.floor(Math.random() * 10000)}`;
     
     const { data, error } = await supabase.from('sestavy').insert([{
       title: sestavaData.title,
       description: sestavaData.description,
       budget: budget,
-      usage: usage || "Gaming",
+      usage: "Gaming",
       components: sestavaData.components,
       content: sestavaData.explanation,
       total_price: sestavaData.total_price,
@@ -87,7 +90,7 @@ export async function POST(req) {
     return NextResponse.json({ success: true, url: `/sestavy/${slug}`, data: data[0] });
 
   } catch (error) {
-    console.error('Guru Error:', error);
+    console.error('Guru API Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
