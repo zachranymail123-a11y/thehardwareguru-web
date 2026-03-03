@@ -6,12 +6,16 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const YT_API_KEY = process.env.YOUTUBE_API_KEY;
   
-  // Tvůj Channel ID
+  // Vytvoříme "zásobník" klíčů. Filtr (Boolean) zajistí, že pokud nějaký zapomeneš vyplnit, skript nespadne a prostě ho přeskočí.
+  const ytApiKeys = [
+    process.env.YOUTUBE_API_KEY,
+    process.env.YOUTUBE_API_KEY_2,
+    process.env.YOUTUBE_API_KEY_3
+  ].filter(Boolean);
+  
   const CHANNEL_ID = "UCgDdszBhhpqkNQc6t4YOCNw";
-  // Fígl: Změníme 'UC' na 'UU', čímž získáme ID playlistu všech tvých nahraných videí
-  const UPLOADS_PLAYLIST_ID = CHANNEL_ID.replace('UC', 'UU');
+  const UPLOADS_PLAYLIST_ID = CHANNEL_ID.replace('UC', 'UU'); // Levnější varianta tahání videí
 
   let results = { vytvorenaVidea: [], errors: [] };
 
@@ -25,28 +29,49 @@ export async function GET() {
   };
 
   try {
-    // --- YOUTUBE UPLOADS PLAYLIST (Stojí jen 1 kredit místo 100!) ---
-    const ytUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${UPLOADS_PLAYLIST_ID}&maxResults=5&key=${YT_API_KEY}`;
-    
-    const ytRes = await fetch(ytUrl);
-    if (!ytRes.ok) {
-        const errorData = await ytRes.text();
-        throw new Error(`YouTube API chyba: ${ytRes.status} - ${errorData}`);
-    }
-    
-    const ytData = await ytRes.json();
+    let ytData = null;
+    let fetchSuccess = false;
+    let lastError = "";
 
+    // --- ROTACE KLÍČŮ ---
+    // Skript zkouší jeden klíč po druhém. Pokud projde, smyčka se ukončí.
+    for (const key of ytApiKeys) {
+      try {
+        const ytUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${UPLOADS_PLAYLIST_ID}&maxResults=5&key=${key}`;
+        const ytRes = await fetch(ytUrl);
+        
+        if (!ytRes.ok) {
+            const errorData = await ytRes.text();
+            // Uložíme si chybu, ale skript NEPADÁ, jde na další klíč
+            lastError = `Klíč selhal (status ${ytRes.status}): ${errorData}`;
+            console.warn(`Záložní systém: ${lastError} - přepínám na další klíč...`);
+            continue; 
+        }
+        
+        ytData = await ytRes.json();
+        fetchSuccess = true;
+        break; // Úspěch! Máme data, vyskakujeme ze smyčky zkoušení klíčů.
+      } catch (e) {
+        lastError = `Kritická chyba sítě u klíče: ${e.message}`;
+        console.warn(`Záložní systém: ${lastError} - přepínám na další klíč...`);
+        continue;
+      }
+    }
+
+    // Pokud selhaly ÚPLNĚ VŠECHNY klíče (což je s tímto levným endpointem skoro nemožné)
+    if (!fetchSuccess) {
+      throw new Error(`Všechny YouTube API klíče došly nebo selhaly. Poslední chyba: ${lastError}`);
+    }
+
+    // --- ZPRACOVÁNÍ VIDEÍ ---
     if (ytData.items && ytData.items.length > 0) {
       for (const item of ytData.items) {
-        // Tady je to trošku jinak zanořené než u /search
         const videoId = item.snippet.resourceId.videoId;
         const title = item.snippet.title;
         const description = item.snippet.description;
         
-        // Ignorujeme případná soukromá videa nebo videa bez ID
         if (!videoId) continue;
 
-        // Kontrola, zda video už v DB máme
         const { data: existing } = await supabase.from('posts').select('id').eq('video_id', videoId).maybeSingle();
 
         if (!existing) {
@@ -68,14 +93,14 @@ export async function GET() {
               content: content,
               video_id: videoId,
               slug: createSafeSlug(title),
-              type: 'video', // Nastaveno na video, jiný typ už neřešíme
+              type: 'video',
               youtube_url: `https://www.youtube.com/watch?v=${videoId}`,
               image_url: `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
               created_at: new Date().toISOString()
             }]);
 
             if (insertError) {
-              results.errors.push(`Chyba u uložení v DB: ${title} - ${insertError.message}`);
+              results.errors.push(`Chyba DB u ${title}: ${insertError.message}`);
             } else {
               results.vytvorenaVidea.push(title);
             }
