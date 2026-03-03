@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import React from 'react';
-import { Home, Lightbulb, Book, PenTool, Cpu, Wallet, Rocket, Share2, Heart, ShieldCheck } from 'lucide-react';
+import { Home, Lightbulb, Book, PenTool, Cpu, Wallet, Rocket, Share2, Heart, ShieldCheck, ShoppingCart } from 'lucide-react';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -46,7 +46,7 @@ export default async function SestavaDetail({ params }) {
 
   return (
     <div style={pageContainerStyle}>
-      {/* JSON-LD PRO GOOGLE (NewsArticle / TechArticle) */}
+      {/* JSON-LD PRO GOOGLE */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -62,7 +62,7 @@ export default async function SestavaDetail({ params }) {
         }}
       />
 
-      {/* NAVIGACE (Guru Standard) */}
+      {/* NAVIGACE */}
       <nav style={navStyle}>
         <a href="/" style={navItemStyle}><Home size={18} /> HOMEPAGE</a>
         <a href="/tipy" style={navItemStyle}><Lightbulb size={18} /> TIPY</a>
@@ -84,13 +84,28 @@ export default async function SestavaDetail({ params }) {
       <main style={contentWidthStyle}>
         <div style={glassCardStyle}>
           {/* SEZNAM KOMPONENT */}
-          <h2 style={sectionTitleStyle}><Rocket size={24} color="#a855f7" /> Výběr komponent</h2>
+          <h2 style={sectionTitleStyle}><Rocket size={24} color="#a855f7" /> Výběr komponent (Ověřené ceny)</h2>
           <div style={componentsGridStyle}>
             {sestava.components.map((comp, idx) => (
               <div key={idx} style={componentItemStyle}>
-                <span style={partLabelStyle}>{comp.part}</span>
-                <span style={partNameStyle}>{comp.name}</span>
-                <span style={partPriceStyle}>{comp.price?.toLocaleString()} Kč</span>
+                <div style={{ flex: 1 }}>
+                  <span style={partLabelStyle}>{comp.part}</span>
+                  <div style={partNameStyle}>{comp.name}</div>
+                </div>
+                
+                <div style={priceAndActionStyle}>
+                  <div style={partPriceStyle}>{comp.price?.toLocaleString()} Kč</div>
+                  {comp.link && (
+                    <a 
+                      href={comp.link} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      style={buyButtonStyle}
+                    >
+                      <ShoppingCart size={14} /> KOUPIT
+                    </a>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -108,7 +123,7 @@ export default async function SestavaDetail({ params }) {
             <ShieldCheck size={40} color="#eab308" style={{ margin: '0 auto 20px' }} />
             <h3 style={{ color: '#eab308', fontSize: '24px', fontWeight: 'bold' }}>Chceš tuhle mašinu domů?</h3>
             <p style={{ color: '#d1d5db', margin: '15px 0 30px' }}>
-              Tato sestava byla vygenerována na základě aktuálních cen na trhu. Pokud potřebuješ individuální úpravu, stav se na Discordu!
+              Tato sestava využívá aktuální ceny z českých e-shopů. Pokud ti nějaký komponent chybí nebo chceš úpravu na míru, stav se u nás na Discordu!
             </p>
             <a href="https://discord.gg/TheHardwareGuru" target="_blank" style={ctaButtonStyle}>
               <Share2 size={20} /> SDÍLET SESTAVU
@@ -120,16 +135,12 @@ export default async function SestavaDetail({ params }) {
   );
 }
 
-// --- GURU STYLES (DRŽÍME DESIGN LINE) ---
+// --- STYLY ---
 
 const pageContainerStyle = {
-  backgroundColor: '#0a0b0d',
-  minHeight: '100vh',
-  color: '#fff',
-  fontFamily: 'sans-serif',
-  backgroundImage: 'url("/bg-guru.png")',
-  backgroundSize: 'cover',
-  backgroundAttachment: 'fixed'
+  backgroundColor: '#0a0b0d', minHeight: '100vh', color: '#fff',
+  fontFamily: 'sans-serif', backgroundImage: 'url("/bg-guru.png")',
+  backgroundSize: 'cover', backgroundAttachment: 'fixed'
 };
 
 const navStyle = {
@@ -149,51 +160,33 @@ const heroStyle = (url) => ({
   backgroundSize: 'cover', backgroundPosition: 'center'
 });
 
-const heroOverlayStyle = {
-  position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 20px'
-};
-
+const heroOverlayStyle = { position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 20px' };
 const contentWidthStyle = { maxWidth: '900px', margin: '0 auto' };
-
-const badgeStyle = {
-  color: '#a855f7', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '12px', marginBottom: '10px'
-};
-
+const badgeStyle = { color: '#a855f7', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '12px', marginBottom: '10px' };
 const titleStyle = { fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: '900', lineHeight: '1.1', marginBottom: '20px' };
-
-const priceBadgeStyle = {
-  display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(168, 85, 247, 0.2)',
-  padding: '10px 20px', borderRadius: '15px', border: '1px solid #a855f7', fontSize: '20px', fontWeight: 'bold'
-};
-
-const glassCardStyle = {
-  background: 'rgba(17, 19, 24, 0.8)', padding: '40px', borderRadius: '35px',
-  border: '1px solid rgba(168, 85, 247, 0.2)', marginBottom: '100px', backdropFilter: 'blur(10px)'
-};
-
+const priceBadgeStyle = { display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(168, 85, 247, 0.2)', padding: '10px 20px', borderRadius: '15px', border: '1px solid #a855f7', fontSize: '20px', fontWeight: 'bold' };
+const glassCardStyle = { background: 'rgba(17, 19, 24, 0.8)', padding: '40px', borderRadius: '35px', border: '1px solid rgba(168, 85, 247, 0.2)', marginBottom: '100px', backdropFilter: 'blur(10px)' };
 const sectionTitleStyle = { display: 'flex', alignItems: 'center', gap: '15px', fontSize: '24px', fontWeight: '900', marginBottom: '30px' };
-
 const componentsGridStyle = { display: 'flex', flexDirection: 'column', gap: '15px' };
 
 const componentItemStyle = {
   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-  padding: '15px 20px', background: 'rgba(255,255,255,0.03)', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)'
+  padding: '15px 20px', background: 'rgba(255,255,255,0.03)', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)', gap: '15px'
 };
 
-const partLabelStyle = { color: '#a855f7', fontWeight: 'bold', width: '80px', fontSize: '14px' };
-const partNameStyle = { flex: 1, fontWeight: '500', color: '#e5e7eb' };
-const partPriceStyle = { fontWeight: 'bold', color: '#fff' };
+const priceAndActionStyle = { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', minWidth: '120px' };
+
+const partLabelStyle = { color: '#a855f7', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px' };
+const partNameStyle = { fontWeight: '500', color: '#e5e7eb', fontSize: '16px', marginTop: '4px' };
+const partPriceStyle = { fontWeight: 'bold', color: '#fff', fontSize: '17px' };
+
+const buyButtonStyle = {
+  display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(168, 85, 247, 0.2)',
+  color: '#a855f7', padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(168, 85, 247, 0.4)',
+  fontSize: '11px', fontWeight: 'bold', textDecoration: 'none', transition: '0.2s'
+};
 
 const textContentStyle = { fontSize: '18px', lineHeight: '1.8', color: '#d1d5db', whiteSpace: 'pre-wrap' };
-
 const dividerStyle = { border: 0, borderTop: '1px solid rgba(168, 85, 247, 0.1)', margin: '40px 0' };
-
-const supportCardStyle = {
-  marginTop: '60px', padding: '40px', background: 'rgba(234, 179, 8, 0.05)',
-  borderRadius: '28px', border: '1px solid rgba(234, 179, 8, 0.3)', textAlign: 'center'
-};
-
-const ctaButtonStyle = {
-  display: 'inline-flex', alignItems: 'center', gap: '10px', background: '#eab308',
-  color: '#000', padding: '16px 30px', borderRadius: '15px', fontWeight: '900', textDecoration: 'none'
-};
+const supportCardStyle = { marginTop: '60px', padding: '40px', background: 'rgba(234, 179, 8, 0.05)', borderRadius: '28px', border: '1px solid rgba(234, 179, 8, 0.3)', textAlign: 'center' };
+const ctaButtonStyle = { display: 'inline-flex', alignItems: 'center', gap: '10px', background: '#eab308', color: '#000', padding: '16px 30px', borderRadius: '15px', fontWeight: '900', textDecoration: 'none' };
