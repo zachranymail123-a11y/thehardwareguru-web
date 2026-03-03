@@ -141,7 +141,12 @@ export async function GET() {
       console.error("Chyba při odesílání do Make:", makeError);
     }
 
-    return NextResponse.json({ success: true, tip: data[0] });
+    // TADY JE TEN PŘIDANÝ ŠPION
+    return NextResponse.json({ 
+      success: true, 
+      tip: data[0],
+      make_url_nacteno: process.env.MAKE_WEBHOOK_URL ? "ANO, Vercel URL vidi" : "NE, Vercel ma URL prazdnou"
+    });
 
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
