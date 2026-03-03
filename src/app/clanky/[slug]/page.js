@@ -12,6 +12,7 @@ function extractYoutubeId(url) {
   return (match && match[2].length === 11) ? match[2] : null;
 }
 
+// 1. GENERACE METADAT PRO GOOGLE DISCOVER A SÍTĚ
 export async function generateMetadata({ params }) {
   const { slug } = params;
   const supabase = createClient(
@@ -35,18 +36,22 @@ export async function generateMetadata({ params }) {
 
   const seoDescription = post.seo_description || (post.content || '').replace(/<[^>]*>?/gm, '').substring(0, 150) + '...';
   
-  const seoKeywords = post.seo_keywords 
-    ? post.seo_keywords.split(',').map(k => k.trim()) 
-    : ['hardware', 'gaming', 'pc', 'guru', 'recenze'];
-
   return {
     title: `${post.title} | The Hardware Guru`,
     description: seoDescription,
-    keywords: seoKeywords,
     openGraph: {
       title: post.title,
       description: seoDescription,
-      images: [{ url: imageUrl }],
+      url: `https://www.thehardwareguru.cz/clanky/${post.slug}`,
+      siteName: 'The Hardware Guru',
+      images: [
+        {
+          url: imageUrl,
+          width: 1200, // Hint pro Google Discover
+          height: 630,
+          alt: post.title,
+        },
+      ],
       type: 'article',
     },
     twitter: {
@@ -66,6 +71,7 @@ export default async function ArticlePage({ params }) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
+  // Zvýšení návštěvnosti
   await supabase.rpc('increment_total_visits');
 
   const [{ data: post }, { data: stats }, { data: relatedPosts }] = await Promise.all([
@@ -98,6 +104,34 @@ export default async function ArticlePage({ params }) {
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
     }}>
+
+      {/* 2. STRUKTUROVANÁ DATA PRO GOOGLE NEWS / DISCOVER */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "NewsArticle",
+            "headline": post.title,
+            "image": [articleImage],
+            "datePublished": post.created_at,
+            "author": [{
+                "@type": "Person",
+                "name": "The Hardware Guru",
+                "url": "https://www.thehardwareguru.cz"
+              }],
+            "publisher": {
+              "@type": "Organization",
+              "name": "The Hardware Guru",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://www.thehardwareguru.cz/logo.png"
+              }
+            },
+            "description": post.seo_description || ""
+          })
+        }}
+      />
       
       <style>{`
         .nav-link { margin: 0 15px; color: #fff; text-decoration: none; font-weight: bold; transition: color 0.3s; text-transform: uppercase; letter-spacing: 1px; display: inline-block; }
@@ -177,7 +211,6 @@ export default async function ArticlePage({ params }) {
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
 
-        {/* OPRAVENÁ SEKCE: Přidáno /clanky/ před slug */}
         {relatedPosts && relatedPosts.length > 0 && (
           <div style={{ marginBottom: '60px', padding: '30px', background: 'rgba(31, 40, 51, 0.5)', borderRadius: '15px', borderLeft: '4px solid #66fcf1' }}>
             <h3 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '20px' }}>Mohlo by tě zajímat:</h3>
