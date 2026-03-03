@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from 'react';
+import Link from 'next/link';
 
 export default function SupportWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,30 +19,30 @@ export default function SupportWidget() {
           padding: '0', transition: 'transform 0.3s ease'
         }}
       >
-        {/* Štítek s jasným CTA (UPRAVENO) */}
+        {/* Štítek s jasným CTA (ZLATÝ STYL) */}
         {!isOpen && (
           <div className="support-label" style={{
             color: '#fff',
-            background: 'rgba(139, 92, 246, 0.2)',
-            border: '2px solid #8b5cf6',
+            background: 'rgba(234, 179, 8, 0.1)',
+            border: '2px solid #eab308',
             padding: '10px 16px',
             borderRadius: '12px',
             fontWeight: '900',
             fontSize: '13px',
             letterSpacing: '1px',
             textTransform: 'uppercase',
-            boxShadow: '0 0 15px rgba(139, 92, 246, 0.4)',
+            boxShadow: '0 0 15px rgba(234, 179, 8, 0.3)',
             whiteSpace: 'nowrap'
           }}>
-            Podpořit provoz ⚡
+            Podpořit Guru ⚡
           </div>
         )}
 
-        {/* Raketka */}
+        {/* Raketka (ZLATÝ GRADIENT) */}
         <div style={{
           width: '55px', height: '55px', borderRadius: '50%',
-          background: 'linear-gradient(45deg, #8b5cf6, #ec4899)',
-          boxShadow: '0 0 25px rgba(139, 92, 246, 0.6)',
+          background: 'linear-gradient(45deg, #eab308, #ca8a04)',
+          boxShadow: '0 0 25px rgba(234, 179, 8, 0.5)',
           fontSize: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
           {isOpen ? '✕' : '🚀'}
@@ -52,24 +53,35 @@ export default function SupportWidget() {
       {isOpen && (
         <div style={{
           position: 'absolute', bottom: '70px', right: '0',
-          width: '280px', backgroundColor: '#111318', border: '2px solid #3b0764',
+          width: '280px', backgroundColor: '#111318', border: '2px solid #eab308',
           borderRadius: '20px', padding: '20px', boxShadow: '0 10px 50px rgba(0,0,0,0.9)',
-          animation: 'fadeIn 0.3s ease'
+          animation: 'fadeIn 0.3s ease',
+          backdropFilter: 'blur(10px)'
         }}>
           <h4 style={{ color: '#fff', margin: '0 0 10px 0', fontSize: '15px', fontWeight: '900', textAlign: 'center' }}>
-            KRMÍŠ TENHLE STROJ?
+            KRMÍŠ TENHLE <span style={{ color: '#eab308' }}>STROJ?</span>
           </h4>
           
-          <p style={{ color: '#9ca3af', fontSize: '11px', textAlign: 'center', marginBottom: '18px' }}>
-            Tvůj příspěvek jde přímo na fixní náklady hostingu a infrastruktury webu.
+          <p style={{ color: '#9ca3af', fontSize: '11px', textAlign: 'center', marginBottom: '18px', lineHeight: '1.4' }}>
+            Tvůj příspěvek jde na fixní náklady hostingu, serverů a infrastruktury webu.
           </p>
+
+          {/* Tlačítko na QR platbu / Stránku Support */}
+          <Link href="/support" onClick={() => setIsOpen(false)} style={{
+            display: 'block', backgroundColor: '#eab308', color: '#000',
+            textAlign: 'center', padding: '14px', borderRadius: '12px',
+            textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', marginBottom: '10px',
+            transition: '0.2s'
+          }}>
+            🤳 QR Platba / Převod (CZ)
+          </Link>
 
           <a href={stripeLink} target="_blank" style={{
             display: 'block', backgroundColor: '#fff', color: '#000',
             textAlign: 'center', padding: '14px', borderRadius: '12px',
             textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', marginBottom: '10px'
           }}>
-            💳 Platební karta / Apple Pay
+            💳 Karta / Apple / Google Pay
           </a>
 
           <a href={`https://revolut.me/${revolutTag}`} target="_blank" style={{
@@ -77,21 +89,22 @@ export default function SupportWidget() {
             textAlign: 'center', padding: '14px', borderRadius: '12px',
             textDecoration: 'none', fontWeight: 'bold', fontSize: '14px'
           }}>
-            R Revolut Me
+            <span style={{ background: '#fff', color: '#0075eb', width: '18px', height: '18px', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', marginRight: '6px' }}>R</span> 
+            Revolut Me
           </a>
         </div>
       )}
 
-      {/* --- Animace pulzování (PŘIDÁNO) --- */}
+      {/* --- Styl animací --- */}
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
         @keyframes pulse-border {
-          0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); }
-          70% { box-shadow: 0 0 0 10px rgba(139, 92, 246, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+          0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.6); }
+          70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
         }
         .support-label {
           animation: pulse-border 2s infinite;
