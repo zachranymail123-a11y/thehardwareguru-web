@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Cpu, Wallet, Rocket, Home, Lightbulb, Book, PenTool } from 'lucide-react';
+import { Cpu, Wallet, Rocket, Home, Lightbulb, PenTool, MessageSquare, MonitorPlay, Youtube } from 'lucide-react';
 
 export default function GuruBuilderPage() {
   const router = useRouter();
@@ -24,6 +24,9 @@ export default function GuruBuilderPage() {
       const data = await res.json();
       if (data.success) {
         router.push(data.url);
+      } else {
+        alert(data.error || "Došlo k chybě při hledání cen.");
+        setLoading(false);
       }
     } catch (err) {
       alert("Guru má teď moc práce s ověřováním cen na Alze, zkus to za vteřinu.");
@@ -89,6 +92,22 @@ export default function GuruBuilderPage() {
           * Guru builder kontroluje reálnou dostupnost komponent na českém trhu. <br/>
           Striktně AM5 (B850/X870) | Pouze RTX 4000/5000 nebo Radeon 9070/XT.
         </p>
+
+        {/* GURU KOMUNITA */}
+        <div style={communityContainerStyle}>
+          <h3 style={communityTitleStyle}>JSI V TOM S NÁMI? PŘIPOJ SE!</h3>
+          <div style={socialsContainerStyle}>
+            <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#5865F2')}>
+              <MessageSquare size={16} /> DISCORD
+            </a>
+            <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#53fc18', '#000')}>
+              <MonitorPlay size={16} /> KICK
+            </a>
+            <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#FF0000')}>
+              <Youtube size={16} /> YOUTUBE
+            </a>
+          </div>
+        </div>
       </main>
     </div>
   );
@@ -137,3 +156,12 @@ const btnStyle = {
 
 const btnDisabledStyle = { ...btnStyle, background: '#4b5563', cursor: 'not-allowed', boxShadow: 'none' };
 const footerNoteStyle = { textAlign: 'center', marginTop: '30px', fontSize: '12px', color: '#4b5563', lineHeight: '1.6' };
+
+const communityContainerStyle = { marginTop: '60px', textAlign: 'center' };
+const communityTitleStyle = { color: '#a855f7', fontSize: '14px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '20px' };
+const socialsContainerStyle = { display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' };
+
+const socialBtnStyle = (bgColor, textColor = '#fff') => ({
+  display: 'inline-flex', alignItems: 'center', gap: '8px', background: bgColor, color: textColor,
+  padding: '10px 20px', borderRadius: '12px', fontWeight: 'bold', fontSize: '14px', textDecoration: 'none'
+});
