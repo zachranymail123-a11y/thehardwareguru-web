@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Home, Lightbulb, Book, PenTool, Newspaper } from 'lucide-react';
 import Link from 'next/link';
 
-// Tato direktiva vynutí, aby Next.js stránku pokaždé sestavil znovu (vyhne se shnilé cache)
+// Vynutíme dynamické vykreslování pro zajištění čerstvých dat ze Supabase
 export const dynamic = 'force-dynamic';
 
 const supabase = createClient(
@@ -19,7 +19,6 @@ export default function TipyPage() {
 
   useEffect(() => {
     async function fetchTipy() {
-      // Přidáme náhodný parametr do dotazu, abychom obešli případnou cache v API volání
       const { data, error } = await supabase
         .from('tipy')
         .select('*')
@@ -104,7 +103,9 @@ export default function TipyPage() {
             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
               <Link href={`/tipy/${tip.slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                {/* Přidán unikátní timestamp, aby prohlížeč neukazoval starý prázdný náhled */}
+                {/* OPRAVA: Přidán ?t=timestamp k URL obrázku. 
+                   Tím donutíme prohlížeč ignorovat starou verzi v cache a načíst aktuální obrázek ze Supabase.
+                */}
                 <img 
                   src={`${tip.image_url}?t=${new Date().getTime()}`} 
                   alt={tip.title} 
@@ -139,7 +140,7 @@ export default function TipyPage() {
   );
 }
 
-// STYLY
+// STYLY (Beze změny)
 const navItemStyle = {
   color: '#fff',
   textDecoration: 'none',
