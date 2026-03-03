@@ -76,4 +76,79 @@ export async function POST() {
     const aiTextResponse = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "user", content: textPrompt }],
-      response_format
+      response_format: { type: "json_object" }
+    });
+
+    const vygenerovanyTipText = JSON.parse(aiTextResponse.choices[0].message.content);
+
+    // --- KROK 3: SKUTEČNÉ VYHLEDÁVÁNÍ NA YOUTUBE (S ROTACÍ KLÍČŮ) ---
+    let realneYoutubeId = null;
+    
+    const ytKeys = [
+      process.env.YOUTUBE_API_KEY,
+      process.env.YOUTUBE_API_KEY_2,
+      process.env.YOUTUBE_API_KEY_3
+    ].filter(Boolean);
+
+    for (const apiKey of ytKeys) {
+      try {
+        const query = encodeURIComponent(`${vygenerovanyTipText.title} hardware tutorial`);
+        const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${query}&type=video&key=${apiKey}`);
+        const ytData = await ytRes.json();
+        
+        if (ytData.error) {
+          console.warn("YouTube API Key selhal, zkouším další záložní klíč...");
+          continue; 
+        }
+
+        if (ytData.items && ytData.items.length > 0) {
+          realneYoutubeId = ytData.items[0].id.videoId;
+          break; 
+        }
+      } catch (err) {
+        console.error("Chyba při hledání na YouTube s aktuálním klíčem:", err);
+      }
+    }
+
+    // --- KROK 4: VOLÁNÍ AI PRO UNIKÁTNÍ OBRÁZEK ---
+    const imagePrompt = `
+      A futuristic cyberpunk illustration of a hardware component related to: "${vygenerovanyTipText.title}". 
+      Use glowing neon purple and green lighting on a dark background. Photorealistic, 8k resolution, highly detailed, without any text.
+    `;
+
+    const aiImageResponse = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: imagePrompt,
+      n: 1,
+      size: "1024x1024",
+    });
+
+    // --- KROK 5: ULOŽENÍ DO SUPABASE ---
+    const finalniTip = {
+      title: vygenerovanyTipText.title,
+      description: vygenerovanyTipText.description,
+      category: vygenerovanyTipText.category,
+      image_url: aiImageResponse.data[0].url,
+      youtube_id: realneYoutubeId, 
+      slug: checkSlug 
+    };
+
+    const { data, error } = await supabase
+      .from('tipy')
+      .insert([finalniTip])
+      .select();
+
+    if (error) throw error;
+
+    return NextResponse.json({ 
+      success: true, 
+      zdroj_puvodni_clanek: novyClanek.title, 
+      pouzity_zdroj: pouzityZdroj,
+      tip: data[0] 
+    });
+
+  } catch (error) {
+    console.error("Chyba generátoru:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
