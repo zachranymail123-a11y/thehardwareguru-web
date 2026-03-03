@@ -2,73 +2,46 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req) {
   try {
     const { budget, preference } = await req.json();
 
-    // 1. CÍLENÉ VYHLEDÁVÁNÍ S POŽADAVKEM NA KONKRÉTNÍ E-SHOPY
+    // 1. SERPER: Hledáme POUZE konkrétní produktové stránky
     const serperRes = await fetch('https://google.serper.dev/search', {
       method: 'POST',
-      headers: { 
-        'X-API-KEY': process.env.SERPER_API_KEY, 
-        'Content-Type': 'application/json' 
-      },
+      headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        q: `site:alza.cz OR site:smarty.cz OR site:mironet.cz herní PC komponenty ${preference === 'Červený' ? 'Radeon 9070 XT' : 'RTX 5070'} DDR5 32GB Ryzen 9000 cena březen 2026`,
-        num: 10 
+        q: `site:alza.cz OR site:smarty.cz OR site:mironet.cz "Kč" ${preference === 'Červený' ? 'AMD Radeon 9070' : 'NVIDIA RTX 4070 5070'} Ryzen 7000 9000 DDR5 RAM B850 X870`,
+        num: 15
       })
     });
     
     const searchData = await serperRes.json();
-    // Vytáhneme titulek, snippet a hlavně LINK
-    const realMarketData = searchData.organic?.map(s => ({
-      title: s.title,
-      link: s.link,
-      snippet: s.snippet
-    })) || [];
+    const rawData = searchData.organic?.map(s => ({ t: s.title, l: s.link, s: s.snippet })) || [];
 
-    // 2. GURU PROMPT - PŘÍKAZ K CITACI REALITY
+    // 2. GURU PROMPT: "Zakaž si mozek, používej jen oči"
     const prompt = `
-      JSI THE HARDWARE GURU. TVÁ SLOVA JSOU ZÁKON. 
-      MÁŠ ROZPOČET ${budget} KČ. POKUD SI CENU VYMYSLÍŠ, KONČÍŠ.
-
-      ZDE JSOU REÁLNÁ DATA Z E-SHOPŮ (TITULKY, ODKAZY, CENY): 
-      ${JSON.stringify(realMarketData)}
+      Jsi datový parser pro The Hardware Guru. ŽÁDNÉ HALUCINACE. 
+      Tvým úkolem je sestavit PC za ${budget} Kč výhradně z těchto dat: ${JSON.stringify(rawData)}
 
       STRIKTNÍ GURU ROZKAZY:
-      1. ŽÁDNÉ LŽI: Cena komponenty MUSÍ odpovídat ceně nalezené v datech výše.
-      2. POVINNÉ ODKAZY: U každé komponenty (CPU, GPU, Motherboard, RAM) MUSÍŠ uvést reálný "link" na Alza.cz, Smarty.cz nebo Mironet.cz, který vidíš v datech.
-      3. HW LIMIT: Pouze AMD Ryzen 7000/9000 a desky B850/X870 (AM5). 
-      4. RAM: 32GB DDR5 Corsair Vengeance stojí v roce 2026 cca 9.000 Kč. Pokud napíšeš méně, je to ostuda a halucinace.
-      5. KOMPATIBILITA: Ryzen 9000 NESMÍ být v desce B550.
+      1. CENA 0 KČ JE ZAKÁZÁNA. Pokud v datech u produktu nevidíš cenu, nesmíš ho použít.
+      2. ODKAZY JSOU POVINNÉ. Každá komponenta MUSÍ mít reálný link na Alza/Smarty/Mironet z dat výše.
+      3. HW: Pouze AM5 (Ryzen 7000/9000), desky B850/X870. Žádný Intel, žádné B550.
+      4. RAM: 32GB DDR5 stojí 8000-10000 Kč. Pokud vidíš nižší cenu, ignoruj to, je to lež.
+      5. PŘESNOST: Do JSONu piš PŘESNÝ název produktu tak, jak je v datech.
 
       Vrať POUZE JSON:
       {
-        "title": "Guru Herní Bestie: [Název]",
+        "title": "Guru Herní Bestie...",
         "components": [
-          {
-            "part": "GPU", 
-            "name": "[Přesný název z e-shopu]", 
-            "price": 0, 
-            "link": "[REÁLNÁ URL Z DAT]"
-          },
-          {
-            "part": "CPU", 
-            "name": "[Přesný název z e-shopu]", 
-            "price": 0, 
-            "link": "[REÁLNÁ URL Z DAT]"
-          }
-          // ... ostatní komponenty
+          { "part": "GPU", "name": "...", "price": 0, "link": "..." },
+          { "part": "CPU", "name": "...", "price": 0, "link": "..." }
         ],
-        "explanation": "Guru potvrzení, že tyto ceny jsou reálné k dnešnímu dni...",
-        "total_price": 0
+        "explanation": "Guru potvrzení reality..."
       }
     `;
 
@@ -78,28 +51,29 @@ export async function POST(req) {
       response_format: { type: "json_object" }
     });
 
-    const sestavaData = JSON.parse(aiRes.choices[0].message.content);
+    const resData = JSON.parse(aiRes.choices[0].message.content);
     
-    const slug = `guru-sestava-${budget}-${Math.floor(Math.random() * 10000)}`;
+    // Vypočítáme reálný součet, abychom nelhali o total_price
+    const realTotal = resData.components.reduce((sum, c) => sum + (Number(c.price) || 0), 0);
+
+    const slug = `guru-sestava-${budget}-${Date.now()}`;
     
     const { data, error } = await supabase.from('sestavy').insert([{
-      title: sestavaData.title,
-      description: "Sestava s reálnými odkazy na e-shopy.",
+      title: resData.title,
+      description: `Reálný herní build sestavený Guruem.`,
       budget: budget,
       usage: "Gaming",
-      components: sestavaData.components, // Ukládáme i s linky
-      content: sestavaData.explanation,
-      total_price: sestavaData.total_price,
+      components: resData.components,
+      content: resData.explanation,
+      total_price: realTotal, // Tohle už nebude halucinace, ale prostý součet
       slug: slug,
       image_url: "https://i.postimg.cc/QdWxszv3/bg-guru.png"
     }]).select();
 
     if (error) throw error;
-
-    return NextResponse.json({ success: true, url: `/sestavy/${slug}`, data: data[0] });
+    return NextResponse.json({ success: true, url: `/sestavy/${slug}` });
 
   } catch (error) {
-    console.error('Guru API Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
