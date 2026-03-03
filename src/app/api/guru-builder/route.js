@@ -5,122 +5,124 @@ import OpenAI from 'openai';
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// FUNKCE PRO ZÍSKÁNÍ REÁLNÉ CENY Z ALZY (S FALLBACKEM NA TVOJE PEVNÉ ODKAZY)
-async function getPrice(query, fallbackName, fallbackPrice, fallbackLink, power = 0) {
-  try {
-    const res = await fetch('https://google.serper.dev/search', {
-      method: 'POST',
-      headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: `site:alza.cz "${query}" cena`, num: 3 })
-    });
-    const data = await res.json();
-    for (const s of (data.organic || [])) {
-      const match = (s.snippet + " " + s.title).replace(/\u00A0/g, ' ').match(/(\d{1,3}(?:[ \.]\d{3})*|\d+)\s*(?:Kč|,-|CZK)/i);
-      if (match) {
-        const price = parseInt(match[1].replace(/[\s\.]/g, ''), 10);
-        if (price > 1000) {
-          // Našli jsme reálnou cenu, vrátíme ji s tvým pevným linkem
-          return { name: fallbackName, price: price, link: fallbackLink || s.link, power: power };
-        }
-      }
-    }
-  } catch (e) {
-    console.error(`Chyba při hledání ceny pro ${query}`);
-  }
-  // Pokud selže hledání, použije se fallback, abychom nespadli
-  return { name: fallbackName, price: fallbackPrice, link: fallbackLink, power: power };
-}
+// 1. TVOJE PEVNÁ MINIMÁLNÍ SESTAVA A ODKAZY
+const baseBuild = {
+  GPU: { name: 'GIGABYTE GeForce RTX 5070 EAGLE OC 12G', price: 16500, link: 'https://www.alza.cz/gigabyte-geforce-rtx-5070-eagle-oc-12g-d12815107.htm?o=6', power: 250 },
+  CPU: { name: 'AMD Ryzen 7 7700', price: 6000, link: 'https://www.alza.cz/amd-ryzen-7-7700-d7612606.htm?o=1', power: 65 },
+  MB: { name: 'MSI MAG B850 TOMAHAWK WIFI', price: 5500, link: 'https://www.alza.cz/msi-mag-b850-tomahawk-wifi-d13163989.htm?o=78', power: 0 },
+  RAM: { name: 'Patriot Viper Venom 32GB KIT DDR5 6000MHz CL30', price: 2800, link: 'https://www.alza.cz/patriot-viper-venom-32gb-kit-ddr5-6000mhz-cl30-d12440050.htm?o=2', power: 0 },
+  SSD: { name: 'Samsung 990 PRO 2TB', price: 4500, link: 'https://www.alza.cz/samsung-990-pro-2tb-d7516910.htm?o=1', power: 0 }
+};
+
+// 2. PEVNÝ KATALOG UPGRADŮ PRO DRAŽŠÍ SESTAVY
+const upgrades = {
+  GPU: [
+    { name: 'GIGABYTE GeForce RTX 5080 GAMING OC 16G', price: 32000, link: 'https://www.alza.cz/graficke-karty-nvidia-geforce-rtx-5080/18810050.htm', power: 320 },
+    { name: 'GIGABYTE GeForce RTX 5090 GAMING OC 32G', price: 55000, link: 'https://www.alza.cz/graficke-karty-nvidia-geforce-rtx-5090/18810049.htm', power: 500 }
+  ],
+  CPU: [
+    { name: 'AMD Ryzen 7 9800X3D', price: 13000, link: 'https://www.alza.cz/amd-ryzen-7-9800x3d-d12666752.htm', power: 120 }
+  ],
+  MB: [
+    { name: 'MSI MPG X870E CARBON WIFI', price: 11500, link: 'https://www.alza.cz/msi-mpg-x870e-carbon-wifi-d12548842.htm', power: 0 }
+  ],
+  RAM: [
+    { name: 'Patriot Viper Venom 64GB KIT DDR5 6000MHz CL30', price: 5500, link: 'https://www.alza.cz/patriot-viper-venom-64gb-kit-ddr5-6000mhz-cl30-d12440051.htm', power: 0 }
+  ]
+};
+
+// 3. PEVNÉ ZDROJE PRO VÝPOČET
+const psus = [
+  { name: 'Seasonic Core GX-650 ATX 3.1', price: 2000, link: 'https://www.alza.cz/seasonic-core-gx-650-atx-3-2024-d12744103.htm?o=2', capacity: 650 },
+  { name: 'Seasonic Focus GX-850 ATX 3.0', price: 3500, link: 'https://www.alza.cz/seasonic-focus-gx-850-atx-3-0-d7943936.htm', capacity: 850 },
+  { name: 'Seasonic Vertex GX-1000 ATX 3.0', price: 5000, link: 'https://www.alza.cz/seasonic-vertex-gx-1000-d7600109.htm', capacity: 1000 }
+];
 
 export async function POST(req) {
   try {
-    const { budget, preference } = await req.json();
+    const { budget } = await req.json();
     const budgetNum = Number(budget);
 
-    // 1. ZÍSKÁVÁME REÁLNÉ DNEŠNÍ CENY PRO TVŮJ ZÁKLAD I UPGRADY (Paralelně)
-    const [
-      baseCPU, baseGPU, baseMB, baseRAM, baseSSD, basePSU,
-      upGPU1, upGPU2, upCPU, upMB, upRAM, upPSU850, upPSU1000
-    ] = await Promise.all([
-      // PEVNÝ ZÁKLAD (Tvoje odkazy a TDP/TGP limity)
-      getPrice('AMD Ryzen 7 7700', 'AMD Ryzen 7 7700', 6000, 'https://www.alza.cz/amd-ryzen-7-7700-d7612606.htm?o=1', 65),
-      getPrice('GIGABYTE GeForce RTX 5070 EAGLE OC 12G', 'GIGABYTE GeForce RTX 5070 EAGLE OC 12G', 16500, 'https://www.alza.cz/gigabyte-geforce-rtx-5070-eagle-oc-12g-d12815107.htm?o=6', 250),
-      getPrice('MSI MAG B850 TOMAHAWK WIFI', 'MSI MAG B850 TOMAHAWK WIFI', 5500, 'https://www.alza.cz/msi-mag-b850-tomahawk-wifi-d13163989.htm?o=78', 0),
-      getPrice('Patriot Viper Venom 32GB KIT DDR5 6000MHz CL30', 'Patriot Viper Venom 32GB KIT DDR5 6000MHz CL30', 2800, 'https://www.alza.cz/patriot-viper-venom-32gb-kit-ddr5-6000mhz-cl30-d12440050.htm?o=2', 0),
-      getPrice('Samsung 990 PRO 2TB', 'Samsung 990 PRO 2TB', 4500, 'https://www.alza.cz/samsung-990-pro-2tb-d7516910.htm?o=1', 0),
-      getPrice('Seasonic Core GX-650', 'Seasonic Core GX-650 ATX 3.1', 2000, 'https://www.alza.cz/seasonic-core-gx-650-atx-3-2024-d12744103.htm?o=2', 650),
-
-      // KATALOG UPGRADŮ S REÁLNÝMI ODKAZY
-      getPrice('NVIDIA GeForce RTX 5080 16G', 'NVIDIA GeForce RTX 5080 16G', 32000, 'https://www.alza.cz/graficke-karty-nvidia-geforce-rtx-5080/18810050.htm', 320),
-      getPrice('NVIDIA GeForce RTX 5090 32G', 'NVIDIA GeForce RTX 5090 32G', 55000, 'https://www.alza.cz/graficke-karty-nvidia-geforce-rtx-5090/18810049.htm', 500),
-      getPrice('AMD Ryzen 7 9800X3D', 'AMD Ryzen 7 9800X3D', 13000, 'https://www.alza.cz/amd-ryzen-7-9800x3d-d12666752.htm', 120),
-      getPrice('MSI MPG X870E CARBON WIFI', 'MSI MPG X870E CARBON WIFI', 11500, 'https://www.alza.cz/msi-mpg-x870e-carbon-wifi-d12548842.htm', 0),
-      getPrice('Patriot Viper Venom 64GB KIT DDR5', 'Patriot Viper Venom 64GB KIT DDR5 6000MHz CL30', 5500, 'https://www.alza.cz/patriot-viper-venom-64gb-kit-ddr5-6000mhz-cl30-d12440051.htm', 0),
-      getPrice('Seasonic Focus GX-850', 'Seasonic Focus GX-850 ATX 3.0', 3500, 'https://www.alza.cz/seasonic-focus-gx-850-atx-3-0-d7943936.htm', 850),
-      getPrice('Seasonic Vertex GX-1000', 'Seasonic Vertex GX-1000 ATX 3.0', 5000, 'https://www.alza.cz/seasonic-vertex-gx-1000-d7600109.htm', 1000)
-    ]);
-
-    // 2. STAVBA PC (TVRDÁ JS MATEMATIKA, UMĚLÁ INTELIGENCE MÁ ZÁKAZ VSTUPU)
-    let build = { GPU: baseGPU, CPU: baseCPU, MB: baseMB, RAM: baseRAM, SSD: baseSSD };
+    // Načteme tvůj pevný základ
+    let currentBuild = { ...baseBuild };
+    let currentTotal = currentBuild.GPU.price + currentBuild.CPU.price + currentBuild.MB.price + currentBuild.RAM.price + currentBuild.SSD.price;
     
-    // Aktuální cena bez zdroje (ten se dopočítá nakonec)
-    let currentTotal = build.GPU.price + build.CPU.price + build.MB.price + build.RAM.price + build.SSD.price;
+    // Rozpočet mínus to, co už máme v košíku a mínus cena nejlevnějšího zdroje
+    let budgetLeft = budgetNum - (currentTotal + psus[0].price);
 
-    // PRAVIDLO 1: Upgrade GPU
-    if (currentTotal - baseGPU.price + upGPU2.price <= budgetNum - basePSU.price) {
-      build.GPU = upGPU2;
-      currentTotal = currentTotal - baseGPU.price + upGPU2.price;
-    } else if (currentTotal - baseGPU.price + upGPU1.price <= budgetNum - basePSU.price) {
-      build.GPU = upGPU1;
-      currentTotal = currentTotal - baseGPU.price + upGPU1.price;
-    }
-
-    // PRAVIDLO 2: Upgrade CPU
-    if (currentTotal - baseCPU.price + upCPU.price <= budgetNum - basePSU.price) {
-      build.CPU = upCPU;
-      currentTotal = currentTotal - baseCPU.price + upCPU.price;
-    }
-
-    // PRAVIDLO 3: Upgrade MB
-    if (currentTotal - baseMB.price + upMB.price <= budgetNum - basePSU.price) {
-      build.MB = upMB;
-      currentTotal = currentTotal - baseMB.price + upMB.price;
-    }
-
-    // PRAVIDLO 4: Upgrade RAM (kapacita)
-    if (currentTotal - baseRAM.price + upRAM.price <= budgetNum - basePSU.price) {
-      build.RAM = upRAM;
-      currentTotal = currentTotal - baseRAM.price + upRAM.price;
-    }
-
-    // PRAVIDLO 5: VÝPOČET ZDROJE (TDP + TGP + 100W)
-    const requiredWattage = build.CPU.power + build.GPU.power + 100;
-    let finalPSU = basePSU; // Záleží na výpočtu, startujeme na tvém 650W
-
-    if (requiredWattage > 850) {
-      finalPSU = upPSU1000;
-    } else if (requiredWattage > 650) {
-      finalPSU = upPSU850;
-    }
+    // KASKÁDOVÝ UPGRADE (PŘESNĚ TVOJE POŘADÍ)
     
-    build.PSU = finalPSU;
-    currentTotal += finalPSU.price;
+    // 1. GRAFIKA
+    for (let i = upgrades.GPU.length - 1; i >= 0; i--) {
+      let costDiff = upgrades.GPU[i].price - currentBuild.GPU.price;
+      if (budgetLeft >= costDiff) {
+        currentBuild.GPU = upgrades.GPU[i];
+        budgetLeft -= costDiff;
+        break; // Vybere nejlepší možnou na kterou má a jde dál
+      }
+    }
 
-    // 3. AI JEN PÍŠE TEXT, NESTAVÍ POČÍTAČ
+    // 2. PROCESOR
+    for (let i = upgrades.CPU.length - 1; i >= 0; i--) {
+      let costDiff = upgrades.CPU[i].price - currentBuild.CPU.price;
+      if (budgetLeft >= costDiff) {
+        currentBuild.CPU = upgrades.CPU[i];
+        budgetLeft -= costDiff;
+        break;
+      }
+    }
+
+    // 3. ZÁKLADNÍ DESKA
+    for (let i = upgrades.MB.length - 1; i >= 0; i--) {
+      let costDiff = upgrades.MB[i].price - currentBuild.MB.price;
+      if (budgetLeft >= costDiff) {
+        currentBuild.MB = upgrades.MB[i];
+        budgetLeft -= costDiff;
+        break;
+      }
+    }
+
+    // 4. PAMĚTI (KAPACITA)
+    for (let i = upgrades.RAM.length - 1; i >= 0; i--) {
+      let costDiff = upgrades.RAM[i].price - currentBuild.RAM.price;
+      if (budgetLeft >= costDiff) {
+        currentBuild.RAM = upgrades.RAM[i];
+        budgetLeft -= costDiff;
+        break;
+      }
+    }
+
+    // 5. VÝPOČET ZDROJE (TDP + TGP + 100W)
+    const requiredPower = currentBuild.CPU.power + currentBuild.GPU.power + 100;
+    let selectedPSU = psus[0]; // Výchozí 650W
+
+    for (const psu of psus) {
+      if (psu.capacity >= requiredPower) {
+        selectedPSU = psu;
+        break; // Najde první, který kapacitně stačí
+      }
+    }
+    currentBuild.PSU = selectedPSU;
+
+    // KONEČNÝ SOUČET
+    const finalTotal = currentBuild.GPU.price + currentBuild.CPU.price + currentBuild.MB.price + currentBuild.RAM.price + currentBuild.SSD.price + currentBuild.PSU.price;
+
+    // PŘÍPRAVA PRO VÝPIS
     const componentsArray = [
-      { part: "GPU", name: build.GPU.name, price: build.GPU.price, link: build.GPU.link },
-      { part: "CPU", name: build.CPU.name, price: build.CPU.price, link: build.CPU.link },
-      { part: "Motherboard", name: build.MB.name, price: build.MB.price, link: build.MB.link },
-      { part: "RAM", name: build.RAM.name, price: build.RAM.price, link: build.RAM.link },
-      { part: "SSD", name: build.SSD.name, price: build.SSD.price, link: build.SSD.link },
-      { part: "PSU", name: build.PSU.name, price: build.PSU.price, link: build.PSU.link }
+      { part: "GPU", name: currentBuild.GPU.name, price: currentBuild.GPU.price, link: currentBuild.GPU.link },
+      { part: "CPU", name: currentBuild.CPU.name, price: currentBuild.CPU.price, link: currentBuild.CPU.link },
+      { part: "Motherboard", name: currentBuild.MB.name, price: currentBuild.MB.price, link: currentBuild.MB.link },
+      { part: "RAM", name: currentBuild.RAM.name, price: currentBuild.RAM.price, link: currentBuild.RAM.link },
+      { part: "SSD", name: currentBuild.SSD.name, price: currentBuild.SSD.price, link: currentBuild.SSD.link },
+      { part: "PSU", name: currentBuild.PSU.name, price: currentBuild.PSU.price, link: currentBuild.PSU.link }
     ];
 
+    // AI JEN GENERUJE KOMENTÁŘ NA ZÁKLADĚ HOTOVÉ SESTAVY
     const prompt = `
-      Napiš krátký, úderný komentář (max 3 věty) pro hotovou herní PC sestavu.
-      Komponenty v sestavě: ${build.GPU.name}, ${build.CPU.name}.
-      Zdroj má rezervu pro TGP a TDP.
-      Napiš to ve stylu "The Hardware Guru" (sebevědomě).
-      Vrať POUZE prostý text komentáře, nic jiného.
+      Napiš krátký, úderný komentář (max 2 věty) pro hotovou herní PC sestavu.
+      Vybrali jsme: ${currentBuild.GPU.name} a ${currentBuild.CPU.name}.
+      Napiš to sebevědomě ve stylu "The Hardware Guru". Žádné odhady cen.
+      Vrať pouze čistý text.
     `;
 
     const aiRes = await openai.chat.completions.create({
@@ -130,17 +132,16 @@ export async function POST(req) {
 
     const explanation = aiRes.choices[0].message.content.trim();
 
-    // 4. ULOŽENÍ DO SUPABASE
+    // ULOŽENÍ
     const slug = `guru-sestava-${budget}-${Date.now()}`;
-    
     const { data, error } = await supabase.from('sestavy').insert([{
-      title: `Guru Herní Mašina za ${currentTotal.toLocaleString()} Kč`,
-      description: "Sestava vypočítaná podle striktní logiky The Hardware Guru.",
+      title: `Guru Herní Mašina za ${finalTotal.toLocaleString()} Kč`,
+      description: "Sestava striktně vygenerovaná od minimálního základu s logickými upgrady.",
       budget: budget,
       usage: "Gaming",
       components: componentsArray,
       content: explanation,
-      total_price: currentTotal,
+      total_price: finalTotal,
       slug: slug,
       image_url: "https://i.postimg.cc/QdWxszv3/bg-guru.png"
     }]).select();
