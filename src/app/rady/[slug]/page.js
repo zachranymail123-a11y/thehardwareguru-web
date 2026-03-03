@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { Home, Lightbulb, Book, PenTool, ChevronLeft, Heart, ShieldCheck } from 'lucide-react';
+import { Home, Lightbulb, Book, PenTool, ChevronLeft, Heart, ShieldCheck, Play } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0; 
@@ -98,7 +98,7 @@ export default async function RadaDetailPage({ params }) {
             {rada.description}
           </div>
 
-          {/* SUPPORT SEKCE DLE ZADÁNÍ */}
+          {/* SUPPORT SEKCE */}
           <div style={{ 
             marginTop: '80px', 
             padding: '40px', 
@@ -143,7 +143,6 @@ export default async function RadaDetailPage({ params }) {
         </div>
       </main>
 
-      {/* --- FOOTER --- */}
       <footer style={{ 
         padding: '60px 20px', 
         background: 'rgba(0, 0, 0, 0.8)', 
