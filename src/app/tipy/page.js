@@ -69,16 +69,25 @@ export default function TipyPage() {
           <article key={tip.id} style={{
             background: 'rgba(17, 19, 24, 0.85)', backdropFilter: 'blur(10px)',
             border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '28px', overflow: 'hidden',
-            display: 'flex', flexDirection: 'column'
-          }}>
-            <img src={tip.image_url} alt={tip.title} style={{ width: '100%', height: '220px', objectFit: 'cover' }} />
-            <div style={{ padding: '25px', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-              <span style={{ color: '#a855f7', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>{tip.category}</span>
-              <h2 style={{ fontSize: '24px', fontWeight: '900', margin: '12px 0' }}>{tip.title}</h2>
-              <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '20px', flexGrow: 1 }}>{tip.description}</p>
-              
-              {/* KLIKACÍ TLAČÍTKO NA YOUTUBE */}
-              {tip.youtube_id && (
+            display: 'flex', flexDirection: 'column', transition: 'transform 0.2s ease'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            {/* ODKAZ NA DETAILNÍ NÁVOD PŘES OBRÁZEK A TEXT */}
+            <a href={`/tipy/${tip.slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+              <img src={tip.image_url} alt={tip.title} style={{ width: '100%', height: '220px', objectFit: 'cover' }} />
+              <div style={{ padding: '25px', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                <span style={{ color: '#a855f7', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>{tip.category}</span>
+                <h2 style={{ fontSize: '24px', fontWeight: '900', margin: '12px 0' }}>{tip.title}</h2>
+                <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '20px', flexGrow: 1 }}>{tip.description}</p>
+                <div style={{ color: '#a855f7', fontWeight: 'bold', fontSize: '14px', marginBottom: tip.youtube_id ? '20px' : '0' }}>Číst celý návod →</div>
+              </div>
+            </a>
+            
+            {/* SAMOSTATNÉ TLAČÍTKO NA YOUTUBE (aby neotvíralo článek) */}
+            {tip.youtube_id && (
+              <div style={{ padding: '0 25px 25px 25px' }}>
                 <a 
                   href={`https://www.youtube.com/watch?v=${tip.youtube_id}`} 
                   target="_blank" 
@@ -95,8 +104,7 @@ export default function TipyPage() {
                     color: '#fff',
                     textDecoration: 'none',
                     fontWeight: 'bold',
-                    transition: 'all 0.3s ease',
-                    marginTop: 'auto'
+                    transition: 'all 0.3s ease'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'rgba(255, 0, 0, 0.2)';
@@ -112,8 +120,8 @@ export default function TipyPage() {
                   <span style={{ color: '#ff0000', fontSize: '18px' }}>▶</span>
                   <span style={{ fontSize: '13px' }}>Přehrát Video Návod</span>
                 </a>
-              )}
-            </div>
+              </div>
+            )}
           </article>
         ))}
       </div>
