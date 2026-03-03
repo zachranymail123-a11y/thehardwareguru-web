@@ -15,7 +15,7 @@ export default async function Home() {
   // 1. PŘIČTEME NÁVŠTĚVU
   await supabase.rpc('increment_total_visits');
 
-  // 2. STÁHNEME DATA (Články, Statistiky a nejnovější Tipy)
+  // 2. STÁHNEME DATA
   const [{ data: posts }, { data: stats }, { data: nejnovejsiTipy }] = await Promise.all([
     supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(15),
     supabase.from('stats').select('value').eq('name', 'total_visits').single(),
@@ -23,6 +23,12 @@ export default async function Home() {
   ]);
 
   const celkemNavstev = stats?.value || 0;
+
+  // Pomocná funkce pro zajištění funkčního obrázku
+  const getSafeImage = (url) => {
+    if (!url || url === "" || url === "null") return 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000&auto=format&fit=crop';
+    return url;
+  };
 
   const getThumbnail = (post) => {
     if (post.image_url) return post.image_url;
@@ -62,8 +68,6 @@ export default async function Home() {
         .nav-special { color: #66fcf1 !important; border: 1px solid #66fcf1; padding: 5px 12px; border-radius: 4px; }
         .social-btn { display: inline-block; padding: 12px 25px; background: #1f2833; color: #66fcf1; border: 1px solid #45a29e; text-decoration: none; font-weight: bold; border-radius: 5px; transition: all 0.3s; text-transform: uppercase; }
         .social-btn:hover { box-shadow: 0 0 15px currentColor; transform: scale(1.05); }
-        .feature-box { background: rgba(31, 40, 51, 0.7); border: 1px solid #45a29e; padding: 25px; border-radius: 12px; text-align: center; text-decoration: none; color: inherit; transition: all 0.3s; }
-        .feature-box:hover { border-color: #66fcf1; background: rgba(31, 40, 51, 0.9); transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.2); }
       `}</style>
 
       {/* HLAVIČKA */}
@@ -96,7 +100,7 @@ export default async function Home() {
         </div>
       </header>
 
-      {/* --- NOVÁ SEKCE: GURU TIPY & TRIKY --- */}
+      {/* --- SEKCE GURU TIPY & TRIKY --- */}
       <section style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
           <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0 }}>GURU <span style={{ color: '#a855f7' }}>TIPY & TRIKY</span></h2>
@@ -105,26 +109,31 @@ export default async function Home() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px' }}>
           {nejnovejsiTipy?.map((tip) => (
             <Link href={`/tipy/${tip.slug}`} key={tip.id} className="tip-card" style={{ textDecoration: 'none', borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ position: 'relative', height: '180px' }}>
-                <Image src={tip.image_url} alt={tip.title} fill style={{ objectFit: 'cover' }} />
+              <div style={{ position: 'relative', height: '220px', width: '100%' }}>
+                {/* OPRAVA: Změna na standardní img pro test, pokud Image komponenta Next.js blbne s externími URL */}
+                <img 
+                  src={getSafeImage(tip.image_url)} 
+                  alt={tip.title} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                />
                 {tip.youtube_id && (
-                  <div style={{ position: 'absolute', top: '15px', right: '15px', background: '#ff0000', padding: '5px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <div style={{ position: 'absolute', top: '15px', right: '15px', background: '#ff0000', padding: '5px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', zIndex: 5 }}>
                     <Play size={12} fill="#fff" /> VIDEO
                   </div>
                 )}
               </div>
-              <div style={{ padding: '20px', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: '25px', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                 <span style={{ color: '#a855f7', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>{tip.category}</span>
-                <h3 style={{ fontSize: '18px', fontWeight: '900', margin: '10px 0', color: '#fff' }}>{tip.title}</h3>
-                <p style={{ color: '#9ca3af', fontSize: '14px', lineHeight: '1.5', marginBottom: '15px' }}>{tip.description}</p>
-                <div style={{ color: '#a855f7', fontWeight: 'bold', fontSize: '12px', marginTop: 'auto' }}>OTEVŘÍT NÁVOD →</div>
+                <h3 style={{ fontSize: '20px', fontWeight: '900', margin: '12px 0', color: '#fff' }}>{tip.title}</h3>
+                <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '20px' }}>{tip.description}</p>
+                <div style={{ color: '#a855f7', fontWeight: 'bold', fontSize: '13px', marginTop: 'auto' }}>OTEVŘÍT NÁVOD →</div>
               </div>
             </Link>
           ))}
         </div>
       </section>
 
-      {/* HLAVNÍ OBSAH - ČLÁNKY */}
+      {/* HLAVNÍ ČLÁNKY */}
       <main style={{ maxWidth: '1200px', margin: '80px auto', padding: '0 20px' }}>
         <h2 style={{ color: '#fff', textAlign: 'center', marginBottom: '40px', fontSize: '2.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '3px' }}>
           Nejnovější články & Videa
@@ -136,7 +145,7 @@ export default async function Home() {
               <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
                 <div className="game-card" style={{ backgroundColor: 'rgba(31, 40, 51, 0.95)', borderRadius: '12px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ position: 'relative', paddingTop: '56.25%', overflow: 'hidden' }}>
-                    <Image src={getThumbnail(post)} alt={post.title} fill style={{ objectFit: 'cover' }} />
+                    <img src={getThumbnail(post)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
                     <div style={{ position: 'absolute', top: '10px', right: '10px', background: badge.color, color: badge.textColor, padding: '5px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem' }}>{badge.text}</div>
                   </div>
                   <div style={{ padding: '25px', flex: 1, display: 'flex', flexDirection: 'column' }}>
