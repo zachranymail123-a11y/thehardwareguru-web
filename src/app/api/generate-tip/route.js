@@ -3,6 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import Parser from 'rss-parser';
 
+// TÍMTO VERCELU ZAKÁŽEME SPOUŠTĚT AUTOMAT PŘI BUILDU
+export const dynamic = 'force-dynamic';
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -11,17 +14,16 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const parser = new Parser();
 
 const RSS_ZDROJE = [
-  "https://www.tomshardware.com/feeds/tutorials", 
+  "https://www.tomshardware.com/feeds/all",       // Změněno na hlavní spolehlivější feed
   "https://www.pcworld.com/how-to/feed",          
-  "https://www.techradar.com/rss/how-to",         
+  "https://www.techradar.com/rss",                // Změněno na stabilnější základ
   "https://www.howtogeek.com/feed/",              
   "https://www.makeuseof.com/feed/category/diy/"  
 ];
 
-// ZMĚNĚNO NA GET: Teď to půjde spustit normálně z prohlížeče!
 export async function GET() {
   try {
-    // --- KROK 1: CHYTRÉ HLEDÁNÍ NOVÉHO ČLÁNKU ---
+    // --- KROK 1: CHYTRÉ HLEDÁNÍ NOVÉHO ČLÁNKU S OCHRANOU PROTI 404 ---
     const zamichaneZdroje = RSS_ZDROJE.sort(() => 0.5 - Math.random());
     
     let novyClanek = null;
@@ -29,31 +31,37 @@ export async function GET() {
     let checkSlug = "";
 
     for (const zdroj of zamichaneZdroje) {
-      const feed = await parser.parseURL(zdroj);
-      const clanek = feed.items[0]; 
-      
-      if (!clanek) continue;
+      try {
+        const feed = await parser.parseURL(zdroj);
+        const clanek = feed.items[0]; 
+        
+        if (!clanek) continue;
 
-      const slug = clanek.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+        const slug = clanek.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
-      const { data: existujiciTip } = await supabase
-        .from('tipy')
-        .select('id')
-        .eq('slug', slug)
-        .single();
+        const { data: existujiciTip } = await supabase
+          .from('tipy')
+          .select('id')
+          .eq('slug', slug)
+          .single();
 
-      if (!existujiciTip) {
-        novyClanek = clanek;
-        pouzityZdroj = zdroj;
-        checkSlug = slug;
-        break; 
+        if (!existujiciTip) {
+          novyClanek = clanek;
+          pouzityZdroj = zdroj;
+          checkSlug = slug;
+          break; 
+        }
+      } catch (rssError) {
+        // POKUD WEB HODÍ 404, SKRIPT UŽ NESPADNE, JEN HO IGNORUJE
+        console.warn(`Zdroj ${zdroj} neodpovídá, přeskakuji na další...`);
+        continue; 
       }
     }
 
     if (!novyClanek) {
       return NextResponse.json({ 
         success: true, 
-        message: "Všechny weby mají pouze staré články. Automat čeká na další novinky.",
+        message: "Všechny weby mají pouze staré články nebo neodpovídají. Automat čeká na další novinky.",
         preskoceno: true
       });
     }
@@ -98,7 +106,6 @@ export async function GET() {
         const ytData = await ytRes.json();
         
         if (ytData.error) {
-          console.warn("YouTube API Key selhal, zkouším další záložní klíč...");
           continue; 
         }
 
@@ -107,7 +114,7 @@ export async function GET() {
           break; 
         }
       } catch (err) {
-        console.error("Chyba při hledání na YouTube s aktuálním klíčem:", err);
+        console.error("Chyba YT:", err);
       }
     }
 
