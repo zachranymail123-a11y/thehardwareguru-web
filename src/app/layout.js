@@ -2,7 +2,8 @@ import './globals.css';
 import Script from 'next/script';
 import SestavyBubble from '../components/SestavyBubble'; 
 import Tracker from '../components/Tracker'; 
-import SocialTracker from '../components/SocialTracker'; // PŘIDÁNO
+import SocialTracker from '../components/SocialTracker';
+import SupportWidget from '../components/SupportWidget'; // PŘIDÁNO
 import { Analytics } from '@vercel/analytics/react';
 
 export const metadata = {
@@ -63,13 +64,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="cs">
       <body>
-        {/* --- GLOBÁLNÍ SLEDOVÁNÍ KLIKŮ (KICK, YT, DISCORD) --- */}
         <SocialTracker /> 
-
-        {/* --- LIVE TRACKING (SUPABASE) --- */}
         <Tracker />
-
-        {/* --- ONESIGNAL --- */}
+        
         <Script 
           src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" 
           strategy="afterInteractive" 
@@ -91,6 +88,9 @@ export default function RootLayout({ children }) {
         />
 
         <SestavyBubble />
+        
+        {/* --- GURU SUPPORT BUBBLE --- */}
+        <SupportWidget />
 
         {children}
 
