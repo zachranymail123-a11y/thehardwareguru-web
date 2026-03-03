@@ -79,5 +79,85 @@ export async function GET() {
 
     const vygenerovanyTipText = JSON.parse(aiTextResponse.choices[0].message.content);
 
-    // YouTube Vyhledávání (Opraveno na původní funkční URL)
-    let realne
+    // YouTube Vyhledávání
+    let realneYoutubeId = null;
+    try {
+      const query = encodeURIComponent(`${vygenerovanyTipText.title} hardware tutorial`);
+      const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=${query}&type=video&key=${process.env.YOUTUBE_API_KEY}`);
+      const ytData = await ytRes.json();
+      if (ytData.items?.length > 0) realneYoutubeId = ytData.items[0].id.videoId;
+    } catch (err) {}
+
+    // --- GENEROVÁNÍ A TRVALÉ ULOŽENÍ OBRÁZKU ---
+    let finalImageUrl = null;
+    
+    const aiImageResponse = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: `Professional high-tech hardware photography: ${vygenerovanyTipText.title}. Violet and cyan cinematic lighting, focus on detail, 8k.`,
+      n: 1, size: "1024x1024",
+    });
+    
+    const tempImageUrl = aiImageResponse.data[0].url;
+
+    // Stáhnutí z OpenAI a nahrání do Supabase
+    const imageRes = await fetch(tempImageUrl);
+    const buffer = Buffer.from(await imageRes.arrayBuffer());
+    const fileName = `tip-${Date.now()}.png`;
+
+    const { data: storageData, error: storageError } = await supabase.storage
+      .from('clanky-images')
+      .upload(fileName, buffer, { contentType: 'image/png' });
+
+    if (storageError) throw storageError;
+
+    const { data: publicUrlData } = supabase.storage
+      .from('clanky-images')
+      .getPublicUrl(fileName);
+
+    finalImageUrl = publicUrlData.publicUrl;
+
+    const finalniTip = {
+      title: vygenerovanyTipText.title,
+      description: vygenerovanyTipText.description,
+      content: vygenerovanyTipText.content,
+      category: vygenerovanyTipText.category,
+      image_url: finalImageUrl,
+      youtube_id: realneYoutubeId, 
+      slug: checkSlug 
+    };
+
+    // ULOŽENÍ DO DATABÁZE
+    const { data, error } = await supabase.from('tipy').insert([finalniTip]).select();
+    if (error) throw error;
+
+    // --- ODESLÁNÍ DO MAKE.COM ---
+    try {
+      const makeUrl = process.env.MAKE_WEBHOOK_URL; 
+      if (makeUrl) {
+        await fetch(makeUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: data[0].title,
+            description: data[0].description,
+            category: data[0].category,
+            image_url: data[0].image_url, 
+            article_url: `https://www.thehardwareguru.cz/tipy/${data[0].slug}`,
+            youtube_id: data[0].youtube_id
+          })
+        });
+      }
+    } catch (makeError) {
+      console.error("Chyba při odesílání do Make:", makeError);
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      tip: data[0],
+      make_url_nacteno: process.env.MAKE_WEBHOOK_URL ? "ANO" : "NE"
+    });
+
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
