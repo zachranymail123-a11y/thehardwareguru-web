@@ -14,7 +14,15 @@ const supabaseAdmin = createClient(
 
 export async function POST(req) {
   try {
-    const { title, slug } = await req.json();
+    // Teď přijímáme i pin z frontend generátoru
+    const { title, slug, pin } = await req.json();
+
+    // BEZPEČNOSTNÍ KONTROLA GURU PINU (Tahá se z Vercel variables)
+    const GURU_SECRET_PIN = process.env.GURU_PIN; 
+
+    if (pin !== GURU_SECRET_PIN) {
+      return NextResponse.json({ error: 'Špatný PIN, kámo. Sem nemáš přístup.' }, { status: 401 });
+    }
 
     if (!title) {
       return NextResponse.json({ error: 'Nezadal jsi název hry.' }, { status: 400 });
