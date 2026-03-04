@@ -3,7 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 import { Home, Lightbulb, Book, PenTool, Newspaper, Monitor, Settings, Wrench, Activity } from 'lucide-react';
 import Link from 'next/link';
 
-// JEDINÝ SPRÁVNÝ PŘÍKAZ PRO ZABITÍ CACHE (Bez pádu serveru)
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
@@ -13,16 +12,31 @@ export const metadata = {
 };
 
 export default async function TweakyPage() {
-  // Čisté a bezpečné připojení k Supabase pro čtení článků
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  let tweaky = [];
+  let errorMsg = null;
 
-  // TAHÁME REÁLNÁ DATA Z DATABÁZE
-  const { data: tweaky, error } = await supabase
-    .from('tweaky')
-    .select('*')
-    .order('created_at', { ascending: false });
+  try {
+    // Brutálně pojištěné načtení klíčů, ať už se jmenují jakkoliv
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error("Vercel nevidí Supabase klíče (NEXT_PUBLIC_SUPABASE_URL nebo ANON_KEY)!");
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data, error } = await supabase
+      .from('tweaky')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    tweaky = data || [];
+  } catch (e) {
+    // Pokud cokoliv selže, zachytíme to sem a nezhodíme celý server!
+    errorMsg = e.message;
+  }
 
   return (
     <div style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif', padding: '0 0 60px 0' }}>
@@ -50,13 +64,20 @@ export default async function TweakyPage() {
           <h1 style={{ fontSize: '54px', fontWeight: '900', fontStyle: 'italic', textTransform: 'uppercase', margin: '0 0 20px 0' }}>GURU <span style={{ color: '#eab308' }}>TWEAKY</span></h1>
         </div>
 
-        {error && <div style={{ textAlign: 'center', color: '#ef4444' }}>Chyba při načítání z databáze: {error.message}</div>}
+        {/* BEZPEČNÉ VYPSÁNÍ CHYBY MÍSTO PÁDU SERVERU */}
+        {errorMsg && (
+          <div style={{ textAlign: 'center', color: '#ef4444', padding: '20px', border: '1px solid #ef4444', borderRadius: '12px', marginBottom: '40px', background: 'rgba(239, 68, 68, 0.1)' }}>
+            <strong>Kritická chyba:</strong> {errorMsg}
+          </div>
+        )}
 
-        {(!tweaky || tweaky.length === 0) && !error && <div style={{ textAlign: 'center', color: '#9ca3af', padding: '40px' }}>Zatím tu nejsou žádné tweaky. Běž do generátoru a nějaký vyrob!</div>}
+        {!errorMsg && tweaky.length === 0 && (
+          <div style={{ textAlign: 'center', color: '#9ca3af', padding: '40px' }}>Zatím tu nejsou žádné tweaky. Běž do generátoru a nějaký vyrob!</div>
+        )}
 
         {/* KARTY REÁLNĚ GENEROVANÉ Z DATABÁZE */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '30px' }}>
-          {tweaky && tweaky.map((tweak) => (
+          {tweaky.map((tweak) => (
             <Link href={`/tweaky/${tweak.slug}`} key={tweak.id} style={{ textDecoration: 'none', color: 'inherit' }}>
               <div style={{ background: 'rgba(17, 19, 24, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(234, 179, 8, 0.2)', borderRadius: '28px', padding: '35px', height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: '0.2s' }} onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.borderColor = 'rgba(234, 179, 8, 0.5)'; }} onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(234, 179, 8, 0.2)'; }}>
                 
