@@ -44,7 +44,7 @@ export async function GET() {
   headers(); 
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-  // Zpět na limit 5 pro výběr, ale zpracujeme jen JEDEN
+  // Výběr úkolů zůstává, ale zpracování je teď totálně sériové
   const { data: tasks, error: fetchError } = await supabase
     .from('content_plan')
     .select('*')
@@ -58,8 +58,9 @@ export async function GET() {
   let results = [];
   let processedCount = 0;
 
+  // ZPĚT NA KLASICKÝ CYKLUS - ŽÁDNÝ PARALELNÍ MAP!
   for (const task of tasks) {
-    if (processedCount >= 1) break; // STRIKTNÍ LIMIT NA 1 ÚKOL PODLE TVÉHO KÓDU
+    if (processedCount >= 1) break; //
 
     try {
       const taskSlug = createSlug(task.title);
@@ -68,12 +69,12 @@ export async function GET() {
       if (existing && existing.length > 0) {
         await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
         results.push({ title: task.title, status: 'DUPLICITA' });
-        continue;
+        continue; // Duplicita se nepočítá jako zpracovaný úkol, jde se na další
       }
 
       await supabase.from('content_plan').update({ status: 'processing' }).eq('id', task.id);
 
-      // REŠERŠE
+      // 1. REŠERŠE (Sériově, aby byl klid)
       const serperRes = await fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
@@ -82,7 +83,7 @@ export async function GET() {
       const searchResults = await serperRes.json();
       const rawContext = JSON.stringify(searchResults.organic || []).substring(0, 6000);
 
-      // PARALELNÍ BĚH UVNITŘ JEDNOHO ÚKOLU (TEXT + OBRÁZEK NARÁZ)
+      // 2. VNITŘNÍ PARALELIZACE (Pouze pro ušetření času u JEDNOHO článku)
       const [completion, imageResponse] = await Promise.all([
         openai.chat.completions.create({
           model: "gpt-4o",
@@ -142,11 +143,12 @@ export async function GET() {
       await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
 
       results.push({ title: article.title, status: 'SUCCESS', slug: finalSlug });
-      processedCount++; 
+      processedCount++; // TADY SE TO UTNE
 
     } catch (err) {
       await supabase.from('content_plan').update({ status: 'error' }).eq('id', task.id);
       results.push({ title: task.title, status: 'ERROR', error: err.message });
+      processedCount++; // I při chybě končíme, ať se to nezacyklí
     }
   }
 
