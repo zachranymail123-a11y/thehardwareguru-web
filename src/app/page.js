@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { Lightbulb, ChevronRight, Play, Search, Newspaper, Book, PenTool, Home, Wrench, Activity } from 'lucide-react';
+import { Lightbulb, ChevronRight, Play, Search, Newspaper, Book, PenTool, Home, Wrench, Activity, Heart, ShieldCheck } from 'lucide-react';
 
 export default function HomePage() {
-  const [searchQuery, setSearchQuery] = useState('');
   const [data, setData] = useState({ 
     posts: [], 
     nejnovejsiTipy: [], 
@@ -21,17 +20,13 @@ export default function HomePage() {
 
   useEffect(() => {
     async function fetchData() {
-      // 1. Přičtení návštěvy (RPC volání)
       await supabase.rpc('increment_total_visits');
-      
-      // 2. Stažení dat pro všechny sekce s Guru limity
       const [p, s, t, tw] = await Promise.all([
         supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(6),
         supabase.from('stats').select('value').eq('name', 'total_visits').single(),
         supabase.from('tipy').select('*').order('created_at', { ascending: false }).limit(3),
         supabase.from('tweaky').select('*').order('created_at', { ascending: false }).limit(3)
       ]);
-
       setData({ 
         posts: p.data || [], 
         stats: s.data || { value: 0 }, 
@@ -48,38 +43,21 @@ export default function HomePage() {
     return url;
   };
 
-  const getThumbnail = (post) => {
-    if (post.image_url) return post.image_url;
-    if (post.video_id && post.video_id.length > 5) return `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`;
-    return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop';
-  };
-
-  const getBadgeInfo = (post) => {
-    if (post.video_id && post.video_id.length > 5) return { text: 'VIDEO / SHORT', color: '#66fcf1', textColor: '#0b0c10' };
-    const isGame = post.type === 'game' || post.title.toLowerCase().includes('recenze');
-    if (isGame) return { text: 'HERNÍ NOVINKA', color: '#ff0055', textColor: '#fff' };
-    return { text: 'HW NOVINKA', color: '#ff0000', textColor: '#fff' };
-  };
-
   return (
     <div style={globalStyles}>
       <style>{`
         .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); }
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
-        
         .tip-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
         .tip-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 0 30px rgba(168, 85, 247, 0.4); border-color: #a855f7; }
-        
         .tweak-card { transition: all 0.3s ease; border: 1px solid rgba(234, 179, 8, 0.3); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
         .tweak-card:hover { transform: translateY(-5px); box-shadow: 0 0 25px rgba(234, 179, 8, 0.3); border-color: #eab308; }
-
         .nav-link { margin: 0 10px; color: #fff; text-decoration: none; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 6px; transition: 0.3s; text-transform: uppercase; }
         .nav-link:hover { color: #a855f7; }
-        
-        .social-btn { padding: 6px 14px; border-radius: 8px; font-weight: 900; font-size: 12px; text-decoration: none; text-transform: uppercase; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
-        .social-btn:hover { transform: scale(1.05); }
-
-        .new-badge { position: absolute; top: 15px; left: 15px; background: #a855f7; color: #fff; padding: 4px 12px; border-radius: 8px; font-size: 11px; font-weight: 900; z-index: 10; letter-spacing: 1px; }
+        .social-btn-main { padding: 14px 28px; border-radius: 14px; font-weight: 900; font-size: 15px; text-decoration: none; text-transform: uppercase; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+        .social-btn-main:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 6px 25px rgba(0,0,0,0.5); }
+        .section-title-bg { background: rgba(0,0,0,0.7); padding: 18px 35px; borderRadius: '18px'; backdropFilter: 'blur(8px)'; border: '1px solid rgba(234, 179, 8, 0.2)'; display: 'inline-block'; }
+        .bio-glow { text-shadow: 0 0 15px rgba(102, 252, 241, 0.5); }
       `}</style>
 
       {/* --- HLAVIČKA --- */}
@@ -91,31 +69,42 @@ export default function HomePage() {
           <Link href="/tipy" className="nav-link"><Lightbulb size={16}/> TIPY</Link>
           <Link href="/tweaky" className="nav-link" style={{color: '#eab308'}}><Wrench size={16}/> GURU TWEAKY</Link>
           <Link href="/slovnik" className="nav-link"><Book size={16}/> SLOVNÍK</Link>
-          
           <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)', margin: '0 10px' }}></div>
-          
-          <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn" style={{ background: '#53fc18', color: '#000' }}>KICK</a>
-          <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-btn" style={{ background: '#ff0000', color: '#fff' }}>YOUTUBE</a>
-          <a href="https://discord.gg/n7xThr8" target="_blank" className="social-btn" style={{ background: '#5865F2', color: '#fff' }}>DISCORD</a>
+          <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn-main" style={{ background: '#53fc18', color: '#000', padding: '6px 14px', fontSize: '12px' }}>KICK</a>
+          <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-btn-main" style={{ background: '#ff0000', color: '#fff', padding: '6px 14px', fontSize: '12px' }}>YOUTUBE</a>
+          <Link href="/support" className="nav-link" style={{color: '#eab308'}}><Heart size={16}/> PODPORA</Link>
         </div>
       </nav>
 
-      {/* --- BIO --- */}
+      {/* --- NOVÉ CHYTLAVÉ BIO --- */}
       <header style={headerStyles}>
         <div style={{ flex: '1', minWidth: '300px' }}>
-            <h1 style={{ color: '#66fcf1', fontSize: '2.5rem', marginBottom: '10px', textTransform: 'uppercase', fontWeight: '900' }}>The Hardware Guru</h1>
-            <p style={{ fontSize: '1.1rem', lineHeight: '1.6', color: '#e0e0e0' }}>
-              Čau pařani! Jsem 45letý HW servisák s 20letou praxí. Tady najdeš vyladěné sestavy, technický slovník a AI návody, co tvýmu PC zachrání krk.
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', marginBottom: '15px' }}>
+              <ShieldCheck size={24} />
+              <span style={{ fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase', fontSize: '13px' }}>Vaše technologická základna</span>
+            </div>
+            <h1 className="bio-glow" style={{ color: '#fff', fontSize: '3rem', marginBottom: '20px', textTransform: 'uppercase', fontWeight: '900', lineHeight: '1.1' }}>
+              Budujeme <span style={{ color: '#66fcf1' }}>Ideální Místo</span> <br/> pro Hráče a Geeky
+            </h1>
+            <p style={{ fontSize: '1.2rem', lineHeight: '1.7', color: '#e0e0e0', marginBottom: '35px', maxWidth: '750px' }}>
+              Čau, jsem GURU. S 20 lety praxe v servisu hardware vím, kde každá mašina tlačí. Moje mise je jasná: <strong>vymýtit lagy, zkrotit FPS a vytvořit web, kde se každý geek cítí jako doma.</strong> Tady nejde jen o AI návody, jde o čistou vášeň pro železo a komunitu, co drží spolu.
             </p>
+            <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+              <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn-main" style={{ background: '#53fc18', color: '#000' }}>SLEDOVAT LIVE</a>
+              <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-btn-main" style={{ background: '#ff0000', color: '#fff' }}>GURU YOUTUBE</a>
+              <Link href="/support" className="social-btn-main" style={{ background: '#eab308', color: '#000' }}>PODPOŘIT KOMUNITU</Link>
+            </div>
         </div>
         <div style={avatarStyles}>HG</div>
       </header>
 
-      {/* --- SEKCE 1: GURU TIPY & TRIKY (3 kousky) --- */}
+      {/* --- SEKCE 1: GURU TIPY & TRIKY --- */}
       <section style={sectionStyles}>
-        <div style={sectionHeaderStyles}>
-          <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0 }}>GURU <span style={{ color: '#a855f7' }}>TIPY & TRIKY</span></h2>
-          <Link href="/tipy" style={{ color: '#a855f7', fontWeight: 'bold', textDecoration: 'none' }}>VŠECHNY TIPY →</Link>
+        <div className="section-title-bg" style={{ marginBottom: '30px', borderRadius: '15px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
+            <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0 }}>GURU <span style={{ color: '#a855f7' }}>TIPY & TRIKY</span></h2>
+            <Link href="/tipy" style={{ color: '#a855f7', fontWeight: 'bold', textDecoration: 'none' }}>KOMPLETNÍ ARCHIV →</Link>
+          </div>
         </div>
         <div style={gridStyles(3)}>
           {data.nejnovejsiTipy.map((tip, index) => (
@@ -134,11 +123,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* --- SEKCE 2: GURU TWEAKY (3 kousky) --- */}
+      {/* --- SEKCE 2: GURU TWEAKY --- */}
       <section style={{ ...sectionStyles, marginTop: '40px' }}>
-        <div style={sectionHeaderStyles}>
-          <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0 }}>POSLEDNÍ <span style={{ color: '#eab308' }}>GURU TWEAKY</span></h2>
-          <Link href="/tweaky" style={{ color: '#eab308', fontWeight: 'bold', textDecoration: 'none' }}>VŠECHNY TWEAKY →</Link>
+        <div className="section-title-bg" style={{ marginBottom: '30px', borderRadius: '15px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
+            <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0 }}>POSLEDNÍ <span style={{ color: '#eab308' }}>GURU TWEAKY</span></h2>
+            <Link href="/tweaky" style={{ color: '#eab308', fontWeight: 'bold', textDecoration: 'none' }}>VŠECHNY TWEAKY →</Link>
+          </div>
         </div>
         <div style={gridStyles(3)}>
           {data.nejnovejsiTweaky.map((tweak) => (
@@ -152,18 +143,20 @@ export default function HomePage() {
                 </div>
                 <h3 style={cardTitleStyle}>{tweak.title}</h3>
                 <p style={cardDescStyle}>{tweak.description}</p>
-                <div style={{ color: '#eab308', fontWeight: 'bold', fontSize: '13px', marginTop: '15px' }}>OTEVŘÍT NÁVOD →</div>
+                <div style={{ color: '#eab308', fontWeight: 'bold', fontSize: '13px', marginTop: '15px' }}>OTEVŘÍT GURU FIX →</div>
               </div>
             </Link>
           ))}
         </div>
       </section>
 
-      {/* --- SEKCE 3: ČLÁNKY & VIDEA (6 kousků) --- */}
+      {/* --- SEKCE 3: ČLÁNKY & VIDEA --- */}
       <main style={{ ...sectionStyles, marginTop: '80px' }}>
-        <h2 style={{ color: '#fff', textAlign: 'center', marginBottom: '40px', fontSize: '2.2rem', fontWeight: '900', textTransform: 'uppercase' }}>
-          Nejnovější články & Videa
-        </h2>
+        <div className="section-title-bg" style={{ margin: '0 auto 40px', display: 'block', textAlign: 'center', maxWidth: 'fit-content', borderRadius: '15px' }}>
+          <h2 style={{ color: '#fff', fontSize: '2.2rem', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>
+            Nejnovější články & Videa
+          </h2>
+        </div>
         <div style={gridStyles(3)}>
           {data.posts.map((post) => {
             const badge = getBadgeInfo(post);
@@ -171,14 +164,14 @@ export default function HomePage() {
               <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
                 <div className="game-card" style={{ borderRadius: '12px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ position: 'relative', paddingTop: '56.25%' }}>
-                    <img src={getThumbnail(post)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                    <img src={post.image_url || `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
                     <div style={{ position: 'absolute', top: '10px', right: '10px', background: badge.color, color: badge.textColor, padding: '5px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem' }}>{badge.text}</div>
                   </div>
                   <div style={{ padding: '25px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <h3 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '1.2rem', fontWeight: 'bold' }}>{post.title}</h3>
                     <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: '#45a29e', fontSize: '0.85rem' }}>{post.created_at ? new Date(post.created_at).toLocaleDateString('cs-CZ') : ''}</span>
-                      <span style={{ color: '#66fcf1', fontWeight: 'bold' }}>ČÍST →</span>
+                      <span style={{ color: '#45a29e', fontSize: '0.85rem' }}>{new Date(post.created_at).toLocaleDateString('cs-CZ')}</span>
+                      <span style={{ color: '#66fcf1', fontWeight: 'bold' }}>ČÍST ČLÁNEK →</span>
                     </div>
                   </div>
                 </div>
@@ -186,33 +179,27 @@ export default function HomePage() {
             );
           })}
         </div>
-        <div style={{ textAlign: 'center', marginTop: '60px' }}>
-          <Link href="/clanky" className="archive-btn">ARCHIV ČLÁNKŮ</Link>
-        </div>
       </main>
 
-      {/* --- FOOTER --- */}
       <footer style={footerStyles}>
           <div style={{ marginBottom: '20px', color: '#a855f7', fontWeight: 'bold' }}>
-            WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #a855f7' }}>{data.stats.value}</span> GURU FANOUŠKŮ 🦾
+            KOMUNITNÍ WEB NAVŠTÍVILO JIŽ <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #a855f7' }}>{data.stats.value}</span> FANOUŠKŮ 🦾
           </div>
-          <p style={{ color: '#9ca3af', opacity: 0.7, fontSize: '0.8rem' }}>© {new Date().getFullYear()} The Hardware Guru. Powered by AI & Caffeine.</p>
+          <p style={{ color: '#9ca3af', opacity: 0.7, fontSize: '0.8rem' }}>© {new Date().getFullYear()} The Hardware Guru. Pro hráče, s láskou k železu.</p>
       </footer>
     </div>
   );
 }
 
-// STYLY (SPOJENÉ PRO PŘEHLEDNOST)
 const globalStyles = { minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#fff', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed' };
-const navStyles = { padding: '20px 40px', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(168, 85, 247, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 1000, flexWrap: 'wrap', gap: '20px' };
-const headerStyles = { maxWidth: '1200px', margin: '40px auto', padding: '40px', background: 'rgba(31, 40, 51, 0.95)', borderRadius: '15px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' };
-const avatarStyles = { width: '120px', height: '120px', background: '#0b0c10', borderRadius: '50%', border: '4px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', color: '#45a29e', fontSize: '2.5rem', fontWeight: 'bold' };
+const navStyles = { padding: '20px 40px', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(168, 85, 247, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 1000, flexWrap: 'wrap', gap: '20px' };
+const headerStyles = { maxWidth: '1200px', margin: '40px auto', padding: '60px 40px', background: 'rgba(31, 40, 51, 0.95)', borderRadius: '25px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '50px', flexWrap: 'wrap', boxShadow: '0 15px 45px rgba(0,0,0,0.6)' };
+const avatarStyles = { width: '160px', height: '160px', background: '#0b0c10', borderRadius: '50%', border: '5px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', color: '#45a29e', fontSize: '3.5rem', fontWeight: 'bold', boxShadow: '0 0 30px rgba(102, 252, 241, 0.4)' };
 const sectionStyles = { maxWidth: '1200px', margin: '60px auto', padding: '0 20px' };
-const sectionHeaderStyles = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' };
-const gridStyles = (cols) => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(320px, 1fr))`, gap: '25px' });
+const gridStyles = (cols) => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(320px, 1fr))`, gap: '30px' });
 const cardBaseStyle = { textDecoration: 'none', borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column' };
-const cardImageWrapper = { position: 'relative', height: '200px', width: '100%', background: '#0b0c10' };
+const cardImageWrapper = { position: 'relative', height: '220px', width: '100%', background: '#0b0c10' };
 const imageStyle = { width: '100%', height: '100%', objectFit: 'cover' };
-const cardTitleStyle = { fontSize: '19px', fontWeight: '900', margin: '12px 0', color: '#fff', lineHeight: '1.2' };
-const cardDescStyle = { color: '#9ca3af', fontSize: '14px', lineHeight: '1.5', marginBottom: '10px' };
+const cardTitleStyle = { fontSize: '20px', fontWeight: '900', margin: '12px 0', color: '#fff', lineHeight: '1.2' };
+const cardDescStyle = { color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '10px' };
 const footerStyles = { background: 'rgba(31, 40, 51, 0.95)', padding: '60px 20px', textAlign: 'center', borderTop: '1px solid rgba(168, 85, 247, 0.2)' };
