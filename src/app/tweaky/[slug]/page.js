@@ -12,10 +12,13 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // 1. GENERUJE META TAGY PRO GOOGLE SEO A SOCIÁLNÍ SÍTĚ
 export async function generateMetadata({ params }) {
+  // OPRAVA: V novém Next.js se musí params awaitnout!
+  const resolvedParams = await params; 
+  
   const { data: tweak } = await supabase
     .from('tweaky')
     .select('*')
-    .eq('slug', params.slug)
+    .eq('slug', resolvedParams.slug)
     .single();
 
   if (!tweak) {
@@ -37,11 +40,14 @@ export async function generateMetadata({ params }) {
 
 // 2. HLAVNÍ KOMPONENTA STRÁNKY ČLÁNKU
 export default async function TweakDetail({ params }) {
+  // OPRAVA: V novém Next.js se musí params awaitnout!
+  const resolvedParams = await params; 
+
   // Načtení dat z databáze podle URL slugu
   const { data: tweak, error } = await supabase
     .from('tweaky')
     .select('*')
-    .eq('slug', params.slug)
+    .eq('slug', resolvedParams.slug)
     .single();
 
   if (error || !tweak) {
@@ -49,7 +55,7 @@ export default async function TweakDetail({ params }) {
       <div style={{ backgroundColor: '#0a0b0d', minHeight: '100vh', color: '#fff', padding: '100px', textAlign: 'center', fontFamily: 'sans-serif' }}>
         <h1 style={{ color: '#ff0000', fontSize: '32px', marginBottom: '20px' }}>Chyba: Tweak nenalezen</h1>
         <p>Tenhle návod buď ještě neexistuje, nebo ho šotek smazal.</p>
-        <Link href="/tweaky" style={{ color: '#eab308', marginTop: '20px', display: 'inline-block' }}>Zpět na Guru Tweaky</Link>
+        <Link href="/tweaky" style={{ color: '#eab308', marginTop: '20px', display: 'inline-block', fontWeight: 'bold' }}>Zpět na Guru Tweaky</Link>
       </div>
     );
   }
