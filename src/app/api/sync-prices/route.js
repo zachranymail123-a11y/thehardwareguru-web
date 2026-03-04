@@ -56,10 +56,22 @@ export async function GET(req) {
     const items = await apifyRes.json();
     const results = [];
 
-    // 6. Propíšeme to do DB
+    // 6. Propíšeme to do DB (OPRAVENÉ CHYTRÉ PÁROVÁNÍ)
     for (const comp of heurekaComps) {
-      // Spárujeme výsledek podle URL
-      const itemData = items.find(i => i.url === comp.product_url || i.productUrl === comp.product_url);
+      
+      // Funkce, která z odkazu vycucne jen to nejdůležitější (např. "amd-ryzen-7-9800x3d-100-100001084wof")
+      const getSlug = (url) => {
+        if (!url) return "";
+        const parts = url.split('?')[0].split('/').filter(Boolean);
+        return parts[parts.length - 1]; 
+      };
+
+      const compSlug = getSlug(comp.product_url);
+      
+      // Spárujeme to bez ohledu na to, jestli tam Heureka dala lomítko nebo ne
+      const itemData = items.find(i => 
+        getSlug(i.url) === compSlug || getSlug(i.productUrl) === compSlug
+      );
       
       let price = null;
       if (itemData) {
