@@ -1,46 +1,47 @@
-import React from 'react';
+"use client";
+import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Home, Lightbulb, Book, PenTool, Newspaper, Monitor, Settings, Wrench, Activity } from 'lucide-react';
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
+export default function TweakyPage() {
+  const [tweaky, setTweaky] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState(null);
 
-export const metadata = {
-  title: 'GURU TWEAKY | The Hardware Guru',
-  description: 'Ždímáme z tvýho hardwaru maximum. Návody, fixy na nedodělané porty, optimalizace FPS a úpravy configů pro nejnovější pecky.',
-  alternates: { types: { 'application/rss+xml': 'https://www.thehardwareguru.cz/rss.xml' } },
-};
+  useEffect(() => {
+    async function loadTweaks() {
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export default async function TweakyPage() {
-  let tweaky = [];
-  let errorMsg = null;
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error("Vercel nevidí tvoje NEXT_PUBLIC Supabase klíče!");
+        }
 
-  try {
-    // Brutálně pojištěné načtení klíčů, ať už se jmenují jakkoliv
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const supabase = createClient(supabaseUrl, supabaseKey);
 
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error("Vercel nevidí Supabase klíče (NEXT_PUBLIC_SUPABASE_URL nebo ANON_KEY)!");
+        const { data, error } = await supabase
+          .from('tweaky')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setTweaky(data || []);
+      } catch (e) {
+        setErrorMsg(e.message);
+      } finally {
+        setLoading(false);
+      }
     }
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data, error } = await supabase
-      .from('tweaky')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    tweaky = data || [];
-  } catch (e) {
-    // Pokud cokoliv selže, zachytíme to sem a nezhodíme celý server!
-    errorMsg = e.message;
-  }
+    
+    loadTweaks();
+  }, []);
 
   return (
     <div style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif', padding: '0 0 60px 0' }}>
       
+      {/* HLAVNÍ NAVIGACE */}
       <nav style={{ display: 'flex', justifyContent: 'center', gap: '25px', padding: '20px', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(234, 179, 8, 0.2)', position: 'sticky', top: 0, zIndex: 100, flexWrap: 'wrap' }}>
         <Link href="/" style={navItemStyle}><Home size={18} /> HOMEPAGE</Link>
         <Link href="/clanky" style={navItemStyle}><Newspaper size={18} /> ČLÁNKY</Link>
@@ -64,39 +65,47 @@ export default async function TweakyPage() {
           <h1 style={{ fontSize: '54px', fontWeight: '900', fontStyle: 'italic', textTransform: 'uppercase', margin: '0 0 20px 0' }}>GURU <span style={{ color: '#eab308' }}>TWEAKY</span></h1>
         </div>
 
-        {/* BEZPEČNÉ VYPSÁNÍ CHYBY MÍSTO PÁDU SERVERU */}
-        {errorMsg && (
+        {/* BEZPEČNÉ VYPSÁNÍ CHYBY / NAČÍTÁNÍ */}
+        {loading && (
+          <div style={{ textAlign: 'center', color: '#eab308', padding: '40px', fontSize: '18px', fontWeight: 'bold' }}>
+            Načítám Tweaky z databáze...
+          </div>
+        )}
+
+        {errorMsg && !loading && (
           <div style={{ textAlign: 'center', color: '#ef4444', padding: '20px', border: '1px solid #ef4444', borderRadius: '12px', marginBottom: '40px', background: 'rgba(239, 68, 68, 0.1)' }}>
             <strong>Kritická chyba:</strong> {errorMsg}
           </div>
         )}
 
-        {!errorMsg && tweaky.length === 0 && (
+        {!errorMsg && !loading && tweaky.length === 0 && (
           <div style={{ textAlign: 'center', color: '#9ca3af', padding: '40px' }}>Zatím tu nejsou žádné tweaky. Běž do generátoru a nějaký vyrob!</div>
         )}
 
         {/* KARTY REÁLNĚ GENEROVANÉ Z DATABÁZE */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '30px' }}>
-          {tweaky.map((tweak) => (
-            <Link href={`/tweaky/${tweak.slug}`} key={tweak.id} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div style={{ background: 'rgba(17, 19, 24, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(234, 179, 8, 0.2)', borderRadius: '28px', padding: '35px', height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: '0.2s' }} onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.borderColor = 'rgba(234, 179, 8, 0.5)'; }} onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(234, 179, 8, 0.2)'; }}>
-                
-                {tweak.image_url && tweak.image_url !== 'EMPTY' && (
-                  <div style={{ width: '100%', height: '180px', borderRadius: '16px', overflow: 'hidden', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <img src={tweak.image_url} alt={tweak.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        {!loading && tweaky.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '30px' }}>
+            {tweaky.map((tweak) => (
+              <Link href={`/tweaky/${tweak.slug}`} key={tweak.id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div style={{ background: 'rgba(17, 19, 24, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(234, 179, 8, 0.2)', borderRadius: '28px', padding: '35px', height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: '0.2s' }} onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.borderColor = 'rgba(234, 179, 8, 0.5)'; }} onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(234, 179, 8, 0.2)'; }}>
+                  
+                  {tweak.image_url && tweak.image_url !== 'EMPTY' && (
+                    <div style={{ width: '100%', height: '180px', borderRadius: '16px', overflow: 'hidden', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <img src={tweak.image_url} alt={tweak.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  )}
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '15px' }}>
+                    <Settings size={14} /> {tweak.category}
                   </div>
-                )}
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '15px' }}>
-                  <Settings size={14} /> {tweak.category}
+                  <h2 style={{ fontSize: '26px', fontWeight: '900', marginBottom: '15px', lineHeight: '1.2' }}>{tweak.title}</h2>
+                  <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', flexGrow: 1, marginBottom: '25px' }}>{tweak.description}</p>
+                  <div style={{ color: '#eab308', fontWeight: 'bold', fontSize: '14px', textTransform: 'uppercase' }}>Otevřít návod →</div>
                 </div>
-                <h2 style={{ fontSize: '26px', fontWeight: '900', marginBottom: '15px', lineHeight: '1.2' }}>{tweak.title}</h2>
-                <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', flexGrow: 1, marginBottom: '25px' }}>{tweak.description}</p>
-                <div style={{ color: '#eab308', fontWeight: 'bold', fontSize: '14px', textTransform: 'uppercase' }}>Otevřít návod →</div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+        )}
 
       </div>
     </div>
