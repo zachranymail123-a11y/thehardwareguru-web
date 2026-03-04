@@ -17,7 +17,6 @@ export async function GET(req) {
     const apiKey = process.env.SCRAPER_API_KEY;
     if (!apiKey) throw new Error("Chybí SCRAPER_API_KEY!");
 
-    // Načteme komponenty
     const { data: components, error: fetchError } = await supabase
       .from('components')
       .select('name, product_url');
@@ -34,7 +33,7 @@ export async function GET(req) {
       
       let price = null;
 
-      // JSON-LD Parser - hledáme validní cenu produktu
+      // METODA A: JSON-LD Parser
       const jsonMatches = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
       for (const match of jsonMatches) {
         try {
@@ -43,8 +42,6 @@ export async function GET(req) {
           for (const item of items) {
             if (item["@type"] === "Product" && item.offers) {
               const foundPrice = extractNumber(item.offers.price || item.offers.lowPrice);
-              
-              // OCHRANA: Nebereme nic pod 1000 Kč (chyby Alzy v doplňcích)
               if (foundPrice && foundPrice > 1000) {
                 price = foundPrice;
                 break;
@@ -55,8 +52,18 @@ export async function GET(req) {
         if (price) break;
       }
 
+      // METODA B: Agresivní Regex (pokud JSON-LD selhalo)
+      if (!price) {
+        // Hledáme vzor "price": 12345 nebo "amount": 12345 v celém HTML
+        const regexPrice = html.match(/"price"\s*:\s*(\d+)/i) || html.match(/"amount"\s*:\s*(\d+)/i);
+        if (regexPrice) {
+          const foundPrice = parseInt(regexPrice[1]);
+          if (foundPrice > 1000) price = foundPrice;
+        }
+      }
+
       if (price) {
-        // UPDATE PODLE product_url - tohle musí projít
+        // ZÁPIS DO DB PODLE product_url
         const { error: updateError } = await supabase
           .from('components')
           .update({ 
@@ -66,15 +73,14 @@ export async function GET(req) {
           .eq('product_url', comp.product_url);
 
         if (updateError) {
-          results.push({ name: comp.name, status: 'DB Update Failed', error: updateError.message });
+          results.push({ name: comp.name, status: 'DB ERROR', error: updateError.message });
         } else {
           results.push({ name: comp.name, status: 'ZAPSÁNO DO DB', price: price });
         }
       } else {
-        results.push({ name: comp.name, status: 'Cena nenalezena nebo příliš nízká' });
+        results.push({ name: comp.name, status: 'Cena nenalezena ani regexem' });
       }
 
-      // 1 sekunda pauza mezi položkami pro stabilitu
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
