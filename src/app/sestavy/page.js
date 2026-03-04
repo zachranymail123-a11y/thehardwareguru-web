@@ -1,167 +1,84 @@
-'use client';
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Cpu, Wallet, Rocket, Home, Lightbulb, PenTool, MessageSquare, MonitorPlay, Youtube } from 'lucide-react';
+import React from 'react';
+import { Youtube, Disc as Discord, Tv } from 'lucide-react';
 
-export default function GuruBuilderPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    budget: '30000',
-    usage: 'Gaming', // Natvrdo pro herní mašiny
-    preference: 'Červeno-Zelený' // Výchozí tým
-  });
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await fetch('/api/guru-builder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      const data = await res.json();
-      if (data.success) {
-        router.push(data.url);
-      } else {
-        alert(data.error || "Došlo k chybě při hledání cen.");
-        setLoading(false);
-      }
-    } catch (err) {
-      alert("Guru má teď moc práce s ověřováním cen na Alze, zkus to za vteřinu.");
-      setLoading(false);
-    }
-  };
-
+export default function SestavyPage() {
   return (
-    <div style={pageStyle}>
-      <nav style={navStyle}>
-        <a href="/" style={navItemStyle}><Home size={18} /> HOMEPAGE</a>
-        <a href="/tipy" style={navItemStyle}><Lightbulb size={18} /> TIPY</a>
-        <a href="/sestavy" style={{...navItemStyle, color: '#a855f7'}}><Cpu size={18} /> GURU BUILDER</a>
-        <a href="/rady" style={navItemStyle}><PenTool size={18} /> RADY</a>
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-yellow-400 selection:text-black">
+      {/* Hlavní navigace v Guru stylu */}
+      <nav className="border-b border-yellow-400/20 bg-black/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="text-2xl font-black tracking-tighter text-yellow-400">THE HARDWARE GURU</div>
+          <div className="flex gap-6">
+            <a href="https://kick.com/thehardwareguru" target="_blank" className="hover:text-yellow-400 transition-all hover:scale-110"><Tv size={22} /></a>
+            <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" className="hover:text-yellow-400 transition-all hover:scale-110"><Youtube size={22} /></a>
+            <a href="https://discord.com/invite/n7xThr8" target="_blank" className="hover:text-yellow-400 transition-all hover:scale-110"><Discord size={22} /></a>
+          </div>
+        </div>
       </nav>
 
-      <main style={containerStyle}>
-        <div style={headerStyle}>
-          <Cpu size={60} color="#a855f7" />
-          <h1 style={titleStyle}>GURU PC BUILDER</h1>
-          <p style={subtitleStyle}>Aktuální herní mašiny. Ceny ověřeny na Alza.cz, Smarty.cz a Mironet.cz.</p>
+      <main className="max-w-4xl mx-auto px-4 py-20 text-center">
+        {/* Hlavní Headline */}
+        <h1 className="text-6xl md:text-8xl font-black mb-10 tracking-tighter italic uppercase leading-none">
+          Herní <span className="text-yellow-400 text-glow">Sestavy</span>
+        </h1>
+
+        {/* Guru Rant na ceny */}
+        <div className="space-y-8 text-xl md:text-2xl text-gray-300 leading-relaxed font-medium italic">
+          <p>
+            Hardware trh se totálně <span className="text-white font-black underline decoration-yellow-400 decoration-4">utrhl ze řetězu</span>. 
+            Ceny komponent se mění doslova každou hodinu a statické tabulky jsou v tuhle chvíli úplně k hovnu.
+          </p>
+          <p>
+            Nechci vám tu věšet bulíky na nos neaktuálními cenami. Chci, abyste za svý prachy dostali <span className="text-yellow-400 font-bold uppercase">maximum výkonu</span>, který je zrovna tenhle den dostupný.
+          </p>
         </div>
 
-        <div style={glassCardStyle}>
-          <form onSubmit={handleSubmit} style={formStyle}>
-            {/* ROZPOČET */}
-            <div style={inputGroupStyle}>
-              <label style={labelStyle}><Wallet size={18} color="#a855f7" /> TVŮJ ROZPOČET (Kč)</label>
-              <input 
-                type="number" 
-                value={formData.budget}
-                onChange={(e) => setFormData({...formData, budget: e.target.value})}
-                style={inputStyle}
-                placeholder="Např. 35000"
-                required
-              />
-            </div>
+        {/* CALL TO ACTION BOX */}
+        <div className="mt-20 bg-yellow-400 p-10 md:p-16 rounded-none transform -rotate-1 shadow-[15px_15px_0px_0px_rgba(255,255,255,0.05)] border-4 border-white">
+          <h2 className="text-black text-4xl md:text-5xl font-black uppercase mb-6 italic leading-none">
+            Chceš mašinu bez kompromisů?
+          </h2>
+          <p className="text-black text-xl md:text-2xl font-bold mb-10 max-w-2xl mx-auto">
+            Individuální návrhy sestav dělám osobně na mém Discordu. 
+            Podmínkou pro tuhle službu je aktivní <span className="underline italic">Subscribe na mém Kicku</span>.
+          </p>
 
-            {/* TÝM GURU - TVRDÉ VOLBY */}
-            <div style={inputGroupStyle}>
-              <label style={labelStyle}><Rocket size={18} color="#a855f7" /> TÝM GURU</label>
-              <select 
-                value={formData.preference}
-                onChange={(e) => setFormData({...formData, preference: e.target.value})}
-                style={inputStyle}
-              >
-                <option value="Červeno-Zelený">Červeno-Zelený (AMD CPU + NVIDIA GPU)</option>
-                <option value="Červený">Červený (AMD CPU + AMD GPU)</option>
-              </select>
-            </div>
-
-            <button 
-              type="submit" 
-              disabled={loading}
-              style={loading ? btnDisabledStyle : btnStyle}
+          <div className="flex flex-col md:flex-row gap-6 justify-center">
+            <a 
+              href="https://kick.com/thehardwareguru" 
+              target="_blank"
+              className="bg-black text-white px-10 py-5 font-black uppercase tracking-widest text-xl hover:bg-white hover:text-black transition-all flex items-center justify-center gap-3 shadow-xl"
             >
-              {loading ? 'GURU PROVĚŘUJE SKLADY E-SHOPŮ...' : 'SESTAVIT HERNÍ STROJ'}
-            </button>
-          </form>
-        </div>
-
-        <p style={footerNoteStyle}>
-          * Guru builder kontroluje reálnou dostupnost komponent na českém trhu. <br/>
-          Striktně AM5 (B850/X870) | Pouze RTX 4000/5000 nebo Radeon 9070/XT.
-        </p>
-
-        {/* GURU KOMUNITA */}
-        <div style={communityContainerStyle}>
-          <h3 style={communityTitleStyle}>JSI V TOM S NÁMI? PŘIPOJ SE!</h3>
-          <div style={socialsContainerStyle}>
-            <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#5865F2')}>
-              <MessageSquare size={16} /> DISCORD
+              <Tv size={28} /> SUBSCRIBE NA KICKU
             </a>
-            <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#53fc18', '#000')}>
-              <MonitorPlay size={16} /> KICK
-            </a>
-            <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#FF0000')}>
-              <Youtube size={16} /> YOUTUBE
+            <a 
+              href="https://discord.com/invite/n7xThr8" 
+              target="_blank"
+              className="border-4 border-black text-black px-10 py-5 font-black uppercase tracking-widest text-xl hover:bg-black hover:text-yellow-400 transition-all flex items-center justify-center gap-3"
+            >
+              <Discord size={28} /> DOVAL NA DISCORD
             </a>
           </div>
         </div>
+
+        {/* Disclaimer */}
+        <p className="mt-16 text-gray-600 font-bold uppercase tracking-widest text-sm opacity-50">
+          Podporou na Kicku udržuješ Guru projekt v chodu. Respekt.
+        </p>
       </main>
+
+      {/* Footer */}
+      <footer className="py-12 border-t border-yellow-400/10 text-center">
+        <div className="text-gray-500 text-xs font-black uppercase tracking-[0.3em]">
+          &copy; 2026 THE HARDWARE GURU | NO BULLSHIT PC BUILDING
+        </div>
+      </footer>
+
+      <style jsx>{`
+        .text-glow {
+          text-shadow: 0 0 20px rgba(250, 204, 21, 0.4);
+        }
+      `}</style>
     </div>
   );
 }
-
-// --- STYLY ---
-const pageStyle = {
-  backgroundColor: '#0a0b0d', minHeight: '100vh', color: '#fff',
-  backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed'
-};
-
-const navStyle = {
-  display: 'flex', justifyContent: 'center', gap: '25px', padding: '20px',
-  background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(168, 85, 247, 0.2)',
-  position: 'sticky', top: 0, zIndex: 100
-};
-
-const navItemStyle = {
-  color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px'
-};
-
-const containerStyle = { maxWidth: '600px', margin: '0 auto', padding: '60px 20px 100px' };
-const headerStyle = { textAlign: 'center', marginBottom: '40px' };
-const titleStyle = { fontSize: '42px', fontWeight: '900', marginTop: '20px', letterSpacing: '2px' };
-const subtitleStyle = { color: '#9ca3af', marginTop: '10px', fontSize: '16px' };
-
-const glassCardStyle = {
-  background: 'rgba(17, 19, 24, 0.8)', padding: '40px', borderRadius: '30px',
-  border: '1px solid rgba(168, 85, 247, 0.3)', backdropFilter: 'blur(10px)', boxShadow: '0 0 40px rgba(168, 85, 247, 0.1)'
-};
-
-const formStyle = { display: 'flex', flexDirection: 'column', gap: '25px' };
-const inputGroupStyle = { display: 'flex', flexDirection: 'column', gap: '10px' };
-const labelStyle = { fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '8px', color: '#a855f7' };
-
-const inputStyle = {
-  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-  padding: '15px', borderRadius: '12px', color: '#fff', fontSize: '16px', outline: 'none'
-};
-
-const btnStyle = {
-  background: '#a855f7', color: '#fff', border: 'none', padding: '20px', borderRadius: '15px',
-  fontWeight: '900', fontSize: '18px', cursor: 'pointer', transition: '0.3s', marginTop: '10px',
-  boxShadow: '0 10px 20px rgba(168, 85, 247, 0.3)'
-};
-
-const btnDisabledStyle = { ...btnStyle, background: '#4b5563', cursor: 'not-allowed', boxShadow: 'none' };
-const footerNoteStyle = { textAlign: 'center', marginTop: '30px', fontSize: '12px', color: '#4b5563', lineHeight: '1.6' };
-
-const communityContainerStyle = { marginTop: '60px', textAlign: 'center' };
-const communityTitleStyle = { color: '#a855f7', fontSize: '14px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '20px' };
-const socialsContainerStyle = { display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' };
-
-const socialBtnStyle = (bgColor, textColor = '#fff') => ({
-  display: 'inline-flex', alignItems: 'center', gap: '8px', background: bgColor, color: textColor,
-  padding: '10px 20px', borderRadius: '12px', fontWeight: 'bold', fontSize: '14px', textDecoration: 'none'
-});
