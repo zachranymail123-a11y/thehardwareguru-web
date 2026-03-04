@@ -21,68 +21,89 @@ export async function GET(req) {
     if (fetchError) throw fetchError;
 
     const results = [];
+    const diagnostics = []; // TADY BUDEME SBÍRAT DŮKAZY
 
     for (const comp of components) {
-      const scraperUrl = `http://api.scraperapi.com?api_key=${apiKey}&url=${encodeURIComponent(comp.product_url)}`;
-      const res = await fetch(scraperUrl);
-      const html = await res.text();
+      const scraperUrl = `http://api.scraperapi.com?api_key=${apiKey}&url=${encodeURIComponent(comp.product_url)}&render=true`;
       
-      let price = null;
+      try {
+        const res = await fetch(scraperUrl);
+        const status = res.status;
+        const html = await res.text();
+        
+        let price = null;
+        
+        // Deník pro případ, že to selže
+        let log = { 
+          name: comp.name, 
+          httpStatus: status, 
+          htmlSnippet: html.substring(0, 300), // Prvních 300 znaků z webu
+          logs: [] 
+        };
 
-      // METODA 1: Meta Tagy (Nejspolehlivější pro Alzu u TOP produktů)
-      const metaPatterns = [
-        /property="product:price:amount"\s+content="([^"]+)"/i,
-        /property="og:price:amount"\s+content="([^"]+)"/i,
-        /itemprop="price"\s+content="([^"]+)"/i
-      ];
-
-      for (const pattern of metaPatterns) {
-        const match = html.match(pattern);
-        if (match) {
-          const p = extractNumber(match[1]);
-          if (p > 500) { price = p; break; }
+        // 1. Meta Tagy
+        const metaPatterns = [
+          /property="product:price:amount"\s+content="([^"]+)"/i,
+          /property="og:price:amount"\s+content="([^"]+)"/i,
+          /itemprop="price"\s+content="([^"]+)"/i
+        ];
+        
+        for (const pattern of metaPatterns) {
+          const match = html.match(pattern);
+          if (match) {
+            const p = extractNumber(match[1]);
+            log.logs.push(`Meta Tag nalezen: ${match[1]} -> převedeno na ${p}`);
+            if (p > 500) { price = p; break; }
+          }
         }
-      }
 
-      // METODA 2: JSON-LD (Záloha)
-      if (!price) {
-        const jsonMatches = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
-        for (const match of jsonMatches) {
-          try {
-            const parsed = JSON.parse(match[1]);
-            const items = Array.isArray(parsed) ? parsed : [parsed];
-            for (const item of items) {
-              if (item["@type"] === "Product" && item.offers) {
-                const p = extractNumber(item.offers.price || item.offers.lowPrice);
-                if (p > 500) { price = p; break; }
+        // 2. JSON-LD
+        if (!price) {
+          const jsonMatches = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
+          log.logs.push(`Nalezeno JSON-LD bloků: ${jsonMatches.length}`);
+          
+          for (const match of jsonMatches) {
+            try {
+              const parsed = JSON.parse(match[1]);
+              const items = Array.isArray(parsed) ? parsed : [parsed];
+              for (const item of items) {
+                if (item["@type"] === "Product" && item.offers) {
+                  const rawPrice = item.offers.price || item.offers.lowPrice;
+                  const p = extractNumber(rawPrice);
+                  log.logs.push(`JSON Product nalezen, surová cena: ${rawPrice} -> převedeno na ${p}`);
+                  if (p > 500) { price = p; break; }
+                }
               }
+            } catch (e) {
+              log.logs.push("Chyba při čtení JSON-LD");
             }
-          } catch (e) {}
-          if (price) break;
+            if (price) break;
+          }
         }
-      }
 
-      // METODA 3: Agresivní Regex na surová data
-      if (!price) {
-        const rawMatch = html.match(/"price"\s*:\s*(\d+)/i);
-        if (rawMatch) price = parseInt(rawMatch[1]);
-      }
+        if (price && price > 500) {
+          const { error: updateError } = await supabase
+            .from('components')
+            .update({ price: price, last_checked: new Date().toISOString() })
+            .eq('product_url', comp.product_url);
 
-      if (price && price > 500) {
-        const { error: updateError } = await supabase
-          .from('components')
-          .update({ price: price, last_checked: new Date().toISOString() })
-          .eq('product_url', comp.product_url);
+          results.push({ name: comp.name, status: updateError ? 'DB ERROR' : 'ZAPSÁNO', price: price });
+        } else {
+          results.push({ name: comp.name, status: 'Selhalo - viz diagnostika' });
+          diagnostics.push(log); // Přidáme do logu jen ty zmrdy, co neprošly
+        }
 
-        results.push({ name: comp.name, status: updateError ? 'DB ERROR' : 'ZAPSÁNO', price: price });
-      } else {
-        results.push({ name: comp.name, status: 'Cena stále nenalezena' });
+      } catch (fetchErr) {
+        results.push({ name: comp.name, status: 'Kritická chyba spojení' });
+        diagnostics.push({ name: comp.name, error: fetchErr.message });
       }
       
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise(resolve => setTimeout(resolve, 1500));
     }
 
-    return NextResponse.json({ success: true, processed: results });
+    // Vypíšeme na obrazovku výsledky PLUS diagnostiku
+    return NextResponse.json({ success: true, processed: results, diagnostics: diagnostics });
+    
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
