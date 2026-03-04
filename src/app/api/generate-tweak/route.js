@@ -15,8 +15,8 @@ export async function POST(req) {
   try {
     const { title, slug, pin } = await req.json();
 
-    const GURU_SECRET_PIN = process.env.GURU_PIN; 
-    if (pin !== GURU_SECRET_PIN) {
+    // Kontrola PINu přímo z Vercel proměnné
+    if (pin !== process.env.GURU_PIN) {
       return NextResponse.json({ error: 'Špatný PIN, kámo. Sem nemáš přístup.' }, { status: 401 });
     }
 
@@ -45,7 +45,7 @@ export async function POST(req) {
       console.log('PCGamingWiki selhalo, jdeme na Serper.');
     }
 
-    // 2. KDYŽ PCGAMINGWIKI NIC NENAJDE, ZAPOJÍME SERPER (GOOGLE)
+    // 2. KDYŽ PCGW NIC NENAJDE, ZAPOJÍME SERPER
     if (!rawText || rawText.length < 100) {
       try {
         const serperRes = await fetch('https://google.serper.dev/search', {
@@ -72,16 +72,16 @@ export async function POST(req) {
     }
 
     if (!rawText || rawText.length < 50) {
-      return NextResponse.json({ error: 'Nenašel jsem k tomu žádné optimalizační návody ani na PCGW, ani na Googlu.' }, { status: 404 });
+      return NextResponse.json({ error: 'Nenašel jsem k tomu žádné návody ani na PCGW, ani na Googlu.' }, { status: 404 });
     }
 
-    // 3. VYGENERUJEME ČISTÉ HTML A SEO POPIS PŘES GPT
+    // 3. VYGENERUJEME HTML A SEO POPIS PŘES GPT
     const shortText = rawText.substring(0, 3000); 
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo", 
       messages: [
-        { role: "system", content: "Jsi 'The Hardware Guru'. Píšeš drsně, no bullshit přístup. Tvojí úlohou je vygenerovat JSON s SEO popisem a HTML článkem." },
-        { role: "user", content: `Hra: ${title}\nZdroj dat: ${sourceUsed}\nData k analýze:\n\n${shortText}\n\nVygeneruj mi JSON s těmito klíči:\n1. "seo_description": Krátký úderný SEO popis (max 150 znaků). TENTO POPIS MUSÍ VŽDY ZAČÍNAT PŘESNĚ SLOVY "Optimalizace ${title} - " a pak ho ty sám kreativně dokonči na základě toho, jaký problém se tam reálně řeší (např. stuttering, unlock FPS).\n2. "html_content": Napiš kompletní HTML návod na zvýšení FPS a optimalizaci hry (použij tagy <h2>, <p>, <ul>, <li>, <strong>). Žádné markdown formátování okolo.` }
+        { role: "system", content: "Jsi 'The Hardware Guru'. Píšeš drsně, no bullshit. Vygeneruj JSON." },
+        { role: "user", content: `Hra: ${title}\nZdroj dat: ${sourceUsed}\nData:\n\n${shortText}\n\nVygeneruj JSON:\n1. "seo_description": Krátký SEO popis (max 150 znaků). TENTO POPIS MUSÍ VŽDY ZAČÍNAT SLOVY "Optimalizace ${title} - ".\n2. "html_content": Napiš HTML návod na zvýšení FPS (použij <h2>, <p>, <ul>, <li>, <strong>).` }
       ],
       response_format: { type: "json_object" }
     });
@@ -89,7 +89,7 @@ export async function POST(req) {
     const aiContent = JSON.parse(completion.choices[0].message.content.trim());
     let aiHtmlContent = aiContent.html_content.replace(/^```html/i, '').replace(/```$/i, '').trim();
 
-    // 4. VYGENERUJEME OBRÁZEK PŘES DALL-E A ULOŽÍME HO DO SUPABASE
+    // 4. OBRÁZEK Z DALL-E DO SUPABASE
     let finalImageUrl = '';
     try {
       const imageRes = await openai.images.generate({
@@ -113,7 +113,6 @@ export async function POST(req) {
       console.error("Chyba obrázku:", e);
     }
 
-    // ODESLÁNÍ ZPĚT DO GENERÁTORU
     return NextResponse.json({
       seo_description: aiContent.seo_description,
       html_content: aiHtmlContent,
