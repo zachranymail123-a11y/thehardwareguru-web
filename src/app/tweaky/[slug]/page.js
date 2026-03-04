@@ -3,10 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import { Home, Lightbulb, Book, PenTool, Newspaper, Monitor, Settings, Wrench, Activity } from 'lucide-react';
 import Link from 'next/link';
 
-// VYPNUTÍ CACHE - STRÁNKA BUDE VŽDY NAČÍTAT AKTUÁLNÍ DATA ZE SUPABASE
+// ABSOLUTNÍ ZABITÍ CACHE - NEXT.JS MUSÍ VŽDY NAČÍST NOVÁ DATA
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
-// MAGIE PRO GOOGLE SEARCH CONSOLE A RSS
 export const metadata = {
   title: 'GURU TWEAKY | The Hardware Guru',
   description: 'Ždímáme z tvýho hardwaru maximum. Návody, fixy na nedodělané porty, optimalizace FPS a úpravy configů pro nejnovější pecky.',
@@ -18,12 +19,11 @@ export const metadata = {
 };
 
 export default async function TweakyPage() {
-  // Připojení k Supabase pro načtení reálných článků
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // TAHÁME REÁLNÁ DATA Z DATABÁZE (od nejnovějšího)
+  // TAHÁME REÁLNÁ DATA Z DATABÁZE
   const { data: tweaky, error } = await supabase
     .from('tweaky')
     .select('*')
@@ -41,7 +41,6 @@ export default async function TweakyPage() {
       padding: '0 0 60px 0' 
     }}>
       
-      {/* HLAVNÍ NAVIGACE V GURU STYLU */}
       <nav style={{ 
         display: 'flex', 
         justifyContent: 'center', 
@@ -66,14 +65,12 @@ export default async function TweakyPage() {
 
       <div style={{ padding: '40px 20px', maxWidth: '1200px', margin: '0 auto' }}>
         
-        {/* SOCIAL BAR S TVÝMI ODKAZY */}
         <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '60px' }}>
           <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#53fc18')}>KICK</a>
           <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#ff0000')}>YOUTUBE</a>
           <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#5865F2')}>DISCORD</a>
         </div>
 
-        {/* HLAVIČKA SEKCE */}
         <div style={{ textAlign: 'center', marginBottom: '60px' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', color: '#eab308' }}>
             <Activity size={48} />
@@ -86,7 +83,6 @@ export default async function TweakyPage() {
           </p>
         </div>
 
-        {/* OŠETŘENÍ CHYBY / PRÁZDNÉ DATABÁZE */}
         {error && (
           <div style={{ textAlign: 'center', color: '#ef4444', padding: '20px', border: '1px solid #ef4444', borderRadius: '12px', marginBottom: '40px' }}>
             Chyba při načítání z databáze: {error.message}
@@ -99,7 +95,7 @@ export default async function TweakyPage() {
           </div>
         )}
 
-        {/* GRID S REÁLNÝMI KARTAMI Z DATABÁZE (Tmavé sklo, zaoblení 28px) */}
+        {/* REÁLNÉ KARTY Z DATABÁZE */}
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', 
@@ -120,13 +116,8 @@ export default async function TweakyPage() {
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                cursor: 'pointer',
-                transition: '0.2s'
-              }}
-              onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.borderColor = 'rgba(234, 179, 8, 0.5)'; }}
-              onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(234, 179, 8, 0.2)'; }}
-              >
-                {/* OBRÁZEK Z AI */}
+                cursor: 'pointer'
+              }}>
                 {tweak.image_url && (
                   <div style={{ width: '100%', height: '180px', borderRadius: '16px', overflow: 'hidden', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
                     <img src={tweak.image_url} alt={tweak.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -155,7 +146,6 @@ export default async function TweakyPage() {
   );
 }
 
-// STYLY 
 const navItemStyle = {
   color: '#fff',
   textDecoration: 'none',
