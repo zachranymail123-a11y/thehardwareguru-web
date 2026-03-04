@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -24,7 +26,7 @@ export async function GET(req) {
     const results = [];
 
     for (const comp of components) {
-      // PROŽENEME TO PŘES SCRAPERAPI, ABY NÁS ALZA NEBLOKLA
+      // Proženeme to přes ScraperAPI, aby nás Alza neblokla
       const scraperUrl = `http://api.scraperapi.com?api_key=${apiKey}&url=${encodeURIComponent(comp.product_url)}`;
       
       const res = await fetch(scraperUrl);
@@ -65,7 +67,7 @@ export async function GET(req) {
         results.push({ name: comp.name, status: 'Price not found' });
       }
 
-      // Se ScraperAPI můžeme jet rychleji, nepotřebujeme tak dlouhé pauzy
+      // Se ScraperAPI můžeme jet rychleji, pauza 500ms stačí
       await new Promise(resolve => setTimeout(resolve, 500));
     }
 
