@@ -6,7 +6,8 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL, 
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { global: { fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' }) } }
 );
 
 export async function GET(req) {
@@ -14,20 +15,27 @@ export async function GET(req) {
     const apiKey = process.env.APIFY_API_TOKEN; 
     if (!apiKey) throw new Error("Chybí token!");
 
-    const { data: components, error: fetchError } = await supabase
-      .from('components')
-      .select('name, product_url');
-      
+    const { data: components, error: fetchError } = await supabase.from('components').select('name, product_url');
     if (fetchError) throw fetchError;
 
-    // FILTR + VYČIŠTĚNÍ URL (Odstraníme subdomény, pokud dělají bordel)
-    const heurekaComps = components.filter(c => c.product_url && c.product_url.includes('heureka.cz'));
+    // AGRESIVNÍ ČIŠTĚNÍ: Odstraníme mezery a vyfiltrujeme jen Heureku
+    const heurekaComps = components
+      .map(c => ({ ...c, product_url: (c.product_url || "").trim() }))
+      .filter(c => c.product_url.includes('heureka.cz'));
 
-    const startUrls = heurekaComps.map(c => {
-      // Převedeme subdomény (procesory.heureka.cz) na hlavní (www.heureka.cz), pokud je to potřeba
-      let cleanUrl = c.product_url.replace(/^(https?:\/\/)[^.]+\.heureka\.cz/, '$1www.heureka.cz');
-      return { url: cleanUrl };
-    });
+    // Pokud je to prázdné, hned končíme s hlášením, co v té DB reálně je
+    if (heurekaComps.length === 0) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "Filtr nenašel žádné Heureka URL.",
+        data_v_db: components.map(c => ({ name: c.name, url: c.product_url }))
+      });
+    }
+
+    // Převedeme subdomény na www, aby to Apify scraper lépe žral
+    const startUrls = heurekaComps.map(c => ({
+      url: c.product_url.replace(/^(https?:\/\/)[^.]+\.heureka\.cz/, '$1www.heureka.cz')
+    }));
 
     const apifyUrl = `https://api.apify.com/v2/acts/cashmere_verdict~heureka-product-scraper/run-sync-get-dataset-items?token=${apiKey}`;
 
@@ -36,30 +44,22 @@ export async function GET(req) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         startUrls: startUrls,
-        // PŘIDÁNO: Explicitně řekneme robotu, ať se nesnaží o hloubkový crawling
         maxItems: startUrls.length,
         useProxy: true
       })
     });
 
     const items = await apifyRes.json();
-    const results = [];
-
-    // Pokud je items prázdné, vypíšeme, co jsme tam reálně posílali za URL
-    if (items.length === 0) {
-      return NextResponse.json({ 
-        success: false, 
-        error: "Apify vrátilo prázdná data.",
-        sent_urls: startUrls 
-      });
+    
+    // Diagnostika pro případ, že Apify vrátí chybu (jako tvůj poslední screen)
+    if (items.error || !Array.isArray(items)) {
+      return NextResponse.json({ success: false, error: "Apify vrátilo chybu", RAW_APIFY_DATA: items, sent_urls: startUrls });
     }
 
+    const results = [];
     for (const comp of heurekaComps) {
       const compSlug = comp.product_url.split('?')[0].split('/').filter(Boolean).pop();
-      
-      const itemData = items.find(i => 
-        (i.url && i.url.includes(compSlug)) || (i.productUrl && i.productUrl.includes(compSlug))
-      );
+      const itemData = items.find(i => (i.url || "").includes(compSlug) || (i.productUrl || "").includes(compSlug));
       
       let price = null;
       if (itemData) {
@@ -68,10 +68,10 @@ export async function GET(req) {
       }
 
       if (price && price > 1000) {
-        await supabase.from('components').update({ price: price }).eq('product_url', comp.product_url);
+        await supabase.from('components').update({ price: price, last_checked: new Date().toISOString() }).eq('product_url', comp.product_url);
         results.push({ name: comp.name, status: 'ZAPSÁNO', price: price });
       } else {
-        results.push({ name: comp.name, status: 'Nenalezeno' });
+        results.push({ name: comp.name, status: price ? `Cena ${price} Kč ignorována` : 'Nenalezeno' });
       }
     }
 
