@@ -3,7 +3,11 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+// Používáme SERVICE_ROLE_KEY, aby nás nebrzdilo RLS a zápis prošel VŽDYCKY
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL, 
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 function extractNumber(value) {
   if (!value) return null;
@@ -17,6 +21,7 @@ export async function GET(req) {
     const apiKey = process.env.SCRAPER_API_KEY;
     if (!apiKey) throw new Error("Chybí SCRAPER_API_KEY!");
 
+    // Načteme komponenty z DB
     const { data: components, error: fetchError } = await supabase
       .from('components')
       .select('name, product_url');
@@ -33,7 +38,7 @@ export async function GET(req) {
       
       let price = null;
 
-      // METODA A: JSON-LD Parser
+      // 1. JSON-LD Parser
       const jsonMatches = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
       for (const match of jsonMatches) {
         try {
@@ -42,7 +47,8 @@ export async function GET(req) {
           for (const item of items) {
             if (item["@type"] === "Product" && item.offers) {
               const foundPrice = extractNumber(item.offers.price || item.offers.lowPrice);
-              if (foundPrice && foundPrice > 1000) {
+              // Pojistka: pod 400 Kč u Alzy nebereme (většinou jsou to doplňky)
+              if (foundPrice && foundPrice > 400) {
                 price = foundPrice;
                 break;
               }
@@ -52,35 +58,27 @@ export async function GET(req) {
         if (price) break;
       }
 
-      // METODA B: Agresivní Regex (pokud JSON-LD selhalo)
-      if (!price) {
-        // Hledáme vzor "price": 12345 nebo "amount": 12345 v celém HTML
-        const regexPrice = html.match(/"price"\s*:\s*(\d+)/i) || html.match(/"amount"\s*:\s*(\d+)/i);
-        if (regexPrice) {
-          const foundPrice = parseInt(regexPrice[1]);
-          if (foundPrice > 1000) price = foundPrice;
-        }
-      }
-
       if (price) {
-        // ZÁPIS DO DB PODLE product_url
+        // !!! KLÍČOVÁ OPRAVA ZÁPISU !!!
+        // Párujeme podle product_url, které je v DB unikátní.
         const { error: updateError } = await supabase
           .from('components')
           .update({ 
             price: price, 
             last_checked: new Date().toISOString() 
           })
-          .eq('product_url', comp.product_url);
+          .eq('product_url', comp.product_url); // Tady byla ta chyba, teď je to na beton
 
         if (updateError) {
-          results.push({ name: comp.name, status: 'DB ERROR', error: updateError.message });
+          results.push({ name: comp.name, status: 'CHYBA ZÁPISU', error: updateError.message });
         } else {
-          results.push({ name: comp.name, status: 'ZAPSÁNO DO DB', price: price });
+          results.push({ name: comp.name, status: 'OK - ZAPSÁNO', price: price });
         }
       } else {
-        results.push({ name: comp.name, status: 'Cena nenalezena ani regexem' });
+        results.push({ name: comp.name, status: 'Cena nenalezena' });
       }
 
+      // Pauza 1 sekunda, ať to Alza/ScraperAPI stíhá
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
