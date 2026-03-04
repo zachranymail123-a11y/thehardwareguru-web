@@ -13,6 +13,7 @@ export default function TweakDetail() {
 
   useEffect(() => {
     async function loadTweakDetail() {
+      // Počkáme, až se v URL objeví slug
       if (!params?.slug) return;
 
       try {
@@ -20,11 +21,12 @@ export default function TweakDetail() {
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
         if (!supabaseUrl || !supabaseKey) {
-          throw new Error("Chybí Supabase klíče v konfiguraci webu.");
+          throw new Error("Chybí NEXT_PUBLIC Supabase klíče v konfiguraci Vercelu!");
         }
 
         const supabase = createClient(supabaseUrl, supabaseKey);
 
+        // Taháme data podle slugu z URL
         const { data, error } = await supabase
           .from('tweaky')
           .select('*')
@@ -43,7 +45,7 @@ export default function TweakDetail() {
     loadTweakDetail();
   }, [params?.slug]);
 
-  // --- STYLY ---
+  // STYLY
   const navItemStyle = { color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' };
   const discordBtnStyle = { display: 'flex', alignItems: 'center', gap: '10px', padding: '16px 32px', borderRadius: '12px', fontWeight: '900', textTransform: 'uppercase', textDecoration: 'none', fontSize: '14px', background: '#5865F2', color: '#fff', border: 'none', cursor: 'pointer' };
   const contentStyle = { color: '#9ca3af', fontSize: '17px', lineHeight: '1.8', fontFamily: 'sans-serif' };
@@ -60,7 +62,7 @@ export default function TweakDetail() {
     return (
       <div style={{ backgroundColor: '#0a0b0d', minHeight: '100vh', color: '#fff', padding: '100px', textAlign: 'center', fontFamily: 'sans-serif' }}>
         <h1 style={{ color: '#ff0000', fontSize: '32px', marginBottom: '20px' }}>Chyba: Tweak nenalezen</h1>
-        <p>{errorMsg || "Návod neexistuje."}</p>
+        <p>{errorMsg || "Tento návod v databázi neexistuje."}</p>
         <Link href="/tweaky" style={{ color: '#eab308', marginTop: '20px', display: 'inline-block', fontWeight: 'bold' }}>Zpět na Guru Tweaky</Link>
       </div>
     );
@@ -120,7 +122,7 @@ export default function TweakDetail() {
 
           <div style={{ background: 'rgba(0, 0, 0, 0.5)', border: '1px solid rgba(88, 101, 242, 0.4)', borderRadius: '20px', padding: '30px', textAlign: 'center', marginTop: '60px' }}>
             <h3 style={{ color: '#fff', fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', fontStyle: 'italic', marginBottom: '15px' }}>Pořád to nejede plynule?</h3>
-            <p style={{ color: '#ccc', fontSize: '15px', marginBottom: '25px', fontWeight: 'bold' }}>Řešíme problémy na našem Discordu.</p>
+            <p style={{ color: '#ccc', fontSize: '15px', marginBottom: '25px', fontWeight: 'bold' }}>Řešíme technické problémy na našem Discordu.</p>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" style={discordBtnStyle}>DISCORD GURU KOMUNITA</a>
             </div>
