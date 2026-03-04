@@ -3,10 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import { Home, Lightbulb, Book, PenTool, Newspaper, Monitor, Settings, Wrench, Activity } from 'lucide-react';
 import Link from 'next/link';
 
-// ABSOLUTNÍ ZABITÍ CACHE
+// JEDINÝ SPRÁVNÝ PŘÍKAZ PRO ZABITÍ CACHE (Bez pádu serveru)
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const fetchCache = 'force-no-store';
 
 export const metadata = {
   title: 'GURU TWEAKY | The Hardware Guru',
@@ -15,8 +13,9 @@ export const metadata = {
 };
 
 export default async function TweakyPage() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Čisté a bezpečné připojení k Supabase pro čtení článků
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   // TAHÁME REÁLNÁ DATA Z DATABÁZE
@@ -59,7 +58,7 @@ export default async function TweakyPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '30px' }}>
           {tweaky && tweaky.map((tweak) => (
             <Link href={`/tweaky/${tweak.slug}`} key={tweak.id} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div style={{ background: 'rgba(17, 19, 24, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(234, 179, 8, 0.2)', borderRadius: '28px', padding: '35px', height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer' }}>
+              <div style={{ background: 'rgba(17, 19, 24, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(234, 179, 8, 0.2)', borderRadius: '28px', padding: '35px', height: '100%', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: '0.2s' }} onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-5px)'; e.currentTarget.style.borderColor = 'rgba(234, 179, 8, 0.5)'; }} onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(234, 179, 8, 0.2)'; }}>
                 
                 {tweak.image_url && tweak.image_url !== 'EMPTY' && (
                   <div style={{ width: '100%', height: '180px', borderRadius: '16px', overflow: 'hidden', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
