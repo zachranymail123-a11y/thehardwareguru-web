@@ -15,8 +15,9 @@ function extractNumber(value) {
 export async function GET(req) {
   try {
     const apiKey = process.env.SCRAPER_API_KEY;
-    if (!apiKey) throw new Error("Chybí SCRAPER_API_KEY ve Vercelu!");
+    if (!apiKey) throw new Error("Chybí SCRAPER_API_KEY!");
 
+    // Načteme komponenty
     const { data: components, error: fetchError } = await supabase
       .from('components')
       .select('name, product_url');
@@ -33,7 +34,7 @@ export async function GET(req) {
       
       let price = null;
 
-      // JSON-LD Parser
+      // JSON-LD Parser - hledáme validní cenu produktu
       const jsonMatches = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
       for (const match of jsonMatches) {
         try {
@@ -42,8 +43,9 @@ export async function GET(req) {
           for (const item of items) {
             if (item["@type"] === "Product" && item.offers) {
               const foundPrice = extractNumber(item.offers.price || item.offers.lowPrice);
-              // Pojistka na totální nesmysly (pod 400 Kč u Alzy nebereme nic)
-              if (foundPrice && foundPrice > 400) {
+              
+              // OCHRANA: Nebereme nic pod 1000 Kč (chyby Alzy v doplňcích)
+              if (foundPrice && foundPrice > 1000) {
                 price = foundPrice;
                 break;
               }
@@ -54,7 +56,7 @@ export async function GET(req) {
       }
 
       if (price) {
-        // TADY JE TA OPRAVA: Update přímo podle URL, ať je jistota
+        // UPDATE PODLE product_url - tohle musí projít
         const { error: updateError } = await supabase
           .from('components')
           .update({ 
@@ -66,13 +68,14 @@ export async function GET(req) {
         if (updateError) {
           results.push({ name: comp.name, status: 'DB Update Failed', error: updateError.message });
         } else {
-          results.push({ name: comp.name, status: 'OK', price: price });
+          results.push({ name: comp.name, status: 'ZAPSÁNO DO DB', price: price });
         }
       } else {
-        results.push({ name: comp.name, status: 'Price not found' });
+        results.push({ name: comp.name, status: 'Cena nenalezena nebo příliš nízká' });
       }
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // 1 sekunda pauza mezi položkami pro stabilitu
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     return NextResponse.json({ success: true, processed: results });
