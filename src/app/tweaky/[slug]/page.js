@@ -1,33 +1,63 @@
 import React from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Home, Lightbulb, Book, PenTool, Newspaper, Monitor, Settings, Wrench, Activity } from 'lucide-react';
+import { Home, Lightbulb, Book, PenTool, Newspaper, Monitor, Wrench, Settings, ArrowLeft, Calendar } from 'lucide-react';
 import Link from 'next/link';
 
-// ABSOLUTNÍ ZABITÍ CACHE - NEXT.JS MUSÍ VŽDY NAČÍST NOVÁ DATA
+// Dynamické načítání – stránka se vygeneruje čerstvá pro každý požadavek
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const fetchCache = 'force-no-store';
 
-export const metadata = {
-  title: 'GURU TWEAKY | The Hardware Guru',
-  description: 'Ždímáme z tvýho hardwaru maximum. Návody, fixy na nedodělané porty, optimalizace FPS a úpravy configů pro nejnovější pecky.',
-  alternates: {
-    types: {
-      'application/rss+xml': 'https://www.thehardwareguru.cz/rss.xml',
-    },
-  },
-};
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default async function TweakyPage() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  // TAHÁME REÁLNÁ DATA Z DATABÁZE
-  const { data: tweaky, error } = await supabase
+// 1. GENERUJE META TAGY PRO GOOGLE SEO A SOCIÁLNÍ SÍTĚ
+export async function generateMetadata({ params }) {
+  const { data: tweak } = await supabase
     .from('tweaky')
     .select('*')
-    .order('created_at', { ascending: false });
+    .eq('slug', params.slug)
+    .single();
+
+  if (!tweak) {
+    return { title: 'Tweak nenalezen | The Hardware Guru' };
+  }
+
+  return {
+    title: `${tweak.title} - Optimalizace a Fixy | The Hardware Guru`,
+    description: tweak.description,
+    openGraph: {
+      title: tweak.title,
+      description: tweak.description,
+      images: tweak.image_url && tweak.image_url !== 'EMPTY' ? [tweak.image_url] : [],
+      type: 'article',
+      publishedTime: tweak.created_at,
+    },
+  };
+}
+
+// 2. HLAVNÍ KOMPONENTA STRÁNKY ČLÁNKU
+export default async function TweakDetail({ params }) {
+  // Načtení dat z databáze podle URL slugu
+  const { data: tweak, error } = await supabase
+    .from('tweaky')
+    .select('*')
+    .eq('slug', params.slug)
+    .single();
+
+  if (error || !tweak) {
+    return (
+      <div style={{ backgroundColor: '#0a0b0d', minHeight: '100vh', color: '#fff', padding: '100px', textAlign: 'center', fontFamily: 'sans-serif' }}>
+        <h1 style={{ color: '#ff0000', fontSize: '32px', marginBottom: '20px' }}>Chyba: Tweak nenalezen</h1>
+        <p>Tenhle návod buď ještě neexistuje, nebo ho šotek smazal.</p>
+        <Link href="/tweaky" style={{ color: '#eab308', marginTop: '20px', display: 'inline-block' }}>Zpět na Guru Tweaky</Link>
+      </div>
+    );
+  }
+
+  // Formátování data
+  const pubDate = new Date(tweak.created_at).toLocaleDateString('cs-CZ', {
+    day: 'numeric', month: 'long', year: 'numeric'
+  });
 
   return (
     <div style={{ 
@@ -38,9 +68,10 @@ export default async function TweakyPage() {
       minHeight: '100vh', 
       color: '#fff', 
       fontFamily: 'sans-serif', 
-      padding: '0 0 60px 0' 
+      padding: '0 0 80px 0' 
     }}>
       
+      {/* HLAVNÍ NAVIGACE */}
       <nav style={{ 
         display: 'flex', 
         justifyContent: 'center', 
@@ -63,89 +94,86 @@ export default async function TweakyPage() {
         <Link href="/rady" style={navItemStyle}><PenTool size={18} /> RADY</Link>
       </nav>
 
-      <div style={{ padding: '40px 20px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 20px' }}>
         
-        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '60px' }}>
-          <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#53fc18')}>KICK</a>
-          <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#ff0000')}>YOUTUBE</a>
-          <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#5865F2')}>DISCORD</a>
+        {/* Tlačítko Zpět */}
+        <div style={{ marginBottom: '30px' }}>
+          <Link href="/tweaky" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#9ca3af', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', transition: 'color 0.2s' }} onMouseOver={(e) => e.currentTarget.style.color = '#eab308'} onMouseOut={(e) => e.currentTarget.style.color = '#9ca3af'}>
+            <ArrowLeft size={16} /> Zpět na přehled tweaků
+          </Link>
         </div>
 
-        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', color: '#eab308' }}>
-            <Activity size={48} />
+        {/* HLAVNÍ KARTA ČLÁNKU */}
+        <div style={{
+          background: 'rgba(17, 19, 24, 0.85)', 
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(234, 179, 8, 0.4)', 
+          borderRadius: '28px', 
+          padding: '40px',
+          boxShadow: '0 0 50px rgba(234, 179, 8, 0.1)',
+          overflow: 'hidden'
+        }}>
+          
+          {/* Štítek kategorie a datum */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontWeight: '900', fontSize: '13px', textTransform: 'uppercase', background: 'rgba(234, 179, 8, 0.1)', padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(234, 179, 8, 0.3)' }}>
+              <Settings size={16} /> {tweak.category}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6b7280', fontSize: '13px', fontWeight: 'bold' }}>
+              <Calendar size={14} /> {pubDate}
+            </div>
           </div>
-          <h1 style={{ fontSize: '54px', fontWeight: '900', fontStyle: 'italic', textTransform: 'uppercase', margin: '0 0 20px 0' }}>
-            GURU <span style={{ color: '#eab308' }}>TWEAKY</span>
+
+          {/* Nadpis H1 */}
+          <h1 style={{ fontSize: '46px', fontWeight: '900', fontStyle: 'italic', textTransform: 'uppercase', marginBottom: '30px', lineHeight: '1.1' }}>
+            {tweak.title}
           </h1>
-          <p style={{ color: '#9ca3af', fontSize: '20px', maxWidth: '700px', margin: '0 auto', lineHeight: '1.6' }}>
-            Ždímáme z tvýho hardwaru i ten poslední zbytek výkonu. Fixy na nedodělaný porty, odemčení FPS a úpravy configů.
+
+          {/* AI Obrázek (Pokud existuje a není EMPTY) */}
+          {tweak.image_url && tweak.image_url !== 'EMPTY' && (
+            <div style={{ marginBottom: '40px', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <img src={tweak.image_url} alt={`Ilustrace k návodu ${tweak.title}`} style={{ width: '100%', height: 'auto', display: 'block' }} />
+            </div>
+          )}
+
+          {/* SEO Popis (Perex) */}
+          <div style={{ fontSize: '20px', color: '#d1d5db', lineHeight: '1.7', fontWeight: '300', marginBottom: '40px', paddingBottom: '30px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <strong style={{ color: '#fff' }}>GURU SHRNUTÍ: </strong>{tweak.description}
+          </div>
+
+          {/* Tělo článku (HTML vygenerované z AI) */}
+          <div 
+            style={contentStyle}
+            dangerouslySetInnerHTML={{ __html: tweak.content }}
+          />
+
+          {/* ZÁVĚREČNÝ CALL TO ACTION */}
+          <div style={{ 
+            background: 'rgba(0, 0, 0, 0.5)', border: '1px solid rgba(88, 101, 242, 0.4)', borderRadius: '20px', padding: '30px', textAlign: 'center', marginTop: '60px'
+          }}>
+            <h3 style={{ color: '#fff', fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', fontStyle: 'italic', marginBottom: '15px' }}>
+              Pořád to nejede plynule?
+            </h3>
+            <p style={{ color: '#ccc', fontSize: '15px', marginBottom: '25px', fontWeight: 'bold' }}>
+              Řešíme hardwarové problémy a tweaky k novým hrám na našem Discordu. <br/>Doval tam a komunita ti pomůže s tvým konkrétním PC.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" style={discordBtnStyle}>
+                DISCORD GURU KOMUNITA
+              </a>
+            </div>
+          </div>
+
+          <p style={{ fontSize: '11px', color: '#4b5563', marginTop: '30px', fontStyle: 'italic', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            Zdroj surových technických dat: PCGamingWiki & Komunita. Texty a fixy zpracovány GURU AI systémem.
           </p>
         </div>
-
-        {error && (
-          <div style={{ textAlign: 'center', color: '#ef4444', padding: '20px', border: '1px solid #ef4444', borderRadius: '12px', marginBottom: '40px' }}>
-            Chyba při načítání z databáze: {error.message}
-          </div>
-        )}
-
-        {(!tweaky || tweaky.length === 0) && !error && (
-          <div style={{ textAlign: 'center', color: '#9ca3af', padding: '40px' }}>
-            Zatím tu nejsou žádné tweaky. Běž do generátoru a nějaký vyrob!
-          </div>
-        )}
-
-        {/* REÁLNÉ KARTY Z DATABÁZE */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', 
-          gap: '30px' 
-        }}>
-          {tweaky && tweaky.map((tweak) => (
-            <Link 
-              href={`/tweaky/${tweak.slug}`} 
-              key={tweak.id} 
-              style={{ textDecoration: 'none', color: 'inherit' }}
-            >
-              <div style={{
-                background: 'rgba(17, 19, 24, 0.85)', 
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(234, 179, 8, 0.2)', 
-                borderRadius: '28px', 
-                padding: '35px',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                cursor: 'pointer'
-              }}>
-                {tweak.image_url && (
-                  <div style={{ width: '100%', height: '180px', borderRadius: '16px', overflow: 'hidden', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <img src={tweak.image_url} alt={tweak.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                )}
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '15px' }}>
-                  <Settings size={14} /> {tweak.category}
-                </div>
-                <h2 style={{ fontSize: '26px', fontWeight: '900', marginBottom: '15px', lineHeight: '1.2' }}>
-                  {tweak.title}
-                </h2>
-                <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', flexGrow: 1, marginBottom: '25px' }}>
-                  {tweak.description}
-                </p>
-                <div style={{ color: '#eab308', fontWeight: 'bold', fontSize: '14px', textTransform: 'uppercase' }}>
-                  Otevřít návod →
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-
       </div>
     </div>
   );
 }
 
+// STYLY 
 const navItemStyle = {
   color: '#fff',
   textDecoration: 'none',
@@ -156,13 +184,25 @@ const navItemStyle = {
   gap: '8px',
 };
 
-const socialBtnStyle = (color) => ({
-  color: color,
-  textDecoration: 'none',
-  fontWeight: 'bold',
-  fontSize: '11px',
-  border: `1px solid ${color}`,
-  padding: '8px 16px',
-  borderRadius: '12px',
-  background: 'transparent'
-});
+const discordBtnStyle = {
+  display: 'flex', 
+  alignItems: 'center', 
+  gap: '10px', 
+  padding: '16px 32px', 
+  borderRadius: '12px', 
+  fontWeight: '900', 
+  textTransform: 'uppercase', 
+  textDecoration: 'none', 
+  fontSize: '14px', 
+  background: '#5865F2', 
+  color: '#fff',
+  border: 'none',
+  cursor: 'pointer'
+};
+
+const contentStyle = {
+  color: '#9ca3af',
+  fontSize: '17px',
+  lineHeight: '1.8',
+  fontFamily: 'sans-serif'
+};
