@@ -1,179 +1,132 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
-import { Home, Lightbulb, Book, PenTool, Newspaper } from 'lucide-react';
+import { Home, Lightbulb, Book, PenTool, Newspaper, Monitor, Wrench, Settings, ArrowLeft, Calendar } from 'lucide-react';
 import Link from 'next/link';
 
-// Vynutíme dynamické vykreslování pro zajištění čerstvých dat ze Supabase
-export const dynamic = 'force-dynamic';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-
-export default function TipyPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [tipyData, setTipyData] = useState([]);
+export default function TweakDetail() {
+  const params = useParams();
+  const [tweak, setTweak] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
-    async function fetchTipy() {
-      const { data, error } = await supabase
-        .from('tipy')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (!error) setTipyData(data);
-      setLoading(false);
-    }
-    fetchTipy();
-  }, []);
+    async function loadTweakDetail() {
+      if (!params?.slug) return;
 
-  const filteredTipy = tipyData.filter(tip => 
-    tip.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    tip.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error("Chybí Supabase klíče v konfiguraci webu.");
+        }
+
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        const { data, error } = await supabase
+          .from('tweaky')
+          .select('*')
+          .eq('slug', params.slug)
+          .single();
+
+        if (error) throw error;
+        setTweak(data);
+      } catch (e) {
+        setErrorMsg(e.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadTweakDetail();
+  }, [params?.slug]);
+
+  // --- STYLY ---
+  const navItemStyle = { color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' };
+  const discordBtnStyle = { display: 'flex', alignItems: 'center', gap: '10px', padding: '16px 32px', borderRadius: '12px', fontWeight: '900', textTransform: 'uppercase', textDecoration: 'none', fontSize: '14px', background: '#5865F2', color: '#fff', border: 'none', cursor: 'pointer' };
+  const contentStyle = { color: '#9ca3af', fontSize: '17px', lineHeight: '1.8', fontFamily: 'sans-serif' };
+
+  if (loading) {
+    return (
+      <div style={{ backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#eab308', fontWeight: 'bold' }}>
+        GURU načítá detaily návodu...
+      </div>
+    );
+  }
+
+  if (errorMsg || !tweak) {
+    return (
+      <div style={{ backgroundColor: '#0a0b0d', minHeight: '100vh', color: '#fff', padding: '100px', textAlign: 'center', fontFamily: 'sans-serif' }}>
+        <h1 style={{ color: '#ff0000', fontSize: '32px', marginBottom: '20px' }}>Chyba: Tweak nenalezen</h1>
+        <p>{errorMsg || "Návod neexistuje."}</p>
+        <Link href="/tweaky" style={{ color: '#eab308', marginTop: '20px', display: 'inline-block', fontWeight: 'bold' }}>Zpět na Guru Tweaky</Link>
+      </div>
+    );
+  }
+
+  const pubDate = new Date(tweak.created_at).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <div style={{ 
-      backgroundColor: '#0a0b0d', 
-      backgroundImage: 'url("/bg-guru.png")',
-      backgroundSize: 'cover',
-      backgroundAttachment: 'fixed',
-      minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif', padding: '0 0 40px 0' 
+      backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif', padding: '0 0 80px 0' 
     }}>
-      
-      {/* HLAVNÍ NAVIGACE */}
-      <nav style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        gap: '25px', 
-        padding: '20px', 
-        background: 'rgba(0,0,0,0.7)', 
-        backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid rgba(234, 179, 8, 0.2)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        flexWrap: 'wrap'
-      }}>
+      <nav style={{ display: 'flex', justifyContent: 'center', gap: '25px', padding: '20px', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(234, 179, 8, 0.2)', position: 'sticky', top: 0, zIndex: 100, flexWrap: 'wrap' }}>
         <Link href="/" style={navItemStyle}><Home size={18} /> HOMEPAGE</Link>
         <Link href="/clanky" style={navItemStyle}><Newspaper size={18} /> ČLÁNKY</Link>
-        <Link href="/tipy" style={{...navItemStyle, color: '#eab308'}}><Lightbulb size={18} /> TIPY</Link>
+        <Link href="/tipy" style={navItemStyle}><Lightbulb size={18} /> TIPY</Link>
+        <Link href="/sestavy" style={navItemStyle}><Monitor size={18} /> SESTAVY</Link>
+        <Link href="/tweaky" style={{...navItemStyle, color: '#eab308'}}><Wrench size={18} /> GURU TWEAKY</Link>
         <Link href="/slovnik" style={navItemStyle}><Book size={18} /> SLOVNÍK</Link>
-        <Link href="/rady" style={navItemStyle}><PenTool size={18} /> PRAKTICKÉ RADY</Link>
+        <Link href="/rady" style={navItemStyle}><PenTool size={18} /> RADY</Link>
       </nav>
 
-      <div style={{ padding: '40px 20px' }}>
-        {/* SOCIAL BAR */}
-        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '40px' }}>
-          <a href="https://kick.com/TheHardwareGuru" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#53fc18')}>KICK</a>
-          <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#ff0000')}>YOUTUBE</a>
-          <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#5865F2')}>DISCORD</a>
-          <Link href="/support" style={socialBtnStyle('#eab308', true)}>SUPPORT</Link>
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 20px' }}>
+        <div style={{ marginBottom: '30px' }}>
+          <Link href="/tweaky" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#9ca3af', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' }}>
+            <ArrowLeft size={16} /> Zpět na přehled tweaků
+          </Link>
         </div>
 
-        {/* SEARCH BOX */}
-        <div style={{ maxWidth: '600px', margin: '0 auto 60px auto' }}>
-          <input 
-            type="text" 
-            placeholder="Hledat v Guru databázi..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%', padding: '18px 25px', borderRadius: '20px',
-              background: 'rgba(17, 19, 24, 0.9)', border: '2px solid #eab308',
-              color: '#fff', fontSize: '16px', outline: 'none',
-              boxShadow: '0 0 25px rgba(234, 179, 8, 0.15)'
-            }}
+        <div style={{ background: 'rgba(17, 19, 24, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(234, 179, 8, 0.4)', borderRadius: '28px', padding: '40px', boxShadow: '0 0 50px rgba(234, 179, 8, 0.1)', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontWeight: '900', fontSize: '13px', textTransform: 'uppercase', background: 'rgba(234, 179, 8, 0.1)', padding: '6px 12px', borderRadius: '8px', border: '1px solid rgba(234, 179, 8, 0.3)' }}>
+              <Settings size={16} /> {tweak.category}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6b7280', fontSize: '13px', fontWeight: 'bold' }}>
+              <Calendar size={14} /> {pubDate}
+            </div>
+          </div>
+
+          <h1 style={{ fontSize: '46px', fontWeight: '900', fontStyle: 'italic', textTransform: 'uppercase', marginBottom: '30px', lineHeight: '1.1' }}>
+            {tweak.title}
+          </h1>
+
+          {tweak.image_url && tweak.image_url !== 'EMPTY' && (
+            <div style={{ marginBottom: '40px', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <img src={tweak.image_url} alt={tweak.title} style={{ width: '100%', height: 'auto', display: 'block' }} />
+            </div>
+          )}
+
+          <div style={{ fontSize: '20px', color: '#d1d5db', lineHeight: '1.7', fontWeight: '300', marginBottom: '40px', paddingBottom: '30px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <strong style={{ color: '#fff' }}>GURU SHRNUTÍ: </strong>{tweak.description}
+          </div>
+
+          <div 
+            style={contentStyle}
+            dangerouslySetInnerHTML={{ __html: tweak.content }}
           />
-        </div>
 
-        {/* GRID ČLÁNKŮ */}
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '35px' }}>
-          {loading ? <p style={{ textAlign: 'center', gridColumn: '1/-1' }}>Načítám Guru vědomosti...</p> : 
-            filteredTipy.map((tip) => (
-            <article key={tip.id} style={{
-              background: 'rgba(17, 19, 24, 0.85)', backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(234, 179, 8, 0.2)', borderRadius: '28px', overflow: 'hidden',
-              display: 'flex', flexDirection: 'column', transition: 'transform 0.2s ease'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-            >
-              <Link href={`/tipy/${tip.slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                {/* OPRAVA: Přidán ?t=timestamp k URL obrázku. 
-                   Tím donutíme prohlížeč ignorovat starou verzi v cache a načíst aktuální obrázek ze Supabase.
-                */}
-                <img 
-                  src={`${tip.image_url}?t=${new Date().getTime()}`} 
-                  alt={tip.title} 
-                  style={{ width: '100%', height: '220px', objectFit: 'cover' }} 
-                />
-                <div style={{ padding: '25px', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                  <span style={{ color: '#eab308', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>{tip.category}</span>
-                  <h2 style={{ fontSize: '24px', fontWeight: '900', margin: '12px 0' }}>{tip.title}</h2>
-                  <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '20px', flexGrow: 1 }}>{tip.description}</p>
-                  <div style={{ color: '#eab308', fontWeight: 'bold', fontSize: '14px', marginBottom: tip.youtube_id ? '20px' : '0' }}>Číst celý návod →</div>
-                </div>
-              </Link>
-              
-              {tip.youtube_id && (
-                <div style={{ padding: '0 25px 25px 25px' }}>
-                  <a 
-                    href={`https://www.youtube.com/watch?v=${tip.youtube_id}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    style={youtubeBtnStyle}
-                  >
-                    <span style={{ color: '#ff0000', fontSize: '18px' }}>▶</span>
-                    <span style={{ fontSize: '13px' }}>Přehrát Video Návod</span>
-                  </a>
-                </div>
-              )}
-            </article>
-          ))}
+          <div style={{ background: 'rgba(0, 0, 0, 0.5)', border: '1px solid rgba(88, 101, 242, 0.4)', borderRadius: '20px', padding: '30px', textAlign: 'center', marginTop: '60px' }}>
+            <h3 style={{ color: '#fff', fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', fontStyle: 'italic', marginBottom: '15px' }}>Pořád to nejede plynule?</h3>
+            <p style={{ color: '#ccc', fontSize: '15px', marginBottom: '25px', fontWeight: 'bold' }}>Řešíme problémy na našem Discordu.</p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" style={discordBtnStyle}>DISCORD GURU KOMUNITA</a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
-// STYLY (Beze změny)
-const navItemStyle = {
-  color: '#fff',
-  textDecoration: 'none',
-  fontSize: '13px',
-  fontWeight: 'bold',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  transition: '0.2s'
-};
-
-const socialBtnStyle = (color, isSupport = false) => ({
-  color: color,
-  textDecoration: 'none',
-  fontWeight: 'bold',
-  fontSize: '11px',
-  border: `1px solid ${color}`,
-  padding: '8px 16px',
-  borderRadius: '12px',
-  background: isSupport ? `${color}1a` : 'transparent'
-});
-
-const youtubeBtnStyle = {
-  background: 'rgba(255, 0, 0, 0.1)', 
-  borderRadius: '12px', 
-  padding: '12px 15px', 
-  display: 'flex', 
-  alignItems: 'center', 
-  justifyContent: 'center',
-  gap: '10px', 
-  border: '1px solid rgba(255, 0, 0, 0.3)',
-  color: '#fff',
-  textDecoration: 'none',
-  fontWeight: 'bold',
-  transition: 'all 0.3s ease'
-};
