@@ -19,14 +19,13 @@ export async function GET(req) {
 
     const { data: components, error: fetchError } = await supabase
       .from('components')
-      .select('id, name, product_url');
+      .select('name, product_url');
 
     if (fetchError) throw fetchError;
 
     const results = [];
 
     for (const comp of components) {
-      // Proženeme to přes ScraperAPI, aby nás Alza neblokla
       const scraperUrl = `http://api.scraperapi.com?api_key=${apiKey}&url=${encodeURIComponent(comp.product_url)}`;
       
       const res = await fetch(scraperUrl);
@@ -34,7 +33,7 @@ export async function GET(req) {
       
       let price = null;
 
-      // 1. JSON-LD Parser
+      // JSON-LD Parser
       const jsonMatches = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
       for (const match of jsonMatches) {
         try {
@@ -42,32 +41,37 @@ export async function GET(req) {
           const items = Array.isArray(parsed) ? parsed : [parsed];
           for (const item of items) {
             if (item["@type"] === "Product" && item.offers) {
-              price = extractNumber(item.offers.price || item.offers.lowPrice);
-              if (price) break;
+              const foundPrice = extractNumber(item.offers.price || item.offers.lowPrice);
+              // Pojistka na totální nesmysly (pod 400 Kč u Alzy nebereme nic)
+              if (foundPrice && foundPrice > 400) {
+                price = foundPrice;
+                break;
+              }
             }
           }
         } catch (e) {}
         if (price) break;
       }
 
-      // 2. Fallback - Regex na cenu v HTML
-      if (!price) {
-        const genericMatch = html.match(/(\d{1,3}(?:\s\d{3})*)\s*(?:Kč|,-)/);
-        if (genericMatch) price = extractNumber(genericMatch[1]);
-      }
-
       if (price) {
-        await supabase
+        // TADY JE TA OPRAVA: Update přímo podle URL, ať je jistota
+        const { error: updateError } = await supabase
           .from('components')
-          .update({ price: price, last_checked: new Date().toISOString() })
-          .eq('id', comp.id);
+          .update({ 
+            price: price, 
+            last_checked: new Date().toISOString() 
+          })
+          .eq('product_url', comp.product_url);
 
-        results.push({ name: comp.name, status: 'OK', price });
+        if (updateError) {
+          results.push({ name: comp.name, status: 'DB Update Failed', error: updateError.message });
+        } else {
+          results.push({ name: comp.name, status: 'OK', price: price });
+        }
       } else {
         results.push({ name: comp.name, status: 'Price not found' });
       }
 
-      // Se ScraperAPI můžeme jet rychleji, pauza 500ms stačí
       await new Promise(resolve => setTimeout(resolve, 500));
     }
 
