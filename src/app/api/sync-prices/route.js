@@ -1,120 +1,85 @@
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // TÍMHLE VERCELU ŘÍKÁME: "DEJ TOMU ČAS AŽ 60 SEKUND, NEZABÍJEJ TO HNED!"
+export const maxDuration = 300; // Vercel Pro limit 5 minut
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-function extractNumber(value) {
-  if (!value) return null;
-  const cleaned = String(value).replace(/[^\d]/g, "");
-  const num = parseInt(cleaned);
-  return isNaN(num) ? null : num;
-}
-
 export async function GET(req) {
   try {
-    const apiKey = process.env.SCRAPER_API_KEY;
-    if (!apiKey) throw new Error("Chybí SCRAPER_API_KEY!");
+    const apiKey = process.env.APIFY_API_TOKEN; // TADY SI TO BERE TEN TVŮJ NOVÝ KLÍČ
+    if (!apiKey) throw new Error("Chybí APIFY_API_TOKEN ve Vercelu!");
 
-    const { data: components, error: fetchError } = await supabase.from('components').select('name, product_url');
+    // 1. Vytáhneme komponenty z DB
+    const { data: components, error: fetchError } = await supabase
+      .from('components')
+      .select('name, product_url');
+      
     if (fetchError) throw fetchError;
 
-    const results = [];
-    const diagnostics = [];
+    // 2. Ochrana: Vyfiltrujeme jen ty, co už mají Heureka link
+    // (Ať Apify nezkouší scrapovat Alza linky, to by spadlo)
+    const heurekaComps = components.filter(c => c.product_url && c.product_url.includes('heureka.cz'));
 
-    // ROZDĚLÍME TO DO DÁVEK PO 5 KS (Abychom nepřehltili ScraperAPI limit souběžných dotazů)
-    const batchSize = 5;
-
-    for (let i = 0; i < components.length; i += batchSize) {
-      const batch = components.slice(i, i + batchSize);
-      
-      // PARALELNÍ ZPRACOVÁNÍ CELÉ DÁVKY NAJEDNOU
-      const batchPromises = batch.map(async (comp) => {
-        const scraperUrl = `http://api.scraperapi.com?api_key=${apiKey}&url=${encodeURIComponent(comp.product_url)}&render=true`;
-        let log = { name: comp.name, logs: [] };
-        
-        try {
-          const res = await fetch(scraperUrl);
-          log.httpStatus = res.status;
-          const html = await res.text();
-          log.htmlSnippet = html.substring(0, 300);
-          
-          let price = null;
-
-          // 1. Meta Tagy
-          const metaPatterns = [
-            /property="product:price:amount"\s+content="([^"]+)"/i,
-            /property="og:price:amount"\s+content="([^"]+)"/i,
-            /itemprop="price"\s+content="([^"]+)"/i
-          ];
-          for (const pattern of metaPatterns) {
-            const match = html.match(pattern);
-            if (match) {
-              const p = extractNumber(match[1]);
-              log.logs.push(`Meta Tag: ${p}`);
-              if (p > 500) { price = p; break; }
-            }
-          }
-
-          // 2. JSON-LD
-          if (!price) {
-            const jsonMatches = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
-            for (const match of jsonMatches) {
-              try {
-                const parsed = JSON.parse(match[1]);
-                const items = Array.isArray(parsed) ? parsed : [parsed];
-                for (const item of items) {
-                  if (item["@type"] === "Product" && item.offers) {
-                    const p = extractNumber(item.offers.price || item.offers.lowPrice);
-                    log.logs.push(`JSON Product: ${p}`);
-                    if (p > 500) { price = p; break; }
-                  }
-                }
-              } catch (e) {}
-              if (price) break;
-            }
-          }
-
-          // 3. Brutální Regex
-          if (!price) {
-             const visibleMatch = html.match(/(?:class="[^"]*price[^"]*"[^>]*>|data-price=")([\d\s]+)(?:[,-Kč]*)?/i);
-             if (visibleMatch) {
-                 const p = extractNumber(visibleMatch[1]);
-                 log.logs.push(`Regex: ${p}`);
-                 if (p > 500) price = p;
-             }
-          }
-
-          if (price && price > 500) {
-            const { error: updateError } = await supabase
-              .from('components')
-              .update({ price: price, last_checked: new Date().toISOString() })
-              .eq('product_url', comp.product_url);
-
-            return { success: true, item: { name: comp.name, status: updateError ? 'DB ERROR' : 'ZAPSÁNO', price: price } };
-          } else {
-            return { success: false, item: { name: comp.name, status: 'Selhalo - viz diagnostika' }, log };
-          }
-
-        } catch (fetchErr) {
-          log.error = fetchErr.message;
-          return { success: false, item: { name: comp.name, status: 'Kritická chyba spojení' }, log };
-        }
-      });
-
-      // POČKÁME NA DOKONČENÍ CELÉ 5KS DÁVKY A JDEME NA DALŠÍ
-      const resolvedBatch = await Promise.all(batchPromises);
-      
-      resolvedBatch.forEach(res => {
-        results.push(res.item);
-        if (!res.success) diagnostics.push(res.log);
+    if (heurekaComps.length === 0) {
+      return NextResponse.json({ 
+        success: false, 
+        message: "V databázi nejsou žádné Heureka odkazy! Musíš nejdřív přepsat Alza linky na Heureku." 
       });
     }
 
-    return NextResponse.json({ success: true, processed: results, diagnostics: diagnostics });
-    
+    // 3. Připravíme data pro Apify
+    const startUrls = heurekaComps.map(c => ({ url: c.product_url }));
+    const apifyUrl = `https://api.apify.com/v2/acts/cashmere_verdict~heureka-product-scraper/run-sync-get-dataset-items?token=${apiKey}`;
+
+    // 4. Odpalíme to na Apify
+    const apifyRes = await fetch(apifyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        startUrls: startUrls,
+        maxItems: startUrls.length
+      })
+    });
+
+    if (!apifyRes.ok) {
+      throw new Error(`Apify selhalo: ${await apifyRes.text()}`);
+    }
+
+    // 5. Apify nám vrátí hotová data
+    const items = await apifyRes.json();
+    const results = [];
+
+    // 6. Propíšeme to do DB
+    for (const comp of heurekaComps) {
+      // Spárujeme výsledek podle URL
+      const itemData = items.find(i => i.url === comp.product_url || i.productUrl === comp.product_url);
+      
+      let price = null;
+      if (itemData) {
+        // Heureka scrapery vrací cenu většinou jako price, priceMin nebo priceMax
+        const rawPrice = itemData.price || itemData.priceMin || itemData.priceMax;
+        if (rawPrice) {
+          const cleaned = String(rawPrice).replace(/[^\d]/g, "");
+          price = parseInt(cleaned);
+        }
+      }
+
+      if (price && price > 500) {
+        const { error: updateError } = await supabase
+          .from('components')
+          .update({ price: price, last_checked: new Date().toISOString() })
+          .eq('product_url', comp.product_url);
+
+        results.push({ name: comp.name, status: updateError ? 'DB ERROR' : 'OK - ZAPSÁNO', price: price });
+      } else {
+        results.push({ name: comp.name, status: 'Cena na Heurece nenalezena' });
+      }
+    }
+
+    return NextResponse.json({ success: true, processed: results });
+
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
