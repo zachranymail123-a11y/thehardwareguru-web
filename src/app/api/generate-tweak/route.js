@@ -15,7 +15,6 @@ export async function POST(req) {
   try {
     const { title, slug, pin } = await req.json();
 
-    // Kontrola PINu přímo z Vercel proměnné
     if (pin !== process.env.GURU_PIN) {
       return NextResponse.json({ error: 'Špatný PIN, kámo. Sem nemáš přístup.' }, { status: 401 });
     }
@@ -55,7 +54,7 @@ export async function POST(req) {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            q: `${title} PC optimization FPS boost max fps settings guide`,
+            q: `${title} PC optimization config ini file stuttering fix FOV`,
             gl: 'us',
             hl: 'en'
           })
@@ -75,15 +74,22 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Nenašel jsem k tomu žádné návody ani na PCGW, ani na Googlu.' }, { status: 404 });
     }
 
-    // 3. VYGENERUJEME HTML A SEO POPIS PŘES GPT
-    const shortText = rawText.substring(0, 3000); 
+    // 3. HARDCORE GURU PROMPT PRO GPT
+    const shortText = rawText.substring(0, 4000); 
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo", 
       messages: [
-        { role: "system", content: "Jsi 'The Hardware Guru'. Píšeš drsně, no bullshit. Vygeneruj JSON." },
-        { role: "user", content: `Hra: ${title}\nZdroj dat: ${sourceUsed}\nData:\n\n${shortText}\n\nVygeneruj JSON:\n1. "seo_description": Krátký SEO popis (max 150 znaků). TENTO POPIS MUSÍ VŽDY ZAČÍNAT SLOVY "Optimalizace ${title} - ".\n2. "html_content": Napiš HTML návod na zvýšení FPS (použij <h2>, <p>, <ul>, <li>, <strong>).` }
+        { 
+          role: "system", 
+          content: "Jsi 'The Hardware Guru', expert na PC hardware a úpravu herních configů. Tvůj styl je drsný a technický. ZAKAZUJI TI psát obecné rady jako 'aktualizujte ovladače', 'snižte rozlišení', 'vypněte V-Sync' nebo 'zavřete programy na pozadí'. To všichni ví." 
+        },
+        { 
+          role: "user", 
+          content: `Hra: ${title}\nZdroj dat: ${sourceUsed}\nData:\n\n${shortText}\n\nVYGENERUJ JSON S KLÍČI:\n1. "seo_description": Krátký popis začínající "Optimalizace ${title} - " (max 150 znaků).\n2. "html_content": Napiš technický HTML návod (použij <h2>, <p>, <ul>, <li>, <code>, <strong>). ZAMĚŘ SE VÝHRADNĚ NA: Úpravy v .ini/.cfg souborech (cesty a proměnné), parametry spouštění (Steam launch options), fixy na stuttering (engine tweaky), komunitní módy nebo úpravy v registrech. Pokud k této hře nejsou v datech žádné hluboké technické fixy, napiš konkrétní hardwarové zhodnocení (např. 'Hra je CPU limitovaná kvůli špatnému Enginu, nepomůže vám ani RTX 4090, jediná záchrana je Frame Gen...'). BUĎ KONKRÉTNÍ.` 
+        }
       ],
-      response_format: { type: "json_object" }
+      response_format: { type: "json_object" },
+      temperature: 0.4 // Nižší teplota = více se drží faktů a nevymýšlí si blbosti
     });
 
     const aiContent = JSON.parse(completion.choices[0].message.content.trim());
