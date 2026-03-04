@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60; // TÍMHLE VERCELU ŘÍKÁME: "DEJ TOMU ČAS AŽ 60 SEKUND, NEZABÍJEJ TO HNED!"
+export const maxDuration = 300; // TÍMHLE VERCELU ŘÍKÁME: "DEJ TOMU ČAS AŽ 60 SEKUND, NEZABÍJEJ TO HNED!"
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
