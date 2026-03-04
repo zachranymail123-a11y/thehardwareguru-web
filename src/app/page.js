@@ -18,7 +18,7 @@ export default function HomePage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 
-  // --- POMOCNÉ FUNKCE (Teď už definované přímo uvnitř!) ---
+  // --- NEPRŮSTŘELNÉ FUNKCE ---
   const getSafeImage = (url) => {
     if (!url || !url.startsWith('http')) return 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000&auto=format&fit=crop';
     return url;
@@ -54,7 +54,7 @@ export default function HomePage() {
           nejnovejsiTweaky: tw.data || []
         });
       } catch (err) {
-        console.error("Chyba při načítání dat:", err);
+        console.error("Data load fail:", err);
       } finally {
         setLoading(false);
       }
@@ -78,7 +78,7 @@ export default function HomePage() {
         .section-title-wrapper { background: rgba(0,0,0,0.7); padding: 18px 35px; border-radius: 18px; backdrop-filter: blur(8px); border: 1px solid rgba(234, 179, 8, 0.2); display: inline-block; }
       `}</style>
 
-      {/* --- HLAVIČKA --- */}
+      {/* --- NAVIGACE --- */}
       <nav style={navStyles}>
         <div style={{ fontSize: '1.5rem', fontWeight: '900', color: '#a855f7', letterSpacing: '1px' }}>HARDWARE GURU</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
@@ -90,6 +90,7 @@ export default function HomePage() {
           <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)', margin: '0 10px' }}></div>
           <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn-main" style={{ background: '#53fc18', color: '#000', padding: '6px 14px', fontSize: '12px' }}>KICK</a>
           <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-btn-main" style={{ background: '#ff0000', color: '#fff', padding: '6px 14px', fontSize: '12px' }}>YOUTUBE</a>
+          <a href="https://discord.gg/n7xThr8" target="_blank" className="social-btn-main" style={{ background: '#5865F2', color: '#fff', padding: '6px 14px', fontSize: '12px' }}>DISCORD</a>
           <Link href="/support" className="nav-link" style={{color: '#eab308'}}><Heart size={16}/> PODPORA</Link>
         </div>
       </nav>
@@ -105,22 +106,22 @@ export default function HomePage() {
               Budujeme <span style={{ color: '#66fcf1' }}>Ideální Místo</span> <br/> pro Hráče a Geeky
             </h1>
             <p style={{ fontSize: '1.2rem', lineHeight: '1.7', color: '#e0e0e0', marginBottom: '35px', maxWidth: '750px' }}>
-              Čau, jsem GURU. S 20 lety praxe v servisu hardware vím, kde každá mašina tlačí. Moje mise je jasná: <strong>vymýtit lagy, zkrotit FPS a vytvořit web, kde se každý geek cítí jako doma.</strong> Tady nejde jen o AI návody, jde o čistou vášeň pro železo a komunitu, co drží spolu.
+              Čau, jsem GURU. S 20 lety praxe v servisu hardware vím, kde každá mašina tlačí. Moje mise je jasná: <strong>vymýtit lagy, zkrotit FPS a vytvořit web, kde se každý geek cítí jako doma.</strong> Tady nejde o žádný suchý návody, jde o čistou vášeň pro železo a služby, co drží tuhle scénu naživu.
             </p>
             <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
               <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn-main" style={{ background: '#53fc18', color: '#000' }}>SLEDOVAT LIVE</a>
               <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-btn-main" style={{ background: '#ff0000', color: '#fff' }}>GURU YOUTUBE</a>
-              <Link href="/support" className="social-btn-main" style={{ background: '#eab308', color: '#000' }}>PODPOŘIT KOMUNITU</Link>
+              <Link href="/support" className="social-btn-main" style={{ background: '#eab308', color: '#000' }}>PODPOŘIT WEB A SLUŽBY</Link>
             </div>
         </div>
         <div style={avatarStyles}>HG</div>
       </header>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '100px', color: '#a855f7', fontWeight: 'bold' }}>Načítám Guru znalosti...</div>
+        <div style={{ textAlign: 'center', padding: '100px', color: '#a855f7', fontWeight: 'bold' }}>GURU aktualizuje systémy...</div>
       ) : (
         <>
-          {/* --- GURU TIPY --- */}
+          {/* --- TIPY --- */}
           <section style={sectionStyles}>
             <div className="section-title-wrapper" style={{ marginBottom: '30px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
@@ -145,7 +146,7 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* --- GURU TWEAKY --- */}
+          {/* --- TWEAKY --- */}
           <section style={{ ...sectionStyles, marginTop: '40px' }}>
             <div className="section-title-wrapper" style={{ marginBottom: '30px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
@@ -172,7 +173,7 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* --- ČLÁNKY & VIDEA --- */}
+          {/* --- ČLÁNKY --- */}
           <main style={{ ...sectionStyles, marginTop: '80px' }}>
             <div className="section-title-wrapper" style={{ margin: '0 auto 40px', display: 'block', textAlign: 'center', maxWidth: 'fit-content' }}>
               <h2 style={{ color: '#fff', fontSize: '2.2rem', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>Nejnovější články & Videa</h2>
