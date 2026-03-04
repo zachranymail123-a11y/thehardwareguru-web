@@ -11,10 +11,10 @@ const supabaseAdmin = createClient(
 export async function POST(req) {
   try {
     const { title, slug, pin } = await req.json();
-    if (pin !== process.env.GURU_PIN) return NextResponse.json({ error: 'Špatný PIN!' }, { status: 401 });
+    if (pin !== process.env.GURU_PIN) return NextResponse.json({ error: 'Špatný PIN, kámo!' }, { status: 401 });
 
     let rawText = '';
-    let sourceUsed = 'Google AI Search';
+    let sourceUsed = 'Google Serper + Guru Knowledge Base';
 
     // 1. Rešerše přes Serper (Hledáme požadavky a hardcore fixy)
     try {
@@ -22,7 +22,7 @@ export async function POST(req) {
         method: 'POST',
         headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          q: `${title} PC optimization stuttering fix steam system requirements reddit config ini`,
+          q: `${title} PC optimization steam system requirements reddit config ini stuttering fix`,
           gl: 'us', hl: 'en'
         })
       });
@@ -30,19 +30,36 @@ export async function POST(req) {
       rawText = data.organic?.map(res => `${res.title}: ${res.snippet}`).join('\n\n') || '';
     } catch (e) { console.error('Serper fail'); }
 
-    // 2. Brutální Guru Prompt
+    // 2. Brutální Guru Prompt se všemi tvými požadavky
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo",
       messages: [
-        { role: "system", content: "Jsi 'The Hardware Guru'. ZAKAZUJI TI psát obecné rady. Piš drsně a technicky. Musíš zahrnout systémové požadavky." },
-        { role: "user", content: `Hra: ${title}\nData: ${rawText}\n\nVygeneruj JSON:\n1. "seo_description": Začíná "Optimalizace ${title} - "\n2. "image_prompt": Urči žánr hry a napiš anglický prompt pro DALL-E 3 na téma 'cinematic gaming hardware' v barvách toho žánru. NESMÍŠ použít název hry v promptu!\n3. "html_content": HTML kód se strukturou: <h2>Guru Analýza</h2> (stav portu/engine), <h2>Systémové požadavky</h2> (Steam tabulka/seznam), <h2>Hardcore Fixy</h2> (cesty k .ini, launch options), <h2>Co žere FPS</h2> (konkrétní položky v menu).` }
+        { 
+          role: "system", 
+          content: "Jsi 'The Hardware Guru'. Píšeš drsně, technicky a bez zbytečných keců. Tvým úkolem je vytvořit EXTRÉMNĚ detailní návod. PŘÍSNĚ ZAKAZUJI obecné rady. Musíš zahrnout přesné systémové požadavky ze Steamu a hardcore technické úpravy." 
+        },
+        { 
+          role: "user", 
+          content: `Hra: ${title}
+Data k analýze: ${rawText}
+
+VYGENERUJ JSON S TĚMITO KLÍČI:
+1. "seo_description": Začíná "Optimalizace ${title} - " (max 150 znaků).
+2. "image_prompt": Anglický prompt pro DALL-E 3: styl high-tech cinematic hardware, barvy podle žánru hry, neonové akcenty. NESMÍŠ použít název hry.
+3. "html_content": HTML kód s touto strukturou:
+   - <h2>Guru Analýza</h2>: Technický stav, engine, co vývojáři podělali.
+   - <h2>Systémové požadavky (Steam)</h2>: PŘESNÁ tabulka nebo seznam (Minimální vs Doporučené).
+   - <h2>Hardcore Fixy a Optimalizace</h2>: Konkrétní cesty k .ini souborům (např. %LOCALAPPDATA%), launch parametry (-dx12, -high), úpravy registrů nebo fixy pro VRAM.
+   - <h2>Nastavení ve hře: Co zabíjí FPS</h2>: Konkrétní položky z menu (např. Volumetric Clouds) a doporučené hodnoty.
+   - <div class="guru-footer">Na konci článku VŽDY přidej: 'Sleduj mě na https://kick.com/thehardwareguru pro live optimalizace a checkuj můj YouTube https://www.youtube.com/@TheHardwareGuru_Czech.'</div>` 
+        }
       ],
       response_format: { type: "json_object" }
     });
 
     const ai = JSON.parse(completion.choices[0].message.content);
 
-    // 3. Generování obrázku bez copyright banu
+    // 3. Generování obrázku (Žánrový prompt bez copyright banu)
     let finalImg = 'EMPTY';
     try {
       const imgRes = await openai.images.generate({
@@ -58,8 +75,15 @@ export async function POST(req) {
         const { data: pUrl } = supabaseAdmin.storage.from('images').getPublicUrl(fileName);
         finalImg = pUrl.publicUrl;
       }
-    } catch (e) { console.error('Obrázek fail'); }
+    } catch (e) { console.error('DALL-E fail'); }
 
-    return NextResponse.json({ seo_description: ai.seo_description, html_content: ai.html_content, image_url: finalImg, source: sourceUsed });
-  } catch (err) { return NextResponse.json({ error: err.message }, { status: 500 }); }
+    return NextResponse.json({ 
+      seo_description: ai.seo_description, 
+      html_content: ai.html_content, 
+      image_url: finalImg, 
+      source: sourceUsed 
+    });
+  } catch (err) { 
+    return NextResponse.json({ error: err.message }, { status: 500 }); 
+  }
 }
