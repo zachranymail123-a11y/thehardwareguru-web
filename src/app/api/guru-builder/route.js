@@ -1,26 +1,23 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import OpenAI from 'openai';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req) {
   try {
     const { budget } = await req.json();
     const budgetNum = Number(budget);
 
-    // 1. TUPĚ VYBEREME VŠECHNO Z TVÉ TABULKY COMPONENTS
+    // 1. Vytáhneme data z DB
     const { data: dbComponents, error: dbError } = await supabase
       .from('components')
       .select('*');
 
     if (dbError) throw dbError;
 
-    // Pomocná funkce pro vytažení dílu podle jména
     const getComp = (name) => dbComponents.find(c => c.name === name);
 
-    // 2. TVŮJ PEVNÝ ZÁKLAD (Pracujeme s tím, co jsi nasyncoval)
+    // 2. Tvůj pevný základ
     let build = {
       gpu: getComp('GIGABYTE GeForce RTX 5070 EAGLE OC 12G'),
       cpu: getComp('AMD Ryzen 7 7700'),
@@ -31,11 +28,9 @@ export async function POST(req) {
     };
 
     const getPartsPrice = (b) => b.gpu.price + b.cpu.price + b.mb.price + b.ram.price + b.ssd.price;
-
-    // 3. MATEMATICKÝ UPGRADE (GPU -> CPU -> MB -> RAM)
     let budgetLeft = budgetNum - (getPartsPrice(build) + build.psu.price);
 
-    // Upgrade GPU
+    // 3. Upgrade Logika (GPU -> CPU -> MB -> RAM)
     const gpu5090 = getComp('GIGABYTE GeForce RTX 5090 GAMING OC 32G');
     const gpu5080 = getComp('GIGABYTE GeForce RTX 5080 GAMING OC 16G');
     if (budgetLeft >= (gpu5090.price - build.gpu.price)) {
@@ -46,28 +41,19 @@ export async function POST(req) {
       budgetLeft -= (gpu5080.price - build.gpu.price);
     }
 
-    // Upgrade CPU
     const cpu9800 = getComp('AMD Ryzen 7 9800X3D');
     if (budgetLeft >= (cpu9800.price - build.cpu.price)) {
       build.cpu = cpu9800;
       budgetLeft -= (cpu9800.price - build.cpu.price);
     }
 
-    // Upgrade MB
     const mbX870 = getComp('MSI MPG X870E CARBON WIFI');
     if (budgetLeft >= (mbX870.price - build.mb.price)) {
-      build.mb = mbX870;
-      budgetLeft -= (mbX870.price - build.mb.price);
+        build.mb = mbX870;
+        budgetLeft -= (mbX870.price - build.mb.price);
     }
 
-    // Upgrade RAM
-    const ram64 = getComp('Patriot Viper Venom 64GB KIT DDR5 6000MHz CL30');
-    if (budgetLeft >= (ram64.price - build.ram.price)) {
-      build.ram = ram64;
-      budgetLeft -= (ram64.price - build.ram.price);
-    }
-
-    // 4. VÝPOČET ZDROJE (TDP + TGP + 100W)
+    // 4. Zdroj podle TDP/TGP
     const reqPwr = (build.cpu.tdp || 65) + (build.gpu.tgp || 250) + 100;
     if (reqPwr > 850) build.psu = getComp('Seasonic Vertex GX-1000 ATX 3.0');
     else if (reqPwr > 650) build.psu = getComp('Seasonic Focus GX-850 ATX 3.0');
@@ -76,10 +62,11 @@ export async function POST(req) {
     const finalTotal = getPartsPrice(build) + build.psu.price;
     const slug = `guru-sestava-${budget}-${Date.now()}`;
 
-    // 5. ULOŽENÍ VÝSLEDKU (Blesková akce)
+    // 5. ULOŽENÍ - TADY JE OPRAVA PRO 'usage'
     const { error: insertError } = await supabase.from('sestavy').insert([{
       title: `Guru Herní Mašina za ${finalTotal.toLocaleString()} Kč`,
       budget: budget,
+      usage: "Gaming", // FIX: Tohle tam v tabulce sestavy MUSÍ být
       components: Object.keys(build).map(key => ({
         part: key.toUpperCase(),
         name: build[key].name,
@@ -87,7 +74,7 @@ export async function POST(req) {
         link: build[key].product_url
       })),
       total_price: finalTotal,
-      content: `Sestava optimalizovaná pro rozpočet ${budget} Kč.`,
+      content: "Profesionálně odladěná sestava z tvých pevných komponent.",
       slug: slug,
       image_url: "https://i.postimg.cc/QdWxszv3/bg-guru.png"
     }]);
