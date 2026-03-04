@@ -1,11 +1,19 @@
-"use client";
-import React, { useState } from 'react';
+import React from 'react';
 import { Home, Lightbulb, Book, PenTool, Newspaper, Monitor, Settings, Wrench, Activity } from 'lucide-react';
 import Link from 'next/link';
 
-export default function TweakyPage() {
-  const [hoveredCard, setHoveredCard] = useState(null);
+// TADY JE TA MAGIE PRO GOOGLE SEARCH CONSOLE A RSS
+export const metadata = {
+  title: 'GURU TWEAKY | The Hardware Guru',
+  description: 'Ždímáme z tvýho hardwaru maximum. Návody, fixy na zkurvené porty, optimalizace FPS a úpravy configů pro nejnovější pecky.',
+  alternates: {
+    types: {
+      'application/rss+xml': 'https://www.thehardwareguru.cz/rss.xml',
+    },
+  },
+};
 
+export default function TweakyPage() {
   // Ukázková data pro články z PCGamingWiki
   const tweaky = [
     {
@@ -84,7 +92,7 @@ export default function TweakyPage() {
             GURU <span style={{ color: '#eab308' }}>TWEAKY</span>
           </h1>
           <p style={{ color: '#9ca3af', fontSize: '20px', maxWidth: '700px', margin: '0 auto', lineHeight: '1.6' }}>
-            Ždímáme z tvýho hardwaru i ten poslední zbytek výkonu. Fixy na zkurvený porty, odemčení FPS a úpravy configů.
+            Ždímáme z tvýho hardwaru i ten poslední zbytek výkonu. Fixy na nedodělaný porty, odemčení FPS a úpravy configů.
           </p>
         </div>
 
@@ -99,8 +107,6 @@ export default function TweakyPage() {
               href={`/tweaky/${tweak.slug}`} 
               key={tweak.id} 
               style={{ textDecoration: 'none', color: 'inherit' }}
-              onMouseEnter={() => setHoveredCard(tweak.id)}
-              onMouseLeave={() => setHoveredCard(null)}
             >
               <div style={{
                 background: 'rgba(17, 19, 24, 0.85)', 
@@ -111,9 +117,7 @@ export default function TweakyPage() {
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                transition: 'all 0.3s ease',
-                transform: hoveredCard === tweak.id ? 'translateY(-5px)' : 'translateY(0)',
-                boxShadow: hoveredCard === tweak.id ? '0 10px 30px rgba(234, 179, 8, 0.15)' : 'none'
+                cursor: 'pointer'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '15px' }}>
                   <Settings size={14} /> {tweak.category}
@@ -151,7 +155,6 @@ const navItemStyle = {
   display: 'flex',
   alignItems: 'center',
   gap: '8px',
-  transition: '0.2s'
 };
 
 const socialBtnStyle = (color) => ({
