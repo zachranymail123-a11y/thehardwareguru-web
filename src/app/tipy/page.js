@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { createClient } from '@supabase/supabase-js';
-import { Home, Lightbulb, Book, PenTool, Newspaper, Monitor, Wrench, Zap, Star } from 'lucide-react';
+import { Home, Lightbulb, Book, PenTool, Newspaper, Monitor, Wrench, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
 const TipyContent = () => {
@@ -22,7 +22,6 @@ const TipyContent = () => {
 
         const supabase = createClient(supabaseUrl, supabaseKey);
 
-        // Taháme data z tabulky "tipy" (ujisti se, že ji máš v DB takhle pojmenovanou)
         const { data, error } = await supabase
           .from('tipy')
           .select('*')
@@ -55,31 +54,53 @@ const TipyContent = () => {
         <Link href="/rady" style={navItemStyle}><PenTool size={18} /> RADY</Link>
       </nav>
 
-      <div style={{ padding: '40px 20px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ padding: '60px 20px', maxWidth: '1200px', margin: '0 auto' }}>
         
         <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', color: '#eab308' }}><Zap size={48} /></div>
-          <h1 style={{ fontSize: '54px', fontWeight: '900', fontStyle: 'italic', textTransform: 'uppercase', margin: '0 0 20px 0' }}>GURU <span style={{ color: '#eab308' }}>TIPY</span></h1>
-          <p style={{ color: '#9ca3af', fontSize: '18px' }}>Rychlé vychytávky, které ti usnadní život s PC.</p>
+          <h1 style={{ fontSize: '54px', fontWeight: '900', fontStyle: 'italic', textTransform: 'uppercase', margin: '0 0 10px 0' }}>
+            GURU <span style={{ color: '#eab308' }}>TIPY</span>
+          </h1>
+          <p style={{ color: '#9ca3af', fontSize: '18px', maxWidth: '600px', margin: '0 auto' }}>Krátké, úderné a užitečné rady pro každého hračičku a stavitele.</p>
         </div>
 
-        {loading && <div style={{ textAlign: 'center', color: '#eab308' }}>Načítám Guru tipy...</div>}
+        {loading && <div style={{ textAlign: 'center', color: '#eab308' }}>Načítám z databáze...</div>}
         {errorMsg && <div style={{ textAlign: 'center', color: '#ef4444' }}>Chyba: {errorMsg}</div>}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '30px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '30px' }}>
           {tipy.map((tip) => (
-            <div key={tip.id} style={{ background: 'rgba(17, 19, 24, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(234, 179, 8, 0.2)', borderRadius: '28px', padding: '35px', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '15px' }}>
-                <Star size={14} /> TIP
+            <div key={tip.id} style={{ 
+              background: 'linear-gradient(180deg, rgba(17, 19, 24, 0.9) 0%, rgba(10, 11, 13, 1) 100%)', 
+              borderRadius: '24px', 
+              overflow: 'hidden', 
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+            }}>
+              {/* Obrázek - pokud má tip image_url, jinak barevný gradient */}
+              <div style={{ width: '100%', height: '220px', background: tip.image_url ? `url(${tip.image_url})` : 'linear-gradient(45deg, #1a1c23, #2d1b4e)', backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative' }}>
+                 <div style={{ position: 'absolute', top: '15px', left: '15px', background: 'rgba(124, 58, 237, 0.2)', color: '#a78bfa', padding: '4px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    {tip.category || 'HARDWARE'}
+                 </div>
               </div>
-              <h2 style={{ fontSize: '24px', fontWeight: '900', marginBottom: '15px' }}>{tip.title}</h2>
-              <p style={{ color: '#ccc', fontSize: '15px', lineHeight: '1.6' }}>{tip.content}</p>
+
+              <div style={{ padding: '30px', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                <h2 style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '15px', color: '#fff', lineHeight: '1.3' }}>
+                  {tip.emoji || '🎬'} {tip.title}
+                </h2>
+                <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '25px', flexGrow: 1 }}>
+                  {tip.content}
+                </p>
+                <Link href={tip.link || '#'} style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#a78bfa', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                  OTEVŘÍT NÁVOD <ChevronRight size={16} />
+                </Link>
+              </div>
             </div>
           ))}
         </div>
 
         {!loading && tipy.length === 0 && !errorMsg && (
-          <div style={{ textAlign: 'center', color: '#9ca3af' }}>Zatím žádné tipy v databázi.</div>
+          <div style={{ textAlign: 'center', color: '#9ca3af', padding: '40px' }}>Zatím žádné tipy v databázi.</div>
         )}
       </div>
     </div>
