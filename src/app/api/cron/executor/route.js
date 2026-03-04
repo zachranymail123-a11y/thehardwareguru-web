@@ -44,6 +44,7 @@ export async function GET() {
   headers(); 
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
+  // Zpět na limit 5 pro výběr, ale zpracujeme jen JEDEN
   const { data: tasks, error: fetchError } = await supabase
     .from('content_plan')
     .select('*')
@@ -54,20 +55,25 @@ export async function GET() {
   if (fetchError) return NextResponse.json({ error: 'Chyba DB', details: fetchError.message });
   if (!tasks || tasks.length === 0) return NextResponse.json({ message: 'Žádné nové úkoly.' });
 
-  // PARALELNÍ ZPRACOVÁNÍ VŠECH ÚKOLŮ NARÁZ
-  const results = await Promise.all(tasks.map(async (task) => {
+  let results = [];
+  let processedCount = 0;
+
+  for (const task of tasks) {
+    if (processedCount >= 1) break; // STRIKTNÍ LIMIT NA 1 ÚKOL PODLE TVÉHO KÓDU
+
     try {
       const taskSlug = createSlug(task.title);
       const { data: existing } = await supabase.from('posts').select('id').or(`slug.eq.${taskSlug},title.ilike.%${task.title.split(':')[0]}%`).limit(1);
 
       if (existing && existing.length > 0) {
         await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
-        return { title: task.title, status: 'DUPLICITA' };
+        results.push({ title: task.title, status: 'DUPLICITA' });
+        continue;
       }
 
       await supabase.from('content_plan').update({ status: 'processing' }).eq('id', task.id);
 
-      // 1. REŠERŠE
+      // REŠERŠE
       const serperRes = await fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
@@ -76,7 +82,7 @@ export async function GET() {
       const searchResults = await serperRes.json();
       const rawContext = JSON.stringify(searchResults.organic || []).substring(0, 6000);
 
-      // 2. PARALELNÍ BĚH: GPT TEXT + DALL-E OBRÁZEK
+      // PARALELNÍ BĚH UVNITŘ JEDNOHO ÚKOLU (TEXT + OBRÁZEK NARÁZ)
       const [completion, imageResponse] = await Promise.all([
         openai.chat.completions.create({
           model: "gpt-4o",
@@ -96,7 +102,6 @@ export async function GET() {
       const article = JSON.parse(completion.choices[0].message.content);
       const finalSlug = createSlug(article.title);
 
-      // 3. STORAGE UPLOAD
       let permanentImageUrl = null;
       if (imageResponse) {
         try {
@@ -108,7 +113,6 @@ export async function GET() {
         } catch (e) {}
       }
 
-      // ULOŽENÍ DO POSTS
       await supabase.from('posts').insert({
         title: article.title,
         slug: finalSlug,
@@ -119,7 +123,6 @@ export async function GET() {
         created_at: new Date().toISOString()
       });
 
-      // MAKE.COM WEBHOOK
       if (MAKE_ARTICLE_WEBHOOK_URL) {
         const cleanDescription = article.content.replace(/<[^>]*>?/gm, '').substring(0, 250).trim() + "...";
         fetch(MAKE_ARTICLE_WEBHOOK_URL, {
@@ -138,13 +141,14 @@ export async function GET() {
       await sendOneSignalNotification(article.title, finalSlug);
       await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
 
-      return { title: article.title, status: 'SUCCESS', slug: finalSlug };
+      results.push({ title: article.title, status: 'SUCCESS', slug: finalSlug });
+      processedCount++; 
 
     } catch (err) {
       await supabase.from('content_plan').update({ status: 'error' }).eq('id', task.id);
-      return { title: task.title, status: 'ERROR', error: err.message };
+      results.push({ title: task.title, status: 'ERROR', error: err.message });
     }
-  }));
+  }
 
   return NextResponse.json({ processed_tasks: results });
 }
