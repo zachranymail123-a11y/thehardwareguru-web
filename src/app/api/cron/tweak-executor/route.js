@@ -9,11 +9,35 @@ export const revalidate = 0;
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
-// Nastavení z tvého funkčního článku-executoru
+const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
+const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY;
+
 const MAKE_ARTICLE_WEBHOOK_URL = process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL;
 
 function createSlug(title) {
   return title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); 
+}
+
+async function sendOneSignalNotification(title, slug) {
+  if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) return false;
+  const articleUrl = `https://www.thehardwareguru.cz/clanky/${slug}`;
+  try {
+    const response = await fetch("https://api.onesignal.com/notifications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`,
+      },
+      body: JSON.stringify({
+        app_id: ONESIGNAL_APP_ID,
+        included_segments: ["Total Subscriptions"],
+        contents: { en: `Nový článek: ${title}`, cs: `Nový článek: ${title}` },
+        headings: { en: "The Hardware Guru", cs: "The Hardware Guru" },
+        url: articleUrl,
+      }),
+    });
+    return response.ok;
+  } catch (error) { return false; }
 }
 
 export async function GET() {
@@ -21,22 +45,25 @@ export async function GET() {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
   // =========================================================================
-  // 1. PRIORITA: KONTROLA EXISTUJÍCÍCH TWEAKŮ (odeslání na Make.com)
+  // 1. KROK: KONTROLA TWEAKŮ (Pokud najde planned, pošle na Make a UKONČÍ SE)
   // =========================================================================
   const { data: plannedTweaks, error: tweakCheckError } = await supabase
     .from('tweaky')
     .select('*')
-    .eq('tweak_plan', 'planned')
+    .ilike('tweak_plan', '%planned%') // ILIKE pro jistotu, kdyby tam byla mezera
     .order('id', { ascending: true })
-    .limit(1); // Striktně vezme jen jeden
+    .limit(1);
 
   if (plannedTweaks && plannedTweaks.length > 0) {
     const tweakTask = plannedTweaks[0];
     
     try {
-      // POUZE odeslání na webhook, žádné generování AI
+      // POUZE odešle na Make.com webhook
       if (MAKE_ARTICLE_WEBHOOK_URL) {
-        const cleanDesc = tweakTask.description || "Nový Guru Tweak je venku!";
+        // Vyčištění popisku od HTML pro webhook
+        const rawDesc = tweakTask.description || tweakTask.content || "";
+        const cleanDesc = rawDesc.replace(/<[^>]*>?/gm, '').substring(0, 250).trim() + "...";
+        
         await fetch(MAKE_ARTICLE_WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -50,41 +77,41 @@ export async function GET() {
         });
       }
 
-      // Změna statusu v tabulce tweaky, ať to příště nepošle znova
+      // Změní status na 'published', aby se ten samý tweak neposlal znova
       await supabase.from('tweaky').update({ tweak_plan: 'published' }).eq('id', tweakTask.id);
 
-      // UKONČÍME BĚH EXECUTORU - Splněn limit 1 úkol na 1 spuštění!
-      return NextResponse.json({ processed_tweaks: [{ title: tweakTask.title, status: 'MAKE_ONLY_SUCCESS', slug: tweakTask.slug }] });
+      // OKAMŽITĚ SKONČÍ (splněn 1 úkol)
+      return NextResponse.json({ processed_tasks: [{ title: tweakTask.title, status: 'MAKE_ONLY_SUCCESS', type: 'tweak' }] });
 
     } catch (err) {
       await supabase.from('tweaky').update({ tweak_plan: 'error' }).eq('id', tweakTask.id);
-      return NextResponse.json({ processed_tweaks: [{ title: tweakTask.title, status: 'ERROR', error: err.message }] });
+      return NextResponse.json({ processed_tasks: [{ title: tweakTask.title, status: 'ERROR', error: err.message }] });
     }
   }
 
   // =========================================================================
-  // 2. TVŮJ PŮVODNÍ KÓD: GENEROVÁNÍ (Spustí se jen když není nic výše)
+  // 2. KROK: GENEROVÁNÍ BĚŽNÝCH ČLÁNKŮ (Spustí se jen, když v tweaky nic není)
   // =========================================================================
   const { data: tasks, error: fetchError } = await supabase
     .from('content_plan')
     .select('*')
-    .eq('status', 'planned')
-    .eq('type', 'tweak') 
+    .eq('status', 'planned') 
     .order('id', { ascending: true })
     .limit(5);
 
   if (fetchError) return NextResponse.json({ error: 'Chyba DB', details: fetchError.message });
-  if (!tasks || tasks.length === 0) return NextResponse.json({ message: 'Žádné nové tweaky k vyřízení.' });
+  // Tady se vypíše tvoje hláška, pokud není planned tweak ani planned článek
+  if (!tasks || tasks.length === 0) return NextResponse.json({ message: 'Žádné nové úkoly.' });
 
   let results = [];
   let processedCount = 0;
 
   for (const task of tasks) {
-    if (processedCount >= 1) break; 
+    if (processedCount >= 1) break; // Zpracuje se vždy jen jeden článek
 
     try {
       const taskSlug = createSlug(task.title);
-      const { data: existing } = await supabase.from('tweaky').select('id').eq('slug', taskSlug).limit(1);
+      const { data: existing } = await supabase.from('posts').select('id').or(`slug.eq.${taskSlug},title.ilike.%${task.title.split(':')[0]}%`).limit(1);
 
       if (existing && existing.length > 0) {
         await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
@@ -97,7 +124,7 @@ export async function GET() {
       const serperRes = await fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q: `${task.title} PC optimization steam system requirements reddit config ini stuttering fix`, num: 10 })
+        body: JSON.stringify({ q: `${task.title} review benchmarks youtube video`, num: 10 })
       });
       const searchResults = await serperRes.json();
       const rawContext = JSON.stringify(searchResults.organic || []).substring(0, 6000);
@@ -106,64 +133,61 @@ export async function GET() {
         openai.chat.completions.create({
           model: "gpt-4o",
           messages: [
-            { 
-              role: "system", 
-              content: "Jsi 'The Hardware Guru'. Píšeš drsně, technicky. JSON: { \"title\": \"...\", \"seo_description\": \"...\", \"html_content\": \"...\" }" 
-            },
-            { role: "user", content: `Vytvoř GURU TWEAK pro: "${task.title}". Data: ${rawContext}. HTML musí obsahovat Guru Analýzu a Hardcore Fixy.` }
+            { role: "system", content: "Jsi elitní šéfredaktor The Hardware Guru. Piš VÝHRADNĚ ČESKY. Styl: drsný, profesionální. JSON: { \"title\": \"...\", \"content\": \"HTML obsah\", \"youtube_url\": \"link\" }" },
+            { role: "user", content: `Napiš článek o: "${task.title}". Data: ${rawContext}` }
           ],
           response_format: { type: "json_object" }
         }),
         openai.images.generate({
           model: "dall-e-3",
-          prompt: `High-tech cinematic PC hardware, glowing neon, liquid cooling, extreme detail for: ${task.title}. No text.`,
+          prompt: `Epic tech magazine thumbnail for: ${task.title}. Photorealistic, no text.`,
           n: 1, size: "1024x1024",
         }).catch(() => null)
       ]);
 
-      const tweak = JSON.parse(completion.choices[0].message.content);
-      const finalSlug = createSlug(tweak.title || task.title);
+      const article = JSON.parse(completion.choices[0].message.content);
+      const finalSlug = createSlug(article.title);
 
       let permanentImageUrl = null;
       if (imageResponse) {
         try {
           const imgRes = await fetch(imageResponse.data[0].url);
           const imageBlob = await imgRes.blob();
-          const fileName = `tweaky/${finalSlug}-${Date.now()}.png`;
-          await supabase.storage.from('images').upload(fileName, imageBlob, { contentType: 'image/png', upsert: true });
-          permanentImageUrl = supabase.storage.from('images').getPublicUrl(fileName).data.publicUrl;
+          const fileName = `${finalSlug}-${Date.now()}.png`;
+          await supabase.storage.from('article_images').upload(fileName, imageBlob, { contentType: 'image/png', upsert: true });
+          permanentImageUrl = supabase.storage.from('article_images').getPublicUrl(fileName).data.publicUrl;
         } catch (e) {}
       }
 
-      await supabase.from('tweaky').insert({
-        title: tweak.title || task.title,
+      await supabase.from('posts').insert({
+        title: article.title,
         slug: finalSlug,
-        description: tweak.seo_description,
-        content: tweak.html_content,
+        content: article.content,
+        type: task.type || 'hardware',
         image_url: permanentImageUrl,
-        category: 'Optimalizace',
+        youtube_url: article.youtube_url,
         created_at: new Date().toISOString()
       });
 
       if (MAKE_ARTICLE_WEBHOOK_URL) {
-        try {
-          const cleanDesc = tweak.seo_description || "Nový Guru Tweak je venku!";
-          await fetch(MAKE_ARTICLE_WEBHOOK_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              title: tweak.title || task.title,
-              url: `https://www.thehardwareguru.cz/tweaky/${finalSlug}`,
-              image_url: permanentImageUrl,
-              description: cleanDesc,
-              type: 'tweak'
-            }),
-          });
-        } catch (e) {}
+        const cleanDescription = article.content.replace(/<[^>]*>?/gm, '').substring(0, 250).trim() + "...";
+        fetch(MAKE_ARTICLE_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: article.title,
+            url: `https://www.thehardwareguru.cz/clanky/${finalSlug}`,
+            image_url: permanentImageUrl,
+            description: cleanDescription,
+            type: task.type || 'article'
+          }),
+        }).catch(() => {});
       }
 
+      await sendOneSignalNotification(article.title, finalSlug);
       await supabase.from('content_plan').update({ status: 'published' }).eq('id', task.id);
-      results.push({ title: task.title, status: 'SUCCESS', slug: finalSlug });
+
+      results.push({ title: article.title, status: 'SUCCESS', slug: finalSlug });
       processedCount++; 
 
     } catch (err) {
@@ -173,5 +197,5 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ processed_tweaks: results });
+  return NextResponse.json({ processed_tasks: results });
 }
