@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Settings, Save, AlertCircle, CheckCircle } from 'lucide-react';
+import { Settings, Save, AlertCircle, CheckCircle, Zap } from 'lucide-react';
 import Link from 'next/link';
 
 // Připojení k Supabase
@@ -14,7 +14,7 @@ export default function TweakyGenerator() {
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
-    category: '',
+    category: 'Optimalizace', // Dal jsem tu defaultně Optimalizace
     description: '',
     image_url: '',
     content: ''
@@ -22,6 +22,7 @@ export default function TweakyGenerator() {
 
   const [status, setStatus] = useState({ type: '', message: '' });
   const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false); // Stav pro načítání AI
 
   // Automatické generování URL ze jména (např. "GTA 6 Fix" -> "gta-6-fix")
   const handleTitleChange = (e) => {
@@ -33,6 +34,45 @@ export default function TweakyGenerator() {
       .replace(/(^-|-$)+/g, ''); // Odstraní pomlčky na začátku a konci
 
     setFormData({ ...formData, title: newTitle, slug: autoSlug });
+  };
+
+  // MAGICKÁ AI FUNKCE
+  const generateWithAI = async () => {
+    if (!formData.title) {
+      setStatus({ type: 'error', message: 'Nejdřív musíš napsat Název Hry (H1), aby AI věděla, co má hledat na PCGamingWiki!' });
+      return;
+    }
+
+    setAiLoading(true);
+    setStatus({ type: '', message: 'Hledám na PCGamingWiki a startuju AI. Tohle může trvat 10-20 sekund...' });
+
+    try {
+      const res = await fetch('/api/generate-tweak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            title: formData.title,
+            slug: formData.slug 
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Chyba API');
+
+      setFormData(prev => ({
+        ...prev,
+        description: data.seo_description || '',
+        content: data.html_content || '',
+        image_url: data.image_url || ''
+      }));
+
+      setStatus({ type: 'success', message: 'Guru AI to tam nasypala a obrázek je uložen na tvém serveru! Zkontroluj to a ulož.' });
+    } catch (error) {
+      setStatus({ type: 'error', message: `AI selhalo: ${error.message}` });
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -54,8 +94,8 @@ export default function TweakyGenerator() {
 
       if (error) throw error;
 
-      setStatus({ type: 'success', message: 'Tweak byl úspěšně uložen do databáze! RSS a Sitemap jsou aktualizovány.' });
-      setFormData({ title: '', slug: '', category: '', description: '', image_url: '', content: '' }); // Vyčistí formulář
+      setStatus({ type: 'success', message: 'Tweak byl úspěšně uložen do databáze! RSS a Sitemap ho automaticky natáhly.' });
+      setFormData({ title: '', slug: '', category: 'Optimalizace', description: '', image_url: '', content: '' }); // Vyčistí formulář
     } catch (error) {
       console.error(error);
       setStatus({ type: 'error', message: `Chyba při ukládání: ${error.message}` });
@@ -81,10 +121,10 @@ export default function TweakyGenerator() {
         {/* HLAVIČKA GENERÁTORU */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <h1 style={{ fontSize: '42px', fontWeight: '900', fontStyle: 'italic', textTransform: 'uppercase', marginBottom: '10px' }}>
-            <span style={{ color: '#eab308' }}>Guru</span> Generátor Tweaků
+            <span style={{ color: '#eab308' }}>Guru</span> AI Generátor
           </h1>
           <p style={{ color: '#9ca3af', fontSize: '16px' }}>
-            Rozhraní pro přidávání nových článků do sekce GURU TWEAKY.
+            Rozhraní pro přidávání nových článků s AI podporou.
           </p>
           <div style={{ marginTop: '20px' }}>
             <Link href="/" style={{ color: '#eab308', textDecoration: 'none', fontSize: '14px', fontWeight: 'bold' }}>
@@ -111,20 +151,20 @@ export default function TweakyGenerator() {
               display: 'flex', 
               alignItems: 'center', 
               gap: '10px',
-              background: status.type === 'success' ? 'rgba(0, 255, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)',
-              border: status.type === 'success' ? '1px solid #00e701' : '1px solid #ff0000',
-              color: status.type === 'success' ? '#00e701' : '#ff0000'
+              background: status.type === 'success' ? 'rgba(0, 255, 0, 0.1)' : (status.type === 'error' ? 'rgba(255, 0, 0, 0.1)' : 'rgba(234, 179, 8, 0.1)'),
+              border: status.type === 'success' ? '1px solid #00e701' : (status.type === 'error' ? '1px solid #ff0000' : '1px solid #eab308'),
+              color: status.type === 'success' ? '#00e701' : (status.type === 'error' ? '#ff0000' : '#eab308')
             }}>
-              {status.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+              {status.type === 'success' ? <CheckCircle size={20} /> : (status.type === 'error' ? <AlertCircle size={20} /> : <Zap size={20} />)}
               <span style={{ fontWeight: 'bold' }}>{status.message}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             
-            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div style={{ flex: '1 1 300px' }}>
-                <label style={labelStyle}>Název Hry / Tweaku (H1)</label>
+                <label style={labelStyle}>Název Hry (AI ho použije pro hledání)</label>
                 <input 
                   type="text" 
                   required 
@@ -134,6 +174,35 @@ export default function TweakyGenerator() {
                   placeholder="Např. Resident Evil Requiem"
                 />
               </div>
+
+              {/* TLAČÍTKO PRO AI MAGII */}
+              <button 
+                type="button"
+                onClick={generateWithAI}
+                disabled={aiLoading || !formData.title}
+                style={{
+                  background: aiLoading ? '#4c1d95' : '#7c3aed',
+                  color: '#fff', 
+                  border: 'none', 
+                  padding: '16px 20px', 
+                  borderRadius: '12px', 
+                  fontSize: '14px', 
+                  fontWeight: '900', 
+                  textTransform: 'uppercase', 
+                  cursor: (aiLoading || !formData.title) ? 'not-allowed' : 'pointer', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  height: '54px', 
+                  transition: '0.2s', 
+                  opacity: formData.title ? 1 : 0.5
+                }}
+              >
+                <Zap size={18} /> {aiLoading ? 'AI Maká (10-20s)...' : 'Auto-vyplnit přes AI'}
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 300px' }}>
                 <label style={labelStyle}>URL Slug (Generuje se samo)</label>
                 <input 
@@ -144,9 +213,6 @@ export default function TweakyGenerator() {
                   style={{ ...inputStyle, background: 'rgba(255,255,255,0.05)', color: '#9ca3af' }} 
                 />
               </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 300px' }}>
                 <label style={labelStyle}>Kategorie</label>
                 <input 
@@ -158,16 +224,24 @@ export default function TweakyGenerator() {
                   placeholder="Např. FPS Boost"
                 />
               </div>
-              <div style={{ flex: '1 1 300px' }}>
-                <label style={labelStyle}>URL Obrázku (Volitelné)</label>
-                <input 
-                  type="text" 
-                  value={formData.image_url} 
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })} 
-                  style={inputStyle} 
-                  placeholder="https://..."
+            </div>
+
+            <div>
+              <label style={labelStyle}>URL Obrázku (Vygenerováno a nahráno AI)</label>
+              <input 
+                type="text" 
+                value={formData.image_url} 
+                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })} 
+                style={inputStyle} 
+                placeholder="https://..."
+              />
+              {formData.image_url && (
+                <img 
+                  src={formData.image_url} 
+                  alt="Náhled" 
+                  style={{ marginTop: '15px', height: '120px', borderRadius: '12px', border: '2px solid #eab308' }} 
                 />
-              </div>
+              )}
             </div>
 
             <div>
@@ -182,7 +256,7 @@ export default function TweakyGenerator() {
             </div>
 
             <div>
-              <label style={labelStyle}>Kompletní obsah návodu (HTML nebo Text)</label>
+              <label style={labelStyle}>Kompletní obsah návodu (HTML)</label>
               <textarea 
                 required 
                 value={formData.content} 
@@ -194,7 +268,7 @@ export default function TweakyGenerator() {
 
             <button 
               type="submit" 
-              disabled={loading}
+              disabled={loading || aiLoading}
               style={{
                 background: '#eab308',
                 color: '#000',
@@ -204,13 +278,13 @@ export default function TweakyGenerator() {
                 fontSize: '18px',
                 fontWeight: '900',
                 textTransform: 'uppercase',
-                cursor: loading ? 'not-allowed' : 'pointer',
+                cursor: (loading || aiLoading) ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '10px',
                 marginTop: '10px',
-                opacity: loading ? 0.7 : 1
+                opacity: (loading || aiLoading) ? 0.7 : 1
               }}
             >
               <Save size={24} /> {loading ? 'Ukládám do databáze...' : 'Vypublikovat Tweak'}
