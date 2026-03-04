@@ -3,7 +3,6 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Používáme SERVICE_ROLE_KEY pro neomezený zápis
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 function extractNumber(value) {
@@ -30,11 +29,22 @@ export async function GET(req) {
       
       let price = null;
 
-      // Metoda A: Meta Tagy (Alza je má skoro vždycky správně)
-      const metaMatch = html.match(/property="product:price:amount"\s+content="([^"]+)"/i);
-      if (metaMatch) price = extractNumber(metaMatch[1]);
+      // METODA 1: Meta Tagy (Nejspolehlivější pro Alzu u TOP produktů)
+      const metaPatterns = [
+        /property="product:price:amount"\s+content="([^"]+)"/i,
+        /property="og:price:amount"\s+content="([^"]+)"/i,
+        /itemprop="price"\s+content="([^"]+)"/i
+      ];
 
-      // Metoda B: JSON-LD (Záloha)
+      for (const pattern of metaPatterns) {
+        const match = html.match(pattern);
+        if (match) {
+          const p = extractNumber(match[1]);
+          if (p > 500) { price = p; break; }
+        }
+      }
+
+      // METODA 2: JSON-LD (Záloha)
       if (!price) {
         const jsonMatches = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
         for (const match of jsonMatches) {
@@ -52,21 +62,23 @@ export async function GET(req) {
         }
       }
 
+      // METODA 3: Agresivní Regex na surová data
+      if (!price) {
+        const rawMatch = html.match(/"price"\s*:\s*(\d+)/i);
+        if (rawMatch) price = parseInt(rawMatch[1]);
+      }
+
       if (price && price > 500) {
-        // ZÁPIS PŘES product_url (Zaručeně spáruje správný řádek)
         const { error: updateError } = await supabase
           .from('components')
           .update({ price: price, last_checked: new Date().toISOString() })
           .eq('product_url', comp.product_url);
 
-        results.push({ 
-          name: comp.name, 
-          status: updateError ? 'DB ERROR' : 'OK - ZAPSÁNO', 
-          price: price 
-        });
+        results.push({ name: comp.name, status: updateError ? 'DB ERROR' : 'ZAPSÁNO', price: price });
       } else {
-        results.push({ name: comp.name, status: 'Cena nenalezena' });
+        results.push({ name: comp.name, status: 'Cena stále nenalezena' });
       }
+      
       await new Promise(resolve => setTimeout(resolve, 800));
     }
 
