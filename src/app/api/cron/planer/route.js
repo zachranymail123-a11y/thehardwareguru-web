@@ -32,7 +32,7 @@ export async function GET() {
     const gameSources = "(site:games.tiscali.cz OR site:indian-tv.cz OR site:eurogamer.net)";
     const hwSources = "(site:guru3d.com OR site:pctuning.cz OR site:tomshardware.com)";
     
-    // 1. Paralelní sběr dat ze Serperu (to už jsi tam měl správně)
+    // Paralelní sběr dat ze Serperu
     const [gameRaw, hwRaw] = await Promise.all([
       getCategoryData(`${gameSources} news`),
       getCategoryData(`${hwSources} news`)
@@ -46,12 +46,10 @@ export async function GET() {
 
     let log = [];
 
-    // --- PARALELNÍ ENGINE PRO KATEGORIE ---
     const processCategoryParallel = async (rawItems, type) => {
-      // Vyfiltrujeme duplicity
       let validForProcessing = rawItems
         .filter(item => !usedUrls.has(item.link))
-        .slice(0, 3); // Chceme jen 3 kousky
+        .slice(0, 3);
       
       if (type === 'game') debug.game.after_duplicate_filter = validForProcessing.length;
       if (type === 'hardware') debug.hw.after_duplicate_filter = validForProcessing.length;
@@ -59,7 +57,6 @@ export async function GET() {
       // PARALELNÍ PŘEKLAD A ZÁPIS
       await Promise.all(validForProcessing.map(async (item) => {
         try {
-          // AI překlad běží pro všechny položky naráz
           const completion = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
@@ -71,7 +68,6 @@ export async function GET() {
 
           const czechTitle = JSON.parse(completion.choices[0].message.content).title;
 
-          // Zápis do DB
           const { data, error } = await supabase.from('content_plan').insert({
             title: czechTitle,
             release_date: todayISO,
@@ -91,7 +87,7 @@ export async function GET() {
       }));
     };
 
-    // Odpálíme obě kategorie paralelně
+    // Odpálíme obě kategorie naráz
     await Promise.all([
       processCategoryParallel(gameRaw, 'game'),
       processCategoryParallel(hwRaw, 'hardware')
@@ -106,5 +102,4 @@ export async function GET() {
   } catch (err) {
     return NextResponse.json({ error: err.message, debug: debug });
   }
-}
 }
