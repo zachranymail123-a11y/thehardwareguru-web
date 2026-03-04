@@ -8,31 +8,33 @@ export async function POST(req) {
     const { budget } = await req.json();
     const budgetNum = Number(budget);
 
-    // 1. Vytáhneme data z DB
-    const { data: dbComponents, error: dbError } = await supabase
-      .from('components')
-      .select('*');
-
+    // Načtení komponent z tvé tabulky
+    const { data: dbComponents, error: dbError } = await supabase.from('components').select('*');
     if (dbError) throw dbError;
 
-    const getComp = (name) => dbComponents.find(c => c.name === name);
+    // Funkce, která vezme cenu z DB, nebo tvoji pevnou cenu, pokud je v DB 0 nebo blbost
+    const getComp = (name, backupPrice) => {
+      const c = dbComponents.find(item => item.name === name);
+      const finalPrice = (c && c.price > 1000) ? c.price : backupPrice;
+      return { ...c, price: finalPrice };
+    };
 
-    // 2. Tvůj pevný základ
+    // TVŮJ BETONOVÝ ZÁKLAD (Pevné ceny jako pojistka proti nule v DB)
     let build = {
-      gpu: getComp('GIGABYTE GeForce RTX 5070 EAGLE OC 12G'),
-      cpu: getComp('AMD Ryzen 7 7700'),
-      mb: getComp('MSI MAG B850 TOMAHAWK WIFI'),
-      ram: getComp('Patriot Viper Venom 32GB KIT DDR5 6000MHz CL30'),
-      ssd: getComp('Samsung 990 PRO 2TB'),
-      psu: getComp('Seasonic Core GX-650 ATX 3.1')
+      gpu: getComp('GIGABYTE GeForce RTX 5070 EAGLE OC 12G', 17390),
+      cpu: getComp('AMD Ryzen 7 7700', 6290),
+      mb: getComp('MSI MAG B850 TOMAHAWK WIFI', 5499),
+      ram: getComp('Patriot Viper Venom 32GB KIT DDR5 6000MHz CL30', 2899),
+      ssd: getComp('Samsung 990 PRO 2TB', 4899),
+      psu: getComp('Seasonic Core GX-650 ATX 3.1', 2199)
     };
 
     const getPartsPrice = (b) => b.gpu.price + b.cpu.price + b.mb.price + b.ram.price + b.ssd.price;
     let budgetLeft = budgetNum - (getPartsPrice(build) + build.psu.price);
 
-    // 3. Upgrade Logika (GPU -> CPU -> MB -> RAM)
-    const gpu5090 = getComp('GIGABYTE GeForce RTX 5090 GAMING OC 32G');
-    const gpu5080 = getComp('GIGABYTE GeForce RTX 5080 GAMING OC 16G');
+    // UPGRADY (Pevné ceny pro případ, že v DB je u 5090/5080 pořád nula)
+    const gpu5090 = getComp('GIGABYTE GeForce RTX 5090 GAMING OC 32G', 54990);
+    const gpu5080 = getComp('GIGABYTE GeForce RTX 5080 GAMING OC 16G', 31990);
     if (budgetLeft >= (gpu5090.price - build.gpu.price)) {
       build.gpu = gpu5090;
       budgetLeft -= (gpu5090.price - build.gpu.price);
@@ -41,32 +43,26 @@ export async function POST(req) {
       budgetLeft -= (gpu5080.price - build.gpu.price);
     }
 
-    const cpu9800 = getComp('AMD Ryzen 7 9800X3D');
+    const cpu9800 = getComp('AMD Ryzen 7 9800X3D', 12990);
     if (budgetLeft >= (cpu9800.price - build.cpu.price)) {
       build.cpu = cpu9800;
       budgetLeft -= (cpu9800.price - build.cpu.price);
     }
 
-    const mbX870 = getComp('MSI MPG X870E CARBON WIFI');
-    if (budgetLeft >= (mbX870.price - build.mb.price)) {
-        build.mb = mbX870;
-        budgetLeft -= (mbX870.price - build.mb.price);
-    }
-
-    // 4. Zdroj podle TDP/TGP
+    // Výpočet zdroje
     const reqPwr = (build.cpu.tdp || 65) + (build.gpu.tgp || 250) + 100;
-    if (reqPwr > 850) build.psu = getComp('Seasonic Vertex GX-1000 ATX 3.0');
-    else if (reqPwr > 650) build.psu = getComp('Seasonic Focus GX-850 ATX 3.0');
-    else build.psu = getComp('Seasonic Core GX-650 ATX 3.1');
+    if (reqPwr > 850) build.psu = getComp('Seasonic Vertex GX-1000 ATX 3.0', 4990);
+    else if (reqPwr > 650) build.psu = getComp('Seasonic Focus GX-850 ATX 3.0', 3490);
+    else build.psu = getComp('Seasonic Core GX-650 ATX 3.1', 2199);
 
     const finalTotal = getPartsPrice(build) + build.psu.price;
     const slug = `guru-sestava-${budget}-${Date.now()}`;
 
-    // 5. ULOŽENÍ - TADY JE OPRAVA PRO 'usage'
+    // ULOŽENÍ (Včetně povinného 'usage')
     const { error: insertError } = await supabase.from('sestavy').insert([{
       title: `Guru Herní Mašina za ${finalTotal.toLocaleString()} Kč`,
       budget: budget,
-      usage: "Gaming", // FIX: Tohle tam v tabulce sestavy MUSÍ být
+      usage: "Gaming", // FIX: Tohle tam musí být!
       components: Object.keys(build).map(key => ({
         part: key.toUpperCase(),
         name: build[key].name,
@@ -74,13 +70,12 @@ export async function POST(req) {
         link: build[key].product_url
       })),
       total_price: finalTotal,
-      content: "Profesionálně odladěná sestava z tvých pevných komponent.",
+      content: "Sestava sestavená podle aktuálních skladových cen.",
       slug: slug,
       image_url: "https://i.postimg.cc/QdWxszv3/bg-guru.png"
     }]);
 
     if (insertError) throw insertError;
-
     return NextResponse.json({ success: true, url: `/sestavy/${slug}` });
 
   } catch (error) {
