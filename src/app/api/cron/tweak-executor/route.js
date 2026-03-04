@@ -9,7 +9,7 @@ export const revalidate = 0;
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
-// Nastavení z tvého funkčního článku-executoru [cite: 2026-03-04]
+// Nastavení z tvého funkčního článku-executoru
 const MAKE_ARTICLE_WEBHOOK_URL = process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL;
 
 function createSlug(title) {
@@ -20,7 +20,51 @@ export async function GET() {
   headers(); 
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-  // Hledáme úkoly typu 'tweak', které jsou naplánované [cite: 2026-03-04]
+  // =========================================================================
+  // 1. PRIORITA: KONTROLA EXISTUJÍCÍCH TWEAKŮ (odeslání na Make.com)
+  // =========================================================================
+  const { data: plannedTweaks, error: tweakCheckError } = await supabase
+    .from('tweaky')
+    .select('*')
+    .eq('tweak_plan', 'planned')
+    .order('id', { ascending: true })
+    .limit(1); // Striktně vezme jen jeden
+
+  if (plannedTweaks && plannedTweaks.length > 0) {
+    const tweakTask = plannedTweaks[0];
+    
+    try {
+      // POUZE odeslání na webhook, žádné generování AI
+      if (MAKE_ARTICLE_WEBHOOK_URL) {
+        const cleanDesc = tweakTask.description || "Nový Guru Tweak je venku!";
+        await fetch(MAKE_ARTICLE_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: tweakTask.title,
+            url: `https://www.thehardwareguru.cz/tweaky/${tweakTask.slug}`,
+            image_url: tweakTask.image_url,
+            description: cleanDesc,
+            type: 'tweak'
+          }),
+        });
+      }
+
+      // Změna statusu v tabulce tweaky, ať to příště nepošle znova
+      await supabase.from('tweaky').update({ tweak_plan: 'published' }).eq('id', tweakTask.id);
+
+      // UKONČÍME BĚH EXECUTORU - Splněn limit 1 úkol na 1 spuštění!
+      return NextResponse.json({ processed_tweaks: [{ title: tweakTask.title, status: 'MAKE_ONLY_SUCCESS', slug: tweakTask.slug }] });
+
+    } catch (err) {
+      await supabase.from('tweaky').update({ tweak_plan: 'error' }).eq('id', tweakTask.id);
+      return NextResponse.json({ processed_tweaks: [{ title: tweakTask.title, status: 'ERROR', error: err.message }] });
+    }
+  }
+
+  // =========================================================================
+  // 2. TVŮJ PŮVODNÍ KÓD: GENEROVÁNÍ (Spustí se jen když není nic výše)
+  // =========================================================================
   const { data: tasks, error: fetchError } = await supabase
     .from('content_plan')
     .select('*')
@@ -35,13 +79,11 @@ export async function GET() {
   let results = [];
   let processedCount = 0;
 
-  // Striktní for...of cyklus pro jeden úkol [cite: 2026-03-04]
   for (const task of tasks) {
     if (processedCount >= 1) break; 
 
     try {
       const taskSlug = createSlug(task.title);
-      // Kontrola duplicity v tabulce tweaky [cite: 2026-03-04]
       const { data: existing } = await supabase.from('tweaky').select('id').eq('slug', taskSlug).limit(1);
 
       if (existing && existing.length > 0) {
@@ -52,7 +94,6 @@ export async function GET() {
 
       await supabase.from('content_plan').update({ status: 'processing' }).eq('id', task.id);
 
-      // 1. REŠERŠE (Optimalizace, configy, fixy) [cite: 2026-03-04]
       const serperRes = await fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
@@ -61,7 +102,6 @@ export async function GET() {
       const searchResults = await serperRes.json();
       const rawContext = JSON.stringify(searchResults.organic || []).substring(0, 6000);
 
-      // 2. PARALELNÍ BĚH (Text + Obrázek pro jeden tweak) [cite: 2026-03-04]
       const [completion, imageResponse] = await Promise.all([
         openai.chat.completions.create({
           model: "gpt-4o",
@@ -84,7 +124,6 @@ export async function GET() {
       const tweak = JSON.parse(completion.choices[0].message.content);
       const finalSlug = createSlug(tweak.title || task.title);
 
-      // 3. STORAGE UPLOAD [cite: 2026-03-04]
       let permanentImageUrl = null;
       if (imageResponse) {
         try {
@@ -96,7 +135,6 @@ export async function GET() {
         } catch (e) {}
       }
 
-      // 4. ZÁPIS DO TABULKY TWEAKY [cite: 2026-03-04]
       await supabase.from('tweaky').insert({
         title: tweak.title || task.title,
         slug: finalSlug,
@@ -107,7 +145,6 @@ export async function GET() {
         created_at: new Date().toISOString()
       });
 
-      // 5. ODESLÁNÍ DO MAKE.COM (Stejně jako u článků) [cite: 2026-03-04]
       if (MAKE_ARTICLE_WEBHOOK_URL) {
         try {
           const cleanDesc = tweak.seo_description || "Nový Guru Tweak je venku!";
