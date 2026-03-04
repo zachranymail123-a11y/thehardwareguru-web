@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
+// TATO ŘÁDKA VYNUTÍ ČERSTVÁ DATA PŘI KAŽDÉM VOLÁNÍ (VYPNE CACHE) [cite: 2026-03-04]
+export const dynamic = 'force-dynamic';
+
 const supabase = createClient(
   process.env.SUPABASE_URL, 
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -11,7 +14,6 @@ export async function GET() {
 
   try {
     // 1. Vytáhneme JEDEN článek, který má reddit = FALSE [cite: 2026-03-04]
-    // Odstraněn filtr 'status', který v tabulce chybí [cite: 2026-03-04]
     const { data: post, error: dbError } = await supabase
       .from('posts')
       .select('*')
@@ -35,7 +37,8 @@ export async function GET() {
     // 2. Příprava dat pro Make.com Webhook [cite: 2026-03-04]
     const redditPayload = {
       title: `[GURU ${post.type ? post.type.toUpperCase() : 'INFO'}] ${post.title}`,
-      text: `${post.seo_description || "Nový článek na webu!"}\n\nCelý článek najdeš zde: https://www.thehardwareguru.cz/clanky/${post.slug}\n\n🦾 Sleduj r/TheHardwareGuru_Info pro denní nálož HW fixů!`,
+      slug: post.slug, // Přidáno pro Make.com mapování [cite: 2026-03-04]
+      seo_description: post.seo_description || "Nový článek na webu!", // Přidáno pro Make.com mapování [cite: 2026-03-04]
       subreddit: "TheHardwareGuru_Info",
       flair: post.type === 'game' ? "GURU TWEAK" : "RECENZE",
       image_url: post.image_url
