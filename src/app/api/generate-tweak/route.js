@@ -11,48 +11,48 @@ const supabaseAdmin = createClient(
 export async function POST(req) {
   try {
     const { title, slug, pin } = await req.json();
-    if (pin !== process.env.GURU_PIN) return NextResponse.json({ error: 'Špatný PIN!' }, { status: 401 });
+    if (pin !== process.env.GURU_PIN) return NextResponse.json({ error: 'Špatný PIN, kámo!' }, { status: 401 });
 
-    // --- PARALELNÍ START: Serper Rešerše + GPT Analýza (příprava promptu) ---
-    // Nejdřív musíme mít data ze Serperu, abychom je dali GPT.
-    // Ale DALL-E může běžet úplně bokem!
-    
-    const getSerperData = async () => {
-      try {
-        const res = await fetch('https://google.serper.dev/search', {
-          method: 'POST',
-          headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            q: `${title} PC optimization steam system requirements reddit config ini stuttering fix`,
-            gl: 'us', hl: 'en'
-          })
-        });
-        const data = await res.json();
-        return data.organic?.map(res => `${res.title}: ${res.snippet}`).join('\n\n') || '';
-      } catch (e) { return ''; }
-    };
+    // 1. REŠERŠE (Musí proběhnout první, aby GPT věděl, o čem psát)
+    let rawText = '';
+    try {
+      const serperRes = await fetch('https://google.serper.dev/search', {
+        method: 'POST',
+        headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          q: `${title} PC optimization steam system requirements reddit config ini stuttering fix`,
+          gl: 'us', hl: 'en'
+        })
+      });
+      const data = await serperRes.json();
+      rawText = data.organic?.map(res => `${res.title}: ${res.snippet}`).join('\n\n') || '';
+    } catch (e) { console.error('Serper fail'); }
 
-    // Odpálíme rešerši
-    const rawText = await getSerperData();
-
-    // --- PARALELNÍ BĚH: GPT Text + DALL-E Obrázek ---
-    // Tady se děje ta magie. GPT generuje text a DALL-E kreslí naráz.
+    // 2. PARALELNÍ ZPRACOVÁNÍ: Text + Obrázek běží naráz!
+    console.log(`🚀 Startuji paralelní generování pro: ${title}`);
     
     const [completion, imageResult] = await Promise.all([
-      // 1. Úloha: GPT-4-turbo generuje text
+      // A. GENEROVÁNÍ TEXTU (GPT-4-turbo)
       openai.chat.completions.create({
         model: "gpt-4-turbo",
         messages: [
-          { role: "system", content: "Jsi 'The Hardware Guru'. Piš drsně, technicky. Žádná omáčka." },
-          { role: "user", content: `Hra: ${title}\nData: ${rawText}\n\nVygeneruj JSON s: seo_description, html_content (struktura: Guru Analýza, Systémové požadavky Steam, Hardcore Fixy, Nastavení FPS), image_prompt (anglicky, high-tech hardware styl bez názvu hry).` }
+          { 
+            role: "system", 
+            content: "Jsi 'The Hardware Guru'. Píšeš drsně, technicky a bez zbytečných keců. ZAKAZUJI obecné rady. Musíš zahrnout systémové požadavky a hardcore fixy." 
+          },
+          { 
+            role: "user", 
+            content: `Hra: ${title}\nData: ${rawText}\n\nVYGENERUJ JSON:\n1. "seo_description": Začíná "Optimalizace ${title} - "\n2. "image_prompt": Anglický prompt pro DALL-E 3: styl high-tech cinematic hardware, barvy podle žánru hry, neonové akcenty. NESMÍŠ použít název hry!\n3. "html_content": HTML kód se strukturou: <h2>Guru Analýza</h2>, <h2>Systémové požadavky (Steam)</h2>, <h2>Hardcore Fixy a Optimalizace</h2>, <h2>Nastavení ve hře: Co zabíjí FPS</h2>. Na konec VŽDY přidej: 'Sleduj mě na https://kick.com/thehardwareguru pro live optimalizace a checkuj můj YouTube https://www.youtube.com/@TheHardwareGuru_Czech.'` 
+          }
         ],
         response_format: { type: "json_object" }
       }),
-      
-      // 2. Úloha: DALL-E 3 generuje obrázek (použijeme generický, ale kvalitní prompt, aby nečekal na GPT)
+
+      // B. GENEROVÁNÍ OBRÁZKU (DALL-E 3)
+      // Použijeme kvalitní hardwarový prompt hned, aby DALL-E nečekal na odpověď od GPT
       openai.images.generate({
         model: "dall-e-3",
-        prompt: `High-tech cinematic close-up of gaming PC components, liquid cooling, neon cyber lighting, professional photography, 8k resolution, hardware enthusiast style.`,
+        prompt: `High-tech cinematic close-up of high-end gaming PC components, liquid cooling, glowing neon purple and yellow lighting, extreme detail, hardware enthusiast aesthetic, 8k resolution.`,
         n: 1, size: "1024x1024"
       }).catch(e => { console.error("DALL-E fail", e); return null; })
     ]);
@@ -60,7 +60,7 @@ export async function POST(req) {
     const ai = JSON.parse(completion.choices[0].message.content);
     let finalImg = 'EMPTY';
 
-    // 3. Nahrání obrázku do Supabase (běží zatímco parsujeme JSON)
+    // 3. NAHRÁNÍ OBRÁZKU (Zatímco zpracováváme zbytek)
     if (imageResult && imageResult.data[0]?.url) {
       try {
         const fetchImg = await fetch(imageResult.data[0].url);
@@ -72,7 +72,7 @@ export async function POST(req) {
           const { data: pUrl } = supabaseAdmin.storage.from('images').getPublicUrl(fileName);
           finalImg = pUrl.publicUrl;
         }
-      } catch (e) { console.error("Storage fail", e); }
+      } catch (e) { console.error("Supabase Storage fail", e); }
     }
 
     return NextResponse.json({ 
@@ -83,6 +83,7 @@ export async function POST(req) {
     });
 
   } catch (err) { 
+    console.error('Kritická chyba:', err);
     return NextResponse.json({ error: err.message }, { status: 500 }); 
   }
 }
