@@ -30,7 +30,7 @@ export default function Navbar() {
     'rady': isEn ? 'GUIDE' : 'RADA'
   };
 
-  // 🚀 GURU FIX: CROSS-TABLE NAŠEPTÁVAČ (HLEDÁ VŠUDE)
+  // 🚀 GURU FIX: CROSS-TABLE NAŠEPTÁVAČ (OPRAVENÝ FALLBACK PRO CHYBĚJÍCÍ SLOUPCE)
   useEffect(() => {
     let active = true;
 
@@ -50,19 +50,23 @@ export default function Navbar() {
         const sections = ['clanky', 'tipy', 'tweaky', 'slovnik', 'rady'];
 
         const searchPromises = sections.map(async (section) => {
+          let tData = [];
+          let cData = [];
+          
+          // GURU FIX: Změněno na select('*'), abychom předešli pádu při chybějícím sloupci
+          // a dotazy rozdělujeme do vlastních try-catch bloků.
           try {
-            // Paralelní dotaz na Title a Content pro obcházení limitací .or()
-            const [titleRes, contentRes] = await Promise.all([
-              supabase.from(section).select('title, slug, seo_description, description_en').ilike('title', searchTerm).limit(3),
-              supabase.from(section).select('title, slug, seo_description, description_en').ilike('content', searchTerm).limit(3)
-            ]);
+            const resTitle = await supabase.from(section).select('*').ilike('title', searchTerm).limit(3);
+            if (!resTitle.error) tData = resTitle.data;
+          } catch (e) { /* Ignorujeme chybu jedné tabulky */ }
 
-            const merged = [...(titleRes.data || []), ...(contentRes.data || [])];
-            // Přidáme informaci o sekci, abychom věděli, kam odkazovat
-            return merged.map(item => ({ ...item, section }));
-          } catch (e) {
-            return []; // Pokud nějaká tabulka chybí, ignorujeme ji a jedeme dál
-          }
+          try {
+            const resContent = await supabase.from(section).select('*').ilike('content', searchTerm).limit(3);
+            if (!resContent.error) cData = resContent.data;
+          } catch (e) { /* Ignorujeme chybu jedné tabulky */ }
+
+          const merged = [...tData, ...cData];
+          return merged.map(item => ({ ...item, section }));
         });
 
         const resultsArrays = await Promise.all(searchPromises);
@@ -173,36 +177,45 @@ export default function Navbar() {
                 {isEn ? 'SEARCHING...' : 'GURU HLEDÁ...'}
               </div>
             ) : (
-              suggestions.map((s, i) => (
-                <div key={i} 
-                  onClick={() => { 
-                    // GURU FIX: Nyní směruje do správné kategorie (články, tipy atd.) místo jen do tweaky!
-                    const target = isEn ? `/en/${s.section}/${s.slug}` : `/${s.section}/${s.slug}`;
-                    router.push(target); 
-                    setQuery(''); 
-                    setShowSuggestions(false); 
-                  }}
-                  style={{ 
-                    padding: '16px 20px', borderBottom: i !== suggestions.length - 1 ? '1px solid #222' : 'none', 
-                    cursor: 'pointer', transition: 'background 0.2s' 
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <div style={{ fontWeight: '900', color: '#eab308', fontSize: '15px' }}>{s.title}</div>
-                    <div style={{ 
-                      fontSize: '10px', color: '#fff', background: '#a855f7', 
-                      padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.5px', fontWeight: 'bold' 
-                    }}>
-                      {sectionNames[s.section] || 'LINK'}
+              suggestions.map((s, i) => {
+                // GURU FIX: Chytré získání popisku (pokud chybí seo_description, vezmeme kus obsahu)
+                let desc = isEn && s.description_en ? s.description_en : s.seo_description;
+                if (!desc && s.content) {
+                  // Odstranění HTML tagů z contentu pro čistý výpis
+                  const plainText = s.content.replace(/<[^>]+>/g, '');
+                  desc = plainText.substring(0, 60) + '...';
+                }
+
+                return (
+                  <div key={i} 
+                    onClick={() => { 
+                      const target = isEn ? `/en/${s.section}/${s.slug}` : `/${s.section}/${s.slug}`;
+                      router.push(target); 
+                      setQuery(''); 
+                      setShowSuggestions(false); 
+                    }}
+                    style={{ 
+                      padding: '16px 20px', borderBottom: i !== suggestions.length - 1 ? '1px solid #222' : 'none', 
+                      cursor: 'pointer', transition: 'background 0.2s' 
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <div style={{ fontWeight: '900', color: '#eab308', fontSize: '15px' }}>{s.title}</div>
+                      <div style={{ 
+                        fontSize: '10px', color: '#fff', background: '#a855f7', 
+                        padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.5px', fontWeight: 'bold' 
+                      }}>
+                        {sectionNames[s.section] || 'LINK'}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {desc}
                     </div>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {isEn && s.description_en ? s.description_en : s.seo_description}
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         )}
