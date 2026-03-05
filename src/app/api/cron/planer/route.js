@@ -3,15 +3,19 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store'; // GURU FIX: Zabití paměti celého route
+export const maxDuration = 60; // Pro jistotu, kdyby AI překládalo dlouho
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
 
+// GURU FIX: Přidán cache: 'no-store' pro jistotu čerstvých dat ze Serperu
 async function getCategoryData(query) {
   const res = await fetch('https://google.serper.dev/search', {
     method: 'POST',
     headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ q: query, tbs: "qdr:d,sbd:1", num: 15 })
+    body: JSON.stringify({ q: query, tbs: "qdr:d,sbd:1", num: 15 }),
+    cache: 'no-store' 
   });
   const data = await res.json();
   return data.organic || [];
@@ -32,7 +36,6 @@ export async function GET() {
     const gameSources = "(site:games.tiscali.cz OR site:indian-tv.cz OR site:eurogamer.net)";
     const hwSources = "(site:guru3d.com OR site:pctuning.cz OR site:tomshardware.com)";
     
-    // Paralelní sběr dat ze Serperu
     const [gameRaw, hwRaw] = await Promise.all([
       getCategoryData(`${gameSources} news`),
       getCategoryData(`${hwSources} news`)
@@ -41,7 +44,6 @@ export async function GET() {
     debug.game.found = gameRaw.length;
     debug.hw.found = hwRaw.length;
 
-    // Načtení stávajících URL z content_plan i posts (pro jistotu)
     const [{ data: existingPlan }, { data: existingPosts }] = await Promise.all([
       supabase.from('content_plan').select('source_url'),
       supabase.from('posts').select('source_url')
@@ -55,7 +57,6 @@ export async function GET() {
     let log = [];
 
     const processCategoryParallel = async (rawItems, type) => {
-      // Filtrace unikátních položek, které ještě nemáme
       let validForProcessing = rawItems
         .filter(item => item.link && !usedUrls.has(item.link))
         .slice(0, 3);
@@ -63,13 +64,12 @@ export async function GET() {
       if (type === 'game') debug.game.after_duplicate_filter = validForProcessing.length;
       if (type === 'hardware') debug.hw.after_duplicate_filter = validForProcessing.length;
 
-      // PARALELNÍ PŘEKLAD A ZÁPIS
       await Promise.all(validForProcessing.map(async (item) => {
         try {
           const completion = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
-              { role: "system", content: "Jsi překladatel. Udělej z titulku úderný český název. JSON: { \"title\": \"...\" }" },
+              { role: "system", content: "Jsi překladatel. Udělej z titulku úderný český název. Vrať striktně JSON: { \"title\": \"...\" }" },
               { role: "user", content: item.title }
             ],
             response_format: { type: "json_object" }
@@ -77,33 +77,30 @@ export async function GET() {
 
           const czechTitle = JSON.parse(completion.choices[0].message.content).title;
 
-          // Použití UPSERT místo INSERT k potlačení chyb s duplicitním klíčem
+          // GURU FIX: Změněno z UPSERT na INSERT. Pokud to padne, zachytíme PŘESNOU chybu.
           const { data, error } = await supabase
             .from('content_plan')
-            .upsert({
+            .insert({
               title: czechTitle,
               release_date: todayISO,
               type: type,
               status: 'planned',
               source_url: item.link 
-            }, { 
-              onConflict: 'source_url',
-              ignoreDuplicates: true 
             })
             .select();
 
-          if (data && data.length > 0) {
+          if (error) {
+            // Pokud DB odmítne zápis, napíše to přesně proč (např. chybí sloupec, limit znaků)
+            debug.errors.push(`DB Zápis selhal (${type}): ${error.message}`);
+          } else if (data && data.length > 0) {
             log.push({ title: czechTitle, type: type });
-          } else if (error) {
-            debug.errors.push(`DB Error (${type}): ${error.message}`);
           }
         } catch (e) {
-          debug.errors.push(`AI Error (${type}): ${e.message}`);
+          debug.errors.push(`AI nebo Parse Error (${type}): ${e.message}`);
         }
       }));
     };
 
-    // Odpálíme obě kategorie naráz
     await Promise.all([
       processCategoryParallel(gameRaw, 'game'),
       processCategoryParallel(hwRaw, 'hardware')
