@@ -22,16 +22,17 @@ export async function GET(request) {
   );
 
   try {
-    // 1. Najdeme články, kde chybí SEO. Limit 2 je STRIKTNÍ kvůli DALL-E timeoutu!
+    // 1. Najdeme články, kde chybí SEO NEBO OBRÁZEK. Limit 2 je STRIKTNÍ kvůli DALL-E timeoutu!
     const { data: posts, error: dbError } = await supabase
       .from('posts')
       .select('id, title, content, image_url, type')
-      .is('seo_description', null)
+      // GURU FIX: Vybere články, kde chybí SEO, nebo kde chybí obrázek (je NULL nebo prázdný "")
+      .or('seo_description.is.null,seo_description.eq."",image_url.is.null,image_url.eq.""')
       .limit(2);
 
     if (dbError) throw dbError;
     if (!posts || posts.length === 0) {
-      return NextResponse.json({ message: "🦾 Všechno SEO je hotové. Jsi GURU!" });
+      return NextResponse.json({ message: "🦾 Všechno SEO i obrázky jsou hotové. Jsi GURU!" });
     }
 
     let results = [];
