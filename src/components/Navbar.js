@@ -13,6 +13,17 @@ export default function Navbar() {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // 🚀 GURU AUTO-DISCOVERY: Zde ukládáme živou strukturu celé databáze
+  const [dbStructure, setDbStructure] = useState([
+    // Fallback struktura pro první milisekundy, než se načte aktuální mapa DB
+    { table: 'clanky', columns: ['title', 'content', 'seo_description', 'seo_keywords', 'description_en', 'content_en', 'meta_title'] },
+    { table: 'tipy', columns: ['title', 'content', 'seo_description', 'seo_keywords', 'description_en', 'content_en', 'meta_title'] },
+    { table: 'tweaky', columns: ['title', 'content', 'seo_description', 'seo_keywords', 'description_en', 'content_en', 'meta_title'] },
+    { table: 'slovnik', columns: ['title', 'content', 'seo_description', 'seo_keywords', 'description_en', 'content_en', 'meta_title'] },
+    { table: 'rady', columns: ['title', 'content', 'seo_description', 'seo_keywords', 'description_en', 'content_en', 'meta_title'] }
+  ]);
+
   const router = useRouter();
   const pathname = usePathname();
   const suggestionRef = useRef(null);
@@ -21,7 +32,7 @@ export default function Navbar() {
   const isEn = pathname.startsWith('/en');
   const lang = isEn ? 'en' : 'cs';
 
-  // Překlad sekcí pro štítky v našeptávači
+  // Překlad známých sekcí pro štítky v našeptávači (Nové sekce dostanou automaticky svůj název)
   const sectionNames = {
     'clanky': isEn ? 'ARTICLE' : 'ČLÁNEK',
     'tipy': isEn ? 'TIP' : 'TIP',
@@ -30,7 +41,48 @@ export default function Navbar() {
     'rady': isEn ? 'GUIDE' : 'RADA'
   };
 
-  // 🚀 GURU FIX: BRUTE-FORCE NAŠEPTÁVAČ (Prohledá VŠECHNY tabulky a VŠECHNY myslitelné sloupce)
+  // 🚀 GURU FÁZE 1: ZMAPOVÁNÍ DATABÁZE PŘI NAČTENÍ (UNIVERSAL ENGINE)
+  useEffect(() => {
+    async function discoverDatabase() {
+      try {
+        // Dotaz přímo na kořen Supabase API, který vrací živou mapu (OpenAPI) všech tabulek a sloupců
+        const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/`, {
+          headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY }
+        });
+        
+        if (!res.ok) return;
+        
+        const spec = await res.json();
+        const schemas = spec.definitions || (spec.components && spec.components.schemas) || {};
+        const dynamicStructure = [];
+
+        // Projdeme VŠECHNY tabulky, které nám databáze nahlásí
+        for (const [tableName, schema] of Object.entries(schemas)) {
+          const textCols = [];
+          // V každé tabulce najdeme VŠECHNY sloupce, které obsahují text
+          for (const [colName, colInfo] of Object.entries(schema.properties || {})) {
+            if (colInfo.type === 'string') {
+              textCols.push(colName);
+            }
+          }
+          // Pokud tabulka má textové sloupce, přidáme ji do hledání
+          if (textCols.length > 0) {
+            dynamicStructure.push({ table: tableName, columns: textCols });
+          }
+        }
+        
+        if (dynamicStructure.length > 0) {
+          setDbStructure(dynamicStructure);
+        }
+      } catch (error) {
+        console.error("Guru Auto-Discovery failed, using fallback.");
+      }
+    }
+    
+    discoverDatabase();
+  }, []);
+
+  // 🚀 GURU FÁZE 2: UNIVERZÁLNÍ NAŠEPTÁVAČ
   useEffect(() => {
     let active = true;
 
@@ -46,17 +98,10 @@ export default function Navbar() {
       
       try {
         const searchTerm = `%${q}%`; 
-        
-        // Všechny tvé kategorie (tabulky)
-        const tables = ['clanky', 'tipy', 'tweaky', 'slovnik', 'rady'];
-        // Úplně všechny myslitelné textové sloupce (i kdyby v nějaké tabulce chyběly)
-        const columns = ['title', 'content', 'seo_description', 'seo_keywords', 'description_en', 'content_en', 'meta_title', 'text'];
-
         const allPromises = [];
 
-        // GURU TANK: Rozstřílíme dotaz na desítky malých nezávislých dotazů. 
-        // Pokud tabulka nemá daný sloupec (např. content_en), dotaz tiše zemře, ale ostatní projdou!
-        tables.forEach(table => {
+        // Projdeme načtenou strukturu - VŠECHNY existující tabulky a VŠECHNY jejich existující textové sloupce
+        dbStructure.forEach(({ table, columns }) => {
           columns.forEach(col => {
             allPromises.push(
               supabase.from(table).select('*').ilike(col, searchTerm).limit(3)
@@ -68,7 +113,7 @@ export default function Navbar() {
           });
         });
 
-        // Počkáme na VŠECHNY dotazy naráz (Promise.allSettled ignoruje ty, které spadly na chybějícím sloupci)
+        // Počkáme na dotazy (ty, které selžou např. na oprávnění, prostě ignorujeme)
         const resultsArrays = await Promise.allSettled(allPromises);
         
         const allResults = resultsArrays
@@ -77,8 +122,8 @@ export default function Navbar() {
           .flat();
 
         if (active) {
-          // Odstranění duplicit (podle slug + sekce) a oříznutí na 6 nejlepších výsledků
-          const uniqueResults = Array.from(new Map(allResults.map(item => [item.section + item.slug, item])).values()).slice(0, 6);
+          // Odstranění duplicit podle slugu a sekce, výpis nejlepších 6
+          const uniqueResults = Array.from(new Map(allResults.map(item => [item.section + (item.slug || item.id), item])).values()).slice(0, 6);
           setSuggestions(uniqueResults);
         }
 
@@ -97,7 +142,7 @@ export default function Navbar() {
       active = false;
       clearTimeout(debounceTimer);
     };
-  }, [query]);
+  }, [query, dbStructure]);
 
   // Schování našeptávače při kliku mimo vyhledávací pole
   useEffect(() => {
@@ -168,7 +213,7 @@ export default function Navbar() {
           </div>
         </form>
 
-        {/* DROPDOWN NAŠEPTÁVAČE S KATEGORIEMI */}
+        {/* DROPDOWN NAŠEPTÁVAČE S DYNAMICKÝMI KATEGORIEMI */}
         {showSuggestions && (suggestions.length > 0 || isLoading) && (
           <div style={{ 
             position: 'absolute', top: '70px', width: '100%', maxWidth: '550px', 
@@ -194,7 +239,7 @@ export default function Navbar() {
                     const matchIndex = plainText.toLowerCase().indexOf(safeQ);
                     
                     if (matchIndex !== -1) {
-                      // Hledané slovo nalezeno! Vyřízneme kontext okolo něj, abys viděl, proč se to našlo
+                      // Hledané slovo nalezeno! Vyřízneme kontext okolo něj
                       const start = Math.max(0, matchIndex - 30);
                       const end = Math.min(plainText.length, matchIndex + 60);
                       desc = (start > 0 ? '...' : '') + plainText.substring(start, end) + '...';
@@ -204,15 +249,18 @@ export default function Navbar() {
                   }
                 }
 
-                // Záchranná brzda, pokud se to našlo jen podle přesné shody v nadpisu nebo se něco pokazilo
+                // Záchranná brzda
                 if (!foundSnippet) {
                   desc = s.seo_description || s.description_en || (s.content ? s.content.replace(/<[^>]+>/g, '').substring(0, 60) + '...' : '');
                 }
 
+                // GURU FIX: Pokud by záznam neměl slug (nové podivné tabulky), použijeme ID, nebo cokoliv jiného.
+                const urlParam = s.slug || s.id || '';
+
                 return (
                   <div key={i} 
                     onClick={() => { 
-                      const target = isEn ? `/en/${s.section}/${s.slug}` : `/${s.section}/${s.slug}`;
+                      const target = isEn ? `/en/${s.section}/${urlParam}` : `/${s.section}/${urlParam}`;
                       router.push(target); 
                       setQuery(''); 
                       setShowSuggestions(false); 
@@ -225,12 +273,13 @@ export default function Navbar() {
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                      <div style={{ fontWeight: '900', color: '#eab308', fontSize: '15px' }}>{s.title}</div>
+                      <div style={{ fontWeight: '900', color: '#eab308', fontSize: '15px' }}>{s.title || s.name || 'Záznam bez názvu'}</div>
                       <div style={{ 
                         fontSize: '10px', color: '#fff', background: '#a855f7', 
                         padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.5px', fontWeight: 'bold' 
                       }}>
-                        {sectionNames[s.section] || 'LINK'}
+                        {/* Pokud najde novou tabulku mimo seznam, napíše její surový název velkými písmeny */}
+                        {sectionNames[s.section] || s.section.toUpperCase()}
                       </div>
                     </div>
                     <div style={{ fontSize: '12px', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
