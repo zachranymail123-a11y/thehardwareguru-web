@@ -18,6 +18,14 @@ export const metadata = {
   creator: 'The Hardware Guru',
   metadataBase: new URL('https://www.thehardwareguru.cz'),
   
+  // GURU FIX: Google SEO optimalizace pro CZ i EN mutaci
+  alternates: {
+    languages: {
+      'cs': 'https://www.thehardwareguru.cz',
+      'en': 'https://www.thehardwareguru.cz/en',
+    },
+  },
+  
   openGraph: {
     title: 'The Hardware Guru | Tech, Gaming & AI',
     description: 'Hardware, gaming a tech novinky na jednom místě.',
@@ -32,6 +40,7 @@ export const metadata = {
       },
     ],
     locale: 'cs_CZ',
+    alternateLocale: ['en_US'], // Přidána podpora pro EN v OpenGraph
     type: 'website',
   },
   
@@ -47,7 +56,10 @@ export const metadata = {
   },
 }
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children, params }) {
+  // GURU FIX: Dynamické načtení jazyka, defaultně 'cs', pokud jsme na EN verzi, vezme 'en'
+  const locale = params?.lang || 'cs';
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -63,7 +75,7 @@ export default function RootLayout({ children }) {
   };
 
   return (
-    <html lang="cs">
+    <html lang={locale}>
       <body>
         {/* --- GLOBÁLNÍ SJEDNOCENÁ NAVIGACE --- */}
         <Navbar />
