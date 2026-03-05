@@ -13,14 +13,14 @@ export async function POST(req) {
     const { title, slug, pin } = await req.json();
     if (pin !== process.env.GURU_PIN) return NextResponse.json({ error: 'Špatný PIN!' }, { status: 401 });
 
-    // 1. REŠERŠE (Bez změn)
+    // 1. REŠERŠE (Serper.dev)
     let rawText = '';
     try {
       const serperRes = await fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          q: `${title} PC optimization steam system requirements reddit config ini stuttering fix registry edit`,
+          q: `${title} PC optimization steam system requirements engine.ini registry editor config tweak stuttering fix`,
           gl: 'us', hl: 'en'
         })
       });
@@ -28,29 +28,36 @@ export async function POST(req) {
       rawText = data.organic?.map(res => `${res.title}: ${res.snippet}`).join('\n\n') || '';
     } catch (e) { console.error('Serper fail'); }
 
-    // 2. PARALELNÍ GENEROVÁNÍ (Tvoje přesná struktura 5 nadpisů!)
+    // 2. PARALELNÍ GENEROVÁNÍ (GURU HARDCORE MODE)
     const [completion, imageResult] = await Promise.all([
       openai.chat.completions.create({
         model: "gpt-4-turbo",
         messages: [
           { 
             role: "system", 
-            content: "Jsi 'The Hardware Guru'. Píšeš drsně, technicky a bez zbytečných keců. ZAKAZUJI obecné rady. Musíš zahrnout systémové požadavky a hardcore fixy." 
+            content: `Jsi 'The Hardware Guru'. Píšeš pro hardcore komunitu. 
+            STRIKTNĚ ZAKAZUJI obecné rady typu 'aktualizujte ovladače' nebo 'snižte detaily'. 
+            TVÉ INSTRUKCE:
+            1. Vypiš přesné cesty k souborům (např. %LOCALAPPDATA%\\${title}\\Saved\\Config\\WindowsNoEditor\\Engine.ini).
+            2. Pro úpravy souborů VŽDY použij Markdown code blocks s konkrétními parametry (např. [SystemSettings] r.Streaming.PoolSize=...).
+            3. V EXPERT ZÓNĚ vypiš přesné cesty v registrech (HKEY_CURRENT_USER\\Software\\...) a konkrétní názvy klíčů (DWORD) s hodnotami.
+            4. U systémových požadavků vypiš reálné komponenty (CPU, GPU, RAM).
+            5. Pokud v rešerši nenajdeš konkrétní data, použij své hluboké znalosti herních enginů (UE4, UE5, Unity) a navrhni funkční fixy pro danou technologii.` 
           },
           { 
             role: "user", 
             content: `Hra: ${title}\nData: ${rawText}\n\nVYGENERUJ JSON STRIKTNĚ S TĚMITO KLÍČI:\n{
-  "meta_title": "Optimalizace ${title} - Guru Tweak Guide",
-  "seo_description": "Optimalizace ${title} - Kompletní návod: FPS boost, EXPERT ZÓNA (Registry) a nastavení souborů.",
-  "seo_keywords": "${title}, optimalizace, fps fix, hardware guru",
-  "html_content": "HTML kód se strukturou: <h2>Guru Analýza</h2>, <h2>Systémové požadavky (Steam)</h2>, <h2>Hardcore Fixy a Optimalizace</h2>, <h2>Nastavení ve hře: Co zabíjí FPS</h2>, <h2>EXPERT ZÓNA: Registry a modifikace souborů</h2>. Na konec přidej tvůj Kick a YouTube odkaz.",
+  "meta_title": "Optimalizace ${title} - Expert Guru Guide",
+  "seo_description": "Brutální optimalizace ${title}. Registry fixy, Engine.ini tweaky a hardcore nastavení pro maximální FPS.",
+  "seo_keywords": "${title}, optimalizace, registry tweak, expert zona, hardware guru",
+  "html_content": "HTML kód se strukturou: <h2>Guru Analýza</h2>, <h2>Systémové požadavky (Steam)</h2> (vypiš konkrétní HW), <h2>Hardcore Fixy a Optimalizace</h2>, <h2>Nastavení ve hře: Co zabíjí FPS</h2> (vypiš konkrétní položky a hodnoty), <h2>EXPERT ZÓNA: Registry a modifikace souborů</h2> (zde dej PŘESNÉ CESTY A KÓDY). Na konec přidej tvůj Kick a YouTube odkaz.",
   
-  "title_en": "${title} Optimization Guide",
+  "title_en": "${title} Hardcore Optimization Guide",
   "slug_en": "${slug}-optimization-guide",
-  "meta_title_en": "${title} FPS Boost & Expert Registry Guide",
-  "description_en": "Best settings and hardcore fixes for ${title} to maximize performance and fix lag.",
-  "seo_keywords_en": "${title} tweak, fps fix, pc guide, graphics settings",
-  "content_en": "HTML code with structure: <h2>Guru Analysis</h2>, <h2>System Requirements (Steam)</h2>, <h2>Hardcore Fixes and Optimization</h2>, <h2>In-game Settings: What Kills FPS</h2>, <h2>EXPERT ZONE: Registry and File Modifications</h2>. Add Kick and YouTube links at the end."
+  "meta_title_en": "${title} FPS Boost & Registry Surgery",
+  "description_en": "No generic advice. Exact registry keys, file paths and engine.ini tweaks for ${title}.",
+  "seo_keywords_en": "${title} tweak, registry edit, pc guide, graphics settings",
+  "content_en": "English version with SAME hardcore structure. Provide exact file paths and code blocks for tweaks. <h2>EXPERT ZONE: Registry and File Modifications</h2> must contain technical data."
 }\n\nOdkazy: https://kick.com/thehardwareguru a YouTube @TheHardwareGuru_Czech.` 
           }
         ],
@@ -59,9 +66,9 @@ export async function POST(req) {
 
       openai.images.generate({
         model: "dall-e-3",
-        prompt: `High-tech cinematic close-up of high-end gaming PC components, liquid cooling, glowing neon purple and yellow lighting, extreme detail, hardware enthusiast aesthetic, 8k resolution.`,
+        prompt: `Detailed high-tech hardware visualization, glowing circuits, extreme gaming PC components, cinematic yellow and purple neon lighting, 8k.`,
         n: 1, size: "1024x1024"
-      }).catch(e => { console.error("DALL-E fail", e); return null; })
+      }).catch(e => null)
     ]);
 
     const ai = JSON.parse(completion.choices[0].message.content);
@@ -80,11 +87,7 @@ export async function POST(req) {
       } catch (e) { console.error("Supabase Storage fail", e); }
     }
 
-    return NextResponse.json({ 
-      ...ai,
-      image_url: finalImg, 
-      source: 'Guru Multilingual Engine V3.5' 
-    });
+    return NextResponse.json({ ...ai, image_url: finalImg });
 
   } catch (err) { 
     return NextResponse.json({ error: err.message }, { status: 500 }); 
