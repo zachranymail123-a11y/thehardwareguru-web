@@ -13,7 +13,7 @@ export async function POST(req) {
     const { title, slug, pin } = await req.json();
     if (pin !== process.env.GURU_PIN) return NextResponse.json({ error: 'Špatný PIN!' }, { status: 401 });
 
-    // 1. REŠERŠE
+    // 1. GURU REŠERŠE
     let rawText = '';
     try {
       const serperRes = await fetch('https://google.serper.dev/search', {
@@ -28,32 +28,30 @@ export async function POST(req) {
       rawText = data.organic?.map(res => `${res.title}: ${res.snippet}`).join('\n\n') || '';
     } catch (e) { console.error('Serper fail'); }
 
-    // 2. PARALELNÍ GENEROVÁNÍ (Obnova tvé struktury)
+    // 2. PARALELNÍ GENEROVÁNÍ (Tvá struktura + Fix klíčů pro DB)
     const [completion, imageResult] = await Promise.all([
       openai.chat.completions.create({
         model: "gpt-4-turbo",
         messages: [
           { 
             role: "system", 
-            // GURU: Vrácen tvůj původní systémový prompt
             content: "Jsi 'The Hardware Guru'. Píšeš drsně, technicky a bez zbytečných keců. ZAKAZUJI obecné rady. Musíš zahrnout systémové požadavky a hardcore fixy." 
           },
           { 
             role: "user", 
-            // GURU: Vrácena tvoje přesná struktura 4 nadpisů + přidána EN verze
-            content: `Hra: ${title}\nData: ${rawText}\n\nVYGENERUJ STRIKTNÍ JSON:\n{
-              "meta_title": "Optimalizace ${title} - Guru Tweak Guide",
-              "seo_description": "Optimalizace ${title} - Kompletní návod pro zvýšení FPS a odstranění stutteringu.",
-              "seo_keywords": "${title}, optimalizace, fps fix, hardware guru",
-              "html_content": "HTML kód se strukturou: <h2>Guru Analýza</h2>, <h2>Systémové požadavky (Steam)</h2>, <h2>Hardcore Fixy a Optimalizace</h2>, <h2>Nastavení ve hře: Co zabíjí FPS</h2>. Na konec přidej tvůj Kick a YouTube odkaz.",
-              
-              "title_en": "${title} Optimization Guide",
-              "slug_en": "${slug}-optimization-guide",
-              "meta_title_en": "${title} FPS Boost & PC Optimization Guide",
-              "description_en": "Best settings and hardcore fixes for ${title} to maximize performance and fix lag.",
-              "seo_keywords_en": "${title} tweak, fps fix, pc guide, graphics settings",
-              "content_en": "HTML code with structure: <h2>Guru Analysis</h2>, <h2>System Requirements (Steam)</h2>, <h2>Hardcore Fixes and Optimization</h2>, <h2>In-game Settings: What Kills FPS</h2>. Add Kick and YouTube links at the end."
-            }\n\nOdkazy: https://kick.com/thehardwareguru a YouTube @TheHardwareGuru_Czech.` 
+            content: `Hra: ${title}\nData: ${rawText}\n\nVYGENERUJ JSON STRIKTNĚ S TĚMITO KLÍČI:\n{
+  "meta_title": "Optimalizace ${title} - Guru Tweak Guide",
+  "seo_description": "Optimalizace ${title} - Kompletní návod pro zvýšení FPS a odstranění stutteringu.",
+  "seo_keywords": "${title}, optimalizace, fps fix, hardware guru",
+  "html_content": "Použij strukturu: <h2>Guru Analýza</h2>, <h2>Systémové požadavky (Steam)</h2>, <h2>Hardcore Fixy a Optimalizace</h2>, <h2>Nastavení ve hře: Co zabíjí FPS</h2>. Na konec dej odkazy na Kick a YouTube.",
+  
+  "title_en": "${title} Optimization Guide",
+  "slug_en": "${slug}-optimization-guide",
+  "meta_title_en": "${title} FPS Boost & PC Optimization Guide",
+  "description_en": "Best settings and hardcore fixes for ${title} to maximize performance and fix lag.",
+  "seo_keywords_en": "${title} tweak, fps fix, pc guide, graphics settings",
+  "content_en": "Same structure in English: <h2>Guru Analysis</h2>, <h2>System Requirements (Steam)</h2>, <h2>Hardcore Fixes and Optimization</h2>, <h2>In-game Settings: What Kills FPS</h2>. Add Kick and YouTube links."
+}\n\nOdkazy: https://kick.com/thehardwareguru a YouTube @TheHardwareGuru_Czech.` 
           }
         ],
         response_format: { type: "json_object" }
@@ -82,11 +80,10 @@ export async function POST(req) {
       } catch (e) { console.error("Supabase Storage fail", e); }
     }
 
-    // VRACÍME PŘESNÉ KLÍČE PRO DB
+    // VRACÍME PŘESNÉ KLÍČE, KTERÉ FRONTEND OČEKÁVÁ
     return NextResponse.json({ 
       ...ai,
-      image_url: finalImg, 
-      source: 'Guru Engine V3 Fixed' 
+      image_url: finalImg
     });
 
   } catch (err) { 
