@@ -5,7 +5,6 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { Cpu, SearchX, ArrowRight, Loader2 } from 'lucide-react';
 
-// GURU ENGINE: Připojení na Supabase
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 function SearchContent() {
@@ -16,7 +15,6 @@ function SearchContent() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // GURU PRAVIDLO: Detekce jazyka
   const isEn = pathname.startsWith('/en');
   const lang = isEn ? 'en' : 'cs';
 
@@ -29,28 +27,29 @@ function SearchContent() {
     const fetchResults = async () => {
       setLoading(true);
       const q = query.trim();
-      
+      const searchTerm = `%${q}%`;
+
       try {
-        // GURU FIX: Syntax .or() musí být bez mezer za čárkami! 
-        // Prohledáváme title a popis. Pokud máš v DB i keywords, přidáme je až po ověření.
+        // GURU FIX: Syntaxe .or() nesmí mít mezery za čárkami!
+        // Prohledáváme sloupce, které máš v DB: title, seo_description, seo_keywords
         const { data, error } = await supabase
           .from('tweaky')
-          .select('title, slug, image_url, seo_description, description_en')
-          .or(`title.ilike.%${q}%,seo_description.ilike.%${q}%`);
+          .select('title,slug,image_url,seo_description,seo_keywords,description_en')
+          .or(`title.ilike.${searchTerm},seo_description.ilike.${searchTerm},seo_keywords.ilike.${searchTerm}`);
 
         if (error) {
           console.error("GURU DB ERROR:", error.message);
-          // Fallback: Pokud seo_description dělá bordel, zkusíme jen Title
-          const { data: fallbackData } = await supabase
+          // Fallback na jednoduché hledání v Title, pokud by or selhal
+          const { data: fallback } = await supabase
             .from('tweaky')
-            .select('title, slug, image_url, seo_description')
-            .ilike('title', `%${q}%`);
-          setResults(fallbackData || []);
+            .select('title,slug,image_url,seo_description')
+            .ilike('title', searchTerm);
+          setResults(fallback || []);
         } else {
           setResults(data || []);
         }
       } catch (err) {
-        console.error("Kritické selhání vyhledávání:", err);
+        console.error("Critical fail:", err);
       } finally {
         setLoading(false);
       }
@@ -60,57 +59,32 @@ function SearchContent() {
   }, [query]);
 
   const t = {
-    cs: {
-      title: 'Výsledky hledání pro:',
-      searching: 'GURU prohledává databázi...',
-      read: 'ČÍST TWEAK',
-      emptyTitle: 'Nic jsme nenašli.',
-      emptyDesc: "Zkus hledat něco jiného nebo zkontroluj překlepy. (např. 'DDR5')",
-    },
-    en: {
-      title: 'Search results for:',
-      searching: 'GURU is searching...',
-      read: 'READ TWEAK',
-      emptyTitle: 'Nothing found.',
-      emptyDesc: "Try a different search term.",
-    }
+    cs: { title: 'Výsledky pro:', searching: 'GURU prohledává archiv...', empty: 'Nic jsme nenašli.' },
+    en: { title: 'Results for:', searching: 'GURU searching...', empty: 'Nothing found.' }
   };
-  const currentT = t[lang];
+  const currentT = t[lang] || t.cs;
 
   return (
-    <div style={{ minHeight: '80vh' }}>
-      <header style={{ borderBottom: '1px solid #1f2937', paddingBottom: '30px', marginBottom: '40px' }}>
-        <h1 style={{ fontSize: '32px', color: '#fff', margin: 0 }}>
-          {currentT.title} <span style={{ color: '#eab308' }}>"{query}"</span>
-        </h1>
-      </header>
+    <div style={{ padding: '40px 20px', maxWidth: '1200px', margin: '0 auto' }}>
+      <h1 style={{ fontSize: '32px', color: '#fff', borderBottom: '1px solid #333', paddingBottom: '20px', marginBottom: '30px' }}>
+        {currentT.title} <span style={{ color: '#eab308' }}>"{query}"</span>
+      </h1>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '100px 20px', color: '#eab308' }}>
-          <Loader2 size={48} className="animate-spin" style={{ margin: '0 auto 20px auto' }} />
+        <div style={{ textAlign: 'center', padding: '100px', color: '#eab308' }}>
+          <Loader2 size={48} className="animate-spin" style={{ margin: 'auto' }} />
           <p>{currentT.searching}</p>
         </div>
       ) : results.length > 0 ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '25px' }}>
           {results.map((item, index) => (
             <Link href={isEn ? `/en/tweaky/${item.slug}` : `/tweaky/${item.slug}`} key={index} style={{ textDecoration: 'none' }}>
-              <div style={{ 
-                background: '#111318', border: '1px solid #222', borderRadius: '16px', 
-                overflow: 'hidden', transition: 'all 0.3s ease', cursor: 'pointer'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.borderColor = '#eab308'}
-              onMouseLeave={(e) => e.currentTarget.style.borderColor = '#222'}
-              >
-                {item.image_url && item.image_url !== 'EMPTY' && (
-                  <img src={item.image_url} alt={item.title} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
-                )}
+              <div style={{ background: '#111318', border: '1px solid #222', borderRadius: '12px', overflow: 'hidden', transition: '0.2s' }}>
                 <div style={{ padding: '24px' }}>
-                  <h2 style={{ fontSize: '18px', color: '#eab308', marginBottom: '10px' }}>{item.title}</h2>
-                  <p style={{ fontSize: '14px', color: '#9ca3af', lineHeight: '1.5' }}>
-                    {isEn && item.description_en ? item.description_en.substring(0, 100) : item.seo_description?.substring(0, 100)}...
-                  </p>
-                  <div style={{ display: 'flex', alignItems: 'center', color: '#a855f7', fontSize: '13px', fontWeight: '900', marginTop: '15px' }}>
-                    {currentT.read} <ArrowRight size={16} style={{ marginLeft: '8px' }} />
+                  <h2 style={{ color: '#eab308', fontSize: '20px', margin: '0 0 10px 0' }}>{item.title}</h2>
+                  <p style={{ color: '#9ca3af', fontSize: '14px' }}>{item.seo_description?.substring(0, 100)}...</p>
+                  <div style={{ display: 'flex', alignItems: 'center', color: '#a855f7', fontWeight: 'bold', marginTop: '15px' }}>
+                    DETAIL <ArrowRight size={16} style={{ marginLeft: '5px' }} />
                   </div>
                 </div>
               </div>
@@ -118,10 +92,9 @@ function SearchContent() {
           ))}
         </div>
       ) : (
-        <div style={{ textAlign: 'center', padding: '80px 20px', background: 'rgba(255,0,0,0.02)', border: '1px dashed #333', borderRadius: '24px' }}>
-          <SearchX size={64} color="#ff4444" style={{ margin: '0 auto 24px auto', opacity: 0.5 }} />
-          <h2 style={{ color: '#fff' }}>{currentT.emptyTitle}</h2>
-          <p style={{ color: '#666' }}>{currentT.emptyDesc}</p>
+        <div style={{ textAlign: 'center', padding: '80px', border: '1px dashed #333', borderRadius: '20px' }}>
+          <SearchX size={64} color="#ff4444" style={{ marginBottom: '20px', opacity: 0.5 }} />
+          <h2 style={{ color: '#fff' }}>{currentT.empty}</h2>
         </div>
       )}
     </div>
@@ -130,12 +103,10 @@ function SearchContent() {
 
 export default function SearchResults() {
   return (
-    <div style={{ backgroundColor: '#0a0b0d', minHeight: '100vh', color: '#fff', padding: '60px 20px' }}>
-      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-        <Suspense fallback={<div style={{ textAlign: 'center', color: '#eab308' }}><Loader2 className="animate-spin" /></div>}>
-          <SearchContent />
-        </Suspense>
-      </div>
+    <div style={{ backgroundColor: '#0a0b0d', minHeight: '100vh' }}>
+      <Suspense fallback={<div style={{ textAlign: 'center', color: '#eab308', padding: '100px' }}>GURU Načítá...</div>}>
+        <SearchContent />
+      </Suspense>
     </div>
   );
 }
