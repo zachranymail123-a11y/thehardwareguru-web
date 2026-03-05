@@ -11,17 +11,16 @@ const supabaseAdmin = createClient(
 export async function POST(req) {
   try {
     const { title, slug, pin } = await req.json();
-    // GURU POJISTKA: Používáme tvůj GURU_PIN z .env
-    if (pin !== process.env.GURU_PIN) return NextResponse.json({ error: 'Špatný PIN, kámo!' }, { status: 401 });
+    if (pin !== process.env.GURU_PIN) return NextResponse.json({ error: 'Špatný PIN!' }, { status: 401 });
 
-    // 1. GURU REŠERŠE (Serper.dev)
+    // 1. REŠERŠE
     let rawText = '';
     try {
       const serperRes = await fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          q: `${title} PC optimization steam reddit config settings stuttering fix engine.ini`,
+          q: `${title} PC optimization steam system requirements reddit config ini stuttering fix`,
           gl: 'us', hl: 'en'
         })
       });
@@ -29,42 +28,40 @@ export async function POST(req) {
       rawText = data.organic?.map(res => `${res.title}: ${res.snippet}`).join('\n\n') || '';
     } catch (e) { console.error('Serper fail'); }
 
-    // 2. PARALELNÍ GIGANT: Text (CZ+EN+SEO) + DALL-E 3
-    console.log(`🚀 Generuji kompletní SEO balík (CZ+EN) pro: ${title}`);
-    
+    // 2. PARALELNÍ GENEROVÁNÍ (Obnova tvé struktury)
     const [completion, imageResult] = await Promise.all([
-      // A. BILINGVÁLNÍ SEO TEXTY
       openai.chat.completions.create({
-        model: "gpt-4-turbo", // Pro precizní bilingvální texty je turbo jistota
+        model: "gpt-4-turbo",
         messages: [
           { 
             role: "system", 
-            content: "Jsi 'The Hardware Guru'. Píšeš technicky, úderně a bez vaty. Tvým úkolem je vytvořit bilingvální optimalizační příručku založenou na dodaných datech. V HTML nepoužívej tag <html> ani <body>, jen čistou strukturu <h2>, <p>, <ul>." 
+            // GURU: Vrácen tvůj původní systémový prompt
+            content: "Jsi 'The Hardware Guru'. Píšeš drsně, technicky a bez zbytečných keců. ZAKAZUJI obecné rady. Musíš zahrnout systémové požadavky a hardcore fixy." 
           },
           { 
             role: "user", 
-            content: `Hra: ${title}\nRešerše: ${rawText}\n\nVYGENERUJ STRIKTNÍ JSON:\n{
-              "meta_title": "CZ SEO Titulek (vábnička pro Google)",
-              "seo_description": "CZ meta description (max 160 znaků)",
-              "seo_keywords": "česká, klíčová, slova, oddělená, čárkou",
-              "html_content": "Kompletní CZ návod (Analýza, Požadavky, Fixy, Nastavení v HTML)",
+            // GURU: Vrácena tvoje přesná struktura 4 nadpisů + přidána EN verze
+            content: `Hra: ${title}\nData: ${rawText}\n\nVYGENERUJ STRIKTNÍ JSON:\n{
+              "meta_title": "Optimalizace ${title} - Guru Tweak Guide",
+              "seo_description": "Optimalizace ${title} - Kompletní návod pro zvýšení FPS a odstranění stutteringu.",
+              "seo_keywords": "${title}, optimalizace, fps fix, hardware guru",
+              "html_content": "HTML kód se strukturou: <h2>Guru Analýza</h2>, <h2>Systémové požadavky (Steam)</h2>, <h2>Hardcore Fixy a Optimalizace</h2>, <h2>Nastavení ve hře: Co zabíjí FPS</h2>. Na konec přidej tvůj Kick a YouTube odkaz.",
               
-              "title_en": "${title} PC Optimization Guide",
+              "title_en": "${title} Optimization Guide",
               "slug_en": "${slug}-optimization-guide",
-              "meta_title_en": "EN SEO Title",
-              "description_en": "EN meta description",
-              "seo_keywords_en": "en, keywords, tweak",
-              "content_en": "Full EN guide (Analysis, Requirements, Fixes, Settings in HTML)"
-            }\n\nNa konec CZ i EN obsahu přidej odkazy na Kick (https://kick.com/thehardwareguru) a YouTube (@TheHardwareGuru_Czech).` 
+              "meta_title_en": "${title} FPS Boost & PC Optimization Guide",
+              "description_en": "Best settings and hardcore fixes for ${title} to maximize performance and fix lag.",
+              "seo_keywords_en": "${title} tweak, fps fix, pc guide, graphics settings",
+              "content_en": "HTML code with structure: <h2>Guru Analysis</h2>, <h2>System Requirements (Steam)</h2>, <h2>Hardcore Fixes and Optimization</h2>, <h2>In-game Settings: What Kills FPS</h2>. Add Kick and YouTube links at the end."
+            }\n\nOdkazy: https://kick.com/thehardwareguru a YouTube @TheHardwareGuru_Czech.` 
           }
         ],
         response_format: { type: "json_object" }
       }),
 
-      // B. CINEMATIC HARDWARE IMAGE
       openai.images.generate({
         model: "dall-e-3",
-        prompt: `Cinematic high-tech gaming PC internal components, focus on GPU and liquid cooling, neon glowing yellow and purple aesthetic, hardware enthusiast style, professional photography, 8k resolution. NO TEXT.`,
+        prompt: `High-tech cinematic close-up of high-end gaming PC components, liquid cooling, glowing neon purple and yellow lighting, extreme detail, hardware enthusiast aesthetic, 8k resolution.`,
         n: 1, size: "1024x1024"
       }).catch(e => { console.error("DALL-E fail", e); return null; })
     ]);
@@ -72,14 +69,12 @@ export async function POST(req) {
     const ai = JSON.parse(completion.choices[0].message.content);
     let finalImg = 'EMPTY';
 
-    // 3. STORAGE UPLOAD (Zpracování obrázku)
     if (imageResult && imageResult.data[0]?.url) {
       try {
         const fetchImg = await fetch(imageResult.data[0].url);
         const blob = await fetchImg.blob();
         const fileName = `tweaky/${slug}-${Date.now()}.png`;
         const { error: upErr } = await supabaseAdmin.storage.from('images').upload(fileName, blob, { contentType: 'image/png' });
-        
         if (!upErr) {
           const { data: pUrl } = supabaseAdmin.storage.from('images').getPublicUrl(fileName);
           finalImg = pUrl.publicUrl;
@@ -87,15 +82,14 @@ export async function POST(req) {
       } catch (e) { console.error("Supabase Storage fail", e); }
     }
 
-    // 4. FINÁLNÍ ODPOVĚĎ PRO FRONTEND
+    // VRACÍME PŘESNÉ KLÍČE PRO DB
     return NextResponse.json({ 
-      ...ai, // Rozbalíme vše z AI (meta_title, content_en, atd.)
+      ...ai,
       image_url: finalImg, 
-      source: 'Guru Multilingual Engine V3' 
+      source: 'Guru Engine V3 Fixed' 
     });
 
   } catch (err) { 
-    console.error('Kritická chyba API:', err);
     return NextResponse.json({ error: err.message }, { status: 500 }); 
   }
 }
