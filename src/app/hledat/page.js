@@ -28,29 +28,45 @@ function SearchContent() {
 
     const fetchResults = async () => {
       setLoading(true);
-      const q = query.trim();
       
       try {
-        // GURU FIX: Zásadní oprava pro Error 400. 
-        // Hodnoty MUSÍ být v uvozovkách, jinak mezera v hledaném slově zničí dotaz.
-        const searchTerm = `%${q}%`;
-        const orFilter = `title.ilike."${searchTerm}",seo_description.ilike."${searchTerm}",seo_keywords.ilike."${searchTerm}",description_en.ilike."${searchTerm}"`;
+        const q = query.trim();
+        
+        // 🚀 GURU POSTGRESQL FULL-TEXT SEARCH (Dle profi návrhu)
+        // Voláme nativní SQL funkci pro brutální rychlost a přesnost (stemming, relevance)
+        const { data: rpcData, error: rpcError } = await supabase.rpc('search_tweaks', { search_term: q });
 
-        const { data, error } = await supabase
-          .from('tweaky')
-          .select('title, slug, image_url, seo_description, seo_keywords, description_en')
-          .or(orFilter);
-
-        if (error) {
-          console.error("GURU DB ERROR (Fallback aktivován):", error.message);
-          // FALLBACK: Pokud by komplexní dotaz selhal, vždy vrátíme aspoň shodu v nadpisu
-          const { data: fallbackData } = await supabase
-            .from('tweaky')
-            .select('title, slug, image_url, seo_description, description_en')
-            .ilike('title', searchTerm);
-          setResults(fallbackData || []);
+        if (!rpcError && rpcData) {
+          // SQL Full-Text engine zafungoval!
+          setResults(rpcData);
         } else {
-          setResults(data || []);
+          // ZÁLOHA: Pokud SQL funkce ještě neexistuje (např. jsi nespustil SQL kód), 
+          // použijeme robustní původní GURU paralelní JS hledání, aby web nikdy nespadl.
+          console.warn("PostgreSQL RPC nenalezeno, aktivuji JS Fallback:", rpcError?.message);
+          
+          const searchTerm = `%${q}%`;
+          const safeQuery = async (column) => {
+            try {
+              const { data, error } = await supabase
+                .from('tweaky')
+                .select('title, slug, image_url, seo_description, description_en')
+                .ilike(column, searchTerm);
+              return error ? [] : (data || []);
+            } catch (e) {
+              return [];
+            }
+          };
+
+          const [byTitle, byDesc, byKeys, byContent] = await Promise.all([
+            safeQuery('title'),
+            safeQuery('seo_description'),
+            safeQuery('seo_keywords'),
+            safeQuery('content')
+          ]);
+
+          const allResults = [...byTitle, ...byDesc, ...byKeys, ...byContent];
+          const uniqueResults = Array.from(new Map(allResults.map(item => [item.slug, item])).values());
+          setResults(uniqueResults);
         }
       } catch (err) {
         console.error("Kritické selhání vyhledávání:", err);
