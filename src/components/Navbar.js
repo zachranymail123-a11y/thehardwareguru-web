@@ -2,11 +2,10 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Search, Home, Cpu, Menu, X, Wrench } from 'lucide-react';
+import { Search, Home, FileText, Lightbulb, Wrench, BookOpen, HeartPulse, Heart } from 'lucide-react';
 
 export default function Navbar() {
   const [query, setQuery] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
 
   const handleSearch = (e) => {
@@ -14,66 +13,49 @@ export default function Navbar() {
     if (query.trim()) {
       router.push(`/hledat?q=${encodeURIComponent(query)}`);
       setQuery('');
-      setIsOpen(false);
     }
   };
 
   return (
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
-      background: 'rgba(10, 11, 13, 0.85)', backdropFilter: 'blur(12px)',
-      borderBottom: '1px solid #eab308', padding: '15px 20px',
+      background: '#0a0b0d', // Tmavé pozadí přesně jako na fotce
+      borderBottom: '1px solid #1f2937', padding: '15px 30px',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#fff'
     }}>
-      {/* LOGO & MENU */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <Link href="/" style={{ textDecoration: 'none', color: '#eab308', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '900', fontSize: '20px', fontStyle: 'italic' }}>
-          <Cpu size={24} color="#7c3aed" />
-          <span>GURU<span style={{ color: '#fff' }}>WEB</span></span>
-        </Link>
-        <div className="desktop-only" style={{ display: 'flex', gap: '15px', marginLeft: '20px' }}>
-          <Link href="/" style={{ color: '#ccc', textDecoration: 'none', fontSize: '14px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}><Home size={16}/> Domů</Link>
-          <Link href="/tweaky" style={{ color: '#ccc', textDecoration: 'none', fontSize: '14px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}><Wrench size={16}/> Tweaky</Link>
-        </div>
-      </div>
+      {/* LOGO (Tvoje fialové HARDWARE GURU) */}
+      <Link href="/" style={{ textDecoration: 'none' }}>
+        <span style={{ color: '#a855f7', fontFamily: 'serif', fontSize: '24px', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase' }}>
+          Hardware Guru
+        </span>
+      </Link>
 
-      {/* VYHLEDÁVÁNÍ */}
-      <form onSubmit={handleSearch} className="desktop-only" style={{ flex: 1, maxWidth: '400px', margin: '0 20px', position: 'relative' }}>
+      {/* VYHLEDÁVÁNÍ (Nové, funkční, uprostřed) */}
+      <form onSubmit={handleSearch} style={{ flex: 1, maxWidth: '300px', margin: '0 20px', position: 'relative' }}>
         <input 
-          type="text" placeholder="Hledat hry, tweaky..." value={query} onChange={(e) => setQuery(e.target.value)}
-          style={{ width: '100%', padding: '10px 15px 10px 40px', borderRadius: '20px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid #333', color: '#fff', outline: 'none' }}
+          type="text" placeholder="Hledat..." value={query} onChange={(e) => setQuery(e.target.value)}
+          style={{ width: '100%', padding: '8px 15px 8px 35px', borderRadius: '8px', background: 'transparent', border: '1px solid #374151', color: '#fff', outline: 'none', fontSize: '14px' }}
         />
-        <Search size={18} style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+        <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
       </form>
 
-      {/* SÍTĚ */}
-      <div className="desktop-only" style={{ display: 'flex', gap: '15px' }}>
-        <a href="https://kick.com/TheHardwareGuru" target="_blank" rel="noreferrer" style={{ color: '#53fc18', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' }}>KICK</a>
-        <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noreferrer" style={{ color: '#ff0000', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' }}>YOUTUBE</a>
-        <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" style={{ color: '#5865F2', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px' }}>DISCORD</a>
+      {/* HLAVNÍ MENU (Podle tvé fotky) */}
+      <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+        <Link href="/" style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}><Home size={16}/> Domů</Link>
+        <Link href="/clanky" style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}><FileText size={16}/> Články</Link>
+        <Link href="/tipy" style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}><Lightbulb size={16}/> Tipy</Link>
+        <Link href="/tweaky" style={{ color: '#eab308', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}><Wrench size={16}/> Guru Tweaky</Link>
+        <Link href="/slovnik" style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}><BookOpen size={16}/> Slovník</Link>
+        <Link href="/rady" style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}><HeartPulse size={16}/> Rady</Link>
       </div>
 
-      <style dangerouslySetInnerHTML={{__html: `
-        @media (max-width: 768px) { .desktop-only { display: none !important; } .mobile-btn { display: block !important; } }
-        .mobile-btn { display: none; background: none; border: none; cursor: pointer; color: #eab308; }
-      `}} />
-
-      {/* MOBILNÍ MENU BTN */}
-      <button className="mobile-btn" onClick={() => setIsOpen(!isOpen)}>
-        {isOpen ? <X size={28} /> : <Menu size={28} />}
-      </button>
-
-      {/* MOBILNÍ ROZBALOVACÍ MENU */}
-      {isOpen && (
-        <div style={{ position: 'absolute', top: '65px', left: 0, right: 0, background: '#0a0b0d', padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px', borderBottom: '1px solid #333' }}>
-          <form onSubmit={handleSearch} style={{ position: 'relative' }}>
-            <input type="text" placeholder="Hledat..." value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: '100%', padding: '12px 15px 12px 40px', borderRadius: '12px', background: '#111', border: '1px solid #333', color: '#fff' }} />
-            <Search size={18} style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
-          </form>
-          <Link href="/" onClick={() => setIsOpen(false)} style={{ color: '#fff', textDecoration: 'none', fontSize: '18px' }}>Domů</Link>
-          <Link href="/tweaky" onClick={() => setIsOpen(false)} style={{ color: '#fff', textDecoration: 'none', fontSize: '18px' }}>Tweaky</Link>
-        </div>
-      )}
+      {/* BAREVNÁ TLAČÍTKA A SÍTĚ (Přesně jako na fotce) */}
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginLeft: '20px' }}>
+        <a href="https://kick.com/TheHardwareGuru" target="_blank" rel="noreferrer" style={{ background: '#53fc18', color: '#000', padding: '6px 12px', borderRadius: '4px', textDecoration: 'none', fontWeight: '900', fontSize: '12px' }}>KICK</a>
+        <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noreferrer" style={{ background: '#ff0000', color: '#fff', padding: '6px 12px', borderRadius: '4px', textDecoration: 'none', fontWeight: '900', fontSize: '12px' }}>YOUTUBE</a>
+        <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" style={{ background: '#5865F2', color: '#fff', padding: '6px 12px', borderRadius: '4px', textDecoration: 'none', fontWeight: '900', fontSize: '12px' }}>DISCORD</a>
+        <a href="/podpora" style={{ display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #eab308', color: '#eab308', padding: '5px 12px', borderRadius: '4px', textDecoration: 'none', fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase' }}><Heart size={14} fill="#eab308" /> Podpora</a>
+      </div>
     </nav>
   );
 }
