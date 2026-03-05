@@ -13,6 +13,11 @@ export default function HomePage() {
   });
   const [loading, setLoading] = useState(true);
 
+  // --- STAV PRO INTELIGENTNÍ VYHLEDÁVÁNÍ ---
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -62,6 +67,37 @@ export default function HomePage() {
     fetchData();
   }, []);
 
+  // --- EFEKT PRO INTELIGENTNÍ VYHLEDÁVÁNÍ ---
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const delayDebounceFn = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const [pRes, tipRes, tweakRes] = await Promise.all([
+          supabase.from('posts').select('title, slug').ilike('title', `%${searchQuery}%`).limit(3),
+          supabase.from('tipy').select('title, slug').ilike('title', `%${searchQuery}%`).limit(3),
+          supabase.from('tweaky').select('title, slug').ilike('title', `%${searchQuery}%`).limit(3)
+        ]);
+
+        let results = [];
+        if (pRes.data) results = [...results, ...pRes.data.map(x => ({ ...x, category: 'Článek', link: `/clanky/${x.slug}` }))];
+        if (tipRes.data) results = [...results, ...tipRes.data.map(x => ({ ...x, category: 'Tip', link: `/tipy/${x.slug}` }))];
+        if (tweakRes.data) results = [...results, ...tweakRes.data.map(x => ({ ...x, category: 'Tweak', link: `/tweaky/${x.slug}` }))];
+
+        setSearchResults(results);
+      } catch (err) {
+        console.error("Search error:", err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
   return (
     <div style={globalStyles}>
       <style>{`
@@ -76,6 +112,7 @@ export default function HomePage() {
         .social-btn-main { padding: 14px 28px; border-radius: 14px; font-weight: 900; font-size: 15px; text-decoration: none; text-transform: uppercase; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); border: none; cursor: pointer; }
         .social-btn-main:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 6px 25px rgba(0,0,0,0.5); }
         .section-title-wrapper { background: rgba(0,0,0,0.7); padding: 18px 35px; border-radius: 18px; backdrop-filter: blur(8px); border: 1px solid rgba(234, 179, 8, 0.2); display: inline-block; }
+        .search-result-item:hover { background: rgba(102, 252, 241, 0.1); }
       `}</style>
 
       {/* --- NAVIGACE --- */}
@@ -94,6 +131,36 @@ export default function HomePage() {
           <Link href="/support" className="nav-link" style={{color: '#eab308'}}><Heart size={16}/> PODPORA</Link>
         </div>
       </nav>
+
+      {/* --- INTELIGENTNÍ VYHLEDÁVÁNÍ (ZÚŽENÉ POLE) --- */}
+      <div style={{ maxWidth: '400px', margin: '30px auto 0', position: 'relative', padding: '0 20px', zIndex: 999 }}>
+        <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(17, 19, 24, 0.95)', border: '1px solid #66fcf1', borderRadius: '12px', padding: '10px 15px', boxShadow: '0 0 15px rgba(102, 252, 241, 0.2)' }}>
+          <Search size={18} color="#66fcf1" style={{ marginRight: '10px' }} />
+          <input
+            type="text"
+            placeholder="Hledat..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ background: 'transparent', border: 'none', color: '#fff', width: '100%', fontSize: '15px', outline: 'none' }}
+          />
+          {isSearching && <span style={{ color: '#a855f7', fontSize: '11px', fontWeight: 'bold', marginLeft: '10px' }}>Hledám...</span>}
+        </div>
+
+        {searchQuery.trim() !== '' && (
+          <div style={{ position: 'absolute', top: '100%', left: '20px', right: '20px', background: 'rgba(31, 40, 51, 0.98)', border: '1px solid #66fcf1', borderRadius: '12px', marginTop: '8px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
+            {searchResults.length > 0 ? (
+              searchResults.map((res, i) => (
+                <Link href={res.link} key={i} className="search-result-item" style={{ display: 'block', padding: '12px 15px', color: '#fff', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', transition: '0.2s' }}>
+                  <div style={{ fontSize: '10px', color: '#66fcf1', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '3px' }}>{res.category}</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{res.title}</div>
+                </Link>
+              ))
+            ) : (
+              !isSearching && <div style={{ padding: '15px', color: '#9ca3af', textAlign: 'center', fontSize: '13px' }}>Nic jsme nenašli.</div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* --- BIO SEKCE --- */}
       <header style={headerStyles}>
@@ -227,4 +294,4 @@ const imageStyle = { width: '100%', height: '100%', objectFit: 'cover' };
 const cardTitleStyle = { fontSize: '20px', fontWeight: '900', margin: '12px 0', color: '#fff', lineHeight: '1.2' };
 const cardDescStyle = { color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '10px' };
 const footerStyles = { background: 'rgba(31, 40, 51, 0.95)', padding: '60px 20px', textAlign: 'center', borderTop: '1px solid rgba(168, 85, 247, 0.2)' };
-const newBadgeStyle = { position: 'absolute', top: '15px', left: '15px', background: '#a855f7', color: '#fff', padding: '4px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '900', zIndex: 10, letterSpacing: '1px' };
+const newBadgeStyle = { position: 'absolute', top: '15px', left: '15px', background: '#a855f7', color: '#fff', padding: '4px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold' };
