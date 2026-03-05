@@ -16,12 +16,11 @@ function SearchContent() {
   const [loading, setLoading] = useState(true);
   const [lang, setLang] = useState('cs');
 
-  // GURU FIX: Automatická detekce jazyka pro CZ/EN mutaci
+  // Automatická detekce jazyka pro CZ/EN mutaci
   useEffect(() => {
     setLang(document.documentElement.lang || 'cs');
   }, []);
 
-  // Slovník pro překlady (CZ/EN pravidlo)
   const t = {
     cs: {
       title: 'Výsledky hledání pro:',
@@ -47,15 +46,14 @@ function SearchContent() {
 
     const fetchResults = async () => {
       setLoading(true);
-      const searchTerm = `%${query}%`;
-
-      // Hledání v tabulce TWEAKY (přidáno description_en pro multijazyčnost)
+      
+      // GURU FIX: Nyní prohledáváme titulky I POPISKY! Tím pádem najde i slova uvnitř textu (jako 'ddr').
       const { data: tweakData, error: tweakError } = await supabase
         .from('tweaky')
-        .select('title, slug, image_url, seo_description, description_en')
-        .ilike('title', searchTerm);
+        .select('title, slug, image_url, seo_description')
+        .or(`title.ilike.%${query}%,seo_description.ilike.%${query}%`);
 
-      if (tweakError) console.error("Chyba hledání:", tweakError);
+      if (tweakError) console.error("Chyba hledání v DB:", tweakError);
 
       setResults(tweakData || []);
       setLoading(false);
@@ -91,10 +89,7 @@ function SearchContent() {
                 <div style={{ padding: '20px' }}>
                   <h2 style={{ fontSize: '20px', margin: '0 0 10px 0', color: '#eab308' }}>{item.title}</h2>
                   <p style={{ fontSize: '14px', color: '#9ca3af', lineHeight: '1.5', margin: '0 0 15px 0' }}>
-                    {/* GURU FIX: Zobrazí správný popisek podle jazyka */}
-                    {lang === 'en' && item.description_en 
-                      ? item.description_en.substring(0, 100) 
-                      : item.seo_description?.substring(0, 100)}...
+                    {item.seo_description?.substring(0, 100)}...
                   </p>
                   <div style={{ display: 'flex', alignItems: 'center', color: '#7c3aed', fontSize: '14px', fontWeight: 'bold' }}>
                     {currentT.read} <ArrowRight size={16} style={{ marginLeft: '5px' }} />
@@ -119,7 +114,7 @@ export default function SearchResults() {
   return (
     <div style={{ backgroundColor: '#0a0b0d', minHeight: '100vh', color: '#fff', padding: '40px 20px' }}>
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        <Suspense fallback={<div style={{ color: '#eab308', textAlign: 'center' }}>GURU načítá...</div>}>
+        <Suspense fallback={<div style={{ color: '#eab308', textAlign: 'center' }}>Načítám...</div>}>
           <SearchContent />
         </Suspense>
       </div>
