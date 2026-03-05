@@ -4,7 +4,7 @@ import OpenAI from 'openai';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
-export const maxDuration = 60; // GURU FIX: Zvýšeno na max, AI teď bude psát hodně
+export const maxDuration = 60; 
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -17,8 +17,8 @@ function cleanDescription(title, desc) {
   for (let start of startsToRemove) {
     if (cleaned.toLowerCase().startsWith(start.toLowerCase())) {
       cleaned = cleaned.substring(start.length).trim();
-      // Odstraní případnou tečku nebo čárku na začátku a capitalize první písmeno
-      cleaned = cleaned.replace(/^[,.\s]+/, '');
+      // Odstraní případnou tečku, čárku nebo dvojtečku na začátku a capitalize první písmeno
+      cleaned = cleaned.replace(/^[,.\s:-]+/, '');
       cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
       break; 
     }
@@ -41,20 +41,17 @@ export async function GET(request) {
   );
 
   try {
-    // 1. GURU FIX: Načteme názvy I SLUGY pro inteligentní kontrolu
     const { data: existingTerms, error: dbError } = await supabase
       .from('slovnik')
       .select('title, slug');
       
     if (dbError) throw dbError;
 
-    // Uděláme si Set existujících slugů (pro nejrychlejší kontrolu)
-    const existingSlugs = new Set(existingTerms ? existingTerms.map(t => t.slug.toLowerCase().trim()) : []);
-    
-    // Seznam názvů pro prompt (ať AI ví, co už máme)
-    const avoidTitles = existingTerms ? existingTerms.map(t => t.title).join(', ') : 'Zatím nic nemáme';
+    // GURU FIX: Bezpečná filtrace, kdyby nějaký záznam v DB neměl slug
+    const existingSlugs = new Set(existingTerms ? existingTerms.filter(t => t.slug).map(t => t.slug.toLowerCase().trim()) : []);
+    const avoidTitles = existingTerms && existingTerms.length > 0 ? existingTerms.filter(t => t.title).map(t => t.title).join(', ') : 'Zatím nic nemáme';
 
-    // 2. SEO ŠÉFREDAKTOR (Hardcore upravený prompt pro čistotu a kvalitu)
+    // SEO ŠÉFREDAKTOR
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -65,6 +62,7 @@ export async function GET(request) {
           ZÁKAZ generovat tyto pojmy (už je máme): ${avoidTitles}.
           
           Pravidla pro JSON:
+          - Vrať STRIKTNĚ formát: { "pojmy": [ { "title": "...", "slug": "...", "description": "..." } ] }
           - title: STRIKTNĚ JEN NÁZEV POJMU (např. 'TDP', 'DLSS'). ZÁKAZ používat vaty jako 'Co je to', 'Vysvětlení', 'Pojem'.
           - slug: cisty-url-slug (pouze malá písmena, čísla, pomlčky).
           - description: Detailní, odborné vysvětlení na 2-3 odstavce (odřádkuj <br><br>). Mluv přímo k věci, ZÁKAZ opakovat název pojmu na začátku, ZÁKAZ používat HTML tagy <b>, jen čistý text. Vysvětli co to je, jak to funguje a proč to má řešit PC hráč.` 
@@ -75,23 +73,31 @@ export async function GET(request) {
 
     const aiData = JSON.parse(completion.choices[0].message.content);
     
+    // 🚀 GURU FAIL-SAFE: Pojistka proti zmatenému AI JSONu
+    let pojmyArray = [];
+    if (aiData && Array.isArray(aiData.pojmy)) {
+      pojmyArray = aiData.pojmy;
+    } else if (Array.isArray(aiData)) {
+      pojmyArray = aiData;
+    } else if (aiData && aiData.slovnik && Array.isArray(aiData.slovnik)) {
+      pojmyArray = aiData.slovnik;
+    } else {
+      throw new Error("AI vrátilo neplatný formát. Ochrana zastavila pád.");
+    }
+    
     let processedLog = [];
     let errorsLog = [];
 
-    // 3. 🚀 GURU PARALELNÍ ENGINE (Rychlé zpracování a zápis)
-    await Promise.all(aiData.pojmy.map(async (pojem) => {
+    // Paralelní zpracování
+    await Promise.all(pojmyArray.map(async (pojem) => {
       try {
-        // Vyčištění a validace
-        const rawTitle = pojem.title.trim();
-        const cleanSlug = pojem.slug.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+        const rawTitle = pojem.title ? pojem.title.trim() : "Neznamo";
+        const cleanSlug = pojem.slug ? pojem.slug.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') : "neplatny-slug";
         
-        // Final cleaner popisu
         const finalDescription = cleanDescription(rawTitle, pojem.description);
 
-        // Kontrola podle slugu (neprůstřelné duplicity)
         if (!existingSlugs.has(cleanSlug)) {
           
-          // Zápis do DB
           const { error: insertError } = await supabase
             .from('slovnik')
             .insert({
@@ -104,14 +110,13 @@ export async function GET(request) {
             errorsLog.push(`DB Chyba u ${rawTitle}: ${insertError.message}`);
           } else {
             processedLog.push(rawTitle);
-            // Přidáme do setu, aby v rámci jedné dávky nevznikly duplicity
             existingSlugs.add(cleanSlug); 
           }
         } else {
            errorsLog.push(`Duplikát chycen (podle slugu): ${rawTitle} (${cleanSlug})`);
         }
       } catch (e) {
-        errorsLog.push(`Chyba zpracování ${pojem.title}: ${e.message}`);
+        errorsLog.push(`Chyba zpracování: ${e.message}`);
       }
     }));
 
