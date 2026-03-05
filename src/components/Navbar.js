@@ -61,7 +61,7 @@ export default function Navbar() {
           const textCols = [];
           // V každé tabulce najdeme VŠECHNY sloupce, které obsahují text
           for (const [colName, colInfo] of Object.entries(schema.properties || {})) {
-            // GURU FIX: Ignorujeme sloupce, které mají v názvu slovo "plan" (např. plan_id, plan_name)
+            // GURU FIX: Ignorujeme sloupce pro hledání, které mají v názvu slovo "plan"
             if (colInfo.type === 'string' && !colName.toLowerCase().includes('plan')) {
               textCols.push(colName);
             }
@@ -105,7 +105,7 @@ export default function Navbar() {
         dbStructure.forEach(({ table, columns }) => {
           columns.forEach(col => {
             allPromises.push(
-              supabase.from(table).select('*').ilike(col, searchTerm).limit(3)
+              supabase.from(table).select('*').ilike(col, searchTerm).limit(10)
                 .then(res => {
                   if (res.error) throw res.error; 
                   return (res.data || []).map(item => ({ ...item, section: table }));
@@ -123,8 +123,8 @@ export default function Navbar() {
           .flat();
 
         if (active) {
-          // Odstranění duplicit podle slugu a sekce, výpis nejlepších 6
-          const uniqueResults = Array.from(new Map(allResults.map(item => [item.section + (item.slug || item.id), item])).values()).slice(0, 6);
+          // Odstranění duplicit podle slugu a sekce, výpis nejlepších 10
+          const uniqueResults = Array.from(new Map(allResults.map(item => [item.section + (item.slug || item.id), item])).values()).slice(0, 10);
           setSuggestions(uniqueResults);
         }
 
@@ -228,19 +228,25 @@ export default function Navbar() {
               </div>
             ) : (
               suggestions.map((s, i) => {
-                // 🚀 GURU FIX: Zobrazí větu z JAKÉHOKOLIV existujícího sloupce, kde se text reálně našel
                 let desc = '';
                 const safeQ = query.trim().toLowerCase();
                 let foundSnippet = false;
 
-                // Dynamicky projdeme ÚPLNĚ VŠECHNY vlastnosti, které nám z databáze přišly (nehledě na jméno)
+                // 🚀 GURU FIX VYKRESLOVÁNÍ: Dynamicky projdeme VŠECHNY vlastnosti z DB...
                 for (const key in s) {
-                  if (typeof s[key] === 'string' && key !== 'image_url' && key !== 'slug' && key !== 'section') {
+                  // ...ALE TVRDĚ IGNORUJEME COKOLIV, CO MÁ V NÁZVU 'plan'! (Tvůj rozkaz)
+                  if (
+                    typeof s[key] === 'string' && 
+                    key !== 'image_url' && 
+                    key !== 'slug' && 
+                    key !== 'section' &&
+                    !key.toLowerCase().includes('plan') 
+                  ) {
                     const plainText = s[key].replace(/<[^>]+>/g, ''); // Vyčistíme HTML balast
                     const matchIndex = plainText.toLowerCase().indexOf(safeQ);
                     
                     if (matchIndex !== -1) {
-                      // Hledané slovo nalezeno! Vyřízneme kontext okolo něj
+                      // Hledané slovo nalezeno v POVOLENÉM sloupci! Vyřízneme kontext.
                       const start = Math.max(0, matchIndex - 30);
                       const end = Math.min(plainText.length, matchIndex + 60);
                       desc = (start > 0 ? '...' : '') + plainText.substring(start, end) + '...';
@@ -255,7 +261,6 @@ export default function Navbar() {
                   desc = s.seo_description || s.description_en || (s.content ? s.content.replace(/<[^>]+>/g, '').substring(0, 60) + '...' : '');
                 }
 
-                // GURU FIX: Pokud by záznam neměl slug (nové podivné tabulky), použijeme ID, nebo cokoliv jiného.
                 const urlParam = s.slug || s.id || '';
 
                 return (
@@ -279,7 +284,6 @@ export default function Navbar() {
                         fontSize: '10px', color: '#fff', background: '#a855f7', 
                         padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.5px', fontWeight: 'bold' 
                       }}>
-                        {/* Pokud najde novou tabulku mimo seznam, napíše její surový název velkými písmeny */}
                         {sectionNames[s.section] || s.section.toUpperCase()}
                       </div>
                     </div>
