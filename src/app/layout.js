@@ -3,8 +3,8 @@ import Script from 'next/script';
 import SestavyBubble from '../components/SestavyBubble'; 
 import Tracker from '../components/Tracker'; 
 import SocialTracker from '../components/SocialTracker';
-import SupportWidget from '../components/SupportWidget'; // PŘIDÁNO
-import Navbar from '../components/Navbar'; // GURU FIX: Import navigace
+import SupportWidget from '../components/SupportWidget';
+import Navbar from '../components/Navbar'; // GURU FIX: Zde je sjednocená navigace!
 import { Analytics } from '@vercel/analytics/react';
 
 export const metadata = {
@@ -65,7 +65,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="cs">
       <body>
-        {/* GURU FIX: Globální plovoucí navigace */}
+        {/* --- GLOBÁLNÍ SJEDNOCENÁ NAVIGACE --- */}
         <Navbar />
 
         <SocialTracker /> 
@@ -92,14 +92,12 @@ export default function RootLayout({ children }) {
         />
 
         <SestavyBubble />
-        
-        {/* --- GURU SUPPORT BUBBLE --- */}
         <SupportWidget />
 
-        {/* GURU FIX: Odsazení, aby lišta nezakrývala obsah */}
-        <div style={{ paddingTop: '75px' }}>
+        {/* --- Odsazení obsahu webu pod plovoucí lištou --- */}
+        <main style={{ paddingTop: '80px', minHeight: '100vh' }}>
           {children}
-        </div>
+        </main>
 
         <Analytics />
       </body>
