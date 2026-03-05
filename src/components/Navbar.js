@@ -35,7 +35,8 @@ export default function Navbar() {
     let active = true;
 
     const fetchSuggestions = async () => {
-      const q = query.trim().replace(/[,]/g, ''); // Odstraníme čárky, které rozbíjejí PostgREST
+      // Očištění od znaků, které by mohly zbourat PostgREST dotaz
+      const q = query.trim().replace(/[,"]/g, ''); 
       if (q.length < 2) {
         setSuggestions([]);
         setIsLoading(false);
@@ -45,8 +46,9 @@ export default function Navbar() {
       setIsLoading(true);
       
       try {
-        // Uvozovky kolem %q% jsou KRITICKÉ, pokud hledaný výraz obsahuje mezeru (zabrání Erroru 400)
-        const searchTerm = `"%${q}%"`; 
+        // GURU FIX: Odstraněny uvozovky! 
+        // Dříve tu bylo "%${q}%" s uvozovkami, což hledalo slovo doslova v uvozovkách a proto to nic nenašlo!
+        const searchTerm = `%${q}%`; 
         
         // Seznam všech textových sloupců potvrzených v tvé databázi
         const orAllColumns = `title.ilike.${searchTerm},content.ilike.${searchTerm},seo_description.ilike.${searchTerm},seo_keywords.ilike.${searchTerm},description_en.ilike.${searchTerm},content_en.ilike.${searchTerm},meta_title.ilike.${searchTerm}`;
@@ -70,7 +72,7 @@ export default function Navbar() {
             } catch (fallbackError) {
               // 3. POSLEDNÍ ZÁCHRANA: Bezpečné hledání jen v titulku (nepoužívá .or)
               try {
-                const { data } = await supabase.from(section).select('*').ilike('title', `%${q}%`).limit(4);
+                const { data } = await supabase.from(section).select('*').ilike('title', searchTerm).limit(4);
                 return (data || []).map(item => ({ ...item, section }));
               } catch (e3) {
                 return [];
@@ -280,7 +282,7 @@ export default function Navbar() {
           <a href="https://kick.com/TheHardwareGuru" target="_blank" rel="noreferrer" style={{ background: '#53fc18', color: '#000', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>
             KICK
           </a>
-          <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noreferrer" style={{ background: '#f00', color: '#fff', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>
+          <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noreferrer" style={{ background: '#f00', color: '#fff', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>
             YOUTUBE
           </a>
           
@@ -289,16 +291,4 @@ export default function Navbar() {
             INSTAGRAM
           </a>
           
-          <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" style={{ background: '#5865F2', color: '#fff', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>
-            DISCORD
-          </a>
-          
-          {/* GURU FIX: Absolutní link na podporu */}
-          <a href="https://www.thehardwareguru.cz/support" style={{ background: '#000', border: '2px solid #eab308', color: '#eab308', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Heart size={14} fill="#eab308" /> {isEn ? 'SUPPORT' : 'PODPORA'}
-          </a>
-        </div>
-      </div>
-    </nav>
-  );
-}
+          <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" style={{ background: '#5865F2', color
