@@ -4,10 +4,11 @@ import OpenAI from 'openai';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
-export const maxDuration = 60; 
+export const maxDuration = 60; // Ponecháváme 60s, i když cron může mít limit 30s
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// GURU CLEANER: Odstraňuje vatu na začátku popisu
 function cleanDescription(title, desc) {
   if (!desc) return "";
   let cleaned = desc.trim();
@@ -43,6 +44,7 @@ export async function GET(request) {
   );
 
   try {
+    // 1. ZÍSKÁNÍ EXISTUJÍCÍCH DAT (Batching)
     const { data: existingTerms, error: dbError } = await supabase
       .from('slovnik')
       .select('title, slug');
@@ -50,96 +52,80 @@ export async function GET(request) {
     if (dbError) throw dbError;
 
     const existingSlugs = new Set(existingTerms ? existingTerms.filter(t => t.slug).map(t => t.slug.toLowerCase().trim()) : []);
-    const avoidTitles = existingTerms && existingTerms.length > 0 ? existingTerms.filter(t => t.title).map(t => t.title).join(', ') : 'Zatím nic nemáme';
+    // GURU OPTIMALIZACE: Posíláme jen posledních 100 pojmů, aby prompt nebyl obří a pomalý
+    const avoidTitles = existingTerms && existingTerms.length > 0 
+      ? existingTerms.slice(-100).map(t => t.title).join(', ') 
+      : 'Zatím nic nemáme';
 
-    // GURU DUAL-LANGUAGE PROMPT
+    // 2. AI GENERACE (Sníženo na 3 pojmy pro rychlost)
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o", // GURU TIP: Pokud to bude stále padat, změň na "gpt-4o-mini" - je 2x rychlejší
       messages: [
         { 
           role: "system", 
-          content: `Jsi Senior SEO Expert a Hardware Guru pro thehardwareguru.cz.
-          Vygeneruj 5 NEJHLEDANĚJŠÍCH pokročilých pojmů z PC hardwaru/gamingu. Pro každý pojem vytvoř ČESKOU a ANGLICKOU mutaci.
-          ZÁKAZ generovat tyto pojmy (už je máme): ${avoidTitles}.
+          content: `Jsi Senior SEO Expert pro thehardwareguru.cz.
+          Vygeneruj 3 POKROČILÉ pojmy z PC hardwaru/gamingu. Pro každý vytvoř CZ a EN mutaci.
+          ZÁKAZ generovat: ${avoidTitles}.
           
-          Pravidla pro JSON:
-          - Vrať STRIKTNĚ formát: 
-            { 
-              "pojmy": [ 
-                { 
-                  "title": "CZ Název", "slug": "cz-slug", "description": "CZ popis...", "seo_description": "CZ seo...", "seo_keywords": "cz, klicova, slova",
-                  "title_en": "EN Title", "slug_en": "en-slug", "description_en": "EN description...", "seo_description_en": "EN seo...", "seo_keywords_en": "en, key, words"
-                } 
-              ] 
-            }
-          - title/title_en: STRIKTNĚ JEN NÁZEV POJMU (např. 'TDP'). ZÁKAZ vaty typu 'Co je to' / 'What is'.
-          - description/description_en: Detailní, odborné vysvětlení na 2-3 odstavce (odřádkuj <br><br>). ZÁKAZ opakovat název pojmu na začátku, ZÁKAZ HTML tagů <b>.
-          - seo_description: Úderný meta popisek pro Google (max 160 znaků).` 
+          JSON formát: 
+          { 
+            "pojmy": [ 
+              { 
+                "title": "CZ Název", "slug": "cz-slug", "description": "CZ popis (2 odstavce, <br><br>)", "seo_description": "CZ meta (max 160)", "seo_keywords": "cz, slova",
+                "title_en": "EN Title", "slug_en": "en-slug", "description_en": "EN description (2 odstavce, <br><br>)", "seo_description_en": "EN meta", "seo_keywords_en": "en, words"
+              } 
+            ] 
+          }
+          Pravidlo: Popis nesmí začínat názvem pojmu.` 
         }
       ],
       response_format: { type: "json_object" }
     });
 
     const aiData = JSON.parse(completion.choices[0].message.content);
-    
-    let pojmyArray = [];
-    if (aiData && Array.isArray(aiData.pojmy)) {
-      pojmyArray = aiData.pojmy;
-    } else if (Array.isArray(aiData)) {
-      pojmyArray = aiData;
-    } else {
-      throw new Error("AI vrátilo neplatný formát.");
-    }
+    const pojmyArray = aiData?.pojmy || [];
     
     let processedLog = [];
     let errorsLog = [];
 
+    // 3. PARALELNÍ ZÁPIS DO DATABÁZE (Promise.all)
     await Promise.all(pojmyArray.map(async (pojem) => {
       try {
-        // Zpracování CZ
-        const rawTitle = pojem.title ? pojem.title.trim() : "Neznamo";
-        const cleanSlug = pojem.slug ? pojem.slug.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') : "neplatny-slug";
-        const finalDesc = cleanDescription(rawTitle, pojem.description);
-
-        // Zpracování EN
-        const rawTitleEn = pojem.title_en ? pojem.title_en.trim() : rawTitle;
-        const cleanSlugEn = pojem.slug_en ? pojem.slug_en.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') : cleanSlug;
-        const finalDescEn = cleanDescription(rawTitleEn, pojem.description_en);
-
+        const rawTitle = pojem.title?.trim() || "Neznamo";
+        const cleanSlug = pojem.slug?.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') || "neplatny-slug";
+        
         if (!existingSlugs.has(cleanSlug)) {
-          
           const { error: insertError } = await supabase
             .from('slovnik')
             .insert({
               title: rawTitle,
               slug: cleanSlug,
-              description: finalDesc,
+              description: cleanDescription(rawTitle, pojem.description),
               seo_description: pojem.seo_description || null,
               seo_keywords: pojem.seo_keywords || null,
-              // GURU FIX: Zápis EN sloupců
-              title_en: rawTitleEn,
-              slug_en: cleanSlugEn,
-              description_en: finalDescEn,
+              title_en: pojem.title_en?.trim() || rawTitle,
+              slug_en: pojem.slug_en?.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-') || cleanSlug,
+              description_en: cleanDescription(pojem.title_en, pojem.description_en),
               seo_description_en: pojem.seo_description_en || null,
               seo_keywords_en: pojem.seo_keywords_en || null
             });
 
           if (insertError) {
-            errorsLog.push(`DB Chyba u ${rawTitle}: ${insertError.message}`);
+            errorsLog.push(`DB Chyba: ${insertError.message}`);
           } else {
             processedLog.push(`${rawTitle} (CZ+EN)`);
             existingSlugs.add(cleanSlug); 
           }
         } else {
-           errorsLog.push(`Duplikát chycen: ${rawTitle}`);
+          errorsLog.push(`Duplikát: ${rawTitle}`);
         }
       } catch (e) {
-        errorsLog.push(`Chyba zpracování: ${e.message}`);
+        errorsLog.push(`Chyba: ${e.message}`);
       }
     }));
 
     return NextResponse.json({ 
-      status: "GURU BILINGUAL SLOVNÍK AKTUALIZOVÁN", 
+      status: "GURU SPEED-RUN DOKONČEN", 
       pridano: processedLog, 
       chyby: errorsLog 
     });
