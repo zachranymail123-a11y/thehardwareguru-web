@@ -11,16 +11,17 @@ const supabaseAdmin = createClient(
 export async function POST(req) {
   try {
     const { title, slug, pin } = await req.json();
+    // GURU POJISTKA: Používáme tvůj GURU_PIN z .env
     if (pin !== process.env.GURU_PIN) return NextResponse.json({ error: 'Špatný PIN, kámo!' }, { status: 401 });
 
-    // 1. REŠERŠE (Musí proběhnout první, aby GPT věděl, o čem psát)
+    // 1. GURU REŠERŠE (Serper.dev)
     let rawText = '';
     try {
       const serperRes = await fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          q: `${title} PC optimization steam system requirements reddit config ini stuttering fix`,
+          q: `${title} PC optimization steam reddit config settings stuttering fix engine.ini`,
           gl: 'us', hl: 'en'
         })
       });
@@ -28,31 +29,42 @@ export async function POST(req) {
       rawText = data.organic?.map(res => `${res.title}: ${res.snippet}`).join('\n\n') || '';
     } catch (e) { console.error('Serper fail'); }
 
-    // 2. PARALELNÍ ZPRACOVÁNÍ: Text + Obrázek běží naráz!
-    console.log(`🚀 Startuji paralelní generování pro: ${title}`);
+    // 2. PARALELNÍ GIGANT: Text (CZ+EN+SEO) + DALL-E 3
+    console.log(`🚀 Generuji kompletní SEO balík (CZ+EN) pro: ${title}`);
     
     const [completion, imageResult] = await Promise.all([
-      // A. GENEROVÁNÍ TEXTU (GPT-4-turbo)
+      // A. BILINGVÁLNÍ SEO TEXTY
       openai.chat.completions.create({
-        model: "gpt-4-turbo",
+        model: "gpt-4-turbo", // Pro precizní bilingvální texty je turbo jistota
         messages: [
           { 
             role: "system", 
-            content: "Jsi 'The Hardware Guru'. Píšeš drsně, technicky a bez zbytečných keců. ZAKAZUJI obecné rady. Musíš zahrnout systémové požadavky a hardcore fixy." 
+            content: "Jsi 'The Hardware Guru'. Píšeš technicky, úderně a bez vaty. Tvým úkolem je vytvořit bilingvální optimalizační příručku založenou na dodaných datech. V HTML nepoužívej tag <html> ani <body>, jen čistou strukturu <h2>, <p>, <ul>." 
           },
           { 
             role: "user", 
-            content: `Hra: ${title}\nData: ${rawText}\n\nVYGENERUJ JSON:\n1. "seo_description": Začíná "Optimalizace ${title} - "\n2. "image_prompt": Anglický prompt pro DALL-E 3: styl high-tech cinematic hardware, barvy podle žánru hry, neonové akcenty. NESMÍŠ použít název hry!\n3. "html_content": HTML kód se strukturou: <h2>Guru Analýza</h2>, <h2>Systémové požadavky (Steam)</h2>, <h2>Hardcore Fixy a Optimalizace</h2>, <h2>Nastavení ve hře: Co zabíjí FPS</h2>. Na konec VŽDY přidej: 'Sleduj mě na https://kick.com/thehardwareguru pro live optimalizace a checkuj můj YouTube https://www.youtube.com/@TheHardwareGuru_Czech.'` 
+            content: `Hra: ${title}\nRešerše: ${rawText}\n\nVYGENERUJ STRIKTNÍ JSON:\n{
+              "meta_title": "CZ SEO Titulek (vábnička pro Google)",
+              "seo_description": "CZ meta description (max 160 znaků)",
+              "seo_keywords": "česká, klíčová, slova, oddělená, čárkou",
+              "html_content": "Kompletní CZ návod (Analýza, Požadavky, Fixy, Nastavení v HTML)",
+              
+              "title_en": "${title} PC Optimization Guide",
+              "slug_en": "${slug}-optimization-guide",
+              "meta_title_en": "EN SEO Title",
+              "description_en": "EN meta description",
+              "seo_keywords_en": "en, keywords, tweak",
+              "content_en": "Full EN guide (Analysis, Requirements, Fixes, Settings in HTML)"
+            }\n\nNa konec CZ i EN obsahu přidej odkazy na Kick (https://kick.com/thehardwareguru) a YouTube (@TheHardwareGuru_Czech).` 
           }
         ],
         response_format: { type: "json_object" }
       }),
 
-      // B. GENEROVÁNÍ OBRÁZKU (DALL-E 3)
-      // Použijeme kvalitní hardwarový prompt hned, aby DALL-E nečekal na odpověď od GPT
+      // B. CINEMATIC HARDWARE IMAGE
       openai.images.generate({
         model: "dall-e-3",
-        prompt: `High-tech cinematic close-up of high-end gaming PC components, liquid cooling, glowing neon purple and yellow lighting, extreme detail, hardware enthusiast aesthetic, 8k resolution.`,
+        prompt: `Cinematic high-tech gaming PC internal components, focus on GPU and liquid cooling, neon glowing yellow and purple aesthetic, hardware enthusiast style, professional photography, 8k resolution. NO TEXT.`,
         n: 1, size: "1024x1024"
       }).catch(e => { console.error("DALL-E fail", e); return null; })
     ]);
@@ -60,7 +72,7 @@ export async function POST(req) {
     const ai = JSON.parse(completion.choices[0].message.content);
     let finalImg = 'EMPTY';
 
-    // 3. NAHRÁNÍ OBRÁZKU (Zatímco zpracováváme zbytek)
+    // 3. STORAGE UPLOAD (Zpracování obrázku)
     if (imageResult && imageResult.data[0]?.url) {
       try {
         const fetchImg = await fetch(imageResult.data[0].url);
@@ -75,15 +87,15 @@ export async function POST(req) {
       } catch (e) { console.error("Supabase Storage fail", e); }
     }
 
+    // 4. FINÁLNÍ ODPOVĚĎ PRO FRONTEND
     return NextResponse.json({ 
-      seo_description: ai.seo_description, 
-      html_content: ai.html_content, 
+      ...ai, // Rozbalíme vše z AI (meta_title, content_en, atd.)
       image_url: finalImg, 
-      source: 'Guru Parallel Engine' 
+      source: 'Guru Multilingual Engine V3' 
     });
 
   } catch (err) { 
-    console.error('Kritická chyba:', err);
+    console.error('Kritická chyba API:', err);
     return NextResponse.json({ error: err.message }, { status: 500 }); 
   }
 }
