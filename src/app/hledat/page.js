@@ -14,6 +14,30 @@ function SearchContent() {
   
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lang, setLang] = useState('cs');
+
+  // GURU FIX: Automatická detekce jazyka pro CZ/EN mutaci
+  useEffect(() => {
+    setLang(document.documentElement.lang || 'cs');
+  }, []);
+
+  // Slovník pro překlady (CZ/EN pravidlo)
+  const t = {
+    cs: {
+      title: 'Výsledky hledání pro:',
+      searching: 'GURU prohledává databázi...',
+      read: 'ČÍST TWEAK',
+      emptyTitle: 'Nic jsme nenašli.',
+      emptyDesc: "Zkus hledat něco jiného nebo zkontroluj překlepy. (např. 'GTA V')"
+    },
+    en: {
+      title: 'Search results for:',
+      searching: 'GURU is searching the database...',
+      read: 'READ TWEAK',
+      emptyTitle: 'Nothing found.',
+      emptyDesc: "Try searching for something else or check for typos. (e.g., 'GTA V')"
+    }
+  };
 
   useEffect(() => {
     if (!query) {
@@ -25,10 +49,10 @@ function SearchContent() {
       setLoading(true);
       const searchTerm = `%${query}%`;
 
-      // Hledání v tabulce TWEAKY
+      // Hledání v tabulce TWEAKY (přidáno description_en pro multijazyčnost)
       const { data: tweakData, error: tweakError } = await supabase
         .from('tweaky')
-        .select('title, slug, image_url, seo_description')
+        .select('title, slug, image_url, seo_description, description_en')
         .ilike('title', searchTerm);
 
       if (tweakError) console.error("Chyba hledání:", tweakError);
@@ -40,21 +64,23 @@ function SearchContent() {
     fetchResults();
   }, [query]);
 
+  const currentT = t[lang] || t.cs;
+
   return (
     <>
       <h1 style={{ fontSize: '32px', borderBottom: '1px solid #333', paddingBottom: '20px', marginBottom: '30px' }}>
-        Výsledky hledání pro: <span style={{ color: '#eab308' }}>"{query}"</span>
+        {currentT.title} <span style={{ color: '#eab308' }}>"{query}"</span>
       </h1>
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '50px', color: '#eab308' }}>
           <Cpu size={48} className="animate-pulse" style={{ margin: '0 auto 20px auto' }} />
-          <p>GURU prohledává databázi...</p>
+          <p>{currentT.searching}</p>
         </div>
       ) : results.length > 0 ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
           {results.map((item, index) => (
-            <Link href={`/tweaky/${item.slug}`} key={index} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Link href={lang === 'en' ? `/en/tweaky/${item.slug}` : `/tweaky/${item.slug}`} key={index} style={{ textDecoration: 'none', color: 'inherit' }}>
               <div style={{ 
                 background: '#111318', border: '1px solid #222', borderRadius: '12px', 
                 overflow: 'hidden', transition: 'transform 0.2s', cursor: 'pointer' 
@@ -65,10 +91,13 @@ function SearchContent() {
                 <div style={{ padding: '20px' }}>
                   <h2 style={{ fontSize: '20px', margin: '0 0 10px 0', color: '#eab308' }}>{item.title}</h2>
                   <p style={{ fontSize: '14px', color: '#9ca3af', lineHeight: '1.5', margin: '0 0 15px 0' }}>
-                    {item.seo_description?.substring(0, 100)}...
+                    {/* GURU FIX: Zobrazí správný popisek podle jazyka */}
+                    {lang === 'en' && item.description_en 
+                      ? item.description_en.substring(0, 100) 
+                      : item.seo_description?.substring(0, 100)}...
                   </p>
                   <div style={{ display: 'flex', alignItems: 'center', color: '#7c3aed', fontSize: '14px', fontWeight: 'bold' }}>
-                    ČÍST TWEAK <ArrowRight size={16} style={{ marginLeft: '5px' }} />
+                    {currentT.read} <ArrowRight size={16} style={{ marginLeft: '5px' }} />
                   </div>
                 </div>
               </div>
@@ -78,8 +107,8 @@ function SearchContent() {
       ) : (
         <div style={{ textAlign: 'center', padding: '50px', background: 'rgba(255,0,0,0.05)', border: '1px solid #ff4444', borderRadius: '12px' }}>
           <SearchX size={48} color="#ff4444" style={{ margin: '0 auto 20px auto' }} />
-          <h2>Nic jsme nenašli.</h2>
-          <p style={{ color: '#9ca3af' }}>Zkus hledat něco jiného nebo zkontroluj překlepy. (např. 'GTA V')</p>
+          <h2>{currentT.emptyTitle}</h2>
+          <p style={{ color: '#9ca3af' }}>{currentT.emptyDesc}</p>
         </div>
       )}
     </>
