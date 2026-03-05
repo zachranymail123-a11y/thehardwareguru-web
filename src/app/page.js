@@ -124,6 +124,7 @@ export default function HomePage() {
           <Link href="/tipy" className="nav-link"><Lightbulb size={16}/> TIPY</Link>
           <Link href="/tweaky" className="nav-link" style={{color: '#eab308'}}><Wrench size={16}/> GURU TWEAKY</Link>
           <Link href="/slovnik" className="nav-link"><Book size={16}/> SLOVNÍK</Link>
+          <Link href="/rady" className="nav-link"><PenTool size={16}/> RADY</Link>
           <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)', margin: '0 10px' }}></div>
           <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn-main" style={{ background: '#53fc18', color: '#000', padding: '6px 14px', fontSize: '12px' }}>KICK</a>
           <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-btn-main" style={{ background: '#ff0000', color: '#fff', padding: '6px 14px', fontSize: '12px' }}>YOUTUBE</a>
