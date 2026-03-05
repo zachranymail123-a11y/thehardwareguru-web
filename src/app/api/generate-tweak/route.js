@@ -1,140 +1,116 @@
-"use client";
-import React, { useState } from 'react';
+export const maxDuration = 60; // GURU FIX: Zabrání Vercel Timeoutu u dlouhých kódů
+
+import { NextResponse } from 'next/server';
+import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
-import { Save, Zap, Globe, CheckCircle, AlertCircle } from 'lucide-react';
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-export default function TweakyGenerator() {
-  const [title, setTitle] = useState('');
-  const [pin, setPin] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
-  const [status, setStatus] = useState({ type: '', msg: '' });
-  const [aiResult, setAiResult] = useState(null);
+export async function POST(req) {
+  try {
+    const { title, slug, pin } = await req.json();
+    if (pin !== process.env.GURU_PIN) return NextResponse.json({ error: 'Špatný PIN!' }, { status: 401 });
 
-  const generate = async () => {
-    setAiLoading(true);
-    setAiResult(null);
-    setStatus({ type: '', msg: '' });
-
+    // 1. DVOJITÁ GURU REŠERŠE (HW a Tweaky)
+    let rawSteam = '';
+    let rawTweaks = '';
     try {
-      const slug = title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+      const [steamReq, tweakReq] = await Promise.all([
+        fetch('https://google.serper.dev/search', {
+          method: 'POST',
+          headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ q: `${title} minimum recommended system requirements pc Steam`, gl: 'us', hl: 'en', num: 4 })
+        }),
+        fetch('https://google.serper.dev/search', {
+          method: 'POST',
+          headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ q: `"${title}" PC performance "Engine.ini" OR "Registry" OR "Config" Reddit Steam Community`, gl: 'us', hl: 'en', num: 8 })
+        })
+      ]);
       
-      const res = await fetch('/api/generate-tweak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, slug, pin })
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Generování selhalo');
-
-      // 🚀 GURU FIX: Zde se mění magie. Data z AI přepisují "title"
-      // Takže pokud AI pošle "The Legend of Khiimori", nahradí to tvé "the legend of khiimori"
-      setAiResult({ title, slug, ...data });
+      const steamData = await steamReq.json();
+      const tweakData = await tweakReq.json();
       
-      setStatus({ type: 'success', msg: 'GURU AI: CZ i EN verze připraveny k revizi!' });
-    } catch (e) { 
-      setStatus({ type: 'error', msg: e.message }); 
-    } finally { 
-      setAiLoading(false); 
+      rawSteam = steamData.organic?.map(res => res.snippet).join('\n') || '';
+      rawTweaks = tweakData.organic?.map(res => `SOURCE: ${res.title}\nCONTENT: ${res.snippet}`).join('\n\n') || '';
+    } catch (e) { console.error('Serper fail'); }
+
+    // 2. PARALELNÍ GENEROVÁNÍ
+    const [completion, imageResult] = await Promise.all([
+      openai.chat.completions.create({
+        model: "gpt-4-turbo",
+        messages: [
+          { 
+            role: "system", 
+            content: `Jsi 'The Hardware Guru'. Píšeš pro hardcore PC komunitu.
+            STRIKTNĚ ZAKAZUJI: obecné rady, vymýšlení si HW a zkracování kódu.
+            
+            TVÁ PRAVIDLA PRO OBSAH:
+            1. 'Systémové požadavky': Vypiš reálné komponenty POUZE z [STEAM DATA].
+            2. 'Hardcore Fixy': Kódy musí být KOMPLETNÍ. Vypiš přesnou cestu a minimálně 4 reálné technické parametry do Markdown bloku.
+            3. 'Nastavení ve hře': Napiš 3-5 konkrétních položek s největším dopadem na VRAM a přesně jak je nastavit.
+            4. 'EXPERT ZÓNA': Musíš vypsat PLNOU cestu (např. HKEY_LOCAL_MACHINE\\...) a PLATNÝ klíč (DWORD) s hodnotou. Pokud v rešerši chybí registry fix, VŽDY vypiš reálný univerzální Windows gaming tweak.` 
+          },
+          { 
+            role: "user", 
+            content: `Hra: ${title}
+
+[STEAM DATA]:
+${rawSteam}
+
+[TWEAK DATA]:
+${rawTweaks}
+
+VYGENERUJ JSON. Zástupné texty v závorkách [...] NAHRAĎ plnohodnotným technickým obsahem. 
+
+{
+  "official_title": "[ZDE NAPIŠ OFICIÁLNĚ SPRÁVNĚ ZFORMÁTOVANÝ NÁZEV HRY, např. 'The Legend of Khiimori' nebo 'GTA V']",
+  "meta_title": "Optimalizace ${title} - Expert Guru Guide",
+  "seo_description": "Brutální optimalizace ${title}. Registry fixy, Engine.ini tweaky a hardcore nastavení pro maximální FPS.",
+  "seo_keywords": "${title}, optimalizace, registry tweak, expert zona, hardware guru",
+  "html_content": "<h2>Guru Analýza</h2>\\n<p>[ZDE NAPIŠ OBSÁHLOU ANALÝZU]</p>\\n<h2>Systémové požadavky (Steam)</h2>\\n<ul>[ZDE VYPIS HW Z DAT]</ul>\\n<h2>Hardcore Fixy a Optimalizace</h2>\\n<p>[ZDE NAPIŠ CELÉ CESTY A MINIMÁLNĚ 4 ŘÁDKY KÓDU DO BLOKU]</p>\\n<h2>Nastavení ve hře: Co zabíjí FPS</h2>\\n<p>[ZDE NAPIŠ KONKRETNI POLOZKY A HODNOTY]</p>\\n<h2>EXPERT ZÓNA: Registry a modifikace souborů</h2>\\n<p>[ZDE NAPIŠ CELOU CESTU V REGISTRECH A HODNOTU, ŽÁDNÉ ZKRACENÍ]</p>\\n<p>Sleduj mě na <a href='https://kick.com/TheHardwareGuru'>Kicku</a>, <a href='https://discord.com/invite/n7xThr8'>Discordu</a> a <a href='https://www.youtube.com/@TheHardwareGuru_Czech'>YouTube</a>.</p>",
+  
+  "title_en": "${title} Hardcore Optimization Guide",
+  "slug_en": "${slug}-optimization-guide",
+  "meta_title_en": "${title} FPS Boost & Registry Surgery",
+  "description_en": "No generic advice. Exact registry keys, full file paths and technical engine tweaks for ${title}.",
+  "seo_keywords_en": "${title}, tweak, registry edit, pc guide",
+  "content_en": "<h2>Guru Analysis</h2>\\n<p>[WRITE FULL ANALYSIS]</p>\\n<h2>System Requirements (Steam)</h2>\\n<ul>[WRITE HW REQUIREMENTS]</ul>\\n<h2>Hardcore Fixes and Optimization</h2>\\n<p>[WRITE FULL PATHS AND CODE BLOCKS WITHOUT SHORTENING]</p>\\n<h2>In-game Settings: What Kills FPS</h2>\\n<p>[SPECIFIC SETTINGS]</p>\\n<h2>EXPERT ZONE: Registry and File Modifications</h2>\\n<p>[WRITE FULL REGISTRY PATH AND EXACT KEYS]</p>\\n<p>Watch live on <a href='https://kick.com/TheHardwareGuru'>Kick</a>.</p>"
+}` 
+          }
+        ],
+        response_format: { type: "json_object" }
+      }),
+
+      openai.images.generate({
+        model: "dall-e-3",
+        prompt: `High-tech cinematic close-up of high-end gaming PC components, liquid cooling, glowing neon purple and yellow lighting, hardware enthusiast aesthetic, 8k resolution.`,
+        n: 1, size: "1024x1024"
+      }).catch(e => null)
+    ]);
+
+    const ai = JSON.parse(completion.choices[0].message.content);
+    let finalImg = 'EMPTY';
+
+    if (imageResult && imageResult.data[0]?.url) {
+      try {
+        const fetchImg = await fetch(imageResult.data[0].url);
+        const blob = await fetchImg.blob();
+        const fileName = `tweaky/${slug}-${Date.now()}.png`;
+        await supabaseAdmin.storage.from('images').upload(fileName, blob, { contentType: 'image/png' });
+        const { data: pUrl } = supabaseAdmin.storage.from('images').getPublicUrl(fileName);
+        finalImg = pUrl.publicUrl;
+      } catch (e) { console.error("Storage fail", e); }
     }
-  };
 
-  const save = async () => {
-    try {
-      const { error } = await supabase.from('tweaky').insert([{
-        title: aiResult.title, // Tohle už bude ten správný velký/malý název
-        slug: aiResult.slug,
-        description: aiResult.seo_description,
-        content: aiResult.html_content,
-        meta_title: aiResult.meta_title,
-        seo_keywords: aiResult.seo_keywords,
-        title_en: aiResult.title_en,
-        slug_en: aiResult.slug_en,
-        description_en: aiResult.description_en,
-        content_en: aiResult.content_en,
-        meta_title_en: aiResult.meta_title_en,
-        seo_keywords_en: aiResult.seo_keywords_en,
-        image_url: aiResult.image_url,
-        og_image: aiResult.image_url, 
-        category: 'Optimalizace',
-        tweak_plan: 'planned'
-      }]);
+    // GURU FIX: Frontendu pošleme ten ověřený title od AI místo toho z inputu
+    return NextResponse.json({ ...ai, image_url: finalImg, title: ai.official_title || title });
 
-      if (error) throw error;
-
-      setStatus({ type: 'success', msg: 'BUM! SEO Tweak odeslán do plánovače. 🚀' });
-      setAiResult(null); 
-      setTitle('');
-    } catch (e) { 
-      setStatus({ type: 'error', msg: e.message }); 
-    }
-  };
-
-  return (
-    <div style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', minHeight: '100vh', color: '#fff', padding: '40px 20px' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-        
-        <h1 style={{ textAlign: 'center', fontStyle: 'italic', fontWeight: '900', color: '#eab308', fontSize: '36px' }}>
-          GURU AI MULTI-GENERATOR
-        </h1>
-
-        <div style={{ background: 'rgba(17,19,24,0.95)', padding: '30px', borderRadius: '24px', border: '1px solid #eab308', marginTop: '30px' }}>
-          
-          {status.msg && (
-            <div style={{ 
-              background: status.type === 'error' ? 'rgba(255,68,68,0.1)' : 'rgba(0,255,0,0.1)',
-              border: `1px solid ${status.type === 'error' ? '#ff4444' : '#00ff00'}`,
-              padding: '15px', borderRadius: '12px', color: status.type === 'error' ? '#ff4444' : '#00ff00', marginBottom: '20px' 
-            }}>
-              {status.msg}
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-            <input placeholder="Název hry (např. gta v)" value={title} onChange={e => setTitle(e.target.value)} style={{ flex: 1, padding: '15px', borderRadius: '12px', background: '#000', border: '1px solid #333', color: '#fff' }} />
-            <input type="password" placeholder="PIN" value={pin} onChange={e => setPin(e.target.value)} style={{ width: '100px', padding: '15px', borderRadius: '12px', background: '#000', border: '1px solid #333', color: '#fff', textAlign: 'center' }} />
-            <button onClick={generate} disabled={aiLoading} style={{ background: '#7c3aed', padding: '15px 30px', borderRadius: '12px', border: 'none', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>
-              {aiLoading ? 'GURU MAKOÁ...' : 'GENEROVAT VŠE'}
-            </button>
-          </div>
-
-          {aiResult && (
-            <div style={{ marginTop: '40px', borderTop: '1px solid #333', paddingTop: '30px' }}>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
-                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '15px', borderRadius: '12px', border: '1px solid #333' }}>
-                   <h4 style={{ color: '#eab308', margin: '0 0 10px 0' }}><Globe size={14} /> CZ SEO</h4>
-                   <p style={{ fontSize: '13px' }}><strong>Title:</strong> {aiResult.meta_title}</p>
-                   <p style={{ fontSize: '11px', color: '#9ca3af' }}>{aiResult.seo_keywords}</p>
-                </div>
-                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '15px', borderRadius: '12px', border: '1px solid #333' }}>
-                   <h4 style={{ color: '#a855f7', margin: '0 0 10px 0' }}><Globe size={14} /> EN SEO</h4>
-                   <p style={{ fontSize: '13px' }}><strong>Title:</strong> {aiResult.meta_title_en}</p>
-                   <p style={{ fontSize: '11px', color: '#9ca3af' }}>{aiResult.seo_keywords_en}</p>
-                </div>
-              </div>
-
-              {/* Tady už se zobrazí krásně formátovaný název z AI */}
-              <h2 style={{ fontSize: '28px', color: '#eab308' }}>{aiResult.title}</h2>
-              {aiResult.image_url !== 'EMPTY' && <img src={aiResult.image_url} style={{ width: '100%', borderRadius: '12px', margin: '20px 0' }} />}
-              
-              <div dangerouslySetInnerHTML={{ __html: aiResult.html_content }} style={{ color: '#ccc', lineHeight: '1.6' }} />
-              
-              <button 
-                onClick={save} 
-                style={{ 
-                  width: '100%', padding: '20px', background: '#eab308', color: '#000', borderRadius: '12px', 
-                  fontWeight: '900', marginTop: '30px', cursor: 'pointer', border: 'none'
-                }}
-              >
-                ULOŽIT DO PLÁNOVAČE 🚀
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+  } catch (err) { 
+    return NextResponse.json({ error: err.message }, { status: 500 }); 
+  }
 }
