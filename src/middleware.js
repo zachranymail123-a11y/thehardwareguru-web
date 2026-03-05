@@ -3,18 +3,27 @@ import { NextResponse } from 'next/server';
 export function middleware(request) {
   const { pathname } = request.nextUrl;
 
-  // GURU SEO TRIK: 
-  // Pokud někdo vleze na klasické české "/slovnik", neviditelně to proženeme přes jazykovou složku "/cs".
-  // URL adresa v prohlížeči zůstane čistá (thehardwareguru.cz/slovnik) = nepřijdeme o české SEO!
-  if (pathname.startsWith('/slovnik')) {
-    return NextResponse.rewrite(new URL(`/cs${pathname}`, request.url));
+  // Pokud už URL začíná /en/ nebo /cs/, nic nedělej a pusť to dál
+  if (pathname.startsWith('/en/') || pathname.startsWith('/cs/')) {
+    return NextResponse.next();
   }
 
-  // /en/slovnik to pustí normálně dál
+  // Pokud někdo jde na /en/slovnik (bez lomítka na konci), pusť ho dál
+  if (pathname === '/en/slovnik' || pathname === '/cs/slovnik') {
+    return NextResponse.next();
+  }
+
+  // GURU SEO TRIK: 
+  // Pokud někdo jde na čisté /slovnik, pod kapotou mu podstrčíme /cs/ verzi
+  if (pathname.startsWith('/slovnik')) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/cs${pathname}`;
+    return NextResponse.rewrite(url);
+  }
+
   return NextResponse.next();
 }
 
-// Spustí se to jen pro slovník, ať nerozbijeme zbytek webu
 export const config = {
-  matcher: ['/slovnik/:path*', '/en/slovnik/:path*'],
+  matcher: ['/slovnik/:path*', '/en/slovnik/:path*', '/cs/slovnik/:path*'],
 };
