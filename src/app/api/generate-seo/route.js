@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store'; // GURU FIX: Zabití Next.js Cache!
 export const maxDuration = 60; 
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -16,25 +17,28 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Nepovolený přístup' }, { status: 401 });
   }
 
+  // GURU FIX: Vytvoření klienta, který IGNORUJE paměť prohlížeče i Vercelu
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY // Tohle MUSÍ být v .env!
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: { persistSession: false },
+      global: {
+        fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' })
+      }
+    }
   );
 
   try {
     const { data: posts, error: dbError } = await supabase
       .from('posts')
       .select('id, title, content, image_url, type')
-      // GURU FIX: Tady je ta magie! Přidáno hledání chybějícího image_alt a og_title.
-      // Skript teď vezme i články, co už mají text/obrázek, ale chybí jim zbytek SEO.
       .or('seo_description.is.null,seo_description.eq."",image_url.is.null,image_url.eq."",image_alt.is.null,og_title.is.null')
-      .not('image_url', 'eq', 'error_dalle') // Pojistka proti zacyklení DALL-E
+      .not('image_url', 'eq', 'error_dalle')
       .order('updated_at', { ascending: true, nullsFirst: true }) 
       .limit(4);
 
     if (dbError) throw dbError;
-    
-    // Pokud i teď vyskočí tohle, znamená to, že DB je FAKT 100% vyplněná!
     if (!posts || posts.length === 0) {
       return NextResponse.json(
         { message: "🦾 Všechno SEO i obrázky jsou kompletně hotové. Jsi GURU!" },
@@ -48,7 +52,8 @@ export async function GET(request) {
         const serperRes = await fetch('https://google.serper.dev/search', {
           method: 'POST',
           headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ q: videoQuery, num: 3 })
+          body: JSON.stringify({ q: videoQuery, num: 3 }),
+          cache: 'no-store' // Pojistka i pro Google Serper
         });
         const searchResults = await serperRes.json();
         const ytLinks = (searchResults.organic || [])
@@ -69,7 +74,6 @@ export async function GET(request) {
         let finalImageUrl = post.image_url;
         let imageStatus = "Existující";
 
-        // Kontrola, jestli obrázek chybí nebo je to placeholder
         if (!finalImageUrl || finalImageUrl === "" || finalImageUrl.includes("placeholder")) {
           try {
             const imageRes = await openai.images.generate({
@@ -85,7 +89,6 @@ export async function GET(request) {
           }
         }
 
-        // Zápis do DB vč. kontroly
         const { data: updatedRow, error: updateError } = await supabase.from('posts').update({
           seo_description: aiData.seo_description,
           seo_keywords: aiData.seo_keywords,
@@ -97,7 +100,6 @@ export async function GET(request) {
         }).eq('id', post.id).select();
 
         if (updateError) throw updateError;
-        
         if (!updatedRow || updatedRow.length === 0) {
            return { title: post.title, status: '❌ CHYBA ZÁPISU (Zkontroluj Service Role Key!)' };
         }
