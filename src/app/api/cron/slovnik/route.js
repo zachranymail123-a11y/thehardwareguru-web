@@ -8,16 +8,13 @@ export const maxDuration = 60;
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Pomocná funkce na pročištění textu popisu (GURU CLEANER)
 function cleanDescription(title, desc) {
   if (!desc) return "";
   let cleaned = desc.trim();
-  // Odstraní zbytečné starty typu "Název pojmu je..."
   const startsToRemove = [`${title} je`, `${title} jsou`, `${title} (`, `co je to ${title}`];
   for (let start of startsToRemove) {
     if (cleaned.toLowerCase().startsWith(start.toLowerCase())) {
       cleaned = cleaned.substring(start.length).trim();
-      // Odstraní případnou tečku, čárku nebo dvojtečku na začátku a capitalize první písmeno
       cleaned = cleaned.replace(/^[,.\s:-]+/, '');
       cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
       break; 
@@ -27,7 +24,6 @@ function cleanDescription(title, desc) {
 }
 
 export async function GET(request) {
-  // GURU Zámek
   const { searchParams } = new URL(request.url);
   const secret = searchParams.get('secret');
 
@@ -47,25 +43,26 @@ export async function GET(request) {
       
     if (dbError) throw dbError;
 
-    // GURU FIX: Bezpečná filtrace, kdyby nějaký záznam v DB neměl slug
     const existingSlugs = new Set(existingTerms ? existingTerms.filter(t => t.slug).map(t => t.slug.toLowerCase().trim()) : []);
     const avoidTitles = existingTerms && existingTerms.length > 0 ? existingTerms.filter(t => t.title).map(t => t.title).join(', ') : 'Zatím nic nemáme';
 
-    // SEO ŠÉFREDAKTOR
+    // GURU FIX: Rozšířený prompt o seo_description a seo_keywords
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         { 
           role: "system", 
           content: `Jsi Senior SEO Expert a Hardware Guru pro thehardwareguru.cz.
-          Vygeneruj 10 NEJHLEDANĚJŠÍCH pokročilých pojmů z PC hardwaru/gamingu v CZ (high search volume).
+          Vygeneruj 10 NEJHLEDANĚJŠÍCH pokročilých pojmů z PC hardwaru/gamingu v CZ.
           ZÁKAZ generovat tyto pojmy (už je máme): ${avoidTitles}.
           
           Pravidla pro JSON:
-          - Vrať STRIKTNĚ formát: { "pojmy": [ { "title": "...", "slug": "...", "description": "..." } ] }
-          - title: STRIKTNĚ JEN NÁZEV POJMU (např. 'TDP', 'DLSS'). ZÁKAZ používat vaty jako 'Co je to', 'Vysvětlení', 'Pojem'.
+          - Vrať STRIKTNĚ formát: { "pojmy": [ { "title": "...", "slug": "...", "description": "...", "seo_description": "...", "seo_keywords": "..." } ] }
+          - title: STRIKTNĚ JEN NÁZEV POJMU (např. 'TDP'). ZÁKAZ vaty typu 'Co je to'.
           - slug: cisty-url-slug (pouze malá písmena, čísla, pomlčky).
-          - description: Detailní, odborné vysvětlení na 2-3 odstavce (odřádkuj <br><br>). Mluv přímo k věci, ZÁKAZ opakovat název pojmu na začátku, ZÁKAZ používat HTML tagy <b>, jen čistý text. Vysvětli co to je, jak to funguje a proč to má řešit PC hráč.` 
+          - description: Detailní, odborné vysvětlení na 2-3 odstavce (odřádkuj <br><br>). ZÁKAZ opakovat název pojmu na začátku, ZÁKAZ HTML tagů <b>.
+          - seo_description: Úderný meta popisek pro Google (max 160 znaků). Musí nalákat ke kliknutí.
+          - seo_keywords: 3 až 5 klíčových slov oddělených čárkou (např. "procesory, chlazení, teplota, spotřeba").` 
         }
       ],
       response_format: { type: "json_object" }
@@ -73,7 +70,6 @@ export async function GET(request) {
 
     const aiData = JSON.parse(completion.choices[0].message.content);
     
-    // 🚀 GURU FAIL-SAFE: Pojistka proti zmatenému AI JSONu
     let pojmyArray = [];
     if (aiData && Array.isArray(aiData.pojmy)) {
       pojmyArray = aiData.pojmy;
@@ -82,7 +78,7 @@ export async function GET(request) {
     } else if (aiData && aiData.slovnik && Array.isArray(aiData.slovnik)) {
       pojmyArray = aiData.slovnik;
     } else {
-      throw new Error("AI vrátilo neplatný formát. Ochrana zastavila pád.");
+      throw new Error("AI vrátilo neplatný formát.");
     }
     
     let processedLog = [];
@@ -98,12 +94,15 @@ export async function GET(request) {
 
         if (!existingSlugs.has(cleanSlug)) {
           
+          // GURU FIX: Přidány sloupce seo_description a seo_keywords do zápisu!
           const { error: insertError } = await supabase
             .from('slovnik')
             .insert({
               title: rawTitle,
               slug: cleanSlug,
-              description: finalDescription
+              description: finalDescription,
+              seo_description: pojem.seo_description || null,
+              seo_keywords: pojem.seo_keywords || null
             });
 
           if (insertError) {
