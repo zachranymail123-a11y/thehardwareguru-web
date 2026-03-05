@@ -67,10 +67,10 @@ export default function RootLayout({ children, params }) {
     url: 'https://www.thehardwareguru.cz',
     logo: 'https://www.thehardwareguru.cz/bg-guru.png',
     sameAs: [
-      'https://youtube.com/@TheHardwareGuru_Czech',
       'https://kick.com/TheHardwareGuru',
-      'https://discord.com/invite/n7xThr8',
-      'https://www.instagram.com/thehardwareguru_czech'
+      'https://youtube.com/@TheHardwareGuru_Czech',
+      'https://www.instagram.com/thehardwareguru_czech',
+      'https://discord.com/invite/n7xThr8'
     ]
   };
 
