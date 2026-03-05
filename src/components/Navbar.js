@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Search, Home, Wrench, HeartPulse, Heart } from 'lucide-react';
+import { Search, Home, Wrench, HeartPulse, Heart, Lightbulb, BookOpen, Newspaper } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 // Inicializace Supabase pro našeptávač
@@ -123,9 +123,24 @@ export default function Navbar() {
       <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexShrink: 0 }}>
         {/* TEXTOVÉ ODKAZY */}
         <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-          <Link href={isEn ? "/en" : "/"} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' }}><Home size={14}/> {isEn ? 'HOME' : 'DOMŮ'}</Link>
-          <Link href={isEn ? "/en/tweaky" : "/tweaky"} style={{ color: '#eab308', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' }}><Wrench size={14}/> {isEn ? 'TWEAKS' : 'GURU TWEAKY'}</Link>
-          <Link href={isEn ? "/en/rady" : "/rady"} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' }}><HeartPulse size={14}/> {isEn ? 'GUIDES' : 'PRAKTICKÉ RADY'}</Link>
+          <Link href={isEn ? "/en" : "/"} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <Home size={14}/> {isEn ? 'HOME' : 'DOMŮ'}
+          </Link>
+          <Link href={isEn ? "/en/clanky" : "/clanky"} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <Newspaper size={14}/> {isEn ? 'ARTICLES' : 'ČLÁNKY'}
+          </Link>
+          <Link href={isEn ? "/en/tipy" : "/tipy"} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <Lightbulb size={14}/> {isEn ? 'TIPS' : 'TIPY'}
+          </Link>
+          <Link href={isEn ? "/en/tweaky" : "/tweaky"} style={{ color: '#eab308', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <Wrench size={14}/> {isEn ? 'TWEAKS' : 'GURU TWEAKY'}
+          </Link>
+          <Link href={isEn ? "/en/slovnik" : "/slovnik"} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <BookOpen size={14}/> {isEn ? 'GLOSSARY' : 'SLOVNÍK'}
+          </Link>
+          <Link href={isEn ? "/en/rady" : "/rady"} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <HeartPulse size={14}/> {isEn ? 'GUIDES' : 'PRAKTICKÉ RADY'}
+          </Link>
         </div>
 
         {/* BAREVNÁ TLAČÍTKA */}
@@ -138,9 +153,10 @@ export default function Navbar() {
           
           <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" style={{ background: '#5865F2', color: '#fff', padding: '6px 10px', borderRadius: '4px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>DISCORD</a>
           
-          <a href={isEn ? "/en/podpora" : "/podpora"} style={{ background: '#000', border: '1px solid #eab308', color: '#eab308', padding: '6px 10px', borderRadius: '4px', textDecoration: 'none', fontWeight: '900', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+          {/* OPRAVENÁ PODPORA (Link místo <a> pro funkční navigaci) */}
+          <Link href={isEn ? "/en/podpora" : "/podpora"} style={{ background: '#000', border: '1px solid #eab308', color: '#eab308', padding: '6px 10px', borderRadius: '4px', textDecoration: 'none', fontWeight: '900', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '5px' }}>
             <Heart size={12} fill="#eab308" /> {isEn ? 'SUPPORT' : 'PODPORA'}
-          </a>
+          </Link>
         </div>
       </div>
     </nav>
