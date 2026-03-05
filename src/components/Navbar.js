@@ -61,7 +61,8 @@ export default function Navbar() {
           const textCols = [];
           // V každé tabulce najdeme VŠECHNY sloupce, které obsahují text
           for (const [colName, colInfo] of Object.entries(schema.properties || {})) {
-            if (colInfo.type === 'string') {
+            // GURU FIX: Ignorujeme sloupce, které mají v názvu slovo "plan" (např. plan_id, plan_name)
+            if (colInfo.type === 'string' && !colName.toLowerCase().includes('plan')) {
               textCols.push(colName);
             }
           }
