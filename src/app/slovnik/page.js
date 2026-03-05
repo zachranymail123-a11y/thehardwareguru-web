@@ -1,20 +1,63 @@
+"use client";
+import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { Home, Lightbulb, Book, PenTool, ChevronRight } from 'lucide-react';
+import { Home, Lightbulb, Book, PenTool, ChevronRight, Search } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export default function SlovnikPage() {
+  const [pojmy, setPojmy] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-export default async function SlovnikPage() {
+  // Klientská inicializace Supabase
   const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 
-  const { data: pojmy } = await supabase
-    .from('slovnik')
-    .select('*')
-    .order('title', { ascending: true });
+  // Načtení slovníku (nahrazuje původní serverové načítání)
+  useEffect(() => {
+    async function loadSlovnik() {
+      const { data } = await supabase
+        .from('slovnik')
+        .select('*')
+        .order('title', { ascending: true });
+      if (data) setPojmy(data);
+    }
+    loadSlovnik();
+  }, []);
+
+  // --- EFEKT PRO INTELIGENTNÍ VYHLEDÁVÁNÍ ---
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const delayDebounceFn = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const [pRes, tipRes, tweakRes] = await Promise.all([
+          supabase.from('posts').select('title, slug').ilike('title', `%${searchQuery}%`).limit(3),
+          supabase.from('tipy').select('title, slug').ilike('title', `%${searchQuery}%`).limit(3),
+          supabase.from('tweaky').select('title, slug').ilike('title', `%${searchQuery}%`).limit(3)
+        ]);
+
+        let results = [];
+        if (pRes.data) results = [...results, ...pRes.data.map(x => ({ ...x, category: 'Článek', link: `/clanky/${x.slug}` }))];
+        if (tipRes.data) results = [...results, ...tipRes.data.map(x => ({ ...x, category: 'Tip', link: `/tipy/${x.slug}` }))];
+        if (tweakRes.data) results = [...results, ...tweakRes.data.map(x => ({ ...x, category: 'Tweak', link: `/tweaky/${x.slug}` }))];
+
+        setSearchResults(results);
+      } catch (err) {
+        console.error("Search error:", err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   return (
     <div style={{ 
@@ -69,6 +112,7 @@ export default async function SlovnikPage() {
             border: 1px solid currentColor;
         }
         .social-btn:hover { transform: scale(1.05); }
+        .search-result-item:hover { background: rgba(102, 252, 241, 0.1); }
         @media (max-width: 768px) {
           .nav-container { flex-direction: column; gap: 15px; padding: 20px !important; }
         }
@@ -92,6 +136,36 @@ export default async function SlovnikPage() {
         <Link href="/slovnik" className="nav-link" style={{color: '#a855f7'}}><Book size={18} /> SLOVNÍK</Link>
         <Link href="/rady" className="nav-link"><PenTool size={18} /> PRAKTICKÉ RADY</Link>
       </nav>
+
+      {/* --- INTELIGENTNÍ VYHLEDÁVÁNÍ --- */}
+      <div style={{ maxWidth: '400px', margin: '30px auto 0', position: 'relative', padding: '0 20px', zIndex: 999 }}>
+        <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(17, 19, 24, 0.95)', border: '1px solid #66fcf1', borderRadius: '12px', padding: '10px 15px', boxShadow: '0 0 15px rgba(102, 252, 241, 0.2)' }}>
+          <Search size={18} color="#66fcf1" style={{ marginRight: '10px' }} />
+          <input
+            type="text"
+            placeholder="Hledat na celém webu..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ background: 'transparent', border: 'none', color: '#fff', width: '100%', fontSize: '15px', outline: 'none' }}
+          />
+          {isSearching && <span style={{ color: '#a855f7', fontSize: '11px', fontWeight: 'bold', marginLeft: '10px' }}>Hledám...</span>}
+        </div>
+
+        {searchQuery.trim() !== '' && (
+          <div style={{ position: 'absolute', top: '100%', left: '20px', right: '20px', background: 'rgba(31, 40, 51, 0.98)', border: '1px solid #66fcf1', borderRadius: '12px', marginTop: '8px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
+            {searchResults.length > 0 ? (
+              searchResults.map((res, i) => (
+                <Link href={res.link} key={i} className="search-result-item" style={{ display: 'block', padding: '12px 15px', color: '#fff', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', transition: '0.2s' }}>
+                  <div style={{ fontSize: '10px', color: '#66fcf1', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '3px' }}>{res.category}</div>
+                  <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{res.title}</div>
+                </Link>
+              ))
+            ) : (
+              !isSearching && <div style={{ padding: '15px', color: '#9ca3af', textAlign: 'center', fontSize: '13px' }}>Nic jsme nenašli.</div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* --- SOCIAL & SUPPORT BAR --- */}
       <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '15px', padding: '30px 20px' }}>
