@@ -13,14 +13,14 @@ export async function POST(req) {
     const { title, slug, pin } = await req.json();
     if (pin !== process.env.GURU_PIN) return NextResponse.json({ error: 'Špatný PIN!' }, { status: 401 });
 
-    // 1. GURU REŠERŠE
+    // 1. GURU REŠERŠE (Rozšířeno o registry a hloubkové tweaky)
     let rawText = '';
     try {
       const serperRes = await fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          q: `${title} PC optimization steam system requirements reddit config ini stuttering fix`,
+          q: `${title} PC optimization registry edit engine.ini config file fix stuttering steam reddit`,
           gl: 'us', hl: 'en'
         })
       });
@@ -28,29 +28,29 @@ export async function POST(req) {
       rawText = data.organic?.map(res => `${res.title}: ${res.snippet}`).join('\n\n') || '';
     } catch (e) { console.error('Serper fail'); }
 
-    // 2. PARALELNÍ GENEROVÁNÍ (Tvá struktura + Fix klíčů pro DB)
+    // 2. PARALELNÍ GENEROVÁNÍ (Nyní 5 klíčových sekcí včetně EXPERT ZÓNY)
     const [completion, imageResult] = await Promise.all([
       openai.chat.completions.create({
         model: "gpt-4-turbo",
         messages: [
           { 
             role: "system", 
-            content: "Jsi 'The Hardware Guru'. Píšeš drsně, technicky a bez zbytečných keců. ZAKAZUJI obecné rady. Musíš zahrnout systémové požadavky a hardcore fixy." 
+            content: "Jsi 'The Hardware Guru'. Píšeš drsně, technicky a bez zbytečných keců. ZAKAZUJI obecné rady. Musíš zahrnout systémové požadavky, hardcore fixy a hloubkovou modifikaci systému." 
           },
           { 
             role: "user", 
             content: `Hra: ${title}\nData: ${rawText}\n\nVYGENERUJ JSON STRIKTNĚ S TĚMITO KLÍČI:\n{
-  "meta_title": "Optimalizace ${title} - Guru Tweak Guide",
-  "seo_description": "Optimalizace ${title} - Kompletní návod pro zvýšení FPS a odstranění stutteringu.",
-  "seo_keywords": "${title}, optimalizace, fps fix, hardware guru",
-  "html_content": "Použij strukturu: <h2>Guru Analýza</h2>, <h2>Systémové požadavky (Steam)</h2>, <h2>Hardcore Fixy a Optimalizace</h2>, <h2>Nastavení ve hře: Co zabíjí FPS</h2>. Na konec dej odkazy na Kick a YouTube.",
+  "meta_title": "Optimalizace ${title} - Expert Guru Guide",
+  "seo_description": "Optimalizace ${title} - Kompletní návod: FPS boost, EXPERT ZÓNA (Registry) a nastavení souborů.",
+  "seo_keywords": "${title}, optimalizace, registry tweak, expert zona, hardware guru",
+  "html_content": "Použij strukturu: <h2>Guru Analýza</h2>, <h2>Systémové požadavky (Steam)</h2>, <h2>Hardcore Fixy a Optimalizace</h2>, <h2>Nastavení ve hře: Co zabíjí FPS</h2>, <h2>EXPERT ZÓNA: Registry a modifikace souborů</h2>. Na konec dej odkazy na Kick a YouTube.",
   
   "title_en": "${title} Optimization Guide",
   "slug_en": "${slug}-optimization-guide",
-  "meta_title_en": "${title} FPS Boost & PC Optimization Guide",
-  "description_en": "Best settings and hardcore fixes for ${title} to maximize performance and fix lag.",
-  "seo_keywords_en": "${title} tweak, fps fix, pc guide, graphics settings",
-  "content_en": "Same structure in English: <h2>Guru Analysis</h2>, <h2>System Requirements (Steam)</h2>, <h2>Hardcore Fixes and Optimization</h2>, <h2>In-game Settings: What Kills FPS</h2>. Add Kick and YouTube links."
+  "meta_title_en": "${title} FPS Boost & Expert Registry Guide",
+  "description_en": "Advanced settings, EXPERT ZONE registry tweaks and config fixes for ${title}.",
+  "seo_keywords_en": "${title} tweak, registry edit, expert zone, pc guide",
+  "content_en": "Same structure in English: <h2>Guru Analysis</h2>, <h2>System Requirements (Steam)</h2>, <h2>Hardcore Fixes and Optimization</h2>, <h2>In-game Settings: What Kills FPS</h2>, <h2>EXPERT ZONE: Registry and File Modifications</h2>. Add Kick and YouTube links."
 }\n\nOdkazy: https://kick.com/thehardwareguru a YouTube @TheHardwareGuru_Czech.` 
           }
         ],
@@ -80,7 +80,7 @@ export async function POST(req) {
       } catch (e) { console.error("Supabase Storage fail", e); }
     }
 
-    // VRACÍME PŘESNÉ KLÍČE, KTERÉ FRONTEND OČEKÁVÁ
+    // VRACÍME VŠE PRO TVOU DB
     return NextResponse.json({ 
       ...ai,
       image_url: finalImg
