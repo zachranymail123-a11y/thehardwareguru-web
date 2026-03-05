@@ -4,6 +4,7 @@ import SestavyBubble from '../components/SestavyBubble';
 import Tracker from '../components/Tracker'; 
 import SocialTracker from '../components/SocialTracker';
 import SupportWidget from '../components/SupportWidget';
+import Navbar from '../components/Navbar'; // GURU FIX: Zde je sjednocená navigace pro celý web!
 import { Analytics } from '@vercel/analytics/react';
 
 export const metadata = {
@@ -76,7 +77,8 @@ export default function RootLayout({ children, params }) {
   return (
     <html lang={locale}>
       <body>
-        {/* Odstraněna ta zdvojená navigace */}
+        {/* --- GLOBÁLNÍ SJEDNOCENÁ NAVIGACE --- */}
+        <Navbar />
         
         <SocialTracker /> 
         <Tracker />
@@ -104,8 +106,10 @@ export default function RootLayout({ children, params }) {
         <SestavyBubble />
         <SupportWidget />
 
-        {/* Návrat k původnímu vykreslování bez zbytečných mezer */}
-        {children}
+        {/* --- Odsazení obsahu webu pod plovoucí lištou --- */}
+        <main style={{ paddingTop: '80px', minHeight: '100vh' }}>
+          {children}
+        </main>
 
         <Analytics />
       </body>
