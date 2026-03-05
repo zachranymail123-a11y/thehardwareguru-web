@@ -30,12 +30,12 @@ export default function Navbar() {
     'rady': isEn ? 'GUIDE' : 'RADA'
   };
 
-  // 🚀 GURU FIX: CROSS-TABLE NAŠEPTÁVAČ (OPRAVENÝ FALLBACK PRO CHYBĚJÍCÍ SLOUPCE)
+  // 🚀 GURU FIX: CROSS-TABLE NAŠEPTÁVAČ (PROHLEDÁVÁ VŠECH 7 SLOUPCŮ DLE DB EXPORTU)
   useEffect(() => {
     let active = true;
 
     const fetchSuggestions = async () => {
-      const q = query.trim().replace(/[,"]/g, ''); // Bezpečný string
+      const q = query.trim().replace(/[,]/g, ''); // Odstraníme čárky, které rozbíjejí PostgREST
       if (q.length < 2) {
         setSuggestions([]);
         setIsLoading(false);
@@ -45,35 +45,46 @@ export default function Navbar() {
       setIsLoading(true);
       
       try {
-        const searchTerm = `%${q}%`;
-        // GURU ARCHITEKTURA: Hledáme ve všech tabulkách tvého webu!
+        // Uvozovky kolem %q% jsou KRITICKÉ, pokud hledaný výraz obsahuje mezeru (zabrání Erroru 400)
+        const searchTerm = `"%${q}%"`; 
+        
+        // Seznam všech textových sloupců potvrzených v tvé databázi
+        const orAllColumns = `title.ilike.${searchTerm},content.ilike.${searchTerm},seo_description.ilike.${searchTerm},seo_keywords.ilike.${searchTerm},description_en.ilike.${searchTerm},content_en.ilike.${searchTerm},meta_title.ilike.${searchTerm}`;
+        
+        // Záchranný dotaz: pro tabulky, kterým novější sloupce chybí (aby nespadly)
+        const orFallbackColumns = `title.ilike.${searchTerm},content.ilike.${searchTerm}`;
+
         const sections = ['clanky', 'tipy', 'tweaky', 'slovnik', 'rady'];
 
         const searchPromises = sections.map(async (section) => {
-          let tData = [];
-          let cData = [];
-          
-          // GURU FIX: Změněno na select('*'), abychom předešli pádu při chybějícím sloupci
-          // a dotazy rozdělujeme do vlastních try-catch bloků.
           try {
-            const resTitle = await supabase.from(section).select('*').ilike('title', searchTerm).limit(3);
-            if (!resTitle.error) tData = resTitle.data;
-          } catch (e) { /* Ignorujeme chybu jedné tabulky */ }
-
-          try {
-            const resContent = await supabase.from(section).select('*').ilike('content', searchTerm).limit(3);
-            if (!resContent.error) cData = resContent.data;
-          } catch (e) { /* Ignorujeme chybu jedné tabulky */ }
-
-          const merged = [...tData, ...cData];
-          return merged.map(item => ({ ...item, section }));
+            // 1. Zkusíme prohledat VŠECHNY sloupce
+            const { data, error } = await supabase.from(section).select('*').or(orAllColumns).limit(4);
+            if (error) throw error; // Pokud chybí sloupec, jdeme do catch
+            return (data || []).map(item => ({ ...item, section }));
+          } catch (e) {
+            // 2. FALLBACK: Tabulka nemá nějaký SEO sloupec, tak prohledáme jen základy (title a content)
+            try {
+              const { data, error: err2 } = await supabase.from(section).select('*').or(orFallbackColumns).limit(4);
+              if (!err2) return (data || []).map(item => ({ ...item, section }));
+            } catch (fallbackError) {
+              // 3. POSLEDNÍ ZÁCHRANA: Bezpečné hledání jen v titulku (nepoužívá .or)
+              try {
+                const { data } = await supabase.from(section).select('*').ilike('title', `%${q}%`).limit(4);
+                return (data || []).map(item => ({ ...item, section }));
+              } catch (e3) {
+                return [];
+              }
+            }
+            return [];
+          }
         });
 
         const resultsArrays = await Promise.all(searchPromises);
         const allResults = resultsArrays.flat();
 
         if (active) {
-          // Odstranění duplicit (stejný slug ve stejné sekci) a oříznutí na top 6 výsledků
+          // Odstranění duplicit a omezení na max 6 výsledků v našeptávači
           const uniqueResults = Array.from(new Map(allResults.map(item => [item.section + item.slug, item])).values()).slice(0, 6);
           setSuggestions(uniqueResults);
         }
@@ -178,24 +189,33 @@ export default function Navbar() {
               </div>
             ) : (
               suggestions.map((s, i) => {
-                // 🚀 GURU FIX: Inteligentní výstřižek textu (Dynamic Snippet)
-                // Umožní vidět hledané slovo, i když bylo zahrabáno hluboko v textu.
+                // 🚀 GURU FIX: Zobrazí větu, kde se našlo hledané slovo (i když to bylo v Content, SEO, atd.)
                 let desc = isEn && s.description_en ? s.description_en : s.seo_description;
                 const safeQ = query.trim().toLowerCase();
                 
-                if (s.content) {
-                  const plainText = s.content.replace(/<[^>]+>/g, '');
-                  const matchIndex = plainText.toLowerCase().indexOf(safeQ);
-                  
-                  if (matchIndex !== -1) {
-                    // Slovo bylo nalezeno v obsahu! Vytáhneme kontext kolem něj.
-                    const start = Math.max(0, matchIndex - 30);
-                    const end = Math.min(plainText.length, matchIndex + 60);
-                    desc = (start > 0 ? '...' : '') + plainText.substring(start, end) + '...';
-                  } else if (!desc) {
-                    // Fallback pokud článek nemá SEO description a slovo se našlo např. jen v nadpisu
-                    desc = plainText.substring(0, 60) + '...';
+                // Pole všech textů k prohledání pro zobrazení kontextu
+                const textFields = [s.content, s.content_en, s.seo_keywords, s.seo_description, s.description_en];
+                let foundSnippet = false;
+
+                for (const field of textFields) {
+                  if (field && typeof field === 'string') {
+                    const plainText = field.replace(/<[^>]+>/g, ''); // Vyčistíme HTML
+                    const matchIndex = plainText.toLowerCase().indexOf(safeQ);
+                    
+                    if (matchIndex !== -1) {
+                      // Hledané slovo nalezeno, vyřízneme větu okolo něj!
+                      const start = Math.max(0, matchIndex - 30);
+                      const end = Math.min(plainText.length, matchIndex + 60);
+                      desc = (start > 0 ? '...' : '') + plainText.substring(start, end) + '...';
+                      foundSnippet = true;
+                      break; // Našli jsme to, konec prohledávání
+                    }
                   }
+                }
+
+                // Pokud hledané slovo bylo jen v title, ukážeme začátek contentu jako fallback
+                if (!foundSnippet && !desc && s.content) {
+                  desc = s.content.replace(/<[^>]+>/g, '').substring(0, 60) + '...';
                 }
 
                 return (
