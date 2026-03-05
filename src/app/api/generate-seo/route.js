@@ -25,16 +25,19 @@ export async function GET(request) {
     const { data: posts, error: dbError } = await supabase
       .from('posts')
       .select('id, title, content, image_url, type')
-      // GURU: Hledáme jen ty, kde fakt chybí SEO NEBO kde není ani errorový placeholder
-      .or('seo_description.is.null,seo_description.eq."",image_url.is.null,image_url.eq.""')
-      .not('image_url', 'eq', 'error_dalle') // Pojistka!
+      // GURU FIX: Tady je ta magie! Přidáno hledání chybějícího image_alt a og_title.
+      // Skript teď vezme i články, co už mají text/obrázek, ale chybí jim zbytek SEO.
+      .or('seo_description.is.null,seo_description.eq."",image_url.is.null,image_url.eq."",image_alt.is.null,og_title.is.null')
+      .not('image_url', 'eq', 'error_dalle') // Pojistka proti zacyklení DALL-E
       .order('updated_at', { ascending: true, nullsFirst: true }) 
       .limit(4);
 
     if (dbError) throw dbError;
+    
+    // Pokud i teď vyskočí tohle, znamená to, že DB je FAKT 100% vyplněná!
     if (!posts || posts.length === 0) {
       return NextResponse.json(
-        { message: "🦾 Všechno SEO i obrázky jsou hotové. Jsi GURU!" },
+        { message: "🦾 Všechno SEO i obrázky jsou kompletně hotové. Jsi GURU!" },
         { headers: { 'Cache-Control': 'no-store, max-age=0' } }
       );
     }
@@ -66,6 +69,7 @@ export async function GET(request) {
         let finalImageUrl = post.image_url;
         let imageStatus = "Existující";
 
+        // Kontrola, jestli obrázek chybí nebo je to placeholder
         if (!finalImageUrl || finalImageUrl === "" || finalImageUrl.includes("placeholder")) {
           try {
             const imageRes = await openai.images.generate({
@@ -76,13 +80,12 @@ export async function GET(request) {
             finalImageUrl = imageRes.data[0].url;
             imageStatus = "Vygenerován";
           } catch (e) {
-            // GURU FIX: ZDE BYL TEN NEJVĚTŠÍ PRŮSER! Zabráníme zacyklení:
             finalImageUrl = "error_dalle"; 
             imageStatus = "DALL-E Selhal (Označen jako error)";
           }
         }
 
-        // GURU FIX: Přidán .select() na konec! Pokud se vrátí prázdné pole, DB to neuložila!
+        // Zápis do DB vč. kontroly
         const { data: updatedRow, error: updateError } = await supabase.from('posts').update({
           seo_description: aiData.seo_description,
           seo_keywords: aiData.seo_keywords,
@@ -91,11 +94,10 @@ export async function GET(request) {
           youtube_url: aiData.youtube_url || ytLinks[0] || null,
           image_url: finalImageUrl,
           updated_at: new Date().toISOString()
-        }).eq('id', post.id).select(); // Tohle je kritické pro kontrolu!
+        }).eq('id', post.id).select();
 
         if (updateError) throw updateError;
         
-        // Pokud Supabase vrátí prázdné pole, zápis se ignoroval (např. kvůli oprávněním)
         if (!updatedRow || updatedRow.length === 0) {
            return { title: post.title, status: '❌ CHYBA ZÁPISU (Zkontroluj Service Role Key!)' };
         }
@@ -107,7 +109,6 @@ export async function GET(request) {
       }
     }));
 
-    // Přidány anti-cache hlavičky, aby ti prohlížeč nevracel pořád starou stránku
     return NextResponse.json(
       { status: "GURU ENGINE RUNNING", processed: results },
       { headers: { 'Cache-Control': 'no-store, max-age=0' } }
