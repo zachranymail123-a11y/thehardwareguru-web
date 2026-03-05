@@ -21,12 +21,21 @@ export default function Navbar() {
   const isEn = pathname.startsWith('/en');
   const lang = isEn ? 'en' : 'cs';
 
-  // 🚀 GURU FIX: OPRAVENÝ NAŠEPTÁVAČ (PROHLEDÁVÁ VŠE VČETNĚ OBSAHU)
+  // Překlad sekcí pro štítky v našeptávači
+  const sectionNames = {
+    'clanky': isEn ? 'ARTICLE' : 'ČLÁNEK',
+    'tipy': isEn ? 'TIP' : 'TIP',
+    'tweaky': isEn ? 'TWEAK' : 'TWEAK',
+    'slovnik': isEn ? 'GLOSSARY' : 'SLOVNÍK',
+    'rady': isEn ? 'GUIDE' : 'RADA'
+  };
+
+  // 🚀 GURU FIX: CROSS-TABLE NAŠEPTÁVAČ (HLEDÁ VŠUDE)
   useEffect(() => {
     let active = true;
 
     const fetchSuggestions = async () => {
-      const q = query.trim();
+      const q = query.trim().replace(/[,"]/g, ''); // Bezpečný string
       if (q.length < 2) {
         setSuggestions([]);
         setIsLoading(false);
@@ -36,42 +45,35 @@ export default function Navbar() {
       setIsLoading(true);
       
       try {
-        // Zkusíme nejdřív ten profi PostgreSQL engine (pokud ho máš nahozený)
-        const { data: rpcData, error: rpcError } = await supabase.rpc('search_tweaks', { search_term: q });
+        const searchTerm = `%${q}%`;
+        // GURU ARCHITEKTURA: Hledáme ve všech tabulkách tvého webu!
+        const sections = ['clanky', 'tipy', 'tweaky', 'slovnik', 'rady'];
 
-        if (active) {
-          if (!rpcError && rpcData) {
-            setSuggestions(rpcData.slice(0, 6)); // Omezíme na 6 pro našeptávač
-          } else {
-            // ZÁLOHA: Paralelní JS hledání, které teď hledá i ve sloupci 'content'
-            const searchTerm = `%${q}%`;
-            const safeQuery = async (column) => {
-              try {
-                const { data, error } = await supabase
-                  .from('tweaky')
-                  .select('title, slug, seo_description, description_en')
-                  .ilike(column, searchTerm);
-                return error ? [] : (data || []);
-              } catch (e) {
-                return [];
-              }
-            };
-
-            // Spustíme hledání všude najednou, ABY TO NAŠLO "DDR"
-            const [byTitle, byDesc, byKeys, byContent] = await Promise.all([
-              safeQuery('title'),
-              safeQuery('seo_description'),
-              safeQuery('seo_keywords'),
-              safeQuery('content') 
+        const searchPromises = sections.map(async (section) => {
+          try {
+            // Paralelní dotaz na Title a Content pro obcházení limitací .or()
+            const [titleRes, contentRes] = await Promise.all([
+              supabase.from(section).select('title, slug, seo_description, description_en').ilike('title', searchTerm).limit(3),
+              supabase.from(section).select('title, slug, seo_description, description_en').ilike('content', searchTerm).limit(3)
             ]);
 
-            const allResults = [...byTitle, ...byDesc, ...byKeys, ...byContent];
-            // Odstranění duplicit a limit na 6 výsledků pro hezký dropdown
-            const uniqueResults = Array.from(new Map(allResults.map(item => [item.slug, item])).values()).slice(0, 6);
-            
-            setSuggestions(uniqueResults);
+            const merged = [...(titleRes.data || []), ...(contentRes.data || [])];
+            // Přidáme informaci o sekci, abychom věděli, kam odkazovat
+            return merged.map(item => ({ ...item, section }));
+          } catch (e) {
+            return []; // Pokud nějaká tabulka chybí, ignorujeme ji a jedeme dál
           }
+        });
+
+        const resultsArrays = await Promise.all(searchPromises);
+        const allResults = resultsArrays.flat();
+
+        if (active) {
+          // Odstranění duplicit (stejný slug ve stejné sekci) a oříznutí na top 6 výsledků
+          const uniqueResults = Array.from(new Map(allResults.map(item => [item.section + item.slug, item])).values()).slice(0, 6);
+          setSuggestions(uniqueResults);
         }
+
       } catch (err) {
         console.error("Guru Search Exception:", err);
       } finally {
@@ -158,7 +160,7 @@ export default function Navbar() {
           </div>
         </form>
 
-        {/* DROPDOWN NAŠEPTÁVAČE */}
+        {/* DROPDOWN NAŠEPTÁVAČE S KATEGORIEMI */}
         {showSuggestions && (suggestions.length > 0 || isLoading) && (
           <div style={{ 
             position: 'absolute', top: '70px', width: '100%', maxWidth: '550px', 
@@ -174,19 +176,28 @@ export default function Navbar() {
               suggestions.map((s, i) => (
                 <div key={i} 
                   onClick={() => { 
-                    const target = isEn ? `/en/tweaky/${s.slug}` : `/tweaky/${s.slug}`;
+                    // GURU FIX: Nyní směruje do správné kategorie (články, tipy atd.) místo jen do tweaky!
+                    const target = isEn ? `/en/${s.section}/${s.slug}` : `/${s.section}/${s.slug}`;
                     router.push(target); 
                     setQuery(''); 
                     setShowSuggestions(false); 
                   }}
                   style={{ 
-                    padding: '18px 25px', borderBottom: i !== suggestions.length - 1 ? '1px solid #222' : 'none', 
+                    padding: '16px 20px', borderBottom: i !== suggestions.length - 1 ? '1px solid #222' : 'none', 
                     cursor: 'pointer', transition: 'background 0.2s' 
                   }}
                   onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
-                  <div style={{ fontWeight: '900', color: '#eab308', fontSize: '15px', marginBottom: '4px' }}>{s.title}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <div style={{ fontWeight: '900', color: '#eab308', fontSize: '15px' }}>{s.title}</div>
+                    <div style={{ 
+                      fontSize: '10px', color: '#fff', background: '#a855f7', 
+                      padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.5px', fontWeight: 'bold' 
+                    }}>
+                      {sectionNames[s.section] || 'LINK'}
+                    </div>
+                  </div>
                   <div style={{ fontSize: '12px', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {isEn && s.description_en ? s.description_en : s.seo_description}
                   </div>
