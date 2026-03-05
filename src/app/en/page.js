@@ -1,9 +1,13 @@
 "use client";
 
-// GURU FIX: Importujeme již hotovou komponentu z hlavní stránky.
-// Tím pádem udržujeme jen jeden hlavní kód a vyhneme se duplicitám.
-import HomePage from '../page';
+/**
+ * GURU PROXY ENGINE
+ * Tento soubor slouží jako vstupní bod pro anglickou verzi archivu článků.
+ * Načítá hlavní komponentu ze src/app/clanky/page.js, která se sama 
+ * postará o překlad na základě URL.
+ */
+import ClankyArchivePage from '../../clanky/page';
 
-export default function EnglishHomePage() {
-  return <HomePage />;
+export default function EnglishClankyPage() {
+  return <ClankyArchivePage />;
 }
