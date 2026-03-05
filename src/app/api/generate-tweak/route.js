@@ -13,53 +13,56 @@ export async function POST(req) {
     const { title, slug, pin } = await req.json();
     if (pin !== process.env.GURU_PIN) return NextResponse.json({ error: 'Špatný PIN!' }, { status: 401 });
 
-    // 1. GURU DEEP SEARCH (Serper.dev) - Hledáme vyloženě technické parametry
+    // 1. GURU DEEP SEARCH (Serper.dev)
     let rawText = '';
     try {
       const serperRes = await fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          // GURU QUERY: Hledáme konkrétní technické výrazy v uvozovkách
           q: `"${title}" PC performance "Engine.ini" OR "Registry" OR "Config" OR "stuttering fix" Reddit Steam Community`,
           gl: 'us', hl: 'en', num: 8
         })
       });
       const data = await serperRes.json();
-      // Taháme title i snippet, abychom měli co nejvíc dat k analýze
       rawText = data.organic?.map(res => `SOURCE: ${res.title}\nCONTENT: ${res.snippet}`).join('\n\n') || '';
     } catch (e) { console.error('Serper fail'); }
 
-    // 2. PARALELNÍ GENEROVÁNÍ (GURU HARDCORE ENGINE)
+    // 2. PARALELNÍ GENEROVÁNÍ 
     const [completion, imageResult] = await Promise.all([
       openai.chat.completions.create({
         model: "gpt-4-turbo",
         messages: [
           { 
             role: "system", 
-            content: `Jsi 'The Hardware Guru'. Tvým úkolem je analyzovat technická data z rešerše a vypreparovat z nich KONKRÉTNÍ hodnoty. 
-            STRIKTNĚ ZAKAZUJI: obecné rady (ovladače, detaily).
-            TVÉ POVINNOSTI:
-            1. Analyzuj "Technická data" ze Serperu a najdi v nich reálné cesty (Registry, %LOCALAPPDATA%).
-            2. Pokud data obsahují konkrétní Engine.ini tweaky (r.Streaming.PoolSize atd.), vypiš je v Markdown code blocks.
-            3. V kategorii "EXPERT ZÓNA" musí být konkrétní cesta v registrech a název klíče s hodnotou. 
-            4. Pokud v rešerši data chybí, využij své expertní znalosti enginu dané hry (UE4/5, Unity, atd.) a doplň technicky správné parametry, které skutečně fungují.` 
+            content: `Jsi 'The Hardware Guru'. Píšeš pro hardcore komunitu.
+            ZAKAZUJI: obecné rady (např. 'aktualizujte ovladače').
+            
+            TVÁ PRAVIDLA PRO GENEROVÁNÍ OBSAHU:
+            1. 'Systémové požadavky': Vypiš reálné CPU, GPU a RAM z dat.
+            2. 'Hardcore Fixy': Dej sem přesné cesty (např. %LOCALAPPDATA%\\...) a úpravy .ini souborů v Markdown code blocích.
+            3. 'Nastavení ve hře': Napiš 3-5 konkrétních položek a jak je nastavit.
+            4. 'EXPERT ZÓNA': Napiš přesné cesty v registrech (HKEY_...) a názvy klíčů (DWORD) s hodnotami.
+            5. Pokud nemáš data, použij své expertní znalosti enginu hry.` 
           },
           { 
             role: "user", 
-            content: `Hra: ${title}\nTechnická data z rešerše:\n${rawText}\n\nVYGENERUJ JSON STRIKTNĚ S TĚMITO KLÍČI:\n{
+            content: `Hra: ${title}\nTechnická data z rešerše:\n${rawText}\n
+VYGENERUJ JSON. Níže je požadovaná struktura. Zástupný text "..." NAHRAĎ plnohodnotným, dlouhým a technickým HTML obsahem podle pravidel výše.
+
+{
   "meta_title": "Optimalizace ${title} - Expert Guru Guide",
   "seo_description": "Brutální optimalizace ${title}. Registry fixy, Engine.ini tweaky a hardcore nastavení pro maximální FPS.",
   "seo_keywords": "${title}, optimalizace, registry tweak, expert zona, hardware guru",
-  "html_content": "HTML struktura: <h2>Guru Analýza</h2>, <h2>Systémové požadavky (Steam)</h2> (vypiš reálné CPU/GPU), <h2>Hardcore Fixy a Optimalizace</h2> (zde dej kódové bloky pro soubory), <h2>Nastavení ve hře: Co zabíjí FPS</h2> (vypiš konkrétní položky), <h2>EXPERT ZÓNA: Registry a modifikace souborů</h2> (ZDE MUSÍ BÝT PŘESNÉ CESTY A HODNOTY).",
+  "html_content": "<h2>Guru Analýza</h2>\\n<p>...</p>\\n<h2>Systémové požadavky (Steam)</h2>\\n<p>...</p>\\n<h2>Hardcore Fixy a Optimalizace</h2>\\n<p>...</p>\\n<h2>Nastavení ve hře: Co zabíjí FPS</h2>\\n<p>...</p>\\n<h2>EXPERT ZÓNA: Registry a modifikace souborů</h2>\\n<p>...</p>\\n<p>Sleduj mě na <a href='https://kick.com/thehardwareguru'>Kicku</a> a <a href='https://www.youtube.com/@TheHardwareGuru_Czech'>YouTube</a>.</p>",
   
   "title_en": "${title} Hardcore Optimization Guide",
   "slug_en": "${slug}-optimization-guide",
   "meta_title_en": "${title} FPS Boost & Registry Surgery",
   "description_en": "No generic advice. Exact registry keys, file paths and technical engine tweaks for ${title}.",
   "seo_keywords_en": "${title}, tweak, registry edit, pc guide",
-  "content_en": "Same technical content in English. Use exact paths and code blocks as in the Czech version."
-}\n\nOdkazy: https://kick.com/thehardwareguru a YouTube @TheHardwareGuru_Czech.` 
+  "content_en": "<h2>Guru Analysis</h2>\\n<p>...</p>\\n<h2>System Requirements (Steam)</h2>\\n<p>...</p>\\n<h2>Hardcore Fixes and Optimization</h2>\\n<p>...</p>\\n<h2>In-game Settings: What Kills FPS</h2>\\n<p>...</p>\\n<h2>EXPERT ZONE: Registry and File Modifications</h2>\\n<p>...</p>\\n<p>Watch live on <a href='https://kick.com/TheHardwareGuru'>Kick</a>.</p>"
+}` 
           }
         ],
         response_format: { type: "json_object" }
