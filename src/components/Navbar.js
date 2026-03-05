@@ -58,6 +58,12 @@ export default function Navbar() {
 
         // Projdeme VŠECHNY tabulky, které nám databáze nahlásí
         for (const [tableName, schema] of Object.entries(schemas)) {
+          
+          // 🚀 GURU FIX: Tvrdý blok na celou TABULKU, která obsahuje slovo "plan"
+          if (tableName.toLowerCase().includes('plan')) {
+            continue; 
+          }
+
           const textCols = [];
           // V každé tabulce najdeme VŠECHNY sloupce, které obsahují text
           for (const [colName, colInfo] of Object.entries(schema.properties || {})) {
@@ -103,8 +109,13 @@ export default function Navbar() {
 
         // Projdeme načtenou strukturu - VŠECHNY existující tabulky a VŠECHNY jejich existující textové sloupce
         dbStructure.forEach(({ table, columns }) => {
+          
+          // GURU FIX: Ještě jedna záchranná brzda proti tabulkám "plan"
+          if (table.toLowerCase().includes('plan')) return;
+
           columns.forEach(col => {
             allPromises.push(
+              // 🚀 GURU FIX: Zvýšeno na 10 podle tvého přímého rozkazu
               supabase.from(table).select('*').ilike(col, searchTerm).limit(10)
                 .then(res => {
                   if (res.error) throw res.error; 
@@ -123,7 +134,7 @@ export default function Navbar() {
           .flat();
 
         if (active) {
-          // Odstranění duplicit podle slugu a sekce, výpis nejlepších 10
+          // 🚀 GURU FIX: Odstranění duplicit podle slugu a sekce, výpis nejlepších 10 položek!
           const uniqueResults = Array.from(new Map(allResults.map(item => [item.section + (item.slug || item.id), item])).values()).slice(0, 10);
           setSuggestions(uniqueResults);
         }
@@ -228,11 +239,14 @@ export default function Navbar() {
               </div>
             ) : (
               suggestions.map((s, i) => {
+                // 🚀 GURU FIX: Definitivní blok vykreslení pro jakýkoliv záznam z tabulky "plan"
+                if (s.section && s.section.toLowerCase().includes('plan')) return null;
+
                 let desc = '';
                 const safeQ = query.trim().toLowerCase();
                 let foundSnippet = false;
 
-                // 🚀 GURU FIX VYKRESLOVÁNÍ: Dynamicky projdeme VŠECHNY vlastnosti z DB...
+                // Dynamicky projdeme VŠECHNY vlastnosti z DB...
                 for (const key in s) {
                   // ...ALE TVRDĚ IGNORUJEME COKOLIV, CO MÁ V NÁZVU 'plan'! (Tvůj rozkaz)
                   if (
