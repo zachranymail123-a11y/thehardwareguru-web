@@ -4,6 +4,7 @@ import SestavyBubble from '../components/SestavyBubble';
 import Tracker from '../components/Tracker'; 
 import SocialTracker from '../components/SocialTracker';
 import SupportWidget from '../components/SupportWidget'; // PŘIDÁNO
+import Navbar from '../components/Navbar'; // GURU FIX: Import navigace
 import { Analytics } from '@vercel/analytics/react';
 
 export const metadata = {
@@ -64,6 +65,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="cs">
       <body>
+        {/* GURU FIX: Globální plovoucí navigace */}
+        <Navbar />
+
         <SocialTracker /> 
         <Tracker />
         
@@ -92,7 +96,10 @@ export default function RootLayout({ children }) {
         {/* --- GURU SUPPORT BUBBLE --- */}
         <SupportWidget />
 
-        {children}
+        {/* GURU FIX: Odsazení, aby lišta nezakrývala obsah */}
+        <div style={{ paddingTop: '75px' }}>
+          {children}
+        </div>
 
         <Analytics />
       </body>
