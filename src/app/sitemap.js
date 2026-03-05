@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-export const revalidate = 0; // Sitemapa se vygeneruje vždy čerstvá při každém požadavku
+export const revalidate = 0; // Sitemapa se vygeneruje vždy čerstvá
 
 export default async function sitemap() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -9,14 +9,15 @@ export default async function sitemap() {
   const supabase = createClient(supabaseUrl, supabaseKey);
   const baseUrl = 'https://www.thehardwareguru.cz';
 
-  // 1. STATICKÉ STRÁNKY
+  // 1. STATICKÉ STRÁNKY (CZ + EN základ)
   const staticRoutes = [
     { url: `${baseUrl}`, priority: 1.0 },
     { url: `${baseUrl}/tipy`, priority: 0.9 }, 
     { url: `${baseUrl}/sestavy`, priority: 0.9 },
-    { url: `${baseUrl}/tweaky`, priority: 0.9 }, // PŘIDÁNA ZÁKLADNÍ STRÁNKA GURU TWEAKY
+    { url: `${baseUrl}/tweaky`, priority: 0.9 },
     { url: `${baseUrl}/moje-pc`, priority: 0.8 },
     { url: `${baseUrl}/slovnik`, priority: 0.8 },
+    { url: `${baseUrl}/en/slovnik`, priority: 0.8 }, // GURU: Nová anglická základna
     { url: `${baseUrl}/rady`, priority: 0.9 },
     { url: `${baseUrl}/support`, priority: 0.5 },
   ].map((route) => ({
@@ -45,15 +46,28 @@ export default async function sitemap() {
       priority: 0.8,
     }));
 
-  // 4. DYNAMICKÝ SLOVNÍK (/slovnik/...)
-  const { data: pojmy } = await supabase.from('slovnik').select('slug, created_at');
-  const slovnikRoutes = (pojmy || [])
-    .filter((pojem) => pojem.slug)
-    .map((pojem) => ({
-      url: `${baseUrl}/slovnik/${pojem.slug}`,
-      lastModified: pojem.created_at || new Date().toISOString(),
-      priority: 0.6,
-    }));
+  // 4. DYNAMICKÝ SLOVNÍK (Bilingvální GURU logiku - CZ + EN)
+  const { data: pojmy } = await supabase.from('slovnik').select('slug, slug_en, created_at');
+  const slovnikRoutes = [];
+  
+  (pojmy || []).forEach((pojem) => {
+    // Česká cesta
+    if (pojem.slug) {
+      slovnikRoutes.push({
+        url: `${baseUrl}/slovnik/${pojem.slug}`,
+        lastModified: pojem.created_at || new Date().toISOString(),
+        priority: 0.7,
+      });
+    }
+    // GURU: Anglická cesta (pokud existuje slug_en)
+    if (pojem.slug_en) {
+      slovnikRoutes.push({
+        url: `${baseUrl}/en/slovnik/${pojem.slug_en}`,
+        lastModified: pojem.created_at || new Date().toISOString(),
+        priority: 0.7,
+      });
+    }
+  });
 
   // 5. DYNAMICKÉ RADY (/rady/...)
   const { data: rady } = await supabase.from('rady').select('slug, created_at');
@@ -65,16 +79,16 @@ export default async function sitemap() {
       priority: 0.8,
     }));
 
-  // 6. DYNAMICKÉ TWEAKY (/tweaky/...) - NOVINKA
+  // 6. DYNAMICKÉ TWEAKY (/tweaky/...)
   const { data: tweaky } = await supabase.from('tweaky').select('slug, created_at');
   const tweakyRoutes = (tweaky || [])
     .filter((tweak) => tweak.slug)
     .map((tweak) => ({
       url: `${baseUrl}/tweaky/${tweak.slug}`,
       lastModified: tweak.created_at || new Date().toISOString(),
-      priority: 0.8, // Priorita podobná jako u článků, ať to Google rychle saje
+      priority: 0.8,
     }));
 
-  // SPOJÍME VŠECHNY CESTY DO JEDNOHO VELKÉHO SEZNAMU
+  // FINÁLNÍ SPOJENÍ
   return [...staticRoutes, ...tipyRoutes, ...clankyRoutes, ...slovnikRoutes, ...radyRoutes, ...tweakyRoutes];
 }
