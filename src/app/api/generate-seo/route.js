@@ -33,7 +33,8 @@ export async function GET(request) {
     const { data: posts, error: dbError } = await supabase
       .from('posts')
       .select('id, title, content, image_url, type')
-      .or('seo_description.is.null,seo_description.eq."",image_url.is.null,image_url.eq."",image_alt.is.null,og_title.is.null')
+      // GURU FIX: Přidáno hledání chybějícího seo_schema!
+      .or('seo_description.is.null,seo_description.eq."",image_url.is.null,image_url.eq."",image_alt.is.null,og_title.is.null,seo_schema.is.null')
       .not('image_url', 'eq', 'error_dalle')
       .order('updated_at', { ascending: true, nullsFirst: true }) 
       .limit(4);
@@ -89,6 +90,16 @@ export async function GET(request) {
           }
         }
 
+        // GURU FIX: Sestavení JSONB Schema.org objektu pro Google!
+        const seoSchema = {
+          "@context": "https://schema.org",
+          "@type": post.type === 'hardware' ? 'TechArticle' : 'Article',
+          "headline": aiData.og_title || post.title,
+          "image": finalImageUrl !== "error_dalle" ? finalImageUrl : null,
+          "description": aiData.seo_description,
+          "author": { "@type": "Organization", "name": "The Hardware Guru" }
+        };
+
         const { data: updatedRow, error: updateError } = await supabase.from('posts').update({
           seo_description: aiData.seo_description,
           seo_keywords: aiData.seo_keywords,
@@ -96,6 +107,7 @@ export async function GET(request) {
           og_title: aiData.og_title,
           youtube_url: aiData.youtube_url || ytLinks[0] || null,
           image_url: finalImageUrl,
+          seo_schema: seoSchema, // <-- TADY TO TEĎ ZAPÍŠE!
           updated_at: new Date().toISOString()
         }).eq('id', post.id).select();
 
