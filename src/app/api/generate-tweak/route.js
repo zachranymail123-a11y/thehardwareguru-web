@@ -13,51 +13,52 @@ export async function POST(req) {
     const { title, slug, pin } = await req.json();
     if (pin !== process.env.GURU_PIN) return NextResponse.json({ error: 'Špatný PIN!' }, { status: 401 });
 
-    // 1. REŠERŠE (Serper.dev)
+    // 1. GURU DEEP SEARCH (Serper.dev) - Hledáme vyloženě technické parametry
     let rawText = '';
     try {
       const serperRes = await fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          q: `${title} PC optimization steam system requirements engine.ini registry editor config tweak stuttering fix`,
-          gl: 'us', hl: 'en'
+          // GURU QUERY: Hledáme konkrétní technické výrazy v uvozovkách
+          q: `"${title}" PC performance "Engine.ini" OR "Registry" OR "Config" OR "stuttering fix" Reddit Steam Community`,
+          gl: 'us', hl: 'en', num: 8
         })
       });
       const data = await serperRes.json();
-      rawText = data.organic?.map(res => `${res.title}: ${res.snippet}`).join('\n\n') || '';
+      // Taháme title i snippet, abychom měli co nejvíc dat k analýze
+      rawText = data.organic?.map(res => `SOURCE: ${res.title}\nCONTENT: ${res.snippet}`).join('\n\n') || '';
     } catch (e) { console.error('Serper fail'); }
 
-    // 2. PARALELNÍ GENEROVÁNÍ (GURU HARDCORE MODE)
+    // 2. PARALELNÍ GENEROVÁNÍ (GURU HARDCORE ENGINE)
     const [completion, imageResult] = await Promise.all([
       openai.chat.completions.create({
         model: "gpt-4-turbo",
         messages: [
           { 
             role: "system", 
-            content: `Jsi 'The Hardware Guru'. Píšeš pro hardcore komunitu. 
-            STRIKTNĚ ZAKAZUJI obecné rady typu 'aktualizujte ovladače' nebo 'snižte detaily'. 
-            TVÉ INSTRUKCE:
-            1. Vypiš přesné cesty k souborům (např. %LOCALAPPDATA%\\${title}\\Saved\\Config\\WindowsNoEditor\\Engine.ini).
-            2. Pro úpravy souborů VŽDY použij Markdown code blocks s konkrétními parametry (např. [SystemSettings] r.Streaming.PoolSize=...).
-            3. V EXPERT ZÓNĚ vypiš přesné cesty v registrech (HKEY_CURRENT_USER\\Software\\...) a konkrétní názvy klíčů (DWORD) s hodnotami.
-            4. U systémových požadavků vypiš reálné komponenty (CPU, GPU, RAM).
-            5. Pokud v rešerši nenajdeš konkrétní data, použij své hluboké znalosti herních enginů (UE4, UE5, Unity) a navrhni funkční fixy pro danou technologii.` 
+            content: `Jsi 'The Hardware Guru'. Tvým úkolem je analyzovat technická data z rešerše a vypreparovat z nich KONKRÉTNÍ hodnoty. 
+            STRIKTNĚ ZAKAZUJI: obecné rady (ovladače, detaily).
+            TVÉ POVINNOSTI:
+            1. Analyzuj "Technická data" ze Serperu a najdi v nich reálné cesty (Registry, %LOCALAPPDATA%).
+            2. Pokud data obsahují konkrétní Engine.ini tweaky (r.Streaming.PoolSize atd.), vypiš je v Markdown code blocks.
+            3. V kategorii "EXPERT ZÓNA" musí být konkrétní cesta v registrech a název klíče s hodnotou. 
+            4. Pokud v rešerši data chybí, využij své expertní znalosti enginu dané hry (UE4/5, Unity, atd.) a doplň technicky správné parametry, které skutečně fungují.` 
           },
           { 
             role: "user", 
-            content: `Hra: ${title}\nData: ${rawText}\n\nVYGENERUJ JSON STRIKTNĚ S TĚMITO KLÍČI:\n{
+            content: `Hra: ${title}\nTechnická data z rešerše:\n${rawText}\n\nVYGENERUJ JSON STRIKTNĚ S TĚMITO KLÍČI:\n{
   "meta_title": "Optimalizace ${title} - Expert Guru Guide",
   "seo_description": "Brutální optimalizace ${title}. Registry fixy, Engine.ini tweaky a hardcore nastavení pro maximální FPS.",
   "seo_keywords": "${title}, optimalizace, registry tweak, expert zona, hardware guru",
-  "html_content": "HTML kód se strukturou: <h2>Guru Analýza</h2>, <h2>Systémové požadavky (Steam)</h2> (vypiš konkrétní HW), <h2>Hardcore Fixy a Optimalizace</h2>, <h2>Nastavení ve hře: Co zabíjí FPS</h2> (vypiš konkrétní položky a hodnoty), <h2>EXPERT ZÓNA: Registry a modifikace souborů</h2> (zde dej PŘESNÉ CESTY A KÓDY). Na konec přidej tvůj Kick a YouTube odkaz.",
+  "html_content": "HTML struktura: <h2>Guru Analýza</h2>, <h2>Systémové požadavky (Steam)</h2> (vypiš reálné CPU/GPU), <h2>Hardcore Fixy a Optimalizace</h2> (zde dej kódové bloky pro soubory), <h2>Nastavení ve hře: Co zabíjí FPS</h2> (vypiš konkrétní položky), <h2>EXPERT ZÓNA: Registry a modifikace souborů</h2> (ZDE MUSÍ BÝT PŘESNÉ CESTY A HODNOTY).",
   
   "title_en": "${title} Hardcore Optimization Guide",
   "slug_en": "${slug}-optimization-guide",
   "meta_title_en": "${title} FPS Boost & Registry Surgery",
-  "description_en": "No generic advice. Exact registry keys, file paths and engine.ini tweaks for ${title}.",
-  "seo_keywords_en": "${title} tweak, registry edit, pc guide, graphics settings",
-  "content_en": "English version with SAME hardcore structure. Provide exact file paths and code blocks for tweaks. <h2>EXPERT ZONE: Registry and File Modifications</h2> must contain technical data."
+  "description_en": "No generic advice. Exact registry keys, file paths and technical engine tweaks for ${title}.",
+  "seo_keywords_en": "${title}, tweak, registry edit, pc guide",
+  "content_en": "Same technical content in English. Use exact paths and code blocks as in the Czech version."
 }\n\nOdkazy: https://kick.com/thehardwareguru a YouTube @TheHardwareGuru_Czech.` 
           }
         ],
@@ -66,7 +67,7 @@ export async function POST(req) {
 
       openai.images.generate({
         model: "dall-e-3",
-        prompt: `Detailed high-tech hardware visualization, glowing circuits, extreme gaming PC components, cinematic yellow and purple neon lighting, 8k.`,
+        prompt: `High-tech cinematic close-up of high-end gaming PC components, liquid cooling, glowing neon purple and yellow lighting, hardware enthusiast aesthetic, 8k resolution.`,
         n: 1, size: "1024x1024"
       }).catch(e => null)
     ]);
@@ -79,12 +80,10 @@ export async function POST(req) {
         const fetchImg = await fetch(imageResult.data[0].url);
         const blob = await fetchImg.blob();
         const fileName = `tweaky/${slug}-${Date.now()}.png`;
-        const { error: upErr } = await supabaseAdmin.storage.from('images').upload(fileName, blob, { contentType: 'image/png' });
-        if (!upErr) {
-          const { data: pUrl } = supabaseAdmin.storage.from('images').getPublicUrl(fileName);
-          finalImg = pUrl.publicUrl;
-        }
-      } catch (e) { console.error("Supabase Storage fail", e); }
+        await supabaseAdmin.storage.from('images').upload(fileName, blob, { contentType: 'image/png' });
+        const { data: pUrl } = supabaseAdmin.storage.from('images').getPublicUrl(fileName);
+        finalImg = pUrl.publicUrl;
+      } catch (e) { console.error("Storage fail", e); }
     }
 
     return NextResponse.json({ ...ai, image_url: finalImg });
