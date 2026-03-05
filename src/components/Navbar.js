@@ -148,13 +148,12 @@ export default function Navbar() {
           <a href="https://kick.com/TheHardwareGuru" target="_blank" rel="noreferrer" style={{ background: '#53fc18', color: '#000', padding: '6px 10px', borderRadius: '4px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>KICK</a>
           <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noreferrer" style={{ background: '#ff0000', color: '#fff', padding: '6px 10px', borderRadius: '4px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>YOUTUBE</a>
           
-          {/* INSTAGRAM NATVRDO MEZI YOUTUBE A DISCORD */}
           <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" rel="noreferrer" style={{ background: '#E1306C', color: '#fff', padding: '6px 10px', borderRadius: '4px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>INSTAGRAM</a>
           
           <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" style={{ background: '#5865F2', color: '#fff', padding: '6px 10px', borderRadius: '4px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>DISCORD</a>
           
-          {/* OPRAVENÁ PODPORA (Link místo <a> pro funkční navigaci) */}
-          <Link href={isEn ? "/en/podpora" : "/podpora"} style={{ background: '#000', border: '1px solid #eab308', color: '#eab308', padding: '6px 10px', borderRadius: '4px', textDecoration: 'none', fontWeight: '900', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+          {/* GURU FIX: Odkaz na podporu opraven na /support */}
+          <Link href={isEn ? "/en/support" : "/support"} style={{ background: '#000', border: '1px solid #eab308', color: '#eab308', padding: '6px 10px', borderRadius: '4px', textDecoration: 'none', fontWeight: '900', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '5px' }}>
             <Heart size={12} fill="#eab308" /> {isEn ? 'SUPPORT' : 'PODPORA'}
           </Link>
         </div>
