@@ -47,7 +47,6 @@ export default function Navbar() {
       
       try {
         // GURU FIX: Odstraněny uvozovky! 
-        // Dříve tu bylo "%${q}%" s uvozovkami, což hledalo slovo doslova v uvozovkách a proto to nic nenašlo!
         const searchTerm = `%${q}%`; 
         
         // Seznam všech textových sloupců potvrzených v tvé databázi
@@ -291,4 +290,16 @@ export default function Navbar() {
             INSTAGRAM
           </a>
           
-          <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" style={{ background: '#5865F2', color
+          <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" style={{ background: '#5865F2', color: '#fff', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>
+            DISCORD
+          </a>
+          
+          {/* GURU FIX: Absolutní link na podporu */}
+          <a href="https://www.thehardwareguru.cz/support" style={{ background: '#000', border: '2px solid #eab308', color: '#eab308', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Heart size={14} fill="#eab308" /> {isEn ? 'SUPPORT' : 'PODPORA'}
+          </a>
+        </div>
+      </div>
+    </nav>
+  );
+}
