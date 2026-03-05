@@ -13,18 +13,16 @@ export async function POST(req) {
     const { title, slug, pin } = await req.json();
     if (pin !== process.env.GURU_PIN) return NextResponse.json({ error: 'Špatný PIN!' }, { status: 401 });
 
-    // 1. DVOJITÁ GURU REŠERŠE (Rozdělujeme HW a Tweaky)
+    // 1. DVOJITÁ GURU REŠERŠE (HW a Tweaky)
     let rawSteam = '';
     let rawTweaks = '';
     try {
       const [steamReq, tweakReq] = await Promise.all([
-        // Hledáme POUZE systémové požadavky na Steamu/oficiálních webech
         fetch('https://google.serper.dev/search', {
           method: 'POST',
           headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
           body: JSON.stringify({ q: `${title} minimum recommended system requirements pc Steam`, gl: 'us', hl: 'en', num: 4 })
         }),
-        // Hledáme POUZE hardcore fixy (Engine.ini, Registry)
         fetch('https://google.serper.dev/search', {
           method: 'POST',
           headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
@@ -46,15 +44,14 @@ export async function POST(req) {
         messages: [
           { 
             role: "system", 
-            content: `Jsi 'The Hardware Guru'. Píšeš pro hardcore komunitu.
-            ZAKAZUJI: obecné rady (např. 'aktualizujte ovladače') a vymýšlení si hardwaru.
+            content: `Jsi 'The Hardware Guru'. Píšeš pro hardcore PC komunitu.
+            STRIKTNĚ ZAKAZUJI: obecné rady (např. 'aktualizujte ovladače'), vymýšlení si HW a používání zástupných znaků (žádné '...', žádné 'atd.').
             
-            TVÁ PRAVIDLA PRO GENEROVÁNÍ OBSAHU:
-            1. 'Systémové požadavky': Vypiš reálné CPU, GPU a RAM VÝHRADNĚ z dat označených jako [STEAM DATA]. Pokud tam HW není, napiš: 'Pro tuto hru zatím nejsou k dispozici oficiální požadavky.' NEVYMÝŠLEJ SI JE!
-            2. 'Hardcore Fixy': Z [TWEAK DATA] vytáhni cesty a .ini úpravy. Kódy dej do Markdown code blocků.
-            3. 'Nastavení ve hře': Napiš 3-5 konkrétních položek a jak je nastavit.
-            4. 'EXPERT ZÓNA': Napiš přesné cesty v registrech (HKEY_...) a názvy klíčů (DWORD) s hodnotami.
-            5. Pokud v [TWEAK DATA] chybí data pro registry, využij své znalosti daného herního enginu k poskytnutí relevantního technického zásahu.` 
+            TVÁ PRAVIDLA PRO OBSAH:
+            1. 'Systémové požadavky': Vypiš reálné komponenty POUZE z [STEAM DATA].
+            2. 'Hardcore Fixy': Kódy musí být KOMPLETNÍ. Vypiš přesnou cestu k souboru (např. C:\\Users\\User\\AppData\\Local\\...) a minimálně 4 reálné technické parametry do Markdown bloku.
+            3. 'Nastavení ve hře': Napiš 3-5 konkrétních položek s největším dopadem na VRAM a přesně jak je nastavit (např. Volumetric Fog -> Low).
+            4. 'EXPERT ZÓNA': NIKDY NEPIŠ NEÚPLNÉ CESTY V REGISTRECH! Musíš vypsat PLNOU cestu (např. HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile) a PLATNÝ klíč (DWORD) s hodnotou. Pokud v rešerši chybí registry fix přímo pro hru, VŽDY vypiš reálný univerzální Windows gaming tweak (např. zakázání FSO nebo SystemResponsiveness tweak).` 
           },
           { 
             role: "user", 
@@ -66,20 +63,20 @@ ${rawSteam}
 [TWEAK DATA]:
 ${rawTweaks}
 
-VYGENERUJ JSON. Zástupný text "..." NAHRAĎ plnohodnotným, dlouhým a technickým HTML obsahem.
+VYGENERUJ JSON. Zástupné texty v závorkách [...] NAHRAĎ plnohodnotným technickým obsahem. Žádné tečky a zkracování!
 
 {
   "meta_title": "Optimalizace ${title} - Expert Guru Guide",
   "seo_description": "Brutální optimalizace ${title}. Registry fixy, Engine.ini tweaky a hardcore nastavení pro maximální FPS.",
   "seo_keywords": "${title}, optimalizace, registry tweak, expert zona, hardware guru",
-  "html_content": "<h2>Guru Analýza</h2>\\n<p>...</p>\\n<h2>Systémové požadavky (Steam)</h2>\\n<ul>...</ul>\\n<h2>Hardcore Fixy a Optimalizace</h2>\\n<p>...</p>\\n<h2>Nastavení ve hře: Co zabíjí FPS</h2>\\n<p>...</p>\\n<h2>EXPERT ZÓNA: Registry a modifikace souborů</h2>\\n<p>...</p>\\n<p>Sleduj mě na <a href='https://kick.com/TheHardwareGuru'>Kicku</a>, <a href='https://discord.com/invite/n7xThr8'>Discordu</a> a <a href='https://www.youtube.com/@TheHardwareGuru_Czech'>YouTube</a>.</p>",
+  "html_content": "<h2>Guru Analýza</h2>\\n<p>[ZDE NAPIŠ OBSÁHLOU ANALÝZU]</p>\\n<h2>Systémové požadavky (Steam)</h2>\\n<ul>[ZDE VYPIS HW Z DAT]</ul>\\n<h2>Hardcore Fixy a Optimalizace</h2>\\n<p>[ZDE NAPIŠ CELÉ CESTY A MINIMÁLNĚ 4 ŘÁDKY KÓDU DO BLOKU]</p>\\n<h2>Nastavení ve hře: Co zabíjí FPS</h2>\\n<p>[ZDE NAPIŠ KONKRETNI POLOZKY A HODNOTY]</p>\\n<h2>EXPERT ZÓNA: Registry a modifikace souborů</h2>\\n<p>[ZDE NAPIŠ CELOU CESTU V REGISTRECH A HODNOTU, ŽÁDNÉ ZKRACENÍ]</p>\\n<p>Sleduj mě na <a href='https://kick.com/TheHardwareGuru'>Kicku</a>, <a href='https://discord.com/invite/n7xThr8'>Discordu</a> a <a href='https://www.youtube.com/@TheHardwareGuru_Czech'>YouTube</a>.</p>",
   
   "title_en": "${title} Hardcore Optimization Guide",
   "slug_en": "${slug}-optimization-guide",
   "meta_title_en": "${title} FPS Boost & Registry Surgery",
-  "description_en": "No generic advice. Exact registry keys, file paths and technical engine tweaks for ${title}.",
+  "description_en": "No generic advice. Exact registry keys, full file paths and technical engine tweaks for ${title}.",
   "seo_keywords_en": "${title}, tweak, registry edit, pc guide",
-  "content_en": "<h2>Guru Analysis</h2>\\n<p>...</p>\\n<h2>System Requirements (Steam)</h2>\\n<ul>...</ul>\\n<h2>Hardcore Fixes and Optimization</h2>\\n<p>...</p>\\n<h2>In-game Settings: What Kills FPS</h2>\\n<p>...</p>\\n<h2>EXPERT ZONE: Registry and File Modifications</h2>\\n<p>...</p>\\n<p>Watch live on <a href='https://kick.com/TheHardwareGuru'>Kick</a>.</p>"
+  "content_en": "<h2>Guru Analysis</h2>\\n<p>[WRITE FULL ANALYSIS]</p>\\n<h2>System Requirements (Steam)</h2>\\n<ul>[WRITE HW REQUIREMENTS]</ul>\\n<h2>Hardcore Fixes and Optimization</h2>\\n<p>[WRITE FULL PATHS AND CODE BLOCKS WITHOUT SHORTENING]</p>\\n<h2>In-game Settings: What Kills FPS</h2>\\n<p>[SPECIFIC SETTINGS]</p>\\n<h2>EXPERT ZONE: Registry and File Modifications</h2>\\n<p>[WRITE FULL REGISTRY PATH AND EXACT KEYS]</p>\\n<p>Watch live on <a href='https://kick.com/TheHardwareGuru'>Kick</a>.</p>"
 }` 
           }
         ],
