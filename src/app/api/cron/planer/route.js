@@ -41,14 +41,23 @@ export async function GET() {
     debug.game.found = gameRaw.length;
     debug.hw.found = hwRaw.length;
 
-    const { data: existing } = await supabase.from('content_plan').select('source_url');
-    const usedUrls = new Set(existing ? existing.map(r => r.source_url) : []);
+    // Načtení stávajících URL z content_plan i posts (pro jistotu)
+    const [{ data: existingPlan }, { data: existingPosts }] = await Promise.all([
+      supabase.from('content_plan').select('source_url'),
+      supabase.from('posts').select('source_url')
+    ]);
+
+    const usedUrls = new Set([
+      ...(existingPlan ? existingPlan.map(r => r.source_url) : []),
+      ...(existingPosts ? existingPosts.map(r => r.source_url) : [])
+    ]);
 
     let log = [];
 
     const processCategoryParallel = async (rawItems, type) => {
+      // Filtrace unikátních položek, které ještě nemáme
       let validForProcessing = rawItems
-        .filter(item => !usedUrls.has(item.link))
+        .filter(item => item.link && !usedUrls.has(item.link))
         .slice(0, 3);
       
       if (type === 'game') debug.game.after_duplicate_filter = validForProcessing.length;
@@ -68,15 +77,22 @@ export async function GET() {
 
           const czechTitle = JSON.parse(completion.choices[0].message.content).title;
 
-          const { data, error } = await supabase.from('content_plan').insert({
-            title: czechTitle,
-            release_date: todayISO,
-            type: type,
-            status: 'planned',
-            source_url: item.link 
-          }).select();
+          // Použití UPSERT místo INSERT k potlačení chyb s duplicitním klíčem
+          const { data, error } = await supabase
+            .from('content_plan')
+            .upsert({
+              title: czechTitle,
+              release_date: todayISO,
+              type: type,
+              status: 'planned',
+              source_url: item.link 
+            }, { 
+              onConflict: 'source_url',
+              ignoreDuplicates: true 
+            })
+            .select();
 
-          if (data) {
+          if (data && data.length > 0) {
             log.push({ title: czechTitle, type: type });
           } else if (error) {
             debug.errors.push(`DB Error (${type}): ${error.message}`);
