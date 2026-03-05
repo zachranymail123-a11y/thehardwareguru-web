@@ -1,4 +1,4 @@
-export const maxDuration = 60; // GURU FIX: Zabrání Vercel Timeoutu u dlouhých kódů
+export const maxDuration = 60; // GURU FIX: Pojistka proti timeoutu pro dlouhé texty
 
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
@@ -10,12 +10,33 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// 🚀 GURU CHYTRÝ FORMÁTOVAČ NÁZVU (Vyřeší 'of', 'the' i zkratky bez zdržování AI)
+function formatGameTitle(str) {
+  if (!str) return '';
+  const exceptions = { 'gta v': 'GTA V', 'gta 5': 'GTA V', 'csgo': 'CS:GO', 'pubg': 'PUBG' };
+  const lowerStr = str.toLowerCase().trim();
+  if (exceptions[lowerStr]) return exceptions[lowerStr];
+  
+  const smallWords = /^(a|an|and|as|at|but|by|en|for|if|in|nor|of|on|or|per|the|to|v|vs|via)$/i;
+  return lowerStr.split(' ').map((word, index, arr) => {
+    // Malá slova uprostřed názvu zůstanou malá
+    if (index !== 0 && index !== arr.length - 1 && smallWords.test(word)) {
+      return word;
+    }
+    // Ostatní slova začnou velkým písmenem
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }).join(' ');
+}
+
 export async function POST(req) {
   try {
-    const { title, slug, pin } = await req.json();
+    const { title: rawTitle, slug, pin } = await req.json();
     if (pin !== process.env.GURU_PIN) return NextResponse.json({ error: 'Špatný PIN!' }, { status: 401 });
 
-    // 1. DVOJITÁ GURU REŠERŠE (HW a Tweaky)
+    // Aplikujeme chytrý formátovač (např. 'the legend of khiimori' -> 'The Legend of Khiimori')
+    const title = formatGameTitle(rawTitle);
+
+    // 1. DVOJITÁ GURU REŠERŠE (HW a Tweaky) - PŮVODNÍ SUPER VERZE
     let rawSteam = '';
     let rawTweaks = '';
     try {
@@ -39,7 +60,7 @@ export async function POST(req) {
       rawTweaks = tweakData.organic?.map(res => `SOURCE: ${res.title}\nCONTENT: ${res.snippet}`).join('\n\n') || '';
     } catch (e) { console.error('Serper fail'); }
 
-    // 2. PARALELNÍ GENEROVÁNÍ
+    // 2. PARALELNÍ GENEROVÁNÍ - PŮVODNÍ SUPER VERZE
     const [completion, imageResult] = await Promise.all([
       openai.chat.completions.create({
         model: "gpt-4-turbo",
@@ -47,13 +68,13 @@ export async function POST(req) {
           { 
             role: "system", 
             content: `Jsi 'The Hardware Guru'. Píšeš pro hardcore PC komunitu.
-            STRIKTNĚ ZAKAZUJI: obecné rady, vymýšlení si HW a zkracování kódu.
+            STRIKTNĚ ZAKAZUJI: obecné rady (např. 'aktualizujte ovladače'), vymýšlení si HW a používání zástupných znaků (žádné '...', žádné 'atd.').
             
             TVÁ PRAVIDLA PRO OBSAH:
             1. 'Systémové požadavky': Vypiš reálné komponenty POUZE z [STEAM DATA].
-            2. 'Hardcore Fixy': Kódy musí být KOMPLETNÍ. Vypiš přesnou cestu a minimálně 4 reálné technické parametry do Markdown bloku.
-            3. 'Nastavení ve hře': Napiš 3-5 konkrétních položek s největším dopadem na VRAM a přesně jak je nastavit.
-            4. 'EXPERT ZÓNA': Musíš vypsat PLNOU cestu (např. HKEY_LOCAL_MACHINE\\...) a PLATNÝ klíč (DWORD) s hodnotou. Pokud v rešerši chybí registry fix, VŽDY vypiš reálný univerzální Windows gaming tweak.` 
+            2. 'Hardcore Fixy': Kódy musí být KOMPLETNÍ. Vypiš přesnou cestu k souboru (např. C:\\Users\\User\\AppData\\Local\\...) a minimálně 4 reálné technické parametry do Markdown bloku.
+            3. 'Nastavení ve hře': Napiš 3-5 konkrétních položek s největším dopadem na VRAM a přesně jak je nastavit (např. Volumetric Fog -> Low).
+            4. 'EXPERT ZÓNA': NIKDY NEPIŠ NEÚPLNÉ CESTY V REGISTRECH! Musíš vypsat PLNOU cestu (např. HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile) a PLATNÝ klíč (DWORD) s hodnotou. Pokud v rešerši chybí registry fix přímo pro hru, VŽDY vypiš reálný univerzální Windows gaming tweak (např. zakázání FSO nebo SystemResponsiveness tweak).` 
           },
           { 
             role: "user", 
@@ -65,10 +86,9 @@ ${rawSteam}
 [TWEAK DATA]:
 ${rawTweaks}
 
-VYGENERUJ JSON. Zástupné texty v závorkách [...] NAHRAĎ plnohodnotným technickým obsahem. 
+VYGENERUJ JSON. Zástupné texty v závorkách [...] NAHRAĎ plnohodnotným technickým obsahem. Žádné tečky a zkracování!
 
 {
-  "official_title": "[ZDE NAPIŠ OFICIÁLNĚ SPRÁVNĚ ZFORMÁTOVANÝ NÁZEV HRY, např. 'The Legend of Khiimori' nebo 'GTA V']",
   "meta_title": "Optimalizace ${title} - Expert Guru Guide",
   "seo_description": "Brutální optimalizace ${title}. Registry fixy, Engine.ini tweaky a hardcore nastavení pro maximální FPS.",
   "seo_keywords": "${title}, optimalizace, registry tweak, expert zona, hardware guru",
@@ -107,8 +127,8 @@ VYGENERUJ JSON. Zástupné texty v závorkách [...] NAHRAĎ plnohodnotným tech
       } catch (e) { console.error("Storage fail", e); }
     }
 
-    // GURU FIX: Frontendu pošleme ten ověřený title od AI místo toho z inputu
-    return NextResponse.json({ ...ai, image_url: finalImg, title: ai.official_title || title });
+    // Vracíme naformátovaný název rovnou do frontendu!
+    return NextResponse.json({ ...ai, image_url: finalImg, title });
 
   } catch (err) { 
     return NextResponse.json({ error: err.message }, { status: 500 }); 
