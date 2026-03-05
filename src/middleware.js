@@ -2,14 +2,27 @@ import { NextResponse } from 'next/server';
 
 export function middleware(request) {
   const { pathname } = request.nextUrl;
-
-  // GURU FIX: Pokud uživatel vleze na /en/slovnik, 
-  // musíme mu podstrčit cestu, kterou pochopí tvoje složka [lang]
-  if (pathname === '/en/slovnik' || pathname.startsWith('/en/slovnik/')) {
+  
+  // 1. Pokud uživatel už je na /en nebo /cs, nic neřešíme a pustíme ho dál
+  if (pathname.startsWith('/en') || pathname.startsWith('/cs')) {
     return NextResponse.next();
   }
 
-  // Pokud vleze na klasické /slovnik, podstrčíme mu /cs/slovnik (české SEO zůstane)
+  // 2. GURU DETEKTOR: Koukneme se, co preferuje prohlížeč návštěvníka
+  const acceptLanguage = request.headers.get('accept-language') || '';
+  
+  // Pokud je to někdo, kdo NEMÁ v prohlížeči češtinu nebo slovenštinu...
+  const isNotCzech = !acceptLanguage.includes('cs') && !acceptLanguage.includes('sk');
+
+  // 3. AUTOMATICKÉ PŘESMĚROVÁNÍ PRO CIZINCE
+  if (pathname.startsWith('/slovnik') && isNotCzech) {
+    // Američana/Němce/kohokoliv jiného pošleme na EN verzi
+    const url = request.nextUrl.clone();
+    url.pathname = `/en${pathname}`;
+    return NextResponse.redirect(url);
+  }
+
+  // 4. ČECHY A SLOVÁKY necháme na /slovnik, ale pod kapotou jim ukážeme /cs verzi
   if (pathname.startsWith('/slovnik')) {
     const url = request.nextUrl.clone();
     url.pathname = `/cs${pathname}`;
