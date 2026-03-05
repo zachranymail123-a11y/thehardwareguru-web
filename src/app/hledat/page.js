@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { Cpu, SearchX, ArrowRight } from 'lucide-react';
@@ -10,17 +10,17 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.
 
 function SearchContent() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const query = searchParams.get('q');
   
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [lang, setLang] = useState('cs');
+  
+  // GURU FIX: Detekce jazyka podle cesty (pathname) nebo lang atributu
+  const isEn = pathname.startsWith('/en');
+  const lang = isEn ? 'en' : 'cs';
 
-  // Automatická detekce jazyka pro CZ/EN mutaci
-  useEffect(() => {
-    setLang(document.documentElement.lang || 'cs');
-  }, []);
-
+  // Slovník pro překlady (CZ/EN pravidlo)
   const t = {
     cs: {
       title: 'Výsledky hledání pro:',
@@ -46,16 +46,19 @@ function SearchContent() {
 
     const fetchResults = async () => {
       setLoading(true);
-      
-      // GURU FIX: Nyní prohledáváme titulky I POPISKY! Tím pádem najde i slova uvnitř textu (jako 'ddr').
-      const { data: tweakData, error: tweakError } = await supabase
+      const searchTerm = `%${query}%`;
+
+      // GURU FIX: Rozšířené hledání v Title, SEO popisu i SEO klíčových slovech
+      const { data, error } = await supabase
         .from('tweaky')
-        .select('title, slug, image_url, seo_description')
-        .or(`title.ilike.%${query}%,seo_description.ilike.%${query}%`);
+        .select('title, slug, image_url, seo_description, seo_keywords, description_en')
+        .or(`title.ilike.${searchTerm},seo_description.ilike.${searchTerm},seo_keywords.ilike.${searchTerm},description_en.ilike.${searchTerm}`);
 
-      if (tweakError) console.error("Chyba hledání v DB:", tweakError);
+      if (error) {
+        console.error("Chyba hledání v DB:", error);
+      }
 
-      setResults(tweakData || []);
+      setResults(data || []);
       setLoading(false);
     };
 
@@ -89,7 +92,9 @@ function SearchContent() {
                 <div style={{ padding: '20px' }}>
                   <h2 style={{ fontSize: '20px', margin: '0 0 10px 0', color: '#eab308' }}>{item.title}</h2>
                   <p style={{ fontSize: '14px', color: '#9ca3af', lineHeight: '1.5', margin: '0 0 15px 0' }}>
-                    {item.seo_description?.substring(0, 100)}...
+                    {(lang === 'en' && item.description_en) 
+                      ? item.description_en.substring(0, 100) 
+                      : item.seo_description?.substring(0, 100)}...
                   </p>
                   <div style={{ display: 'flex', alignItems: 'center', color: '#7c3aed', fontSize: '14px', fontWeight: 'bold' }}>
                     {currentT.read} <ArrowRight size={16} style={{ marginLeft: '5px' }} />
@@ -114,7 +119,7 @@ export default function SearchResults() {
   return (
     <div style={{ backgroundColor: '#0a0b0d', minHeight: '100vh', color: '#fff', padding: '40px 20px' }}>
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        <Suspense fallback={<div style={{ color: '#eab308', textAlign: 'center' }}>Načítám...</div>}>
+        <Suspense fallback={<div style={{ color: '#eab308', textAlign: 'center' }}>Načítám výsledky...</div>}>
           <SearchContent />
         </Suspense>
       </div>
