@@ -21,7 +21,7 @@ export default function Navbar() {
   const isEn = pathname.startsWith('/en');
   const lang = isEn ? 'en' : 'cs';
 
-  // LOGIKA INTELIGENTNÍHO NAŠEPTÁVAČE S FIXEM CHYBY 400 (QUOTED VALUES)
+  // 🚀 GURU FIX: OPRAVENÝ NAŠEPTÁVAČ (PROHLEDÁVÁ VŠE VČETNĚ OBSAHU)
   useEffect(() => {
     let active = true;
 
@@ -36,29 +36,40 @@ export default function Navbar() {
       setIsLoading(true);
       
       try {
-        // GURU FIX: PostgREST vyžaduje u .or() řetězec, kde hodnoty s mezerami MUSÍ být v uvozovkách.
-        // Syntaxe: column.ilike."%value%"
-        const searchTerm = `%${q}%`;
-        const orFilter = `title.ilike."${searchTerm}",seo_description.ilike."${searchTerm}",seo_keywords.ilike."${searchTerm}"`;
-        
-        const { data, error } = await supabase
-          .from('tweaky')
-          .select('title, slug, seo_description')
-          .or(orFilter)
-          .limit(6);
+        // Zkusíme nejdřív ten profi PostgreSQL engine (pokud ho máš nahozený)
+        const { data: rpcData, error: rpcError } = await supabase.rpc('search_tweaks', { search_term: q });
 
         if (active) {
-          if (error) {
-            console.error("Guru Search System Error:", error.message);
-            // Fallback na čistý title search pro maximální stabilitu
-            const { data: fallback } = await supabase
-              .from('tweaky')
-              .select('title, slug, seo_description')
-              .ilike('title', searchTerm)
-              .limit(6);
-            setSuggestions(fallback || []);
+          if (!rpcError && rpcData) {
+            setSuggestions(rpcData.slice(0, 6)); // Omezíme na 6 pro našeptávač
           } else {
-            setSuggestions(data || []);
+            // ZÁLOHA: Paralelní JS hledání, které teď hledá i ve sloupci 'content'
+            const searchTerm = `%${q}%`;
+            const safeQuery = async (column) => {
+              try {
+                const { data, error } = await supabase
+                  .from('tweaky')
+                  .select('title, slug, seo_description, description_en')
+                  .ilike(column, searchTerm);
+                return error ? [] : (data || []);
+              } catch (e) {
+                return [];
+              }
+            };
+
+            // Spustíme hledání všude najednou, ABY TO NAŠLO "DDR"
+            const [byTitle, byDesc, byKeys, byContent] = await Promise.all([
+              safeQuery('title'),
+              safeQuery('seo_description'),
+              safeQuery('seo_keywords'),
+              safeQuery('content') 
+            ]);
+
+            const allResults = [...byTitle, ...byDesc, ...byKeys, ...byContent];
+            // Odstranění duplicit a limit na 6 výsledků pro hezký dropdown
+            const uniqueResults = Array.from(new Map(allResults.map(item => [item.slug, item])).values()).slice(0, 6);
+            
+            setSuggestions(uniqueResults);
           }
         }
       } catch (err) {
@@ -156,7 +167,9 @@ export default function Navbar() {
             overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.9)', zIndex: 10000
           }}>
             {isLoading ? (
-              <div style={{ padding: '20px', textAlign: 'center', color: '#eab308', fontWeight: 'bold' }}>GURU HLEDÁ...</div>
+              <div style={{ padding: '20px', textAlign: 'center', color: '#eab308', fontWeight: 'bold' }}>
+                {isEn ? 'SEARCHING...' : 'GURU HLEDÁ...'}
+              </div>
             ) : (
               suggestions.map((s, i) => (
                 <div key={i} 
@@ -175,7 +188,7 @@ export default function Navbar() {
                 >
                   <div style={{ fontWeight: '900', color: '#eab308', fontSize: '15px', marginBottom: '4px' }}>{s.title}</div>
                   <div style={{ fontSize: '12px', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {s.seo_description}
+                    {isEn && s.description_en ? s.description_en : s.seo_description}
                   </div>
                 </div>
               ))
@@ -186,7 +199,7 @@ export default function Navbar() {
 
       {/* 3. MENU A SÍTĚ VPRAVO */}
       <div style={{ display: 'flex', gap: '30px', alignItems: 'center', flexShrink: 0 }}>
-        {/* TEXTOVÉ ODKAZY */}
+        {/* TEXTOVÉ ODKAZY - PLNÉ NÁZVY A VĚTŠÍ PÍSMO */}
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           <Link href={isEn ? "/en/clanky" : "/clanky"} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             {isEn ? 'ARTICLES' : 'ČLÁNKY'}
@@ -206,9 +219,9 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* BAREVNÁ TLAČÍTKA - PLNÉ NÁZVY */}
+        {/* BAREVNÁ TLAČÍTKA - ŽÁDNÉ ZKRATKY */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <a href="https://kick.com/thehardwareguru" target="_blank" rel="noreferrer" style={{ background: '#53fc18', color: '#000', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>
+          <a href="https://kick.com/TheHardwareGuru" target="_blank" rel="noreferrer" style={{ background: '#53fc18', color: '#000', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>
             KICK
           </a>
           <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noreferrer" style={{ background: '#f00', color: '#fff', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>
@@ -224,7 +237,7 @@ export default function Navbar() {
             DISCORD
           </a>
           
-          {/* PODPORA - ABSOLUTNÍ LINK */}
+          {/* GURU FIX: Absolutní link na podporu */}
           <a href="https://www.thehardwareguru.cz/support" style={{ background: '#000', border: '2px solid #eab308', color: '#eab308', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Heart size={14} fill="#eab308" /> {isEn ? 'SUPPORT' : 'PODPORA'}
           </a>
