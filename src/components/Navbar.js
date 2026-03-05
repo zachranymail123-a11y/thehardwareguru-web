@@ -178,12 +178,24 @@ export default function Navbar() {
               </div>
             ) : (
               suggestions.map((s, i) => {
-                // GURU FIX: Chytré získání popisku (pokud chybí seo_description, vezmeme kus obsahu)
+                // 🚀 GURU FIX: Inteligentní výstřižek textu (Dynamic Snippet)
+                // Umožní vidět hledané slovo, i když bylo zahrabáno hluboko v textu.
                 let desc = isEn && s.description_en ? s.description_en : s.seo_description;
-                if (!desc && s.content) {
-                  // Odstranění HTML tagů z contentu pro čistý výpis
+                const safeQ = query.trim().toLowerCase();
+                
+                if (s.content) {
                   const plainText = s.content.replace(/<[^>]+>/g, '');
-                  desc = plainText.substring(0, 60) + '...';
+                  const matchIndex = plainText.toLowerCase().indexOf(safeQ);
+                  
+                  if (matchIndex !== -1) {
+                    // Slovo bylo nalezeno v obsahu! Vytáhneme kontext kolem něj.
+                    const start = Math.max(0, matchIndex - 30);
+                    const end = Math.min(plainText.length, matchIndex + 60);
+                    desc = (start > 0 ? '...' : '') + plainText.substring(start, end) + '...';
+                  } else if (!desc) {
+                    // Fallback pokud článek nemá SEO description a slovo se našlo např. jen v nadpisu
+                    desc = plainText.substring(0, 60) + '...';
+                  }
                 }
 
                 return (
