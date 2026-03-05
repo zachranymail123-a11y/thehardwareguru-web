@@ -4,7 +4,6 @@ import SestavyBubble from '../components/SestavyBubble';
 import Tracker from '../components/Tracker'; 
 import SocialTracker from '../components/SocialTracker';
 import SupportWidget from '../components/SupportWidget';
-import Navbar from '../components/Navbar'; // GURU FIX: Zde je sjednocená navigace!
 import { Analytics } from '@vercel/analytics/react';
 
 export const metadata = {
@@ -40,7 +39,7 @@ export const metadata = {
       },
     ],
     locale: 'cs_CZ',
-    alternateLocale: ['en_US'], // Přidána podpora pro EN v OpenGraph
+    alternateLocale: ['en_US'],
     type: 'website',
   },
   
@@ -69,7 +68,7 @@ export default function RootLayout({ children, params }) {
     sameAs: [
       'https://youtube.com/@TheHardwareGuru_Czech',
       'https://kick.com/TheHardwareGuru',
-      'https://discord.gg/TheHardwareGuru',
+      'https://discord.com/invite/n7xThr8',
       'https://www.instagram.com/thehardwareguru_czech'
     ]
   };
@@ -77,9 +76,8 @@ export default function RootLayout({ children, params }) {
   return (
     <html lang={locale}>
       <body>
-        {/* --- GLOBÁLNÍ SJEDNOCENÁ NAVIGACE --- */}
-        <Navbar />
-
+        {/* Odstraněna ta zdvojená navigace */}
+        
         <SocialTracker /> 
         <Tracker />
         
@@ -106,10 +104,8 @@ export default function RootLayout({ children, params }) {
         <SestavyBubble />
         <SupportWidget />
 
-        {/* --- Odsazení obsahu webu pod plovoucí lištou --- */}
-        <main style={{ paddingTop: '80px', minHeight: '100vh' }}>
-          {children}
-        </main>
+        {/* Návrat k původnímu vykreslování bez zbytečných mezer */}
+        {children}
 
         <Analytics />
       </body>
