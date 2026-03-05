@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60; // Důležité pro DALL-E (pokud jsi na Pro plánu Vercelu)
+export const maxDuration = 60; 
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
@@ -22,13 +22,13 @@ export async function GET(request) {
   );
 
   try {
-    // 1. GURU QUERY: Vybereme články, které SEO fakt potřebují. 
-    // Limit 4 je optimální pro paralelní běh pod 30-60 sekundami.
+    // 1. GURU QUERY: Vybereme články, kde chybí SEO nebo obrázek.
+    // Prioritizujeme ty, co nemají seo_description, abychom se nezasekli.
     const { data: posts, error: dbError } = await supabase
       .from('posts')
       .select('id, title, content, image_url, type')
       .or('seo_description.is.null,seo_description.eq."",image_url.is.null,image_url.eq.""')
-      .order('created_at', { ascending: false }) // Bereme nejnovější nejdřív
+      .order('created_at', { ascending: false })
       .limit(4);
 
     if (dbError) throw dbError;
@@ -36,10 +36,10 @@ export async function GET(request) {
       return NextResponse.json({ message: "🦾 Všechno SEO i obrázky jsou hotové. Jsi GURU!" });
     }
 
-    // 2. PARALELNÍ ENGINE
+    // 2. PARALELNÍ ENGINE (Promise.all odpálí vše naráz)
     const results = await Promise.all(posts.map(async (post) => {
       try {
-        // A. Najdeme YouTube video (Serper)
+        // A. Najdeme YouTube video přes Serper
         const videoQuery = `${post.title} ${post.type === 'game' ? 'official trailer gameplay' : 'hardware review benchmark'}`;
         const serperRes = await fetch('https://google.serper.dev/search', {
           method: 'POST',
@@ -51,13 +51,13 @@ export async function GET(request) {
           .filter(item => item.link.includes('youtube.com/watch') || item.link.includes('youtu.be/'))
           .map(item => item.link);
 
-        // B. AI generování dat (Guru styl - Google Optimized)
+        // B. AI generování dat (GPT-4o)
         const completion = await openai.chat.completions.create({
           model: "gpt-4o",
           messages: [
             { 
               role: "system", 
-              content: "Jsi Senior SEO expert a hardware guru. Piš v Guru stylu (technicky přesně, ale srozumitelně). SEO description musí začínat akčním slovesem. Vrať JSON: { \"seo_description\": \"...\", \"seo_keywords\": \"...\", \"image_alt\": \"...\", \"og_title\": \"...\", \"youtube_url\": \"...\", \"dalle_prompt\": \"...\" }" 
+              content: "Jsi Senior SEO expert a hardware guru. Vrať STRIKTNÍ JSON: { \"seo_description\": \"...\", \"seo_keywords\": \"...\", \"image_alt\": \"...\", \"og_title\": \"...\", \"youtube_url\": \"...\", \"dalle_prompt\": \"...\" }" 
             },
             { 
               role: "user", 
@@ -69,18 +69,25 @@ export async function GET(request) {
 
         const aiData = JSON.parse(completion.choices[0].message.content);
 
-        // C. Generování obrázku jen pokud fakt chybí
+        // C. Generování obrázku (DALL-E 3) - jen pokud chybí
         let finalImageUrl = post.image_url;
+        let imageGenerationFailed = false;
+
         if (!finalImageUrl || finalImageUrl === "" || finalImageUrl.includes("placeholder")) {
-          const imageRes = await openai.images.generate({
-            model: "dall-e-3",
-            prompt: `Highly detailed cinematic tech photography of: ${aiData.dalle_prompt}. Cyberpunk aesthetic, 8k, hardware guru style.`,
-            size: "1024x1024"
-          });
-          finalImageUrl = imageRes.data[0].url;
+          try {
+            const imageRes = await openai.images.generate({
+              model: "dall-e-3",
+              prompt: `Cinematic tech photography, 8k, hardware guru style: ${aiData.dalle_prompt}`,
+              size: "1024x1024"
+            });
+            finalImageUrl = imageRes.data[0].url;
+          } catch (imgError) {
+            console.error("DALL-E selhalo, ale SEO uložíme:", imgError.message);
+            imageGenerationFailed = true;
+          }
         }
 
-        // D. Schema.org (Google snippet optimization)
+        // D. Schema.org struktura
         const seoSchema = {
           "@context": "https://schema.org",
           "@type": post.type === 'hardware' ? 'TechArticle' : 'Article',
@@ -90,20 +97,21 @@ export async function GET(request) {
           "author": { "@type": "Person", "name": "The Hardware Guru", "url": "https://youtube.com/@TheHardwareGuru_Czech" }
         };
 
-        // E. UPDATE DB
+        // E. Zápis do DB
+        // GURU TIP: I když selže obrázek, zapíšeme SEO description, aby se post už příště nevybíral
         const { error: updateError } = await supabase.from('posts').update({
           seo_description: aiData.seo_description,
           seo_keywords: aiData.seo_keywords,
-          image_alt: aiData.image_alt,
+          image_alt: aiData.image_alt, // Teď už v DB musí existovat!
           og_title: aiData.og_title,
           youtube_url: aiData.youtube_url || ytLinks[0] || null,
           seo_schema: seoSchema,
           image_url: finalImageUrl,
-          updated_at: new Date().toISOString() // Příznak, že jsme na to sáhli
+          updated_at: new Date().toISOString()
         }).eq('id', post.id);
 
         if (updateError) throw updateError;
-        return { title: post.title, status: '✅ OK' };
+        return { title: post.title, status: imageGenerationFailed ? '⚠️ SEO OK, Obrázek selhal' : '✅ Komplet OK' };
 
       } catch (e) {
         console.error(`GURU ERROR u ${post.title}:`, e.message);
