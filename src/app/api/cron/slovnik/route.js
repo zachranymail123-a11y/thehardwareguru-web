@@ -4,11 +4,11 @@ import OpenAI from 'openai';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
-export const maxDuration = 60; // Ponecháváme 60s, i když cron může mít limit 30s
+export const maxDuration = 60; // GURU NOTE: Limit pro Vercel Pro, ale cílíme pod 30s
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// GURU CLEANER: Odstraňuje vatu na začátku popisu
+// GURU CLEANER: Odstraňuje zbytečný úvod typu "TDP je..."
 function cleanDescription(title, desc) {
   if (!desc) return "";
   let cleaned = desc.trim();
@@ -37,46 +37,35 @@ export async function GET(request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY,
     {
       auth: { persistSession: false },
-      global: {
-        fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' })
-      }
+      global: { fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' }) }
     }
   );
 
   try {
-    // 1. ZÍSKÁNÍ EXISTUJÍCÍCH DAT (Batching)
+    // 1. GURU BATCH: Načteme existující názvy pro kontrolu duplicity
     const { data: existingTerms, error: dbError } = await supabase
       .from('slovnik')
-      .select('title, slug');
+      .select('title');
       
     if (dbError) throw dbError;
 
-    const existingSlugs = new Set(existingTerms ? existingTerms.filter(t => t.slug).map(t => t.slug.toLowerCase().trim()) : []);
-    // GURU OPTIMALIZACE: Posíláme jen posledních 100 pojmů, aby prompt nebyl obří a pomalý
-    const avoidTitles = existingTerms && existingTerms.length > 0 
-      ? existingTerms.slice(-100).map(t => t.title).join(', ') 
-      : 'Zatím nic nemáme';
+    // Posíláme jen posledních 50 pojmů, ať není prompt moc dlouhý (zrychluje to start AI)
+    const avoidTitles = existingTerms?.slice(-50).map(t => t.title).join(', ') || 'Nic';
 
-    // 2. AI GENERACE (Sníženo na 3 pojmy pro rychlost)
+    // 2. GURU SPEED GENERATION: Model "mini" odpovídá skoro okamžitě
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o", // GURU TIP: Pokud to bude stále padat, změň na "gpt-4o-mini" - je 2x rychlejší
+      model: "gpt-4o-mini", 
       messages: [
         { 
           role: "system", 
-          content: `Jsi Senior SEO Expert pro thehardwareguru.cz.
-          Vygeneruj 3 POKROČILÉ pojmy z PC hardwaru/gamingu. Pro každý vytvoř CZ a EN mutaci.
-          ZÁKAZ generovat: ${avoidTitles}.
-          
+          content: `Jsi SEO Expert pro thehardwareguru.cz. Vygeneruj 3 pokročilé pojmy z hardwaru (CZ i EN).
+          ZÁKAZ: ${avoidTitles}.
           JSON formát: 
-          { 
-            "pojmy": [ 
-              { 
-                "title": "CZ Název", "slug": "cz-slug", "description": "CZ popis (2 odstavce, <br><br>)", "seo_description": "CZ meta (max 160)", "seo_keywords": "cz, slova",
-                "title_en": "EN Title", "slug_en": "en-slug", "description_en": "EN description (2 odstavce, <br><br>)", "seo_description_en": "EN meta", "seo_keywords_en": "en, words"
-              } 
-            ] 
-          }
-          Pravidlo: Popis nesmí začínat názvem pojmu.` 
+          { "pojmy": [{ 
+            "title": "CZ název", "slug": "cz-slug", "description": "CZ popis (1-2 odstavce, <br><br>)", "seo_description": "CZ meta", "seo_keywords": "cz, slova",
+            "title_en": "EN Title", "slug_en": "en-slug", "description_en": "EN description (1-2 odstavce, <br><br>)", "seo_description_en": "EN meta", "seo_keywords_en": "en, words" 
+          }] }
+          Pravidlo: Popis nesmí začínat názvem pojmu.`
         }
       ],
       response_format: { type: "json_object" }
@@ -88,44 +77,39 @@ export async function GET(request) {
     let processedLog = [];
     let errorsLog = [];
 
-    // 3. PARALELNÍ ZÁPIS DO DATABÁZE (Promise.all)
+    // 3. GURU PARALLEL WRITE: Všechny zápisy do DB vyřídíme naráz
     await Promise.all(pojmyArray.map(async (pojem) => {
       try {
-        const rawTitle = pojem.title?.trim() || "Neznamo";
-        const cleanSlug = pojem.slug?.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') || "neplatny-slug";
+        const rawTitle = pojem.title?.trim();
+        const cleanSlug = pojem.slug?.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
         
-        if (!existingSlugs.has(cleanSlug)) {
-          const { error: insertError } = await supabase
-            .from('slovnik')
-            .insert({
-              title: rawTitle,
-              slug: cleanSlug,
-              description: cleanDescription(rawTitle, pojem.description),
-              seo_description: pojem.seo_description || null,
-              seo_keywords: pojem.seo_keywords || null,
-              title_en: pojem.title_en?.trim() || rawTitle,
-              slug_en: pojem.slug_en?.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-') || cleanSlug,
-              description_en: cleanDescription(pojem.title_en, pojem.description_en),
-              seo_description_en: pojem.seo_description_en || null,
-              seo_keywords_en: pojem.seo_keywords_en || null
-            });
+        const { error: insertError } = await supabase
+          .from('slovnik')
+          .insert({
+            title: rawTitle,
+            slug: cleanSlug,
+            description: cleanDescription(rawTitle, pojem.description),
+            seo_description: pojem.seo_description,
+            seo_keywords: pojem.seo_keywords,
+            title_en: pojem.title_en || rawTitle,
+            slug_en: pojem.slug_en || cleanSlug,
+            description_en: cleanDescription(pojem.title_en, pojem.description_en),
+            seo_description_en: pojem.seo_description_en,
+            seo_keywords_en: pojem.seo_keywords_en
+          });
 
-          if (insertError) {
-            errorsLog.push(`DB Chyba: ${insertError.message}`);
-          } else {
-            processedLog.push(`${rawTitle} (CZ+EN)`);
-            existingSlugs.add(cleanSlug); 
-          }
+        if (!insertError) {
+          processedLog.push(rawTitle);
         } else {
-          errorsLog.push(`Duplikát: ${rawTitle}`);
+          errorsLog.push(`DB: ${insertError.message}`);
         }
       } catch (e) {
-        errorsLog.push(`Chyba: ${e.message}`);
+        errorsLog.push(`Processing: ${e.message}`);
       }
     }));
 
     return NextResponse.json({ 
-      status: "GURU SPEED-RUN DOKONČEN", 
+      status: "GURU MINI-RUN OK", 
       pridano: processedLog, 
       chyby: errorsLog 
     });
