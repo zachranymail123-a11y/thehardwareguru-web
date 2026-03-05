@@ -31,9 +31,16 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Nepovolený přístup' }, { status: 401 });
   }
 
+  // GURU FIX: Vytvoření klienta, který natvrdo IGNORUJE paměť Next.js!
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: { persistSession: false },
+      global: {
+        fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' })
+      }
+    }
   );
 
   try {
@@ -46,14 +53,14 @@ export async function GET(request) {
     const existingSlugs = new Set(existingTerms ? existingTerms.filter(t => t.slug).map(t => t.slug.toLowerCase().trim()) : []);
     const avoidTitles = existingTerms && existingTerms.length > 0 ? existingTerms.filter(t => t.title).map(t => t.title).join(', ') : 'Zatím nic nemáme';
 
-    // GURU FIX: Rozšířený prompt o seo_description a seo_keywords
+    // GURU FIX: Sníženo z 10 na 5, aby Vercel neshazoval Timeout 504
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         { 
           role: "system", 
           content: `Jsi Senior SEO Expert a Hardware Guru pro thehardwareguru.cz.
-          Vygeneruj 10 NEJHLEDANĚJŠÍCH pokročilých pojmů z PC hardwaru/gamingu v CZ.
+          Vygeneruj 5 NEJHLEDANĚJŠÍCH pokročilých pojmů z PC hardwaru/gamingu v CZ.
           ZÁKAZ generovat tyto pojmy (už je máme): ${avoidTitles}.
           
           Pravidla pro JSON:
@@ -94,7 +101,7 @@ export async function GET(request) {
 
         if (!existingSlugs.has(cleanSlug)) {
           
-          // GURU FIX: Přidány sloupce seo_description a seo_keywords do zápisu!
+          // GURU FIX: Zápis i včetně SEO sloupců
           const { error: insertError } = await supabase
             .from('slovnik')
             .insert({
