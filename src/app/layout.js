@@ -23,19 +23,19 @@ export const metadata = {
 }
 
 export default function RootLayout({ children, params }) {
-  // GURU FIX: Oprava detekce jazyka pro HTML tag
+  // GURU FIX: Zajištění správného locale pro HTML tag bez ohledu na routování
   const locale = params?.lang || 'cs';
 
   return (
     <html lang={locale}>
-      <body style={{ margin: 0, padding: 0 }}>
-        {/* --- GLOBÁLNÍ SJEDNOCENÁ NAVIGACE (90px) --- */}
+      <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d' }}>
+        {/* --- GLOBÁLNÍ SJEDNOCENÁ NAVIGACE --- */}
         <Navbar />
         
         <SocialTracker /> 
         <Tracker />
         
-        {/* --- GURU FIX: Padding-top musí být 90px, aby navbar nic nezakrýval! --- */}
+        {/* --- GURU FIX: Odsazení main obsahu, aby Navbar (90px) nic nezakrýval --- */}
         <main style={{ paddingTop: '90px', minHeight: '100vh', position: 'relative' }}>
           {children}
         </main>
@@ -44,7 +44,7 @@ export default function RootLayout({ children, params }) {
         <SupportWidget />
         <Analytics />
 
-        {/* --- ONESIGNAL & OTHERS --- */}
+        {/* --- ONESIGNAL PUSH NOTIFIKACE --- */}
         <Script 
           src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" 
           strategy="afterInteractive" 
