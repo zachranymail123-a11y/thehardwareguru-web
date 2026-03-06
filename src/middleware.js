@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 
 /**
- * 🚀 GURU MASTER MIDDLEWARE 2.0
- * Tento engine teď kombinuje detekci jazyka prohlížeče s reálnou polohou IP adresy (Geo-IP).
+ * 🚀 GURU MASTER MIDDLEWARE 2.1 - GEO-IP PRIORITY
+ * Tento engine upřednostňuje reálnou polohu IP adresy před jazykem prohlížeče.
+ * Pokud je uživatel mimo CZ/SK, web ho nekompromisně přepne do angličtiny.
  */
 export function middleware(request) {
   const { pathname } = request.nextUrl;
-  const acceptLanguage = request.headers.get('accept-language') || '';
   
   // 🌍 GEO-IP ENGINE: Vercel posílá kód země v této hlavičce
   const country = request.headers.get('x-vercel-ip-country') || 'CZ';
@@ -21,47 +21,43 @@ export function middleware(request) {
     return NextResponse.next();
   }
 
-  // 🌍 PŘESNÁ DETEKCE: Je to Čech/Slovák? (Kontrola jazyka i IP adresy)
-  const hasLocalLanguage = acceptLanguage.toLowerCase().includes('cs') || acceptLanguage.toLowerCase().includes('sk');
+  // 🌍 STRIKTNÍ DETEKCE: Je to cizinec?
+  // Pokud IP adresa NENÍ z CZ ani SK, je to foreigner. Tečka.
   const hasLocalIP = ['CZ', 'SK'].includes(country.toUpperCase());
-  
-  // Guru definice: Pokud nemá místní IP ani místní jazyk, je to cizinec.
-  // Pokud jsi na VPN v USA, 'hasLocalIP' bude false a pošle tě to do EN.
-  const isForeigner = !hasLocalIP && !hasLocalLanguage;
+  const isForeigner = !hasLocalIP;
 
-  // SEZNAM SEKCI POD DOHLEDEM GURUHO (Přidány mikrorecenze)
+  // SEZNAM SEKCI POD DOHLEDEM GURUHO
   const sections = ['slovnik', 'clanky', 'tipy', 'tweaky', 'rady', 'mikrorecenze'];
 
-  // 1. AUTO-REDIRECT PRO CIZINCE NA ROOTU
+  // 1. AUTO-REDIRECT PRO CIZINCE NA ROOTU (/) -> (/en)
   if (pathname === '/' && isForeigner) {
     return NextResponse.redirect(new URL('/en', request.url));
   }
 
-  // 2. GURU ROUTING ENGINE
+  // 2. GURU ROUTING ENGINE PRO SEKCE
   for (const section of sections) {
-    // Pokud už je v EN větvi, necháme ho v klidu
+    // Pokud už je v EN větvi, nic neděláme
     if (pathname.startsWith(`/en/${section}`)) {
       return NextResponse.next();
     }
 
-    // Pokud cizinec (VPN/Zahraničí) vleze na českou cestu, hodíme ho na /en verzi
+    // Pokud je detekován jako cizinec a snaží se lézt na CZ cestu, hodíme ho na /en
     if (pathname.startsWith(`/${section}`) && isForeigner) {
       const targetPath = pathname.replace(`/${section}`, `/en/${section}`);
       return NextResponse.redirect(new URL(targetPath, request.url));
     }
 
-    // GURU KOREKCE: Pokud někdo napíše nesmysl /sekce/en, opravíme na /en/sekce
+    // GURU KOREKCE: Oprava nesmyslných URL typu /sekce/en
     if (pathname.endsWith(`/${section}/en`)) {
       return NextResponse.redirect(new URL(`/en/${section}`, request.url));
     }
   }
 
-  // 🏁 GURU FINAL: Pro lokální uživatele běží web nativně
+  // 🏁 GURU FINAL: Lokální uživatelé (CZ/SK) zůstávají v nativním jazyce
   return NextResponse.next();
 }
 
 export const config = {
-  // GURU MATCHING: Musíme přidat mikrorecenze do matcheru!
   matcher: [
     '/', 
     '/slovnik/:path*', '/en/slovnik/:path*',
