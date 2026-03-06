@@ -23,12 +23,12 @@ export const metadata = {
 }
 
 export default function RootLayout({ children, params }) {
-  // GURU JAZYKOVÁ LOGIKA: Zajištění správného locale pro HTML tag
+  // GURU JAZYKOVÁ LOGIKA: Zajištění správného locale pro HTML tag a skripty
   const locale = params?.lang || 'cs';
 
   return (
     <html lang={locale}>
-      {/* 🚀 GURU RESET: margin 0 a barva pozadí přímo v body, aby neprosvítala bílá při načítání */}
+      {/* 🚀 GURU RESET: barva pozadí přímo v body */}
       <body style={{ 
         margin: 0, 
         padding: 0, 
@@ -51,7 +51,7 @@ export default function RootLayout({ children, params }) {
           flex: 1,
           position: 'relative',
           width: '100%',
-          overflowX: 'hidden' // Zabrání nechtěnému vodorovnému posunu
+          overflowX: 'hidden'
         }}>
           {children}
         </main>
@@ -60,6 +60,24 @@ export default function RootLayout({ children, params }) {
         <SestavyBubble />
         <SupportWidget />
         <Analytics />
+
+        {/* 📰 GURU GOOGLE NEWS / SUBSCRIBE WITH GOOGLE ENGINE */}
+        <Script 
+          src="https://news.google.com/swg/js/v1/swg-basic.js" 
+          strategy="afterInteractive" 
+        />
+        <Script id="google-news-swg-init" strategy="afterInteractive">
+          {`
+            (self.SWG_BASIC = self.SWG_BASIC || []).push( basicSubscriptions => {
+              basicSubscriptions.init({
+                type: "NewsArticle",
+                isPartOfType: ["Product"],
+                isPartOfProductId: "CAow2M_FDA:openaccess",
+                clientOptions: { theme: "light", lang: "${locale}" },
+              });
+            });
+          `}
+        </Script>
 
         {/* ONESIGNAL NOTIFIKACE */}
         <Script 
