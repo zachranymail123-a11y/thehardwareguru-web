@@ -23,27 +23,45 @@ export const metadata = {
 }
 
 export default function RootLayout({ children, params }) {
-  // GURU FIX: Zajištění správného locale pro HTML
+  // GURU JAZYKOVÁ LOGIKA: Zajištění správného locale pro HTML tag
   const locale = params?.lang || 'cs';
 
   return (
     <html lang={locale}>
-      <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d' }}>
+      {/* 🚀 GURU RESET: margin 0 a barva pozadí přímo v body, aby neprosvítala bílá při načítání */}
+      <body style={{ 
+        margin: 0, 
+        padding: 0, 
+        backgroundColor: '#0a0b0d', 
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
         
+        {/* PEVNÝ NAVBAR (Výška 90px) */}
         <Navbar />
         
+        {/* GURU TRACKERY */}
         <SocialTracker /> 
         <Tracker />
         
-        {/* --- GURU FIX: Zde je 90px odsazení, aby Navbar nesežral obsah --- */}
-        <main style={{ paddingTop: '90px', minHeight: '100vh', position: 'relative' }}>
+        {/* --- 🛡️ GURU SHIELD: Odsazení 90px vyřeší překrývání oken! --- */}
+        <main style={{ 
+          paddingTop: '90px', 
+          flex: 1,
+          position: 'relative',
+          width: '100%',
+          overflowX: 'hidden' // Zabrání nechtěnému vodorovnému posunu
+        }}>
           {children}
         </main>
 
+        {/* WIDGETY A ANALYTIKA */}
         <SestavyBubble />
         <SupportWidget />
         <Analytics />
 
+        {/* ONESIGNAL NOTIFIKACE */}
         <Script 
           src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" 
           strategy="afterInteractive" 
