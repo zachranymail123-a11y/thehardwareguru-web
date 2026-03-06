@@ -23,7 +23,6 @@ export default function HomePage() {
 
   const pathname = usePathname();
   const isEn = pathname.startsWith('/en');
-  const lang = isEn ? 'en' : 'cs';
 
   useEffect(() => {
     async function fetchData() {
@@ -80,11 +79,16 @@ export default function HomePage() {
         .social-btn-main { padding: 14px 28px; border-radius: 14px; font-weight: 900; font-size: 15px; text-decoration: none; text-transform: uppercase; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); border: none; cursor: pointer; }
         .social-btn-main:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 6px 25px rgba(0,0,0,0.5); }
         .section-title-wrapper { background: rgba(0,0,0,0.7); padding: 18px 35px; border-radius: 18px; backdrop-filter: blur(8px); border: 1px solid rgba(234, 179, 8, 0.2); display: inline-block; }
-        .monetize-box { flex: 1; min-width: 320px; background: rgba(17, 19, 24, 0.9); border-radius: 24px; padding: 35px; border: 1px solid #1f2937; position: relative; overflow: hidden; text-decoration: none; color: #fff; transition: 0.3s; }
-        .monetize-box:hover { border-color: #a855f7; transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        /* GURU FIX: Zvětšené a čitelnější boxy */
+        .monetize-box { flex: 1; min-width: 320px; background: rgba(17, 19, 24, 0.9); border-radius: 24px; padding: 40px; border: 1px solid #1f2937; position: relative; overflow: hidden; text-decoration: none; color: #fff; transition: 0.3s; }
+        .monetize-box:hover { border-color: #a855f7; transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
         .monetize-box.partners:hover { border-color: #eab308; }
-        .donor-badge { background: rgba(168, 85, 247, 0.1); color: #a855f7; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 900; }
-        .partner-card { background: #000; border: 1px solid #eab308; padding: 15px; borderRadius: 12px; display: flex; align-items: center; gap: 15px; margin-top: 15px; text-decoration: none; transition: 0.2s; }
+        .monetize-box h2 { font-size: 28px; font-weight: 900; text-transform: uppercase; margin: 0; }
+        .monetize-box p { color: #d1d5db; fontSize: 17px; line-height: 1.6; margin-bottom: 25px; }
+        
+        .donor-badge { background: rgba(168, 85, 247, 0.15); color: #a855f7; padding: 6px 14px; border-radius: 8px; font-size: 14px; font-weight: 900; border: 1px solid rgba(168, 85, 247, 0.2); }
+        .partner-card { background: #000; border: 1px solid #eab308; padding: 20px; borderRadius: 12px; display: flex; align-items: center; gap: 15px; margin-top: 15px; text-decoration: none; transition: 0.2s; }
         .partner-card:hover { transform: scale(1.02); background: #111; }
       `}</style>
 
@@ -100,7 +104,7 @@ export default function HomePage() {
             <h1 style={{ color: '#fff', fontSize: '3rem', marginBottom: '20px', textTransform: 'uppercase', fontWeight: '900', lineHeight: '1.1' }}>
               {isEn ? <>Building the <span style={{ color: '#66fcf1' }}>Ideal Place</span> <br/> for Gamers and Geeks</> : <>Budujeme <span style={{ color: '#66fcf1' }}>Ideální Místo</span> <br/> pro Hráče a Geeky</>}
             </h1>
-            <p style={{ fontSize: '1.1rem', color: '#e0e0e0', marginBottom: '35px', maxWidth: '750px' }}>
+            <p style={{ fontSize: '1.2rem', color: '#e0e0e0', marginBottom: '35px', maxWidth: '750px' }}>
               {isEn 
                 ? "Hi, I'm GURU. Hardware expert with 20 years of experience. My mission: eradicate lag, tame FPS, and support the community that keeps this scene alive."
                 : "Čau, jsem GURU. S 20 lety praxe v servisu hardware vím, kde každá mašina tlačí. Moje mise: vymýtit lagy, zkrotit FPS a podpořit komunitu, co drží tuhle scénu naživu."
@@ -116,70 +120,72 @@ export default function HomePage() {
         <div style={avatarStyles}>HG</div>
       </header>
 
-      {/* 🚀 GURU MONETIZACE: DARCI & PARTNERI (KLIKACÍ BOX PRO SÍŇ SLÁVY A PARTNERY) */}
+      {/* 🚀 GURU MONETIZACE: DARCI & PARTNERI */}
       <section style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 20px', display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
-        {/* OKNO 1: DARCI (SIN SLAVY) - KLIKACÍ */}
-        <Link href={isEn ? "/en/sin-slavy" : "/sin-slavy"} className="monetize-box" style={{ borderColor: 'rgba(168, 85, 247, 0.4)' }}>
+        {/* OKNO 1: DARCI (SIN SLAVY) */}
+        <Link href={isEn ? "/en/sin-slavy" : "/sin-slavy"} className="monetize-box">
            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
-              <Trophy color="#a855f7" size={32} />
-              <h2 style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>
-                {isEn ? 'HALL OF FAME' : 'SÍŇ SLÁVY'}
-              </h2>
+              <Trophy color="#a855f7" size={36} />
+              <h2>{isEn ? 'HALL OF FAME' : 'SÍŇ SLÁVY'}</h2>
            </div>
-           <p style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '20px' }}>
-              {isEn ? 'Those who keep the Guru engines running. Thank you!' : 'Tihle borci drží motory Guruho v chodu. Respekt!'}
+           <p>
+              {isEn 
+                ? 'The legends who keep the Guru engines running. **Big respect!**' 
+                : 'Tihle borci drží motory Guruho v chodu. **Maximální respekt!**'}
            </p>
-           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
               {data.darci.length > 0 ? data.darci.map(darce => (
                 <div key={darce.id} className="donor-badge">
-                  {darce.name} {darce.amount > 100 && '🔥'}
+                  {darce.name} {darce.amount >= 500 && '💎'} {darce.amount >= 100 && darce.amount < 500 && '🔥'}
                 </div>
               )) : (
-                <div style={{ color: '#444', fontSize: '13px' }}>{isEn ? 'Waiting for the first legends...' : 'Čekáme na první legendy...'}</div>
+                <div style={{ color: '#444', fontSize: '15px', fontWeight: 'bold' }}>{isEn ? 'Waiting for the first legends...' : 'Čekáme na první legendy...'}</div>
               )}
            </div>
-           <div style={{ marginTop: '20px', fontSize: '12px', color: '#a855f7', fontWeight: 'bold' }}>
+           <div style={{ marginTop: '30px', fontSize: '14px', color: '#a855f7', fontWeight: '900', textTransform: 'uppercase' }}>
              {isEn ? 'SHOW FULL HALL OF FAME →' : 'ZOBRAZIT CELOU SÍŇ SLÁVY →'}
            </div>
         </Link>
 
-        {/* OKNO 2: PARTNERI (REKLAMA) - KLIKACÍ */}
-        <Link href={isEn ? "/en/partneri" : "/partneri"} className="monetize-box partners" style={{ borderColor: 'rgba(234, 179, 8, 0.4)' }}>
+        {/* OKNO 2: PARTNERI (REKLAMA) */}
+        <Link href={isEn ? "/en/partneri" : "/partneri"} className="monetize-box partners">
            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
-              <Rocket color="#eab308" size={32} />
-              <h2 style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>
-                {isEn ? 'PARTNERS' : 'PARTNEŘI'}
-              </h2>
+              <Rocket color="#eab308" size={36} />
+              <h2>{isEn ? 'PARTNERS' : 'PARTNEŘI'}</h2>
            </div>
-           <p style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '20px' }}>
-              {isEn ? 'Support over 500 CZK and get your project listed here.' : 'Podpoř web částkou nad 500 Kč a získej reklamu na svůj web/stream.'}
+           <p>
+              {isEn ? (
+                <><strong>Ads for web / stream / social media</strong> for supporters over 500 CZK.</>
+              ) : (
+                <><strong>Reklama na web / stream / sociální sítě</strong> za podporu nad 500 Kč.</>
+              )}
            </p>
-           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {data.partneri.length > 0 ? data.partneri.map(p => (
                 <div key={p.id} className="partner-card" onClick={(e) => { e.preventDefault(); window.open(p.url, '_blank'); }}>
-                  <div style={{ width: '40px', height: '40px', background: '#222', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#eab308' }}>
+                  <div style={{ width: '45px', height: '45px', background: '#222', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#eab308', border: '1px solid #eab308' }}>
                     {p.name.charAt(0)}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#fff' }}>{p.name}</div>
-                    <div style={{ fontSize: '11px', color: '#888' }}>{isEn ? p.description_en : p.description}</div>
+                    <div style={{ fontWeight: '900', fontSize: '16px', color: '#fff' }}>{p.name}</div>
+                    <div style={{ fontSize: '12px', color: '#9ca3af' }}>{isEn ? p.description_en : p.description}</div>
                   </div>
-                  <ExternalLink size={16} color="#eab308" />
+                  <ExternalLink size={18} color="#eab308" />
                 </div>
               )) : (
-                <div style={{ color: '#eab308', fontSize: '13px', fontWeight: 'bold', textDecoration: 'none', border: '1px dashed #eab308', padding: '15px', borderRadius: '12px', textAlign: 'center' }}>
-                  {isEn ? '+ YOUR PROJECT HERE' : '+ TVŮJ PROJEKT ZDE'}
+                <div style={{ color: '#eab308', fontSize: '15px', fontWeight: '900', textDecoration: 'none', border: '2px dashed #eab308', padding: '20px', borderRadius: '16px', textAlign: 'center', textTransform: 'uppercase' }}>
+                  {isEn ? '+ GET YOUR AD HERE' : '+ TVŮJ PROJEKT ZDE'}
                 </div>
               )}
            </div>
-           <div style={{ marginTop: '20px', fontSize: '12px', color: '#eab308', fontWeight: 'bold' }}>
+           <div style={{ marginTop: '30px', fontSize: '14px', color: '#eab308', fontWeight: '900', textTransform: 'uppercase' }}>
              {isEn ? 'VIEW ALL PARTNERS →' : 'ZOBRAZIT VŠECHNY PARTNERY →'}
            </div>
         </Link>
       </section>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '100px', color: '#a855f7' }}>GURU IS LOADING...</div>
+        <div style={{ textAlign: 'center', padding: '100px', color: '#a855f7', fontWeight: '900', fontSize: '24px' }}>GURU IS LOADING...</div>
       ) : (
         <>
           {/* --- TIPY --- */}
@@ -261,7 +267,7 @@ export default function HomePage() {
           <div style={{ marginBottom: '20px', color: '#a855f7', fontWeight: 'bold' }}>
             VISITED BY <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #a855f7' }}>{data.stats.value}</span> FANS 🦾
           </div>
-          <p style={{ color: '#9ca3af', opacity: 0.7, fontSize: '0.8rem' }}>© {new Date().getFullYear()} The Hardware Guru.</p>
+          <p style={{ color: '#9ca3af', opacity: 0.7, fontSize: '0.9rem' }}>© {new Date().getFullYear()} The Hardware Guru.</p>
       </footer>
     </div>
   );
