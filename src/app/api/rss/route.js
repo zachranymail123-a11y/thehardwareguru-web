@@ -12,28 +12,62 @@ export async function GET() {
   try {
     const siteUrl = 'https://www.thehardwareguru.cz';
 
-    // 1. GURU FETCH: Stahujeme data ze všech 5 tabulek.
-    // Používáme vytvoření 'created_at', který je v DB 100% přítomen (na rozdíl od updated_at).
-    const [postsRes, tipyRes, tweakyRes, radyRes, slovnikRes] = await Promise.all([
-      supabase.from('posts').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(10),
+    // 1. GURU FETCH: Stahujeme data ze všech 6 tabulek (přidány mikrorecenze).
+    // Používáme 'created_at', který je v DB 100% přítomen a přidali jsme 'type' do posts pro správný routing.
+    const [postsRes, tipyRes, tweakyRes, radyRes, slovnikRes, mikroRes] = await Promise.all([
+      supabase.from('posts').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en, type').order('created_at', { ascending: false }).limit(15),
       supabase.from('tipy').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(10),
       supabase.from('tweaky').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(10),
       supabase.from('rady').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(10),
-      supabase.from('slovnik').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(15)
+      supabase.from('slovnik').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(15),
+      supabase.from('mikrorecenze').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(10)
     ]);
 
     const allItems = [];
 
-    // Konfigurace sekcí s tvými Guru prefixy
+    // 2A. GURU ROUTING PRO POSTS (Rozlišení Články vs Očekávané hry)
+    (postsRes.data || []).forEach(item => {
+      const isExpected = item.type === 'expected';
+      const path = isExpected ? 'ocekavane-hry' : 'clanky';
+      const czPrefix = isExpected ? '[Očekávané]' : '[Článek]';
+      const enPrefix = isExpected ? '[Expected]' : '[Article]';
+
+      // --- ČESKÁ POLOŽKA ---
+      if (item.title && item.slug) {
+        allItems.push({
+          title: `${czPrefix} ${item.title}`,
+          description: item.description || '',
+          url: `${siteUrl}/${path}/${item.slug}`,
+          date: item.created_at,
+          image: item.image_url,
+          lang: 'cs'
+        });
+      }
+
+      // --- ANGLICKÁ POLOŽKA ---
+      if (item.title_en) {
+        const enSlug = item.slug_en || item.slug;
+        allItems.push({
+          title: `${enPrefix} ${item.title_en}`,
+          description: item.description_en || item.description || '',
+          url: `${siteUrl}/en/${path}/${enSlug}`,
+          date: item.created_at,
+          image: item.image_url,
+          lang: 'en'
+        });
+      }
+    });
+
+    // 2B. Konfigurace ostatních sekcí s tvými Guru prefixy
     const sections = [
-      { data: postsRes.data, czPrefix: '[Článek]', enPrefix: '[Article]', path: 'clanky' },
       { data: tipyRes.data, czPrefix: '[Tip]', enPrefix: '[Tip]', path: 'tipy' },
       { data: tweakyRes.data, czPrefix: '[Tweak]', enPrefix: '[Tweak]', path: 'tweaky' },
       { data: radyRes.data, czPrefix: '[Rada]', enPrefix: '[Guide]', path: 'rady' },
-      { data: slovnikRes.data, czPrefix: '[Slovník]', enPrefix: '[Dictionary]', path: 'slovnik' }
+      { data: slovnikRes.data, czPrefix: '[Slovník]', enPrefix: '[Glossary]', path: 'slovnik' },
+      { data: mikroRes.data, czPrefix: '[Recenze]', enPrefix: '[Review]', path: 'mikrorecenze' }
     ];
 
-    // 2. DUAL-LANG MAPPING ENGINE
+    // 2C. DUAL-LANG MAPPING ENGINE PRO ZBYTEK
     sections.forEach(({ data, czPrefix, enPrefix, path }) => {
       (data || []).forEach(item => {
         // --- ČESKÁ POLOŽKA ---
@@ -48,7 +82,7 @@ export async function GET() {
           });
         }
 
-        // --- ANGLICKÁ POLOŽKA (Pouze pokud Fixer již doplnil title_en) ---
+        // --- ANGLICKÁ POLOŽKA (Pouze pokud existuje title_en) ---
         if (item.title_en) {
           const enSlug = item.slug_en || item.slug;
           allItems.push({
@@ -63,7 +97,7 @@ export async function GET() {
       });
     });
 
-    // 3. Sjednocení a seřazení (Limit 50 pro stabilitu čteček)
+    // 3. Sjednocení a seřazení (Limit 50 pro stabilitu RSS čteček)
     const finalFeed = allItems
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 50);
