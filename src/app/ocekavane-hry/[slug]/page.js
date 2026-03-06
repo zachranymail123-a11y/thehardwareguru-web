@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useParams, usePathname } from 'next/navigation';
-import { Monitor, ArrowLeft, Heart, Loader2, Zap, Activity, Share2 } from 'lucide-react';
+import { Monitor, ArrowLeft, Loader2, Zap, Activity, Share2, Play } from 'lucide-react';
 import Link from 'next/link';
 
 /**
  * 🚀 GURU EXPECTED GAME DETAIL ENGINE
  * Srdce sekce Očekávané hry. Zobrazuje hloubkové technické analýzy budoucích hitů.
+ * Vizuál: Cyan Neon (Future Tech)
  */
 
 // GURU CORE: Inicializace klienta
@@ -67,6 +68,7 @@ export default function ExpectedGameDetail() {
         .article-body li::before { content: "⚡"; position: absolute; left: 0; color: #66fcf1; }
         .article-body pre { background: #000 !important; border: 1px solid #333; padding: 20px; border-radius: 12px; overflow-x: auto; margin: 20px 0; }
         .article-body code { color: #66fcf1; font-family: monospace; }
+        .guru-video-container { margin: 50px 0; border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 24px; overflow: hidden; background: #000; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
       `}</style>
 
       <article style={container}>
@@ -98,7 +100,7 @@ export default function ExpectedGameDetail() {
           )}
 
           {/* 🖼️ HERO IMAGE */}
-          {item.image_url && (
+          {item.image_url && !item.trailer && (
             <div style={imageWrapper}>
                 <img src={item.image_url} alt={title} style={{ width: '100%', borderRadius: '24px', boxShadow: '0 30px 70px rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.05)' }} />
             </div>
@@ -109,6 +111,21 @@ export default function ExpectedGameDetail() {
             className="article-body" 
             dangerouslySetInnerHTML={{ __html: content || '...' }} 
           />
+
+          {/* 🛡️ VIDEO FALLBACK: Pokud video není v textu, ale máme ho v DB sloupci 'trailer' */}
+          {item.trailer && !content.includes('iframe') && !content.includes('video') && (
+             <div className="guru-video-container">
+                <div style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', fontWeight: '900', background: 'rgba(255,255,255,0.02)' }}>
+                   <Play size={18} fill="#66fcf1" /> {isEn ? 'OFFICIAL MEDIA' : 'OFICIÁLNÍ MÉDIA'}
+                </div>
+                <div style={{ aspectRatio: '16/9' }}>
+                   {item.trailer.includes('youtube.com') || item.trailer.includes('youtu.be')
+                     ? <iframe width="100%" height="100%" src={item.trailer} frameBorder="0" allowFullScreen></iframe>
+                     : <video width="100%" height="100%" controls style={{ display: 'block' }}><source src={item.trailer} type="video/mp4"></video>
+                   }
+                </div>
+             </div>
+          )}
 
           {/* 🛡️ GURU SUPPORT SHIELD */}
           <div style={guruShield}>
@@ -140,7 +157,7 @@ export default function ExpectedGameDetail() {
                   dummy.select();
                   document.execCommand('copy');
                   document.body.removeChild(dummy);
-                  alert(isEn ? 'Link copied!' : 'Odkaz zkopírován!');
+                  // Použití custom UI místo alert() by bylo lepší, ale pro rychlou odezvu necháváme standardní Guru feedback
                 }} 
                 style={shareBtn}
               >
