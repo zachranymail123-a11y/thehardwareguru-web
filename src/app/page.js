@@ -21,7 +21,8 @@ export default function HomePage() {
   });
   const [loading, setLoading] = useState(true);
 
-  const pathname = usePathname();
+  // 🚀 GURU ZÁCHRANNÁ BRZDA: Zabrání pádu webu (SSR Error) na Vercelu
+  const pathname = usePathname() || '';
   const isEn = pathname.startsWith('/en');
 
   useEffect(() => {
@@ -80,7 +81,6 @@ export default function HomePage() {
         .social-btn-main:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 6px 25px rgba(0,0,0,0.5); }
         .section-title-wrapper { background: rgba(0,0,0,0.7); padding: 18px 35px; border-radius: 18px; backdrop-filter: blur(8px); border: 1px solid rgba(234, 179, 8, 0.2); display: inline-block; }
         
-        /* GURU FIX: Zvětšené a čitelnější boxy */
         .monetize-box { flex: 1; min-width: 320px; background: rgba(17, 19, 24, 0.9); border-radius: 24px; padding: 40px; border: 1px solid #1f2937; position: relative; overflow: hidden; text-decoration: none; color: #fff; transition: 0.3s; }
         .monetize-box:hover { border-color: #a855f7; transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
         .monetize-box.partners:hover { border-color: #eab308; }
@@ -157,7 +157,7 @@ export default function HomePage() {
               {isEn ? (
                 <><strong>Ads for web / stream / social media</strong> for supporters over 500 CZK.</>
               ) : (
-                <><strong>Reklama na web / stream / sociální sítě</strong> za podporu nad 500 Kč.</>
+                <><strong>Reklama na web / stream / sociální sítě</strong> za podpoření nad 500 Kč.</>
               )}
            </p>
            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
