@@ -1,8 +1,7 @@
 /**
- * 🚀 GURU GAME ARTICLE GENERATOR - MASTER ENGINE V10
+ * 🚀 GURU GAME ARTICLE GENERATOR - MASTER ENGINE V9
  * Vyriešené: YouTube Fallback, Anti-Duplicate logika,
- * EXTRÉMNÍ ZÁKAZ halucinování HW + STRIKTNÍ HTML STRUKTURA (Anti-Parrot),
- * + MAKE.COM WEBHOOK INTEGRÁCIA.
+ * EXTRÉMNÍ ZÁKAZ halucinování HW + STRIKTNÍ HTML STRUKTURA (Anti-Parrot).
  */
 
 export const maxDuration = 60;
@@ -176,8 +175,8 @@ export async function POST(req) {
       const { error: insertError } = await supabaseAdmin.from('posts').insert([postData]);
       if (insertError) throw insertError;
     }
-
-    // 5. INTEGRÁCIA MAKE.COM (Odoslanie dát na Webhook)
+    
+    // 5. INTEGRACE MAKE.COM
     try {
       const makeWebhookUrl = process.env.MAKE_WEBHOOK_URL;
       if (makeWebhookUrl) {
@@ -197,10 +196,9 @@ export async function POST(req) {
         console.log("GURU MAKE.COM WEBHOOK ODESLÁN");
       }
     } catch (makeErr) {
-      // Zlyhanie webhooku nesmie zastaviť proces uloženia do DB
-      console.error("GURU MAKE.COM WEBHOOK ZLYHAL:", makeErr);
+      console.error("GURU MAKE.COM WEBHOOK SELHAL:", makeErr);
     }
-    
+
     return NextResponse.json({ success: true, slug: ai.slug });
 
   } catch (err) { 
