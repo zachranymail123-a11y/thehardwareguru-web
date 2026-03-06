@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Calendar, Gamepad, Monitor, Clock, Loader2, ArrowLeft, ChevronRight, Zap, Heart, FileText, ExternalLink, RefreshCw } from 'lucide-react';
+import { Calendar, Gamepad, Monitor, Clock, Loader2, ArrowLeft, ChevronRight, Zap, Heart, FileText, ExternalLink, RefreshCw, Eye } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
@@ -12,8 +12,8 @@ const supabase = createClient(
 );
 
 /**
- * 🚀 GURU GAME CALENDAR (DATABASE POWERED)
- * Elitní rozhraní pro správu a zobrazení herních novinek.
+ * 🚀 GURU EXPECTED GAMES CALENDAR (DATABASE POWERED)
+ * Elitní rozhraní pro správu her, které spadnou do sekce "Očekávané hry".
  */
 export default function GameCalendarPage() {
   const [games, setGames] = useState([]);
@@ -45,10 +45,10 @@ export default function GameCalendarPage() {
 
   useEffect(() => {
     fetchDbGames();
-    document.title = isEn ? 'Game Release Calendar | Guru Base' : 'Herní Kalendář | Guru Základna';
+    document.title = isEn ? 'Expected Games Calendar | Guru Base' : 'Kalendář očekávaných her | Guru Základna';
   }, [isEn]);
 
-  // 🚀 GURU SYNC: Žluté plovoucí tlačítko - volá API v Canvasu a plní DB z RAWG
+  // 🚀 GURU SYNC: Žluté plovoucí tlačítko - naplnění zásobníku z RAWG
   const handleSync = async () => {
     const pin = prompt(isEn ? "Enter GURU PIN to sync calendar:" : "Zadej GURU PIN pro synchronizaci kalendáře:");
     if (!pin) return;
@@ -62,7 +62,7 @@ export default function GameCalendarPage() {
       });
       const data = await res.json();
       if (data.success) {
-        alert(isEn ? `Success: ${data.count} games synced.` : `Úspěch: Synchronizováno ${data.count} her.`);
+        alert(isEn ? `Success: ${data.count} games added to Expected list.` : `Úspěch: Do očekávaných her přidáno ${data.count} titulů.`);
         fetchDbGames();
       } else {
         alert("GURU SYNC FAIL: " + data.error);
@@ -74,9 +74,9 @@ export default function GameCalendarPage() {
     }
   };
 
-  // 🚀 GURU SURGERY: Vygenerování článku a trvalý zápis propojení do DB
+  // 🚀 GURU SURGERY: Vygenerování preview a trvalý zápis do sekce Očekávané hry
   const handleSurgery = async (game) => {
-    const pin = prompt(isEn ? `Approve & Generate for: ${game.name}` : `Schválit a vyrobit technický článek pro: ${game.name}`);
+    const pin = prompt(isEn ? `Approve & Generate Preview for: ${game.name}` : `Schválit a vyrobit Technické Preview pro: ${game.name}`);
     if (!pin) return;
 
     setGenerating(game.id);
@@ -84,19 +84,19 @@ export default function GameCalendarPage() {
       const res = await fetch('/api/generate-game-article', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameId: game.rawg_id, pin })
+        body: JSON.stringify({ gameId: game.rawg_id, pin, section: 'expected' }) 
       });
       
       const data = await res.json();
       
       if (data.success) {
-        // GURU DB UPDATE: Zapíšeme slug článku k záznamu hry
+        // GURU DB UPDATE: Propojíme hru v kalendáři s novým preview
         await supabase
           .from('herni_kalendar')
           .update({ post_slug: data.slug })
           .eq('id', game.id);
 
-        alert(isEn ? "Article created and linked!" : "Článek úspěšně vytvořen a propojen s kalendářem!");
+        alert(isEn ? "Preview generated and added to Expected Games!" : "Preview bylo vygenerováno a přidáno do Očekávaných her!");
         fetchDbGames();
       } else {
         alert("Surgery error: " + data.error);
@@ -146,10 +146,10 @@ export default function GameCalendarPage() {
             width: 100%;
         }
         .surgery-btn:hover { background: #fff; color: #a855f7; }
-        .view-article-btn {
-            background: rgba(83, 252, 24, 0.1);
-            color: #53fc18;
-            border: 1px solid #53fc18;
+        .view-expected-btn {
+            background: rgba(102, 252, 241, 0.1);
+            color: #66fcf1;
+            border: 1px solid #66fcf1;
             padding: 14px 15px;
             border-radius: 12px;
             font-weight: 900;
@@ -193,7 +193,7 @@ export default function GameCalendarPage() {
       `}</style>
 
       {/* --- 🚀 GURU FLOATING SYNC --- */}
-      <button onClick={handleSync} className="sync-btn-float" title="GURU SYNC ENGINE">
+      <button onClick={handleSync} className="sync-btn-float" title="SYNCHRONIZOVAT OČEKÁVANÉ HRY">
         {isSyncing ? <Loader2 className="animate-spin" /> : <RefreshCw size={28} />}
       </button>
 
@@ -205,13 +205,13 @@ export default function GameCalendarPage() {
           </Link>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '25px', marginTop: '20px' }}>
             <Calendar size={64} color="#a855f7" style={{ filter: 'drop-shadow(0 0 15px rgba(168, 85, 247, 0.5))' }} />
-            <Zap size={64} color="#eab308" style={{ filter: 'drop-shadow(0 0 15px rgba(234, 179, 8, 0.5))' }} />
+            <Monitor size={64} color="#66fcf1" style={{ filter: 'drop-shadow(0 0 15px rgba(102, 252, 241, 0.5))' }} />
           </div>
           <h1 style={titleStyle}>
-            {isEn ? <>RELEASE <span style={{ color: '#a855f7' }}>CALENDAR</span></> : <>HERNÍ <span style={{ color: '#a855f7' }}>KALENDÁŘ</span></>}
+            {isEn ? <>EXPECTED <span style={{ color: '#a855f7' }}>GAMES</span></> : <>OČEKÁVANÉ <span style={{ color: '#a855f7' }}>HRY</span></>}
           </h1>
           <p style={subtitleStyle}>
-            {isEn ? 'Elite hardware tracking of upcoming titles.' : 'Nadcházející tituly pod přísným technickým dohledem.'}
+            {isEn ? 'Future tech hits under Guru surveillance.' : 'Budoucí technologické pecky pod přísným Guru dohledem.'}
           </p>
         </div>
       </header>
@@ -224,8 +224,8 @@ export default function GameCalendarPage() {
           <div style={center}>
             <div style={{ textAlign: 'center', opacity: 0.5 }}>
                 <Gamepad size={64} style={{ marginBottom: '20px' }} />
-                <h2>{isEn ? 'DATABASE IS EMPTY' : 'DATABÁZE JE PRÁZDNÁ'}</h2>
-                <p>{isEn ? 'Use the yellow sync button to fetch data.' : 'Použij žluté tlačítko pro synchronizaci novinek.'}</p>
+                <h2>{isEn ? 'NO EXPECTED GAMES LOGGED' : 'ŽÁDNÉ OČEKÁVANÉ HRY V ZÁSOBNÍKU'}</h2>
+                <p>{isEn ? 'Use yellow sync to fetch incoming titles.' : 'Použij žluté tlačítko pro načtení titulů.'}</p>
             </div>
           </div>
         ) : (
@@ -251,8 +251,8 @@ export default function GameCalendarPage() {
                   {/* 🛠️ GURU ACTION ZÓNA */}
                   <div style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '20px' }}>
                     {game.post_slug ? (
-                      <Link href={isEn ? `/en/clanky/${game.post_slug}` : `/clanky/${game.post_slug}`} className="view-article-btn">
-                        <FileText size={16} /> {isEn ? 'VIEW TECH ANALYSIS' : 'ZOBRAZIT ROZBOR'}
+                      <Link href={isEn ? `/en/ocekavane-hry/${game.post_slug}` : `/ocekavane-hry/${game.post_slug}`} className="view-expected-btn">
+                        <Eye size={16} /> {isEn ? 'VIEW PREVIEW' : 'ZOBRAZIT PREVIEW'}
                       </Link>
                     ) : (
                       <button 
@@ -261,7 +261,7 @@ export default function GameCalendarPage() {
                         className="surgery-btn"
                       >
                         {generating === game.id ? <Loader2 className="animate-spin" size={16} /> : <Zap size={16} fill="currentColor" />}
-                        {generating === game.id ? (isEn ? 'ANALYZING...' : 'PROBÍHÁ OPERACE...') : (isEn ? 'APPROVE & GENERATE' : 'SCHVÁLIT A VYROBIT')}
+                        {generating === game.id ? (isEn ? 'PROCESSING...' : 'PROBÍHÁ OPERACE...') : (isEn ? 'APPROVE PREVIEW' : 'VYROBIT PREVIEW')}
                       </button>
                     )}
                   </div>
@@ -276,18 +276,16 @@ export default function GameCalendarPage() {
       <section style={guruShield}>
           <Heart size={44} color="#a855f7" fill="#a855f7" style={{ margin: '0 auto 25px' }} />
           <h3 style={{ fontSize: '28px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', marginBottom: '15px' }}>
-            {isEn ? 'SUPPORT THE RELEASES' : 'PODPOŘ GURU KALENDÁŘ'}
+            {isEn ? 'SUPPORT THE DATABASE' : 'PODPOŘ GURU DATABÁZI'}
           </h3>
           <p style={{ color: '#d1d5db', margin: '0 auto 35px', maxWidth: '600px' }}>
-            {isEn ? 'Help us maintain this independent tracking system.' : 'Hardware Guru běží bez reklam díky tvojí podpoře. Pomoz nám udržet systémy v chodu.'}
+            {isEn ? 'Help us analyze more upcoming hits.' : 'Hardware Guru běží bez reklam díky tvojí podpoře. Pomoz nám analyzovat další pecky.'}
           </p>
           
           <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
             <Link href={isEn ? "/en/support" : "/support"} style={supportBtn}>
               DARY / REVOLUT
             </Link>
-            
-            {/* 📰 GOOGLE CONTRIBUTION BUTTON */}
             <div style={{ background: '#fff', borderRadius: '12px', padding: '0 5px', display: 'flex', alignItems: 'center', height: '48px' }}>
               <button swg-standard-button="contribution" style={{ cursor: 'pointer' }}></button>
             </div>
@@ -295,7 +293,7 @@ export default function GameCalendarPage() {
       </section>
 
       <footer style={footerStyle}>
-        <p>© {new Date().getFullYear()} THE HARDWARE GURU SYSTEM • ELITE AUTOMATED RELEASE TRACKER</p>
+        <p>© {new Date().getFullYear()} THE HARDWARE GURU SYSTEM • EXPECTED GAMES TRACKER</p>
       </footer>
     </div>
   );
