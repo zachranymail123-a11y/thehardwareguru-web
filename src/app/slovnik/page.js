@@ -23,7 +23,7 @@ export default function SlovnikArchivePage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // GURU SYNC: Řadíme abecedně pro snadnou orientaci ve slovníku
+        // GURU SYNC: Abecední řazení pro technickou preciznost
         const { data, error } = await supabase
           .from('slovnik')
           .select('*')
@@ -34,8 +34,8 @@ export default function SlovnikArchivePage() {
 
         // 🚀 SEO GURU: Dynamický Title
         document.title = isEn 
-          ? 'Hardware Glossary | Technical Terms Decoded' 
-          : 'Hardware Slovník | Technické pojmy dešifrovány';
+          ? 'Hardware Glossary | High-Tech Terms' 
+          : 'Hardware Slovník | High-Tech Pojmy';
       } catch (err) {
         console.error("GURU DB ERROR:", err);
       } finally {
@@ -57,100 +57,102 @@ export default function SlovnikArchivePage() {
     <div style={archiveWrapper}>
       <style>{`
         .term-card { 
-            background: rgba(5, 7, 10, 0.96); 
-            border: 1px solid rgba(168, 85, 247, 0.15); 
+            background: rgba(20, 10, 35, 0.7); /* PRŮHLEDNÁ FIALOVÁ */
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(168, 85, 247, 0.2); 
             border-radius: 16px; 
-            padding: 25px; 
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+            padding: 20px; 
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
             height: 100%;
             display: flex;
             flex-direction: column;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             text-decoration: none;
             position: relative;
-            overflow: hidden;
         }
         .term-card:hover { 
-            transform: translateY(-4px); 
+            transform: translateY(-5px); 
             border-color: #a855f7; 
-            box-shadow: 0 0 25px rgba(168, 85, 247, 0.2); 
+            background: rgba(168, 85, 247, 0.1);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.25); 
         }
         .search-container {
-            max-width: 600px;
-            margin: 0 auto 50px;
+            max-width: 500px;
+            margin: 0 auto 60px;
             position: relative;
+            z-index: 10;
         }
         .search-input {
             width: 100%;
-            padding: 15px 20px 15px 50px;
-            background: rgba(17, 19, 24, 0.9);
-            border: 1px solid rgba(168, 85, 247, 0.3);
+            padding: 14px 20px 14px 50px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(168, 85, 247, 0.4);
             border-radius: 12px;
             color: #fff;
-            font-size: 16px;
+            font-size: 15px;
             outline: none;
             transition: 0.3s;
+            box-shadow: inset 0 0 10px rgba(168, 85, 247, 0.1);
         }
         .search-input:focus {
             border-color: #a855f7;
-            box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
         }
       `}</style>
 
       {/* --- ELITNÍ HEADER --- */}
       <header style={headerStyle}>
         <div style={headerContentBox}>
-          <BookOpen size={56} color="#a855f7" style={{ margin: '0 auto 20px', filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.5))' }} />
+          <BookOpen size={48} color="#a855f7" style={{ margin: '0 auto 20px', filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.6))' }} />
           <h1 style={titleStyle}>
             {isEn ? <>GURU <span style={{ color: '#a855f7' }}>GLOSSARY</span></> : <>GURU <span style={{ color: '#a855f7' }}>SLOVNÍK</span></>}
           </h1>
           <p style={subtitleStyle}>
-            {isEn ? 'Hardware terms decoded for professional geeks.' : 'Technické pojmy dešifrované pro profi geeky.'}
+            {isEn ? 'Hardware terms decoded for elite geeks.' : 'Technické pojmy dešifrované pro elitní geeky.'}
           </p>
         </div>
       </header>
 
-      {/* --- SEARCH BAR --- */}
+      {/* --- VYHLEDÁVÁNÍ --- */}
       <div className="search-container">
-        <Search size={20} color="#a855f7" style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)' }} />
+        <Search size={18} color="#a855f7" style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)' }} />
         <input 
           type="text" 
-          placeholder={isEn ? "Search terms (e.g. DDR5, Latency)..." : "Hledej pojmy (např. DDR5, Latence)..."} 
+          placeholder={isEn ? "Search term..." : "Hledat pojem..."} 
           className="search-input"
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
 
-      {/* --- GRID ARCHIV --- */}
+      {/* --- GRID ARCHIV (KOMPAKTNÍ) --- */}
       <main style={gridContainer}>
         {loading ? (
           <div style={{ textAlign: 'center', gridColumn: '1/-1', padding: '100px' }}>
-            <Loader2 className="animate-spin" size={64} color="#a855f7" />
+            <Loader2 className="animate-spin" size={54} color="#a855f7" />
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '25px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
             {filteredItems.map((pojem) => {
               const displayTitle = (isEn && pojem.title_en) ? pojem.title_en : pojem.title;
               const displayDesc = (isEn && pojem.description_en) ? pojem.description_en : pojem.description;
               const displaySlug = (isEn && pojem.slug_en) ? pojem.slug_en : pojem.slug;
               
-              // KOMPAKTNÍ OŘEZ TEXTU: Jen to nejdůležitější pro archiv
-              const shortDesc = displayDesc?.length > 100 ? displayDesc.substring(0, 100) + '...' : displayDesc;
+              // ULTRA-KOMPAKTNÍ OŘEZ: Jen rychlá info, detail je až uvnitř
+              const shortDesc = displayDesc?.length > 85 ? displayDesc.substring(0, 85) + '...' : displayDesc;
 
               return (
                 <Link key={pojem.id} href={isEn ? `/en/slovnik/${displaySlug}` : `/slovnik/${displaySlug}`} style={{ textDecoration: 'none' }}>
                   <article className="term-card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                        <Bookmark size={20} color="#a855f7" fill="rgba(168, 85, 247, 0.1)" />
-                        <span style={badgeStyle}>{isEn ? 'DEFINED' : 'POJEM'}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                        <Bookmark size={16} color="#a855f7" />
+                        <span style={badgeStyle}>{isEn ? 'INFO' : 'POJEM'}</span>
                     </div>
 
                     <h3 style={cardTitleStyle}>{displayTitle}</h3>
                     <p style={cardDescStyle}>{shortDesc}</p>
                     
                     <div style={moreStyle}>
-                      {isEn ? 'DECODE' : 'ZOBRAZIT VÝKLAD'} <ChevronRight size={16} />
+                      {isEn ? 'DECRYPT' : 'ZOBRAZIT'} <ChevronRight size={14} />
                     </div>
                   </article>
                 </Link>
@@ -160,17 +162,11 @@ export default function SlovnikArchivePage() {
         )}
       </main>
 
-      {!loading && filteredItems.length === 0 && (
-        <div style={{ textAlign: 'center', color: '#444', padding: '40px', fontWeight: '900', textTransform: 'uppercase' }}>
-            {isEn ? 'No terms found in database.' : 'V databázi jsem nic nenašel.'}
-        </div>
-      )}
-
-      {/* --- ELITNÍ FOOTER --- */}
+      {/* --- GURU FOOTER --- */}
       <footer style={footerStyle}>
         <div style={footerContentBox}>
-          <div style={{ fontSize: '12px', color: '#333', fontWeight: '900', letterSpacing: '3px', textTransform: 'uppercase' }}>
-             Guru Technical Intelligence 🦾 Knowledge Base
+          <div style={{ fontSize: '11px', color: '#444', fontWeight: '900', letterSpacing: '3px', textTransform: 'uppercase' }}>
+             Guru Technical Intelligence 🦾 Knowledge Base v2.0
           </div>
         </div>
       </footer>
@@ -188,18 +184,18 @@ const archiveWrapper = {
     padding: '120px 20px 0px' 
 };
 
-const headerStyle = { maxWidth: '1000px', margin: '0 auto 40px', textAlign: 'center' };
+const headerStyle = { maxWidth: '900px', margin: '0 auto 40px', textAlign: 'center' };
 const headerContentBox = {
     background: 'rgba(0,0,0,0.85)',
-    padding: '40px 20px',
+    padding: '30px 20px',
     borderRadius: '24px',
     backdropFilter: 'blur(15px)',
-    border: '1px solid rgba(168, 85, 247, 0.15)',
-    boxShadow: '0 20px 50px rgba(0,0,0,0.7)'
+    border: '1px solid rgba(168, 85, 247, 0.2)',
+    boxShadow: '0 20px 50px rgba(0,0,0,0.8)'
 };
 
 const titleStyle = { 
-    fontSize: 'clamp(32px, 6vw, 64px)', 
+    fontSize: 'clamp(28px, 5vw, 54px)', 
     fontWeight: '950', 
     textTransform: 'uppercase', 
     letterSpacing: '-2px', 
@@ -208,16 +204,16 @@ const titleStyle = {
     margin: 0
 };
 
-const subtitleStyle = { marginTop: '20px', color: '#9ca3af', fontWeight: '700', fontSize: '18px' };
+const subtitleStyle = { marginTop: '15px', color: '#9ca3af', fontWeight: '700', fontSize: '17px' };
 const gridContainer = { maxWidth: '1300px', margin: '0 auto' };
 
-const badgeStyle = { fontSize: '9px', fontWeight: '950', color: '#a855f7', textTransform: 'uppercase', letterSpacing: '1px', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '2px 8px', borderRadius: '4px' };
+const badgeStyle = { fontSize: '8px', fontWeight: '950', color: '#a855f7', textTransform: 'uppercase', letterSpacing: '1px', border: '1px solid rgba(168, 85, 247, 0.4)', padding: '2px 6px', borderRadius: '4px' };
 
 const cardTitleStyle = { 
-    fontSize: '20px', 
+    fontSize: '18px', 
     fontWeight: '950', 
     color: '#fff', 
-    marginBottom: '10px', 
+    marginBottom: '8px', 
     textTransform: 'uppercase', 
     lineHeight: '1.2',
     letterSpacing: '-0.5px'
@@ -225,29 +221,29 @@ const cardTitleStyle = {
 
 const cardDescStyle = { 
     color: '#9ca3af', 
-    fontSize: '14px', 
-    lineHeight: '1.5', 
+    fontSize: '13px', 
+    lineHeight: '1.4', 
     flexGrow: 1, 
-    marginBottom: '20px' 
+    marginBottom: '15px' 
 };
 
 const moreStyle = { 
     color: '#a855f7', 
     fontWeight: '950', 
-    fontSize: '12px', 
+    fontSize: '11px', 
     display: 'flex', 
     alignItems: 'center', 
-    gap: '6px', 
+    gap: '4px', 
     marginTop: 'auto', 
     textTransform: 'uppercase',
     letterSpacing: '1px'
 };
 
-const footerStyle = { marginTop: '80px', paddingBottom: '60px' };
+const footerStyle = { marginTop: '80px', paddingBottom: '40px' };
 const footerContentBox = {
-    maxWidth: '800px', 
+    maxWidth: '700px', 
     margin: '0 auto',
-    padding: '30px 20px',
-    borderTop: '1px solid rgba(168, 85, 247, 0.1)',
+    padding: '20px',
+    borderTop: '1px solid rgba(168, 85, 247, 0.15)',
     textAlign: 'center'
 };
