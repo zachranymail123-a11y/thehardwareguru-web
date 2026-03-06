@@ -3,37 +3,39 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, Loader2, Activity, ChevronRight, Zap } from 'lucide-react';
+import { BookOpen, Loader2, ChevronRight, Bookmark, Search, Zap } from 'lucide-react';
 
-// GURU CORE ENGINE: Připojení k Supabase
+// GURU CORE ENGINE: Napojení na tvou Supabase DB
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-export default function RadyArchivePage() {
+export default function SlovnikArchivePage() {
   const [items, setItems] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   
-  // 🌍 MULTILINGUAL LOGIC: Detekce jazyka z URL
+  // 🌍 MULTILINGUÁLNÍ LOGIKA
   const pathname = usePathname() || '';
   const isEn = pathname.startsWith('/en');
 
   useEffect(() => {
     async function fetchData() {
       try {
+        // GURU SYNC: Řadíme abecedně pro snadnou orientaci ve slovníku
         const { data, error } = await supabase
-          .from('rady')
+          .from('slovnik')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('title', { ascending: true });
         
         if (error) throw error;
         setItems(data || []);
 
-        // 🚀 SEO GURU: Dynamický titulek stránky
+        // 🚀 SEO GURU: Dynamický Title
         document.title = isEn 
-          ? 'Technical Solutions & Guides | The Hardware Guru' 
-          : 'Technická řešení a rady | The Hardware Guru';
+          ? 'Hardware Glossary | Technical Terms Decoded' 
+          : 'Hardware Slovník | Technické pojmy dešifrovány';
       } catch (err) {
         console.error("GURU DB ERROR:", err);
       } finally {
@@ -43,126 +45,112 @@ export default function RadyArchivePage() {
     fetchData();
   }, [isEn]);
 
+  // FILTROVÁNÍ POJMŮ
+  const filteredItems = items.filter(item => {
+    const title = (isEn && item.title_en ? item.title_en : item.title).toLowerCase();
+    const desc = (isEn && item.description_en ? item.description_en : item.description).toLowerCase();
+    const q = searchQuery.toLowerCase();
+    return title.includes(q) || desc.includes(q);
+  });
+
   return (
     <div style={archiveWrapper}>
       <style>{`
-        .rada-card { 
-            background: #05070a; 
-            border: 1px solid #1f2937; 
-            border-radius: 28px; 
-            overflow: hidden; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        .term-card { 
+            background: rgba(5, 7, 10, 0.96); 
+            border: 1px solid rgba(168, 85, 247, 0.15); 
+            border-radius: 16px; 
+            padding: 25px; 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
             height: 100%;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
             text-decoration: none;
-        }
-        .rada-card:hover { 
-            transform: translateY(-8px); 
-            border-color: #66fcf1; 
-            box-shadow: 0 0 40px rgba(102, 252, 241, 0.15); 
-        }
-        .img-box {
-            width: 100%;
-            height: 200px;
             position: relative;
-            background: #000;
             overflow: hidden;
-            border-bottom: 1px solid rgba(102, 252, 241, 0.1);
         }
-        .img-box img {
+        .term-card:hover { 
+            transform: translateY(-4px); 
+            border-color: #a855f7; 
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.2); 
+        }
+        .search-container {
+            max-width: 600px;
+            margin: 0 auto 50px;
+            position: relative;
+        }
+        .search-input {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
-            opacity: 0.75;
-            transition: 0.5s;
+            padding: 15px 20px 15px 50px;
+            background: rgba(17, 19, 24, 0.9);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            transition: 0.3s;
         }
-        .rada-card:hover .img-box img { 
-            opacity: 1; 
-            transform: scale(1.05); 
-        }
-        
-        .guru-badge {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(4px);
-            border: 1px solid #66fcf1;
-            color: #66fcf1;
-            padding: 5px 12px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 950;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            z-index: 5;
+        .search-input:focus {
+            border-color: #a855f7;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
         }
       `}</style>
 
-      {/* --- GURU HEADER (Bez navigace, počítá s 90px Navbarem) --- */}
+      {/* --- ELITNÍ HEADER --- */}
       <header style={headerStyle}>
         <div style={headerContentBox}>
-          <ShieldCheck size={56} color="#66fcf1" style={{ margin: '0 auto 20px', filter: 'drop-shadow(0 0 10px rgba(102, 252, 241, 0.5))' }} />
+          <BookOpen size={56} color="#a855f7" style={{ margin: '0 auto 20px', filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.5))' }} />
           <h1 style={titleStyle}>
-            {isEn ? <>GURU <span style={{ color: '#66fcf1' }}>GUIDES</span></> : <>GURU <span style={{ color: '#66fcf1' }}>RADY</span></>}
+            {isEn ? <>GURU <span style={{ color: '#a855f7' }}>GLOSSARY</span></> : <>GURU <span style={{ color: '#a855f7' }}>SLOVNÍK</span></>}
           </h1>
           <p style={subtitleStyle}>
-            {isEn ? 'Technical solutions for every hardware crisis.' : 'Technická řešení pro každou hardwarovou krizi.'}
+            {isEn ? 'Hardware terms decoded for professional geeks.' : 'Technické pojmy dešifrované pro profi geeky.'}
           </p>
         </div>
       </header>
 
-      {/* --- HLAVNÍ GRID ARCHIVU --- */}
+      {/* --- SEARCH BAR --- */}
+      <div className="search-container">
+        <Search size={20} color="#a855f7" style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)' }} />
+        <input 
+          type="text" 
+          placeholder={isEn ? "Search terms (e.g. DDR5, Latency)..." : "Hledej pojmy (např. DDR5, Latence)..."} 
+          className="search-input"
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
+      {/* --- GRID ARCHIV --- */}
       <main style={gridContainer}>
         {loading ? (
           <div style={{ textAlign: 'center', gridColumn: '1/-1', padding: '100px' }}>
-            <Loader2 className="animate-spin" size={64} color="#66fcf1" />
+            <Loader2 className="animate-spin" size={64} color="#a855f7" />
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '35px' }}>
-            {items.map((rada) => {
-              // GURU LOGIKA: Výběr polí podle aktuálního jazyka
-              const displayTitle = (isEn && rada.title_en) ? rada.title_en : rada.title;
-              const displayDesc = (isEn && rada.description_en) ? rada.description_en : rada.description;
-              const displaySlug = (isEn && rada.slug_en) ? rada.slug_en : rada.slug;
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '25px' }}>
+            {filteredItems.map((pojem) => {
+              const displayTitle = (isEn && pojem.title_en) ? pojem.title_en : pojem.title;
+              const displayDesc = (isEn && pojem.description_en) ? pojem.description_en : pojem.description;
+              const displaySlug = (isEn && pojem.slug_en) ? pojem.slug_en : pojem.slug;
               
-              // Zkrácení popisu pro archiv (plný text je až v detailu)
-              const shortDesc = displayDesc?.length > 110 ? displayDesc.substring(0, 110) + '...' : displayDesc;
+              // KOMPAKTNÍ OŘEZ TEXTU: Jen to nejdůležitější pro archiv
+              const shortDesc = displayDesc?.length > 100 ? displayDesc.substring(0, 100) + '...' : displayDesc;
 
               return (
-                <Link key={rada.id} href={isEn ? `/en/rady/${displaySlug}` : `/rady/${displaySlug}`} style={{ textDecoration: 'none' }}>
-                  <article className="rada-card">
-                    {/* OBRÁZEK STRIKTNĚ Z DB SLOUPECE 'image_url' */}
-                    <div className="img-box">
-                      <div className="guru-badge">
-                        <Zap size={12} fill="#66fcf1" /> {isEn ? 'GURU BASE' : 'GURU ZÁKLADNA'}
-                      </div>
-                      {rada.image_url ? (
-                        <img src={rada.image_url} alt={displayTitle} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', background: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <ShieldCheck size={48} color="#1f2937" />
-                        </div>
-                      )}
+                <Link key={pojem.id} href={isEn ? `/en/slovnik/${displaySlug}` : `/slovnik/${displaySlug}`} style={{ textDecoration: 'none' }}>
+                  <article className="term-card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                        <Bookmark size={20} color="#a855f7" fill="rgba(168, 85, 247, 0.1)" />
+                        <span style={badgeStyle}>{isEn ? 'DEFINED' : 'POJEM'}</span>
                     </div>
 
-                    {/* TEXTOVÝ OBSAH KARTY */}
-                    <div style={{ padding: '30px', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                      <h3 style={cardTitleStyle}>{displayTitle}</h3>
-                      <p style={cardDescStyle}>
-                        <strong style={{ color: '#fff', fontSize: '12px', letterSpacing: '1px' }}>
-                          {isEn ? 'PROBLEM:' : 'PROBLÉM:'}
-                        </strong> {shortDesc}
-                      </p>
-                      
-                      <div style={moreStyle}>
-                        {isEn ? 'VIEW FULL GUIDE' : 'ZOBRAZIT CELOU RADU'} <ChevronRight size={18} />
-                      </div>
+                    <h3 style={cardTitleStyle}>{displayTitle}</h3>
+                    <p style={cardDescStyle}>{shortDesc}</p>
+                    
+                    <div style={moreStyle}>
+                      {isEn ? 'DECODE' : 'ZOBRAZIT VÝKLAD'} <ChevronRight size={16} />
                     </div>
                   </article>
                 </Link>
@@ -172,32 +160,41 @@ export default function RadyArchivePage() {
         )}
       </main>
 
+      {!loading && filteredItems.length === 0 && (
+        <div style={{ textAlign: 'center', color: '#444', padding: '40px', fontWeight: '900', textTransform: 'uppercase' }}>
+            {isEn ? 'No terms found in database.' : 'V databázi jsem nic nenašel.'}
+        </div>
+      )}
+
+      {/* --- ELITNÍ FOOTER --- */}
       <footer style={footerStyle}>
-        <div style={{ fontSize: '13px', color: '#444', fontWeight: '900', letterSpacing: '2px', textTransform: 'uppercase' }}>
-          Hardware Guru Technical Base 🦾 20 Years of field-tested Expertise
+        <div style={footerContentBox}>
+          <div style={{ fontSize: '12px', color: '#333', fontWeight: '900', letterSpacing: '3px', textTransform: 'uppercase' }}>
+             Guru Technical Intelligence 🦾 Knowledge Base
+          </div>
         </div>
       </footer>
     </div>
   );
 }
 
-// --- GURU MASTER STYLES (MATCHING SCREENSHOT 6) ---
+// --- GURU MASTER STYLES ---
 const archiveWrapper = { 
     minHeight: '100vh', 
     backgroundColor: '#0a0b0d', 
     backgroundImage: 'url("/bg-guru.png")', 
     backgroundSize: 'cover', 
     backgroundAttachment: 'fixed', 
-    padding: '120px 20px 40px' 
+    padding: '120px 20px 0px' 
 };
 
-const headerStyle = { maxWidth: '1000px', margin: '0 auto 60px', textAlign: 'center' };
+const headerStyle = { maxWidth: '1000px', margin: '0 auto 40px', textAlign: 'center' };
 const headerContentBox = {
     background: 'rgba(0,0,0,0.85)',
     padding: '40px 20px',
-    borderRadius: '35px',
+    borderRadius: '24px',
     backdropFilter: 'blur(15px)',
-    border: '1px solid rgba(102, 252, 241, 0.15)',
+    border: '1px solid rgba(168, 85, 247, 0.15)',
     boxShadow: '0 20px 50px rgba(0,0,0,0.7)'
 };
 
@@ -211,21 +208,16 @@ const titleStyle = {
     margin: 0
 };
 
-const subtitleStyle = { 
-    marginTop: '20px', 
-    color: '#9ca3af', 
-    fontWeight: '700', 
-    fontSize: '18px',
-    letterSpacing: '0.5px'
-};
-
+const subtitleStyle = { marginTop: '20px', color: '#9ca3af', fontWeight: '700', fontSize: '18px' };
 const gridContainer = { maxWidth: '1300px', margin: '0 auto' };
 
+const badgeStyle = { fontSize: '9px', fontWeight: '950', color: '#a855f7', textTransform: 'uppercase', letterSpacing: '1px', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '2px 8px', borderRadius: '4px' };
+
 const cardTitleStyle = { 
-    fontSize: '22px', 
+    fontSize: '20px', 
     fontWeight: '950', 
     color: '#fff', 
-    marginBottom: '15px', 
+    marginBottom: '10px', 
     textTransform: 'uppercase', 
     lineHeight: '1.2',
     letterSpacing: '-0.5px'
@@ -233,22 +225,29 @@ const cardTitleStyle = {
 
 const cardDescStyle = { 
     color: '#9ca3af', 
-    fontSize: '15px', 
-    lineHeight: '1.6', 
+    fontSize: '14px', 
+    lineHeight: '1.5', 
     flexGrow: 1, 
-    marginBottom: '25px' 
+    marginBottom: '20px' 
 };
 
 const moreStyle = { 
-    color: '#66fcf1', 
+    color: '#a855f7', 
     fontWeight: '950', 
-    fontSize: '14px', 
+    fontSize: '12px', 
     display: 'flex', 
     alignItems: 'center', 
-    gap: '8px', 
+    gap: '6px', 
     marginTop: 'auto', 
     textTransform: 'uppercase',
     letterSpacing: '1px'
 };
 
-const footerStyle = { padding: '60px 20px', textAlign: 'center' };
+const footerStyle = { marginTop: '80px', paddingBottom: '60px' };
+const footerContentBox = {
+    maxWidth: '800px', 
+    margin: '0 auto',
+    padding: '30px 20px',
+    borderTop: '1px solid rgba(168, 85, 247, 0.1)',
+    textAlign: 'center'
+};
