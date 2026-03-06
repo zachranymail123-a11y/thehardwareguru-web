@@ -16,7 +16,6 @@ export default function Navbar() {
   
   // 🚀 GURU AUTO-DISCOVERY: Zde ukládáme živou strukturu celé databáze
   const [dbStructure, setDbStructure] = useState([
-    // Fallback struktura pro první milisekundy, než se načte aktuální mapa DB
     { table: 'clanky', columns: ['title', 'content', 'seo_description', 'seo_keywords', 'description_en', 'content_en', 'meta_title'] },
     { table: 'tipy', columns: ['title', 'content', 'seo_description', 'seo_keywords', 'description_en', 'content_en', 'meta_title'] },
     { table: 'tweaky', columns: ['title', 'content', 'seo_description', 'seo_keywords', 'description_en', 'content_en', 'meta_title'] },
@@ -32,7 +31,7 @@ export default function Navbar() {
   const isEn = pathname.startsWith('/en');
   const lang = isEn ? 'en' : 'cs';
 
-  // Překlad známých sekcí pro štítky v našeptávači (Nové sekce dostanou automaticky svůj název)
+  // Překlad známých sekcí pro štítky v našeptávači
   const sectionNames = {
     'clanky': isEn ? 'ARTICLE' : 'ČLÁNEK',
     'tipy': isEn ? 'TIP' : 'TIP',
@@ -41,11 +40,10 @@ export default function Navbar() {
     'rady': isEn ? 'GUIDE' : 'RADA'
   };
 
-  // 🚀 GURU FÁZE 1: ZMAPOVÁNÍ DATABÁZE PŘI NAČTENÍ (UNIVERSAL ENGINE)
+  // 🚀 GURU FÁZE 1: ZMAPOVÁNÍ DATABÁZE PŘI NAČTENÍ
   useEffect(() => {
     async function discoverDatabase() {
       try {
-        // Dotaz přímo na kořen Supabase API, který vrací živou mapu (OpenAPI) všech tabulek a sloupců
         const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/`, {
           headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY }
         });
@@ -56,23 +54,15 @@ export default function Navbar() {
         const schemas = spec.definitions || (spec.components && spec.components.schemas) || {};
         const dynamicStructure = [];
 
-        // Projdeme VŠECHNY tabulky, které nám databáze nahlásí
         for (const [tableName, schema] of Object.entries(schemas)) {
-          
-          // 🚀 GURU FIX: Tvrdý blok na celou TABULKU, která obsahuje slovo "plan"
-          if (tableName.toLowerCase().includes('plan')) {
-            continue; 
-          }
+          if (tableName.toLowerCase().includes('plan')) continue; 
 
           const textCols = [];
-          // V každé tabulce najdeme VŠECHNY sloupce, které obsahují text
           for (const [colName, colInfo] of Object.entries(schema.properties || {})) {
-            // GURU FIX: Ignorujeme sloupce pro hledání, které mají v názvu slovo "plan"
             if (colInfo.type === 'string' && !colName.toLowerCase().includes('plan')) {
               textCols.push(colName);
             }
           }
-          // Pokud tabulka má textové sloupce, přidáme ji do hledání
           if (textCols.length > 0) {
             dynamicStructure.push({ table: tableName, columns: textCols });
           }
@@ -107,15 +97,11 @@ export default function Navbar() {
         const searchTerm = `%${q}%`; 
         const allPromises = [];
 
-        // Projdeme načtenou strukturu - VŠECHNY existující tabulky a VŠECHNY jejich existující textové sloupce
         dbStructure.forEach(({ table, columns }) => {
-          
-          // GURU FIX: Ještě jedna záchranná brzda proti tabulkám "plan"
           if (table.toLowerCase().includes('plan')) return;
 
           columns.forEach(col => {
             allPromises.push(
-              // 🚀 GURU FIX: Zvýšeno na 10 podle tvého přímého rozkazu
               supabase.from(table).select('*').ilike(col, searchTerm).limit(10)
                 .then(res => {
                   if (res.error) throw res.error; 
@@ -125,7 +111,6 @@ export default function Navbar() {
           });
         });
 
-        // Počkáme na dotazy (ty, které selžou např. na oprávnění, prostě ignorujeme)
         const resultsArrays = await Promise.allSettled(allPromises);
         
         const allResults = resultsArrays
@@ -134,7 +119,6 @@ export default function Navbar() {
           .flat();
 
         if (active) {
-          // 🚀 GURU FIX: Odstranění duplicit podle slugu a sekce, výpis nejlepších 10 položek!
           const uniqueResults = Array.from(new Map(allResults.map(item => [item.section + (item.slug || item.id), item])).values()).slice(0, 10);
           setSuggestions(uniqueResults);
         }
@@ -156,7 +140,6 @@ export default function Navbar() {
     };
   }, [query, dbStructure]);
 
-  // Schování našeptávače při kliku mimo vyhledávací pole
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (suggestionRef.current && !suggestionRef.current.contains(e.target)) {
@@ -171,10 +154,15 @@ export default function Navbar() {
     e.preventDefault();
     const q = query.trim();
     if (q) {
-      const searchPath = isEn ? `/en/hledat?q=${encodeURIComponent(q)}` : `/hledat?q=${encodeURIComponent(q)}`;
-      router.push(searchPath);
-      setShowSuggestions(false);
+      // GURU FIX: Tvrdé přesměrování i u hledání
+      window.location.href = isEn ? `/en/hledat?q=${encodeURIComponent(q)}` : `/hledat?q=${encodeURIComponent(q)}`;
     }
+  };
+
+  // GURU HARDCORE ROUTING ENGINE: Ignoruje zmatený cache Next.js routeru a načte stránku natvrdo
+  const hardNavigate = (e, path) => {
+    e.preventDefault();
+    window.location.href = path;
   };
 
   return (
@@ -182,22 +170,15 @@ export default function Navbar() {
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
       background: '#0a0b0d', borderBottom: '1px solid #1f2937', 
       padding: '0 40px', display: 'flex', alignItems: 'center', 
-      justifyContent: 'space-between', color: '#fff', height: '90px' // GURU GOLDEN HEIGHT: 90px
+      justifyContent: 'space-between', color: '#fff', height: '90px'
     }}>
       
-      {/* 1. LOGO VLEVO (GURU FIX: Přidán prefetch false a natvrdý router push) */}
-      <Link href={isEn ? "/en" : "/"} prefetch={false} onClick={(e) => { e.preventDefault(); router.push(isEn ? "/en" : "/"); }} style={{ textDecoration: 'none', flexShrink: 0, cursor: 'pointer' }}>
-        <span style={{ 
-          color: '#a855f7', 
-          fontFamily: 'serif', 
-          fontSize: '28px', // GURU GOLDEN LOGO: 28px
-          fontWeight: '900', 
-          letterSpacing: '1px', 
-          textTransform: 'uppercase' 
-        }}>
+      {/* 1. LOGO VLEVO */}
+      <a href={isEn ? "/en" : "/"} onClick={(e) => hardNavigate(e, isEn ? "/en" : "/")} style={{ textDecoration: 'none', flexShrink: 0, cursor: 'pointer' }}>
+        <span style={{ color: '#a855f7', fontFamily: 'serif', fontSize: '28px', fontWeight: '900', letterSpacing: '1px', textTransform: 'uppercase' }}>
           HARDWARE GURU
         </span>
-      </Link>
+      </a>
 
       {/* 2. VYHLEDÁVÁNÍ S NAŠEPTÁVAČEM (UPROSTŘED) */}
       <div style={{ flex: 1, display: 'flex', justifyContent: 'center', margin: '0 30px', position: 'relative' }} ref={suggestionRef}>
@@ -225,7 +206,7 @@ export default function Navbar() {
           </div>
         </form>
 
-        {/* DROPDOWN NAŠEPTÁVAČE S DYNAMICKÝMI KATEGORIEMI */}
+        {/* DROPDOWN NAŠEPTÁVAČE */}
         {showSuggestions && (suggestions.length > 0 || isLoading) && (
           <div style={{ 
             position: 'absolute', top: '70px', width: '100%', maxWidth: '550px', 
@@ -239,28 +220,17 @@ export default function Navbar() {
               </div>
             ) : (
               suggestions.map((s, i) => {
-                // 🚀 GURU FIX: Definitivní blok vykreslení pro jakýkoliv záznam z tabulky "plan"
                 if (s.section && s.section.toLowerCase().includes('plan')) return null;
 
                 let desc = '';
                 const safeQ = query.trim().toLowerCase();
                 let foundSnippet = false;
 
-                // Dynamicky projdeme VŠECHNY vlastnosti z DB...
                 for (const key in s) {
-                  // ...ALE TVRDĚ IGNORUJEME COKOLIV, CO MÁ V NÁZVU 'plan'! (Tvůj rozkaz)
-                  if (
-                    typeof s[key] === 'string' && 
-                    key !== 'image_url' && 
-                    key !== 'slug' && 
-                    key !== 'section' &&
-                    !key.toLowerCase().includes('plan') 
-                  ) {
-                    const plainText = s[key].replace(/<[^>]+>/g, ''); // Vyčistíme HTML balast
+                  if (typeof s[key] === 'string' && key !== 'image_url' && key !== 'slug' && key !== 'section' && !key.toLowerCase().includes('plan')) {
+                    const plainText = s[key].replace(/<[^>]+>/g, '');
                     const matchIndex = plainText.toLowerCase().indexOf(safeQ);
-                    
                     if (matchIndex !== -1) {
-                      // Hledané slovo nalezeno v POVOLENÉM sloupci! Vyřízneme kontext.
                       const start = Math.max(0, matchIndex - 30);
                       const end = Math.min(plainText.length, matchIndex + 60);
                       desc = (start > 0 ? '...' : '') + plainText.substring(start, end) + '...';
@@ -270,7 +240,6 @@ export default function Navbar() {
                   }
                 }
 
-                // Záchranná brzda
                 if (!foundSnippet) {
                   desc = s.seo_description || s.description_en || (s.content ? s.content.replace(/<[^>]+>/g, '').substring(0, 60) + '...' : '');
                 }
@@ -279,25 +248,17 @@ export default function Navbar() {
 
                 return (
                   <div key={i} 
-                    onClick={() => { 
+                    onClick={(e) => { 
                       const target = isEn ? `/en/${s.section}/${urlParam}` : `/${s.section}/${urlParam}`;
-                      router.push(target); 
-                      setQuery(''); 
-                      setShowSuggestions(false); 
+                      hardNavigate(e, target);
                     }}
-                    style={{ 
-                      padding: '16px 20px', borderBottom: i !== suggestions.length - 1 ? '1px solid #222' : 'none', 
-                      cursor: 'pointer', transition: 'background 0.2s' 
-                    }}
+                    style={{ padding: '16px 20px', borderBottom: i !== suggestions.length - 1 ? '1px solid #222' : 'none', cursor: 'pointer', transition: 'background 0.2s' }}
                     onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                       <div style={{ fontWeight: '900', color: '#eab308', fontSize: '15px' }}>{s.title || s.name || 'Záznam bez názvu'}</div>
-                      <div style={{ 
-                        fontSize: '10px', color: '#fff', background: '#a855f7', 
-                        padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.5px', fontWeight: 'bold' 
-                      }}>
+                      <div style={{ fontSize: '10px', color: '#fff', background: '#a855f7', padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.5px', fontWeight: 'bold' }}>
                         {sectionNames[s.section] || s.section.toUpperCase()}
                       </div>
                     </div>
@@ -312,28 +273,26 @@ export default function Navbar() {
         )}
       </div>
 
-      {/* 3. MENU A SÍTĚ VPRAVO (GURU FIX: Přidán prefetch false a imperative router.push) */}
+      {/* 3. MENU A SÍTĚ VPRAVO (GURU FIX: Použito tvrdé přesměrování k vyřazení Next.js cache) */}
       <div style={{ display: 'flex', gap: '30px', alignItems: 'center', flexShrink: 0 }}>
-        {/* TEXTOVÉ ODKAZY - PLNÉ NÁZVY A VĚTŠÍ PÍSMO */}
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          <Link href={isEn ? "/en/clanky" : "/clanky"} prefetch={false} onClick={(e) => { e.preventDefault(); router.push(isEn ? "/en/clanky" : "/clanky"); }} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
+          <a href={isEn ? "/en/clanky" : "/clanky"} onClick={(e) => hardNavigate(e, isEn ? "/en/clanky" : "/clanky")} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
             {isEn ? 'ARTICLES' : 'ČLÁNKY'}
-          </Link>
-          <Link href={isEn ? "/en/tipy" : "/tipy"} prefetch={false} onClick={(e) => { e.preventDefault(); router.push(isEn ? "/en/tipy" : "/tipy"); }} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
+          </a>
+          <a href={isEn ? "/en/tipy" : "/tipy"} onClick={(e) => hardNavigate(e, isEn ? "/en/tipy" : "/tipy")} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
             {isEn ? 'TIPS' : 'TIPY'}
-          </Link>
-          <Link href={isEn ? "/en/tweaky" : "/tweaky"} prefetch={false} onClick={(e) => { e.preventDefault(); router.push(isEn ? "/en/tweaky" : "/tweaky"); }} style={{ color: '#eab308', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
+          </a>
+          <a href={isEn ? "/en/tweaky" : "/tweaky"} onClick={(e) => hardNavigate(e, isEn ? "/en/tweaky" : "/tweaky")} style={{ color: '#eab308', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
             {isEn ? 'GURU TWEAKS' : 'GURU TWEAKY'}
-          </Link>
-          <Link href={isEn ? "/en/slovnik" : "/slovnik"} prefetch={false} onClick={(e) => { e.preventDefault(); router.push(isEn ? "/en/slovnik" : "/slovnik"); }} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
+          </a>
+          <a href={isEn ? "/en/slovnik" : "/slovnik"} onClick={(e) => hardNavigate(e, isEn ? "/en/slovnik" : "/slovnik")} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
             {isEn ? 'GLOSSARY' : 'SLOVNÍK'}
-          </Link>
-          <Link href={isEn ? "/en/rady" : "/rady"} prefetch={false} onClick={(e) => { e.preventDefault(); router.push(isEn ? "/en/rady" : "/rady"); }} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
+          </a>
+          <a href={isEn ? "/en/rady" : "/rady"} onClick={(e) => hardNavigate(e, isEn ? "/en/rady" : "/rady")} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
             {isEn ? 'PRACTICAL GUIDES' : 'PRAKTICKÉ RADY'}
-          </Link>
+          </a>
         </div>
 
-        {/* BAREVNÁ TLAČÍTKA - ŽÁDNÉ ZKRATKY */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <a href="https://kick.com/TheHardwareGuru" target="_blank" rel="noreferrer" style={{ background: '#53fc18', color: '#000', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>
             KICK
@@ -341,17 +300,12 @@ export default function Navbar() {
           <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noreferrer" style={{ background: '#f00', color: '#fff', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>
             YOUTUBE
           </a>
-          
-          {/* INSTAGRAM MEZI YOUTUBE A DISCORD */}
           <a href="https://www.instagram.com/thehardwareguru_czech" target="_blank" rel="noreferrer" style={{ background: '#E1306C', color: '#fff', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>
             INSTAGRAM
           </a>
-          
           <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" style={{ background: '#5865F2', color: '#fff', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>
             DISCORD
           </a>
-          
-          {/* GURU FIX: Absolutní link na podporu */}
           <a href="https://www.thehardwareguru.cz/support" style={{ background: '#000', border: '2px solid #eab308', color: '#eab308', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Heart size={14} fill="#eab308" /> {isEn ? 'SUPPORT' : 'PODPORA'}
           </a>
