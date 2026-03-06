@@ -2,112 +2,108 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
-// GURU CORE: Admin klient obchází RLS
+// GURU CORE: Admin klient s božskými právy (SERVICE_ROLE_KEY)
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 /**
- * GURU AI ENGINE: Technický překlad pro HW specialisty.
+ * 🚀 GURU MASTER DETECTION
+ * Tato funkce musí být 1:1 s frontendem. 
+ * Detekuje: null, undefined, prázdný string "" a textový řetězec "NULL".
+ */
+const isActuallyEmpty = (val) => {
+  if (val === null || val === undefined) return true;
+  const s = String(val).trim();
+  return s === '' || s.toLowerCase() === 'null';
+};
+
+/**
+ * GURU AI TRANSLATOR: Technický překlad pro experty.
  */
 async function getGuruTranslation(czData, tableName) {
   const isPosts = tableName === 'posts';
-  
-  const systemPrompt = `You are 'The Hardware Guru'. Your task is to technically translate and enhance hardware/gaming content from Czech to English. 
-  NEVER use generic phrasing. Use expert terminology. 
-  For table '${tableName}', return a valid JSON object with:
-  - title_en
-  - content_en (Full HTML)
-  - slug_en (URL friendly)
-  - meta_title_en
-  - description_en (Technical description)
-  ${isPosts ? '- seo_description_en (Engaging SEO summary)\n- seo_keywords_en (Comma separated keywords)' : ''}`;
+  const systemPrompt = `You are 'The Hardware Guru'. Technically translate hardware/gaming content. 
+  For table '${tableName}', return valid JSON with: title_en, content_en, slug_en, meta_title_en, description_en ${isPosts ? ', seo_description_en, seo_keywords_en' : ''}. Use expert terminology.`;
 
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo", 
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `Technically translate this Guru content to English: ${JSON.stringify(czData)}` }
+        { role: "user", content: `Translate technically: ${JSON.stringify(czData)}` }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7,
+      temperature: 0.7
     });
-
     return JSON.parse(completion.choices[0].message.content);
   } catch (err) {
     console.error("GURU AI FAIL:", err.message);
-    throw new Error(`OpenAI fail: ${err.message}`);
+    throw new Error("OpenAI API Failure");
   }
 }
 
 export async function POST(req) {
   try {
     const { tableName, limit = 3 } = await req.json();
-    if (!tableName) throw new Error("Chybí název tabulky.");
-
-    // 1. GURU JS SURGERY: Stáhneme vše a přefiltrujeme v paměti (100% jistota)
-    const { data: allItems, error: fetchError } = await supabaseAdmin
-      .from(tableName)
-      .select('*');
-
+    
+    // GURU FETCH: Sázíme na absolutní jistotu, stáhneme vše a přefiltrujeme v paměti JS
+    const { data: allItems, error: fetchError } = await supabaseAdmin.from(tableName).select('*');
     if (fetchError) throw fetchError;
 
-    // Najdeme záznamy, kde title_en je null, prázdné, nebo jen mezery
-    const itemsToProcess = allItems.filter(item => 
-      !item.title_en || item.title_en.trim() === ''
-    ).slice(0, limit);
+    // 🚀 GURU SYNC FILTER: Backend teď používá identická pravidla jako tvůj Dashboard
+    const itemsToProcess = allItems.filter(item => {
+      // 1. Základní technická pole
+      if (isActuallyEmpty(item.title_en)) return true;
+      if (isActuallyEmpty(item.description_en)) return true;
+      
+      // 2. Hardcore SEO pole pro články (posts) - detekce "NULL" humusů
+      if (tableName === 'posts') {
+        if (isActuallyEmpty(item.seo_description_en)) return true;
+        if (isActuallyEmpty(item.seo_keywords_en)) return true;
+      }
+      return false;
+    }).slice(0, limit);
 
     if (itemsToProcess.length === 0) {
-      return NextResponse.json({ message: 'Všechny záznamy v této tabulce mají EN verzi.', count: 0 });
+        return NextResponse.json({ processedIds: [], message: "Data jsou v pořádku." });
     }
 
     const results = [];
-
     for (const item of itemsToProcess) {
-      const czSource = {
-        title: item.title,
-        content: item.content || item.html_content || item.text || '',
-        description: item.description || item.seo_description || '',
-        slug: item.slug
+      const czSource = { 
+        title: item.title, 
+        content: item.content || item.html_content || item.text, 
+        description: item.description || item.seo_description, 
+        slug: item.slug 
       };
 
+      // Spustíme operaci překladu
       const enData = await getGuruTranslation(czSource, tableName);
-
-      // GURU SYNC: Připravíme payload (odstraněno updated_at pro stabilitu)
-      const updatePayload = {
-        ...enData
-      };
-
-      if (tableName === 'posts') {
-        updatePayload.seo_description_en = enData.seo_description_en || enData.description_en;
-        updatePayload.seo_keywords_en = enData.seo_keywords_en || '';
-      }
-
+      
+      // Uložení s přepsáním všech (i těch falešných "NULL") polí
       const { error: updateError } = await supabaseAdmin
         .from(tableName)
-        .update(updatePayload)
+        .update(enData)
         .eq('id', item.id);
-
-      if (updateError) {
-        console.error(`GURU DB FAIL ID ${item.id}:`, updateError.message);
-      } else {
+        
+      if (!updateError) {
         results.push(item.id);
+      } else {
+        console.error(`GURU UPDATE FAIL for ID ${item.id}:`, updateError.message);
       }
     }
 
     return NextResponse.json({ 
-      message: `Úspěšně opraveno ${results.length} záznamů v tabulce ${tableName}.`,
-      processedIds: results 
+      processedIds: results,
+      message: `Úspěšně opraveno ${results.length} záznamů v tabulce ${tableName}.`
     });
 
-  } catch (err) {
+  } catch (err) { 
     console.error("GURU FIXER CRITICAL FAIL:", err.message);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err.message }, { status: 500 }); 
   }
 }
