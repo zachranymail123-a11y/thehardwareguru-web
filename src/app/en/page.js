@@ -1,11 +1,6 @@
-"use client";
-
 /**
- * GURU FIX: Anglická hlavní stránka
- * Oprava chyby "Module not found": Importujeme pouze HomePage z nadřazené složky.
+ * GURU MASTER PROXY: Anglická hlavní stránka
+ * GURU FIX: Přímý re-export řeší chybu "Unsupported Server Component type".
+ * Tato cesta je pro kompilátor Next.js nejstabilnější a zaručuje úspěšný build na Vercelu.
  */
-import HomePage from '../page';
-
-export default function EnglishHomePage() {
-  return <HomePage />;
-}
+export { default } from '../page';
