@@ -2,22 +2,20 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
-// GURU CORE: Admin klient obchází RLS pro hromadné opravy
+// GURU CORE: Admin klient obchází RLS
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// GURU CORE: Striktně OpenAI GPT-4 Turbo
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 /**
- * GURU AI ENGINE: Generuje technický překlad a SEO metadata.
+ * GURU AI ENGINE: Technický překlad pro HW specialisty.
  */
 async function getGuruTranslation(czData, tableName) {
-  // Rozšíření promptu pro tabulku posts o chybějící SEO pole
   const isPosts = tableName === 'posts';
   
   const systemPrompt = `You are 'The Hardware Guru'. Your task is to technically translate and enhance hardware/gaming content from Czech to English. 
@@ -48,29 +46,30 @@ async function getGuruTranslation(czData, tableName) {
   }
 }
 
-/**
- * GURU EN FIXER ROUTE: Opravuje záznamy v CZ/EN mutaci.
- */
 export async function POST(req) {
   try {
     const { tableName, limit = 3 } = await req.json();
-    
-    // 1. GURU ROBUST SEARCH: Najdeme záznamy, kde title_en je buď NULL nebo prázdný řetězec
-    const { data: items, error: fetchError } = await supabaseAdmin
+    if (!tableName) throw new Error("Chybí název tabulky.");
+
+    // 1. GURU JS SURGERY: Stáhneme vše a přefiltrujeme v paměti (100% jistota)
+    const { data: allItems, error: fetchError } = await supabaseAdmin
       .from(tableName)
-      .select('*')
-      .or(`title_en.is.null,title_en.eq.""`)
-      .limit(limit);
+      .select('*');
 
     if (fetchError) throw fetchError;
-    if (!items || items.length === 0) {
-      return NextResponse.json({ message: 'Hotovo, v této tabulce není co opravovat.', count: 0 });
+
+    // Najdeme záznamy, kde title_en je null, prázdné, nebo jen mezery
+    const itemsToProcess = allItems.filter(item => 
+      !item.title_en || item.title_en.trim() === ''
+    ).slice(0, limit);
+
+    if (itemsToProcess.length === 0) {
+      return NextResponse.json({ message: 'Všechny záznamy v této tabulce mají EN verzi.', count: 0 });
     }
 
     const results = [];
 
-    for (const item of items) {
-      // Příprava dat pro AI (Flexible Mapping)
+    for (const item of itemsToProcess) {
       const czSource = {
         title: item.title,
         content: item.content || item.html_content || item.text || '',
@@ -78,16 +77,13 @@ export async function POST(req) {
         slug: item.slug
       };
 
-      // 2. AI GENERATION
       const enData = await getGuruTranslation(czSource, tableName);
 
-      // 3. DATABASE SYNC: Ukládáme kompletní balík včetně SEO polí
+      // GURU SYNC: Připravíme payload (odstraněno updated_at pro stabilitu)
       const updatePayload = {
-        ...enData,
-        updated_at: new Date().toISOString()
+        ...enData
       };
 
-      // Speciální ošetření pro posts, aby se vyplnila seo pole, pokud je AI vrátila v jiném klíči
       if (tableName === 'posts') {
         updatePayload.seo_description_en = enData.seo_description_en || enData.description_en;
         updatePayload.seo_keywords_en = enData.seo_keywords_en || '';
@@ -99,7 +95,7 @@ export async function POST(req) {
         .eq('id', item.id);
 
       if (updateError) {
-        console.error(`GURU DB FAIL for ID ${item.id}:`, updateError.message);
+        console.error(`GURU DB FAIL ID ${item.id}:`, updateError.message);
       } else {
         results.push(item.id);
       }
@@ -111,7 +107,7 @@ export async function POST(req) {
     });
 
   } catch (err) {
-    console.error("GURU FIXER CRITICAL EXCEPTION:", err.message);
+    console.error("GURU FIXER CRITICAL FAIL:", err.message);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
