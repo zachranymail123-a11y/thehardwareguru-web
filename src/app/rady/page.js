@@ -3,9 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, Loader2, ChevronRight, Activity, Zap, ImageOff } from 'lucide-react';
+import { ShieldCheck, Loader2, Activity, ChevronRight } from 'lucide-react';
 
-// GURU ENGINE: Připojení k tvé DB
+// GURU CORE: Inicializace Supabase
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -15,7 +15,7 @@ export default function RadyArchivePage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // 🌍 JAZYKOVÁ LOGIKA
+  // 🌍 MULTILINGUÁLNÍ LOGIKA
   const pathname = usePathname() || '';
   const isEn = pathname.startsWith('/en');
 
@@ -27,14 +27,15 @@ export default function RadyArchivePage() {
           .select('*')
           .order('created_at', { ascending: false });
         
-        if (!error && data) setItems(data);
+        if (error) throw error;
+        setItems(data || []);
 
-        // 🚀 SEO GURU: Dynamický Title
+        // 🚀 SEO GURU: Titulek pro Google
         document.title = isEn 
-          ? 'Hardware Guides | The Hardware Guru' 
-          : 'Hardware Rady | The Hardware Guru';
+          ? 'Professional Hardware Solutions | The Hardware Guru' 
+          : 'Profesionální hardwarová řešení | The Hardware Guru';
       } catch (err) {
-        console.error("GURU DATA FAIL:", err);
+        console.error("GURU DB ERROR:", err);
       } finally {
         setLoading(false);
       }
@@ -46,118 +47,112 @@ export default function RadyArchivePage() {
     <div style={archiveWrapper}>
       <style>{`
         .rada-card { 
-            background: rgba(10, 11, 13, 0.98); 
-            border: 1px solid rgba(102, 252, 241, 0.2); 
-            border-radius: 16px; 
+            background: #05070a; 
+            border: 1px solid #1f2937; 
+            border-radius: 28px; 
             overflow: hidden; 
-            transition: all 0.2s ease-out; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
             height: 100%;
             display: flex;
             flex-direction: column;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
             text-decoration: none;
         }
         .rada-card:hover { 
-            transform: translateY(-4px); 
+            transform: translateY(-8px); 
             border-color: #66fcf1; 
-            box-shadow: 0 0 30px rgba(102, 252, 241, 0.2); 
+            box-shadow: 0 0 40px rgba(102, 252, 241, 0.15); 
         }
-        .rada-img-container {
+        .img-box {
             width: 100%;
-            height: 160px; /* KOMPAKTNÍ VÝŠKA */
-            overflow: hidden;
-            background: #000;
+            height: 220px;
             position: relative;
-            border-bottom: 1px solid rgba(102, 252, 241, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: #000;
+            overflow: hidden;
         }
-        .rada-img-container img {
+        .img-box img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: 0.4s;
             opacity: 0.8;
+            transition: 0.5s;
         }
-        .rada-card:hover .rada-img-container img {
-            opacity: 1;
-            transform: scale(1.05);
-        }
+        .rada-card:hover .img-box img { opacity: 1; transform: scale(1.05); }
+        
         .guru-badge {
             position: absolute;
-            top: 12px;
-            left: 12px;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(4px);
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
             border: 1px solid #66fcf1;
             color: #66fcf1;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 9px;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 11px;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 1px;
-            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 5;
         }
       `}</style>
 
-      {/* --- HEADER --- */}
       <header style={headerStyle}>
         <div style={headerContentBox}>
-          <ShieldCheck size={40} color="#66fcf1" style={{ margin: '0 auto 15px', filter: 'drop-shadow(0 0 8px rgba(102, 252, 241, 0.4))' }} />
+          <ShieldCheck size={56} color="#66fcf1" style={{ margin: '0 auto 20px', filter: 'drop-shadow(0 0 10px rgba(102, 252, 241, 0.5))' }} />
           <h1 style={titleStyle}>
-            {isEn ? <>PRACTICAL <span style={{ color: '#66fcf1' }}>GUIDES</span></> : <>PRAKTICKÉ <span style={{ color: '#66fcf1' }}>RADY</span></>}
+            {isEn ? <>GURU <span style={{ color: '#66fcf1' }}>GUIDES</span></> : <>GURU <span style={{ color: '#66fcf1' }}>RADY</span></>}
           </h1>
           <p style={subtitleStyle}>
-            {isEn 
-              ? 'Real technical solutions from field practice.' 
-              : 'Reálná technická řešení přímo z praxe.'}
+            {isEn ? 'Technical solutions for every hardware crisis.' : 'Technická řešení pro každou hardwarovou krizi.'}
           </p>
         </div>
       </header>
 
-      {/* --- GRID --- */}
       <main style={gridContainer}>
         {loading ? (
           <div style={{ textAlign: 'center', gridColumn: '1/-1', padding: '100px' }}>
-            <Loader2 className="animate-spin" size={48} color="#66fcf1" />
+            <Loader2 className="animate-spin" size={64} color="#66fcf1" />
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '25px' }}>
-            {items.map((item) => {
-              const displayTitle = (isEn && item.title_en) ? item.title_en : item.title;
-              const displayDesc = (isEn && item.description_en) ? item.description_en : item.description;
-              const displaySlug = (isEn && item.slug_en) ? item.slug_en : item.slug;
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '35px' }}>
+            {items.map((rada) => {
+              // GURU ENGINE: Výběr polí podle jazyka
+              const displayTitle = (isEn && rada.title_en) ? rada.title_en : rada.title;
+              const displayDesc = (isEn && rada.description_en) ? rada.description_en : rada.description;
+              const displaySlug = (isEn && rada.slug_en) ? rada.slug_en : rada.slug;
               
-              // Ořezání popisu na naprosté minimum pro archiv
-              const shortDesc = displayDesc?.length > 80 ? displayDesc.substring(0, 80) + '...' : displayDesc;
+              // Zkrácení popisu pro archiv - detaily jsou až na slug stránce
+              const shortDesc = displayDesc?.length > 120 ? displayDesc.substring(0, 120) + '...' : displayDesc;
 
               return (
-                <Link key={item.id} href={isEn ? `/en/rady/${displaySlug}` : `/rady/${displaySlug}`} style={{ textDecoration: 'none' }}>
+                <Link key={rada.id} href={isEn ? `/en/rady/${displaySlug}` : `/rady/${displaySlug}`} style={{ textDecoration: 'none' }}>
                   <article className="rada-card">
-                    {/* GURU DB IMAGE ENGINE - POUZE TVOJE OBRÁZKY */}
-                    <div className="rada-img-container">
+                    {/* HORNÍ OBRÁZEK Z DB (image_url) */}
+                    <div className="img-box">
                       <div className="guru-badge">
-                        <Zap size={10} fill="#66fcf1" /> GURU
+                        <Activity size={14} /> {isEn ? 'GURU BASE' : 'GURU ZÁKLADNA'}
                       </div>
-                      {item.image_url ? (
-                        <img src={item.image_url} alt={displayTitle} />
+                      {rada.image_url ? (
+                        <img src={rada.image_url} alt={displayTitle} />
                       ) : (
-                        <div style={{ color: '#1f2937', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                          <ImageOff size={32} />
-                          <span style={{ fontSize: '10px', marginTop: '8px', fontWeight: '900' }}>NO IMAGE</span>
+                        <div style={{ width: '100%', height: '100%', background: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <ShieldCheck size={48} color="#1f2937" />
                         </div>
                       )}
                     </div>
 
-                    <div style={{ padding: '20px', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                    {/* OBSAH KARTY */}
+                    <div style={{ padding: '35px', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                       <h3 style={cardTitleStyle}>{displayTitle}</h3>
-                      <p style={cardDescStyle}>{shortDesc}</p>
+                      <p style={cardDescStyle}>
+                        <strong style={{ color: '#fff' }}>{isEn ? 'PROBLEM:' : 'PROBLÉM:'}</strong> {shortDesc}
+                      </p>
                       
                       <div style={moreStyle}>
-                        {isEn ? 'OPEN' : 'OTEVŘÍT'} <ChevronRight size={16} />
+                        {isEn ? 'VIEW FULL GUIDE' : 'ZOBRAZIT CELOU RADU'} <ChevronRight size={18} />
                       </div>
                     </div>
                   </article>
@@ -168,19 +163,16 @@ export default function RadyArchivePage() {
         )}
       </main>
 
-      {/* --- FOOTER --- */}
       <footer style={footerStyle}>
-        <div style={footerContentBox}>
-          <div style={{ fontSize: '12px', color: '#444', fontWeight: '900', letterSpacing: '2px', textTransform: 'uppercase' }}>
-             20 Years of field-work | Hardware Guru Base
-          </div>
+        <div style={{ fontSize: '13px', color: '#444', fontWeight: '900', letterSpacing: '2px', textTransform: 'uppercase' }}>
+          Hardware Guru Technical Base 🦾 20 Years Experience
         </div>
       </footer>
     </div>
   );
 }
 
-// --- MASTER STYLES ---
+// --- GURU MASTER STYLES ---
 const archiveWrapper = { 
     minHeight: '100vh', 
     backgroundColor: '#0a0b0d', 
@@ -190,76 +182,57 @@ const archiveWrapper = {
     padding: '120px 20px 0px' 
 };
 
-const headerStyle = { 
-    maxWidth: '800px', 
-    margin: '0 auto 40px', 
-    textAlign: 'center' 
-};
-
+const headerStyle = { maxWidth: '1000px', margin: '0 auto 60px', textAlign: 'center' };
 const headerContentBox = {
-    background: 'rgba(0,0,0,0.8)',
-    padding: '30px 20px',
-    borderRadius: '24px',
+    background: 'rgba(0,0,0,0.85)',
+    padding: '40px 20px',
+    borderRadius: '35px',
     backdropFilter: 'blur(15px)',
-    border: '1px solid rgba(102, 252, 241, 0.15)'
+    border: '1px solid rgba(102, 252, 241, 0.15)',
+    boxShadow: '0 20px 50px rgba(0,0,0,0.7)'
 };
 
 const titleStyle = { 
-    fontSize: 'clamp(28px, 5vw, 48px)', 
+    fontSize: 'clamp(32px, 6vw, 64px)', 
     fontWeight: '950', 
     textTransform: 'uppercase', 
-    letterSpacing: '-1px', 
+    letterSpacing: '-2px', 
     color: '#fff', 
     lineHeight: '1',
     margin: 0
 };
 
-const subtitleStyle = { 
-    marginTop: '15px', 
-    color: '#9ca3af', 
-    fontWeight: '600', 
-    fontSize: '16px'
-};
-
-const gridContainer = { 
-    maxWidth: '1200px', 
-    margin: '0 auto' 
-};
+const subtitleStyle = { marginTop: '20px', color: '#9ca3af', fontWeight: '700', fontSize: '18px' };
+const gridContainer = { maxWidth: '1300px', margin: '0 auto' };
 
 const cardTitleStyle = { 
-    fontSize: '18px', 
+    fontSize: '24px', 
     fontWeight: '900', 
     color: '#fff', 
-    marginBottom: '10px', 
+    marginBottom: '20px', 
     textTransform: 'uppercase', 
-    lineHeight: '1.2'
+    lineHeight: '1.2',
+    letterSpacing: '-0.5px'
 };
 
 const cardDescStyle = { 
     color: '#9ca3af', 
-    fontSize: '13px', 
-    lineHeight: '1.5', 
+    fontSize: '15px', 
+    lineHeight: '1.7', 
     flexGrow: 1, 
-    marginBottom: '15px' 
+    marginBottom: '30px' 
 };
 
 const moreStyle = { 
     color: '#66fcf1', 
     fontWeight: '950', 
-    fontSize: '12px', 
+    fontSize: '14px', 
     display: 'flex', 
     alignItems: 'center', 
-    gap: '5px', 
+    gap: '8px', 
     marginTop: 'auto', 
     textTransform: 'uppercase',
     letterSpacing: '1px'
 };
 
-const footerStyle = { marginTop: '60px', paddingBottom: '40px' };
-const footerContentBox = {
-    maxWidth: '800px', 
-    margin: '0 auto',
-    padding: '30px 20px',
-    borderTop: '1px solid rgba(102, 252, 241, 0.1)',
-    textAlign: 'center'
-};
+const footerStyle = { padding: '80px 20px', textAlign: 'center' };
