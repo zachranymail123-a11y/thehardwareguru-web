@@ -121,7 +121,7 @@ export default function ExpectedGameDetail() {
                 <div style={{ aspectRatio: '16/9' }}>
                    {item.trailer.includes('youtube.com') || item.trailer.includes('youtu.be')
                      ? <iframe width="100%" height="100%" src={item.trailer} frameBorder="0" allowFullScreen></iframe>
-                     : <video width="100%" height="100%" controls style={{ display: 'block' }}><source src={item.trailer} type="video/mp4"></video>
+                     : <video width="100%" height="100%" controls style={{ display: 'block' }}><source src={item.trailer} type="video/mp4" /></video>
                    }
                 </div>
              </div>
