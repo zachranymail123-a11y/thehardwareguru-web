@@ -185,8 +185,8 @@ export default function Navbar() {
       justifyContent: 'space-between', color: '#fff', height: '90px' // GURU GOLDEN HEIGHT: 90px
     }}>
       
-      {/* 1. LOGO VLEVO */}
-      <Link href={isEn ? "/en" : "/"} style={{ textDecoration: 'none', flexShrink: 0 }}>
+      {/* 1. LOGO VLEVO (GURU FIX: Přidán prefetch false a natvrdý router push) */}
+      <Link href={isEn ? "/en" : "/"} prefetch={false} onClick={(e) => { e.preventDefault(); router.push(isEn ? "/en" : "/"); }} style={{ textDecoration: 'none', flexShrink: 0, cursor: 'pointer' }}>
         <span style={{ 
           color: '#a855f7', 
           fontFamily: 'serif', 
@@ -312,24 +312,23 @@ export default function Navbar() {
         )}
       </div>
 
-      {/* 3. MENU A SÍTĚ VPRAVO */}
+      {/* 3. MENU A SÍTĚ VPRAVO (GURU FIX: Přidán prefetch false a imperative router.push) */}
       <div style={{ display: 'flex', gap: '30px', alignItems: 'center', flexShrink: 0 }}>
         {/* TEXTOVÉ ODKAZY - PLNÉ NÁZVY A VĚTŠÍ PÍSMO */}
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          <Link href={isEn ? "/en/clanky" : "/clanky"} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <Link href={isEn ? "/en/clanky" : "/clanky"} prefetch={false} onClick={(e) => { e.preventDefault(); router.push(isEn ? "/en/clanky" : "/clanky"); }} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
             {isEn ? 'ARTICLES' : 'ČLÁNKY'}
           </Link>
-          <Link href={isEn ? "/en/tipy" : "/tipy"} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <Link href={isEn ? "/en/tipy" : "/tipy"} prefetch={false} onClick={(e) => { e.preventDefault(); router.push(isEn ? "/en/tipy" : "/tipy"); }} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
             {isEn ? 'TIPS' : 'TIPY'}
           </Link>
-          <Link href={isEn ? "/en/tweaky" : "/tweaky"} style={{ color: '#eab308', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <Link href={isEn ? "/en/tweaky" : "/tweaky"} prefetch={false} onClick={(e) => { e.preventDefault(); router.push(isEn ? "/en/tweaky" : "/tweaky"); }} style={{ color: '#eab308', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
             {isEn ? 'GURU TWEAKS' : 'GURU TWEAKY'}
           </Link>
-          <Link href={isEn ? "/en/slovnik" : "/slovnik"} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <Link href={isEn ? "/en/slovnik" : "/slovnik"} prefetch={false} onClick={(e) => { e.preventDefault(); router.push(isEn ? "/en/slovnik" : "/slovnik"); }} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
             {isEn ? 'GLOSSARY' : 'SLOVNÍK'}
           </Link>
-          {/* GURU GOLDEN MENU: PRAKTICKÉ RADY */}
-          <Link href={isEn ? "/en/rady" : "/rady"} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <Link href={isEn ? "/en/rady" : "/rady"} prefetch={false} onClick={(e) => { e.preventDefault(); router.push(isEn ? "/en/rady" : "/rady"); }} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
             {isEn ? 'PRACTICAL GUIDES' : 'PRAKTICKÉ RADY'}
           </Link>
         </div>
