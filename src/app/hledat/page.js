@@ -3,22 +3,39 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { Cpu, SearchX, ArrowRight, Loader2 } from 'lucide-react';
+import { SearchX, ArrowRight, Loader2 } from 'lucide-react';
 
-// GURU ENGINE: Připojení na Supabase
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 function SearchContent() {
   const searchParams = useSearchParams();
-  const pathname = usePathname();
+  const pathname = usePathname() || '';
   const query = searchParams.get('q');
   
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // GURU PRAVIDLO: Detekce jazyka
   const isEn = pathname.startsWith('/en');
   const lang = isEn ? 'en' : 'cs';
+
+  // 🚀 GURU ROUTE MAP: Správný překlad z DB (posts) na webové složky (clanky)
+  const routeMap = {
+    'posts': 'clanky',
+    'clanky': 'clanky',
+    'tipy': 'tipy',
+    'tweaky': 'tweaky',
+    'slovnik': 'slovnik',
+    'rady': 'rady'
+  };
+
+  const sectionNames = {
+    'posts': isEn ? 'ARTICLE' : 'ČLÁNEK',
+    'clanky': isEn ? 'ARTICLE' : 'ČLÁNEK',
+    'tipy': isEn ? 'TIP' : 'TIP',
+    'tweaky': isEn ? 'TWEAK' : 'TWEAK',
+    'slovnik': isEn ? 'GLOSSARY' : 'SLOVNÍK',
+    'rady': isEn ? 'GUIDE' : 'RADA'
+  };
 
   useEffect(() => {
     if (!query) {
@@ -30,44 +47,73 @@ function SearchContent() {
       setLoading(true);
       
       try {
-        const q = query.trim();
+        const q = query.trim().replace(/[,"]/g, ''); 
+        const searchTerm = `%${q}%`;
+        const safeQ = q.toLowerCase();
+
+        // 🚀 GURU DB FIX: Tabulka v Supabase se jmenuje 'posts', ne 'clanky'!
+        const tables = ['posts', 'tipy', 'tweaky', 'slovnik', 'rady'];
+        const columns = ['title', 'content', 'seo_description', 'seo_keywords', 'description_en', 'content_en', 'meta_title', 'text', 'title_en'];
+
+        const allPromises = [];
+
+        tables.forEach(table => {
+          columns.forEach(col => {
+            allPromises.push(
+              supabase.from(table).select('*').ilike(col, searchTerm)
+                .then(res => {
+                  if (res.error) throw res.error;
+                  return (res.data || []).map(item => ({ ...item, section: table }));
+                })
+            );
+          });
+        });
+
+        const resultsArrays = await Promise.allSettled(allPromises);
+        const allResults = resultsArrays
+          .filter(p => p.status === 'fulfilled')
+          .map(p => p.value)
+          .flat();
+
+        const uniqueResultsMap = new Map();
         
-        // 🚀 GURU POSTGRESQL FULL-TEXT SEARCH (Dle profi návrhu)
-        // Voláme nativní SQL funkci pro brutální rychlost a přesnost (stemming, relevance)
-        const { data: rpcData, error: rpcError } = await supabase.rpc('search_tweaks', { search_term: q });
-
-        if (!rpcError && rpcData) {
-          // SQL Full-Text engine zafungoval!
-          setResults(rpcData);
-        } else {
-          // ZÁLOHA: Pokud SQL funkce ještě neexistuje (např. jsi nespustil SQL kód), 
-          // použijeme robustní původní GURU paralelní JS hledání, aby web nikdy nespadl.
-          console.warn("PostgreSQL RPC nenalezeno, aktivuji JS Fallback:", rpcError?.message);
+        allResults.forEach(item => {
+          // GURU SLUG ENGINE
+          const actualSlug = (isEn && item.slug_en) ? item.slug_en : item.slug;
+          const key = item.section + actualSlug;
           
-          const searchTerm = `%${q}%`;
-          const safeQuery = async (column) => {
-            try {
-              const { data, error } = await supabase
-                .from('tweaky')
-                .select('title, slug, image_url, seo_description, description_en')
-                .ilike(column, searchTerm);
-              return error ? [] : (data || []);
-            } catch (e) {
-              return [];
+          if (!uniqueResultsMap.has(key)) {
+            let desc = '';
+            let foundSnippet = false;
+
+            for (const k in item) {
+              if (typeof item[k] === 'string' && k !== 'image_url' && k !== 'slug' && k !== 'slug_en' && k !== 'section' && k !== 'title' && k !== 'title_en') {
+                const plainText = item[k].replace(/<[^>]+>/g, '');
+                const matchIndex = plainText.toLowerCase().indexOf(safeQ);
+                
+                if (matchIndex !== -1) {
+                  const start = Math.max(0, matchIndex - 40);
+                  const end = Math.min(plainText.length, matchIndex + 80);
+                  desc = (start > 0 ? '...' : '') + plainText.substring(start, end) + '...';
+                  foundSnippet = true;
+                  break;
+                }
+              }
             }
-          };
 
-          const [byTitle, byDesc, byKeys, byContent] = await Promise.all([
-            safeQuery('title'),
-            safeQuery('seo_description'),
-            safeQuery('seo_keywords'),
-            safeQuery('content')
-          ]);
+            if (!foundSnippet) {
+              desc = item.seo_description || item.description_en || (item.content ? item.content.replace(/<[^>]+>/g, '').substring(0, 100) + '...' : '');
+            }
+            
+            item.displayDesc = desc;
+            item.finalSlug = actualSlug;
+            item.finalSection = routeMap[item.section] || item.section;
+            
+            uniqueResultsMap.set(key, item);
+          }
+        });
 
-          const allResults = [...byTitle, ...byDesc, ...byKeys, ...byContent];
-          const uniqueResults = Array.from(new Map(allResults.map(item => [item.slug, item])).values());
-          setResults(uniqueResults);
-        }
+        setResults(Array.from(uniqueResultsMap.values()));
       } catch (err) {
         console.error("Kritické selhání vyhledávání:", err);
       } finally {
@@ -76,21 +122,20 @@ function SearchContent() {
     };
 
     fetchResults();
-  }, [query]);
+  }, [query, isEn]);
 
-  // Multijazyčný slovník
   const t = {
     cs: {
       title: 'Výsledky hledání pro:',
       searching: 'GURU PROHLEDÁVÁ ARCHIV...',
-      read: 'DETAIL TWEAKU',
+      read: 'ZOBRAZIT',
       emptyTitle: 'GURU NIC NENAŠEL.',
       emptyDesc: "Zkus hledat něco jiného nebo zkontroluj překlepy. (např. 'DDR5', 'Optimalizace')",
     },
     en: {
       title: 'Search results for:',
       searching: 'GURU IS SEARCHING...',
-      read: 'READ TWEAK',
+      read: 'VIEW',
       emptyTitle: 'NOTHING FOUND.',
       emptyDesc: "Try a different keyword or check for typos. (e.g. 'DDR5', 'Optimization')",
     }
@@ -112,8 +157,11 @@ function SearchContent() {
         </div>
       ) : results.length > 0 ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '30px' }}>
-          {results.map((item, index) => (
-            <Link href={isEn ? `/en/tweaky/${item.slug}` : `/tweaky/${item.slug}`} key={index} style={{ textDecoration: 'none' }}>
+          {results.map((item, index) => {
+            const titleToDisplay = (isEn && item.title_en) ? item.title_en : item.title;
+
+            return (
+            <Link href={isEn ? `/en/${item.finalSection}/${item.finalSlug}` : `/${item.finalSection}/${item.finalSlug}`} prefetch={false} key={index} style={{ textDecoration: 'none' }}>
               <div style={{ 
                 background: '#0d0e12', 
                 border: '1px solid #1f2937', 
@@ -138,13 +186,23 @@ function SearchContent() {
               >
                 {item.image_url && item.image_url !== 'EMPTY' && (
                   <div style={{ height: '180px', overflow: 'hidden', position: 'relative' }}>
-                    <img src={item.image_url} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={item.image_url} alt={titleToDisplay} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', top: '10px', right: '10px', background: '#a855f7', padding: '4px 8px', borderRadius: '4px', fontSize: '10px', color: '#fff', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                      {sectionNames[item.section]}
+                    </div>
                   </div>
                 )}
                 <div style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <h2 style={{ fontSize: '20px', color: '#eab308', marginBottom: '12px', fontWeight: '800' }}>{item.title}</h2>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                    <h2 style={{ fontSize: '20px', color: '#eab308', margin: 0, fontWeight: '800' }}>{titleToDisplay}</h2>
+                    {(!item.image_url || item.image_url === 'EMPTY') && (
+                      <div style={{ background: '#a855f7', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', color: '#fff', fontWeight: 'bold', letterSpacing: '0.5px', marginLeft: '10px' }}>
+                        {sectionNames[item.section]}
+                      </div>
+                    )}
+                  </div>
                   <p style={{ fontSize: '14px', color: '#9ca3af', lineHeight: '1.6', marginBottom: '20px', flex: 1 }}>
-                    {isEn && item.description_en ? item.description_en.substring(0, 110) : item.seo_description?.substring(0, 110)}...
+                    {item.displayDesc}
                   </p>
                   <div style={{ display: 'flex', alignItems: 'center', color: '#a855f7', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase' }}>
                     {currentT.read} <ArrowRight size={16} style={{ marginLeft: '8px' }} />
@@ -152,7 +210,7 @@ function SearchContent() {
                 </div>
               </div>
             </Link>
-          ))}
+          )})}
         </div>
       ) : (
         <div style={{ textAlign: 'center', padding: '80px 20px', background: 'rgba(168, 85, 247, 0.02)', border: '1px dashed #333', borderRadius: '24px' }}>
