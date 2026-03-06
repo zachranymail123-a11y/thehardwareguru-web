@@ -1,214 +1,153 @@
+"use client";
+import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import React from 'react';
-import { ChevronLeft, Play, Heart, ShieldCheck, Home, Lightbulb, Book, PenTool } from 'lucide-react';
+import { usePathname, useParams } from 'next/navigation';
+import { Lightbulb, ArrowLeft, Share2, Loader2, Heart } from 'lucide-react';
+import Link from 'next/link';
 
+// GURU ENGINE: Připojení k Supabase
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-// 1. ZDE JE MAGIE PRO GOOGLE DISCOVER A SOCIÁLNÍ SÍTĚ
-export async function generateMetadata({ params }) {
-  const { data: tip } = await supabase
-    .from('tipy')
-    .select('*')
-    .eq('slug', params.slug)
-    .single();
+export default function TipDetail() {
+  const { slug } = useParams();
+  const pathname = usePathname();
+  const isEn = pathname.startsWith('/en');
 
-  if (!tip) return { title: 'Tip nenalezen | The Hardware Guru' };
+  const [item, setItem] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  return {
-    title: `${tip.title} | The Hardware Guru`,
-    description: tip.description,
-    openGraph: {
-      title: tip.title,
-      description: tip.description,
-      url: `https://www.thehardwareguru.cz/tipy/${tip.slug}`,
-      siteName: 'The Hardware Guru',
-      images: [
-        {
-          url: tip.image_url, // Tady si to vezme tu širokou fotku
-          width: 1792,
-          height: 1024,
-          alt: tip.title,
-        },
-      ],
-      type: 'article',
-    },
-    twitter: {
-      card: 'summary_large_image', // Nutí to Google a sítě použít velký náhled
-      title: tip.title,
-      description: tip.description,
-      images: [tip.image_url],
-    },
-  };
-}
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        let query = supabase.from('tipy').select('*');
+        
+        // GURU SLUG ENGINE: V angličtině hledáme v obou sloupcích současně. 
+        // Pokud slug_en v DB není vyplněný, matchne se to na klasický slug.
+        if (isEn) {
+          query = query.or(`slug_en.eq."${slug}",slug.eq."${slug}"`);
+        } else {
+          query = query.eq('slug', slug);
+        }
 
-export default async function TipDetail({ params }) {
-  // 1. Načtení aktuálního tipu
-  const { data: tip } = await supabase
-    .from('tipy')
-    .select('*')
-    .eq('slug', params.slug)
-    .single();
+        const { data, error } = await query.single();
+        if (error) throw error;
+        setItem(data);
 
-  // 2. Načtení 3 dalších náhodných tipů
-  const { data: dalsiTipy } = await supabase
-    .from('tipy')
-    .select('*')
-    .neq('slug', params.slug)
-    .limit(3);
+        // 🚀 GURU SEO INJECTION: Dynamická změna titulku a meta description
+        const seoTitle = isEn 
+          ? (data.meta_title_en || data.title_en || data.title) 
+          : (data.meta_title || data.title);
+        
+        const seoDesc = isEn 
+          ? (data.description_en || data.description) 
+          : (data.description);
 
-  if (!tip) return <div style={{ color: '#fff', textAlign: 'center', padding: '100px' }}>Guru tento tip nenašel.</div>;
+        document.title = `${seoTitle} | Guru Hardware Tips`;
+        
+        let metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) {
+          metaDesc.setAttribute('content', seoDesc || '');
+        }
+
+      } catch (err) {
+        console.error("GURU ERROR: Tip load failed or missing slug:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [slug, isEn]);
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader2 className="animate-spin" size={48} color="#a855f7" />
+        <p style={{ marginTop: '20px', fontWeight: 'bold', color: '#a855f7' }}>
+          {isEn ? 'GURU IS LOADING KNOWLEDGE...' : 'GURU NAČÍTÁ MOUDROST...'}
+        </p>
+      </div>
+    );
+  }
+
+  if (!item) {
+    return (
+      <div style={errorContainer}>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '20px' }}>
+          {isEn ? 'TIP NOT FOUND' : 'TIP NENALEZEN'}
+        </h1>
+        <Link href={isEn ? "/en/tipy" : "/tipy"} style={backBtn}>
+          {isEn ? 'BACK TO TIPS' : 'ZPĚT NA TIPY'}
+        </Link>
+      </div>
+    );
+  }
+
+  // GURU FALLBACK: Pokud EN verze v DB chybí, ukážeme CZ jako backup
+  const displayTitle = (isEn && item.title_en) ? item.title_en : item.title;
+  const displayContent = (isEn && item.content_en) ? item.content_en : item.content;
 
   return (
-    <div style={{ 
-      backgroundColor: '#0a0b0d', 
-      minHeight: '100vh', 
-      color: '#fff', 
-      fontFamily: 'sans-serif',
-      backgroundImage: 'url("/bg-guru.png")',
-      backgroundSize: 'cover',
-      backgroundAttachment: 'fixed'
-    }}>
-      
-      {/* 2. ZDE JE DRUHÁ ČÁST MAGIE - JSON-LD (NewsArticle Schema) */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "NewsArticle",
-            "headline": tip.title,
-            "image": [
-              tip.image_url
-            ],
-            "datePublished": tip.created_at,
-            "author": [{
-                "@type": "Person",
-                "name": "The Hardware Guru",
-                "url": "https://www.thehardwareguru.cz"
-              }],
-            "publisher": {
-              "@type": "Organization",
-              "name": "The Hardware Guru",
-              "logo": {
-                "@type": "ImageObject",
-                "url": "https://www.thehardwareguru.cz/logo.png" // Uprav, pokud máš logo jinde
-              }
-            }
-          })
-        }}
+    <article style={articleContainer}>
+      <style>{`
+        .article-body h2 { color: #a855f7; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem; font-weight: 900; text-transform: uppercase; border-bottom: 2px solid rgba(168, 85, 247, 0.2); display: inline-block; padding-bottom: 5px; }
+        .article-body p { line-height: 1.8; margin-bottom: 20px; font-size: 1.1rem; color: #e5e7eb; }
+        .article-body img { max-width: 100%; border-radius: 16px; margin: 30px 0; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .article-body ul, .article-body ol { margin-bottom: 25px; padding-left: 25px; color: #d1d5db; }
+        .article-body li { margin-bottom: 12px; }
+        .article-body strong { color: #a855f7; }
+        .article-body a { color: #a855f7; text-decoration: underline; }
+      `}</style>
+
+      {/* --- HEADER --- */}
+      <header style={headerStyle}>
+        <Link href={isEn ? "/en/tipy" : "/tipy"} style={backLink}>
+          <ArrowLeft size={16} /> {isEn ? 'BACK TO GURU TIPS' : 'ZPĚT NA GURU TIPY'}
+        </Link>
+        <div style={{ color: '#a855f7', marginBottom: '25px' }}><Lightbulb size={56} /></div>
+        <h1 style={mainTitle}>{displayTitle}</h1>
+      </header>
+
+      {/* --- CONTENT --- */}
+      <div 
+        className="article-body"
+        style={contentStyle}
+        dangerouslySetInnerHTML={{ __html: displayContent || (isEn ? 'The Guru is currently translating this tip...' : 'Obsah tipu se připravuje...') }} 
       />
 
-      {/* HLAVNÍ NAVIGACE WEBU */}
-      <nav style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        gap: '25px', 
-        padding: '20px', 
-        background: 'rgba(0,0,0,0.5)', 
-        backdropFilter: 'blur(10px)',
-        borderBottom: '1px solid rgba(168, 85, 247, 0.2)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100
-      }}>
-        <a href="/" style={navItemStyle}><Home size={18} /> HOMEPAGE</a>
-        <a href="/tipy" style={{...navItemStyle, color: '#a855f7'}}><Lightbulb size={18} /> TIPY</a>
-        <a href="/slovnik" style={navItemStyle}><Book size={18} /> SLOVNÍK</a>
-        <a href="/rady" style={navItemStyle}><PenTool size={18} /> PRAKTICKÉ RADY</a>
-      </nav>
-
-      {/* SOCIAL & SUPPORT MENU */}
-      <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '15px', padding: '20px' }}>
-        <a href="https://kick.com/TheHardwareGuru" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#53fc18')}>KICK</a>
-        <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#ff0000')}>YOUTUBE</a>
-        <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" style={socialBtnStyle('#5865F2')}>DISCORD</a>
-        <a href="/support" style={socialBtnStyle('#eab308', true)}>SUPPORT</a>
-      </div>
-
-      {/* HERO SECTION */}
-      <div style={{ width: '100%', height: '40vh', position: 'relative' }}>
-        <img src={tip.image_url} alt={tip.title} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: '0.4' }} />
-        <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', background: 'linear-gradient(to top, #0a0b0d, transparent)', padding: '60px 20px' }}>
-          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-            <span style={{ color: '#a855f7', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '12px' }}>{tip.category}</span>
-            <h1 style={{ fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: '900', marginTop: '15px', lineHeight: '1.1' }}>{tip.title}</h1>
-          </div>
+      {/* --- FOOTER --- */}
+      <footer style={footerStyle}>
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center', gap: '20px' }}>
+             <button onClick={() => navigator.clipboard.writeText(window.location.href)} style={shareBtn}>
+               <Share2 size={18} /> {isEn ? 'COPY TIP LINK' : 'KOPÍROVAT ODKAZ'}
+             </button>
         </div>
-      </div>
-
-      <main style={{ maxWidth: '900px', margin: '0 auto', padding: '0 20px 100px 20px' }}>
-        <div style={{ background: 'rgba(17, 19, 24, 0.8)', padding: '40px', borderRadius: '35px', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
-          
-          <div style={{ fontSize: '19px', lineHeight: '1.8', whiteSpace: 'pre-wrap', color: '#e5e7eb' }}>
-            {tip.content}
-          </div>
-
-          {tip.youtube_id && (
-            <div style={{ marginTop: '60px' }}>
-              <h3 style={{ marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Play size={20} fill="#ff0000" color="#ff0000" /> Video manuál:
-              </h3>
-              <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '25px' }}>
-                <iframe style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} src={`https://www.youtube.com/embed/${tip.youtube_id}`} frameBorder="0" allowFullScreen></iframe>
-              </div>
-            </div>
-          )}
-
-          {/* SUPPORT SEKCE */}
-          <div style={{ marginTop: '80px', padding: '40px', background: 'rgba(234, 179, 8, 0.05)', borderRadius: '28px', border: '1px solid rgba(234, 179, 8, 0.3)', textAlign: 'center' }}>
-            <ShieldCheck size={40} color="#eab308" style={{ margin: '0 auto 20px' }} />
-            <h3 style={{ color: '#eab308', fontSize: '24px', fontWeight: 'bold', marginBottom: '15px' }}>Dalo ti to něco nového?</h3>
-            <p style={{ color: '#d1d5db', fontSize: '16px', lineHeight: '1.6', marginBottom: '30px' }}>
-              Pokud ti tento tip pomohl nebo ses dozvěděl něco úplně nového, zvaž podporu projektu <strong>The Hardware Guru</strong>. Každá podpora nám pomáhá udržet provoz serveru a všech služeb v provozu. Děkujeme za každý dar!
-            </p>
-            <a href="/support" style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: '#eab308', color: '#000', padding: '16px 30px', borderRadius: '15px', fontWeight: '900', textDecoration: 'none' }}>
-              <Heart size={20} fill="#000" /> PODPOŘIT PROJEKT
-            </a>
-          </div>
+        
+        <div style={supportBanner}>
+          <h3 style={{ color: '#a855f7', margin: '0 0 15px 0' }}>{isEn ? 'Fuel the Guru engine' : 'Podpoř Guru mašinu'}</h3>
+          <p style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '25px' }}>
+            {isEn ? 'Did this tip save you money or time? Keep the Guru alive and support the project.' : 'Ušetřil ti tento tip peníze nebo čas? Podpoř projekt a udrž Guruho při životě.'}
+          </p>
+          <Link href={isEn ? "/en/support" : "/support"} style={supportLink}>
+             <Heart size={18} fill="#0b0c10" /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
+          </Link>
         </div>
-
-        {/* NÁVRHY DALŠÍCH TIPŮ */}
-        <div style={{ marginTop: '80px' }}>
-          <h2 style={{ fontSize: '22px', fontWeight: '900', marginBottom: '30px', textAlign: 'center', opacity: 0.8 }}>DALŠÍ GURU NÁVODY</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '25px' }}>
-            {dalsiTipy?.map((item) => (
-              <a href={`/tipy/${item.slug}`} key={item.id} style={{ textDecoration: 'none', color: 'inherit' }}>
-                <article style={{ background: 'rgba(17, 19, 24, 0.6)', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <img src={item.image_url} alt={item.title} style={{ width: '100%', height: '160px', objectFit: 'cover' }} />
-                  <div style={{ padding: '20px' }}>
-                    <h4 style={{ fontSize: '17px', fontWeight: 'bold', margin: 0 }}>{item.title}</h4>
-                  </div>
-                </article>
-              </a>
-            ))}
-          </div>
-        </div>
-      </main>
-    </div>
+      </footer>
+    </article>
   );
 }
 
-const navItemStyle = {
-  color: '#fff',
-  textDecoration: 'none',
-  fontSize: '13px',
-  fontWeight: 'bold',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  transition: '0.2s'
-};
-
-const socialBtnStyle = (color, isSupport = false) => ({
-  color: color,
-  textDecoration: 'none',
-  fontWeight: 'bold',
-  fontSize: '11px',
-  border: `1px solid ${color}`,
-  padding: '8px 16px',
-  borderRadius: '12px',
-  background: isSupport ? `${color}1a` : 'transparent'
-});
+// --- GURU STYLES (PURPLE THEME) ---
+const articleContainer = { maxWidth: '850px', margin: '0 auto', padding: '40px 20px', color: '#fff' };
+const errorContainer = { textAlign: 'center', padding: '120px 20px' };
+const headerStyle = { marginBottom: '50px' };
+const backLink = { display: 'flex', alignItems: 'center', gap: '8px', color: '#a855f7', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px', marginBottom: '35px', textTransform: 'uppercase', letterSpacing: '1px' };
+const backBtn = { display: 'inline-block', background: '#a855f7', color: '#fff', padding: '14px 28px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold', marginTop: '20px' };
+const mainTitle = { fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: '900', lineHeight: '1.1', textTransform: 'uppercase', letterSpacing: '-0.5px' };
+const contentStyle = { maxWidth: '100%' };
+const footerStyle = { marginTop: '80px', paddingTop: '40px', borderTop: '1px solid #1f2937', textAlign: 'center' };
+const shareBtn = { background: '#111', border: '1px solid #333', color: '#fff', padding: '14px 28px', borderRadius: '14px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '10px', fontWeight: 'bold' };
+const supportBanner = { background: 'rgba(168, 85, 247, 0.03)', border: '1px solid rgba(168, 85, 247, 0.2)', padding: '35px', borderRadius: '24px', textAlign: 'center' };
+const supportLink = { background: '#a855f7', color: '#fff', padding: '14px 30px', borderRadius: '14px', textDecoration: 'none', fontWeight: '900', display: 'inline-flex', alignItems: 'center', gap: '10px' };
