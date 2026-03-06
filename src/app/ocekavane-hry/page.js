@@ -6,8 +6,8 @@ import { usePathname } from 'next/navigation';
 import { Calendar, Monitor, Loader2, Eye, Zap, ArrowRight, Info, Play } from 'lucide-react';
 
 /**
- * 🚀 GURU EXPECTED GAMES ARCHIVE - DEFINITÍVNA VERZIA 2.0
- * Vyriešené: Detekcia a vizualizácia trailerov, navigácia na slug a Elite Neon dizajn.
+ * 🚀 GURU EXPECTED GAMES ARCHIVE - DEFINITÍVNA VERZIA 3.0 (VIDEO UPDATE)
+ * Vyriešené: Živé video náhľady pri hoveri, detekcia trailerov a Elite Neon dizajn.
  */
 
 const supabase = createClient(
@@ -18,6 +18,7 @@ const supabase = createClient(
 export default function ExpectedGamesArchive() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hoveredId, setHoveredId] = useState(null); // GURU FIX: Stav pro aktivaci videa
   const pathname = usePathname() || '';
   const isEn = pathname.startsWith('/en');
 
@@ -27,7 +28,7 @@ export default function ExpectedGamesArchive() {
         const { data, error } = await supabase
           .from('posts')
           .select('*')
-          .eq('type', 'expected') // GURU CORE: Filtrujeme iba technologické preview
+          .eq('type', 'expected') 
           .order('created_at', { ascending: false });
         
         if (!error && data) setItems(data);
@@ -93,6 +94,7 @@ export default function ExpectedGamesArchive() {
             opacity: 0;
             transition: 0.3s;
             z-index: 10;
+            pointer-events: none;
         }
         .desc-text {
             color: #9ca3af;
@@ -122,6 +124,15 @@ export default function ExpectedGamesArchive() {
             text-transform: uppercase;
             letter-spacing: 1px;
         }
+        .card-video-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+        }
       `}</style>
 
       <header style={headerStyle}>
@@ -134,8 +145,8 @@ export default function ExpectedGamesArchive() {
           </h1>
           <p style={subtitleStyle}>
             {isEn 
-              ? 'Technical breakdowns of upcoming hardware-crushing titles.' 
-              : 'Technické rozbory titulov, ktoré v blízkej dobe preveria tvoj hardvér.'}
+              ? 'Technical breakdowns with live video trailers.' 
+              : 'Technické rozbory s interaktívnymi video ukážkami.'}
           </p>
         </div>
       </header>
@@ -151,14 +162,14 @@ export default function ExpectedGamesArchive() {
         ) : (
           <div style={grid}>
             {items.map((item) => {
-              // 🚀 GURU SLUG ENGINE: Kľúčová logika pre navigáciu
               const actualSlug = (isEn && item.slug_en) ? item.slug_en : item.slug;
               if (!actualSlug) return null;
 
               const displayTitle = (isEn && item.title_en) ? item.title_en : item.title;
               const displayDesc = (isEn && item.description_en) ? item.description_en : item.description;
               
-              // 🎥 GURU VIDEO CHECK: Máme trailer alebo video_id?
+              // 🎥 GURU VIDEO CHECK
+              const hasTrailerLink = item.trailer && item.trailer.includes('.mp4');
               const hasVideo = item.trailer || (item.video_id && item.video_id.length > 5);
 
               return (
@@ -166,24 +177,42 @@ export default function ExpectedGamesArchive() {
                   key={item.id} 
                   href={isEn ? `/en/ocekavane-hry/${actualSlug.trim()}` : `/ocekavane-hry/${actualSlug.trim()}`} 
                   prefetch={false}
+                  onMouseEnter={() => setHoveredId(item.id)}
+                  onMouseLeave={() => setHoveredId(null)}
                   style={{ textDecoration: 'none' }}
                 >
                   <article className="expected-card">
                     <div className="card-image-wrapper">
-                       {/* 🎥 VIDEO BADGE */}
+                       {/* 🎥 GURU LIVE PREVIEW ENGINE */}
+                       {hasTrailerLink && hoveredId === item.id ? (
+                         <video 
+                            className="card-video-preview" 
+                            src={item.trailer} 
+                            autoPlay 
+                            muted 
+                            loop 
+                            playsInline
+                         />
+                       ) : (
+                         <img 
+                            src={item.image_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e'} 
+                            alt={displayTitle} 
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: hasVideo ? 0.7 : 0.8 }} 
+                         />
+                       )}
+
+                       {/* 🎥 VIDEO UI ELEMENTS */}
                        {hasVideo && (
                          <div className="video-badge">
                             <Play size={12} fill="#fff" /> {isEn ? 'VIDEO' : 'VIDEO'}
                          </div>
                        )}
                        
-                       {hasVideo && <div className="play-overlay"><Play size={30} fill="currentColor" /></div>}
-
-                       <img 
-                        src={item.image_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e'} 
-                        alt={displayTitle} 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: hasVideo ? 0.7 : 0.8 }} 
-                       />
+                       {hasVideo && hoveredId !== item.id && (
+                         <div className="play-overlay">
+                            <Play size={30} fill="currentColor" />
+                         </div>
+                       )}
                        
                        <div style={techBadge}>
                           <Info size={12} /> {isEn ? 'TECH PREVIEW' : 'TECHNICKÝ ROZBOR'}
@@ -221,6 +250,6 @@ const subtitleStyle = { marginTop: '25px', color: '#d1d5db', fontWeight: '700', 
 const gridContainer = { maxWidth: '1300px', margin: '0 auto' };
 const grid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '40px' };
 const cardTitleStyle = { fontSize: '26px', fontWeight: '900', color: '#fff', marginBottom: '15px', textTransform: 'uppercase', lineHeight: '1.1' };
-const techBadge = { position: 'absolute', top: '20px', left: '20px', background: 'rgba(102, 252, 241, 0.9)', color: '#000', padding: '6px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '5px', textTransform: 'uppercase' };
+const techBadge = { position: 'absolute', top: '20px', left: '20px', background: 'rgba(102, 252, 241, 0.9)', color: '#000', padding: '6px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '5px', textTransform: 'uppercase', zIndex: 10 };
 const moreBtn = { color: '#66fcf1', fontWeight: '950', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '10px', marginTop: 'auto', textTransform: 'uppercase', letterSpacing: '1px' };
 const center = { textAlign: 'center', padding: '100px' };
