@@ -1,6 +1,6 @@
 /**
- * 🚀 GURU GAME ARTICLE GENERATOR - MASTER ENGINE V4
- * Vyriešené: Detekcia trailerov z viacerých zdrojov, zápis do DB a riešenie duplicít (upsert).
+ * 🚀 GURU GAME ARTICLE GENERATOR - MASTER ENGINE V5
+ * Vyriešené: YouTube Fallback (ak RAWG nemá video) a 100% Anti-Duplicate logika.
  */
 
 export const maxDuration = 60;
@@ -24,8 +24,7 @@ export async function POST(req) {
 
     const apiKey = process.env.RAWG_API_KEY;
 
-    // 1. GURU DEEP DATA MINING
-    // Taháme základné info o hre + trailery (movies)
+    // 1. GURU DEEP DATA MINING (RAWG)
     const [gameRes, movieRes] = await Promise.all([
       fetch(`https://api.rawg.io/api/games/${gameId}?key=${apiKey}`),
       fetch(`https://api.rawg.io/api/games/${gameId}/movies?key=${apiKey}`)
@@ -34,13 +33,11 @@ export async function POST(req) {
     const gameData = await gameRes.json();
     const movieData = await movieRes.json();
     
-    // 🎥 GURU VIDEO DETECTION LOGIC
+    // 🎥 GURU VIDEO DETECTION (Fáze 1: RAWG)
     let rawVideo = null;
-    // Skúsime nájsť najlepší trailer v movies
     if (movieData.results && movieData.results.length > 0) {
         rawVideo = movieData.results[0].data?.max || movieData.results[0].data?.["480"];
     }
-    // Fallback na klip priamo v gameData
     if (!rawVideo) rawVideo = gameData.clip?.video;
     
     let videoId = null;
@@ -53,8 +50,34 @@ export async function POST(req) {
             videoId = (match && match[2].length === 11) ? match[2] : null;
             if (videoId) trailerUrl = `https://www.youtube.com/embed/${videoId}`;
         } else {
-            trailerUrl = rawVideo; // Priamy .mp4 link
+            trailerUrl = rawVideo;
         }
+    }
+
+    // 🎥 GURU VIDEO DETECTION (Fáze 2: YouTube Fallback Scraper)
+    // Pokud RAWG nic nemá (jako u hry 1348 Ex Voto), najdeme to natvrdo na YouTube
+    if (!videoId && !trailerUrl) {
+      try {
+        const ytSearch = await fetch('https://google.serper.dev/search', {
+          method: 'POST',
+          headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ q: `${gameData.name} official game trailer youtube`, gl: 'us', hl: 'en', num: 3 })
+        });
+        const ytData = await ytSearch.json();
+        
+        // Najdeme první validní YouTube link
+        const videoResult = ytData.organic?.find(r => r.link && r.link.includes('youtube.com/watch'));
+        if (videoResult) {
+           const match = videoResult.link.match(/[?&]v=([^&]+)/);
+           if (match && match[1]) {
+               videoId = match[1];
+               trailerUrl = `https://www.youtube.com/embed/${videoId}`;
+               console.log(`GURU YT FALLBACK SUCCESS pro hru ${gameData.name}:`, videoId);
+           }
+        }
+      } catch (e) {
+        console.error("GURU YT FALLBACK FAIL", e);
+      }
     }
 
     // 2. TECH REŠERŠE (AI Context)
@@ -87,20 +110,41 @@ export async function POST(req) {
 
     const ai = JSON.parse(completion.choices[0].message.content);
 
-    // 4. DB UPSERT - 🚀 GURU MASTER FIX: 
-    // Používame .upsert() s 'onConflict: slug', aby sme prepísali staré dáta a vyhli sa chybe "duplicate key"
-    const { error } = await supabaseAdmin.from('posts').upsert({
+    // Příprava finálních dat
+    const postData = {
       ...ai,
       image_url: gameData.background_image,
       video_id: videoId,
-      trailer: trailerUrl, // GURU FIX: Ukladáme nájdený trailer
-      youtube_url: videoId ? `https://www.youtube.com/watch?v=${videoId}` : trailerUrl, // Poistka pre stĺpec youtube_url
-      type: section || 'expected' 
-    }, { onConflict: 'slug' });
+      trailer: trailerUrl,
+      youtube_url: videoId ? `https://www.youtube.com/watch?v=${videoId}` : trailerUrl,
+      type: section || 'expected'
+    };
 
-    if (error) {
-      console.error("SUPABASE ERROR:", error);
-      throw error;
+    // 4. DB UPDATE / INSERT - 🚀 GURU MASTER ANTI-DUPLICATE ENGINE
+    // Místo upsertu manuálně zjistíme, zda existuje konflikt na slug nebo title
+    
+    let targetId = null;
+
+    // A) Zkusíme najít podle slugu
+    const { data: existingSlug } = await supabaseAdmin.from('posts').select('id').eq('slug', ai.slug).maybeSingle();
+    if (existingSlug) {
+      targetId = existingSlug.id;
+    } else {
+      // B) Pokud nesedí slug, zkusíme najít podle title (abychom předešli posts_title_unique chybě)
+      const { data: existingTitle } = await supabaseAdmin.from('posts').select('id').eq('title', ai.title).maybeSingle();
+      if (existingTitle) {
+        targetId = existingTitle.id;
+      }
+    }
+
+    if (targetId) {
+      // Záznam existuje -> UPDATE (přepíšeme ho)
+      const { error: updateError } = await supabaseAdmin.from('posts').update(postData).eq('id', targetId);
+      if (updateError) throw updateError;
+    } else {
+      // Záznam neexistuje -> INSERT
+      const { error: insertError } = await supabaseAdmin.from('posts').insert([postData]);
+      if (insertError) throw insertError;
     }
     
     return NextResponse.json({ success: true, slug: ai.slug });
