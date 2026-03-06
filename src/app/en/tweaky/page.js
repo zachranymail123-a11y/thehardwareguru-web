@@ -1,12 +1,6 @@
-"use client";
-
 /**
- * GURU EN PROXY: Tweaky
- * Tento soubor zajišťuje, že adresa /en/tweaky fyzicky existuje a je přístupná.
- * Importuje hlavní komponentu archivu, která si sama detekuje /en v URL.
+ * GURU MASTER PROXY: Anglické Tweaky
+ * GURU FIX: Přímý re-export řeší chybu "Unsupported Server Component type".
+ * Tento pattern zajišťuje maximální stabilitu Next.js kompilátoru během produkčního buildu.
  */
-import TweaksArchivePage from '../../tweaky/page';
-
-export default function EnglishTweaksPage() {
-  return <TweaksArchivePage />;
-}
+export { default } from '../../tweaky/page';
