@@ -21,19 +21,18 @@ export default function EnFixerDashboard() {
   const [currentTable, setCurrentTable] = useState(null);
   const [log, setLog] = useState([]);
   
-  // Ref pro zastavení smyčky
   const stopLoopRef = useRef(false);
 
-  // GURU DEEP DETECTION: Kontrolujeme VŠECHNA kritická pole
+  // 🚀 GURU DEEP DETECTION: Musí odpovídat backendu na 100%
   const needsFixing = (item, tableId) => {
-    // Základní EN pole musí existovat
-    if (!item.title_en || item.title_en.trim() === '') return true;
-    if (!item.description_en || item.description_en.trim() === '') return true;
+    const isValEmpty = (v) => !v || String(v).trim() === '' || String(v).toLowerCase() === 'null';
+
+    if (isValEmpty(item.title_en)) return true;
+    if (isValEmpty(item.description_en)) return true;
     
-    // Speciální SEO kontrola pro Články (podle tvého screenshotu)
     if (tableId === 'posts') {
-      if (!item.seo_description_en || item.seo_description_en === 'NULL' || item.seo_description_en.trim() === '') return true;
-      if (!item.seo_keywords_en || item.seo_keywords_en === 'NULL' || item.seo_keywords_en.trim() === '') return true;
+      if (isValEmpty(item.seo_description_en)) return true;
+      if (isValEmpty(item.seo_keywords_en)) return true;
     }
     
     return false;
@@ -59,7 +58,7 @@ export default function EnFixerDashboard() {
   };
 
   const runFix = async (tableId) => {
-    if (isFixing && !isAutoLoop) return;
+    if (isFixing && !isAutoLoop) return false;
     setIsFixing(true);
     setCurrentTable(tableId);
     addLog(`GURU SURGERY: Zpracovávám ${tableId}...`, 'info');
@@ -77,10 +76,11 @@ export default function EnFixerDashboard() {
       if (data.processedIds && data.processedIds.length > 0) {
         addLog(`Úspěch: Opraveny ${data.processedIds.length} záznamy v ${tableId}.`, 'success');
         await refreshCounts();
-        return true; // Našel a opravil
+        return true; 
       } else {
-        addLog(`Tabulka ${tableId} je kompletně v pořádku.`, 'success');
-        return false; // Nic k opravě
+        addLog(`Backend nehlásí žádná data k opravě pro ${tableId}.`, 'success');
+        await refreshCounts(); // Znovu přepočítáme, jestli se backend a frontend shodují
+        return false; 
       }
     } catch (err) {
       addLog(`CHYBA: ${err.message}`, 'error');
@@ -93,7 +93,6 @@ export default function EnFixerDashboard() {
     }
   };
 
-  // 🚀 GURU AUTO-LOOP: Mašina, co se nezastaví
   const startAutoLoop = async (tableId) => {
     stopLoopRef.current = false;
     setIsAutoLoop(true);
@@ -102,9 +101,19 @@ export default function EnFixerDashboard() {
 
     let hasMore = true;
     while (hasMore && !stopLoopRef.current) {
+      // Vždy před každým krokem zkontrolujeme, jestli je co dělat
+      const { data } = await supabase.from(tableId).select('*');
+      const currentCount = data ? data.filter(item => needsFixing(item, tableId)).length : 0;
+      
+      if (currentCount === 0) {
+        hasMore = false;
+        break;
+      }
+
       hasMore = await runFix(tableId);
-      if (hasMore) {
-        addLog(`Smyčka: Čekám 2 sekundy na další dávku...`, 'info');
+      
+      if (hasMore && !stopLoopRef.current) {
+        addLog(`Smyčka: Čekám 2s na další dávku (zbývá cca ${currentCount})...`, 'info');
         await new Promise(r => setTimeout(r, 2000));
       }
     }
@@ -113,7 +122,8 @@ export default function EnFixerDashboard() {
     setIsFixing(false);
     setCurrentTable(null);
     if (stopLoopRef.current) addLog(`🛑 AUTO-GURU MÓD BYL ZASTAVEN.`, 'error');
-    else addLog(`🏁 AUTO-GURU MÓD DOKONČEN. Vše je EN-READY!`, 'success');
+    else addLog(`🏁 AUTO-GURU MÓD DOKONČEN. Tabulka ${tableId} je čistá!`, 'success');
+    refreshCounts();
   };
 
   return (
@@ -126,9 +136,9 @@ export default function EnFixerDashboard() {
         {isAutoLoop && (
           <button 
             onClick={() => { stopLoopRef.current = true; }}
-            style={{ background: '#ff4444', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '900', cursor: 'pointer' }}
+            style={{ background: '#ff4444', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '900', cursor: 'pointer', boxShadow: '0 0 20px rgba(255, 68, 68, 0.4)' }}
           >
-            ZASTAVIT SMYČKU
+            ZASTAVIT OPERACI
           </button>
         )}
       </header>
