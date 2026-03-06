@@ -14,7 +14,8 @@ export default function Navbar() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const pathname = usePathname();
+  // 🚀 GURU ZÁCHRANNÁ BRZDA: Ochrana proti pádu aplikace na Vercelu (SSR fallback)
+  const pathname = usePathname() || ''; 
   const router = useRouter();
   const suggestionRef = useRef(null);
 
