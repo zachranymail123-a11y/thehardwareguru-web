@@ -12,96 +12,79 @@ export async function GET() {
   try {
     const siteUrl = 'https://www.thehardwareguru.cz';
 
-    // 1. GURU FETCH: Stáhneme data ze VŠECH čtyř tabulek najednou
-    const [tipyRes, postsRes, tweakyRes, slovnikRes] = await Promise.all([
-      supabase.from('tipy').select('*').order('created_at', { ascending: false }).limit(10),
+    // 1. GURU FETCH: Stáhneme data ze VŠECH pěti tabulek
+    const [postsRes, tipyRes, tweakyRes, radyRes, slovnikRes] = await Promise.all([
       supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(10),
+      supabase.from('tipy').select('*').order('created_at', { ascending: false }).limit(10),
       supabase.from('tweaky').select('*').order('created_at', { ascending: false }).limit(10),
+      supabase.from('rady').select('*').order('created_at', { ascending: false }).limit(10),
       supabase.from('slovnik').select('*').order('created_at', { ascending: false }).limit(15)
     ]);
 
     const allItems = [];
 
-    // 2. FORMÁTOVÁNÍ KLASIKY (Tipy, Články, Tweaky)
-    (tipyRes.data || []).forEach(item => {
-      allItems.push({
-        title: `[Tip] ${item.title}`,
-        description: item.description,
-        url: `${siteUrl}/tipy/${item.slug}`,
-        date: item.created_at,
-        image: item.image_url
-      });
-    });
+    // Konfigurace pro mapování sekcí
+    const sections = [
+      { data: postsRes.data, czPrefix: '[Článek]', enPrefix: '[Article]', path: 'clanky' },
+      { data: tipyRes.data, czPrefix: '[Tip]', enPrefix: '[Tip]', path: 'tipy' },
+      { data: tweakyRes.data, czPrefix: '[Tweak]', enPrefix: '[Tweak]', path: 'tweaky' },
+      { data: radyRes.data, czPrefix: '[Rada]', enPrefix: '[Guide]', path: 'rady' },
+      { data: slovnikRes.data, czPrefix: '[Slovník]', enPrefix: '[Dictionary]', path: 'slovnik' }
+    ];
 
-    (postsRes.data || []).forEach(item => {
-      allItems.push({
-        title: `[Článek] ${item.title}`,
-        description: item.description,
-        url: `${siteUrl}/clanky/${item.slug}`,
-        date: item.created_at,
-        image: item.image_url
-      });
-    });
-
-    (tweakyRes.data || []).forEach(item => {
-      allItems.push({
-        title: `[Tweak] ${item.title}`,
-        description: item.desc || item.description,
-        url: `${siteUrl}/tweaky/${item.slug}`,
-        date: item.created_at,
-        image: item.image_url
-      });
-    });
-
-    // 3. GURU BILINGUAL LOGIKA (Slovník CZ + EN)
-    (slovnikRes.data || []).forEach(item => {
-      // Česká verze
-      if (item.slug) {
+    // 2. GURU DUAL-LANG MAPPING ENGINE
+    sections.forEach(({ data, czPrefix, enPrefix, path }) => {
+      (data || []).forEach(item => {
+        // --- ČESKÁ POLOŽKA (Vždy) ---
         allItems.push({
-          title: `[Slovník] ${item.title}`,
-          description: item.description || item.seo_description,
-          url: `${siteUrl}/slovnik/${item.slug}`,
+          title: `${czPrefix} ${item.title}`,
+          description: item.seo_description || item.description || '',
+          url: `${siteUrl}/${path}/${item.slug}`,
           date: item.created_at,
-          image: item.image_url
+          image: item.image_url,
+          lang: 'cs'
         });
-      }
-      // Anglická verze (vystřelíme ji jako samostatnou novinku pro globální zásah)
-      if (item.slug_en) {
-        allItems.push({
-          title: `[Dictionary] ${item.title_en || item.title}`,
-          description: item.description_en || item.seo_description_en || item.description,
-          url: `${siteUrl}/en/slovnik/${item.slug_en}`,
-          date: item.created_at,
-          image: item.image_url
-        });
-      }
+
+        // --- ANGLICKÁ POLOŽKA (Pouze pokud existuje překlad) ---
+        if (item.title_en) {
+          const enSlug = item.slug_en || item.slug;
+          allItems.push({
+            title: `${enPrefix} ${item.title_en}`,
+            description: item.description_en || item.seo_description_en || '',
+            url: `${siteUrl}/en/${path}/${enSlug}`,
+            date: item.created_at,
+            image: item.image_url,
+            lang: 'en'
+          });
+        }
+      });
     });
 
-    // 4. Sjednocení a seřazení od nejnovějšího
+    // 3. Sjednocení a seřazení od nejnovějšího (Limit 50 pro Google/RSS čtečky)
     const finalFeed = allItems
       .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 40);
+      .slice(0, 50);
 
-    // 5. XML KONSTRUKCE
+    // 4. XML KONSTRUKCE
     let rss = `<?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
-    <title>The Hardware Guru | Global Tech Feed</title>
+    <title>The Hardware Guru | Tech, Gaming &amp; AI Global Feed</title>
     <link>${siteUrl}</link>
-    <description>Všechny novinky, hardware tipy, tweaky a bilingvální slovník na jednom místě.</description>
+    <description>Hardware novinky, herní fixy, expertní rady a technický slovník v CZ i EN verzi.</description>
     <language>cs</language>
     <atom:link href="${siteUrl}/api/rss" rel="self" type="application/rss+xml" />
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>`;
 
     finalFeed.forEach((item) => {
-      // Bezpečné ošetření speciálních znaků pomocí CDATA (lepšé pro HTML v popisu)
       rss += `
     <item>
       <title><![CDATA[${item.title}]]></title>
       <link>${item.url}</link>
       <guid isPermaLink="true">${item.url}</guid>
       <pubDate>${new Date(item.date).toUTCString()}</pubDate>
-      <description><![CDATA[${item.description || ''}]]></description>
+      <description><![CDATA[${item.description}]]></description>
+      <dc:language>${item.lang === 'cs' ? 'cs-cz' : 'en-us'}</dc:language>
       ${item.image ? `<media:content url="${item.image}" medium="image" />` : ''}
     </item>`;
     });
@@ -118,7 +101,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error("GURU RSS ERROR:", error);
-    return new NextResponse("Chyba při generování feedu", { status: 500 });
+    console.error("GURU RSS CRITICAL ERROR:", error);
+    return new NextResponse("Chyba při generování Guru feedu", { status: 500 });
   }
 }
