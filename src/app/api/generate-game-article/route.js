@@ -1,7 +1,7 @@
 /**
- * 🚀 GURU GAME ARTICLE GENERATOR - MASTER ENGINE V7
+ * 🚀 GURU GAME ARTICLE GENERATOR - MASTER ENGINE V8
  * Vyriešené: YouTube Fallback, 100% Anti-Duplicate logika,
- * a EXTRÉMNÍ ZÁKAZ halucinování HW (Striktní doslovné kopírování ze Steam Data).
+ * a EXTRÉMNÍ ZÁKAZ halucinování HW s využitím Chain of Thought (extracted_specs).
  */
 
 export const maxDuration = 60;
@@ -92,8 +92,9 @@ export async function POST(req) {
       fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
+        // GURU TARGET SEARCH: Tvrdý zámek Googlu pouze na data z obchodu Steam
         body: JSON.stringify({ 
-          q: `${gameData.name} official system requirements minimum recommended Steam`, 
+          q: `"system requirements" "${gameData.name}" site:store.steampowered.com`, 
           gl: 'us', hl: 'en', num: 3 
         })
       })
@@ -112,12 +113,17 @@ export async function POST(req) {
         { 
           role: "system", 
           content: `Jsi 'The Hardware Guru'. Generuješ nekompromisní technické rozbory. 
-          ABSOLUTNÍ ZÁKAZ HALUCINACÍ: Pro sekci "Systémové požadavky" MUSÍŠ DOSLOVA ZKOPÍROVAT přesné modely GPU, CPU a RAM ze sekce [STEAM DATA]. Je přísně zakázáno modely měnit, odhadovat nebo vypisovat starší ekvivalenty (např. zakazuji psát GTX 1060, pokud je ve Steam datech RTX 3060). Musíš být 100% přesný jako kopírka, přesně jak uvádí Steam. Pokud data ve [STEAM DATA] chybí, napiš jasně, že "oficiální požadavky zatím nebyly stanoveny".
-          Vrať validní JSON s poli: title, slug, description, content (CZ HTML), title_en, slug_en, description_en, content_en (EN HTML).` 
+          KRITICKÉ PRAVIDLO PRO SYSTÉMOVÉ POŽADAVKY:
+          1. Nesmíš si vymyslet ANI PÍSMENO.
+          2. Pokud [STEAM DATA] obsahují např. "Nvidia 3060 RTX", napíšeš přesně "Nvidia 3060 RTX". Žádné nahrazování za GTX 1060 nebo starší i5!
+          3. Pokud [STEAM DATA] neobsahují konkrétní modely (nebo jsou data prázdná), do sekce požadavků napíšeš POUZE: "Oficiální požadavky zatím nebyly stanoveny."
+          4. Aby ses vyhnul halucinacím, přidal jsem do JSONu pole "extracted_specs". Tam nejdřív doslova zkopíruj HW ze [STEAM DATA]. Až podle toho vygeneruj "content" a "content_en".
+
+          Vrať validní JSON s poli: extracted_specs, title, slug, description, content (CZ HTML), title_en, slug_en, description_en, content_en (EN HTML).` 
         },
         { 
           role: "user", 
-          content: `Hra: ${gameData.name}\nPopis z RAWG: ${gameData.description_raw}\n\n[TECHNICKÝ KONTEXT]:\n${techContext}\n\n[STEAM DATA - REÁLNÉ POŽADAVKY]:\n${steamContext}` 
+          content: `Hra: ${gameData.name}\nPopis z RAWG: ${gameData.description_raw}\n\n[TECHNICKÝ KONTEXT]:\n${techContext}\n\n[STEAM DATA - POUZE Z TOHOTO BER HW]:\n${steamContext}` 
         }
       ],
       response_format: { type: "json_object" }
@@ -125,9 +131,16 @@ export async function POST(req) {
 
     const ai = JSON.parse(completion.choices[0].message.content);
 
-    // Příprava finálních dat
+    // Příprava finálních dat (pole extracted_specs do databáze neukládáme, slouží jen jako filtr pro AI)
     const postData = {
-      ...ai,
+      title: ai.title,
+      slug: ai.slug,
+      description: ai.description,
+      content: ai.content,
+      title_en: ai.title_en,
+      slug_en: ai.slug_en,
+      description_en: ai.description_en,
+      content_en: ai.content_en,
       image_url: gameData.background_image,
       video_id: videoId,
       trailer: trailerUrl,
