@@ -7,7 +7,7 @@ export function middleware(request) {
   // GURU PRAVIDLO: Detekce jazyka (Čech/Slovák vs. zbytek světa)
   const isCzechOrSlovak = acceptLanguage.toLowerCase().includes('cs') || acceptLanguage.toLowerCase().includes('sk');
 
-  // SEZNAM VŠECH SEKCI, KTERÉ MUSÍME HLÍDAT
+  // SEZNAM VŠECH SEKCI
   const sections = ['slovnik', 'clanky', 'tipy', 'tweaky', 'rady'];
 
   // 1. AUTO-REDIRECT PRO CIZINCE NA HLAVNÍ STRÁNCE
@@ -15,37 +15,30 @@ export function middleware(request) {
     return NextResponse.redirect(new URL('/en', request.url));
   }
 
-  // 2. UNIVERZÁLNÍ LOGIKA PRO VŠECHNY SEKCE
+  // 2. UNIVERZÁLNÍ LOGIKA PRO SEKCE
   for (const section of sections) {
-    // Pokud uživatel už je na správné anglické cestě (např. /en/clanky), necháme ho být
+    // Pokud už je na /en/ cestě, nic neděláme, Next.js to vyřeší přes naše Proxy soubory
     if (pathname === `/en/${section}` || pathname.startsWith(`/en/${section}/`)) {
       return NextResponse.next();
     }
 
-    // Pokud cizinec vleze na českou cestu (např. /clanky), hodíme ho na anglickou (/en/clanky)
+    // Pokud cizinec vleze na českou cestu, hodíme ho na anglickou
     if (pathname === `/${section}` && !isCzechOrSlovak) {
       return NextResponse.redirect(new URL(`/en/${section}`, request.url));
     }
 
-    // GURU FIX: Pokud je uživatel na české cestě (např. /clanky), podstrčíme mu interně /cs/clanky
-    // To zajistí, že dynamické [slug] stránky budou vědět, že jsou v CZ režimu.
-    if (pathname === `/${section}` || pathname.startsWith(`/${section}/`)) {
-      // Pokud někdo omylem napíše /clanky/en, přesměrujeme ho na správné /en/clanky
-      if (pathname === `/${section}/en`) {
-        return NextResponse.redirect(new URL(`/en/${section}`, request.url));
-      }
-      
-      const url = request.nextUrl.clone();
-      url.pathname = `/cs${pathname}`;
-      return NextResponse.rewrite(url);
+    // Pokud někdo napíše nesmysl typu /clanky/en, pošleme ho na /en/clanky
+    if (pathname === `/${section}/en`) {
+      return NextResponse.redirect(new URL(`/en/${section}`, request.url));
     }
   }
 
+  // GURU FIX: Pro české cesty vracíme NextResponse.next() BEZ rewritu na /cs/!
+  // Soubory jsou přímo v src/app/[sekce], takže není co přepisovat.
   return NextResponse.next();
 }
 
 export const config = {
-  // GURU MATCHING: Musíme hlídat vše, co chceme překládat
   matcher: [
     '/', 
     '/slovnik/:path*', '/en/slovnik/:path*',
