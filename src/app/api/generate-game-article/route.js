@@ -1,7 +1,7 @@
 /**
- * 🚀 GURU GAME ARTICLE GENERATOR - MASTER ENGINE V8
- * Vyriešené: YouTube Fallback, 100% Anti-Duplicate logika,
- * a EXTRÉMNÍ ZÁKAZ halucinování HW s využitím Chain of Thought (extracted_specs).
+ * 🚀 GURU GAME ARTICLE GENERATOR - MASTER ENGINE V9
+ * Vyriešené: YouTube Fallback, Anti-Duplicate logika,
+ * EXTRÉMNÍ ZÁKAZ halucinování HW + STRIKTNÍ HTML STRUKTURA (Anti-Parrot).
  */
 
 export const maxDuration = 60;
@@ -92,7 +92,6 @@ export async function POST(req) {
       fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
-        // GURU TARGET SEARCH: Tvrdý zámek Googlu pouze na data z obchodu Steam
         body: JSON.stringify({ 
           q: `"system requirements" "${gameData.name}" site:store.steampowered.com`, 
           gl: 'us', hl: 'en', num: 3 
@@ -106,24 +105,32 @@ export async function POST(req) {
     const techContext = techData.organic?.map(r => r.snippet).join('\n') || '';
     const steamContext = steamData.organic?.map(r => r.snippet).join('\n') || '';
 
-    // 3. GURU AI ANALYST (S nekompromisní ochranou proti halucinacím HW)
+    // 3. GURU AI ANALYST (S nekompromisní ochranou proti halucinacím HW a pevnou HTML kostrou)
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo",
       messages: [
         { 
           role: "system", 
-          content: `Jsi 'The Hardware Guru'. Generuješ nekompromisní technické rozbory. 
-          KRITICKÉ PRAVIDLO PRO SYSTÉMOVÉ POŽADAVKY:
-          1. Nesmíš si vymyslet ANI PÍSMENO.
-          2. Pokud [STEAM DATA] obsahují např. "Nvidia 3060 RTX", napíšeš přesně "Nvidia 3060 RTX". Žádné nahrazování za GTX 1060 nebo starší i5!
-          3. Pokud [STEAM DATA] neobsahují konkrétní modely (nebo jsou data prázdná), do sekce požadavků napíšeš POUZE: "Oficiální požadavky zatím nebyly stanoveny."
-          4. Aby ses vyhnul halucinacím, přidal jsem do JSONu pole "extracted_specs". Tam nejdřív doslova zkopíruj HW ze [STEAM DATA]. Až podle toho vygeneruj "content" a "content_en".
+          content: `Jsi 'The Hardware Guru'. Generuješ nekompromisní technické rozbory her pro hardcore PC komunitu. 
+          
+          KRITICKÁ PRAVIDLA PRO STRUKTURU HTML (pole content a content_en):
+          1. ZÁKAZ DUPLICITY: NIKDY nepiš na začátek textu název hry, slovíčko "Popis:" ani běžný příběhový děj! Do pole "content" piš VÝHRADNĚ technický rozbor.
+          2. TVOU HTML STRUKTURU PŘIKAZUJI TAKTO:
+             <h2>Technický rozbor a Engine</h2>
+             <p>[Zde napiš expertní analýzu enginu, grafiky, ray-tracingu a předpokládané náročnosti na VRAM/CPU podle poskytnutých dat]</p>
+             <h2>Systémové požadavky</h2>
+             [Zde vlož <ul><li> seznam HW přesně podle STEAM DATA. Pokud STEAM DATA chybí, vlož sem pouze text: <p>Oficiální hardwarové specifikace zatím nebyly vývojáři stanoveny.</p>]
 
-          Vrať validní JSON s poli: extracted_specs, title, slug, description, content (CZ HTML), title_en, slug_en, description_en, content_en (EN HTML).` 
+          KRITICKÉ PRAVIDLO PRO SYSTÉMOVÉ POŽADAVKY:
+          1. Nesmíš si vymyslet ANI PÍSMENO HW komponent.
+          2. Pokud [STEAM DATA] obsahují např. "Nvidia 3060 RTX", napíšeš do HTML přesně "Nvidia 3060 RTX". Žádné nahrazování za GTX 1060!
+          3. Aby ses vyhnul halucinacím, ulož si čistá HW data nejprve do pole "extracted_specs".
+
+          Vrať validní JSON s poli: extracted_specs, title, slug, description (pouze 2 věty technického shrnutí), content (CZ HTML přesně podle mé šablony), title_en, slug_en, description_en, content_en (EN HTML).` 
         },
         { 
           role: "user", 
-          content: `Hra: ${gameData.name}\nPopis z RAWG: ${gameData.description_raw}\n\n[TECHNICKÝ KONTEXT]:\n${techContext}\n\n[STEAM DATA - POUZE Z TOHOTO BER HW]:\n${steamContext}` 
+          content: `Hra: ${gameData.name}\nO hře (jen pro tvůj kontext, nekopíruj to do textu!): ${gameData.description_raw}\n\n[TECHNICKÝ KONTEXT]:\n${techContext}\n\n[STEAM DATA - POUZE Z TOHOTO BER HW]:\n${steamContext}` 
         }
       ],
       response_format: { type: "json_object" }
@@ -131,7 +138,7 @@ export async function POST(req) {
 
     const ai = JSON.parse(completion.choices[0].message.content);
 
-    // Příprava finálních dat (pole extracted_specs do databáze neukládáme, slouží jen jako filtr pro AI)
+    // Příprava finálních dat
     const postData = {
       title: ai.title,
       slug: ai.slug,
