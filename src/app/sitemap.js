@@ -21,6 +21,8 @@ export default async function sitemap() {
     { url: '/support', priority: 0.5 },
     { url: '/sin-slavy', priority: 0.6 },
     { url: '/partneri', priority: 0.6 },
+    { url: '/ochrana-soukromi', priority: 0.3 }, // GURU NEWS REQUIREMENT
+    { url: '/podminky-uziti', priority: 0.3 },   // GURU NEWS REQUIREMENT
   ];
 
   const staticRoutes = [];
@@ -51,7 +53,7 @@ export default async function sitemap() {
   const dynamicRoutes = [];
 
   try {
-    // GURU FIX: Dotazujeme se na sloupce, které v tabulkách 100% jsou (slug, title_en jsou v migraci)
+    // GURU FIX: Dotazujeme se na sloupce, které v tabulkách 100% jsou
     const results = await Promise.all(
       config.map(c => supabase.from(c.table).select('slug, slug_en, title_en, created_at'))
     );
@@ -71,7 +73,6 @@ export default async function sitemap() {
           }
 
           // --- ANGLICKÁ CESTA (Pouze pokud existuje anglický ekvivalent) ---
-          // Podmínka: buď má vyplněný title_en nebo slug_en
           if (item.title_en || item.slug_en) {
             const enSlug = item.slug_en || item.slug;
             dynamicRoutes.push({
