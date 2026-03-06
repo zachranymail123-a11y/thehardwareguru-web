@@ -28,7 +28,6 @@ export default function RootLayout({ children, params }) {
 
   return (
     <html lang={locale}>
-      {/* 🚀 GURU RESET: barva pozadí přímo v body */}
       <body style={{ 
         margin: 0, 
         padding: 0, 
@@ -61,10 +60,12 @@ export default function RootLayout({ children, params }) {
         <SupportWidget />
         <Analytics />
 
-        {/* 📰 GURU GOOGLE NEWS / SUBSCRIBE WITH GOOGLE ENGINE */}
+        {/* 📰 GURU GOOGLE NEWS / SUBSCRIBE WITH GOOGLE ENGINE (Verified Snippet) */}
         <Script 
           src="https://news.google.com/swg/js/v1/swg-basic.js" 
           strategy="afterInteractive" 
+          type="application/javascript"
+          async
         />
         <Script id="google-news-swg-init" strategy="afterInteractive">
           {`
