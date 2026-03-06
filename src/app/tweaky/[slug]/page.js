@@ -1,57 +1,160 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import dynamic from 'next/dynamic';
 import { createClient } from '@supabase/supabase-js';
-import { Home, Newspaper, Lightbulb, Monitor, Wrench, Book, PenTool, ArrowLeft, Settings, Heart } from 'lucide-react';
+import { usePathname, useParams } from 'next/navigation';
+import { Wrench, ArrowLeft, Share2, Loader2, Activity, Heart } from 'lucide-react';
 import Link from 'next/link';
 
-const TweakDetail = () => {
+// GURU ENGINE: Připojení k Supabase
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
+export default function TweakDetail() {
   const { slug } = useParams();
-  const [tweak, setTweak] = useState(null);
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const pathname = usePathname();
+  const isEn = pathname.startsWith('/en');
+
+  const [item, setItem] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (slug) {
-      supabase.from('tweaky').select('*').eq('slug', slug).single().then(({ data }) => setTweak(data));
+    async function fetchData() {
+      try {
+        let query = supabase.from('tweaky').select('*');
+        
+        // GURU SLUG ENGINE: V angličtině hledáme v obou sloupcích současně. 
+        // Pokud slug_en v DB není vyplněný, matchne se to na klasický slug.
+        if (isEn) {
+          query = query.or(`slug_en.eq."${slug}",slug.eq."${slug}"`);
+        } else {
+          query = query.eq('slug', slug);
+        }
+
+        const { data, error } = await query.single();
+        if (error) throw error;
+        setItem(data);
+
+        // 🚀 GURU SEO INJECTION: Dynamická změna titulku a meta description
+        const seoTitle = isEn 
+          ? (data.meta_title_en || data.title_en || data.title) 
+          : (data.meta_title || data.title);
+        
+        const seoDesc = isEn 
+          ? (data.description_en || data.description) 
+          : (data.description);
+
+        document.title = `${seoTitle} | Expert Guru Tweaks`;
+        
+        let metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) {
+          metaDesc.setAttribute('content', seoDesc || '');
+        }
+
+      } catch (err) {
+        console.error("GURU ERROR: Tweak load failed or missing slug:", err);
+      } finally {
+        setLoading(false);
+      }
     }
-  }, [slug]);
+    fetchData();
+  }, [slug, isEn]);
 
-  const navItemStyle = { color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' };
+  if (loading) {
+    return (
+      <div style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader2 className="animate-spin" size={48} color="#eab308" />
+        <p style={{ marginTop: '20px', fontWeight: 'bold', color: '#eab308' }}>
+          {isEn ? 'GURU IS OPTIMIZING DATA...' : 'GURU OPTIMALIZUJE DATA...'}
+        </p>
+      </div>
+    );
+  }
 
-  if (!tweak) return <div style={{ color: '#eab308', textAlign: 'center', padding: '100px', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>GURU načítá data...</div>;
+  if (!item) {
+    return (
+      <div style={errorContainer}>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: '900', marginBottom: '20px' }}>
+          {isEn ? 'TWEAK NOT FOUND' : 'TWEAK NENALEZEN'}
+        </h1>
+        <Link href={isEn ? "/en/tweaky" : "/tweaky"} style={backBtn}>
+          {isEn ? 'BACK TO TWEAKS' : 'ZPĚT NA TWEAKY'}
+        </Link>
+      </div>
+    );
+  }
+
+  // GURU FALLBACK: Pokud EN verze v DB chybí, ukážeme CZ jako backup
+  const displayTitle = (isEn && item.title_en) ? item.title_en : item.title;
+  const displayContent = (isEn && item.content_en) ? item.content_en : item.content;
 
   return (
-    <div style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif', padding: '0 0 80px 0' }}>
-      <nav style={{ display: 'flex', justifyContent: 'center', gap: '25px', padding: '20px', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(234, 179, 8, 0.2)', position: 'sticky', top: 0, zIndex: 100 }}>
-        <Link href="/" style={navItemStyle}><Home size={18} /> HOMEPAGE</Link>
-        <Link href="/clanky" style={navItemStyle}><Newspaper size={18} /> ČLÁNKY</Link>
-        <Link href="/tweaky" style={{...navItemStyle, color: '#eab308'}}><Wrench size={18} /> GURU TWEAKY</Link>
-      </nav>
+    <article style={articleContainer}>
+      <style>{`
+        .article-body h2 { color: #eab308; margin-top: 40px; margin-bottom: 20px; font-size: 1.8rem; font-weight: 900; text-transform: uppercase; }
+        .article-body p { line-height: 1.8; margin-bottom: 20px; font-size: 1.1rem; color: #e5e7eb; }
+        .article-body img { max-width: 100%; border-radius: 16px; margin: 30px 0; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .article-body pre { background: #000; padding: 25px; border-radius: 12px; border: 1px solid #eab308; overflow-x: auto; margin: 25px 0; box-shadow: inset 0 0 20px rgba(234, 179, 8, 0.1); }
+        .article-body code { font-family: 'Fira Code', 'Courier New', monospace; color: #66fcf1; font-size: 0.95rem; }
+        .article-body ul, .article-body ol { margin-bottom: 25px; padding-left: 25px; color: #d1d5db; }
+        .article-body li { margin-bottom: 12px; }
+        .article-body strong { color: #eab308; }
+      `}</style>
 
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '40px 20px' }}>
-        <Link href="/tweaky" style={{ color: '#9ca3af', textDecoration: 'none', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}><ArrowLeft size={16}/> ZPĚT</Link>
-        
-        <div style={{ background: 'rgba(17,19,24,0.9)', padding: '40px', borderRadius: '28px', border: '1px solid rgba(234, 179, 8, 0.4)', marginTop: '20px' }}>
-          <h1 style={{ fontSize: '46px', fontWeight: '900', fontStyle: 'italic', textTransform: 'uppercase' }}>{tweak.title}</h1>
-          {tweak.image_url && tweak.image_url !== 'EMPTY' && <img src={tweak.image_url} style={{ width: '100%', borderRadius: '15px', margin: '30px 0', border: '1px solid rgba(255,255,255,0.1)' }} />}
-          
-          <div dangerouslySetInnerHTML={{ __html: tweak.content }} style={{ color: '#ccc', lineHeight: '1.8', fontSize: '17px' }} />
-
-          {/* SEKCE PODPORY - TOTO TAM CHCEŠ */}
-          <div style={{ marginTop: '60px', padding: '30px', background: 'rgba(234, 179, 8, 0.1)', borderRadius: '20px', border: '1px solid #eab308', textAlign: 'center' }}>
-            <Heart size={32} color="#eab308" style={{ margin: '0 auto 15px' }} />
-            <h3 style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', color: '#fff' }}>PODPOŘIT GURU PROJEKT</h3>
-            <p style={{ color: '#ccc', marginBottom: '25px' }}>Tento web běží bez otravných reklam díky tvojí podpoře. Pokud ti návod pomohl, zvaž podporu, abych mohl dál drtit AI a Serper pro tvůj hardware.</p>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
-              <a href="https://kick.com/thehardwareguru" target="_blank" style={{ background: '#53fc18', color: '#000', padding: '12px 24px', borderRadius: '10px', textDecoration: 'none', fontWeight: '900' }}>KICK SUB</a>
-              <a href="/support" style={{ background: '#eab308', color: '#000', padding: '12px 24px', borderRadius: '10px', textDecoration: 'none', fontWeight: '900' }}>DONATE</a>
-            </div>
-          </div>
+      {/* --- HEADER --- */}
+      <header style={headerStyle}>
+        <Link href={isEn ? "/en/tweaky" : "/tweaky"} style={backLink}>
+          <ArrowLeft size={16} /> {isEn ? 'BACK TO GURU TWEAKS' : 'ZPĚT NA GURU TWEAKY'}
+        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', color: '#eab308', marginBottom: '20px' }}>
+             <Wrench size={56} />
+             <div style={{ background: 'rgba(234, 179, 8, 0.1)', padding: '5px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '900', letterSpacing: '1px' }}>
+                <Activity size={14} style={{ display: 'inline', marginRight: '5px' }} />
+                {isEn ? 'SYSTEM OPTIMIZATION' : 'OPTIMALIZACE SYSTÉMU'}
+             </div>
         </div>
-      </div>
-    </div>
-  );
-};
+        <h1 style={mainTitle}>{displayTitle}</h1>
+      </header>
 
-export default dynamic(() => Promise.resolve(TweakDetail), { ssr: false });
+      {/* --- CONTENT --- */}
+      <div 
+        className="article-body"
+        style={contentStyle}
+        dangerouslySetInnerHTML={{ __html: displayContent || (isEn ? 'This technical tweak is currently being translated...' : 'Obsah tweaku se připravuje...') }} 
+      />
+
+      {/* --- FOOTER --- */}
+      <footer style={footerStyle}>
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center', gap: '20px' }}>
+             <button onClick={() => navigator.clipboard.writeText(window.location.href)} style={shareBtn}>
+               <Share2 size={18} /> {isEn ? 'COPY TWEAK LINK' : 'KOPÍROVAT ODKAZ'}
+             </button>
+        </div>
+        
+        <div style={supportBanner}>
+          <h3 style={{ color: '#eab308', margin: '0 0 15px 0' }}>{isEn ? 'Keep the FPS high' : 'Udržuj FPS vysoko'}</h3>
+          <p style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '25px' }}>
+            {isEn ? 'Did this tweak fix your game? Support the Guru project and help us research more fixes.' : 'Pomohl ti tento tweak opravit hru? Podpoř projekt Guru a pomoz nám zkoumat další fixy.'}
+          </p>
+          <Link href={isEn ? "/en/support" : "/support"} style={supportLink}>
+             <Heart size={18} fill="#0b0c10" /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
+          </Link>
+        </div>
+      </footer>
+    </article>
+  );
+}
+
+// --- GURU STYLES (GOLD THEME) ---
+const articleContainer = { maxWidth: '850px', margin: '0 auto', padding: '40px 20px', color: '#fff' };
+const errorContainer = { textAlign: 'center', padding: '120px 20px' };
+const headerStyle = { marginBottom: '50px' };
+const backLink = { display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px', marginBottom: '35px', textTransform: 'uppercase', letterSpacing: '1px' };
+const backBtn = { display: 'inline-block', background: '#eab308', color: '#0b0c10', padding: '14px 28px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold', marginTop: '20px' };
+const mainTitle = { fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: '900', lineHeight: '1.1', textTransform: 'uppercase', letterSpacing: '-0.5px' };
+const contentStyle = { maxWidth: '100%' };
+const footerStyle = { marginTop: '80px', paddingTop: '40px', borderTop: '1px solid #1f2937', textAlign: 'center' };
+const shareBtn = { background: '#111', border: '1px solid #333', color: '#fff', padding: '14px 28px', borderRadius: '14px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '10px', fontWeight: 'bold' };
+const supportBanner = { background: 'rgba(234, 179, 8, 0.03)', border: '1px solid rgba(234, 179, 8, 0.2)', padding: '35px', borderRadius: '24px', textAlign: 'center' };
+const supportLink = { background: '#eab308', color: '#0b0c10', padding: '14px 30px', borderRadius: '14px', textDecoration: 'none', fontWeight: '900', display: 'inline-flex', alignItems: 'center', gap: '10px' };
