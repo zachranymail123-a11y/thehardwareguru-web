@@ -1,473 +1,125 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { useParams, usePathname } from 'next/navigation';
+import { BookOpen, ArrowLeft, Loader2, Heart, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { BookOpen, Loader2, ChevronRight, Bookmark, Search } from 'lucide-react';
-
-// GURU CORE ENGINE: Napojení na tvou Supabase DB
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-
-export default function SlovnikArchivePage() {
-  const [items, setItems] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  
-  const pathname = usePathname() || '';
-  const isEn = pathname.startsWith('/en');
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data, error } = await supabase
-          .from('slovnik')"use client";
-import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play } from 'lucide-react';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-export default function HomePage() {
-  const [data, setData] = useState({ 
-    posts: [], 
-    nejnovejsiTipy: [], 
-    nejnovejsiTweaky: [], 
-    darci: [],
-    partneri: [],
-    stats: { value: 0 } 
-  });
-  const [loading, setLoading] = useState(true);
-
-  const pathname = usePathname() || '';
+export default function GlossaryDetail() {
+  const { slug } = useParams();
+  const pathname = usePathname();
   const isEn = pathname.startsWith('/en');
-
-  // --- NEPRŮSTŘELNÉ FUNKCE (RECOVERY) ---
-  const getSafeImage = (url) => {
-    if (!url || !url.startsWith('http')) return 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000&auto=format&fit=crop';
-    return url;
-  };
-
-  const getThumbnail = (post) => {
-    if (post.image_url) return post.image_url;
-    if (post.video_id && post.video_id.length > 5) return `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`;
-    return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop';
-  };
-
-  const getBadgeInfo = (post) => {
-    if (post.video_id && post.video_id.length > 5) return { text: 'VIDEO / SHORT', color: '#66fcf1', textColor: '#0b0c10' };
-    const isGame = post.type === 'game' || post.title.toLowerCase().includes('recenze');
-    if (isGame) return { text: isEn ? 'GAME NEWS' : 'HERNÍ NOVINKA', color: '#ff0055', textColor: '#fff' };
-    return { text: isEn ? 'HW NEWS' : 'HW NOVINKA', color: '#ff0000', textColor: '#fff' };
-  };
+  const [item, setItem] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        await supabase.rpc('increment_total_visits');
-        const [p, s, t, tw, d, pa] = await Promise.all([
-          supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(6),
-          supabase.from('stats').select('value').eq('name', 'total_visits').single(),
-          supabase.from('tipy').select('*').order('created_at', { ascending: false }).limit(3),
-          supabase.from('tweaky').select('*').order('created_at', { ascending: false }).limit(3),
-          supabase.from('darci').select('*').order('amount', { ascending: false }).limit(20),
-          supabase.from('partneri').select('*').order('created_at', { ascending: false }).limit(4)
-        ]);
-        setData({ 
-          posts: p.data || [], 
-          stats: s.data || { value: 0 }, 
-          nejnovejsiTipy: t.data || [],
-          nejnovejsiTweaky: tw.data || [],
-          darci: d.data || [],
-          partneri: pa.data || []
-        });
+        let query = supabase.from('slovnik').select('*');
+        // GURU SLUG ENGINE: V angličtině hledáme v obou sloupcích
+        if (isEn) {
+          query = query.or(`slug_en.eq."${slug}",slug.eq."${slug}"`);
+        } else {
+          query = query.eq('slug', slug);
+        }
+
+        const { data, error } = await query.single();
+        if (error) throw error;
+        setItem(data);
+        
+        const pageTitle = (isEn && data.title_en) ? data.title_en : data.title;
+        document.title = `${pageTitle} – ${isEn ? 'Hardware Definition' : 'Technická definice'} | Guru Slovník`;
       } catch (err) {
-        console.error("Data load fail:", err);
+        console.error("GURU DB FAIL:", err);
       } finally {
         setLoading(false);
       }
     }
     fetchData();
-  }, [isEn]);
+  }, [slug, isEn]);
+
+  if (loading) return <div style={center}><Loader2 className="animate-spin" size={48} color="#a855f7" /></div>;
+  if (!item) return (
+    <div style={center}>
+      <div style={{ textAlign: 'center' }}>
+        <h1 style={{ fontSize: '4rem', fontWeight: '950', color: '#a855f7' }}>404</h1>
+        <p style={{ fontSize: '1.2rem', marginBottom: '30px' }}>{isEn ? 'TERM NOT FOUND' : 'POJEM NENALEZEN'}</p>
+        <Link href={isEn ? "/en/slovnik" : "/slovnik"} style={backLink}>{isEn ? 'BACK TO GLOSSARY' : 'ZPĚT DO SLOVNÍKU'}</Link>
+      </div>
+    </div>
+  );
+
+  const title = (isEn && item.title_en) ? item.title_en : item.title;
+  const description = (isEn && item.description_en) ? item.description_en : item.description;
+  const content = (isEn && item.content_en) ? item.content_en : item.content;
 
   return (
-    <div style={globalStyles}>
-      <style>{`
-        .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); }
-        .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
-        .tip-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
-        .tip-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 0 30px rgba(168, 85, 247, 0.4); border-color: #a855f7; }
-        .tweak-card { transition: all 0.3s ease; border: 1px solid rgba(234, 179, 8, 0.3); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
-        .tweak-card:hover { transform: translateY(-5px); box-shadow: 0 0 25px rgba(234, 179, 8, 0.3); border-color: #eab308; }
-        .social-btn-main { padding: 14px 28px; border-radius: 14px; font-weight: 900; font-size: 15px; text-decoration: none; text-transform: uppercase; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); border: none; cursor: pointer; }
-        .social-btn-main:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 6px 25px rgba(0,0,0,0.5); }
-        .section-title-wrapper { background: rgba(0,0,0,0.7); padding: 18px 35px; border-radius: 18px; backdrop-filter: blur(8px); border: 1px solid rgba(234, 179, 8, 0.2); display: inline-block; }
-        .monetize-mini-card { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 15px; text-decoration: none; color: #fff; transition: 0.2s; }
-        .monetize-mini-card:hover { border-color: #a855f7; background: rgba(168, 85, 247, 0.05); }
-      `}</style>
-
-      {/* --- BIO SEKCE (RESTORED STYLE) --- */}
-      <header style={headerStyles}>
-        <div style={{ flex: '1', minWidth: '300px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', marginBottom: '15px' }}>
-              <ShieldCheck size={24} />
-              <span style={{ fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase', fontSize: '13px' }}>
-                {isEn ? 'OFFICIAL TECHNOLOGY BASE' : 'Vaše technologická základna'}
-              </span>
+    <div style={pageWrapper}>
+      <article style={container}>
+        <div style={contentBox}>
+          <header style={{ marginBottom: '40px' }}>
+            <Link href={isEn ? "/en/slovnik" : "/slovnik"} style={backLink}>
+              <ArrowLeft size={16} /> {isEn ? 'BACK TO GLOSSARY' : 'ZPĚT DO SLOVNÍKU'}
+            </Link>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', color: '#a855f7', marginTop: '30px', marginBottom: '20px' }}>
+              <BookOpen size={42} />
+              <div style={badgeStyle}>{isEn ? 'TECHNICAL DEFINITION' : 'TECHNICKÁ DEFINICE'}</div>
             </div>
-            <h1 style={{ color: '#fff', fontSize: '3rem', marginBottom: '20px', textTransform: 'uppercase', fontWeight: '900', lineHeight: '1.1', textShadow: '0 0 15px rgba(102, 252, 241, 0.5)' }}>
-              {isEn ? <>BUILDING THE <span style={{ color: '#66fcf1' }}>IDEAL PLACE</span> <br/> FOR GAMERS & GEEKS</> 
-                     : <>Budujeme <span style={{ color: '#66fcf1' }}>Ideální Místo</span> <br/> pro Hráče a Geeky</>}
-            </h1>
-            <p style={{ fontSize: '1.2rem', lineHeight: '1.7', color: '#e0e0e0', marginBottom: '35px', maxWidth: '750px' }}>
-              {isEn ? "Hardware expert with 20 years of experience. Mission: eradicate lag, optimize FPS, and build a place where every geek feels at home." 
-                     : "S 20 lety praxe v servisu hardware vím, kde každá mašina tlačí. Moje mise je jasná: vymýtit lagy, zkrotit FPS a vytvořit web, kde se každý geek cítí jako doma."}
+            
+            <h1 style={titleStyle}>{title}</h1>
+          </header>
+          
+          {/* 🚀 GURU DESCRIPTION PANEL - POPISKY PODLE TVÉHO PŘÍKAZU */}
+          {description && (
+            <div style={descPanel}>
+              {description}
+            </div>
+          )}
+
+          <div className="article-body prose" style={{ color: '#d1d5db', lineHeight: '1.8' }} dangerouslySetInnerHTML={{ __html: content }} />
+          
+          {/* 🛡️ GURU SUPPORT SHIELD (Včetně Google Contribution) */}
+          <div style={supportBox}>
+            <ShieldCheck size={40} color="#eab308" style={{ margin: '0 auto 20px' }} />
+            <h3 style={{ color: '#eab308', fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '15px' }}>
+              {isEn ? 'HELPED THIS DEFINITION?' : 'POMOHL TI TENTO VÝKLAD?'}
+            </h3>
+            <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '35px', maxWidth: '600px', margin: '0 auto 35px' }}>
+              {isEn 
+                ? 'Support The Hardware Guru project. Every contribution helps us maintain servers and hardware testing.' 
+                : 'Pokud ti Guru Slovník osvětlil technické pojmy, zvaž podporu projektu. Každá podpora nám pomáhá udržet provoz serveru a všech služeb.'}
             </p>
-            <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn-main" style={{ background: '#53fc18', color: '#000' }}>{isEn ? 'LIVE' : 'SLEDOVAT LIVE'}</a>
-              <Link href={isEn ? "/en/support" : "/support"} className="social-btn-main" style={{ background: '#eab308', color: '#000' }}>{isEn ? 'SUPPORT' : 'PODPOŘIT GURU'}</Link>
+            
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <Link href={isEn ? "/en/support" : "/support"} style={supportBtn}>
+                <Heart size={20} fill="#000" /> {isEn ? 'SUPPORT' : 'PODPOŘIT GURU'}
+              </Link>
               
-              {/* 📰 GOOGLE CONTRIBUTION BUTTON (Integrated into restored design) */}
+              {/* 📰 GOOGLE CONTRIBUTION BUTTON */}
               <div style={{ background: '#fff', borderRadius: '12px', padding: '0 5px', display: 'flex', alignItems: 'center', height: '48px' }}>
                 <button swg-standard-button="contribution" style={{ cursor: 'pointer' }}></button>
               </div>
             </div>
-        </div>
-        <div style={avatarStyles}>HG</div>
-      </header>
-
-      {/* --- MONETIZACE (MINIMALIST SYNC) --- */}
-      <section style={{ ...sectionStyles, display: 'flex', gap: '20px', flexWrap: 'wrap', marginTop: '-20px', marginBottom: '40px' }}>
-          <Link href={isEn ? "/en/sin-slavy" : "/sin-slavy"} className="monetize-mini-card" style={{ flex: 1, minWidth: '280px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              <Trophy size={18} color="#a855f7" />
-              <span style={{ fontWeight: '900', fontSize: '14px' }}>{isEn ? 'HALL OF FAME' : 'SÍŇ SLÁVY'}</span>
-            </div>
-            <div style={{ fontSize: '12px', color: '#9ca3af' }}>{data.darci.slice(0, 5).map(d => d.name).join(', ')}...</div>
-          </Link>
-          <Link href={isEn ? "/en/partneri" : "/partneri"} className="monetize-mini-card" style={{ flex: 1, minWidth: '280px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              <Rocket size={18} color="#eab308" />
-              <span style={{ fontWeight: '900', fontSize: '14px' }}>{isEn ? 'PARTNERS' : 'PARTNEŘI'}</span>
-            </div>
-            <div style={{ fontSize: '12px', color: '#9ca3af' }}>{data.partneri.slice(0, 3).map(p => p.name).join(' • ')}</div>
-          </Link>
-      </section>
-
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '100px', color: '#a855f7', fontWeight: 'bold' }}>GURU AKTUALIZUJE SYSTÉMY...</div>
-      ) : (
-        <>
-          {/* --- TIPY --- */}
-          <section style={sectionStyles}>
-            <div className="section-title-wrapper" style={{ marginBottom: '30px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
-                <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0, color: '#fff' }}>GURU <span style={{ color: '#a855f7' }}>{isEn ? 'TIPS' : 'TIPY & TRIKY'}</span></h2>
-                <Link href={isEn ? "/en/tipy" : "/tipy"} style={{ color: '#a855f7', fontWeight: 'bold', textDecoration: 'none' }}>{isEn ? 'ARCHIVE →' : 'ARCHIV TIPŮ →'}</Link>
-              </div>
-            </div>
-            <div style={gridStyles}>
-              {data.nejnovejsiTipy.map((tip, idx) => (
-                <Link href={isEn ? `/en/tipy/${tip.slug_en || tip.slug}` : `/tipy/${tip.slug}`} key={tip.id} className="tip-card" style={cardBaseStyle}>
-                  <div style={cardImageWrapper}>
-                    {idx === 0 && <div style={newBadgeStyle}>{isEn ? 'NEW 🔥' : 'NOVINKA 🔥'}</div>}
-                    <img src={getSafeImage(tip.image_url)} alt={tip.title} style={imageStyle} loading="lazy" />
-                  </div>
-                  <div style={{ padding: '25px' }}>
-                    <span style={{ color: '#a855f7', fontSize: '10px', fontWeight: 'bold' }}>{isEn ? (tip.category_en || 'HARDWARE') : tip.category}</span>
-                    <h3 style={cardTitleStyle}>{isEn ? (tip.title_en || tip.title) : tip.title}</h3>
-                    <p style={cardDescStyle}>{isEn ? (tip.description_en || tip.description) : tip.description}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          {/* --- TWEAKY --- */}
-          <section style={{ ...sectionStyles, marginTop: '40px' }}>
-            <div className="section-title-wrapper" style={{ marginBottom: '30px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
-                <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0, color: '#fff' }}>{isEn ? 'LATEST' : 'POSLEDNÍ'} <span style={{ color: '#eab308' }}>GURU TWEAKY</span></h2>
-                <Link href={isEn ? "/en/tweaky" : "/tweaky"} style={{ color: '#eab308', fontWeight: 'bold', textDecoration: 'none' }}>{isEn ? 'ALL →' : 'VŠECHNY TWEAKY →'}</Link>
-              </div>
-            </div>
-            <div style={gridStyles}>
-              {data.nejnovejsiTweaky.map((tweak) => (
-                <Link href={isEn ? `/en/tweaky/${tweak.slug_en || tweak.slug}` : `/tweaky/${tweak.slug}`} key={tweak.id} className="tweak-card" style={cardBaseStyle}>
-                  <div style={{ ...cardImageWrapper, height: '180px' }}>
-                    <img src={getSafeImage(tweak.image_url)} alt={tweak.title} style={imageStyle} loading="lazy" />
-                  </div>
-                  <div style={{ padding: '25px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>
-                      <Activity size={14} /> {isEn ? 'OPTIMIZATION' : 'OPTIMALIZACE'}
-                    </div>
-                    <h3 style={cardTitleStyle}>{isEn ? (tweak.title_en || tweak.title) : tweak.title}</h3>
-                    <p style={cardDescStyle}>{isEn ? (tweak.description_en || tweak.description) : tweak.description}</p>
-                    <div style={{ color: '#eab308', fontWeight: 'bold', fontSize: '13px', marginTop: '15px' }}>{isEn ? 'OPEN GURU FIX →' : 'OTEVŘÍT GURU FIX →'}</div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          {/* --- ČLÁNKY --- */}
-          <main style={{ ...sectionStyles, marginTop: '80px' }}>
-            <div className="section-title-wrapper" style={{ margin: '0 auto 40px', display: 'block', textAlign: 'center', maxWidth: 'fit-content' }}>
-              <h2 style={{ color: '#fff', fontSize: '2.2rem', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>{isEn ? 'Latest Articles & Videos' : 'Nejnovější články & Videa'}</h2>
-            </div>
-            <div style={gridStyles}>
-              {data.posts.map((post) => {
-                const badge = getBadgeInfo(post);
-                return (
-                  <Link key={post.id} href={isEn ? `/en/clanky/${post.slug_en || post.slug}` : `/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
-                    <div className="game-card" style={{ borderRadius: '12px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ position: 'relative', paddingTop: '56.25%' }}>
-                        <img src={getThumbnail(post)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-                        <div style={{ position: 'absolute', top: '10px', right: '10px', background: badge.color, color: badge.textColor, padding: '5px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem' }}>{badge.text}</div>
-                      </div>
-                      <div style={{ padding: '25px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                        <h3 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '1.2rem', fontWeight: 'bold' }}>{isEn ? (post.title_en || post.title) : post.title}</h3>
-                        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ color: '#45a29e', fontSize: '0.85rem' }}>{new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
-                          <span style={{ color: '#66fcf1', fontWeight: 'bold' }}>{isEn ? 'READ MORE →' : 'ČÍST ČLÁNEK →'}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </main>
-        </>
-      )}
-
-      <footer style={footerStyles}>
-          <div style={{ marginBottom: '20px', color: '#a855f7', fontWeight: 'bold' }}>
-            {isEn ? 'ALREADY ANALYZED BY' : 'KOMUNITNÍ WEB NAVŠTÍVILO JIŽ'} <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #a855f7' }}>{data.stats.value}</span> {isEn ? 'FANS 🦾' : 'FANOUŠKŮ 🦾'}
           </div>
-          <p style={{ color: '#9ca3af', opacity: 0.7, fontSize: '0.8rem' }}>© {new Date().getFullYear()} The Hardware Guru. {isEn ? 'For players, with love for hardware.' : 'Pro hráče, s láskou k železu.'}</p>
-      </footer>
+        </div>
+      </article>
     </div>
   );
 }
 
-// --- GURU MASTER STYLES (NO COMPROMISE RECOVERY) ---
-const globalStyles = { minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#fff', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed' };
-const headerStyles = { maxWidth: '1200px', margin: '40px auto', padding: '60px 40px', background: 'rgba(31, 40, 51, 0.95)', borderRadius: '25px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '50px', flexWrap: 'wrap', boxShadow: '0 15px 45px rgba(0,0,0,0.6)' };
-const avatarStyles = { width: '160px', height: '160px', background: '#0b0c10', borderRadius: '50%', border: '5px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', color: '#45a29e', fontSize: '3.5rem', fontWeight: 'bold', boxShadow: '0 0 30px rgba(102, 252, 241, 0.4)' };
-const sectionStyles = { maxWidth: '1200px', margin: '60px auto', padding: '0 20px' };
-const gridStyles = { display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(320px, 1fr))`, gap: '30px' };
-const cardBaseStyle = { textDecoration: 'none', borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column' };
-const cardImageWrapper = { position: 'relative', height: '220px', width: '100%', background: '#0b0c10' };
-const imageStyle = { width: '100%', height: '100%', objectFit: 'cover' };
-const cardTitleStyle = { fontSize: '20px', fontWeight: '900', margin: '12px 0', color: '#fff', lineHeight: '1.2' };
-const cardDescStyle = { color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '10px' };
-const footerStyles = { background: 'rgba(31, 40, 51, 0.95)', padding: '60px 20px', textAlign: 'center', borderTop: '1px solid rgba(168, 85, 247, 0.2)' };
-const newBadgeStyle = { position: 'absolute', top: '15px', left: '15px', background: '#a855f7', color: '#fff', padding: '4px 12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '10px', zIndex: 10 };
-          .select('*')
-          .order('title', { ascending: true });
-        
-        if (error) throw error;
-        setItems(data || []);
-
-        document.title = isEn 
-          ? 'Hardware Glossary | Tech Database' 
-          : 'Hardware Slovník | Technická databáze';
-      } catch (err) {
-        console.error("GURU DB ERROR:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, [isEn]);
-
-  const filteredItems = items.filter(item => {
-    const title = (isEn && item.title_en ? item.title_en : item.title).toLowerCase();
-    const q = searchQuery.toLowerCase();
-    return title.includes(q);
-  });
-
-  return (
-    <div style={archiveWrapper}>
-      <style>{`
-        .term-card { 
-            background: rgba(15, 5, 25, 0.92); /* TEMNÁ PRŮHLEDNÁ FIALOVÁ PRO ČITELNOST */
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(168, 85, 247, 0.3); 
-            border-radius: 12px; 
-            padding: 15px; 
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-            text-decoration: none;
-            width: 100%; /* FIX: Karta vyplní grid a nepřelézá */
-        }
-        .term-card:hover { 
-            transform: translateY(-4px); 
-            border-color: #a855f7; 
-            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); 
-        }
-        .search-container {
-            max-width: 400px;
-            margin: 0 auto 40px;
-            position: relative;
-        }
-        .search-input {
-            width: 100%;
-            padding: 10px 15px 10px 40px;
-            background: #000;
-            border: 1px solid rgba(168, 85, 247, 0.4);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 14px;
-            outline: none;
-        }
-      `}</style>
-
-      {/* --- HEADER --- */}
-      <header style={headerStyle}>
-        <div style={headerContentBox}>
-          <BookOpen size={32} color="#a855f7" style={{ margin: '0 auto 10px' }} />
-          <h1 style={titleStyle}>
-            {isEn ? <>GURU <span style={{ color: '#a855f7' }}>GLOSSARY</span></> : <>GURU <span style={{ color: '#a855f7' }}>SLOVNÍK</span></>}
-          </h1>
-          <p style={subtitleStyle}>{isEn ? 'Hardware terms decoded.' : 'Technické pojmy dešifrovány.'}</p>
-        </div>
-      </header>
-
-      {/* --- VYHLEDÁVÁNÍ --- */}
-      <div className="search-container">
-        <Search size={16} color="#a855f7" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-        <input 
-          type="text" 
-          placeholder={isEn ? "Filter..." : "Hledat..."} 
-          className="search-input"
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
-
-      {/* --- GRID (ULTRA KOMPAKTNÍ A BEZ PŘEKRÝVÁNÍ) --- */}
-      <main style={gridContainer}>
-        {loading ? (
-          <div style={{ textAlign: 'center', gridColumn: '1/-1', padding: '100px' }}>
-            <Loader2 className="animate-spin" size={48} color="#a855f7" />
-          </div>
-        ) : (
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
-            gap: '25px', 
-            width: '100%'
-          }}>
-            {filteredItems.map((pojem) => {
-              const displayTitle = (isEn && pojem.title_en) ? pojem.title_en : pojem.title;
-              const displayDesc = (isEn && pojem.description_en) ? pojem.description_en : pojem.description;
-              const displaySlug = (isEn && pojem.slug_en) ? pojem.slug_en : pojem.slug;
-              
-              // ULTRA-KOMPAKTNÍ OŘEZ TEXTU (MAX 60 ZNAKŮ)
-              const shortDesc = displayDesc?.length > 60 ? displayDesc.substring(0, 60) + '...' : displayDesc;
-
-              return (
-                <Link key={pojem.id} href={isEn ? `/en/slovnik/${displaySlug}` : `/slovnik/${displaySlug}`} style={{ textDecoration: 'none' }}>
-                  <article className="term-card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                        <Bookmark size={14} color="#a855f7" />
-                        <span style={badgeStyle}>{isEn ? 'INFO' : 'POJEM'}</span>
-                    </div>
-
-                    <h3 style={cardTitleStyle}>{displayTitle}</h3>
-                    <p style={cardDescStyle}>{shortDesc}</p>
-                    
-                    <div style={moreStyle}>
-                      {isEn ? 'DECRYPT' : 'ZOBRAZIT'} <ChevronRight size={12} />
-                    </div>
-                  </article>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </main>
-
-      <footer style={footerStyle}>
-        <div style={{ fontSize: '10px', color: '#444', fontWeight: '900', letterSpacing: '2px', textTransform: 'uppercase' }}>
-           Guru Technical Database v2.6 | Fixed
-        </div>
-      </footer>
-    </div>
-  );
-}
-
-// --- MASTER STYLES ---
-const archiveWrapper = { 
-    minHeight: '100vh', 
-    backgroundColor: '#0a0b0d', 
-    backgroundImage: 'url("/bg-guru.png")', 
-    backgroundSize: 'cover', 
-    backgroundAttachment: 'fixed', 
-    padding: '120px 20px 40px' 
-};
-
-const headerStyle = { maxWidth: '800px', margin: '0 auto 30px', textAlign: 'center' };
-const headerContentBox = {
-    background: 'rgba(0,0,0,0.9)',
-    padding: '20px',
-    borderRadius: '16px',
-    backdropFilter: 'blur(10px)',
-    border: '1px solid rgba(168, 85, 247, 0.2)'
-};
-
-const titleStyle = { 
-    fontSize: 'clamp(24px, 4vw, 42px)', 
-    fontWeight: '950', 
-    textTransform: 'uppercase', 
-    letterSpacing: '-1.5px', 
-    color: '#fff', 
-    lineHeight: '1',
-    margin: 0
-};
-
-const subtitleStyle = { marginTop: '10px', color: '#9ca3af', fontWeight: '700', fontSize: '14px' };
-const gridContainer = { maxWidth: '1200px', margin: '0 auto' };
-
-const badgeStyle = { fontSize: '7px', fontWeight: '950', color: '#a855f7', textTransform: 'uppercase', letterSpacing: '1px', border: '1px solid rgba(168, 85, 247, 0.4)', padding: '1px 4px', borderRadius: '3px' };
-
-const cardTitleStyle = { 
-    fontSize: '15px', 
-    fontWeight: '950', 
-    color: '#fff', 
-    marginBottom: '8px', 
-    textTransform: 'uppercase', 
-    lineHeight: '1.2'
-};
-
-const cardDescStyle = { 
-    color: '#e0e0e0', /* JASNÁ PRO ČITELNOST */
-    fontSize: '12px', 
-    lineHeight: '1.4', 
-    flexGrow: 1, 
-    marginBottom: '10px' 
-};
-
-const moreStyle = { 
-    color: '#a855f7', 
-    fontWeight: '950', 
-    fontSize: '10px', 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '4px', 
-    marginTop: 'auto', 
-    textTransform: 'uppercase'
-};
-
-const footerStyle = { padding: '40px 20px', textAlign: 'center' };
+const pageWrapper = { minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', padding: '120px 20px 80px' };
+const container = { maxWidth: '850px', margin: '0 auto' };
+const contentBox = { background: 'rgba(10, 11, 13, 0.96)', backdropFilter: 'blur(20px)', borderRadius: '35px', padding: '50px', border: '1px solid rgba(168, 85, 247, 0.2)', boxShadow: '0 40px 100px rgba(0,0,0,0.9)' };
+const backLink = { display: 'flex', alignItems: 'center', gap: '8px', color: '#a855f7', textDecoration: 'none', fontWeight: '900', fontSize: '13px', textTransform: 'uppercase' };
+const titleStyle = { fontSize: 'clamp(32px, 6vw, 56px)', fontWeight: '950', textTransform: 'uppercase', color: '#fff', margin: 0, lineHeight: '1.1' };
+const badgeStyle = { background: 'rgba(168, 85, 247, 0.15)', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '950', border: '1px solid #a855f7', letterSpacing: '1px' };
+const descPanel = { background: 'rgba(255,255,255,0.03)', borderLeft: '4px solid #a855f7', padding: '25px', margin: '20px 0 40px 0', fontSize: '1.25rem', color: '#fff', fontWeight: '600', borderRadius: '0 12px 12px 0' };
+const supportBox = { marginTop: '80px', padding: '50px', background: 'rgba(234, 179, 8, 0.03)', borderRadius: '32px', border: '1px dashed rgba(234, 179, 8, 0.3)', textAlign: 'center' };
+const supportBtn = { background: '#eab308', color: '#000', padding: '15px 30px', borderRadius: '15px', textDecoration: 'none', fontWeight: '950', display: 'inline-flex', alignItems: 'center', gap: '10px' };
+const center = { minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a0b0d' };
