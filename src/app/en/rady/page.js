@@ -1,13 +1,6 @@
-"use client";
-
 /**
- * GURU EN PROXY: Praktické Rady (Guides)
- * Tento soubor zajišťuje existenci routy /en/rady.
- * Importuje hlavní komponentu archivu, která si sama detekuje /en v URL
- * a podle toho servíruje anglický obsah a data z databáze.
+ * GURU MASTER PROXY: Anglické Praktické Rady
+ * GURU FIX: Přímý re-export řeší chybu "Unsupported Server Component type".
+ * Tento pattern zajišťuje maximální stabilitu Next.js kompilátoru během produkčního buildu.
  */
-import GuidesArchivePage from '../../rady/page';
-
-export default function EnglishGuidesPage() {
-  return <GuidesArchivePage />;
-}
+export { default } from '../../rady/page';
