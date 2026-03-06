@@ -1,6 +1,7 @@
 /**
- * 🚀 GURU GAME ARTICLE GENERATOR - MASTER ENGINE V5
- * Vyriešené: YouTube Fallback (ak RAWG nemá video) a 100% Anti-Duplicate logika.
+ * 🚀 GURU GAME ARTICLE GENERATOR - MASTER ENGINE V6
+ * Vyriešené: YouTube Fallback, 100% Anti-Duplicate logika,
+ * a STRIKTNÍ ZÁKAZ halucinování systémových požadavků (Steam Data Only).
  */
 
 export const maxDuration = 60;
@@ -55,7 +56,6 @@ export async function POST(req) {
     }
 
     // 🎥 GURU VIDEO DETECTION (Fáze 2: YouTube Fallback Scraper)
-    // Pokud RAWG nic nemá (jako u hry 1348 Ex Voto), najdeme to natvrdo na YouTube
     if (!videoId && !trailerUrl) {
       try {
         const ytSearch = await fetch('https://google.serper.dev/search', {
@@ -65,7 +65,6 @@ export async function POST(req) {
         });
         const ytData = await ytSearch.json();
         
-        // Najdeme první validní YouTube link
         const videoResult = ytData.organic?.find(r => r.link && r.link.includes('youtube.com/watch'));
         if (videoResult) {
            const match = videoResult.link.match(/[?&]v=([^&]+)/);
@@ -80,29 +79,45 @@ export async function POST(req) {
       }
     }
 
-    // 2. TECH REŠERŠE (AI Context)
-    const searchRes = await fetch('https://google.serper.dev/search', {
-      method: 'POST',
-      headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        q: `${gameData.name} PC tech engine graphics requirements analysis`, 
-        gl: 'us', hl: 'en', num: 4 
+    // 2. TECH REŠERŠE + STEAM REQUIREMENTS (Dvojitý Serper fetch)
+    const [techRes, steamRes] = await Promise.all([
+      fetch('https://google.serper.dev/search', {
+        method: 'POST',
+        headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          q: `${gameData.name} PC tech engine graphics requirements analysis`, 
+          gl: 'us', hl: 'en', num: 4 
+        })
+      }),
+      fetch('https://google.serper.dev/search', {
+        method: 'POST',
+        headers: { 'X-API-KEY': process.env.SERPER_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          q: `${gameData.name} official system requirements minimum recommended Steam`, 
+          gl: 'us', hl: 'en', num: 3 
+        })
       })
-    });
-    const searchData = await searchRes.json();
-    const techContext = searchData.organic?.map(r => r.snippet).join('\n') || '';
+    ]);
+    
+    const techData = await techRes.json();
+    const steamData = await steamRes.json();
+    
+    const techContext = techData.organic?.map(r => r.snippet).join('\n') || '';
+    const steamContext = steamData.organic?.map(r => r.snippet).join('\n') || '';
 
-    // 3. GURU AI ANALYST
+    // 3. GURU AI ANALYST (S ochranou proti halucinacím)
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo",
       messages: [
         { 
           role: "system", 
-          content: "Jsi 'The Hardware Guru'. Generuješ nekompromisní technické rozbory. Vrať validní JSON s poli: title, slug, description, content (CZ HTML), title_en, slug_en, description_en, content_en (EN HTML)." 
+          content: `Jsi 'The Hardware Guru'. Generuješ nekompromisní technické rozbory. 
+          STRIKTNÍ ZÁKAZ: Nikdy si nevymýšlej hardware (GPU, CPU, RAM). Pro sekci "Systémové požadavky" smíš použít VÝHRADNĚ reálná data ze sekce [STEAM DATA]. Pokud data ve [STEAM DATA] chybí, napiš jasně, že "oficiální požadavky zatím nebyly stanoveny". Žádné "ATI FireGL" a podobné nesmysly!
+          Vrať validní JSON s poli: title, slug, description, content (CZ HTML), title_en, slug_en, description_en, content_en (EN HTML).` 
         },
         { 
           role: "user", 
-          content: `Hra: ${gameData.name}\nPopis z RAWG: ${gameData.description_raw}\nTechnický kontext: ${techContext}` 
+          content: `Hra: ${gameData.name}\nPopis z RAWG: ${gameData.description_raw}\n\n[TECHNICKÝ KONTEXT]:\n${techContext}\n\n[STEAM DATA - REÁLNÉ POŽADAVKY]:\n${steamContext}` 
         }
       ],
       response_format: { type: "json_object" }
@@ -120,17 +135,13 @@ export async function POST(req) {
       type: section || 'expected'
     };
 
-    // 4. DB UPDATE / INSERT - 🚀 GURU MASTER ANTI-DUPLICATE ENGINE
-    // Místo upsertu manuálně zjistíme, zda existuje konflikt na slug nebo title
-    
+    // 4. DB UPDATE / INSERT - GURU MASTER ANTI-DUPLICATE ENGINE
     let targetId = null;
 
-    // A) Zkusíme najít podle slugu
     const { data: existingSlug } = await supabaseAdmin.from('posts').select('id').eq('slug', ai.slug).maybeSingle();
     if (existingSlug) {
       targetId = existingSlug.id;
     } else {
-      // B) Pokud nesedí slug, zkusíme najít podle title (abychom předešli posts_title_unique chybě)
       const { data: existingTitle } = await supabaseAdmin.from('posts').select('id').eq('title', ai.title).maybeSingle();
       if (existingTitle) {
         targetId = existingTitle.id;
@@ -138,11 +149,9 @@ export async function POST(req) {
     }
 
     if (targetId) {
-      // Záznam existuje -> UPDATE (přepíšeme ho)
       const { error: updateError } = await supabaseAdmin.from('posts').update(postData).eq('id', targetId);
       if (updateError) throw updateError;
     } else {
-      // Záznam neexistuje -> INSERT
       const { error: insertError } = await supabaseAdmin.from('posts').insert([postData]);
       if (insertError) throw insertError;
     }
