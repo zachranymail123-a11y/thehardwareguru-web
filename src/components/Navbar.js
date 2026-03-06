@@ -106,7 +106,6 @@ export default function Navbar() {
     }}>
       
       {/* 1. LOGO */}
-      {/* GURU CACHE BYPASS: Klasický A tag */}
       <a href={isEn ? "/en" : "/"} style={{ textDecoration: 'none', flexShrink: 0 }}>
         <span style={{ color: '#a855f7', fontFamily: 'serif', fontSize: '28px', fontWeight: '900', letterSpacing: '1px', textTransform: 'uppercase' }}>
           HARDWARE GURU
@@ -145,7 +144,6 @@ export default function Navbar() {
               const target = `${langPrefix}/${sectionFolder}/${slug}`;
 
               return (
-                {/* GURU CACHE BYPASS: Klasický A tag */}
                 <a key={i} href={target} onClick={() => setShowSuggestions(false)} style={{ 
                   display: 'block', padding: '15px 20px', textDecoration: 'none', borderBottom: '1px solid #1a1a1a', transition: '0.2s'
                 }} onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
@@ -165,7 +163,6 @@ export default function Navbar() {
       {/* 3. MENU */}
       <div style={{ display: 'flex', gap: '25px', alignItems: 'center', flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-          {/* GURU CACHE BYPASS: Klasické A tagy, které spolehlivě probijí Vercel Cache */}
           <a href={langPrefix + "/clanky"} style={navLinkStyle}>{isEn ? 'ARTICLES' : 'ČLÁNKY'}</a>
           <a href={langPrefix + "/tipy"} style={navLinkStyle}>{isEn ? 'TIPS' : 'TIPY'}</a>
           <a href={langPrefix + "/tweaky"} style={{...navLinkStyle, color: '#eab308'}}>{isEn ? 'GURU TWEAKS' : 'GURU TWEAKY'}</a>
