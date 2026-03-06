@@ -15,6 +15,7 @@ export default function HomePage() {
     posts: [], 
     nejnovejsiTipy: [], 
     nejnovejsiTweaky: [], 
+    expectedGames: [], // 🚀 GURU FIX: Přidáno pro Očekávané hry
     darci: [],
     partneri: [],
     stats: { value: 0 } 
@@ -47,13 +48,16 @@ export default function HomePage() {
     async function fetchData() {
       try {
         await supabase.rpc('increment_total_visits');
-        const [p, s, t, tw, d, pa] = await Promise.all([
-          supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(6),
+        const [p, s, t, tw, d, pa, exp] = await Promise.all([
+          // GURU FIX: Odfiltrováno 'expected', aby nebyly duplicity v hlavních článcích
+          supabase.from('posts').select('*').neq('type', 'expected').order('created_at', { ascending: false }).limit(6),
           supabase.from('stats').select('value').eq('name', 'total_visits').single(),
           supabase.from('tipy').select('*').order('created_at', { ascending: false }).limit(3),
           supabase.from('tweaky').select('*').order('created_at', { ascending: false }).limit(3),
           supabase.from('darci').select('*').order('amount', { ascending: false }).limit(20),
-          supabase.from('partneri').select('*').order('created_at', { ascending: false }).limit(4)
+          supabase.from('partneri').select('*').order('created_at', { ascending: false }).limit(4),
+          // 🚀 GURU DATA: Přidáno stahování 3 očekávaných her
+          supabase.from('posts').select('*').eq('type', 'expected').order('created_at', { ascending: false }).limit(3)
         ]);
         setData({ 
           posts: p.data || [], 
@@ -61,7 +65,8 @@ export default function HomePage() {
           nejnovejsiTipy: t.data || [],
           nejnovejsiTweaky: tw.data || [],
           darci: d.data || [],
-          partneri: pa.data || []
+          partneri: pa.data || [],
+          expectedGames: exp.data || []
         });
       } catch (err) {
         console.error("Data load fail:", err);
@@ -77,6 +82,11 @@ export default function HomePage() {
       <style>{`
         .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); }
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
+        
+        /* 🚀 GURU FIX: Styly pro Očekávané hry */
+        .expected-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
+        .expected-card:hover { transform: translateY(-5px); box-shadow: 0 0 25px rgba(102, 252, 241, 0.25); border-color: #66fcf1; }
+
         .tip-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
         .tip-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 0 30px rgba(168, 85, 247, 0.4); border-color: #a855f7; }
         .tweak-card { transition: all 0.3s ease; border: 1px solid rgba(234, 179, 8, 0.3); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
@@ -84,8 +94,31 @@ export default function HomePage() {
         .social-btn-main { padding: 14px 28px; border-radius: 14px; font-weight: 900; font-size: 15px; text-decoration: none; text-transform: uppercase; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); border: none; cursor: pointer; }
         .social-btn-main:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 6px 25px rgba(0,0,0,0.5); }
         .section-title-wrapper { background: rgba(0,0,0,0.7); padding: 18px 35px; border-radius: 18px; backdrop-filter: blur(8px); border: 1px solid rgba(234, 179, 8, 0.2); display: inline-block; }
-        .monetize-mini-card { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 15px; text-decoration: none; color: #fff; transition: 0.2s; }
-        .monetize-mini-card:hover { border-color: #a855f7; background: rgba(168, 85, 247, 0.05); }
+        
+        /* 🚀 GURU FIX: Masivní vizuál pro Monetizaci */
+        .monetize-hero-card {
+            background: linear-gradient(145deg, rgba(17, 19, 24, 0.95) 0%, rgba(0, 0, 0, 0.98) 100%);
+            border: 2px solid rgba(255,255,255,0.05);
+            border-radius: 24px;
+            padding: 35px 30px;
+            text-decoration: none;
+            color: #fff;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(15px);
+        }
+        .monetize-hero-card.hof:hover { border-color: #a855f7; box-shadow: 0 20px 50px rgba(168, 85, 247, 0.25); transform: translateY(-8px); }
+        .monetize-hero-card.partners:hover { border-color: #eab308; box-shadow: 0 20px 50px rgba(234, 179, 8, 0.25); transform: translateY(-8px); }
+        .monetize-hero-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+        .monetize-hero-card.hof::before { background: #a855f7; }
+        .monetize-hero-card.partners::before { background: #eab308; }
       `}</style>
 
       {/* --- BIO SEKCE (RESTORED STYLE) --- */}
@@ -118,21 +151,25 @@ export default function HomePage() {
         <div style={avatarStyles}>HG</div>
       </header>
 
-      {/* --- MONETIZACE (MINIMALIST SYNC) --- */}
-      <section style={{ ...sectionStyles, display: 'flex', gap: '20px', flexWrap: 'wrap', marginTop: '-20px', marginBottom: '40px' }}>
-          <Link href={isEn ? "/en/sin-slavy" : "/sin-slavy"} className="monetize-mini-card" style={{ flex: 1, minWidth: '280px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              <Trophy size={18} color="#a855f7" />
-              <span style={{ fontWeight: '900', fontSize: '14px' }}>{isEn ? 'HALL OF FAME' : 'SÍŇ SLÁVY'}</span>
-            </div>
-            <div style={{ fontSize: '12px', color: '#9ca3af' }}>{data.darci.slice(0, 5).map(d => d.name).join(', ')}...</div>
+      {/* --- 🚀 MONETIZACE (HERO EDITION) --- */}
+      <section style={{ ...sectionStyles, display: 'flex', gap: '30px', flexWrap: 'wrap', marginTop: '-30px', marginBottom: '60px' }}>
+          <Link href={isEn ? "/en/sin-slavy" : "/sin-slavy"} className="monetize-hero-card hof" style={{ flex: 1, minWidth: '300px' }}>
+            <Trophy size={48} color="#a855f7" style={{ marginBottom: '15px', filter: 'drop-shadow(0 0 15px rgba(168, 85, 247, 0.6))' }} />
+            <h2 style={{ fontWeight: '950', fontSize: '24px', color: '#fff', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '1px' }}>
+              {isEn ? 'HALL OF FAME' : 'SÍŇ SLÁVY'}
+            </h2>
+            <p style={{ fontSize: '15px', color: '#9ca3af', maxWidth: '85%', margin: '0 auto', lineHeight: '1.5' }}>
+                {data.darci.slice(0, 5).map(d => d.name).join(', ')}...
+            </p>
           </Link>
-          <Link href={isEn ? "/en/partneri" : "/partneri"} className="monetize-mini-card" style={{ flex: 1, minWidth: '280px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-              <Rocket size={18} color="#eab308" />
-              <span style={{ fontWeight: '900', fontSize: '14px' }}>{isEn ? 'PARTNERS' : 'PARTNEŘI'}</span>
-            </div>
-            <div style={{ fontSize: '12px', color: '#9ca3af' }}>{data.partneri.slice(0, 3).map(p => p.name).join(' • ')}</div>
+          <Link href={isEn ? "/en/partneri" : "/partneri"} className="monetize-hero-card partners" style={{ flex: 1, minWidth: '300px' }}>
+            <Rocket size={48} color="#eab308" style={{ marginBottom: '15px', filter: 'drop-shadow(0 0 15px rgba(234, 179, 8, 0.6))' }} />
+            <h2 style={{ fontWeight: '950', fontSize: '24px', color: '#fff', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '1px' }}>
+              {isEn ? 'GURU PARTNERS' : 'NAŠI PARTNEŘI'}
+            </h2>
+            <p style={{ fontSize: '15px', color: '#9ca3af', maxWidth: '85%', margin: '0 auto', lineHeight: '1.5' }}>
+                {data.partneri.slice(0, 3).map(p => p.name).join(' • ')}
+            </p>
           </Link>
       </section>
 
@@ -140,6 +177,47 @@ export default function HomePage() {
         <div style={{ textAlign: 'center', padding: '100px', color: '#a855f7', fontWeight: 'bold' }}>GURU AKTUALIZUJE SYSTÉMY...</div>
       ) : (
         <>
+          {/* --- 🚀 OČEKÁVANÉ HRY --- */}
+          {data.expectedGames && data.expectedGames.length > 0 && (
+            <section style={{ ...sectionStyles, marginBottom: '60px' }}>
+              <div className="section-title-wrapper" style={{ marginBottom: '30px', borderColor: 'rgba(102, 252, 241, 0.2)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
+                  <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0, color: '#fff' }}>
+                    {isEn ? 'EXPECTED' : 'OČEKÁVANÉ'} <span style={{ color: '#66fcf1' }}>{isEn ? 'HITS' : 'HRY'}</span>
+                  </h2>
+                  <Link href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"} style={{ color: '#66fcf1', fontWeight: 'bold', textDecoration: 'none', textTransform: 'uppercase', fontSize: '14px' }}>
+                    {isEn ? 'FULL ARCHIVE →' : 'ARCHIV HER →'}
+                  </Link>
+                </div>
+              </div>
+              <div style={gridStyles}>
+                {data.expectedGames.map((game) => {
+                   const displayTitle = (isEn && game.title_en) ? game.title_en : game.title;
+                   const displaySlug = (isEn && game.slug_en) ? game.slug_en : game.slug;
+                   const hasVideo = game.trailer || (game.video_id && game.video_id.length > 5);
+
+                   return (
+                     <Link href={isEn ? `/en/ocekavane-hry/${displaySlug}` : `/ocekavane-hry/${displaySlug}`} key={game.id} className="expected-card" style={cardBaseStyle}>
+                        <div style={cardImageWrapper}>
+                           {hasVideo && <div style={{ position: 'absolute', top: '15px', right: '15px', background: '#ff0055', color: '#fff', padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '900', zIndex: 10, display: 'flex', alignItems: 'center', gap: '4px' }}><Play size={10} fill="#fff"/> VIDEO</div>}
+                           <img src={getThumbnail(game)} alt={displayTitle} style={{...imageStyle, opacity: 0.8}} loading="lazy" />
+                        </div>
+                        <div style={{ padding: '25px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                          <span style={{ color: '#66fcf1', fontSize: '10px', fontWeight: '900', letterSpacing: '1px', marginBottom: '10px' }}>
+                            {isEn ? 'TECH PREVIEW' : 'TECHNICKÝ ROZBOR'}
+                          </span>
+                          <h3 style={{ ...cardTitleStyle, marginBottom: '15px' }}>{displayTitle}</h3>
+                          <div style={{ color: '#66fcf1', fontWeight: '900', fontSize: '13px', marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                             {isEn ? 'VIEW ANALYSIS' : 'ZOBRAZIT ROZBOR'} <ChevronRight size={16} />
+                          </div>
+                        </div>
+                     </Link>
+                   )
+                })}
+              </div>
+            </section>
+          )}
+
           {/* --- TIPY --- */}
           <section style={sectionStyles}>
             <div className="section-title-wrapper" style={{ marginBottom: '30px' }}>
@@ -167,7 +245,7 @@ export default function HomePage() {
 
           {/* --- TWEAKY --- */}
           <section style={{ ...sectionStyles, marginTop: '40px' }}>
-            <div className="section-title-wrapper" style={{ marginBottom: '30px' }}>
+            <div className="section-title-wrapper" style={{ marginBottom: '30px', borderColor: 'rgba(234, 179, 8, 0.2)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
                 <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0, color: '#fff' }}>{isEn ? 'LATEST' : 'POSLEDNÍ'} <span style={{ color: '#eab308' }}>GURU TWEAKY</span></h2>
                 <Link href={isEn ? "/en/tweaky" : "/tweaky"} style={{ color: '#eab308', fontWeight: 'bold', textDecoration: 'none' }}>{isEn ? 'ALL →' : 'VŠECHNY TWEAKY →'}</Link>
