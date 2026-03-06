@@ -80,6 +80,14 @@ export default function RootLayout({ children, params }) {
           `}
         </Script>
 
+        {/* 💰 GURU GOOGLE ADSENSE ENGINE */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+
         {/* ONESIGNAL NOTIFIKACE */}
         <Script 
           src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" 
