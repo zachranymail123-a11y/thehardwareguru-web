@@ -3,31 +3,56 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Lightbulb, ChevronRight, Play, Activity, Heart, ShieldCheck } from 'lucide-react';
+import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, ExternalLink } from 'lucide-react';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 export default function HomePage() {
   const [data, setData] = useState({ 
     posts: [], 
     nejnovejsiTipy: [], 
     nejnovejsiTweaky: [], 
+    darci: [],
+    partneri: [],
     stats: { value: 0 } 
   });
   const [loading, setLoading] = useState(true);
 
-  // GURU PRAVIDLO: Detekce jazyka pro CZ/EN variantu
   const pathname = usePathname();
   const isEn = pathname.startsWith('/en');
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        await supabase.rpc('increment_total_visits');
+        const [p, s, t, tw, d, pa] = await Promise.all([
+          supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(6),
+          supabase.from('stats').select('value').eq('name', 'total_visits').single(),
+          supabase.from('tipy').select('*').order('created_at', { ascending: false }).limit(3),
+          supabase.from('tweaky').select('*').order('created_at', { ascending: false }).limit(3),
+          supabase.from('darci').select('*').order('amount', { ascending: false }).limit(20),
+          supabase.from('partneri').select('*').order('created_at', { ascending: false }).limit(4)
+        ]);
 
-  // --- NEPRŮSTŘELNÉ FUNKCE ---
-  const getSafeImage = (url) => {
-    if (!url || !url.startsWith('http')) return 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000&auto=format&fit=crop';
-    return url;
-  };
+        setData({ 
+          posts: p.data || [], 
+          stats: s.data || { value: 0 }, 
+          nejnovejsiTipy: t.data || [],
+          nejnovejsiTweaky: tw.data || [],
+          darci: d.data || [],
+          partneri: pa.data || []
+        });
+      } catch (err) {
+        console.error("Data load fail:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   const getThumbnail = (post) => {
     if (post.image_url) return post.image_url;
@@ -42,31 +67,6 @@ export default function HomePage() {
     return { text: isEn ? 'HW NEWS' : 'HW NOVINKA', color: '#ff0000', textColor: '#fff' };
   };
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        await supabase.rpc('increment_total_visits');
-        const [p, s, t, tw] = await Promise.all([
-          supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(6),
-          supabase.from('stats').select('value').eq('name', 'total_visits').single(),
-          supabase.from('tipy').select('*').order('created_at', { ascending: false }).limit(3),
-          supabase.from('tweaky').select('*').order('created_at', { ascending: false }).limit(3)
-        ]);
-        setData({ 
-          posts: p.data || [], 
-          stats: s.data || { value: 0 }, 
-          nejnovejsiTipy: t.data || [],
-          nejnovejsiTweaky: tw.data || []
-        });
-      } catch (err) {
-        console.error("Data load fail:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, []);
-
   return (
     <div style={globalStyles}>
       <style>{`
@@ -79,10 +79,13 @@ export default function HomePage() {
         .social-btn-main { padding: 14px 28px; border-radius: 14px; font-weight: 900; font-size: 15px; text-decoration: none; text-transform: uppercase; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); border: none; cursor: pointer; }
         .social-btn-main:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 6px 25px rgba(0,0,0,0.5); }
         .section-title-wrapper { background: rgba(0,0,0,0.7); padding: 18px 35px; border-radius: 18px; backdrop-filter: blur(8px); border: 1px solid rgba(234, 179, 8, 0.2); display: inline-block; }
+        .monetize-box { flex: 1; min-width: 320px; background: rgba(17, 19, 24, 0.9); border-radius: 24px; padding: 35px; border: 1px solid #1f2937; position: relative; overflow: hidden; }
+        .donor-badge { background: rgba(168, 85, 247, 0.1); color: #a855f7; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 900; }
+        .partner-card { background: #000; border: 1px solid #eab308; padding: 15px; borderRadius: 12px; display: flex; align-items: center; gap: 15px; margin-top: 15px; text-decoration: none; transition: 0.2s; }
+        .partner-card:hover { transform: scale(1.02); background: #111; }
       `}</style>
 
       {/* --- BIO SEKCE --- */}
-      {/* GURU FIX: margin top změněn na 0, aby perfektně navazoval na globální Navbar z layoutu */}
       <header style={{ ...headerStyles, margin: '0 auto 40px' }}>
         <div style={{ flex: '1', minWidth: '300px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', marginBottom: '15px' }}>
@@ -91,38 +94,83 @@ export default function HomePage() {
                 {isEn ? 'Your technological base' : 'Vaše technologická základna'}
               </span>
             </div>
-            <h1 style={{ color: '#fff', fontSize: '3rem', marginBottom: '20px', textTransform: 'uppercase', fontWeight: '900', lineHeight: '1.1', textShadow: '0 0 15px rgba(102, 252, 241, 0.5)' }}>
-              {isEn ? (
-                <>Building the <span style={{ color: '#66fcf1' }}>Ideal Place</span> <br/> for Gamers and Geeks</>
-              ) : (
-                <>Budujeme <span style={{ color: '#66fcf1' }}>Ideální Místo</span> <br/> pro Hráče a Geeky</>
-              )}
+            <h1 style={{ color: '#fff', fontSize: '3rem', marginBottom: '20px', textTransform: 'uppercase', fontWeight: '900', lineHeight: '1.1' }}>
+              {isEn ? <>Building the <span style={{ color: '#66fcf1' }}>Ideal Place</span> <br/> for Gamers and Geeks</> : <>Budujeme <span style={{ color: '#66fcf1' }}>Ideální Místo</span> <br/> pro Hráče a Geeky</>}
             </h1>
-            <p style={{ fontSize: '1.2rem', lineHeight: '1.7', color: '#e0e0e0', marginBottom: '35px', maxWidth: '750px' }}>
+            <p style={{ fontSize: '1.1rem', color: '#e0e0e0', marginBottom: '35px', maxWidth: '750px' }}>
               {isEn 
-                ? "Hi, I'm GURU. With 20 years of experience in hardware service, I know where every machine struggles. My mission is clear: eradicate lag, tame FPS, and build a site where every geek feels at home. This isn't about dry tutorials, it's about pure passion for hardware and services that keep this scene alive."
-                : "Čau, jsem GURU. S 20 lety praxe v servisu hardware vím, kde každá mašina tlačí. Moje mise je jasná: vymýtit lagy, zkrotit FPS a vytvořit web, kde se každý geek cítí jako doma. Tady nejde o žádný suchý návody, jde o čistou vášeň pro železo a služby, co drží tuhle scénu naživu."
+                ? "Hi, I'm GURU. Hardware expert with 20 years of experience. My mission: eradicate lag, tame FPS, and support the community that keeps this scene alive."
+                : "Čau, jsem GURU. S 20 lety praxe v servisu hardware vím, kde každá mašina tlačí. Moje mise: vymýtit lagy, zkrotit FPS a podpořit komunitu, co drží tuhle scénu naživu."
               }
             </p>
             <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-              <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn-main" style={{ background: '#53fc18', color: '#000' }}>
-                {isEn ? 'WATCH LIVE' : 'SLEDOVAT LIVE'}
-              </a>
-              <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" className="social-btn-main" style={{ background: '#ff0000', color: '#fff' }}>
-                GURU YOUTUBE
-              </a>
+              <a href="https://kick.com/thehardwareguru" className="social-btn-main" style={{ background: '#53fc18', color: '#000' }}>KICK LIVE</a>
               <Link href={isEn ? "/en/support" : "/support"} className="social-btn-main" style={{ background: '#eab308', color: '#000' }}>
-                {isEn ? 'SUPPORT WEB & SERVICES' : 'PODPOŘIT WEB A SLUŽBY'}
+                <Heart size={18} fill="#000" /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
               </Link>
             </div>
         </div>
         <div style={avatarStyles}>HG</div>
       </header>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '100px', color: '#a855f7', fontWeight: 'bold' }}>
-          {isEn ? 'GURU updating systems...' : 'GURU aktualizuje systémy...'}
+      {/* 🚀 GURU MONETIZACE: DARCI & PARTNERI */}
+      <section style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 20px', display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
+        {/* OKNO 1: DARCI (SIN SLAVY) */}
+        <div className="monetize-box" style={{ borderColor: 'rgba(168, 85, 247, 0.4)' }}>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
+              <Trophy color="#a855f7" size={32} />
+              <h2 style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>
+                {isEn ? 'HALL OF FAME' : 'SÍŇ SLÁVY'}
+              </h2>
+           </div>
+           <p style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '20px' }}>
+              {isEn ? 'Those who keep the Guru engines running. Thank you!' : 'Tihle borci drží motory Guruho v chodu. Respekt!'}
+           </p>
+           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+              {data.darci.length > 0 ? data.darci.map(darce => (
+                <div key={darce.id} className="donor-badge">
+                  {darce.name} {darce.amount > 100 && '🔥'}
+                </div>
+              )) : (
+                <div style={{ color: '#444', fontSize: '13px' }}>{isEn ? 'Waiting for the first legends...' : 'Čekáme na první legendy...'}</div>
+              )}
+           </div>
         </div>
+
+        {/* OKNO 2: PARTNERI (REKLAMA) */}
+        <div className="monetize-box" style={{ borderColor: 'rgba(234, 179, 8, 0.4)' }}>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
+              <Rocket color="#eab308" size={32} />
+              <h2 style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>
+                {isEn ? 'PARTNERS' : 'PARTNEŘI'}
+              </h2>
+           </div>
+           <p style={{ color: '#9ca3af', fontSize: '14px', marginBottom: '20px' }}>
+              {isEn ? 'Support over 500 CZK and get your project listed here.' : 'Podpoř web částkou nad 500 Kč a získej reklamu na svůj web/stream.'}
+           </p>
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {data.partneri.length > 0 ? data.partneri.map(p => (
+                <a key={p.id} href={p.url} target="_blank" className="partner-card">
+                  <div style={{ width: '40px', height: '40px', background: '#222', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#eab308' }}>
+                    {p.name.charAt(0)}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#fff' }}>{p.name}</div>
+                    <div style={{ fontSize: '11px', color: '#888' }}>{isEn ? p.description_en : p.description}</div>
+                  </div>
+                  <ExternalLink size={16} color="#eab308" />
+                </a>
+              )) : (
+                <Link href={isEn ? "/en/support" : "/support"} style={{ color: '#eab308', fontSize: '13px', fontWeight: 'bold', textDecoration: 'none', border: '1px dashed #eab308', padding: '15px', borderRadius: '12px', textAlign: 'center' }}>
+                  {isEn ? '+ YOUR PROJECT HERE' : '+ TVŮJ PROJEKT ZDE'}
+                </Link>
+              )}
+           </div>
+        </div>
+      </section>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '100px', color: '#a855f7' }}>GURU IS LOADING...</div>
       ) : (
         <>
           {/* --- TIPY --- */}
@@ -130,23 +178,17 @@ export default function HomePage() {
             <div className="section-title-wrapper" style={{ marginBottom: '30px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
                 <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0, color: '#fff' }}>
-                  GURU <span style={{ color: '#a855f7' }}>{isEn ? 'TIPS & TRICKS' : 'TIPY & TRIKY'}</span>
+                  GURU <span style={{ color: '#a855f7' }}>{isEn ? 'TIPS' : 'TIPY'}</span>
                 </h2>
-                <Link href={isEn ? "/en/tipy" : "/tipy"} style={{ color: '#a855f7', fontWeight: 'bold', textDecoration: 'none' }}>
-                  {isEn ? 'TIPS ARCHIVE →' : 'ARCHIV TIPŮ →'}
-                </Link>
+                <Link href={isEn ? "/en/tipy" : "/tipy"} style={{ color: '#a855f7', fontWeight: 'bold', textDecoration: 'none' }}>{isEn ? 'ALL →' : 'VŠE →'}</Link>
               </div>
             </div>
             <div style={gridStyles}>
-              {data.nejnovejsiTipy.map((tip, idx) => (
+              {data.nejnovejsiTipy.map((tip) => (
                 <Link href={isEn ? `/en/tipy/${tip.slug}` : `/tipy/${tip.slug}`} key={tip.id} className="tip-card" style={cardBaseStyle}>
-                  <div style={cardImageWrapper}>
-                    {idx === 0 && <div style={newBadgeStyle}>{isEn ? 'NEW 🔥' : 'NOVINKA 🔥'}</div>}
-                    <img src={getSafeImage(tip.image_url)} alt={tip.title} style={imageStyle} loading="lazy" />
-                  </div>
+                  <div style={cardImageWrapper}><img src={tip.image_url} alt={tip.title} style={imageStyle} /></div>
                   <div style={{ padding: '25px' }}>
-                    <span style={{ color: '#a855f7', fontSize: '10px', fontWeight: 'bold' }}>{tip.category}</span>
-                    <h3 style={cardTitleStyle}>{tip.title}</h3>
+                    <h3 style={cardTitleStyle}>{isEn && tip.title_en ? tip.title_en : tip.title}</h3>
                     <p style={cardDescStyle}>{isEn && tip.description_en ? tip.description_en : tip.description}</p>
                   </div>
                 </Link>
@@ -159,28 +201,18 @@ export default function HomePage() {
             <div className="section-title-wrapper" style={{ marginBottom: '30px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
                 <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0, color: '#fff' }}>
-                  {isEn ? 'LATEST' : 'POSLEDNÍ'} <span style={{ color: '#eab308' }}>GURU TWEAKY</span>
+                  LATEST <span style={{ color: '#eab308' }}>GURU TWEAKS</span>
                 </h2>
-                <Link href={isEn ? "/en/tweaky" : "/tweaky"} style={{ color: '#eab308', fontWeight: 'bold', textDecoration: 'none' }}>
-                  {isEn ? 'ALL TWEAKS →' : 'VŠECHNY TWEAKY →'}
-                </Link>
+                <Link href={isEn ? "/en/tweaky" : "/tweaky"} style={{ color: '#eab308', fontWeight: 'bold', textDecoration: 'none' }}>{isEn ? 'ALL →' : 'VŠE →'}</Link>
               </div>
             </div>
             <div style={gridStyles}>
               {data.nejnovejsiTweaky.map((tweak) => (
                 <Link href={isEn ? `/en/tweaky/${tweak.slug}` : `/tweaky/${tweak.slug}`} key={tweak.id} className="tweak-card" style={cardBaseStyle}>
-                  <div style={{ ...cardImageWrapper, height: '180px' }}>
-                    <img src={getSafeImage(tweak.image_url)} alt={tweak.title} style={imageStyle} loading="lazy" />
-                  </div>
+                  <div style={cardImageWrapper}><img src={tweak.image_url} alt={tweak.title} style={imageStyle} /></div>
                   <div style={{ padding: '25px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>
-                      <Activity size={14} /> {isEn ? 'OPTIMIZATION' : 'OPTIMALIZACE'}
-                    </div>
-                    <h3 style={cardTitleStyle}>{tweak.title}</h3>
-                    <p style={cardDescStyle}>{isEn && tweak.description_en ? tweak.description_en : tweak.description}</p>
-                    <div style={{ color: '#eab308', fontWeight: 'bold', fontSize: '13px', marginTop: '15px' }}>
-                      {isEn ? 'OPEN GURU FIX →' : 'OTEVŘÍT GURU FIX →'}
-                    </div>
+                    <h3 style={cardTitleStyle}>{isEn && tweak.title_en ? tweak.title_en : tweak.title}</h3>
+                    <div style={{ color: '#eab308', fontWeight: 'bold', fontSize: '13px' }}>{isEn ? 'OPEN FIX →' : 'OTEVŘÍT FIX →'}</div>
                   </div>
                 </Link>
               ))}
@@ -191,7 +223,7 @@ export default function HomePage() {
           <main style={{ ...sectionStyles, marginTop: '80px' }}>
             <div className="section-title-wrapper" style={{ margin: '0 auto 40px', display: 'block', textAlign: 'center', maxWidth: 'fit-content' }}>
               <h2 style={{ color: '#fff', fontSize: '2.2rem', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>
-                {isEn ? 'Latest Articles & Videos' : 'Nejnovější články & Videa'}
+                {isEn ? 'Articles & Videos' : 'Články & Videa'}
               </h2>
             </div>
             <div style={gridStyles}>
@@ -201,15 +233,11 @@ export default function HomePage() {
                   <Link key={post.id} href={isEn ? `/en/clanky/${post.slug}` : `/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
                     <div className="game-card" style={{ borderRadius: '12px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
                       <div style={{ position: 'relative', paddingTop: '56.25%' }}>
-                        <img src={getThumbnail(post)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                        <img src={getThumbnail(post)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
                         <div style={{ position: 'absolute', top: '10px', right: '10px', background: badge.color, color: badge.textColor, padding: '5px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem' }}>{badge.text}</div>
                       </div>
-                      <div style={{ padding: '25px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                        <h3 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '1.2rem', fontWeight: 'bold' }}>{post.title}</h3>
-                        <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ color: '#45a29e', fontSize: '0.85rem' }}>{new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
-                          <span style={{ color: '#66fcf1', fontWeight: 'bold' }}>{isEn ? 'READ ARTICLE →' : 'ČÍST ČLÁNEK →'}</span>
-                        </div>
+                      <div style={{ padding: '25px', flex: 1 }}>
+                        <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold' }}>{isEn && post.title_en ? post.title_en : post.title}</h3>
                       </div>
                     </div>
                   </Link>
@@ -222,29 +250,22 @@ export default function HomePage() {
 
       <footer style={footerStyles}>
           <div style={{ marginBottom: '20px', color: '#a855f7', fontWeight: 'bold' }}>
-            {isEn ? 'COMMUNITY WEBSITE VISITED BY ' : 'KOMUNITNÍ WEB NAVŠTÍVILO JIŽ '}
-            <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #a855f7' }}>{data.stats.value}</span> 
-            {isEn ? ' FANS' : ' FANOUŠKŮ'} 🦾
+            VISITED BY <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #a855f7' }}>{data.stats.value}</span> FANS 🦾
           </div>
-          <p style={{ color: '#9ca3af', opacity: 0.7, fontSize: '0.8rem' }}>
-            © {new Date().getFullYear()} The Hardware Guru. {isEn ? 'For gamers, with love for hardware.' : 'Pro hráče, s láskou k železu.'}
-          </p>
+          <p style={{ color: '#9ca3af', opacity: 0.7, fontSize: '0.8rem' }}>© {new Date().getFullYear()} The Hardware Guru.</p>
       </footer>
     </div>
   );
 }
 
-// --- STYLY ---
 const globalStyles = { minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#fff', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed' };
-// const navStyles = { ... } - SMAZÁNO, NENÍ POTŘEBA
-const headerStyles = { maxWidth: '1200px', padding: '60px 40px', background: 'rgba(31, 40, 51, 0.95)', borderRadius: '25px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '50px', flexWrap: 'wrap', boxShadow: '0 15px 45px rgba(0,0,0,0.6)' };
-const avatarStyles = { width: '160px', height: '160px', background: '#0b0c10', borderRadius: '50%', border: '5px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', color: '#45a29e', fontSize: '3.5rem', fontWeight: 'bold', boxShadow: '0 0 30px rgba(102, 252, 241, 0.4)' };
+const headerStyles = { maxWidth: '1200px', padding: '60px 40px', background: 'rgba(31, 40, 51, 0.95)', borderRadius: '25px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '50px', flexWrap: 'wrap' };
+const avatarStyles = { width: '160px', height: '160px', background: '#0b0c10', borderRadius: '50%', border: '5px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#45a29e', fontSize: '3.5rem', fontWeight: 'bold' };
 const sectionStyles = { maxWidth: '1200px', margin: '60px auto', padding: '0 20px' };
 const gridStyles = { display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(320px, 1fr))`, gap: '30px' };
 const cardBaseStyle = { textDecoration: 'none', borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column' };
-const cardImageWrapper = { position: 'relative', height: '220px', width: '100%', background: '#0b0c10' };
+const cardImageWrapper = { position: 'relative', height: '200px', width: '100%', background: '#0b0c10' };
 const imageStyle = { width: '100%', height: '100%', objectFit: 'cover' };
-const cardTitleStyle = { fontSize: '20px', fontWeight: '900', margin: '12px 0', color: '#fff', lineHeight: '1.2' };
-const cardDescStyle = { color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '10px' };
+const cardTitleStyle = { fontSize: '20px', fontWeight: '900', margin: '12px 0', color: '#fff' };
+const cardDescStyle = { color: '#9ca3af', fontSize: '15px', lineHeight: '1.6' };
 const footerStyles = { background: 'rgba(31, 40, 51, 0.95)', padding: '60px 20px', textAlign: 'center', borderTop: '1px solid rgba(168, 85, 247, 0.2)' };
-const newBadgeStyle = { position: 'absolute', top: '15px', left: '15px', background: '#a855f7', color: '#fff', padding: '4px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold' };
