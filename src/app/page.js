@@ -23,6 +23,7 @@ export default function HomePage() {
 
   const pathname = usePathname();
   const isEn = pathname.startsWith('/en');
+  const lang = isEn ? 'en' : 'cs';
 
   useEffect(() => {
     async function fetchData() {
@@ -79,7 +80,9 @@ export default function HomePage() {
         .social-btn-main { padding: 14px 28px; border-radius: 14px; font-weight: 900; font-size: 15px; text-decoration: none; text-transform: uppercase; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); border: none; cursor: pointer; }
         .social-btn-main:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 6px 25px rgba(0,0,0,0.5); }
         .section-title-wrapper { background: rgba(0,0,0,0.7); padding: 18px 35px; border-radius: 18px; backdrop-filter: blur(8px); border: 1px solid rgba(234, 179, 8, 0.2); display: inline-block; }
-        .monetize-box { flex: 1; min-width: 320px; background: rgba(17, 19, 24, 0.9); border-radius: 24px; padding: 35px; border: 1px solid #1f2937; position: relative; overflow: hidden; }
+        .monetize-box { flex: 1; min-width: 320px; background: rgba(17, 19, 24, 0.9); border-radius: 24px; padding: 35px; border: 1px solid #1f2937; position: relative; overflow: hidden; text-decoration: none; color: #fff; transition: 0.3s; }
+        .monetize-box:hover { border-color: #a855f7; transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .monetize-box.partners:hover { border-color: #eab308; }
         .donor-badge { background: rgba(168, 85, 247, 0.1); color: #a855f7; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 900; }
         .partner-card { background: #000; border: 1px solid #eab308; padding: 15px; borderRadius: 12px; display: flex; align-items: center; gap: 15px; margin-top: 15px; text-decoration: none; transition: 0.2s; }
         .partner-card:hover { transform: scale(1.02); background: #111; }
@@ -113,10 +116,10 @@ export default function HomePage() {
         <div style={avatarStyles}>HG</div>
       </header>
 
-      {/* 🚀 GURU MONETIZACE: DARCI & PARTNERI */}
+      {/* 🚀 GURU MONETIZACE: DARCI & PARTNERI (KLIKACÍ BOX PRO SÍŇ SLÁVY A PARTNERY) */}
       <section style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 20px', display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
-        {/* OKNO 1: DARCI (SIN SLAVY) */}
-        <div className="monetize-box" style={{ borderColor: 'rgba(168, 85, 247, 0.4)' }}>
+        {/* OKNO 1: DARCI (SIN SLAVY) - KLIKACÍ */}
+        <Link href={isEn ? "/en/sin-slavy" : "/sin-slavy"} className="monetize-box" style={{ borderColor: 'rgba(168, 85, 247, 0.4)' }}>
            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
               <Trophy color="#a855f7" size={32} />
               <h2 style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>
@@ -135,10 +138,13 @@ export default function HomePage() {
                 <div style={{ color: '#444', fontSize: '13px' }}>{isEn ? 'Waiting for the first legends...' : 'Čekáme na první legendy...'}</div>
               )}
            </div>
-        </div>
+           <div style={{ marginTop: '20px', fontSize: '12px', color: '#a855f7', fontWeight: 'bold' }}>
+             {isEn ? 'SHOW FULL HALL OF FAME →' : 'ZOBRAZIT CELOU SÍŇ SLÁVY →'}
+           </div>
+        </Link>
 
-        {/* OKNO 2: PARTNERI (REKLAMA) */}
-        <div className="monetize-box" style={{ borderColor: 'rgba(234, 179, 8, 0.4)' }}>
+        {/* OKNO 2: PARTNERI (REKLAMA) - KLIKACÍ */}
+        <Link href={isEn ? "/en/partneri" : "/partneri"} className="monetize-box partners" style={{ borderColor: 'rgba(234, 179, 8, 0.4)' }}>
            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
               <Rocket color="#eab308" size={32} />
               <h2 style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>
@@ -150,7 +156,7 @@ export default function HomePage() {
            </p>
            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {data.partneri.length > 0 ? data.partneri.map(p => (
-                <a key={p.id} href={p.url} target="_blank" className="partner-card">
+                <div key={p.id} className="partner-card" onClick={(e) => { e.preventDefault(); window.open(p.url, '_blank'); }}>
                   <div style={{ width: '40px', height: '40px', background: '#222', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#eab308' }}>
                     {p.name.charAt(0)}
                   </div>
@@ -159,14 +165,17 @@ export default function HomePage() {
                     <div style={{ fontSize: '11px', color: '#888' }}>{isEn ? p.description_en : p.description}</div>
                   </div>
                   <ExternalLink size={16} color="#eab308" />
-                </a>
+                </div>
               )) : (
-                <Link href={isEn ? "/en/support" : "/support"} style={{ color: '#eab308', fontSize: '13px', fontWeight: 'bold', textDecoration: 'none', border: '1px dashed #eab308', padding: '15px', borderRadius: '12px', textAlign: 'center' }}>
+                <div style={{ color: '#eab308', fontSize: '13px', fontWeight: 'bold', textDecoration: 'none', border: '1px dashed #eab308', padding: '15px', borderRadius: '12px', textAlign: 'center' }}>
                   {isEn ? '+ YOUR PROJECT HERE' : '+ TVŮJ PROJEKT ZDE'}
-                </Link>
+                </div>
               )}
            </div>
-        </div>
+           <div style={{ marginTop: '20px', fontSize: '12px', color: '#eab308', fontWeight: 'bold' }}>
+             {isEn ? 'VIEW ALL PARTNERS →' : 'ZOBRAZIT VŠECHNY PARTNERY →'}
+           </div>
+        </Link>
       </section>
 
       {loading ? (
