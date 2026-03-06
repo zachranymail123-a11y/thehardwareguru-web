@@ -9,8 +9,7 @@ export default async function sitemap() {
   const supabase = createClient(supabaseUrl, supabaseKey);
   const baseUrl = 'https://www.thehardwareguru.cz';
 
-  // 1. STATICKÉ STRÁNKY (CZ + EN základ)
-  // Definujeme základní kameny webu v obou jazycích
+  // 1. STATICKÉ STRÁNKY (Základní kameny webu CZ + EN)
   const staticPaths = [
     { url: '', priority: 1.0 },
     { url: '/tipy', priority: 0.9 },
@@ -20,6 +19,8 @@ export default async function sitemap() {
     { url: '/slovnik', priority: 0.8 },
     { url: '/rady', priority: 0.9 },
     { url: '/support', priority: 0.5 },
+    { url: '/sin-slavy', priority: 0.6 },
+    { url: '/partneri', priority: 0.6 },
   ];
 
   const staticRoutes = [];
@@ -30,15 +31,15 @@ export default async function sitemap() {
       lastModified: new Date().toISOString(),
       priority: route.priority,
     });
-    // Anglická verze (všechny statické stránky mají své /en varianty)
+    // Anglická verze
     staticRoutes.push({
       url: `${baseUrl}/en${route.url}`,
       lastModified: new Date().toISOString(),
-      priority: route.priority - 0.1, // EN verze mají mírně nižší prioritu pro Google než CZ originál
+      priority: Math.max(0.1, route.priority - 0.1),
     });
   });
 
-  // 2. KONFIGURACE DYNAMICKÝCH TABULEK
+  // 2. DYNAMICKÉ TABULKY (GURU ENGINE)
   const config = [
     { table: 'posts', path: '/clanky', priority: 0.8 },
     { table: 'tipy', path: '/tipy', priority: 0.8 },
@@ -50,42 +51,41 @@ export default async function sitemap() {
   const dynamicRoutes = [];
 
   try {
-    // Vystřelíme dotazy na všechny tabulky najednou pro maximální rychlost buildu
+    // GURU FIX: Dotazujeme se na sloupce, které v tabulkách 100% jsou (slug, title_en jsou v migraci)
     const results = await Promise.all(
-      config.map(c => supabase.from(c.table).select('slug, slug_en, title_en, created_at, updated_at'))
+      config.map(c => supabase.from(c.table).select('slug, slug_en, title_en, created_at'))
     );
 
     results.forEach((res, index) => {
       const { path, priority } = config[index];
       
-      if (res.data) {
+      if (res.data && res.data.length > 0) {
         res.data.forEach(item => {
-          // --- ČESKÁ CESTA (Základ) ---
+          // --- ČESKÁ CESTA ---
           if (item.slug) {
             dynamicRoutes.push({
               url: `${baseUrl}${path}/${item.slug}`,
-              lastModified: item.updated_at || item.created_at || new Date().toISOString(),
+              lastModified: item.created_at || new Date().toISOString(),
               priority: priority,
             });
           }
 
-          // --- ANGLICKÁ CESTA (GURU SLUG-PROOF LOGIKA) ---
-          // Indexujeme pouze pokud existuje anglický titulek (příkaz: neindexovat prázdné EN stránky)
-          if (item.title_en) {
+          // --- ANGLICKÁ CESTA (Pouze pokud existuje anglický ekvivalent) ---
+          // Podmínka: buď má vyplněný title_en nebo slug_en
+          if (item.title_en || item.slug_en) {
             const enSlug = item.slug_en || item.slug;
             dynamicRoutes.push({
               url: `${baseUrl}/en${path}/${enSlug}`,
-              lastModified: item.updated_at || item.created_at || new Date().toISOString(),
-              priority: priority - 0.1,
+              lastModified: item.created_at || new Date().toISOString(),
+              priority: Math.max(0.1, priority - 0.1),
             });
           }
         });
       }
     });
   } catch (err) {
-    console.error("GURU SITEMAP ENGINE CRITICAL ERROR:", err);
+    console.error("GURU SITEMAP ENGINE ERROR:", err);
   }
 
-  // FINÁLNÍ SPOJENÍ VŠEHO DO JEDNOHO POLE PRO GOOGLE
   return [...staticRoutes, ...dynamicRoutes];
 }
