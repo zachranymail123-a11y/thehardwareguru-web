@@ -126,7 +126,8 @@ export default function HomePage() {
             </p>
             <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
               <a href="https://kick.com/thehardwareguru" className="social-btn-main" style={{ background: '#53fc18', color: '#000' }}>KICK LIVE</a>
-              <Link href={isEn ? "/en/support" : "/support"} className="social-btn-main" style={{ background: '#eab308', color: '#000' }}>
+              {/* GURU FIX: Přidáno prefetch={false} pro správné fungování odkazu */}
+              <Link href={isEn ? "/en/support" : "/support"} prefetch={false} className="social-btn-main" style={{ background: '#eab308', color: '#000' }}>
                 <Heart size={18} fill="#000" /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
               </Link>
             </div>
@@ -137,7 +138,8 @@ export default function HomePage() {
       {/* 🚀 GURU MONETIZACE: DARCI & PARTNERI */}
       <section style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 20px', display: 'flex', gap: '30px', flexWrap: 'wrap' }}>
         {/* OKNO 1: DARCI (SIN SLAVY) */}
-        <Link href={isEn ? "/en/sin-slavy" : "/sin-slavy"} className="monetize-box">
+        {/* GURU FIX: Přidáno prefetch={false} */}
+        <Link href={isEn ? "/en/sin-slavy" : "/sin-slavy"} prefetch={false} className="monetize-box">
            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
               <Trophy color="#a855f7" size={36} />
               <h2>{isEn ? 'HALL OF FAME' : 'SÍŇ SLÁVY'}</h2>
@@ -162,7 +164,8 @@ export default function HomePage() {
         </Link>
 
         {/* OKNO 2: PARTNERI (REKLAMA) */}
-        <Link href={isEn ? "/en/partneri" : "/partneri"} className="monetize-box partners">
+        {/* GURU FIX: Přidáno prefetch={false} */}
+        <Link href={isEn ? "/en/partneri" : "/partneri"} prefetch={false} className="monetize-box partners">
            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
               <Rocket color="#eab308" size={36} />
               <h2>{isEn ? 'PARTNERS' : 'PARTNEŘI'}</h2>
@@ -209,12 +212,14 @@ export default function HomePage() {
                 <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0, color: '#fff' }}>
                   GURU <span style={{ color: '#a855f7' }}>{isEn ? 'TIPS' : 'TIPY'}</span>
                 </h2>
-                <Link href={isEn ? "/en/tipy" : "/tipy"} style={{ color: '#a855f7', fontWeight: 'bold', textDecoration: 'none' }}>{isEn ? 'ALL →' : 'VŠE →'}</Link>
+                {/* GURU FIX: Přidáno prefetch={false} */}
+                <Link href={isEn ? "/en/tipy" : "/tipy"} prefetch={false} style={{ color: '#a855f7', fontWeight: 'bold', textDecoration: 'none' }}>{isEn ? 'ALL →' : 'VŠE →'}</Link>
               </div>
             </div>
             <div style={gridStyles}>
               {data.nejnovejsiTipy.map((tip) => (
-                <Link href={isEn ? `/en/tipy/${tip.slug}` : `/tipy/${tip.slug}`} key={tip.id} className="tip-card" style={cardBaseStyle}>
+                {/* GURU FIX: Přidáno prefetch={false} */}
+                <Link href={isEn ? `/en/tipy/${tip.slug}` : `/tipy/${tip.slug}`} prefetch={false} key={tip.id} className="tip-card" style={cardBaseStyle}>
                   <div style={cardImageWrapper}><img src={tip.image_url} alt={tip.title} style={imageStyle} /></div>
                   <div style={{ padding: '25px' }}>
                     <h3 style={cardTitleStyle}>{isEn && tip.title_en ? tip.title_en : tip.title}</h3>
@@ -232,12 +237,14 @@ export default function HomePage() {
                 <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0, color: '#fff' }}>
                   LATEST <span style={{ color: '#eab308' }}>GURU TWEAKS</span>
                 </h2>
-                <Link href={isEn ? "/en/tweaky" : "/tweaky"} style={{ color: '#eab308', fontWeight: 'bold', textDecoration: 'none' }}>{isEn ? 'ALL →' : 'VŠE →'}</Link>
+                {/* GURU FIX: Přidáno prefetch={false} */}
+                <Link href={isEn ? "/en/tweaky" : "/tweaky"} prefetch={false} style={{ color: '#eab308', fontWeight: 'bold', textDecoration: 'none' }}>{isEn ? 'ALL →' : 'VŠE →'}</Link>
               </div>
             </div>
             <div style={gridStyles}>
               {data.nejnovejsiTweaky.map((tweak) => (
-                <Link href={isEn ? `/en/tweaky/${tweak.slug}` : `/tweaky/${tweak.slug}`} key={tweak.id} className="tweak-card" style={cardBaseStyle}>
+                {/* GURU FIX: Přidáno prefetch={false} */}
+                <Link href={isEn ? `/en/tweaky/${tweak.slug}` : `/tweaky/${tweak.slug}`} prefetch={false} key={tweak.id} className="tweak-card" style={cardBaseStyle}>
                   <div style={cardImageWrapper}><img src={tweak.image_url} alt={tweak.title} style={imageStyle} /></div>
                   <div style={{ padding: '25px' }}>
                     <h3 style={cardTitleStyle}>{isEn && tweak.title_en ? tweak.title_en : tweak.title}</h3>
@@ -259,7 +266,8 @@ export default function HomePage() {
               {data.posts.map((post) => {
                 const badge = getBadgeInfo(post);
                 return (
-                  <Link key={post.id} href={isEn ? `/en/clanky/${post.slug}` : `/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
+                  {/* GURU FIX: Přidáno prefetch={false} */}
+                  <Link key={post.id} href={isEn ? `/en/clanky/${post.slug}` : `/clanky/${post.slug}`} prefetch={false} style={{ textDecoration: 'none' }}>
                     <div className="game-card" style={{ borderRadius: '12px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
                       <div style={{ position: 'relative', paddingTop: '56.25%' }}>
                         <img src={getThumbnail(post)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
