@@ -6,8 +6,8 @@ import { usePathname } from 'next/navigation';
 import { Calendar, Monitor, Loader2, Eye, Zap, ArrowRight, Info } from 'lucide-react';
 
 /**
- * 🚀 GURU EXPECTED GAMES ARCHIVE - MASTER NAVIGATION UPDATE
- * Vyřešeno: Nefunkční proskoky na slug a ošetření chybějících dat.
+ * 🚀 GURU EXPECTED GAMES ARCHIVE - DEFINITÍVNA VERZIA
+ * Vyriešené: Navigácia na slug, CZ/EN podpora a Elite Neon dizajn.
  */
 
 const supabase = createClient(
@@ -27,14 +27,14 @@ export default function ExpectedGamesArchive() {
         const { data, error } = await supabase
           .from('posts')
           .select('*')
-          .eq('type', 'expected') // GURU CORE: Filtrujeme pouze technické preview
+          .eq('type', 'expected') // GURU CORE: Filtrujeme iba technologické preview
           .order('created_at', { ascending: false });
         
         if (!error && data) setItems(data);
         
         document.title = isEn 
           ? 'Expected Tech Hits | Guru Previews' 
-          : 'Očekávané pecky | Guru Technické Preview';
+          : 'Očakávané pecky | Guru Technické Preview';
       } catch (err) {
         console.error("GURU DB FAIL:", err);
       } finally {
@@ -91,12 +91,12 @@ export default function ExpectedGamesArchive() {
             <Monitor size={48} color="#66fcf1" style={{ filter: 'drop-shadow(0 0 10px rgba(102, 252, 241, 0.5))' }} />
           </div>
           <h1 style={titleStyle}>
-            {isEn ? <>EXPECTED <span style={{ color: '#66fcf1' }}>GAMES</span></> : <>OČEKÁVANÉ <span style={{ color: '#66fcf1' }}>HRY</span></>}
+            {isEn ? <>EXPECTED <span style={{ color: '#66fcf1' }}>GAMES</span></> : <>OČAKÁVANÉ <span style={{ color: '#66fcf1' }}>HRY</span></>}
           </h1>
           <p style={subtitleStyle}>
             {isEn 
               ? 'Technical breakdowns of upcoming hardware-crushing titles.' 
-              : 'Technické rozbory titulů, které v blízké době prověří tvůj hardware.'}
+              : 'Technické rozbory titulov, ktoré v blízkej dobe preveria tvoj hardvér.'}
           </p>
         </div>
       </header>
@@ -107,12 +107,12 @@ export default function ExpectedGamesArchive() {
         ) : items.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '100px', opacity: 0.4 }}>
              <Zap size={48} style={{ margin: '0 auto 20px' }} />
-             <h2>{isEn ? 'NO PREVIEWS GENERATED' : 'ZATÍM ŽÁDNÉ ROZBORY'}</h2>
+             <h2>{isEn ? 'NO PREVIEWS GENERATED' : 'ZATIAĽ ŽIADNE ROZBORY'}</h2>
           </div>
         ) : (
           <div style={grid}>
             {items.map((item) => {
-              // GURU NAV ENGINE: Pokud chybí slug, karta je nepoužitelná
+              // 🚀 GURU SLUG ENGINE: Tu je tá kľúčová logika pre navigáciu
               const actualSlug = (isEn && item.slug_en) ? item.slug_en : item.slug;
               if (!actualSlug) return null;
 
@@ -142,11 +142,11 @@ export default function ExpectedGamesArchive() {
                       <h3 style={cardTitleStyle}>{displayTitle}</h3>
                       
                       <p className="desc-text">
-                        {displayDesc || (isEn ? 'Detailed technical analysis of the upcoming title.' : 'Detailní technický rozbor připravovaného titulu.')}
+                        {displayDesc || (isEn ? 'Detailed technical analysis of the upcoming title.' : 'Detailný technický rozbor pripravovaného titulu.')}
                       </p>
 
                       <div style={moreBtn}>
-                         {isEn ? 'VIEW ANALYSIS' : 'ZOBRAZIT ROZBOR'} <ArrowRight size={18} />
+                         {isEn ? 'VIEW ANALYSIS' : 'ZOBRAZIŤ ROZBOR'} <ArrowRight size={18} />
                       </div>
                     </div>
                   </article>
@@ -160,7 +160,7 @@ export default function ExpectedGamesArchive() {
   );
 }
 
-// --- MASTER STYLES ---
+// --- MASTER STYLES (GURU LOOK) ---
 const archiveWrapper = { minHeight: '100vh', padding: '120px 20px 80px', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed' };
 const headerStyle = { maxWidth: '1000px', margin: '0 auto 80px', textAlign: 'center' };
 const headerContentBox = { background: 'rgba(0,0,0,0.7)', padding: '50px 30px', borderRadius: '40px', border: '1px solid rgba(102, 252, 241, 0.15)', backdropFilter: 'blur(10px)' };
