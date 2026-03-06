@@ -1,7 +1,7 @@
 /**
- * 🚀 GURU GAME ARTICLE GENERATOR - MASTER ENGINE V6
+ * 🚀 GURU GAME ARTICLE GENERATOR - MASTER ENGINE V7
  * Vyriešené: YouTube Fallback, 100% Anti-Duplicate logika,
- * a STRIKTNÍ ZÁKAZ halucinování systémových požadavků (Steam Data Only).
+ * a EXTRÉMNÍ ZÁKAZ halucinování HW (Striktní doslovné kopírování ze Steam Data).
  */
 
 export const maxDuration = 60;
@@ -105,14 +105,14 @@ export async function POST(req) {
     const techContext = techData.organic?.map(r => r.snippet).join('\n') || '';
     const steamContext = steamData.organic?.map(r => r.snippet).join('\n') || '';
 
-    // 3. GURU AI ANALYST (S ochranou proti halucinacím)
+    // 3. GURU AI ANALYST (S nekompromisní ochranou proti halucinacím HW)
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo",
       messages: [
         { 
           role: "system", 
           content: `Jsi 'The Hardware Guru'. Generuješ nekompromisní technické rozbory. 
-          STRIKTNÍ ZÁKAZ: Nikdy si nevymýšlej hardware (GPU, CPU, RAM). Pro sekci "Systémové požadavky" smíš použít VÝHRADNĚ reálná data ze sekce [STEAM DATA]. Pokud data ve [STEAM DATA] chybí, napiš jasně, že "oficiální požadavky zatím nebyly stanoveny". Žádné "ATI FireGL" a podobné nesmysly!
+          ABSOLUTNÍ ZÁKAZ HALUCINACÍ: Pro sekci "Systémové požadavky" MUSÍŠ DOSLOVA ZKOPÍROVAT přesné modely GPU, CPU a RAM ze sekce [STEAM DATA]. Je přísně zakázáno modely měnit, odhadovat nebo vypisovat starší ekvivalenty (např. zakazuji psát GTX 1060, pokud je ve Steam datech RTX 3060). Musíš být 100% přesný jako kopírka, přesně jak uvádí Steam. Pokud data ve [STEAM DATA] chybí, napiš jasně, že "oficiální požadavky zatím nebyly stanoveny".
           Vrať validní JSON s poli: title, slug, description, content (CZ HTML), title_en, slug_en, description_en, content_en (EN HTML).` 
         },
         { 
