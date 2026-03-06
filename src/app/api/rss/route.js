@@ -12,18 +12,19 @@ export async function GET() {
   try {
     const siteUrl = 'https://www.thehardwareguru.cz';
 
-    // 1. GURU FETCH: Stáhneme data ze VŠECH pěti tabulek
+    // 1. GURU FETCH: Stahujeme data ze všech 5 tabulek.
+    // Používáme vytvoření 'created_at', který je v DB 100% přítomen (na rozdíl od updated_at).
     const [postsRes, tipyRes, tweakyRes, radyRes, slovnikRes] = await Promise.all([
-      supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(10),
-      supabase.from('tipy').select('*').order('created_at', { ascending: false }).limit(10),
-      supabase.from('tweaky').select('*').order('created_at', { ascending: false }).limit(10),
-      supabase.from('rady').select('*').order('created_at', { ascending: false }).limit(10),
-      supabase.from('slovnik').select('*').order('created_at', { ascending: false }).limit(15)
+      supabase.from('posts').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(10),
+      supabase.from('tipy').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(10),
+      supabase.from('tweaky').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(10),
+      supabase.from('rady').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(10),
+      supabase.from('slovnik').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(15)
     ]);
 
     const allItems = [];
 
-    // Konfigurace pro mapování sekcí
+    // Konfigurace sekcí s tvými Guru prefixy
     const sections = [
       { data: postsRes.data, czPrefix: '[Článek]', enPrefix: '[Article]', path: 'clanky' },
       { data: tipyRes.data, czPrefix: '[Tip]', enPrefix: '[Tip]', path: 'tipy' },
@@ -32,25 +33,27 @@ export async function GET() {
       { data: slovnikRes.data, czPrefix: '[Slovník]', enPrefix: '[Dictionary]', path: 'slovnik' }
     ];
 
-    // 2. GURU DUAL-LANG MAPPING ENGINE
+    // 2. DUAL-LANG MAPPING ENGINE
     sections.forEach(({ data, czPrefix, enPrefix, path }) => {
       (data || []).forEach(item => {
-        // --- ČESKÁ POLOŽKA (Vždy) ---
-        allItems.push({
-          title: `${czPrefix} ${item.title}`,
-          description: item.seo_description || item.description || '',
-          url: `${siteUrl}/${path}/${item.slug}`,
-          date: item.created_at,
-          image: item.image_url,
-          lang: 'cs'
-        });
+        // --- ČESKÁ POLOŽKA ---
+        if (item.title && item.slug) {
+          allItems.push({
+            title: `${czPrefix} ${item.title}`,
+            description: item.description || '',
+            url: `${siteUrl}/${path}/${item.slug}`,
+            date: item.created_at,
+            image: item.image_url,
+            lang: 'cs'
+          });
+        }
 
-        // --- ANGLICKÁ POLOŽKA (Pouze pokud existuje překlad) ---
+        // --- ANGLICKÁ POLOŽKA (Pouze pokud Fixer již doplnil title_en) ---
         if (item.title_en) {
           const enSlug = item.slug_en || item.slug;
           allItems.push({
             title: `${enPrefix} ${item.title_en}`,
-            description: item.description_en || item.seo_description_en || '',
+            description: item.description_en || item.description || '',
             url: `${siteUrl}/en/${path}/${enSlug}`,
             date: item.created_at,
             image: item.image_url,
@@ -60,7 +63,7 @@ export async function GET() {
       });
     });
 
-    // 3. Sjednocení a seřazení od nejnovějšího (Limit 50 pro Google/RSS čtečky)
+    // 3. Sjednocení a seřazení (Limit 50 pro stabilitu čteček)
     const finalFeed = allItems
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 50);
