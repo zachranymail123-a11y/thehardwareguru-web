@@ -37,7 +37,7 @@ export default function GameCalendarPage() {
 
   // 🚀 GURU SURGERY: Funkce pro vygenerování článku rovnou z kalendáře
   const handleSurgery = async (gameId, gameName) => {
-    const pin = prompt(isEn ? `Enter GURU PIN to generate article for: ${gameName}` : `Zadej GURU PIN pro vygenerování článku k: ${gameName}`);
+    const pin = prompt(isEn ? `Enter GURU PIN to approve and generate article for: ${gameName}` : `Zadej GURU PIN pro SCHVÁLENÍ a generování článku k: ${gameName}`);
     if (!pin) return;
 
     setGenerating(gameId);
@@ -51,10 +51,9 @@ export default function GameCalendarPage() {
       const data = await res.json();
       
       if (data.success) {
-        // GURU SUCCESS: Článek je v DB, přesměrujeme uživatele nebo potvrdíme
         const msg = isEn 
-          ? `SUCCESS! Article '${gameName}' has been created. Check Article Archive.` 
-          : `HOTOVO! Článek '${gameName}' byl úspěšně vygenerován a uložen.`;
+          ? `SUCCESS! Article '${gameName}' has been created.` 
+          : `HOTOVO! Článek '${gameName}' byl schválen, vygenerován a uložen do databáze.`;
         alert(msg);
       } else {
         alert(`${isEn ? 'ERROR' : 'CHYBA'}: ${data.error}`);
@@ -90,7 +89,7 @@ export default function GameCalendarPage() {
             background: #a855f7;
             color: #fff;
             border: none;
-            padding: 12px 15px;
+            padding: 14px 15px;
             border-radius: 12px;
             font-weight: 900;
             font-size: 11px;
@@ -98,13 +97,13 @@ export default function GameCalendarPage() {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            margin-top: 15px;
+            gap: 10px;
             text-transform: uppercase;
             transition: 0.2s;
             box-shadow: 0 5px 15px rgba(168, 85, 247, 0.3);
+            width: 100%;
         }
-        .surgery-btn:hover { background: #fff; color: #a855f7; transform: scale(1.05); }
+        .surgery-btn:hover { background: #fff; color: #a855f7; transform: scale(1.02); }
         .surgery-btn:disabled { opacity: 0.5; cursor: wait; }
 
         .platform-pill {
@@ -133,7 +132,7 @@ export default function GameCalendarPage() {
             {isEn ? <>RELEASE <span style={{ color: '#a855f7' }}>CALENDAR</span></> : <>HERNÍ <span style={{ color: '#a855f7' }}>KALENDÁŘ</span></>}
           </h1>
           <p style={subtitleStyle}>
-            {isEn ? 'Next 7 days of hardware-crushing titles. Monitored by Guru.' : 'Příštích 7 dní herního masakru. Pod přísným dohledem Guruho.'}
+            {isEn ? 'Next 7 days of hardware-crushing titles. Select to generate content.' : 'Příštích 7 dní herního masakru. Vyber hru a nechej AI vyrobit článek.'}
           </p>
         </div>
       </header>
@@ -167,21 +166,26 @@ export default function GameCalendarPage() {
                 <div style={{ padding: '30px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <h3 style={gameTitle}>{game.name}</h3>
                   
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: 'auto' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
                     {game.platforms?.slice(0, 4).map((p, i) => (
                       <span key={i} className="platform-pill">{p.platform.name}</span>
                     ))}
                   </div>
 
-                  {/* 🛠️ GURU SURGERY BUTTON (ADMIN TOOL) */}
-                  <button 
-                    disabled={generating === game.id}
-                    onClick={() => handleSurgery(game.id, game.name)}
-                    className="surgery-btn"
-                  >
-                    {generating === game.id ? <Loader2 className="animate-spin" size={14} /> : <FileText size={14} />}
-                    {generating === game.id ? (isEn ? 'SURGERY IN PROGRESS...' : 'PROBÍHÁ OPERACE...') : 'GURU SURGERY'}
-                  </button>
+                  {/* 🛠️ GURU SCHVALOVACÍ SEKCE (ADMIN ONLY) */}
+                  <div style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '20px' }}>
+                    <div style={{ fontSize: '9px', fontWeight: '900', color: '#6b7280', marginBottom: '10px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                      {isEn ? 'Admin Action:' : 'Akce administrátora:'}
+                    </div>
+                    <button 
+                      disabled={generating === game.id}
+                      onClick={() => handleSurgery(game.id, game.name)}
+                      className="surgery-btn"
+                    >
+                      {generating === game.id ? <Loader2 className="animate-spin" size={16} /> : <Zap size={16} fill="currentColor" />}
+                      {generating === game.id ? (isEn ? 'GENERATING...' : 'GENERUJI...') : (isEn ? 'APPROVE & GENERATE' : 'SCHVÁLIT A VYROBIT')}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
