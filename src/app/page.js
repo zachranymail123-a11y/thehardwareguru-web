@@ -5,10 +5,17 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, ExternalLink } from 'lucide-react';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+// 🚀 GURU SINGLETON ENGINE: Definitivně odstraňuje varování "Multiple GoTrueClient instances" z logů!
+const getSupabase = () => {
+  if (typeof window === 'undefined') {
+    return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  }
+  if (!window.__supabaseClient) {
+    window.__supabaseClient = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  }
+  return window.__supabaseClient;
+};
+const supabase = getSupabase();
 
 export default function HomePage() {
   const [data, setData] = useState({ 
@@ -26,6 +33,8 @@ export default function HomePage() {
   const isEn = pathname.startsWith('/en');
 
   useEffect(() => {
+    let isMounted = true;
+
     async function fetchData() {
       try {
         await supabase.rpc('increment_total_visits');
@@ -38,21 +47,25 @@ export default function HomePage() {
           supabase.from('partneri').select('*').order('created_at', { ascending: false }).limit(4)
         ]);
 
-        setData({ 
-          posts: p.data || [], 
-          stats: s.data || { value: 0 }, 
-          nejnovejsiTipy: t.data || [],
-          nejnovejsiTweaky: tw.data || [],
-          darci: d.data || [],
-          partneri: pa.data || []
-        });
+        if (isMounted) {
+          setData({ 
+            posts: p.data || [], 
+            stats: s.data || { value: 0 }, 
+            nejnovejsiTipy: t.data || [],
+            nejnovejsiTweaky: tw.data || [],
+            darci: d.data || [],
+            partneri: pa.data || []
+          });
+        }
       } catch (err) {
         console.error("Data load fail:", err);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     }
     fetchData();
+
+    return () => { isMounted = false; };
   }, []);
 
   const getThumbnail = (post) => {
@@ -69,7 +82,8 @@ export default function HomePage() {
   };
 
   return (
-    <div style={globalStyles}>
+    // 🚀 GURU HYDRATION SHIELD: Zabrání chybě #418 a #423 od MetaMasku a dalších doplňků v prohlížeči!
+    <div style={globalStyles} suppressHydrationWarning={true}>
       <style>{`
         .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); }
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
