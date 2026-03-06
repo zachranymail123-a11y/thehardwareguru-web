@@ -3,9 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, Loader2, ChevronRight, Activity } from 'lucide-react';
+import { ShieldCheck, Loader2, ChevronRight, Activity, Zap } from 'lucide-react';
 
-// GURU ENGINE: Inicializace Supabase
+// GURU ENGINE: Připojení k DB
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -15,7 +15,7 @@ export default function RadyArchivePage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // 🌍 JAZYKOVÁ LOGIKA
+  // 🌍 MULTILINGUAL LOGIC
   const pathname = usePathname() || '';
   const isEn = pathname.startsWith('/en');
 
@@ -29,10 +29,10 @@ export default function RadyArchivePage() {
         
         if (!error && data) setItems(data);
 
-        // 🚀 SEO GURU: Titulek stránky
+        // 🚀 SEO GURU: Dynamický Title
         document.title = isEn 
-          ? 'Elite Hardware Guides | Hardware Guru Base' 
-          : 'Elitní Hardware Rady | Hardware Guru Základna';
+          ? 'Professional Hardware Guides | The Hardware Guru' 
+          : 'Profesionální Hardware Rady | The Hardware Guru';
       } catch (err) {
         console.error("GURU DATA FAIL:", err);
       } finally {
@@ -46,99 +46,116 @@ export default function RadyArchivePage() {
     <div style={archiveWrapper}>
       <style>{`
         .rada-card { 
-            background: rgba(10, 11, 13, 0.95); 
+            background: rgba(10, 11, 13, 0.98); 
             border: 1px solid rgba(102, 252, 241, 0.2); 
-            border-radius: 32px; 
+            border-radius: 20px; 
             overflow: hidden; 
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
             height: 100%;
             display: flex;
             flex-direction: column;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
             text-decoration: none;
-            cursor: pointer;
         }
         .rada-card:hover { 
-            transform: translateY(-10px) scale(1.02); 
+            transform: translateY(-5px); 
             border-color: #66fcf1; 
-            box-shadow: 0 25px 60px rgba(102, 252, 241, 0.15); 
+            box-shadow: 0 0 25px rgba(102, 252, 241, 0.3); 
         }
-        .rada-image-box {
+        .rada-img-container {
             width: 100%;
-            height: 220px;
+            height: 180px;
             overflow: hidden;
             background: #000;
-            border-bottom: 1px solid rgba(102, 252, 241, 0.1);
+            position: relative;
+            border-bottom: 2px solid rgba(102, 252, 241, 0.1);
         }
-        .rada-image-box img {
+        .rada-img-container img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            opacity: 0.8;
-            transition: 0.5s;
+            transition: 0.6s;
+            opacity: 0.85;
         }
-        .rada-card:hover .rada-image-box img {
+        .rada-card:hover .rada-img-container img {
+            transform: scale(1.1);
             opacity: 1;
-            transform: scale(1.05);
+        }
+        .guru-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            border: 1px solid #66fcf1;
+            color: #66fcf1;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            z-index: 2;
         }
       `}</style>
 
-      {/* --- ELITNÍ HEADER --- */}
+      {/* --- HEADER --- */}
       <header style={headerStyle}>
         <div style={headerContentBox}>
-          <ShieldCheck size={64} color="#66fcf1" style={{ margin: '0 auto 25px', filter: 'drop-shadow(0 0 15px rgba(102, 252, 241, 0.4))' }} />
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '20px' }}>
+             <ShieldCheck size={48} color="#66fcf1" style={{ filter: 'drop-shadow(0 0 10px rgba(102, 252, 241, 0.5))' }} />
+          </div>
           <h1 style={titleStyle}>
             {isEn ? <>PRACTICAL <span style={{ color: '#66fcf1' }}>GUIDES</span></> : <>PRAKTICKÉ <span style={{ color: '#66fcf1' }}>RADY</span></>}
           </h1>
           <p style={subtitleStyle}>
             {isEn 
-              ? 'Elite technical solutions and deep hardware maintenance for pro geeks.' 
-              : 'Elitní technická řešení a hloubková údržba hardwaru pro profi geeky.'}
+              ? 'No generic trash. Real technical solutions from field practice.' 
+              : 'Žádnej generickej odpad. Reálná technická řešení přímo z praxe.'}
           </p>
         </div>
       </header>
 
-      {/* --- HLAVNÍ GRID --- */}
+      {/* --- GRID --- */}
       <main style={gridContainer}>
         {loading ? (
-          <div style={{ textAlign: 'center', gridColumn: '1/-1', padding: '120px' }}>
+          <div style={{ textAlign: 'center', gridColumn: '1/-1', padding: '100px' }}>
             <Loader2 className="animate-spin" size={64} color="#66fcf1" />
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '40px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '30px' }}>
             {items.map((item) => {
-              // GURU ROBUST ENGINE: Výběr polí a zkrácení popisu
               const displayTitle = (isEn && item.title_en) ? item.title_en : item.title;
               const displayDesc = (isEn && item.description_en) ? item.description_en : item.description;
               const displaySlug = (isEn && item.slug_en) ? item.slug_en : item.slug;
               
-              // Zkrátíme popis pro archiv, aby okna nebyla obří
-              const shortDesc = displayDesc?.length > 150 ? displayDesc.substring(0, 150) + '...' : displayDesc;
+              // Ořezání popisu pro čistý vzhled archivu
+              const shortDesc = displayDesc?.length > 100 ? displayDesc.substring(0, 100) + '...' : displayDesc;
 
               return (
-                <Link key={item.id} href={isEn ? `/en/rady/${displaySlug}` : `/rady/${displaySlug}`} prefetch={false} style={{ textDecoration: 'none' }}>
+                <Link key={item.id} href={isEn ? `/en/rady/${displaySlug}` : `/rady/${displaySlug}`} style={{ textDecoration: 'none' }}>
                   <article className="rada-card">
-                    {/* GURU IMAGE ENGINE: Návrat obrázků do oken */}
-                    <div className="rada-image-box">
+                    {/* GURU DB IMAGE ENGINE */}
+                    <div className="rada-img-container">
+                      <div className="guru-badge">
+                        <Zap size={10} fill="#66fcf1" /> GURU BASE
+                      </div>
                       <img 
                         src={item.image_url || 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000'} 
                         alt={displayTitle} 
                       />
                     </div>
 
-                    <div style={{ padding: '30px', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                      <div style={categoryBadge}>
-                        <Activity size={14} /> {isEn ? 'GURU BASE' : 'GURU ZÁKLADNA'}
-                      </div>
-                      
+                    <div style={{ padding: '25px', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                       <h3 style={cardTitleStyle}>{displayTitle}</h3>
-                      
-                      {/* ZDE JE OPRAVA: Jen krátký popis pro čistý archiv */}
                       <p style={cardDescStyle}>{shortDesc}</p>
                       
                       <div style={moreStyle}>
-                        {isEn ? 'VIEW FULL GUIDE' : 'ZOBRAZIT CELOU RADU'} <ChevronRight size={20} />
+                        {isEn ? 'DECRYPT GUIDE' : 'OTEVŘÍT RADU'} <ChevronRight size={18} />
                       </div>
                     </div>
                   </article>
@@ -149,138 +166,103 @@ export default function RadyArchivePage() {
         )}
       </main>
 
-      {/* --- GURU FOOTER --- */}
+      {/* --- FOOTER --- */}
       <footer style={footerStyle}>
         <div style={footerContentBox}>
-          <h2 style={{ color: '#66fcf1', marginBottom: '25px', textTransform: 'uppercase', fontWeight: '900', fontSize: '32px', letterSpacing: '-1px' }}>
-            {isEn ? '20 Years of Expertise' : '20 Let Praxe v Oboru'}
+          <h2 style={{ color: '#66fcf1', marginBottom: '15px', textTransform: 'uppercase', fontWeight: '900', fontSize: '28px' }}>
+             20 YEARS OF FIELD-WORK
           </h2>
-          <p style={{ lineHeight: '1.8', fontSize: '17px', color: '#e0e0e0', marginBottom: '45px', maxWidth: '800px', margin: '0 auto 40px' }}>
-            {isEn ? (
-              <>Field-tested solutions for your PC stability and long-term hardware health.</>
-            ) : (
-              <>Praxí ověřená řešení pro tvou stabilitu a dlouhodobé zdraví tvého hardwaru.</>
-            )}
+          <p style={{ lineHeight: '1.6', fontSize: '15px', color: '#9ca3af', maxWidth: '700px', margin: '0 auto' }}>
+            {isEn ? 'Decades of testing and fixing. Welcome to the base.' : 'Dvě dekády testování a oprav. Vítej na základně.'}
           </p>
-          <div style={{ fontSize: '13px', color: '#444', fontWeight: '900', letterSpacing: '2px' }}>
-            THE HARDWARE GURU SYSTEM 🦾
-          </div>
         </div>
       </footer>
     </div>
   );
 }
 
-// --- GURU MASTER STYLES ---
+// --- MASTER STYLES ---
 const archiveWrapper = { 
     minHeight: '100vh', 
     backgroundColor: '#0a0b0d', 
     backgroundImage: 'url("/bg-guru.png")', 
     backgroundSize: 'cover', 
     backgroundAttachment: 'fixed', 
-    padding: '130px 20px 0px' 
+    padding: '120px 20px 0px' 
 };
 
 const headerStyle = { 
-    maxWidth: '1100px', 
-    margin: '0 auto 80px', 
+    maxWidth: '1000px', 
+    margin: '0 auto 60px', 
     textAlign: 'center' 
 };
 
 const headerContentBox = {
-    background: 'rgba(0,0,0,0.85)',
-    padding: '60px 40px',
-    borderRadius: '40px',
-    backdropFilter: 'blur(20px)',
-    border: '1px solid rgba(102, 252, 241, 0.15)',
-    boxShadow: '0 30px 100px rgba(0,0,0,0.8)'
+    background: 'rgba(0,0,0,0.8)',
+    padding: '40px 20px',
+    borderRadius: '30px',
+    backdropFilter: 'blur(15px)',
+    border: '1px solid rgba(102, 252, 241, 0.15)'
 };
 
 const titleStyle = { 
-    fontSize: 'clamp(40px, 8vw, 76px)', 
+    fontSize: 'clamp(32px, 6vw, 64px)', 
     fontWeight: '950', 
     textTransform: 'uppercase', 
-    letterSpacing: '-2px', 
+    letterSpacing: '-1.5px', 
     color: '#fff', 
-    lineHeight: '0.85',
+    lineHeight: '1',
     margin: 0
 };
 
 const subtitleStyle = { 
-    marginTop: '30px', 
-    color: '#9ca3af', 
-    fontWeight: '700', 
-    fontSize: '19px',
-    maxWidth: '700px',
-    margin: '30px auto 0',
-    lineHeight: '1.5'
+    marginTop: '20px', 
+    color: '#d1d5db', 
+    fontWeight: '600', 
+    fontSize: '18px'
 };
 
 const gridContainer = { 
-    maxWidth: '1300px', 
+    maxWidth: '1200px', 
     margin: '0 auto' 
 };
 
-const categoryBadge = { 
-    background: 'rgba(102, 252, 241, 0.1)', 
-    color: '#66fcf1', 
-    padding: '5px 14px', 
-    borderRadius: '8px', 
-    fontSize: '11px', 
-    fontWeight: '950', 
-    letterSpacing: '1.5px',
-    border: '1px solid rgba(102, 252, 241, 0.2)',
-    textTransform: 'uppercase',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginBottom: '15px',
-    width: 'fit-content'
-};
-
 const cardTitleStyle = { 
-    fontSize: '26px', 
+    fontSize: '22px', 
     fontWeight: '900', 
     color: '#fff', 
-    marginBottom: '15px', 
+    marginBottom: '12px', 
     textTransform: 'uppercase', 
-    lineHeight: '1.1',
-    letterSpacing: '-0.5px'
+    lineHeight: '1.2'
 };
 
 const cardDescStyle = { 
     color: '#9ca3af', 
-    fontSize: '15px', 
-    lineHeight: '1.6', 
+    fontSize: '14px', 
+    lineHeight: '1.5', 
     flexGrow: 1, 
-    marginBottom: '30px' 
+    marginBottom: '20px' 
 };
 
 const moreStyle = { 
     color: '#66fcf1', 
     fontWeight: '950', 
-    fontSize: '14px', 
+    fontSize: '13px', 
     display: 'flex', 
     alignItems: 'center', 
-    gap: '10px', 
+    gap: '8px', 
     marginTop: 'auto', 
     textTransform: 'uppercase',
     letterSpacing: '1px'
 };
 
-const footerStyle = { 
-    marginTop: '120px',
-    paddingBottom: '80px'
-};
-
+const footerStyle = { marginTop: '80px', paddingBottom: '60px' };
 const footerContentBox = {
-    maxWidth: '1000px', 
+    maxWidth: '900px', 
     margin: '0 auto',
     background: 'rgba(0,0,0,0.9)',
-    padding: '80px 40px',
-    borderRadius: '50px 50px 0 0',
+    padding: '50px 20px',
+    borderRadius: '40px 40px 0 0',
     border: '1px solid rgba(102, 252, 241, 0.1)',
-    borderBottom: 'none',
-    textAlign: 'center',
-    backdropFilter: 'blur(30px)'
+    textAlign: 'center'
 };
