@@ -1,13 +1,11 @@
 "use client";
 
 /**
- * GURU PROXY ENGINE
- * Tento soubor slouží jako vstupní bod pro anglickou verzi archivu článků.
- * Načítá hlavní komponentu ze src/app/clanky/page.js, která se sama 
- * postará o překlad na základě URL.
+ * GURU FIX: Anglická hlavní stránka
+ * Oprava chyby "Module not found": Importujeme pouze HomePage z nadřazené složky.
  */
-import ClankyArchivePage from '../../clanky/page';
+import HomePage from '../page';
 
-export default function EnglishClankyPage() {
-  return <ClankyArchivePage />;
+export default function EnglishHomePage() {
+  return <HomePage />;
 }
