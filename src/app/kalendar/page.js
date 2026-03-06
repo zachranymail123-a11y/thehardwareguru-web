@@ -1,25 +1,30 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Calendar, Gamepad, Monitor, Clock, Loader2, ArrowLeft, ChevronRight, Zap, Heart } from 'lucide-react';
+import { Calendar, Gamepad, Monitor, Clock, Loader2, ArrowLeft, ChevronRight, Zap, Heart, FileText, ExternalLink } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 /**
- * 🚀 GURU GAME CALENDAR FRONTEND
- * Zobrazuje nadcházející pecky v příštích 7 dnech.
+ * 🚀 GURU GAME CALENDAR + SURGERY ENGINE
+ * Zobrazuje hry v příštích 7 dnech a umožňuje Guruovi generovat články jedním klikem.
  */
 export default function GameCalendarPage() {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(null); // ID hry, která se právě "operuje"
+  
   const pathname = usePathname() || '';
   const isEn = pathname.startsWith('/en');
 
+  // Načtení dat z RAWG API Engine
   useEffect(() => {
     async function fetchGames() {
       try {
         const res = await fetch('/api/game-calendar');
         const data = await res.json();
-        setGames(data.games || []);
+        if (data.games) {
+          setGames(data.games);
+        }
       } catch (err) {
         console.error("GURU CALENDAR FAIL:", err);
       } finally {
@@ -27,9 +32,39 @@ export default function GameCalendarPage() {
       }
     }
     fetchGames();
-    // GURU SEO: Dynamický titulek
     document.title = isEn ? 'Game Release Calendar | Guru Base' : 'Herní Kalendář | Guru Základna';
   }, [isEn]);
+
+  // 🚀 GURU SURGERY: Funkce pro vygenerování článku rovnou z kalendáře
+  const handleSurgery = async (gameId, gameName) => {
+    const pin = prompt(isEn ? `Enter GURU PIN to generate article for: ${gameName}` : `Zadej GURU PIN pro vygenerování článku k: ${gameName}`);
+    if (!pin) return;
+
+    setGenerating(gameId);
+    try {
+      const res = await fetch('/api/generate-game-article', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameId, pin })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        // GURU SUCCESS: Článek je v DB, přesměrujeme uživatele nebo potvrdíme
+        const msg = isEn 
+          ? `SUCCESS! Article '${gameName}' has been created. Check Article Archive.` 
+          : `HOTOVO! Článek '${gameName}' byl úspěšně vygenerován a uložen.`;
+        alert(msg);
+      } else {
+        alert(`${isEn ? 'ERROR' : 'CHYBA'}: ${data.error}`);
+      }
+    } catch (err) {
+      alert(isEn ? "Generator engine failure!" : "Kritické selhání generátoru!");
+    } finally {
+      setGenerating(null);
+    }
+  };
 
   return (
     <div style={pageWrapper}>
@@ -51,6 +86,27 @@ export default function GameCalendarPage() {
             border-color: #a855f7; 
             box-shadow: 0 20px 60px rgba(168, 85, 247, 0.3); 
         }
+        .surgery-btn {
+            background: #a855f7;
+            color: #fff;
+            border: none;
+            padding: 12px 15px;
+            border-radius: 12px;
+            font-weight: 900;
+            font-size: 11px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+            text-transform: uppercase;
+            transition: 0.2s;
+            box-shadow: 0 5px 15px rgba(168, 85, 247, 0.3);
+        }
+        .surgery-btn:hover { background: #fff; color: #a855f7; transform: scale(1.05); }
+        .surgery-btn:disabled { opacity: 0.5; cursor: wait; }
+
         .platform-pill {
             background: rgba(168, 85, 247, 0.1);
             color: #a855f7;
@@ -63,7 +119,7 @@ export default function GameCalendarPage() {
         }
       `}</style>
 
-      {/* --- HEADER SEKCE --- */}
+      {/* --- HEADER --- */}
       <header style={headerContainer}>
         <div style={headerBox}>
           <Link href={isEn ? "/en" : "/"} style={backLink}>
@@ -77,12 +133,12 @@ export default function GameCalendarPage() {
             {isEn ? <>RELEASE <span style={{ color: '#a855f7' }}>CALENDAR</span></> : <>HERNÍ <span style={{ color: '#a855f7' }}>KALENDÁŘ</span></>}
           </h1>
           <p style={subtitleStyle}>
-            {isEn ? 'Upcoming hits for the next 7 days. Tracked and verified by Guru.' : 'Očekávané pecky v příštích 7 dnech. Sledováno a ověřeno Guruem.'}
+            {isEn ? 'Next 7 days of hardware-crushing titles. Monitored by Guru.' : 'Příštích 7 dní herního masakru. Pod přísným dohledem Guruho.'}
           </p>
         </div>
       </header>
 
-      {/* --- HLAVNÍ GRID --- */}
+      {/* --- GRID --- */}
       <main style={gridContainer}>
         {loading ? (
           <div style={center}><Loader2 className="animate-spin" size={64} color="#a855f7" /></div>
@@ -90,7 +146,7 @@ export default function GameCalendarPage() {
           <div style={center}>
             <div style={{ textAlign: 'center', opacity: 0.5 }}>
                 <Gamepad size={64} style={{ marginBottom: '20px' }} />
-                <h2>{isEn ? 'NO RELEASES IN NEXT 7 DAYS' : 'V PŘÍŠTÍCH 7 DNECH NIC NEVYCHÁZÍ'}</h2>
+                <h2>{isEn ? 'THE SYSTEM IS EMPTY' : 'SYSTÉM JE ZATÍM PRÁZDNÝ'}</h2>
             </div>
           </div>
         ) : (
@@ -116,20 +172,30 @@ export default function GameCalendarPage() {
                       <span key={i} className="platform-pill">{p.platform.name}</span>
                     ))}
                   </div>
+
+                  {/* 🛠️ GURU SURGERY BUTTON (ADMIN TOOL) */}
+                  <button 
+                    disabled={generating === game.id}
+                    onClick={() => handleSurgery(game.id, game.name)}
+                    className="surgery-btn"
+                  >
+                    {generating === game.id ? <Loader2 className="animate-spin" size={14} /> : <FileText size={14} />}
+                    {generating === game.id ? (isEn ? 'SURGERY IN PROGRESS...' : 'PROBÍHÁ OPERACE...') : 'GURU SURGERY'}
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* 🛡️ GURU SUPPORT SHIELD */}
+        {/* 🛡️ SUPPORT SHIELD */}
         <div style={guruShield}>
           <Heart size={44} color="#a855f7" fill="#a855f7" style={{ margin: '0 auto 25px' }} />
           <h3 style={{ fontSize: '28px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', marginBottom: '15px' }}>
             {isEn ? 'SUPPORT GURU RELEASES' : 'PODPOŘ GURU KALENDÁŘ'}
           </h3>
           <p style={{ color: '#d1d5db', margin: '0 auto 35px', maxWidth: '600px' }}>
-            {isEn ? 'Help us maintain this automated system for the community.' : 'Hardware Guru běží bez reklam díky tvojí podpoře. Pomoz nám udržet systémy v chodu.'}
+            {isEn ? 'Keep this automated tracking system alive for the community.' : 'Hardware Guru běží bez reklam díky tvojí podpoře. Pomoz nám udržet systémy v chodu.'}
           </p>
           
           <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -152,6 +218,7 @@ export default function GameCalendarPage() {
   );
 }
 
+// --- MASTER STYLES ---
 const pageWrapper = { minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', color: '#fff', padding: '120px 20px 60px' };
 const headerContainer = { maxWidth: '1100px', margin: '0 auto 60px' };
 const headerBox = { background: 'rgba(0,0,0,0.75)', padding: '60px 40px', borderRadius: '40px', border: '1px solid rgba(168, 85, 247, 0.2)', backdropFilter: 'blur(15px)', textAlign: 'center', boxShadow: '0 40px 100px rgba(0,0,0,0.8)' };
