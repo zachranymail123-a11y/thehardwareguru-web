@@ -16,7 +16,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-export default function App() {
+export default function ExpectedGameDetail() {
   const { slug } = useParams();
   const pathname = usePathname();
   const isEn = pathname?.startsWith('/en');
@@ -134,7 +134,6 @@ export default function App() {
 
               <button 
                 onClick={() => {
-                  document.execCommand('copy');
                   const dummy = document.createElement('input');
                   document.body.appendChild(dummy);
                   dummy.value = window.location.href;
