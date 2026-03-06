@@ -25,8 +25,19 @@ export async function POST(req) {
     const gameData = await gameRes.json();
     const movieData = await movieRes.json();
     
-    // Získáme trailer
-    const trailerId = movieData.results?.[0]?.data?.max || gameData.clip?.video || null;
+    // GURU VIDEO LOGIC: Získáme buď ID z YouTube nebo přímý link na mp4
+    const rawVideo = movieData.results?.[0]?.data?.max || gameData.clip?.video || null;
+    let videoId = null;
+    let trailerUrl = null;
+
+    if (rawVideo) {
+        if (rawVideo.includes('youtube.com') || rawVideo.includes('youtu.be')) {
+            videoId = rawVideo.split('v=')[1]?.split('&')[0] || rawVideo.split('/').pop();
+            trailerUrl = `https://www.youtube.com/embed/${videoId}`;
+        } else {
+            trailerUrl = rawVideo; // Přímý mp4 link
+        }
+    }
 
     // 2. TECH REŠERŠE
     const searchRes = await fetch('https://google.serper.dev/search', {
@@ -37,30 +48,42 @@ export async function POST(req) {
     const searchData = await searchRes.json();
     const techContext = searchData.organic?.map(r => r.snippet).join('\n') || '';
 
-    // 3. AI WRITER (Dual Language)
+    // 3. AI WRITER
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo",
       messages: [
-        { role: "system", content: "Jsi 'The Hardware Guru'. Generuješ hloubkové technické analýzy her. Žádný bullshit, jen hardware, engine a optimalizace. Vždy vrať validní JSON." },
-        { role: "user", content: `Hra: ${gameData.name}\nPopis: ${gameData.description_raw}\nTechnický kontext: ${techContext}\n\nGeneruj JSON s poli: title, slug, description, content (CZ HTML), title_en, slug_en, description_en, content_en (EN HTML).` }
+        { role: "system", content: "Jsi 'The Hardware Guru'. Generuješ nekompromisní technické analýzy her. Žádný marketing, jen hardware a engine." },
+        { role: "user", content: `Hra: ${gameData.name}\nTechnický kontext: ${techContext}\nGeneruj JSON s poli: title, slug, description, content, title_en, slug_en, description_en, content_en.` }
       ],
       response_format: { type: "json_object" }
     });
 
     const ai = JSON.parse(completion.choices[0].message.content);
 
-    // 🎥 VIDEO INJECTION
-    if (trailerId) {
-      const videoEmbed = `<h2>Oficiální Trailer</h2><div style="aspect-ratio:16/9; margin: 30px 0;"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/${trailerId}" frameborder="0" allowfullscreen style="border-radius:16px;"></iframe></div>`;
-      ai.content += videoEmbed;
-      ai.content_en += videoEmbed;
+    // 🎥 VIDEO EMBED INJECTION: Automaticky vložíme přehrávač do textu
+    if (trailerUrl) {
+      const isYoutube = trailerUrl.includes('youtube.com');
+      const videoHtml = `
+        <div class="guru-video-box" style="margin: 40px 0;">
+          <h2>Oficiální Trailer / Video</h2>
+          <div style="aspect-ratio:16/9; background:#000; border-radius:20px; overflow:hidden; border:1px solid #66fcf1;">
+            ${isYoutube 
+              ? `<iframe width="100%" height="100%" src="${trailerUrl}" frameborder="0" allowfullscreen></iframe>`
+              : `<video width="100%" height="100%" controls poster="${gameData.background_image}"><source src="${trailerUrl}" type="video/mp4"></video>`
+            }
+          </div>
+        </div>
+      `;
+      ai.content += videoHtml;
+      ai.content_en += videoHtml;
     }
 
-    // 4. DB INSERT - 🚀 GURU FIX: Nastavujeme typ podle sekce (default 'expected' pro kalendář)
+    // 4. DB INSERT - 🚀 GURU FIX: Zapisujeme video_id i trailer!
     const { error } = await supabaseAdmin.from('posts').insert([{
       ...ai,
       image_url: gameData.background_image,
-      video_id: trailerId,
+      video_id: videoId,
+      trailer: trailerUrl,
       type: section || 'expected' 
     }]);
 
@@ -68,7 +91,6 @@ export async function POST(req) {
     
     return NextResponse.json({ success: true, slug: ai.slug });
   } catch (err) { 
-    console.error("GURU GENERATOR FAIL:", err.message);
     return NextResponse.json({ error: err.message }, { status: 500 }); 
   }
 }
