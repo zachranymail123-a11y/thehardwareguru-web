@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Calendar, Monitor, Loader2, Eye, Zap, ArrowRight, Info } from 'lucide-react';
+import { Calendar, Monitor, Loader2, Eye, Zap, ArrowRight, Info, Play } from 'lucide-react';
 
 /**
- * 🚀 GURU EXPECTED GAMES ARCHIVE - DEFINITÍVNA VERZIA
- * Vyriešené: Navigácia na slug, CZ/EN podpora a Elite Neon dizajn.
+ * 🚀 GURU EXPECTED GAMES ARCHIVE - DEFINITÍVNA VERZIA 2.0
+ * Vyriešené: Detekcia a vizualizácia trailerov, navigácia na slug a Elite Neon dizajn.
  */
 
 const supabase = createClient(
@@ -34,7 +34,7 @@ export default function ExpectedGamesArchive() {
         
         document.title = isEn 
           ? 'Expected Tech Hits | Guru Previews' 
-          : 'Očakávané pecky | Guru Technické Preview';
+          : 'Očekávané pecky | Guru Technické Preview';
       } catch (err) {
         console.error("GURU DB FAIL:", err);
       } finally {
@@ -66,12 +66,33 @@ export default function ExpectedGamesArchive() {
             border-color: #66fcf1; 
             box-shadow: 0 20px 60px rgba(102, 252, 241, 0.2); 
         }
+        .expected-card:hover .play-overlay {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
         .card-image-wrapper {
             width: 100%;
             height: 240px;
             overflow: hidden;
             position: relative;
             background: #000;
+        }
+        .play-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: rgba(102, 252, 241, 0.8);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            opacity: 0;
+            transition: 0.3s;
+            z-index: 10;
         }
         .desc-text {
             color: #9ca3af;
@@ -82,6 +103,24 @@ export default function ExpectedGamesArchive() {
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
+        }
+        .video-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #ff0055;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 5;
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
       `}</style>
 
@@ -112,12 +151,15 @@ export default function ExpectedGamesArchive() {
         ) : (
           <div style={grid}>
             {items.map((item) => {
-              // 🚀 GURU SLUG ENGINE: Tu je tá kľúčová logika pre navigáciu
+              // 🚀 GURU SLUG ENGINE: Kľúčová logika pre navigáciu
               const actualSlug = (isEn && item.slug_en) ? item.slug_en : item.slug;
               if (!actualSlug) return null;
 
               const displayTitle = (isEn && item.title_en) ? item.title_en : item.title;
               const displayDesc = (isEn && item.description_en) ? item.description_en : item.description;
+              
+              // 🎥 GURU VIDEO CHECK: Máme trailer alebo video_id?
+              const hasVideo = item.trailer || (item.video_id && item.video_id.length > 5);
 
               return (
                 <Link 
@@ -128,11 +170,21 @@ export default function ExpectedGamesArchive() {
                 >
                   <article className="expected-card">
                     <div className="card-image-wrapper">
+                       {/* 🎥 VIDEO BADGE */}
+                       {hasVideo && (
+                         <div className="video-badge">
+                            <Play size={12} fill="#fff" /> {isEn ? 'VIDEO' : 'VIDEO'}
+                         </div>
+                       )}
+                       
+                       {hasVideo && <div className="play-overlay"><Play size={30} fill="currentColor" /></div>}
+
                        <img 
                         src={item.image_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e'} 
                         alt={displayTitle} 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: hasVideo ? 0.7 : 0.8 }} 
                        />
+                       
                        <div style={techBadge}>
                           <Info size={12} /> {isEn ? 'TECH PREVIEW' : 'TECHNICKÝ ROZBOR'}
                        </div>
