@@ -218,7 +218,6 @@ export default function HomePage() {
             </div>
             <div style={gridStyles}>
               {data.nejnovejsiTipy.map((tip) => (
-                {/* GURU FIX: Přidáno prefetch={false} */}
                 <Link href={isEn ? `/en/tipy/${tip.slug}` : `/tipy/${tip.slug}`} prefetch={false} key={tip.id} className="tip-card" style={cardBaseStyle}>
                   <div style={cardImageWrapper}><img src={tip.image_url} alt={tip.title} style={imageStyle} /></div>
                   <div style={{ padding: '25px' }}>
@@ -243,7 +242,6 @@ export default function HomePage() {
             </div>
             <div style={gridStyles}>
               {data.nejnovejsiTweaky.map((tweak) => (
-                {/* GURU FIX: Přidáno prefetch={false} */}
                 <Link href={isEn ? `/en/tweaky/${tweak.slug}` : `/tweaky/${tweak.slug}`} prefetch={false} key={tweak.id} className="tweak-card" style={cardBaseStyle}>
                   <div style={cardImageWrapper}><img src={tweak.image_url} alt={tweak.title} style={imageStyle} /></div>
                   <div style={{ padding: '25px' }}>
@@ -266,7 +264,6 @@ export default function HomePage() {
               {data.posts.map((post) => {
                 const badge = getBadgeInfo(post);
                 return (
-                  {/* GURU FIX: Přidáno prefetch={false} */}
                   <Link key={post.id} href={isEn ? `/en/clanky/${post.slug}` : `/clanky/${post.slug}`} prefetch={false} style={{ textDecoration: 'none' }}>
                     <div className="game-card" style={{ borderRadius: '12px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
                       <div style={{ position: 'relative', paddingTop: '56.25%' }}>
