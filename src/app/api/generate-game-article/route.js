@@ -1,7 +1,8 @@
 /**
- * 🚀 GURU GAME ARTICLE GENERATOR - MASTER ENGINE V9
+ * 🚀 GURU GAME ARTICLE GENERATOR - MASTER ENGINE V10
  * Vyriešené: YouTube Fallback, Anti-Duplicate logika,
- * EXTRÉMNÍ ZÁKAZ halucinování HW + STRIKTNÍ HTML STRUKTURA (Anti-Parrot).
+ * EXTRÉMNÍ ZÁKAZ halucinování HW + STRIKTNÍ HTML STRUKTURA (Anti-Parrot),
+ * + MAKE.COM WEBHOOK INTEGRÁCIA.
  */
 
 export const maxDuration = 60;
@@ -174,6 +175,30 @@ export async function POST(req) {
     } else {
       const { error: insertError } = await supabaseAdmin.from('posts').insert([postData]);
       if (insertError) throw insertError;
+    }
+
+    // 5. INTEGRÁCIA MAKE.COM (Odoslanie dát na Webhook)
+    try {
+      const makeWebhookUrl = process.env.MAKE_WEBHOOK_URL;
+      if (makeWebhookUrl) {
+        await fetch(makeWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'new_game_preview',
+            title: postData.title,
+            slug: postData.slug,
+            description: postData.description,
+            image_url: postData.image_url,
+            url_cz: `https://www.thehardwareguru.cz/ocekavane-hry/${postData.slug}`,
+            url_en: `https://www.thehardwareguru.cz/en/ocekavane-hry/${postData.slug_en || postData.slug}`
+          })
+        });
+        console.log("GURU MAKE.COM WEBHOOK ODESLÁN");
+      }
+    } catch (makeErr) {
+      // Zlyhanie webhooku nesmie zastaviť proces uloženia do DB
+      console.error("GURU MAKE.COM WEBHOOK ZLYHAL:", makeErr);
     }
     
     return NextResponse.json({ success: true, slug: ai.slug });
