@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Search, Home, Wrench, HeartPulse, Heart, Lightbulb, BookOpen, Newspaper, Loader2, X } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -16,7 +15,6 @@ export default function Navbar() {
   
   // 🚀 GURU AUTO-DISCOVERY: Zde ukládáme živou strukturu celé databáze
   const [dbStructure, setDbStructure] = useState([
-    // GURU FIX: Změněno z 'clanky' na 'posts', což je skutečný název tabulky v tvé DB!
     { table: 'posts', columns: ['title', 'content', 'seo_description', 'seo_keywords', 'description_en', 'content_en', 'meta_title'] },
     { table: 'tipy', columns: ['title', 'content', 'seo_description', 'seo_keywords', 'description_en', 'content_en', 'meta_title'] },
     { table: 'tweaky', columns: ['title', 'content', 'seo_description', 'seo_keywords', 'description_en', 'content_en', 'meta_title'] },
@@ -24,7 +22,6 @@ export default function Navbar() {
     { table: 'rady', columns: ['title', 'content', 'seo_description', 'seo_keywords', 'description_en', 'content_en', 'meta_title'] }
   ]);
 
-  const router = useRouter();
   const pathname = usePathname();
   const suggestionRef = useRef(null);
 
@@ -35,6 +32,7 @@ export default function Navbar() {
   // 🚀 GURU ROUTE MAP: Zásadní oprava! Překládá DB tabulky na reálné názvy složek.
   const routeMap = {
     'posts': 'clanky',
+    'clanky': 'clanky',
     'tipy': 'tipy',
     'tweaky': 'tweaky',
     'slovnik': 'slovnik',
@@ -165,7 +163,8 @@ export default function Navbar() {
     e.preventDefault();
     const q = query.trim();
     if (q) {
-      router.push(isEn ? `/en/hledat?q=${encodeURIComponent(q)}` : `/hledat?q=${encodeURIComponent(q)}`);
+      // GURU FIX: Natvrdo přesměrujeme přes window.location a obejdeme Next.js Router
+      window.location.href = isEn ? `/en/hledat?q=${encodeURIComponent(q)}` : `/hledat?q=${encodeURIComponent(q)}`;
       setShowSuggestions(false);
     }
   };
@@ -178,12 +177,12 @@ export default function Navbar() {
       justifyContent: 'space-between', color: '#fff', height: '90px'
     }}>
       
-      {/* 1. LOGO VLEVO (GURU FIX: Vráceno na čistý Next.js Link bez experimentů) */}
-      <Link href={isEn ? "/en" : "/"} prefetch={false} style={{ textDecoration: 'none', flexShrink: 0, cursor: 'pointer' }}>
+      {/* 1. LOGO VLEVO (GURU FIX: Čistý <a> tag obchází 404 cache) */}
+      <a href={isEn ? "/en" : "/"} style={{ textDecoration: 'none', flexShrink: 0, cursor: 'pointer' }}>
         <span style={{ color: '#a855f7', fontFamily: 'serif', fontSize: '28px', fontWeight: '900', letterSpacing: '1px', textTransform: 'uppercase' }}>
           HARDWARE GURU
         </span>
-      </Link>
+      </a>
 
       {/* 2. VYHLEDÁVÁNÍ S NAŠEPTÁVAČEM (UPROSTŘED) */}
       <div style={{ flex: 1, display: 'flex', justifyContent: 'center', margin: '0 30px', position: 'relative' }} ref={suggestionRef}>
@@ -251,12 +250,13 @@ export default function Navbar() {
 
                 const urlParam = s.slug || s.id || '';
                 
-                // 🚀 GURU FIX: Zde se tabulka 'posts' přemění na složku 'clanky' a nehodí to 404!
-                const sectionFolder = routeMap[s.section] || s.section;
+                // 🚀 GURU FIX: Spolehlivý překlad s ošetřením velikosti písmen
+                const normalizedSection = (s.section || '').toLowerCase();
+                const sectionFolder = routeMap[normalizedSection] || normalizedSection;
                 const targetPath = isEn ? `/en/${sectionFolder}/${urlParam}` : `/${sectionFolder}/${urlParam}`;
 
                 return (
-                  <Link key={i} 
+                  <a key={i} 
                     href={targetPath}
                     onClick={() => { setQuery(''); setShowSuggestions(false); }}
                     style={{ padding: '16px 20px', borderBottom: i !== suggestions.length - 1 ? '1px solid #222' : 'none', cursor: 'pointer', transition: 'background 0.2s', display: 'block', textDecoration: 'none' }}
@@ -266,13 +266,13 @@ export default function Navbar() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                       <div style={{ fontWeight: '900', color: '#eab308', fontSize: '15px' }}>{s.title || s.name || 'Záznam bez názvu'}</div>
                       <div style={{ fontSize: '10px', color: '#fff', background: '#a855f7', padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.5px', fontWeight: 'bold' }}>
-                        {sectionNames[s.section] || s.section.toUpperCase()}
+                        {sectionNames[normalizedSection] || normalizedSection.toUpperCase()}
                       </div>
                     </div>
                     <div style={{ fontSize: '12px', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {desc}
                     </div>
-                  </Link>
+                  </a>
                 );
               })
             )}
@@ -280,24 +280,24 @@ export default function Navbar() {
         )}
       </div>
 
-      {/* 3. MENU A SÍTĚ VPRAVO (GURU FIX: Návrat k čistým Linkům, 404 je pryč) */}
+      {/* 3. MENU A SÍTĚ VPRAVO (GURU FIX: Návrat k čistým HTML <a> tagům, 404 cache je pryč) */}
       <div style={{ display: 'flex', gap: '30px', alignItems: 'center', flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          <Link href={isEn ? "/en/clanky" : "/clanky"} prefetch={false} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
+          <a href={isEn ? "/en/clanky" : "/clanky"} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
             {isEn ? 'ARTICLES' : 'ČLÁNKY'}
-          </Link>
-          <Link href={isEn ? "/en/tipy" : "/tipy"} prefetch={false} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
+          </a>
+          <a href={isEn ? "/en/tipy" : "/tipy"} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
             {isEn ? 'TIPS' : 'TIPY'}
-          </Link>
-          <Link href={isEn ? "/en/tweaky" : "/tweaky"} prefetch={false} style={{ color: '#eab308', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
+          </a>
+          <a href={isEn ? "/en/tweaky" : "/tweaky"} style={{ color: '#eab308', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
             {isEn ? 'GURU TWEAKS' : 'GURU TWEAKY'}
-          </Link>
-          <Link href={isEn ? "/en/slovnik" : "/slovnik"} prefetch={false} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
+          </a>
+          <a href={isEn ? "/en/slovnik" : "/slovnik"} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
             {isEn ? 'GLOSSARY' : 'SLOVNÍK'}
-          </Link>
-          <Link href={isEn ? "/en/rady" : "/rady"} prefetch={false} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
+          </a>
+          <a href={isEn ? "/en/rady" : "/rady"} style={{ color: '#d1d5db', textDecoration: 'none', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px', cursor: 'pointer' }}>
             {isEn ? 'PRACTICAL GUIDES' : 'PRAKTICKÉ RADY'}
-          </Link>
+          </a>
         </div>
 
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -313,9 +313,9 @@ export default function Navbar() {
           <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" style={{ background: '#5865F2', color: '#fff', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px' }}>
             DISCORD
           </a>
-          <Link href={isEn ? "/en/support" : "/support"} style={{ background: '#000', border: '2px solid #eab308', color: '#eab308', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <a href={isEn ? "/en/support" : "/support"} style={{ background: '#000', border: '2px solid #eab308', color: '#eab308', padding: '8px 14px', borderRadius: '6px', textDecoration: 'none', fontWeight: '900', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Heart size={14} fill="#eab308" /> {isEn ? 'SUPPORT' : 'PODPORA'}
-          </Link>
+          </a>
         </div>
       </div>
     </nav>
