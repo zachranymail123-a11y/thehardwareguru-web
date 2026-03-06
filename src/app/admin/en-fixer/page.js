@@ -28,10 +28,17 @@ export default function EnFixerDashboard() {
   const refreshCounts = async () => {
     const newTables = [...tables];
     for (let table of newTables) {
-      const { count, error } = await supabase
-        .from(table.id)
-        .select('*', { count: 'exact', head: true })
-        .is('title_en', null);
+      let query = supabase.from(table.id).select('*', { count: 'exact', head: true });
+      
+      if (table.id === 'posts') {
+        // U článků nás zajímá, jestli chybí překlad NEBO seo pole
+        query = query.or('title_en.is.null,seo_description_en.is.null');
+      } else {
+        // U ostatních hledáme striktně prázdné překlady
+        query = query.is('title_en', null);
+      }
+      
+      const { count, error } = await query;
       if (!error) table.count = count || 0;
     }
     setTables(newTables);
