@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Search, Heart, Loader2, X, BookOpen, Newspaper, Lightbulb, Wrench, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
+import { Search, Heart, Loader2, X } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 // GURU ENGINE: Inicializace Supabase
@@ -17,8 +18,8 @@ export default function Navbar() {
   const router = useRouter();
   const suggestionRef = useRef(null);
 
-  // GURU JAZYKOVÁ LOGIKA: Nejsilnější detekce EN verze
-  const isEn = pathname === '/en' || pathname.startsWith('/en/');
+  // GURU JAZYKOVÁ LOGIKA
+  const isEn = pathname.startsWith('/en');
   const langPrefix = isEn ? '/en' : '';
 
   // 🚀 GURU ROUTE MAP: Překládá názvy tabulek z DB na tvoje skutečné složky na webu
@@ -40,7 +41,7 @@ export default function Navbar() {
     'rady': isEn ? 'GUIDE' : 'RADA'
   };
 
-  // 🚀 UNIVERZÁLNÍ NAŠEPTÁVAČ
+  // UNIVERZÁLNÍ NAŠEPTÁVAČ
   useEffect(() => {
     let active = true;
     const fetchSuggestions = async () => {
@@ -91,14 +92,9 @@ export default function Navbar() {
   const handleSearch = (e) => {
     e.preventDefault();
     if (query.trim()) {
-      window.location.href = `${langPrefix}/hledat?q=${encodeURIComponent(query.trim())}`;
+      router.push(`${langPrefix}/hledat?q=${encodeURIComponent(query.trim())}`);
+      setShowSuggestions(false);
     }
-  };
-
-  // GURU HARD NAVIGATION: Obejít Next.js cache pro 100% jistotu bez 404
-  const navigate = (e, path) => {
-    e.preventDefault();
-    window.location.href = path;
   };
 
   return (
@@ -110,11 +106,11 @@ export default function Navbar() {
     }}>
       
       {/* 1. LOGO */}
-      <a href={isEn ? "/en" : "/"} onClick={(e) => navigate(e, isEn ? "/en" : "/")} style={{ textDecoration: 'none', flexShrink: 0 }}>
+      <Link href={isEn ? "/en" : "/"} prefetch={false} style={{ textDecoration: 'none', flexShrink: 0 }}>
         <span style={{ color: '#a855f7', fontFamily: 'serif', fontSize: '28px', fontWeight: '900', letterSpacing: '1px', textTransform: 'uppercase' }}>
           HARDWARE GURU
         </span>
-      </a>
+      </Link>
 
       {/* 2. HLEDÁNÍ */}
       <div style={{ flex: 1, display: 'flex', justifyContent: 'center', margin: '0 30px', position: 'relative' }} ref={suggestionRef}>
@@ -144,11 +140,12 @@ export default function Navbar() {
           }}>
             {suggestions.map((s, i) => {
               const sectionFolder = routeMap[s.section] || s.section;
+              // GURU FALLBACK: Pokud je angličtina, zkusí slug_en, jinak použije český slug
               const slug = (isEn && s.slug_en) ? s.slug_en : s.slug;
               const target = `${langPrefix}/${sectionFolder}/${slug}`;
 
               return (
-                <a key={i} href={target} onClick={(e) => navigate(e, target)} style={{ 
+                <Link key={i} href={target} prefetch={false} onClick={() => setShowSuggestions(false)} style={{ 
                   display: 'block', padding: '15px 20px', textDecoration: 'none', borderBottom: '1px solid #1a1a1a', transition: '0.2s'
                 }} onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -157,7 +154,7 @@ export default function Navbar() {
                       {sectionNames[s.section]}
                     </div>
                   </div>
-                </a>
+                </Link>
               );
             })}
           </div>
@@ -167,20 +164,20 @@ export default function Navbar() {
       {/* 3. MENU */}
       <div style={{ display: 'flex', gap: '25px', alignItems: 'center', flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-          <a href={langPrefix + "/clanky"} onClick={(e) => navigate(e, langPrefix + "/clanky")} style={navLinkStyle}>{isEn ? 'ARTICLES' : 'ČLÁNKY'}</a>
-          <a href={langPrefix + "/tipy"} onClick={(e) => navigate(e, langPrefix + "/tipy")} style={navLinkStyle}>{isEn ? 'TIPS' : 'TIPY'}</a>
-          <a href={langPrefix + "/tweaky"} onClick={(e) => navigate(e, langPrefix + "/tweaky")} style={{...navLinkStyle, color: '#eab308'}}>{isEn ? 'GURU TWEAKS' : 'GURU TWEAKY'}</a>
-          <a href={langPrefix + "/slovnik"} onClick={(e) => navigate(e, langPrefix + "/slovnik")} style={navLinkStyle}>{isEn ? 'GLOSSARY' : 'SLOVNÍK'}</a>
-          <a href={langPrefix + "/rady"} onClick={(e) => navigate(e, langPrefix + "/rady")} style={navLinkStyle}>{isEn ? 'GUIDES' : 'RADY'}</a>
+          <Link href={langPrefix + "/clanky"} prefetch={false} style={navLinkStyle}>{isEn ? 'ARTICLES' : 'ČLÁNKY'}</Link>
+          <Link href={langPrefix + "/tipy"} prefetch={false} style={navLinkStyle}>{isEn ? 'TIPS' : 'TIPY'}</Link>
+          <Link href={langPrefix + "/tweaky"} prefetch={false} style={{...navLinkStyle, color: '#eab308'}}>{isEn ? 'GURU TWEAKS' : 'GURU TWEAKY'}</Link>
+          <Link href={langPrefix + "/slovnik"} prefetch={false} style={navLinkStyle}>{isEn ? 'GLOSSARY' : 'SLOVNÍK'}</Link>
+          <Link href={langPrefix + "/rady"} prefetch={false} style={navLinkStyle}>{isEn ? 'GUIDES' : 'RADY'}</Link>
         </div>
 
         <div style={{ display: 'flex', gap: '8px' }}>
-          <a href="https://kick.com/TheHardwareGuru" target="_blank" style={{...socialBtn, background: '#53fc18', color: '#000'}}>KICK</a>
-          <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" style={{...socialBtn, background: '#f00', color: '#fff'}}>YT</a>
-          <a href="https://discord.com/invite/n7xThr8" target="_blank" style={{...socialBtn, background: '#5865F2', color: '#fff'}}>DISCORD</a>
-          <a href={langPrefix + "/support"} onClick={(e) => navigate(e, langPrefix + "/support")} style={{...socialBtn, border: '2px solid #eab308', color: '#eab308', background: 'transparent', display: 'flex', gap: '5px'}}>
+          <a href="https://kick.com/TheHardwareGuru" target="_blank" rel="noreferrer" style={{...socialBtn, background: '#53fc18', color: '#000'}}>KICK</a>
+          <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noreferrer" style={{...socialBtn, background: '#f00', color: '#fff'}}>YT</a>
+          <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" style={{...socialBtn, background: '#5865F2', color: '#fff'}}>DISCORD</a>
+          <Link href={langPrefix + "/support"} prefetch={false} style={{...socialBtn, border: '2px solid #eab308', color: '#eab308', background: 'transparent', display: 'flex', gap: '5px'}}>
             <Heart size={12} fill="#eab308" /> {isEn ? 'SUPPORT' : 'PODPORA'}
-          </a>
+          </Link>
         </div>
       </div>
     </nav>
