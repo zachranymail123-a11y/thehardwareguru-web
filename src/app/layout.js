@@ -24,10 +24,11 @@ export const metadata = {
 
 export default function RootLayout({ children, params }) {
   // GURU JAZYKOVÁ LOGIKA: Zajištění správného locale pro HTML tag a skripty
-  // Používáme locale z params (standard Next.js) s fallbackem na lang z tvého snippetu
   const locale = params?.locale || params?.lang || 'cs';
 
-  // 🚀 GURU NUCLEAR INJECTION: Načtení proměnných na straně serveru (SSR)
+  // 🚀 GURU DATA BRIDGE (CSP-SAFE INJECTION): 
+  // Načtení proměnných na straně serveru. Protože CSP blokuje inline skripty, 
+  // propašujeme data přes atributy skrytého DOM elementu.
   const envVars = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
@@ -37,18 +38,7 @@ export default function RootLayout({ children, params }) {
   return (
     <html lang={locale}>
       <head>
-        {/* 🛡️ GURU FAILSAFE: Injektujeme proměnné přímo do window objektu před hydratací Reactu */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.__ENV__ = {
-                NEXT_PUBLIC_SUPABASE_URL: "${envVars.NEXT_PUBLIC_SUPABASE_URL}",
-                NEXT_PUBLIC_SUPABASE_ANON_KEY: "${envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY}",
-                NEXT_PUBLIC_MAKE_WEBHOOK2_URL: "${envVars.NEXT_PUBLIC_MAKE_WEBHOOK2_URL}"
-              };
-            `
-          }}
-        />
+        {/* Odstraněna window.__ENV__ injekce, kterou blokovalo CSP */}
       </head>
       <body style={{ 
         margin: 0, 
@@ -58,6 +48,16 @@ export default function RootLayout({ children, params }) {
         display: 'flex',
         flexDirection: 'column'
       }}>
+        
+        {/* 🛡️ GURU DATA BRIDGE: Tento element CSP nevidí jako hrozbu. 
+            Server do něj vypálí data a klientský kód si je bezpečně přečte přes getAttribute. */}
+        <div 
+          id="guru-env-bridge" 
+          style={{ display: 'none' }}
+          data-url={envVars.NEXT_PUBLIC_SUPABASE_URL}
+          data-key={envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY}
+          data-webhook={envVars.NEXT_PUBLIC_MAKE_WEBHOOK2_URL}
+        />
         
         {/* PEVNÝ NAVBAR (Výška 90px) */}
         <Navbar />
