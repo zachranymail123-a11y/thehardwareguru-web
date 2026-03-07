@@ -2,6 +2,11 @@ import { createClient } from '@supabase/supabase-js';
 
 export const revalidate = 0; // GURU FIX: Sitemapa sa vygeneruje vždy čerstvá pri každej požiadavke
 
+/**
+ * GURU SEO ENGINE - SITEMAP GENERATOR
+ * Dynamicky generuje mapu webu pre Google.
+ * Zahrnuje statické sekcie (vrátane nových slev) a všetky dynamické príspevky z DB.
+ */
 export default async function sitemap() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -13,12 +18,13 @@ export default async function sitemap() {
   const staticPaths = [
     { url: '', priority: 1.0 },
     { url: '/clanky', priority: 0.9 },
-    { url: '/ocekavane-hry', priority: 0.9 }, // 🚀 GURU FIX: Pridané
-    { url: '/mikrorecenze', priority: 0.9 },  // 🚀 GURU FIX: Pridané
+    { url: '/ocekavane-hry', priority: 0.9 }, 
+    { url: '/mikrorecenze', priority: 0.9 },  
     { url: '/tipy', priority: 0.9 },
     { url: '/tweaky', priority: 0.9 },
     { url: '/rady', priority: 0.9 },
-    { url: '/kalendar', priority: 0.8 },      // 🚀 GURU FIX: Pridané
+    { url: '/deals', priority: 0.9 },        // 🚀 GURU FIX: Pridané slevy na hry
+    { url: '/kalendar', priority: 0.8 },      
     { url: '/sestavy', priority: 0.9 },
     { url: '/moje-pc', priority: 0.8 },
     { url: '/slovnik', priority: 0.8 },
@@ -33,7 +39,7 @@ export default async function sitemap() {
   staticPaths.forEach((route) => {
     // Česká verzia
     staticRoutes.push({
-      url: `${baseUrl}${route.url}`,
+      url: `${baseUrl}/cs${route.url}`, // GURU FIX: Explicitné /cs pre lepšiu indexáciu
       lastModified: new Date().toISOString(),
       priority: route.priority,
     });
@@ -64,7 +70,7 @@ export default async function sitemap() {
       // --- ČESKÁ CESTA ---
       if (item.slug) {
         dynamicRoutes.push({
-          url: `${baseUrl}${basePath}/${item.slug}`,
+          url: `${baseUrl}/cs${basePath}/${item.slug}`,
           lastModified: item.created_at || new Date().toISOString(),
           priority: priority,
         });
