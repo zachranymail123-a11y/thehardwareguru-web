@@ -1,144 +1,113 @@
-import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 0; // GURU FIX: Sitemapa sa vygeneruje vždy čerstvá pri každej požiadavke
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+/**
+ * GURU SEO ENGINE - SITEMAP GENERATOR
+ * Dynamicky generuje mapu webu pre Google.
+ * Zahrnuje statické sekcie a všetky dynamické príspevky z DB vrátane slev na hry.
+ */
+export default async function sitemap() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export async function GET() {
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  const baseUrl = 'https://www.thehardwareguru.cz';
+
+  // 1. STATICKÉ STRÁNKY (Základné kamene webu CZ + EN)
+  const staticPaths = [
+    { url: '', priority: 1.0 },
+    { url: '/clanky', priority: 0.9 },
+    { url: '/ocekavane-hry', priority: 0.9 }, 
+    { url: '/mikrorecenze', priority: 0.9 },  
+    { url: '/tipy', priority: 0.9 },
+    { url: '/tweaky', priority: 0.9 },
+    { url: '/rady', priority: 0.9 },
+    { url: '/deals', priority: 0.9 },        // 🚀 GURU FIX: Hlavná sekcia slev
+    { url: '/kalendar', priority: 0.8 },      
+    { url: '/sestavy', priority: 0.9 },
+    { url: '/moje-pc', priority: 0.8 },
+    { url: '/slovnik', priority: 0.8 },
+    { url: '/support', priority: 0.5 },
+    { url: '/sin-slavy', priority: 0.6 },
+    { url: '/partneri', priority: 0.6 },
+    { url: '/ochrana-soukromi', priority: 0.3 },
+    { url: '/podminky-uziti', priority: 0.3 },
+  ];
+
+  const staticRoutes = [];
+  staticPaths.forEach((route) => {
+    // Česká verzia
+    staticRoutes.push({
+      url: `${baseUrl}/cs${route.url}`,
+      lastModified: new Date().toISOString(),
+      priority: route.priority,
+    });
+    // Anglická verzia
+    staticRoutes.push({
+      url: `${baseUrl}/en${route.url}`,
+      lastModified: new Date().toISOString(),
+      priority: Math.max(0.1, route.priority - 0.1),
+    });
+  });
+
+  // 2. DYNAMICKÉ TABUĽKY (GURU ENGINE)
+  const dynamicRoutes = [];
+
   try {
-    const siteUrl = 'https://www.thehardwareguru.cz';
-
-    // 1. GURU FETCH: Stahujeme data ze všech 6 tabulek (přidány mikrorecenze).
-    // Používáme 'created_at', který je v DB 100% přítomen a přidali jsme 'type' do posts pro správný routing.
-    const [postsRes, tipyRes, tweakyRes, radyRes, slovnikRes, mikroRes] = await Promise.all([
-      supabase.from('posts').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en, type').order('created_at', { ascending: false }).limit(15),
-      supabase.from('tipy').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(10),
-      supabase.from('tweaky').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(10),
-      supabase.from('rady').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(10),
-      supabase.from('slovnik').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(15),
-      supabase.from('mikrorecenze').select('title, slug, created_at, image_url, description, title_en, slug_en, description_en').order('created_at', { ascending: false }).limit(10)
+    // 🚀 GURU DATA FETCH: Rozšírené o game_deals
+    const [postsRes, tipyRes, tweakyRes, radyRes, slovnikRes, mikroRes, dealsRes] = await Promise.all([
+      supabase.from('posts').select('slug, slug_en, title_en, created_at, type'),
+      supabase.from('tipy').select('slug, slug_en, title_en, created_at'),
+      supabase.from('tweaky').select('slug, slug_en, title_en, created_at'),
+      supabase.from('rady').select('slug, slug_en, title_en, created_at'),
+      supabase.from('slovnik').select('slug, slug_en, title_en, created_at'),
+      supabase.from('mikrorecenze').select('slug, slug_en, title_en, created_at'),
+      supabase.from('game_deals').select('id, created_at') // Slevy smerujú zatiaľ na hlavnú stránku /deals
     ]);
 
-    const allItems = [];
-
-    // 2A. GURU ROUTING PRO POSTS (Rozlišení Články vs Očekávané hry)
-    (postsRes.data || []).forEach(item => {
-      const isExpected = item.type === 'expected';
-      const path = isExpected ? 'ocekavane-hry' : 'clanky';
-      const czPrefix = isExpected ? '[Očekávané]' : '[Článek]';
-      const enPrefix = isExpected ? '[Expected]' : '[Article]';
-
-      // --- ČESKÁ POLOŽKA ---
-      if (item.title && item.slug) {
-        allItems.push({
-          title: `${czPrefix} ${item.title}`,
-          description: item.description || '',
-          url: `${siteUrl}/${path}/${item.slug}`,
-          date: item.created_at,
-          image: item.image_url,
-          lang: 'cs'
+    // Univerzálna funkcia na pridávanie do poľa (CZ + EN)
+    const addToRoutes = (item, basePath, priority) => {
+      if (item.slug) {
+        dynamicRoutes.push({
+          url: `${baseUrl}/cs${basePath}/${item.slug}`,
+          lastModified: item.created_at || new Date().toISOString(),
+          priority: priority,
         });
       }
 
-      // --- ANGLICKÁ POLOŽKA ---
-      if (item.title_en) {
+      if (item.title_en || item.slug_en) {
         const enSlug = item.slug_en || item.slug;
-        allItems.push({
-          title: `${enPrefix} ${item.title_en}`,
-          description: item.description_en || item.description || '',
-          url: `${siteUrl}/en/${path}/${enSlug}`,
-          date: item.created_at,
-          image: item.image_url,
-          lang: 'en'
+        dynamicRoutes.push({
+          url: `${baseUrl}/en${basePath}/${enSlug}`,
+          lastModified: item.created_at || new Date().toISOString(),
+          priority: Math.max(0.1, priority - 0.1),
         });
       }
-    });
+    };
 
-    // 2B. Konfigurace ostatních sekcí s tvými Guru prefixy
-    const sections = [
-      { data: tipyRes.data, czPrefix: '[Tip]', enPrefix: '[Tip]', path: 'tipy' },
-      { data: tweakyRes.data, czPrefix: '[Tweak]', enPrefix: '[Tweak]', path: 'tweaky' },
-      { data: radyRes.data, czPrefix: '[Rada]', enPrefix: '[Guide]', path: 'rady' },
-      { data: slovnikRes.data, czPrefix: '[Slovník]', enPrefix: '[Glossary]', path: 'slovnik' },
-      { data: mikroRes.data, czPrefix: '[Recenze]', enPrefix: '[Review]', path: 'mikrorecenze' }
-    ];
-
-    // 2C. DUAL-LANG MAPPING ENGINE PRO ZBYTEK
-    sections.forEach(({ data, czPrefix, enPrefix, path }) => {
-      (data || []).forEach(item => {
-        // --- ČESKÁ POLOŽKA ---
-        if (item.title && item.slug) {
-          allItems.push({
-            title: `${czPrefix} ${item.title}`,
-            description: item.description || '',
-            url: `${siteUrl}/${path}/${item.slug}`,
-            date: item.created_at,
-            image: item.image_url,
-            lang: 'cs'
-          });
-        }
-
-        // --- ANGLICKÁ POLOŽKA (Pouze pokud existuje title_en) ---
-        if (item.title_en) {
-          const enSlug = item.slug_en || item.slug;
-          allItems.push({
-            title: `${enPrefix} ${item.title_en}`,
-            description: item.description_en || item.description || '',
-            url: `${siteUrl}/en/${path}/${enSlug}`,
-            date: item.created_at,
-            image: item.image_url,
-            lang: 'en'
-          });
-        }
+    // A) Spracovanie POSTS (Rozlíšenie Články vs Očakávané hry)
+    if (postsRes.data) {
+      postsRes.data.forEach(item => {
+        const isExpected = item.type === 'expected';
+        const basePath = isExpected ? '/ocekavane-hry' : '/clanky';
+        const priority = isExpected ? 0.9 : 0.8;
+        addToRoutes(item, basePath, priority);
       });
-    });
+    }
 
-    // 3. Sjednocení a seřazení (Limit 50 pro stabilitu RSS čteček)
-    const finalFeed = allItems
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 50);
+    // B) Spracovanie ostatných tabuliek
+    if (tipyRes.data) tipyRes.data.forEach(item => addToRoutes(item, '/tipy', 0.8));
+    if (tweakyRes.data) tweakyRes.data.forEach(item => addToRoutes(item, '/tweaky', 0.8));
+    if (radyRes.data) radyRes.data.forEach(item => addToRoutes(item, '/rady', 0.8));
+    if (slovnikRes.data) slovnikRes.data.forEach(item => addToRoutes(item, '/slovnik', 0.7));
+    if (mikroRes.data) mikroRes.data.forEach(item => addToRoutes(item, '/mikrorecenze', 0.8));
 
-    // 4. XML KONSTRUKCE
-    let rss = `<?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
-  <channel>
-    <title>The Hardware Guru | Tech, Gaming &amp; AI Global Feed</title>
-    <link>${siteUrl}</link>
-    <description>Hardware novinky, herní fixy, expertní rady a technický slovník v CZ i EN verzi.</description>
-    <language>cs</language>
-    <atom:link href="${siteUrl}/api/rss" rel="self" type="application/rss+xml" />
-    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>`;
+    // C) 🚀 GURU DEALS: Keďže slevy vedú na externé linky, do sitemapy dávame len hlavnú sekciu (už je v staticPaths)
 
-    finalFeed.forEach((item) => {
-      rss += `
-    <item>
-      <title><![CDATA[${item.title}]]></title>
-      <link>${item.url}</link>
-      <guid isPermaLink="true">${item.url}</guid>
-      <pubDate>${new Date(item.date).toUTCString()}</pubDate>
-      <description><![CDATA[${item.description}]]></description>
-      <dc:language>${item.lang === 'cs' ? 'cs-cz' : 'en-us'}</dc:language>
-      ${item.image ? `<media:content url="${item.image}" medium="image" />` : ''}
-    </item>`;
-    });
-
-    rss += `
-  </channel>
-</rss>`;
-
-    return new NextResponse(rss, {
-      headers: { 
-        'Content-Type': 'application/xml; charset=utf-8',
-        'Cache-Control': 's-maxage=3600, stale-while-revalidate' 
-      },
-    });
-
-  } catch (error) {
-    console.error("GURU RSS CRITICAL ERROR:", error);
-    return new NextResponse("Chyba při generování Guru feedu", { status: 500 });
+  } catch (err) {
+    console.error("GURU SITEMAP ENGINE ERROR:", err);
   }
+
+  return [...staticRoutes, ...dynamicRoutes];
 }
