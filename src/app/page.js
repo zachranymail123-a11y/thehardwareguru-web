@@ -1,14 +1,46 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame } from 'lucide-react';
+import { ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, ChevronRight, Activity } from 'lucide-react';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+/**
+ * GURU HOMEPAGE ENGINE
+ * Návrat k bezpečné inicializaci modulů. Tento kód zajistí, že kompilace v Canvasu nezkolabuje, 
+ * ale v ostrém Next.js prostředí se použijí správné komponenty (next/link atd.).
+ */
+
+// --- BEZPEČNÉ NAČÍTÁNÍ NEXT.JS A SUPABASE MODULŮ ---
+let Link = (props) => <a {...props} />;
+let usePathname = () => '';
+let createClient = () => ({ 
+  rpc: () => ({}), 
+  from: () => ({ select: () => ({ neq: () => ({ order: () => ({ limit: () => ({}) }) }), eq: () => ({ order: () => ({ limit: () => ({}) }) }), order: () => ({ limit: () => ({}) }) }) }) 
+});
+
+try {
+  const nextLink = require('next/link');
+  Link = nextLink.default || nextLink;
+  
+  const nextNav = require('next/navigation');
+  usePathname = nextNav.usePathname;
+  
+  const supabaseJs = require('@supabase/supabase-js');
+  createClient = supabaseJs.createClient;
+} catch (e) {
+  // Silent catch pro Canvas
+}
+
+// 🚀 GURU FIX: Bezpečné načtení proměnných prostředí proti chybě "process is not defined"
+let supabaseUrl = '';
+let supabaseKey = '';
+try {
+  if (typeof process !== 'undefined' && process.env) {
+    supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  }
+} catch (e) {}
+
+// Inicializace Supabase
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function HomePage() {
   const [data, setData] = useState({ 
@@ -16,17 +48,25 @@ export default function HomePage() {
     nejnovejsiTipy: [], 
     nejnovejsiTweaky: [], 
     expectedGames: [], 
-    featuredDeals: [], // 🚀 GURU DATA: Slevy na hry
+    featuredDeals: [], 
     darci: [],
     partneri: [],
     stats: { value: 0 } 
   });
   const [loading, setLoading] = useState(true);
 
-  const pathname = usePathname() || '';
-  const isEn = pathname.startsWith('/en');
+  // Řešení pro bezpečné použití hooku v reálném prostředí i v náhledu
+  let pathname = '';
+  try { pathname = usePathname() || ''; } catch (e) {}
+  const [currentPath, setCurrentPath] = useState('');
 
-  // --- NEPRŮSTŘELNÉ FUNKCE (RECOVERY) ---
+  useEffect(() => {
+      setCurrentPath(window.location.pathname);
+  }, []);
+
+  const isEn = (pathname || currentPath).startsWith('/en');
+
+  // --- NEPRŮSTŘELNÉ FUNKCE ---
   const getSafeImage = (url) => {
     if (!url || !url.startsWith('http')) return 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000&auto=format&fit=crop';
     return url;
@@ -34,13 +74,14 @@ export default function HomePage() {
 
   const getThumbnail = (post) => {
     if (post.image_url) return post.image_url;
+    if (post.cover_image) return post.cover_image;
     if (post.video_id && post.video_id.length > 5) return `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`;
     return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop';
   };
 
   const getBadgeInfo = (post) => {
     if (post.video_id && post.video_id.length > 5) return { text: 'VIDEO / SHORT', color: '#66fcf1', textColor: '#0b0c10' };
-    const isGame = post.type === 'game' || post.title.toLowerCase().includes('recenze');
+    const isGame = post.type === 'game' || post.title?.toLowerCase().includes('recenze');
     if (isGame) return { text: isEn ? 'GAME NEWS' : 'HERNÍ NOVINKA', color: '#ff0055', textColor: '#fff' };
     return { text: isEn ? 'HW NEWS' : 'HW NOVINKA', color: '#ff0000', textColor: '#fff' };
   };
@@ -48,18 +89,23 @@ export default function HomePage() {
   useEffect(() => {
     async function fetchData() {
       try {
+        if (!supabaseUrl) {
+            setLoading(false);
+            return;
+        }
+
         await supabase.rpc('increment_total_visits');
         const [p, s, t, tw, d, pa, exp, feat] = await Promise.all([
-          supabase.from('posts').select('*').neq('type', 'expected').order('created_at', { ascending: false }).limit(6),
+          supabase.from('posts').select('*, affiliate_link, price_cs, price_en').neq('type', 'expected').order('created_at', { ascending: false }).limit(6),
           supabase.from('stats').select('value').eq('name', 'total_visits').single(),
           supabase.from('tipy').select('*').order('created_at', { ascending: false }).limit(3),
           supabase.from('tweaky').select('*').order('created_at', { ascending: false }).limit(3),
           supabase.from('darci').select('*').order('amount', { ascending: false }).limit(20),
           supabase.from('partneri').select('*').order('created_at', { ascending: false }).limit(4),
-          supabase.from('posts').select('*').eq('type', 'expected').order('created_at', { ascending: false }).limit(3),
-          // 🚀 GURU FIX: Načítáme nejnovější slevy (včetně tvého Resident Evilu)
+          supabase.from('posts').select('*, affiliate_link, price_cs, price_en').eq('type', 'expected').order('created_at', { ascending: false }).limit(3),
           supabase.from('game_deals').select('*').order('created_at', { ascending: false }).limit(3)
         ]);
+        
         setData({ 
           posts: p.data || [], 
           stats: s.data || { value: 0 }, 
@@ -71,7 +117,7 @@ export default function HomePage() {
           featuredDeals: feat.data || []
         });
       } catch (err) {
-        console.error("Data load fail:", err);
+        console.error("Guru Sync Error:", err);
       } finally {
         setLoading(false);
       }
@@ -79,16 +125,34 @@ export default function HomePage() {
     fetchData();
   }, [isEn]);
 
+  if (loading) return (
+    <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center">
+        <div className="text-orange-500 font-black animate-pulse tracking-[0.4em] uppercase">Guru Loading...</div>
+    </div>
+  );
+
   return (
-    <div style={globalStyles}>
+    <div className="min-h-screen bg-[#0a0b0d] text-white font-sans selection:bg-orange-500"
+         style={{ backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed' }}>
+      
       <style>{`
-        .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); }
+        .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); display: flex; flex-direction: column; border-radius: 20px; overflow: hidden; }
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
         
-        .expected-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
+        .expected-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); display: flex; flex-direction: column; border-radius: 20px; overflow: hidden;}
         .expected-card:hover { transform: translateY(-5px); box-shadow: 0 0 25px rgba(102, 252, 241, 0.25); border-color: #66fcf1; }
 
-        /* 🔥 GURU DEALS HP STYLES 🔥 */
+        /* 🔥 GURU AFFILIATE BUTTON STYLE 🔥 */
+        .guru-buy-btn {
+          display: flex; align-items: center; justify-content: center; gap: 8px;
+          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+          color: #fff; padding: 12px 15px; border-radius: 12px;
+          font-weight: 900; font-size: 13px; text-transform: uppercase;
+          text-decoration: none; transition: 0.3s; width: 100%;
+          border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+        }
+        .guru-buy-btn:hover { transform: scale(1.02); box-shadow: 0 6px 20px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
+
         .deal-hp-card { 
           display: flex; align-items: center; gap: 20px; 
           background: rgba(31, 40, 51, 0.9); padding: 15px 20px; 
@@ -97,9 +161,9 @@ export default function HomePage() {
         }
         .deal-hp-card:hover { transform: translateY(-3px); border-color: #f97316; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.2); }
 
-        .tip-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
+        .tip-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); border-radius: 20px; overflow: hidden; display: flex; flex-direction: column;}
         .tip-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 0 30px rgba(168, 85, 247, 0.4); border-color: #a855f7; }
-        .tweak-card { transition: all 0.3s ease; border: 1px solid rgba(234, 179, 8, 0.3); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
+        .tweak-card { transition: all 0.3s ease; border: 1px solid rgba(234, 179, 8, 0.3); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); border-radius: 20px; overflow: hidden; display: flex; flex-direction: column;}
         .tweak-card:hover { transform: translateY(-5px); box-shadow: 0 0 25px rgba(234, 179, 8, 0.3); border-color: #eab308; }
         .social-btn-main { padding: 14px 28px; border-radius: 14px; font-weight: 900; font-size: 15px; text-decoration: none; text-transform: uppercase; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); border: none; cursor: pointer; }
         .social-btn-main:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 6px 25px rgba(0,0,0,0.5); }
@@ -131,7 +195,7 @@ export default function HomePage() {
       `}</style>
 
       {/* --- BIO SEKCE --- */}
-      <header style={headerStyles}>
+      <header className="max-w-[1200px] mx-auto my-10 p-10 md:p-14 bg-neutral-900/95 rounded-[25px] border border-cyan-500/50 flex flex-wrap items-center gap-12 shadow-[0_15px_45px_rgba(0,0,0,0.6)]">
         <div style={{ flex: '1', minWidth: '300px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', marginBottom: '15px' }}>
               <ShieldCheck size={24} />
@@ -158,188 +222,237 @@ export default function HomePage() {
               </div>
             </div>
         </div>
-        <div style={avatarStyles}>HG</div>
+        <div className="w-40 h-40 bg-[#0b0c10] rounded-full border-[5px] border-cyan-400 flex items-center justify-center overflow-hidden text-cyan-500 text-5xl font-black shadow-[0_0_30px_rgba(102,252,241,0.4)]">HG</div>
       </header>
 
       {/* --- MONETIZACE --- */}
-      <section style={{ ...sectionStyles, display: 'flex', gap: '30px', flexWrap: 'wrap', marginTop: '-30px', marginBottom: '60px' }}>
+      <section className="max-w-[1200px] mx-auto px-5 flex gap-8 flex-wrap -mt-8 mb-16">
           <Link href={isEn ? "/en/sin-slavy" : "/sin-slavy"} className="monetize-hero-card hof" style={{ flex: 1, minWidth: '300px' }}>
             <Trophy size={48} color="#a855f7" style={{ marginBottom: '15px', filter: 'drop-shadow(0 0 15px rgba(168, 85, 247, 0.6))' }} />
-            <h2 style={{ fontWeight: '950', fontSize: '24px', color: '#fff', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '1px' }}>
+            <h2 style={{ fontWeight: '950', fontSize: '26px', color: '#fff', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '1px' }}>
               {isEn ? 'HALL OF FAME' : 'SÍŇ SLÁVY'}
             </h2>
-            <p style={{ fontSize: '15px', color: '#9ca3af', maxWidth: '85%', margin: '0 auto', lineHeight: '1.5' }}>
-                {data.darci.slice(0, 5).map(d => d.name).join(', ')}...
+            <p style={{ fontSize: '14px', color: '#d1d5db', maxWidth: '90%', margin: '0 auto 18px auto', lineHeight: '1.5', fontStyle: 'italic' }}>
+              {isEn 
+                ? "Epic heroes keeping this project alive. See who feeds the machine and become a legend." 
+                : "Epičtí hrdinové, co drží tenhle projekt při životě. Podívej se, kdo krmí stroj a staň se legendou."}
             </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
+              <span style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', color: '#a855f7', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '900', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                {isEn ? `🔥 ${data.darci?.length || 0} ACTIVE SUPPORTERS` : `🔥 ${data.darci?.length || 0} AKTIVNÍCH GURUS`}
+              </span>
+              <span style={{ color: '#a855f7', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase' }}>{isEn ? 'ENTER →' : 'VSTOUPIT →'}</span>
+            </div>
           </Link>
+          
           <Link href={isEn ? "/en/partneri" : "/partneri"} className="monetize-hero-card partners" style={{ flex: 1, minWidth: '300px' }}>
             <Rocket size={48} color="#eab308" style={{ marginBottom: '15px', filter: 'drop-shadow(0 0 15px rgba(234, 179, 8, 0.6))' }} />
-            <h2 style={{ fontWeight: '950', fontSize: '24px', color: '#fff', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '1px' }}>
+            <h2 style={{ fontWeight: '950', fontSize: '26px', color: '#fff', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '1px' }}>
               {isEn ? 'GURU PARTNERS' : 'NAŠI PARTNEŘI'}
             </h2>
-            <p style={{ fontSize: '15px', color: '#9ca3af', maxWidth: '85%', margin: '0 auto', lineHeight: '1.5' }}>
-                {data.partneri.slice(0, 3).map(p => p.name).join(' • ')}
+            <p style={{ fontSize: '14px', color: '#d1d5db', maxWidth: '90%', margin: '0 auto 18px auto', lineHeight: '1.5', fontStyle: 'italic' }}>
+              {isEn 
+                ? "Verified brands, exclusive hardware discounts and special perks for our community." 
+                : "Ověřené značky, exkluzivní hardwarové slevy a speciální výhody pro naši komunitu."}
             </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
+              <span style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', color: '#eab308', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '900', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                {isEn ? `🤝 ${data.partneri?.length || 0} ELITE BRANDS` : `🤝 ${data.partneri?.length || 0} ELITNÍCH ZNAČEK`}
+              </span>
+              <span style={{ color: '#eab308', fontSize: '13px', fontWeight: '900', textTransform: 'uppercase' }}>{isEn ? 'VIEW PERKS →' : 'UKÁZAT VÝHODY →'}</span>
+            </div>
           </Link>
       </section>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '100px', color: '#a855f7', fontWeight: 'bold' }}>GURU AKTUALIZUJE SYSTÉMY...</div>
-      ) : (
-        <>
-          {/* --- 🚀 GURU ŽHAVÉ SLEVY (NA PRVNÍM MÍSTĚ OBSAHU) --- */}
-          {!loading && data.featuredDeals.length > 0 && (
-            <section style={sectionStyles}>
-                <div className="section-title-wrapper" style={{ marginBottom: '30px', borderColor: 'rgba(234, 115, 22, 0.3)', borderLeft: '4px solid #f97316' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
-                      <h2 style={{ fontSize: '28px', fontWeight: '950', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <Flame color="#f97316" fill="#f97316" /> {isEn ? 'GURU HOT DEALS' : 'GURU ŽHAVÉ SLEVY'}
-                      </h2>
-                      <Link href={isEn ? "/en/deals" : "/cs/deals"} style={{ color: '#f97316', fontWeight: 'bold', textDecoration: 'none', textTransform: 'uppercase', fontSize: '14px' }}>
-                        {isEn ? 'ALL DEALS →' : 'VŠECHNY SLEVY →'}
-                      </Link>
-                    </div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-                    {data.featuredDeals.map(deal => (
-                        <a key={deal.id} href={deal.affiliate_link} target="_blank" rel="nofollow sponsored" className="deal-hp-card">
-                            <img src={deal.image_url} style={{ width: '100px', height: '60px', borderRadius: '10px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} alt={deal.title} />
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: '900', fontSize: '14px', color: '#fff', textTransform: 'uppercase', marginBottom: '2px', display: '-webkit-box', WebkitLineClamp: '1', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{deal.title}</div>
-                                <div style={{ color: '#f97316', fontWeight: '950', fontSize: '16px' }}>{isEn ? deal.price_en : deal.price_cs}</div>
-                            </div>
-                            <div style={{ background: '#f97316', color: '#fff', padding: '10px 15px', borderRadius: '12px', fontWeight: '950', fontSize: '12px' }}>{isEn ? 'BUY' : 'KOUPIT'}</div>
-                        </a>
-                    ))}
-                </div>
-            </section>
-          )}
-
-          {/* --- 🚀 OČEKÁVANÉ HRY (POSUNUTO O JEDNO DOLŮ) --- */}
-          {data.expectedGames && data.expectedGames.length > 0 && (
-            <section style={{ ...sectionStyles, marginBottom: '60px' }}>
-              <div className="section-title-wrapper" style={{ marginBottom: '30px', borderColor: 'rgba(102, 252, 241, 0.2)' }}>
+      {/* --- ŽHAVÉ SLEVY --- */}
+      {!loading && data.featuredDeals && data.featuredDeals.length > 0 && (
+        <section className="max-w-[1200px] mx-auto px-5 mb-16">
+            <div className="section-title-wrapper mb-8 !border-orange-500/20" style={{ borderLeft: '4px solid #f97316' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
-                  <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0, color: '#fff' }}>
-                    {isEn ? 'EXPECTED' : 'OČEKÁVANÉ'} <span style={{ color: '#66fcf1' }}>{isEn ? 'HITS' : 'HRY'}</span>
+                  <h2 style={{ fontSize: '28px', fontWeight: '950', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Flame color="#f97316" fill="#f97316" /> {isEn ? 'GURU HOT DEALS' : 'GURU ŽHAVÉ SLEVY'}
                   </h2>
-                  <Link href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"} style={{ color: '#66fcf1', fontWeight: 'bold', textDecoration: 'none', textTransform: 'uppercase', fontSize: '14px' }}>
-                    {isEn ? 'FULL ARCHIVE →' : 'ARCHIV HER →'}
+                  <Link href={isEn ? "/en/deals" : "/cs/deals"} style={{ color: '#f97316', fontWeight: 'bold', textDecoration: 'none', textTransform: 'uppercase', fontSize: '14px' }}>
+                    {isEn ? 'ALL DEALS →' : 'VŠECHNY SLEVY →'}
                   </Link>
                 </div>
-              </div>
-              <div style={gridStyles}>
-                {data.expectedGames.map((game) => {
-                   const displayTitle = (isEn && game.title_en) ? game.title_en : game.title;
-                   const displaySlug = (isEn && game.slug_en) ? game.slug_en : game.slug;
-                   const hasVideo = game.trailer || (game.video_id && game.video_id.length > 5);
-
-                   return (
-                     <Link href={isEn ? `/en/ocekavane-hry/${displaySlug}` : `/ocekavane-hry/${displaySlug}`} key={game.id} className="expected-card" style={cardBaseStyle}>
-                        <div style={cardImageWrapper}>
-                           {hasVideo && <div style={{ position: 'absolute', top: '15px', right: '15px', background: '#ff0055', color: '#fff', padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '900', zIndex: 10, display: 'flex', alignItems: 'center', gap: '4px' }}><Play size={10} fill="#fff"/> VIDEO</div>}
-                           <img src={getThumbnail(game)} alt={displayTitle} style={{...imageStyle, opacity: 0.8}} loading="lazy" />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                {data.featuredDeals.map(deal => (
+                    <a key={deal.id} href={deal.affiliate_link} target="_blank" rel="nofollow sponsored" className="deal-hp-card">
+                        <img src={deal.image_url} style={{ width: '100px', height: '60px', borderRadius: '10px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} alt={deal.title} />
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: '900', fontSize: '14px', color: '#fff', textTransform: 'uppercase', marginBottom: '2px', display: '-webkit-box', WebkitLineClamp: '1', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{deal.title}</div>
+                            <div style={{ color: '#f97316', fontWeight: '950', fontSize: '16px' }}>{isEn ? deal.price_en : deal.price_cs}</div>
                         </div>
-                        <div style={{ padding: '25px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                          <span style={{ color: '#66fcf1', fontSize: '10px', fontWeight: '900', letterSpacing: '1px', marginBottom: '10px' }}>
-                            {isEn ? 'TECH PREVIEW' : 'TECHNICKÝ ROZBOR'}
-                          </span>
-                          <h3 style={{ ...cardTitleStyle, marginBottom: '15px' }}>{displayTitle}</h3>
-                          <div style={{ color: '#66fcf1', fontWeight: '900', fontSize: '13px', marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                             {isEn ? 'VIEW ANALYSIS' : 'ZOBRAZIT ROZBOR'} <ChevronRight size={16} />
-                          </div>
-                        </div>
-                     </Link>
-                   )
-                })}
-              </div>
-            </section>
-          )}
+                        <div style={{ background: '#f97316', color: '#fff', padding: '10px 15px', borderRadius: '12px', fontWeight: '950', fontSize: '12px' }}>{isEn ? 'BUY' : 'KOUPIT'}</div>
+                    </a>
+                ))}
+            </div>
+        </section>
+      )}
 
-          {/* --- TIPY (POSUNUTÉ O DALŠÍ ÚROVEŇ DOLŮ) --- */}
-          <section style={sectionStyles}>
-            <div className="section-title-wrapper" style={{ marginBottom: '30px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
-                <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0, color: '#fff' }}>GURU <span style={{ color: '#a855f7' }}>{isEn ? 'TIPS' : 'TIPY & TRIKY'}</span></h2>
-                <Link href={isEn ? "/en/tipy" : "/tipy"} style={{ color: '#a855f7', fontWeight: 'bold', textDecoration: 'none' }}>{isEn ? 'ARCHIVE →' : 'ARCHIV TIPŮ →'}</Link>
-              </div>
+      {/* --- 🚀 OČEKÁVANÉ HRY (S NÁKUPNÍM TLAČÍTKEM) --- */}
+      {!loading && data.expectedGames && data.expectedGames.length > 0 && (
+        <section className="max-w-[1200px] mx-auto px-5 mb-16">
+          <div className="section-title-wrapper mb-8 !border-cyan-500/20">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
+              <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0, color: '#fff' }}>
+                {isEn ? 'EXPECTED' : 'OČEKÁVANÉ'} <span style={{ color: '#66fcf1' }}>{isEn ? 'HITS' : 'HRY'}</span>
+              </h2>
+              <Link href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"} style={{ color: '#66fcf1', fontWeight: 'bold', textDecoration: 'none', textTransform: 'uppercase', fontSize: '14px' }}>
+                {isEn ? 'FULL ARCHIVE →' : 'ARCHIV HER →'}
+              </Link>
             </div>
-            <div style={gridStyles}>
-              {data.nejnovejsiTipy.map((tip, idx) => (
-                <Link href={isEn ? `/en/tipy/${tip.slug_en || tip.slug}` : `/tipy/${tip.slug}`} key={tip.id} className="tip-card" style={cardBaseStyle}>
-                  <div style={cardImageWrapper}>
-                    {idx === 0 && <div style={newBadgeStyle}>{isEn ? 'NEW 🔥' : 'NOVINKA 🔥'}</div>}
-                    <img src={getSafeImage(tip.image_url)} alt={tip.title} style={imageStyle} loading="lazy" />
-                  </div>
-                  <div style={{ padding: '25px' }}>
-                    <span style={{ color: '#a855f7', fontSize: '10px', fontWeight: 'bold' }}>{isEn ? (tip.category_en || 'HARDWARE') : tip.category}</span>
-                    <h3 style={cardTitleStyle}>{isEn ? (tip.title_en || tip.title) : tip.title}</h3>
-                    <p style={cardDescStyle}>{isEn ? (tip.description_en || tip.description) : tip.description}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px' }}>
+            {data.expectedGames.map((game) => {
+               const displayTitle = (isEn && game.title_en) ? game.title_en : game.title;
+               const displaySlug = (isEn && game.slug_en) ? game.slug_en : game.slug;
+               const hasVideo = game.trailer || (game.video_id && game.video_id.length > 5);
 
-          {/* --- TWEAKY --- */}
-          <section style={{ ...sectionStyles, marginTop: '40px' }}>
-            <div className="section-title-wrapper" style={{ marginBottom: '30px', borderColor: 'rgba(234, 179, 8, 0.2)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
-                <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0, color: '#fff' }}>{isEn ? 'LATEST' : 'POSLEDNÍ'} <span style={{ color: '#eab308' }}>GURU TWEAKY</span></h2>
-                <Link href={isEn ? "/en/tweaky" : "/tweaky"} style={{ color: '#eab308', fontWeight: 'bold', textDecoration: 'none' }}>{isEn ? 'ALL →' : 'VŠECHNY TWEAKY →'}</Link>
-              </div>
-            </div>
-            <div style={gridStyles}>
-              {data.nejnovejsiTweaky.map((tweak) => (
-                <Link href={isEn ? `/en/tweaky/${tweak.slug_en || tweak.slug}` : `/tweaky/${tweak.slug}`} key={tweak.id} className="tweak-card" style={cardBaseStyle}>
-                  <div style={{ ...cardImageWrapper, height: '180px' }}>
-                    <img src={getSafeImage(tweak.image_url)} alt={tweak.title} style={imageStyle} loading="lazy" />
-                  </div>
-                  <div style={{ padding: '25px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>
-                      <Activity size={14} /> {isEn ? 'OPTIMIZATION' : 'OPTIMALIZACE'}
-                    </div>
-                    <h3 style={cardTitleStyle}>{isEn ? (tweak.title_en || tweak.title) : tweak.title}</h3>
-                    <p style={cardDescStyle}>{isEn ? (tweak.description_en || tweak.description) : tweak.description}</p>
-                    <div style={{ color: '#eab308', fontWeight: 'bold', fontSize: '13px', marginTop: '15px' }}>{isEn ? 'OPEN GURU FIX →' : 'OTEVŘÍT GURU FIX →'}</div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          {/* --- ČLÁNKY --- */}
-          <main style={{ ...sectionStyles, marginTop: '80px' }}>
-            <div className="section-title-wrapper" style={{ margin: '0 auto 40px', display: 'block', textAlign: 'center', maxWidth: 'fit-content' }}>
-              <h2 style={{ color: '#fff', fontSize: '2.2rem', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>{isEn ? 'Latest Articles & Videos' : 'Nejnovější články & Videa'}</h2>
-            </div>
-            <div style={gridStyles}>
-              {data.posts.map((post) => {
-                const badge = getBadgeInfo(post);
-                return (
-                  <Link key={post.id} href={isEn ? `/en/clanky/${post.slug_en || post.slug}` : `/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
-                    <div className="game-card" style={{ borderRadius: '12px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ position: 'relative', paddingTop: '56.25%' }}>
-                        <img src={getThumbnail(post)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-                        <div style={{ position: 'absolute', top: '10px', right: '10px', background: badge.color, color: badge.textColor, padding: '5px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem' }}>{badge.text}</div>
+               return (
+                 <div key={game.id} className="expected-card">
+                    <Link href={isEn ? `/en/ocekavane-hry/${displaySlug}` : `/ocekavane-hry/${displaySlug}`} style={{ textDecoration: 'none', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ position: 'relative', height: '220px', width: '100%', background: '#0b0c10' }}>
+                         {hasVideo && <div style={{ position: 'absolute', top: '15px', right: '15px', background: '#ff0055', color: '#fff', padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '900', zIndex: 10, display: 'flex', alignItems: 'center', gap: '4px' }}><Play size={10} fill="#fff"/> VIDEO</div>}
+                         <img src={getThumbnail(game)} alt={displayTitle} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} loading="lazy" />
                       </div>
-                      <div style={{ padding: '25px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                        <h3 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '1.2rem', fontWeight: 'bold' }}>{isEn ? (post.title_en || post.title) : post.title}</h3>
+                      <div style={{ padding: '25px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                        <span style={{ color: '#66fcf1', fontSize: '10px', fontWeight: '900', letterSpacing: '1px', marginBottom: '10px' }}>
+                          {isEn ? 'TECH PREVIEW' : 'TECHNICKÝ ROZBOR'}
+                        </span>
+                        <h3 style={{ fontSize: '20px', fontWeight: '900', margin: '12px 0 15px 0', color: '#fff', lineHeight: '1.2' }}>{displayTitle}</h3>
+                        
+                        <div style={{ flex: 1 }}></div>
+
+                        {!game.affiliate_link && (
+                          <div style={{ color: '#66fcf1', fontWeight: '900', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {isEn ? 'VIEW ANALYSIS' : 'ZOBRAZIT ROZBOR'} <ChevronRight size={16} />
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                    
+                    {/* 🚀 GURU AFFILIATE TLACÍTKO (Připnuté ke spodní straně) */}
+                    {game.affiliate_link && (
+                      <div style={{ padding: '0 25px 25px 25px' }}>
+                        <a href={game.affiliate_link} target="_blank" rel="nofollow sponsored" className="guru-buy-btn">
+                          <ShoppingCart size={16} />
+                          {isEn ? `BUY: ${game.price_en || 'BEST PRICE'}` : `KOUPIT ZA ${game.price_cs || 'NEJLEPŠÍ CENU'}`}
+                        </a>
+                      </div>
+                    )}
+                 </div>
+               )
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* --- TIPY --- */}
+      {!loading && (
+        <section className="max-w-[1200px] mx-auto px-5 mb-16">
+          <div className="section-title-wrapper mb-8">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
+              <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0, color: '#fff' }}>GURU <span style={{ color: '#a855f7' }}>{isEn ? 'TIPS' : 'TIPY & TRIKY'}</span></h2>
+              <Link href={isEn ? "/en/tipy" : "/tipy"} style={{ color: '#a855f7', fontWeight: 'bold', textDecoration: 'none' }}>{isEn ? 'ARCHIVE →' : 'ARCHIV TIPŮ →'}</Link>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px' }}>
+            {data.nejnovejsiTipy.map((tip, idx) => (
+              <Link href={isEn ? `/en/tipy/${tip.slug_en || tip.slug}` : `/tipy/${tip.slug}`} key={tip.id} className="tip-card text-decoration-none">
+                <div style={{ position: 'relative', height: '220px', width: '100%', background: '#0b0c10' }}>
+                  {idx === 0 && <div style={{ position: 'absolute', top: '15px', left: '15px', background: '#a855f7', color: '#fff', padding: '4px 12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '10px', zIndex: 10 }}>{isEn ? 'NEW 🔥' : 'NOVINKA 🔥'}</div>}
+                  <img src={getSafeImage(tip.image_url)} alt={tip.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                </div>
+                <div style={{ padding: '25px' }}>
+                  <span style={{ color: '#a855f7', fontSize: '10px', fontWeight: 'bold' }}>{isEn ? (tip.category_en || 'HARDWARE') : tip.category}</span>
+                  <h3 style={{ fontSize: '20px', fontWeight: '900', margin: '12px 0', color: '#fff', lineHeight: '1.2' }}>{isEn ? (tip.title_en || tip.title) : tip.title}</h3>
+                  <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '10px' }}>{isEn ? (tip.description_en || tip.description) : tip.description}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* --- TWEAKY --- */}
+      {!loading && (
+        <section className="max-w-[1200px] mx-auto px-5 mb-16">
+          <div className="section-title-wrapper mb-8 !border-yellow-500/20">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
+              <h2 style={{ fontSize: '28px', fontWeight: '900', margin: 0, color: '#fff' }}>{isEn ? 'LATEST' : 'POSLEDNÍ'} <span style={{ color: '#eab308' }}>GURU TWEAKY</span></h2>
+              <Link href={isEn ? "/en/tweaky" : "/tweaky"} style={{ color: '#eab308', fontWeight: 'bold', textDecoration: 'none' }}>{isEn ? 'ALL →' : 'VŠECHNY TWEAKY →'}</Link>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px' }}>
+            {data.nejnovejsiTweaky.map((tweak) => (
+              <Link href={isEn ? `/en/tweaky/${tweak.slug_en || tweak.slug}` : `/tweaky/${tweak.slug}`} key={tweak.id} className="tweak-card text-decoration-none">
+                <div style={{ position: 'relative', height: '180px', width: '100%', background: '#0b0c10' }}>
+                  <img src={getSafeImage(tweak.image_url)} alt={tweak.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                </div>
+                <div style={{ padding: '25px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>
+                    <Activity size={14} /> {isEn ? 'OPTIMIZATION' : 'OPTIMALIZACE'}
+                  </div>
+                  <h3 style={{ fontSize: '20px', fontWeight: '900', margin: '12px 0', color: '#fff', lineHeight: '1.2' }}>{isEn ? (tweak.title_en || tweak.title) : tweak.title}</h3>
+                  <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '10px' }}>{isEn ? (tweak.description_en || tweak.description) : tweak.description}</p>
+                  <div style={{ color: '#eab308', fontWeight: 'bold', fontSize: '13px', marginTop: '15px' }}>{isEn ? 'OPEN GURU FIX →' : 'OTEVŘÍT GURU FIX →'}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* --- ČLÁNKY (S NÁKUPNÍM TLAČÍTKEM) --- */}
+      {!loading && (
+        <main className="max-w-[1200px] mx-auto px-5 mt-20 mb-20">
+          <div className="section-title-wrapper block text-center max-w-max mx-auto mb-10">
+            <h2 style={{ color: '#fff', fontSize: '2.2rem', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>{isEn ? 'Latest Articles & Videos' : 'Nejnovější články & Videa'}</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px' }}>
+            {data.posts.map((post) => {
+              const badge = getBadgeInfo(post);
+              return (
+                <div key={post.id} className="game-card">
+                  <Link href={isEn ? `/en/clanky/${post.slug_en || post.slug}` : `/clanky/${post.slug}`} style={{ textDecoration: 'none', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ position: 'relative', paddingTop: '56.25%' }}>
+                      <img src={getThumbnail(post)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                      <div style={{ position: 'absolute', top: '10px', right: '10px', background: badge.color, color: badge.textColor, padding: '5px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem' }}>{badge.text}</div>
+                    </div>
+                    <div style={{ padding: '25px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                      <h3 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '1.2rem', fontWeight: 'bold' }}>{isEn ? (post.title_en || post.title) : post.title}</h3>
+                      
+                      <div style={{ flex: 1 }}></div>
+
+                      {!post.affiliate_link && (
                         <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ color: '#45a29e', fontSize: '0.85rem' }}>{new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
                           <span style={{ color: '#66fcf1', fontWeight: 'bold' }}>{isEn ? 'READ MORE →' : 'ČÍST ČLÁNEK →'}</span>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </Link>
-                );
-              })}
-            </div>
-          </main>
-        </>
+                  
+                  {/* 🚀 GURU AFFILIATE TLACÍTKO (Připnuté ke spodní straně) */}
+                  {post.affiliate_link && (
+                    <div style={{ padding: '0 25px 25px 25px' }}>
+                      <a href={post.affiliate_link} target="_blank" rel="nofollow sponsored" className="guru-buy-btn">
+                        <ShoppingCart size={16} />
+                        {isEn ? `BUY: ${post.price_en || 'BEST PRICE'}` : `KOUPIT ZA ${post.price_cs || 'NEJLEPŠÍ CENU'}`}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </main>
       )}
 
-      <footer style={footerStyles}>
+      <footer className="bg-neutral-900/95 py-16 px-5 text-center border-t border-purple-500/20">
           <div style={{ marginBottom: '20px', color: '#a855f7', fontWeight: 'bold' }}>
             {isEn ? 'ALREADY ANALYZED BY' : 'KOMUNITNÍ WEB NAVŠTÍVILO JIŽ'} <span style={{ color: '#fff', background: '#0b0c10', padding: '2px 8px', borderRadius: '4px', border: '1px solid #a855f7' }}>{data.stats.value}</span> {isEn ? 'FANS 🦾' : 'FANOUŠKŮ 🦾'}
           </div>
@@ -348,17 +461,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-// --- GURU MASTER STYLES ---
-const globalStyles = { minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#fff', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed' };
-const headerStyles = { maxWidth: '1200px', margin: '40px auto', padding: '60px 40px', background: 'rgba(31, 40, 51, 0.95)', borderRadius: '25px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '50px', flexWrap: 'wrap', boxShadow: '0 15px 45px rgba(0,0,0,0.6)' };
-const avatarStyles = { width: '160px', height: '160px', background: '#0b0c10', borderRadius: '50%', border: '5px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', color: '#45a29e', fontSize: '3.5rem', fontWeight: 'bold', boxShadow: '0 0 30px rgba(102, 252, 241, 0.4)' };
-const sectionStyles = { maxWidth: '1200px', margin: '60px auto', padding: '0 20px' };
-const gridStyles = { display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(320px, 1fr))`, gap: '30px' };
-const cardBaseStyle = { textDecoration: 'none', borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column' };
-const cardImageWrapper = { position: 'relative', height: '220px', width: '100%', background: '#0b0c10' };
-const imageStyle = { width: '100%', height: '100%', objectFit: 'cover' };
-const cardTitleStyle = { fontSize: '20px', fontWeight: '900', margin: '12px 0', color: '#fff', lineHeight: '1.2' };
-const cardDescStyle = { color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '10px' };
-const footerStyles = { background: 'rgba(31, 40, 51, 0.95)', padding: '60px 20px', textAlign: 'center', borderTop: '1px solid rgba(168, 85, 247, 0.2)' };
-const newBadgeStyle = { position: 'absolute', top: '15px', left: '15px', background: '#a855f7', color: '#fff', padding: '4px 12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '10px', zIndex: 10 };
