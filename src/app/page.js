@@ -211,8 +211,8 @@ export default function HomePage() {
             </h2>
             <p style={{ fontSize: '14px', color: '#d1d5db', maxWidth: '90%', margin: '0 auto 18px auto', lineHeight: '1.5', fontStyle: 'italic' }}>
               {isEn 
-                ? "Verified brands, exclusive hardware discounts and special perks for our community." 
-                : "Ověřené značky, exkluzivní hardwarové slevy a speciální výhody pro naši komunitu."}
+                ? "Partners directly supporting our website promotion, live streams, and social media growth." 
+                : "Partneři, kteří přímo podporují propagaci webu, naše live streamy a rozvoj sociálních sítí."}
             </p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
               <span style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', color: '#eab308', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '900', letterSpacing: '1px', textTransform: 'uppercase' }}>
