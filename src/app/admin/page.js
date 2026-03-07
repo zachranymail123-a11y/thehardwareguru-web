@@ -38,12 +38,26 @@ try {
 }
 
 // Pomocná funkcia pre bezpečné Sidebar prvky
-const SidebarItemUI = ({ id, activeTab, setActiveTab, icon, label, color }) => {
+const SidebarItemUI = ({ id, activeTab, setActiveTab, icon, label, color, href }) => {
   const active = activeTab === id;
-  return (
-    <button onClick={() => setActiveTab(id)} className={`sidebar-btn ${active ? 'active' : ''}`} style={{ borderLeftColor: active ? color : 'transparent' }}>
+  const content = (
+    <>
       {React.cloneElement(icon, { size: 18, color: active ? color : '#9ca3af' })}
       <span style={{ flex: 1, textAlign: 'left' }}>{label}</span>
+    </>
+  );
+
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" className="sidebar-link" style={{ textDecoration: 'none' }}>
+        {content} <ExternalLink size={14} color="#4b5563" />
+      </a>
+    );
+  }
+
+  return (
+    <button onClick={() => setActiveTab(id)} className={`sidebar-btn ${active ? 'active' : ''}`} style={{ borderLeftColor: active ? color : 'transparent' }}>
+      {content}
     </button>
   );
 };
@@ -218,11 +232,12 @@ export default function AdminApp() {
       setActiveTab('terminal');
       addLog(`Mažu slevu s ID: ${id}...`, 'warning');
       try {
-          await supabase.from('game_deals').delete().eq('id', id);
+          const { error } = await supabase.from('game_deals').delete().eq('id', id);
+          if (error) throw error;
           addLog('SLEVA SMAZÁNA.', 'success');
           fetchAndScanData();
       } catch (e) {
-          addLog('CHYBA PŘI MAZÁNÍ.', 'error');
+          addLog(`CHYBA PŘI MAZÁNÍ: ${e.message}`, 'error');
       }
   };
 
@@ -238,7 +253,10 @@ export default function AdminApp() {
       });
       if (response.ok) {
         const table = type === 'deal' ? 'game_deals' : 'posts';
-        await supabase.from(table).update({ is_fired: true }).eq('id', item.id);
+        // 🚀 OPRAVA: Přidána kontrola erroru pro Supabase
+        const { error } = await supabase.from(table).update({ is_fired: true }).eq('id', item.id);
+        if (error) throw error;
+        
         addLog('ÚSPĚŠNĚ ODESLÁNO! Položka byla skryta z fronty.', 'success');
         fetchAndScanData(); 
       } else {
@@ -253,11 +271,14 @@ export default function AdminApp() {
   const markAsFired = async (id, table) => {
       addLog(`Odstraňuji položku z fronty Executoru (označuji jako odeslané)...`, 'warning');
       try {
-          await supabase.from(table).update({ is_fired: true }).eq('id', id);
+          // 🚀 OPRAVA: Přidána striktní kontrola erroru pro Supabase
+          const { error } = await supabase.from(table).update({ is_fired: true }).eq('id', id);
+          if (error) throw error;
+          
           addLog('ÚSPĚŠNĚ SKRYTO.', 'success');
-          fetchAndScanData();
+          fetchAndScanData(); // Spustí refresh UI
       } catch (e) {
-          addLog('CHYBA PŘI SKRÝVÁNÍ.', 'error');
+          addLog(`CHYBA PŘI SKRÝVÁNÍ: ${e.message}`, 'error');
       }
   };
 
@@ -275,14 +296,15 @@ export default function AdminApp() {
       addLog('Zahajuji hromadné čištění fronty Executoru...', 'warning');
       
       try {
-          const postIds = unfiredPosts.map(p => p.id);
-          const dealIds = unfiredDeals.map(d => d.id);
-          
-          let promises = [];
-          if (postIds.length > 0) promises.push(supabase.from('posts').update({ is_fired: true }).in('id', postIds));
-          if (dealIds.length > 0) promises.push(supabase.from('game_deals').update({ is_fired: true }).in('id', dealIds));
-          
-          if (promises.length > 0) await Promise.all(promises);
+          // 🚀 OPRAVA: Bezpečný cyklus položku po položce s kontrolou errorů místo spoléhání se na hromadný update
+          for (const post of unfiredPosts) {
+              const { error } = await supabase.from('posts').update({ is_fired: true }).eq('id', post.id);
+              if (error) throw error;
+          }
+          for (const deal of unfiredDeals) {
+              const { error } = await supabase.from('game_deals').update({ is_fired: true }).eq('id', deal.id);
+              if (error) throw error;
+          }
           
           addLog('✅ FRONTA ÚSPĚŠNĚ VYMAZÁNA! Vše staré je pryč.', 'success');
           fetchAndScanData();
@@ -324,8 +346,8 @@ export default function AdminApp() {
         .admin-main { flex: 1; margin-left: 280px; padding: 40px 60px; max-width: 1500px; height: 100vh; overflow-y: auto; }
         
         .sidebar-header { margin: 20px 25px 10px 25px; font-size: 10px; color: #4b5563; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; }
-        .sidebar-btn { width: 100%; display: flex; align-items: center; gap: 15px; padding: 15px 25px; background: transparent; border: none; border-left: 4px solid transparent; color: #9ca3af; cursor: pointer; transition: 0.2s; font-weight: 900; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
-        .sidebar-btn:hover, .sidebar-btn.active { background: rgba(255,255,255,0.05); color: #fff; }
+        .sidebar-btn, .sidebar-link { width: 100%; display: flex; align-items: center; gap: 15px; padding: 15px 25px; background: transparent; border: none; border-left: 4px solid transparent; color: #9ca3af; cursor: pointer; transition: 0.2s; font-weight: 900; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        .sidebar-btn:hover, .sidebar-link:hover, .sidebar-btn.active { background: rgba(255,255,255,0.05); color: #fff; }
         
         .logout-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; border-radius: 12px; font-weight: 900; font-size: 11px; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
         .logout-btn:hover { background: #ef4444; color: #fff; }
@@ -398,7 +420,7 @@ export default function AdminApp() {
           <h1 style={{ margin: 0, fontSize: '18px', fontWeight: '950', letterSpacing: '2px', color: '#a855f7' }}>
             <ShieldCheck size={20} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '5px' }}/> GURU <span style={{ color: '#fff' }}>ADMIN</span>
           </h1>
-          <div style={{ fontSize: '9px', color: '#4b5563', fontWeight: '900', marginTop: '5px', textTransform: 'uppercase' }}>Command Center v7.0</div>
+          <div style={{ fontSize: '9px', color: '#4b5563', fontWeight: '900', marginTop: '5px', textTransform: 'uppercase' }}>Command Center v8.0</div>
         </div>
 
         <nav style={{ flex: 1, paddingTop: '10px', overflowY: 'auto' }}>
@@ -413,6 +435,8 @@ export default function AdminApp() {
           
           <div className="sidebar-header">{isEn ? 'CONTENT' : 'OBSAH'}</div>
           <SidebarItemUI id="deals" activeTab={activeTab} setActiveTab={setActiveTab} icon={<ShoppingCart />} label="Správa Slev na hry" color="#ff0055" />
+          {/* 🚀 OPRAVA: Kalendář vyveden jako čistý externí odkaz na novou záložku */}
+          <SidebarItemUI id="kalendar_link" activeTab={activeTab} setActiveTab={setActiveTab} icon={<CalendarDays />} label="Herní Kalendář" color="#3b82f6" href="/kalendar" />
         </nav>
 
         <div style={{ padding: '20px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
@@ -481,7 +505,7 @@ export default function AdminApp() {
             </section>
         )}
 
-        {/* --- TAB 1: PUBLIKACE & PLÁNOVÁNÍ (Executor + Planner + Kalendář) --- */}
+        {/* --- TAB 1: PUBLIKACE & PLÁNOVÁNÍ (Executor + Planner) --- */}
         {activeTab === 'social-planner' && (
           <section className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -502,7 +526,7 @@ export default function AdminApp() {
                   <h3 style={{ margin: 0, color: '#10b981', display: 'flex', alignItems: 'center', gap: '10px' }}><Send size={20}/> SOCIAL EXECUTOR FRONTA</h3>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                      <span style={{ fontSize: '10px', background: '#000', padding: '8px 12px', borderRadius: '8px', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', fontWeight: '900', letterSpacing: '1px' }}>MAX 14 DNÍ STARÉ</span>
-                     <button onClick={clearQueue} style={{ background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', padding: '8px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}><X size={12} style={{display: 'inline', marginBottom: '-2px'}}/> SMAZAT STAROU</button>
+                     <button onClick={clearQueue} style={{ background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', padding: '8px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}><X size={12} style={{display: 'inline', marginBottom: '-2px'}}/> SMAZAT STAROU FRONTU</button>
                   </div>
                </div>
                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -542,9 +566,9 @@ export default function AdminApp() {
                </div>
             </div>
 
-            {/* Zóna Očekávaných her (Plánovač) */}
+            {/* Zóna Očekávaných her (Plánovač) - BEZ IFRAME */}
             <div style={{ marginBottom: '40px', background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-               <h3 style={{ margin: '0 0 20px 0', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '10px' }}><Database size={20}/> OČEKÁVANÉ HRY V DATABÁZI</h3>
+               <h3 style={{ margin: '0 0 20px 0', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '10px' }}><Database size={20}/> OČEKÁVANÉ HRY V DATABÁZI (PLANNER)</h3>
                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                    {data.posts.filter(p => p.type === 'expected').map(game => (
                        <div key={game.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#000', padding: '15px 20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -559,15 +583,6 @@ export default function AdminApp() {
                        <div style={{ color: '#4b5563', fontStyle: 'italic', fontSize: '13px', textAlign: 'center', padding: '20px 0' }}>Žádné očekávané hry na analýzu.</div>
                    )}
                </div>
-            </div>
-
-            {/* Zóna Kalendář Iframe */}
-            <div style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                   <h3 style={{ margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '10px' }}><CalendarDays size={20}/> HERNÍ KALENDÁŘ</h3>
-                   <a href={`${BASE_URL}/kalendar`} target="_blank" rel="noreferrer" style={{ color: '#9ca3af', fontSize: '12px', textDecoration: 'none' }}>OTEVŘÍT V NOVÉM OKNĚ <ExternalLink size={12} style={{display: 'inline', marginBottom: '-2px'}}/></a>
-               </div>
-               <iframe src={`${BASE_URL}/kalendar`} style={{ width: '100%', height: '500px', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '15px', background: '#0a0b0d' }}></iframe>
             </div>
           </section>
         )}
