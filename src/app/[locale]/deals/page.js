@@ -37,20 +37,52 @@ export default async function DealsPage({ params }) {
   }
 
   // Texty podle jazyka
-  const pageTitle = isEn ? "🔥 Best Game Deals" : "🔥 Hry za ty nejnižší ceny";
-  const pageSubtitle = isEn ? "Support the channel by purchasing through these links!" : "Nákupem přes tyto odkazy přímo podpoříš kanál!";
+  const pageTitle = isEn ? "🔥 BEST GAME DEALS" : "🔥 HRY ZA TY NEJNIŽŠÍ CENY";
+  const pageSubtitle = isEn ? "SUPPORT THE CHANNEL BY PURCHASING THROUGH THESE LINKS!" : "NÁKUPEM PŘES TYTO ODKAZY PŘÍMO PODPOŘÍŠ KANÁL!";
   const buyText = isEn ? "BUY NOW" : "KOUPIT HNED";
 
+  // --- GURU MASTER STYLES ---
+  const globalStyles = { 
+    minHeight: '100vh', 
+    backgroundColor: '#0a0b0d', 
+    color: '#fff', 
+    backgroundImage: 'url("/bg-guru.png")', 
+    backgroundSize: 'cover', 
+    backgroundAttachment: 'fixed',
+    paddingTop: '120px', // Odsazení pro Navbar
+    paddingBottom: '80px'
+  };
+  
+  const headerCardStyles = { 
+    background: 'rgba(31, 40, 51, 0.95)', 
+    padding: '50px 40px', 
+    borderRadius: '25px', 
+    border: '1px solid #eab308', 
+    boxShadow: '0 15px 45px rgba(0,0,0,0.6)', 
+    textAlign: 'center', 
+    marginBottom: '60px' 
+  };
+  
+  const titleStyles = { 
+    color: '#fff', 
+    fontSize: '3.5rem', 
+    margin: '0 0 15px 0', 
+    textTransform: 'uppercase', 
+    fontWeight: '900', 
+    lineHeight: '1.1', 
+    textShadow: '0 0 15px rgba(234, 179, 8, 0.5)' 
+  };
+
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-200 py-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <div style={globalStyles}>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Hlavička stránky */}
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight uppercase">
+        {/* Hlavička stránky - GURU STYLE */}
+        <div style={headerCardStyles}>
+          <h1 style={titleStyles}>
             {pageTitle}
           </h1>
-          <p className="text-xl text-orange-500 font-medium">
+          <p style={{ color: '#eab308', fontSize: '1.2rem', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase' }}>
             {pageSubtitle}
           </p>
         </div>
@@ -58,16 +90,17 @@ export default async function DealsPage({ params }) {
         {/* Mřížka karet her */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {deals && deals.map((deal) => (
-            /* CELÁ KARTA JE ODKAZ NA HRK (DeepLink) - Otevírá se do nového okna */
+            /* CELÁ KARTA JE ODKAZ NA HRK (DeepLink) */
             <a 
               key={deal.id}
               href={deal.affiliate_link}
               target="_blank"
               rel="nofollow sponsored"
-              className="group block bg-neutral-900 rounded-2xl overflow-hidden border border-neutral-800 hover:border-orange-500 hover:shadow-[0_0_30px_rgba(234,88,12,0.15)] transition-all duration-300 transform hover:-translate-y-2 flex flex-col h-full cursor-pointer"
+              className="group block rounded-2xl overflow-hidden transition-all duration-300 transform hover:-translate-y-2 flex flex-col h-full cursor-pointer"
+              style={{ background: 'rgba(17, 19, 24, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(234, 179, 8, 0.3)', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
             >
               {/* Obrázek hry */}
-              <div className="relative h-48 w-full overflow-hidden bg-neutral-800 border-b border-neutral-800 group-hover:border-orange-500 transition-colors">
+              <div className="relative h-48 w-full overflow-hidden bg-neutral-800 border-b border-neutral-800 transition-colors" style={{ borderBottomColor: 'rgba(234, 179, 8, 0.3)' }}>
                 {deal.image_url ? (
                   <img 
                     src={deal.image_url} 
@@ -80,14 +113,14 @@ export default async function DealsPage({ params }) {
                   </div>
                 )}
                 {/* Cenovka plovoucí přes obrázek */}
-                <div className="absolute top-4 right-4 bg-orange-600 text-white px-4 py-2 rounded-lg font-black text-lg shadow-lg">
+                <div className="absolute top-4 right-4 bg-orange-600 text-white px-4 py-2 rounded-lg font-black text-lg shadow-[0_0_15px_rgba(234,88,12,0.6)]">
                   {isEn ? deal.price_en : deal.price_cs}
                 </div>
               </div>
 
               {/* Obsah karty */}
               <div className="p-6 flex flex-col flex-grow">
-                <h2 className="text-2xl font-bold text-white mb-3 line-clamp-2">
+                <h2 className="text-2xl font-black text-white mb-3 line-clamp-2" style={{ letterSpacing: '0.5px' }}>
                   {deal.title}
                 </h2>
                 
@@ -96,21 +129,29 @@ export default async function DealsPage({ params }) {
                 </p>
 
                 {/* Tlačítko pro vizuální efekt dole na kartě */}
-                <div className="w-full py-3 px-4 bg-neutral-800 group-hover:bg-orange-600 text-white font-black text-center rounded-xl transition-colors duration-300 shadow-inner">
+                <div className="w-full py-3 px-4 text-white font-black text-center rounded-xl transition-all duration-300 shadow-inner" style={{ background: '#eab308', color: '#000', textTransform: 'uppercase', letterSpacing: '1px' }}>
                   {buyText}
                 </div>
               </div>
             </a>
           ))}
           
+          {/* Hláška, když nejsou žádné hry - GURU STYLE */}
           {(!deals || deals.length === 0) && (
-            <div className="col-span-full text-center text-neutral-500 py-20 text-xl font-medium">
-              {isEn ? "No deals available at the moment. Check back later!" : "Momentálně zde nejsou žádné slevy. Zkus to později!"}
+            <div className="col-span-full">
+               <div style={{ background: 'rgba(31, 40, 51, 0.95)', padding: '60px 20px', borderRadius: '25px', border: '1px solid #a855f7', textAlign: 'center', boxShadow: '0 0 30px rgba(168, 85, 247, 0.2)' }}>
+                  <h3 style={{ color: '#a855f7', fontSize: '1.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>
+                    {isEn ? "GURU SYSTEMS ARE SCANNING FOR NEW DEALS..." : "GURU SYSTÉMY SKENUJÍ NOVÉ SLEVY..."}
+                  </h3>
+                  <p style={{ color: '#9ca3af', marginTop: '15px', fontSize: '1.1rem' }}>
+                    {isEn ? "No deals available at the moment. Check back later!" : "Momentálně zde nejsou žádné slevy. Zkus to později!"}
+                  </p>
+               </div>
             </div>
           )}
         </div>
 
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
