@@ -29,6 +29,7 @@ export default function RootLayout({ children, params }) {
   // 🚀 GURU DATA BRIDGE (CSP-SAFE INJECTION): 
   // Načtení proměnných na straně serveru. Protože CSP blokuje inline skripty, 
   // propašujeme data přes atributy skrytého DOM elementu.
+  // Tyto hodnoty jsou v Next.js na serveru (SSR) vždy dostupné.
   const envVars = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
@@ -38,7 +39,7 @@ export default function RootLayout({ children, params }) {
   return (
     <html lang={locale}>
       <head>
-        {/* Odstraněna window.__ENV__ injekce, kterou blokovalo CSP */}
+        {/* Odstraněna window.__ENV__ injekce, kterou blokovalo CSP jako hrozbu (ReferenceError/Hydration error) */}
       </head>
       <body style={{ 
         margin: 0, 
@@ -49,8 +50,9 @@ export default function RootLayout({ children, params }) {
         flexDirection: 'column'
       }}>
         
-        {/* 🛡️ GURU DATA BRIDGE: Tento element CSP nevidí jako hrozbu. 
-            Server do něj vypálí data a klientský kód si je bezpečně přečte přes getAttribute. */}
+        {/* 🛡️ GURU SUPREME DATA BRIDGE: 
+            Element, který CSP neřeší, ale klientský kód z něj bezpečně přečte konfiguraci. 
+            Využíváme standardní 'data-' atributy pro maximální stabilitu. */}
         <div 
           id="guru-env-bridge" 
           style={{ display: 'none' }}
@@ -82,7 +84,7 @@ export default function RootLayout({ children, params }) {
         <SupportWidget />
         <Analytics />
 
-        {/* 📰 GURU GOOGLE NEWS / SUBSCRIBE WITH GOOGLE ENGINE (Verified Snippet) */}
+        {/* 📰 GURU GOOGLE NEWS / SUBSCRIBE WITH GOOGLE ENGINE */}
         <Script 
           src="https://news.google.com/swg/js/v1/swg-basic.js" 
           strategy="afterInteractive" 
