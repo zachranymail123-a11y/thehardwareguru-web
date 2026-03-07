@@ -1,28 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { createClient } from '@supabase/supabase-js';
 import { Rocket, Send, Check, AlertCircle, ChevronRight, Flame, RefreshCw } from 'lucide-react';
 
 /**
- * GURU SUPREME EXECUTOR - NUCLEAR FAILSAFE EDITION
- * Tato verze používá "Runtime Fallback" přes objekt window.__ENV__.
- * Pokud bundler Next.js selže a nevloží proměnné při buildu, 
- * kód si je vytáhne přímo z HTML hlavičky, kterou jsme injektovali v layoutu.
+ * GURU SUPREME EXECUTOR - CSP-BYPASS EDITION
+ * Tento komponent čte konfiguraci z "Data Bridge" (div#guru-env-bridge), 
+ * což je nejspolehlivější metoda pro weby s přísným zabezpečením.
  */
-
-// Bezpečné získání parametrů a Supabase klienta pro prostředí náhledu
-let useParams = () => ({ locale: 'cs' });
-let createClient = null;
-
-try {
-  const nextNav = require('next/navigation');
-  if (nextNav && nextNav.useParams) useParams = nextNav.useParams;
-
-  const supabaseJs = require('@supabase/supabase-js');
-  if (supabaseJs && supabaseJs.createClient) createClient = supabaseJs.createClient;
-} catch (e) {
-  // Fallback pro Canvas sandbox
-}
 
 export default function App() {
   const params = useParams();
@@ -35,40 +22,48 @@ export default function App() {
   const [status, setStatus] = useState({ firing: false, success: null, error: null });
   const [supabaseClient, setSupabaseClient] = useState(null);
   
-  // Bezpečné uložení konfigurace
-  const [env, setEnv] = useState({ url: '', key: '', webhook: '', isLoaded: false });
+  const [env, setEnv] = useState({ 
+    url: '', 
+    key: '', 
+    webhook: '', 
+    isLoaded: false 
+  });
 
   /**
-   * 🛡️ GURU ENV RESOLVER (The Nuclear Helper)
-   * Zkouší nejdříve standardní cestu (vypálení při buildu), 
-   * pokud selže, bere data z window.__ENV__ (injektováno přes SSR).
+   * 🛡️ GURU DATA BRIDGE RESOLVER
+   * Vyzvedne data z HTML elementu, který server vypsal do layoutu.
    */
-  const getFailsafeEnv = (key) => {
-    // 1. Zkusíme standardní process.env (literal access pro bundler)
-    try {
-      if (key === 'NEXT_PUBLIC_SUPABASE_URL' && process.env.NEXT_PUBLIC_SUPABASE_URL) return process.env.NEXT_PUBLIC_SUPABASE_URL;
-      if (key === 'NEXT_PUBLIC_SUPABASE_ANON_KEY' && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      if (key === 'NEXT_PUBLIC_MAKE_WEBHOOK2_URL' && process.env.NEXT_PUBLIC_MAKE_WEBHOOK2_URL) return process.env.NEXT_PUBLIC_MAKE_WEBHOOK2_URL;
-    } catch (e) {}
-
-    // 2. Fallback na window.__ENV__ (injektováno v layout.js)
-    if (typeof window !== 'undefined' && window.__ENV__) {
-      return window.__ENV__[key] || "";
+  const getEnvFromBridge = () => {
+    if (typeof window === 'undefined') return { url: '', key: '', webhook: '' };
+    
+    const bridge = document.getElementById('guru-env-bridge');
+    if (!bridge) {
+      console.warn("Guru Bridge element nebyl nalezen v DOMu.");
+      return { url: '', key: '', webhook: '' };
     }
-    return "";
+
+    return {
+      url: bridge.getAttribute('data-url') || '',
+      key: bridge.getAttribute('data-key') || '',
+      webhook: bridge.getAttribute('data-webhook') || ''
+    };
   };
 
   useEffect(() => {
     const bootstrap = async () => {
-      const url = getFailsafeEnv('NEXT_PUBLIC_SUPABASE_URL');
-      const key = getFailsafeEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
-      const webhook = getFailsafeEnv('NEXT_PUBLIC_MAKE_WEBHOOK2_URL');
+      // Načtení dat přes Bridge
+      const config = getEnvFromBridge();
+      
+      // Fallback na process.env (pokud by se bundler probral)
+      const finalUrl = config.url || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+      const finalKey = config.key || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+      const finalWebhook = config.webhook || process.env.NEXT_PUBLIC_MAKE_WEBHOOK2_URL || "";
 
-      setEnv({ url, key, webhook, isLoaded: true });
+      setEnv({ url: finalUrl, key: finalKey, webhook: finalWebhook, isLoaded: true });
 
-      if (url && key && createClient) {
+      if (finalUrl && finalKey) {
         try {
-          const client = createClient(url, key);
+          const client = createClient(finalUrl, finalKey);
           setSupabaseClient(client);
           
           const { data, error } = await client
@@ -80,24 +75,29 @@ export default function App() {
           setDeals(data || []);
           if (data && data.length > 0) setSelectedDeal(data[0]);
         } catch (err) {
-          console.error("Guru Boot Error:", err);
+          console.error("Guru Sync Error:", err);
           setStatus(prev => ({ 
             ...prev, 
-            error: isEn ? "DATABASE CONNECTION FAILED!" : "CHYBA PŘIPOJENÍ K DATABÁZI!" 
+            error: isEn ? "DB CONNECTION FAILED!" : "SPOJENÍ S DB SELHALO!" 
           }));
         }
       }
       setLoading(false);
     };
 
-    bootstrap();
+    // Krátké zpoždění pro zajištění, že layout je plně vykreslen
+    const timer = setTimeout(bootstrap, 150);
+    return () => clearTimeout(timer);
   }, [locale]);
 
   const handleRefresh = async () => {
     if (!supabaseClient) return;
     setLoading(true);
     try {
-      const { data } = await supabaseClient.from('game_deals').select('*').order('created_at', { ascending: false });
+      const { data } = await supabaseClient
+        .from('game_deals')
+        .select('*')
+        .order('created_at', { ascending: false });
       setDeals(data || []);
     } catch (e) {}
     setLoading(false);
@@ -109,13 +109,21 @@ export default function App() {
     
     const featuredCount = deals.filter(d => d.is_featured).length;
     if (!deal.is_featured && featuredCount >= 3) {
-      setStatus({ firing: false, success: false, error: isEn ? "MAX 3 DEALS!" : "MAXIMÁLNĚ 3 DEALY!" });
+      setStatus({ 
+        firing: false, 
+        success: false, 
+        error: isEn ? "MAX 3 DEALS ON HOMEPAGE!" : "MAXIMÁLNĚ 3 DEALY NA HOMEPAGE!" 
+      });
       setTimeout(() => setStatus(prev => ({ ...prev, error: null })), 4000);
       return;
     }
 
     try {
-      const { error } = await supabaseClient.from('game_deals').update({ is_featured: !deal.is_featured }).eq('id', deal.id);
+      const { error } = await supabaseClient
+        .from('game_deals')
+        .update({ is_featured: !deal.is_featured })
+        .eq('id', deal.id);
+
       if (error) throw error;
       handleRefresh(); 
     } catch (err) {
@@ -125,7 +133,7 @@ export default function App() {
 
   const fireToMake = async () => {
     if (!env.webhook) {
-      setStatus({ firing: false, success: false, error: "WEBHOOK URL MISSING!" });
+      setStatus({ firing: false, success: false, error: isEn ? "WEBHOOK MISSING!" : "CHYBÍ WEBHOOK!" });
       return;
     }
     if (!selectedDeal) return;
@@ -155,29 +163,29 @@ export default function App() {
         setStatus({ firing: false, success: true, error: null });
         setTimeout(() => setStatus(prev => ({ ...prev, success: null })), 3000);
       } else {
-        throw new Error(`STATUS: ${response.status}`);
+        throw new Error(`MAKE.COM ERROR: ${response.status}`);
       }
     } catch (err) {
       setStatus({ firing: false, success: false, error: err.message });
     }
   };
 
-  // DIAGNOSTIKA PRO CANVAS / VERCEL
+  // --- DIAGNOSTIKA ---
   if (!loading && env.isLoaded && (!env.url || !env.key)) {
     return (
       <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center p-6 text-center">
         <div className="max-w-md bg-red-950/20 border border-red-500 p-10 rounded-[40px] backdrop-blur-xl shadow-2xl">
           <AlertCircle className="text-red-500 mx-auto mb-6" size={64} />
-          <h2 className="text-2xl font-black text-white uppercase mb-4 italic tracking-tighter">Nuclear Injection Error!</h2>
+          <h2 className="text-2xl font-black text-white uppercase mb-4 italic tracking-tighter">Bridge Blocked!</h2>
           <p className="text-neutral-400 text-sm mb-8 leading-relaxed font-bold uppercase tracking-widest">
-            Bundler selhal a Runtime Injection v layout.js nebyla provedena.
+            Data Bridge v layoutu nepropustil klíče. Ujisti se, že jsi nahrál upravený layout.js a udělal Redeploy bez cache.
           </p>
           <div className="text-left bg-black/50 p-5 rounded-2xl font-mono text-[10px] space-y-3 mb-8 border border-red-900/30">
-            <div className="flex justify-between uppercase"><span>URL Status:</span> <span className={env.url ? "text-green-500" : "text-red-500"}>{env.url ? "INJECTED ✅" : "MISSING ❌"}</span></div>
-            <div className="flex justify-between uppercase"><span>Key Status:</span> <span className={env.key ? "text-green-500" : "text-red-500"}>{env.key ? "INJECTED ✅" : "MISSING ❌"}</span></div>
+            <div className="flex justify-between uppercase"><span>Bridge ID:</span> <span className={typeof document !== 'undefined' && document.getElementById('guru-env-bridge') ? "text-green-500" : "text-red-500"}>{typeof document !== 'undefined' && document.getElementById('guru-env-bridge') ? "DETECTED ✅" : "NOT FOUND ❌"}</span></div>
+            <div className="flex justify-between uppercase"><span>Webhook Status:</span> <span className={env.webhook ? "text-green-500" : "text-red-500"}>{env.webhook ? "READY ✅" : "MISSING ❌"}</span></div>
           </div>
           <button onClick={() => window.location.reload()} className="w-full py-4 bg-red-600 text-white font-black rounded-xl hover:bg-red-500 transition-all uppercase text-xs tracking-widest shadow-lg shadow-red-600/30">
-            Resetovat Systém
+            Obnovit Guru Engine
           </button>
         </div>
       </div>
@@ -186,7 +194,7 @@ export default function App() {
 
   if (loading) return (
     <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center">
-      <div className="text-orange-500 font-black animate-pulse tracking-[0.6em] text-2xl uppercase italic">Guru System Booting...</div>
+      <div className="text-orange-500 font-black animate-pulse tracking-[0.6em] text-2xl uppercase italic">Guru Scanning Catalyst...</div>
     </div>
   );
 
@@ -202,9 +210,9 @@ export default function App() {
               Executor <span className="text-red-600 italic">Lite</span>
             </h1>
             <p className="text-neutral-500 font-black text-[11px] uppercase tracking-[0.4em] mt-3 flex items-center gap-3">
-              WEBHOOK 2: 
+              DATA BRIDGE: 
               <span className={`px-2 py-0.5 rounded ${env.webhook ? 'bg-green-600/20 text-green-500' : 'bg-red-600/20 text-red-500'}`}>
-                {env.webhook ? 'NUCLEAR READY' : 'MISSING'}
+                {env.webhook ? 'STABLE CONNECTION' : 'DISCONNECTED'}
               </span>
             </p>
           </div>
@@ -231,7 +239,7 @@ export default function App() {
         <div className="space-y-5">
           <div className="flex justify-between items-center px-6">
              <h2 className="text-[12px] font-black text-neutral-500 uppercase tracking-[0.7em] flex items-center gap-4">
-               KATALOG NABÍDEK 
+               {isEn ? 'DEALS CATALOG' : 'KATALOG NABÍDEK'} 
                <span className="text-red-600">({deals.filter(d => d.is_featured).length}/3 PINNED)</span>
              </h2>
              <button onClick={handleRefresh} className="p-3 text-neutral-500 hover:text-white transition-all bg-white/5 rounded-xl border border-white/5 hover:border-white/10 shadow-lg">
@@ -251,7 +259,7 @@ export default function App() {
                 }`}
               >
                 <div className="flex items-center gap-10">
-                  <div className="w-24 h-24 rounded-2xl overflow-hidden border border-white/10 flex-shrink-0 bg-black shadow-inner relative">
+                  <div className="w-24 h-24 rounded-2xl overflow-hidden border border-white/10 flex-shrink-0 bg-black shadow-inner relative group-hover:shadow-2xl transition-all duration-500">
                     <img src={deal.image_url} alt="" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
                     <div className={`absolute inset-0 transition-opacity duration-500 ${selectedDeal?.id === deal.id ? 'bg-red-600/10' : 'bg-transparent'}`}></div>
                   </div>
@@ -263,7 +271,7 @@ export default function App() {
                       <span className="text-red-500 font-black text-xl tracking-tight">{isEn ? deal.price_en : deal.price_cs}</span>
                       {deal.discount_code && (
                         <span className="text-[11px] font-black text-pink-500 uppercase tracking-[0.2em] border border-pink-500/30 px-4 py-1.5 rounded-full bg-pink-500/5 shadow-inner">
-                          KÓD: {deal.discount_code}
+                          {isEn ? 'CODE' : 'KÓD'}: {deal.discount_code}
                         </span>
                       )}
                     </div>
@@ -271,7 +279,7 @@ export default function App() {
                 </div>
                 
                 <div className="flex items-center gap-6">
-                    <button onClick={(e) => toggleFeatured(e, deal)} title={deal.is_featured ? (isEn ? "Unpin" : "Odepnout") : (isEn ? "Pin to HP" : "Připnout na HP")}
+                    <button onClick={(e) => toggleFeatured(e, deal)} title={deal.is_featured ? "Unpin" : "Pin"}
                       className={`p-5 rounded-2xl transition-all duration-500 ${deal.is_featured ? 'bg-orange-600 text-white shadow-[0_0_35px_rgba(234,88,12,0.6)] hover:scale-110' : 'bg-white/5 text-neutral-800 hover:text-white hover:bg-white/10'}`}
                     >
                         <Flame size={28} fill={deal.is_featured ? "currentColor" : "none"} />
@@ -283,7 +291,7 @@ export default function App() {
               </div>
             )) : (
               <div className="p-24 text-center border-4 border-dashed border-white/5 rounded-[60px] bg-black/40 text-neutral-700 font-black uppercase tracking-[0.6em] mb-4 text-sm italic">
-                Databáze je prázdná
+                {isEn ? 'GURU SCANNING FOR DATA...' : 'GURU SYSTÉMY NAČÍTAJÍ DATA...'}
               </div>
             )}
           </div>
