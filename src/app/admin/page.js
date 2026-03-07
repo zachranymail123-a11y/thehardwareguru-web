@@ -2,38 +2,37 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-// --- BEZPEČNÉ NAČÍTÁNÍ NEXT.JS MODULŮ (PROTI PÁDU V NÁHLEDU) ---
+// --- BEZPEČNÉ NAČÍTÁNÍ NEXT.JS MODULŮ ---
 let usePathname = () => '';
 try {
   const nextNav = require('next/navigation');
   usePathname = nextNav.usePathname;
-} catch (e) {
-  // Silent catch
-}
+} catch (e) {}
 
 export default function SestavyBubble() {
   const [isVisible, setIsVisible] = useState(false);
   const [currentPath, setCurrentPath] = useState('');
+  const pathname = usePathname() || '';
 
-  // Hydration fix & timer
   useEffect(() => {
+    // Okamžitá synchronizace cesty
     setCurrentPath(window.location.pathname);
-    const timer = setTimeout(() => setIsVisible(true), 4000);
-    return () => clearTimeout(timer);
-  }, []);
+    
+    // Časovač pro zobrazení (pouze pokud nejsme v adminu)
+    if (!window.location.pathname.includes('/admin')) {
+      const timer = setTimeout(() => setIsVisible(true), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [pathname]); // Reaguje na změnu cesty v Next.js
 
-  // 🚀 GURU JAZYKOVÁ LOGIKA A OCHRANA ADMINISTRACE
-  let pathname = '';
-  try { pathname = usePathname() || ''; } catch (e) {}
-  
+  // 🛡️ GURU SHIELD: Absolutní blokace v administraci
+  // Kontrolujeme pathname z hooku i syrové URL okna
   const activePath = pathname || currentPath;
-  const isEn = activePath.startsWith('/en');
-  
-  // 🛡️ GURU SHIELD: Pokud jsme v administraci (/admin), bublina se nikdy neukáže
-  // Kontrolujeme i URL bez prefixu i s prefixem
-  const isAdmin = activePath.includes('/admin');
+  const isAdmin = activePath.includes('/admin') || (typeof window !== 'undefined' && window.location.href.includes('/admin'));
 
   if (!isVisible || isAdmin) return null;
+
+  const isEn = activePath.startsWith('/en');
 
   return (
     <div className="guru-bubble-container">
@@ -42,7 +41,6 @@ export default function SestavyBubble() {
           from { transform: translateY(150px); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
-        
         .guru-bubble-container {
           position: fixed;
           bottom: 30px;
@@ -51,16 +49,9 @@ export default function SestavyBubble() {
           max-width: 320px;
           animation: guruSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-
         @media (max-width: 768px) {
-          .guru-bubble-container {
-            bottom: 90px;
-            left: 15px;
-            right: 15px;
-            max-width: calc(100vw - 30px);
-          }
+          .guru-bubble-container { bottom: 90px; left: 15px; right: 15px; max-width: calc(100vw - 30px); }
         }
-
         .guru-bubble {
           background: rgba(31, 40, 51, 0.98);
           border: 2px solid #66fcf1;
@@ -96,11 +87,7 @@ export default function SestavyBubble() {
           text-transform: uppercase;
           letter-spacing: 1px;
         }
-        .guru-btn:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 5px 15px rgba(102, 252, 241, 0.5);
-          background: #fff;
-        }
+        .guru-btn:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(102, 252, 241, 0.5); background: #fff; }
       `}</style>
 
       <div className="guru-bubble">
