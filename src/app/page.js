@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play } from 'lucide-react';
+import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame } from 'lucide-react';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -15,7 +15,8 @@ export default function HomePage() {
     posts: [], 
     nejnovejsiTipy: [], 
     nejnovejsiTweaky: [], 
-    expectedGames: [], // 🚀 GURU FIX: Přidáno pro Očekávané hry
+    expectedGames: [], 
+    featuredDeals: [], // 🚀 GURU DATA: Přidáno pro Slevy na hry
     darci: [],
     partneri: [],
     stats: { value: 0 } 
@@ -48,16 +49,16 @@ export default function HomePage() {
     async function fetchData() {
       try {
         await supabase.rpc('increment_total_visits');
-        const [p, s, t, tw, d, pa, exp] = await Promise.all([
-          // GURU FIX: Odfiltrováno 'expected', aby nebyly duplicity v hlavních článcích
+        const [p, s, t, tw, d, pa, exp, feat] = await Promise.all([
           supabase.from('posts').select('*').neq('type', 'expected').order('created_at', { ascending: false }).limit(6),
           supabase.from('stats').select('value').eq('name', 'total_visits').single(),
           supabase.from('tipy').select('*').order('created_at', { ascending: false }).limit(3),
           supabase.from('tweaky').select('*').order('created_at', { ascending: false }).limit(3),
           supabase.from('darci').select('*').order('amount', { ascending: false }).limit(20),
           supabase.from('partneri').select('*').order('created_at', { ascending: false }).limit(4),
-          // 🚀 GURU DATA: Přidáno stahování 3 očekávaných her
-          supabase.from('posts').select('*').eq('type', 'expected').order('created_at', { ascending: false }).limit(3)
+          supabase.from('posts').select('*').eq('type', 'expected').order('created_at', { ascending: false }).limit(3),
+          // 🚀 GURU QUERY: Načtení max 3 připnutých slev pro homepage
+          supabase.from('game_deals').select('*').eq('is_featured', true).limit(3)
         ]);
         setData({ 
           posts: p.data || [], 
@@ -66,7 +67,8 @@ export default function HomePage() {
           nejnovejsiTweaky: tw.data || [],
           darci: d.data || [],
           partneri: pa.data || [],
-          expectedGames: exp.data || []
+          expectedGames: exp.data || [],
+          featuredDeals: feat.data || []
         });
       } catch (err) {
         console.error("Data load fail:", err);
@@ -83,9 +85,17 @@ export default function HomePage() {
         .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); }
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
         
-        /* 🚀 GURU FIX: Styly pro Očekávané hry */
         .expected-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
         .expected-card:hover { transform: translateY(-5px); box-shadow: 0 0 25px rgba(102, 252, 241, 0.25); border-color: #66fcf1; }
+
+        /* 🔥 GURU DEALS HP STYLES 🔥 */
+        .deal-hp-card { 
+          display: flex; align-items: center; gap: 20px; 
+          background: rgba(31, 40, 51, 0.9); padding: 15px 20px; 
+          border-radius: 20px; border: 1px solid rgba(249, 115, 22, 0.2); 
+          transition: 0.3s; text-decoration: none; 
+        }
+        .deal-hp-card:hover { transform: translateY(-3px); border-color: #f97316; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.2); }
 
         .tip-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
         .tip-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 0 30px rgba(168, 85, 247, 0.4); border-color: #a855f7; }
@@ -95,7 +105,6 @@ export default function HomePage() {
         .social-btn-main:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 6px 25px rgba(0,0,0,0.5); }
         .section-title-wrapper { background: rgba(0,0,0,0.7); padding: 18px 35px; border-radius: 18px; backdrop-filter: blur(8px); border: 1px solid rgba(234, 179, 8, 0.2); display: inline-block; }
         
-        /* 🚀 GURU FIX: Masivní vizuál pro Monetizaci */
         .monetize-hero-card {
             background: linear-gradient(145deg, rgba(17, 19, 24, 0.95) 0%, rgba(0, 0, 0, 0.98) 100%);
             border: 2px solid rgba(255,255,255,0.05);
@@ -121,7 +130,7 @@ export default function HomePage() {
         .monetize-hero-card.partners::before { background: #eab308; }
       `}</style>
 
-      {/* --- BIO SEKCE (RESTORED STYLE) --- */}
+      {/* --- BIO SEKCE --- */}
       <header style={headerStyles}>
         <div style={{ flex: '1', minWidth: '300px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', marginBottom: '15px' }}>
@@ -142,11 +151,8 @@ export default function HomePage() {
               <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn-main" style={{ background: '#53fc18', color: '#000' }}>{isEn ? 'LIVE' : 'SLEDOVAT LIVE'}</a>
               <Link href={isEn ? "/en/support" : "/support"} className="social-btn-main" style={{ background: '#eab308', color: '#000' }}>{isEn ? 'SUPPORT' : 'PODPOŘIT GURU'}</Link>
               
-              {/* 🔥 NOVÉ TLAČÍTKO NA SLEVY 🔥 */}
-              {/* GURU FIX: Změněno z "/deals" na "/cs/deals" pro obejití middleware problému */}
               <Link href={isEn ? "/en/deals" : "/cs/deals"} className="social-btn-main" style={{ background: '#f97316', color: '#fff' }}>{isEn ? '🔥 GAME DEALS' : '🔥 SLEVY NA HRY'}</Link>
               
-              {/* 📰 GOOGLE CONTRIBUTION BUTTON (Integrated into restored design) */}
               <div style={{ background: '#fff', borderRadius: '12px', padding: '0 5px', display: 'flex', alignItems: 'center', height: '48px' }}>
                 <button swg-standard-button="contribution" style={{ cursor: 'pointer' }}></button>
               </div>
@@ -155,7 +161,7 @@ export default function HomePage() {
         <div style={avatarStyles}>HG</div>
       </header>
 
-      {/* --- 🚀 MONETIZACE (HERO EDITION) --- */}
+      {/* --- MONETIZACE --- */}
       <section style={{ ...sectionStyles, display: 'flex', gap: '30px', flexWrap: 'wrap', marginTop: '-30px', marginBottom: '60px' }}>
           <Link href={isEn ? "/en/sin-slavy" : "/sin-slavy"} className="monetize-hero-card hof" style={{ flex: 1, minWidth: '300px' }}>
             <Trophy size={48} color="#a855f7" style={{ marginBottom: '15px', filter: 'drop-shadow(0 0 15px rgba(168, 85, 247, 0.6))' }} />
@@ -181,6 +187,34 @@ export default function HomePage() {
         <div style={{ textAlign: 'center', padding: '100px', color: '#a855f7', fontWeight: 'bold' }}>GURU AKTUALIZUJE SYSTÉMY...</div>
       ) : (
         <>
+          {/* --- 🚀 GURU ŽHAVÉ SLEVY (NA PRVNÍM MÍSTĚ) --- */}
+          {!loading && data.featuredDeals.length > 0 && (
+            <section style={sectionStyles}>
+                <div className="section-title-wrapper" style={{ marginBottom: '30px', borderColor: 'rgba(234, 115, 22, 0.3)', borderLeft: '4px solid #f97316' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
+                      <h2 style={{ fontSize: '28px', fontWeight: '950', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <Flame color="#f97316" fill="#f97316" /> {isEn ? 'GURU HOT DEALS' : 'GURU ŽHAVÉ SLEVY'}
+                      </h2>
+                      <Link href={isEn ? "/en/deals" : "/cs/deals"} style={{ color: '#f97316', fontWeight: 'bold', textDecoration: 'none', textTransform: 'uppercase', fontSize: '14px' }}>
+                        {isEn ? 'ALL DEALS →' : 'VŠECHNY SLEVY →'}
+                      </Link>
+                    </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                    {data.featuredDeals.map(deal => (
+                        <a key={deal.id} href={deal.affiliate_link} target="_blank" rel="nofollow sponsored" className="deal-hp-card">
+                            <img src={deal.image_url} style={{ width: '100px', height: '60px', borderRadius: '10px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} alt={deal.title} />
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: '900', fontSize: '14px', color: '#fff', textTransform: 'uppercase', marginBottom: '2px', display: '-webkit-box', WebkitLineClamp: '1', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{deal.title}</div>
+                                <div style={{ color: '#f97316', fontWeight: '950', fontSize: '16px' }}>{isEn ? deal.price_en : deal.price_cs}</div>
+                            </div>
+                            <div style={{ background: '#f97316', color: '#fff', padding: '10px 15px', borderRadius: '12px', fontWeight: '950', fontSize: '12px' }}>{isEn ? 'BUY' : 'KOUPIT'}</div>
+                        </a>
+                    ))}
+                </div>
+            </section>
+          )}
+
           {/* --- 🚀 OČEKÁVANÉ HRY --- */}
           {data.expectedGames && data.expectedGames.length > 0 && (
             <section style={{ ...sectionStyles, marginBottom: '60px' }}>
@@ -222,7 +256,7 @@ export default function HomePage() {
             </section>
           )}
 
-          {/* --- TIPY --- */}
+          {/* --- TIPY (POSUNUTÉ DOLŮ) --- */}
           <section style={sectionStyles}>
             <div className="section-title-wrapper" style={{ marginBottom: '30px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
@@ -315,7 +349,7 @@ export default function HomePage() {
   );
 }
 
-// --- GURU MASTER STYLES (NO COMPROMISE RECOVERY) ---
+// --- GURU MASTER STYLES ---
 const globalStyles = { minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#fff', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed' };
 const headerStyles = { maxWidth: '1200px', margin: '40px auto', padding: '60px 40px', background: 'rgba(31, 40, 51, 0.95)', borderRadius: '25px', border: '1px solid #45a29e', display: 'flex', alignItems: 'center', gap: '50px', flexWrap: 'wrap', boxShadow: '0 15px 45px rgba(0,0,0,0.6)' };
 const avatarStyles = { width: '160px', height: '160px', background: '#0b0c10', borderRadius: '50%', border: '5px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', color: '#45a29e', fontSize: '3.5rem', fontWeight: 'bold', boxShadow: '0 0 30px rgba(102, 252, 241, 0.4)' };
