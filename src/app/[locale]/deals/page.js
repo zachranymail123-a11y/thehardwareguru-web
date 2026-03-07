@@ -40,6 +40,10 @@ export default async function DealsPage({ params }) {
   const pageTitle = isEn ? "🔥 BEST GAME DEALS" : "🔥 HRY ZA TY NEJNIŽŠÍ CENY";
   const pageSubtitle = isEn ? "SUPPORT THE CHANNEL BY PURCHASING THROUGH THESE LINKS!" : "NÁKUPEM PŘES TYTO ODKAZY PŘÍMO PODPOŘÍŠ KANÁL!";
   const buyText = isEn ? "BUY NOW" : "KOUPIT HNED";
+  
+  // 🔥 GURU FIX: Odstraněno "NA HRK" pro maximalizaci prokliků (Curiosity Gap) 🔥
+  const ctaText = isEn ? "VIEW ALL GREAT DEALS →" : "ZOBRAZIT VŠECHNY VÝHODNÉ NABÍDKY →";
+  const hrkMainLink = "https://www.hrkgame.com/#a_aid=TheHardwareGuru";
 
   // --- GURU MASTER STYLES ---
   const globalStyles = { 
@@ -85,6 +89,16 @@ export default async function DealsPage({ params }) {
           <p style={{ color: '#eab308', fontSize: '1.2rem', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase' }}>
             {pageSubtitle}
           </p>
+          
+          {/* 🔥 GURU HLAVNÍ CTA TLAČÍTKO 🔥 */}
+          <a
+            href={hrkMainLink}
+            target="_blank"
+            rel="nofollow sponsored"
+            className="inline-block mt-8 px-8 py-3 rounded-xl font-black text-[1rem] sm:text-lg uppercase tracking-wider transition-all duration-300 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white shadow-[0_0_20px_rgba(249,115,22,0.2)] hover:shadow-[0_0_30px_rgba(249,115,22,0.5)] hover:-translate-y-1"
+          >
+            {ctaText}
+          </a>
         </div>
 
         {/* Mřížka karet her */}
