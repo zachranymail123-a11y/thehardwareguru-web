@@ -4,33 +4,27 @@ import React, { useState, useEffect } from 'react';
 import { Rocket, Send, Check, AlertCircle, ChevronRight, Flame, RefreshCw } from 'lucide-react';
 
 /**
- * GURU SUPREME EXECUTOR - PROD-READY EDITION
- * Implementace na základě analýzy Next.js build-time inlining.
+ * GURU SUPREME EXECUTOR - ULTRA-STABLE EDITION
+ * Implementace bezpečných importů pro prostředí náhledu i produkce.
  */
 
-// Pomocná funkce pro bezpečné získání parametrů v Canvasu i na Vercelu
-const useSafeParams = () => {
-  try {
-    const { useParams } = require('next/navigation');
-    return useParams() || { locale: 'cs' };
-  } catch (e) {
-    return { locale: 'cs' };
-  }
-};
+// Bezpečné získání parametrů a Supabase klienta pro prostředí, kde moduly nemusí být dostupné
+let useParams = () => ({ locale: 'cs' });
+let createClient = null;
 
-// Pomocná funkce pro bezpečný import Supabase v Canvasu
-const getSupabaseClient = (url, key) => {
-  try {
-    const { createClient } = require('@supabase/supabase-js');
-    if (!url || !key) return null;
-    return createClient(url, key);
-  } catch (e) {
-    return null;
-  }
-};
+try {
+  // Pokus o dynamické načtení modulů (řeší chybu "Could not resolve" v náhledu)
+  const nextNav = require('next/navigation');
+  if (nextNav && nextNav.useParams) useParams = nextNav.useParams;
+
+  const supabaseJs = require('@supabase/supabase-js');
+  if (supabaseJs && supabaseJs.createClient) createClient = supabaseJs.createClient;
+} catch (e) {
+  // Moduly nejsou v tomto prostředí dostupné, použijí se fallbacky
+}
 
 export default function App() {
-  const params = useSafeParams();
+  const params = useParams();
   const locale = params?.locale || 'cs';
   const isEn = locale === 'en';
 
@@ -40,90 +34,91 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState({ firing: false, success: null, error: null });
   const [supabaseClient, setSupabaseClient] = useState(null);
+  
+  // Bezpečné uložení konfigurace prostředí (řeší ReferenceError: process is not defined)
+  const [env, setEnv] = useState({ 
+    url: '', 
+    key: '', 
+    webhook: '', 
+    isLoaded: false 
+  });
 
   /**
-   * 🚀 GURU STATIC ENVIROMENT INJECTION
-   * Tady k proměnným přistupujeme naprosto doslova. 
-   * Bundler Next.js tyto řetězce při buildu nahradí skutečnými hodnotami.
-   */
-  let SUPABASE_URL = "";
-  let SUPABASE_KEY = "";
-  let WEBHOOK_URL = "";
-
-  try {
-    // DOSLOVNÝ PŘÍSTUP - Kompilátor Vercelu toto při buildu "vypálí" do JS
-    SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-    SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-    WEBHOOK_URL = process.env.NEXT_PUBLIC_MAKE_WEBHOOK2_URL || "";
-  } catch (e) {
-    // Tichý fallback pro prostředí, kde process neexistuje (např. Canvas)
-  }
-
-  const isConfigValid = Boolean(SUPABASE_URL) && Boolean(SUPABASE_KEY);
-
-  /**
-   * INICIALIZACE SYSTÉMU (Safe Client Pattern)
+   * 🚀 GURU SYSTÉMOVÝ BOOTSTRAP
+   * Načte proměnné a inicializuje klienta pouze v prohlížeči.
    */
   useEffect(() => {
-    // Diagnostický log pro tebe (uvidíš v konzoli F12 na webu)
-    console.log("Guru Env Check:", {
-      url: SUPABASE_URL ? "NALEZENO ✅" : "CHYBÍ ❌",
-      key: SUPABASE_KEY ? "NALEZENO ✅" : "CHYBÍ ❌",
-      webhook: WEBHOOK_URL ? "NALEZENO ✅" : "CHYBÍ ❌"
-    });
-
-    const initGuruSystem = async () => {
-      if (!isConfigValid) {
-        setLoading(false);
-        return;
-      }
+    const bootstrap = async () => {
+      let url = "";
+      let key = "";
+      let webhook = "";
 
       try {
-        const client = getSupabaseClient(SUPABASE_URL, SUPABASE_KEY);
-        if (!client) {
-          setLoading(false);
-          return;
-        }
-
-        setSupabaseClient(client);
-        
-        const { data, error } = await client
-          .from('game_deals')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        setDeals(data || []);
-        if (data?.length > 0) setSelectedDeal(data[0]);
-
-      } catch (err) {
-        setStatus(prev => ({ ...prev, error: isEn ? "DATABASE ERROR!" : "CHYBA DATABÁZE!" }));
-      } finally {
-        setLoading(false);
+        // Přímý přístup ošetřený pro bundler
+        url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+        key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+        webhook = process.env.NEXT_PUBLIC_MAKE_WEBHOOK2_URL || "";
+      } catch (e) {
+        console.warn("Guru Environment Warning: process.env is not accessible.");
       }
+
+      setEnv({ url, key, webhook, isLoaded: true });
+
+      if (url && key && createClient) {
+        try {
+          const client = createClient(url, key);
+          setSupabaseClient(client);
+          
+          // Načtení dat
+          const { data, error } = await client
+            .from('game_deals')
+            .select('*')
+            .order('created_at', { ascending: false });
+          
+          if (error) throw error;
+          setDeals(data || []);
+          if (data && data.length > 0) setSelectedDeal(data[0]);
+        } catch (err) {
+          console.error("Guru Boot Error:", err);
+          setStatus(prev => ({ 
+            ...prev, 
+            error: isEn ? "DATABASE CONNECTION FAILED!" : "CHYBA PŘIPOJENÍ K DATABÁZI!" 
+          }));
+        }
+      }
+      setLoading(false);
     };
 
-    initGuruSystem();
-  }, [locale, SUPABASE_URL, SUPABASE_KEY]);
+    bootstrap();
+  }, [locale]);
 
+  // Manuální obnova seznamu
   const handleRefresh = async () => {
     if (!supabaseClient) return;
     setLoading(true);
     try {
-      const { data } = await supabaseClient.from('game_deals').select('*').order('created_at', { ascending: false });
+      const { data } = await supabaseClient
+        .from('game_deals')
+        .select('*')
+        .order('created_at', { ascending: false });
       setDeals(data || []);
     } catch (e) {}
     setLoading(false);
   };
 
+  // Správa připnutí na Homepage
   const toggleFeatured = async (e, deal) => {
     e.stopPropagation();
     if (!supabaseClient) return;
     
     const featuredCount = deals.filter(d => d.is_featured).length;
     if (!deal.is_featured && featuredCount >= 3) {
-      setStatus({ firing: false, success: false, error: isEn ? "MAX 3 DEALS ON HP!" : "MAXIMÁLNĚ 3 DEALY NA HP!" });
-      setTimeout(() => setStatus(prev => ({ ...prev, error: null })), 3000);
+      setStatus({ 
+        firing: false, 
+        success: false, 
+        error: isEn ? "MAX 3 DEALS ON HOMEPAGE!" : "MAXIMÁLNĚ 3 DEALY NA HOMEPAGE!" 
+      });
+      setTimeout(() => setStatus(prev => ({ ...prev, error: null })), 4000);
       return;
     }
 
@@ -140,9 +135,10 @@ export default function App() {
     }
   };
 
+  // Odeslání dat na Make.com
   const fireToMake = async () => {
-    if (!WEBHOOK_URL) {
-      setStatus({ firing: false, success: false, error: "WEBHOOK 2 MISSING!" });
+    if (!env.webhook) {
+      setStatus({ firing: false, success: false, error: "WEBHOOK 2 URL MISSING!" });
       return;
     }
     if (!selectedDeal) return;
@@ -162,7 +158,7 @@ export default function App() {
     };
 
     try {
-      const response = await fetch(WEBHOOK_URL, {
+      const response = await fetch(env.webhook, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -172,30 +168,30 @@ export default function App() {
         setStatus({ firing: false, success: true, error: null });
         setTimeout(() => setStatus(prev => ({ ...prev, success: null })), 3000);
       } else {
-        throw new Error(`STATUS: ${response.status}`);
+        throw new Error(`MAKE STATUS: ${response.status}`);
       }
     } catch (err) {
       setStatus({ firing: false, success: false, error: err.message });
     }
   };
 
-  // --- DIAGNOSTICKÝ PANEL (Vytvořen na základě rady ChatGPT) ---
-  if (!loading && !isConfigValid) {
+  // DIAGNOSTIKA PRO PROSTŘEDÍ NÁHLEDU (Canvas)
+  if (!loading && (!createClient || (env.isLoaded && (!env.url || !env.key)))) {
     return (
       <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center p-6 text-center">
         <div className="max-w-md bg-red-950/20 border border-red-500 p-10 rounded-[40px] backdrop-blur-xl shadow-2xl">
           <AlertCircle className="text-red-500 mx-auto mb-6" size={64} />
-          <h2 className="text-2xl font-black text-white uppercase mb-4 italic tracking-tighter">Vercel Build Cache Error!</h2>
-          <p className="text-neutral-400 text-sm mb-8 leading-relaxed uppercase tracking-widest font-bold">
-            Bundler nenašel tvé proměnné. Proveď Redeploy a zvol <strong>"Build Cache: Disabled"</strong>.
+          <h2 className="text-2xl font-black text-white uppercase mb-4 italic tracking-tighter">Build Environment Alert!</h2>
+          <p className="text-neutral-400 text-sm mb-8 leading-relaxed font-bold uppercase tracking-widest">
+            Kód je připraven pro Vercel, ale v tomto náhledu chybí potřebné moduly nebo proměnné prostředí.
           </p>
           <div className="text-left bg-black/50 p-5 rounded-2xl font-mono text-[10px] space-y-3 mb-8 border border-red-900/30">
-            <div className="flex justify-between uppercase"><span>URL:</span> <span className={SUPABASE_URL ? "text-green-500" : "text-red-500"}>{SUPABASE_URL ? "OK ✅" : "MISSING ❌"}</span></div>
-            <div className="flex justify-between uppercase"><span>KEY:</span> <span className={SUPABASE_KEY ? "text-green-500" : "text-red-500"}>{SUPABASE_KEY ? "OK ✅" : "MISSING ❌"}</span></div>
-            <div className="flex justify-between uppercase"><span>WEBHOOK 2:</span> <span className={WEBHOOK_URL ? "text-green-500" : "text-red-500"}>{WEBHOOK_URL ? "OK ✅" : "MISSING ❌"}</span></div>
+            <div className="flex justify-between uppercase"><span>Lib Loaded:</span> <span className={createClient ? "text-green-500" : "text-red-500"}>{createClient ? "YES ✅" : "NO ❌"}</span></div>
+            <div className="flex justify-between uppercase"><span>URL Status:</span> <span className={env.url ? "text-green-500" : "text-red-500"}>{env.url ? "FOUND ✅" : "MISSING ❌"}</span></div>
+            <div className="flex justify-between uppercase"><span>Key Status:</span> <span className={env.key ? "text-green-500" : "text-red-500"}>{env.key ? "FOUND ✅" : "MISSING ❌"}</span></div>
           </div>
           <button onClick={() => window.location.reload()} className="w-full py-4 bg-red-600 text-white font-black rounded-xl hover:bg-red-500 transition-all uppercase text-xs tracking-widest shadow-lg shadow-red-600/30">
-            Zkusit Refreshnout Systém
+            Zkusit obnovit náhled
           </button>
         </div>
       </div>
@@ -204,7 +200,7 @@ export default function App() {
 
   if (loading) return (
     <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center">
-      <div className="text-orange-500 font-black animate-pulse tracking-[0.6em] text-2xl uppercase italic">Guru Catalyst Booting...</div>
+      <div className="text-orange-500 font-black animate-pulse tracking-[0.6em] text-2xl uppercase italic">Guru System Booting...</div>
     </div>
   );
 
@@ -220,23 +216,23 @@ export default function App() {
               Executor <span className="text-red-600 italic">Lite</span>
             </h1>
             <p className="text-neutral-500 font-black text-[11px] uppercase tracking-[0.4em] mt-3 flex items-center gap-3">
-              SYNC STATUS: 
-              <span className={`px-2 py-0.5 rounded ${WEBHOOK_URL ? 'bg-green-600/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
-                {WEBHOOK_URL ? 'READY TO FIRE' : 'WEBHOOK 2 MISSING'}
+              WEBHOOK 2: 
+              <span className={`px-2 py-0.5 rounded ${env.webhook ? 'bg-green-600/20 text-green-500' : 'bg-red-600/20 text-red-500'}`}>
+                {env.webhook ? 'CONNECTED' : 'MISSING'}
               </span>
             </p>
           </div>
           
           <button 
             onClick={fireToMake}
-            disabled={status.firing || !selectedDeal || !WEBHOOK_URL}
+            disabled={status.firing || !selectedDeal || !env.webhook}
             className={`relative z-10 px-16 py-7 rounded-2xl font-black text-xl transition-all duration-500 flex items-center gap-4 shadow-2xl ${
               status.success ? 'bg-green-600' :
               status.error ? 'bg-red-800' :
-              (!selectedDeal || !WEBHOOK_URL) ? 'bg-neutral-800 opacity-40 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 hover:scale-[1.03] active:scale-95 shadow-red-600/40'
+              (!selectedDeal || !env.webhook) ? 'bg-neutral-800 opacity-40 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 hover:scale-[1.03] active:scale-95 shadow-red-600/40'
             }`}
           >
-            {status.firing ? 'PALBA...' : status.success ? <><Check size={28} /> ZÁSAH!</> : <><Send size={28} /> STŘELIT NA MAKE</>}
+            {status.firing ? 'PALBA...' : status.success ? <><Check size={28} /> ZÁSAH!</> : <><Send size={28} /> ODESLAT NA MAKE</>}
           </button>
         </header>
 
@@ -269,7 +265,7 @@ export default function App() {
                 }`}
               >
                 <div className="flex items-center gap-10">
-                  <div className="w-24 h-24 rounded-2xl overflow-hidden border border-white/10 flex-shrink-0 bg-black shadow-inner relative group-hover:shadow-2xl transition-all duration-500">
+                  <div className="w-24 h-24 rounded-2xl overflow-hidden border border-white/10 flex-shrink-0 bg-black shadow-inner relative">
                     <img src={deal.image_url} alt="" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
                     <div className={`absolute inset-0 transition-opacity duration-500 ${selectedDeal?.id === deal.id ? 'bg-red-600/10' : 'bg-transparent'}`}></div>
                   </div>
@@ -310,7 +306,7 @@ export default function App() {
               </div>
             )) : (
               <div className="p-24 text-center border-4 border-dashed border-white/5 rounded-[60px] bg-black/40 text-neutral-700 font-black uppercase tracking-[0.6em] mb-4 text-sm italic">
-                Žádná data v databázi
+                Databáze je prázdná
               </div>
             )}
           </div>
