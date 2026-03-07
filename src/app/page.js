@@ -1,36 +1,12 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart } from 'lucide-react';
 
-// Bezpečné načítání modulů pro náhledové prostředí a prevence chyb kompilace
-let createClient = () => {
-  const chain = {
-    neq: () => chain,
-    eq: () => chain,
-    order: () => chain,
-    limit: () => Promise.resolve({ data: [] }),
-    single: () => Promise.resolve({ data: { value: 0 } })
-  };
-  return {
-    rpc: () => Promise.resolve(),
-    from: () => ({ select: () => chain })
-  };
-};
-
-let Link = ({ children, ...props }) => <a {...props}>{children}</a>;
-let usePathname = () => '';
-
-try { const mod = '@supabase/supabase-js'; createClient = require(mod).createClient; } catch (e) {}
-try { const mod = 'next/link'; Link = require(mod).default || require(mod); } catch (e) {}
-try { const mod = 'next/navigation'; usePathname = require(mod).usePathname; } catch (e) {}
-
-let supabaseUrl = '';
-let supabaseKey = '';
-try {
-  supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-} catch (e) {}
-
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function HomePage() {
