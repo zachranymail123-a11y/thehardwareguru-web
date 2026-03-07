@@ -1,9 +1,15 @@
 "use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function SupportWidget() {
   const [isOpen, setIsOpen] = useState(false);
+  
+  // 🚀 GURU JAZYKOVÁ LOGIKA
+  const pathname = usePathname() || '';
+  const isEn = pathname.startsWith('/en');
+
   const stripeLink = "https://buy.stripe.com/5kQdR900Nc115tSbTD9EI00";
   const revolutTag = "thehardwareguru";
 
@@ -34,7 +40,7 @@ export default function SupportWidget() {
             boxShadow: '0 0 15px rgba(234, 179, 8, 0.3)',
             whiteSpace: 'nowrap'
           }}>
-            Podpořit Guru ⚡
+            {isEn ? 'Support Guru ⚡' : 'Podpořit Guru ⚡'}
           </div>
         )}
 
@@ -58,22 +64,24 @@ export default function SupportWidget() {
           animation: 'fadeIn 0.3s ease',
           backdropFilter: 'blur(10px)'
         }}>
-          <h4 style={{ color: '#fff', margin: '0 0 10px 0', fontSize: '15px', fontWeight: '900', textAlign: 'center' }}>
-            KRMÍŠ TENHLE <span style={{ color: '#eab308' }}>STROJ?</span>
+          <h4 style={{ color: '#fff', margin: '0 0 10px 0', fontSize: '15px', fontWeight: '900', textAlign: 'center', textTransform: 'uppercase' }}>
+            {isEn ? 'Feeding this ' : 'Krmíš tenhle '} <span style={{ color: '#eab308' }}>{isEn ? 'machine?' : 'stroj?'}</span>
           </h4>
           
           <p style={{ color: '#9ca3af', fontSize: '11px', textAlign: 'center', marginBottom: '18px', lineHeight: '1.4' }}>
-            Tvůj příspěvek jde na fixní náklady hostingu, serverů a infrastruktury webu.
+            {isEn 
+              ? 'Your contribution covers fixed hosting, server, and infrastructure costs.' 
+              : 'Tvůj příspěvek jde na fixní náklady hostingu, serverů a infrastruktury webu.'}
           </p>
 
           {/* Tlačítko na QR platbu / Stránku Support */}
-          <Link href="/support" onClick={() => setIsOpen(false)} style={{
+          <Link href={isEn ? "/en/support" : "/support"} onClick={() => setIsOpen(false)} style={{
             display: 'block', backgroundColor: '#eab308', color: '#000',
             textAlign: 'center', padding: '14px', borderRadius: '12px',
             textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', marginBottom: '10px',
             transition: '0.2s'
           }}>
-            🤳 QR Platba / Převod (CZ)
+            🤳 {isEn ? 'QR / Bank Transfer (CZ)' : 'QR Platba / Převod (CZ)'}
           </Link>
 
           <a href={stripeLink} target="_blank" style={{
@@ -87,10 +95,20 @@ export default function SupportWidget() {
           <a href={`https://revolut.me/${revolutTag}`} target="_blank" style={{
             display: 'block', backgroundColor: '#0075eb', color: '#fff',
             textAlign: 'center', padding: '14px', borderRadius: '12px',
-            textDecoration: 'none', fontWeight: 'bold', fontSize: '14px'
+            textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', marginBottom: '10px'
           }}>
             <span style={{ background: '#fff', color: '#0075eb', width: '18px', height: '18px', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', marginRight: '6px' }}>R</span> 
             Revolut Me
+          </a>
+
+          {/* 🚀 ČTVRTÁ MOŽNOST: GURU AFFILIATE NÁKUP HRY 🚀 */}
+          <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" style={{
+            display: 'block', background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', color: '#fff',
+            textAlign: 'center', padding: '14px', borderRadius: '12px',
+            textDecoration: 'none', fontWeight: '900', fontSize: '14px',
+            boxShadow: '0 4px 15px rgba(249, 115, 22, 0.4)'
+          }}>
+            🔥 {isEn ? 'Buy a game for the best price' : 'Koupit hru za nejlepší cenu'}
           </a>
         </div>
       )}
