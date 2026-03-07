@@ -40,154 +40,226 @@ export default async function DealsPage({ params }) {
   const pageTitle = isEn ? "🔥 BEST GAME DEALS" : "🔥 HRY ZA TY NEJNIŽŠÍ CENY";
   const pageSubtitle = isEn ? "SUPPORT THE CHANNEL BY PURCHASING THROUGH THESE LINKS!" : "NÁKUPEM PŘES TYTO ODKAZY PŘÍMO PODPOŘÍŠ KANÁL!";
   const buyText = isEn ? "BUY NOW" : "KOUPIT HNED";
-  
-  // 🔥 GURU FIX: Odstraněno "NA HRK" pro maximalizaci prokliků (Curiosity Gap) 🔥
   const ctaText = isEn ? "VIEW ALL GREAT DEALS →" : "ZOBRAZIT VŠECHNY VÝHODNÉ NABÍDKY →";
   const hrkMainLink = "https://www.hrkgame.com/#a_aid=TheHardwareGuru";
 
-  // --- GURU MASTER STYLES ---
-  const globalStyles = { 
-    minHeight: '100vh', 
-    backgroundColor: '#0a0b0d', 
-    color: '#fff', 
-    backgroundImage: 'url("/bg-guru.png")', 
-    backgroundSize: 'cover', 
-    backgroundAttachment: 'fixed',
-    paddingTop: '120px', // Odsazení pro Navbar
-    paddingBottom: '80px'
-  };
-  
-  const headerCardStyles = { 
-    background: 'rgba(31, 40, 51, 0.95)', 
-    padding: '50px 40px', 
-    borderRadius: '25px', 
-    border: '1px solid #eab308', 
-    boxShadow: '0 15px 45px rgba(0,0,0,0.6)', 
-    textAlign: 'center', 
-    marginBottom: '60px' 
-  };
-  
-  const titleStyles = { 
-    color: '#fff', 
-    fontSize: '3.5rem', 
-    margin: '0 0 15px 0', 
-    textTransform: 'uppercase', 
-    fontWeight: '900', 
-    lineHeight: '1.1', 
-    textShadow: '0 0 15px rgba(234, 179, 8, 0.5)' 
-  };
-
   return (
-    <div style={globalStyles}>
+    <div style={{ 
+      minHeight: '100vh', 
+      backgroundColor: '#0a0b0d', 
+      backgroundImage: 'url("/bg-guru.png")', 
+      backgroundSize: 'cover', 
+      backgroundAttachment: 'fixed',
+      paddingTop: '140px',
+      paddingBottom: '100px',
+      color: '#fff'
+    }}>
       
-      {/* 🚀 NEPRŮSTŘELNÝ GURU STYL PRO CTA TLAČÍTKO 🚀 */}
+      {/* 🚀 GURU SUPREME CSS OVERRIDE (FORCE STYLE) 🚀 */}
       <style>{`
-        .guru-cta-button {
+        .guru-deals-wrapper a {
+          text-decoration: none !important;
+          color: inherit !important;
+        }
+        .guru-deals-wrapper h1, .guru-deals-wrapper h2, .guru-deals-wrapper h3 {
+          text-decoration: none !important;
+          color: #fff !important;
+        }
+        
+        .guru-header-card {
+          background: rgba(31, 40, 51, 0.95);
+          padding: 60px 40px;
+          border-radius: 30px;
+          border: 1px solid #eab308;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+          text-align: center;
+          max-width: 1200px;
+          margin: 0 auto 80px auto;
+          backdrop-filter: blur(10px);
+        }
+
+        .guru-main-cta {
           display: inline-block;
-          margin-top: 30px;
-          padding: 18px 45px;
+          margin-top: 35px;
+          padding: 20px 50px;
           background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
           color: #ffffff !important;
           font-weight: 900;
+          font-size: 1.3rem;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          border-radius: 20px;
+          box-shadow: 0 10px 40px rgba(249, 115, 22, 0.5);
+          border: 2px solid rgba(255, 255, 255, 0.2);
+          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .guru-main-cta:hover {
+          transform: translateY(-5px) scale(1.03);
+          box-shadow: 0 20px 50px rgba(249, 115, 22, 0.7);
+          border-color: #fff;
+        }
+
+        .deals-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 35px;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+
+        .guru-card {
+          background: rgba(17, 19, 24, 0.9);
+          border: 1px solid rgba(234, 179, 8, 0.3);
+          border-radius: 25px;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          transition: all 0.4s ease;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .guru-card:hover {
+          transform: translateY(-10px);
+          border-color: #eab308;
+          box-shadow: 0 20px 45px rgba(234, 179, 8, 0.25);
+        }
+
+        .guru-card-img-container {
+          position: relative;
+          height: 200px;
+          width: 100%;
+          background: #000;
+          overflow: hidden;
+        }
+        .guru-card-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.6s ease;
+        }
+        .guru-card:hover .guru-card-img {
+          transform: scale(1.1);
+        }
+
+        .guru-card-badge {
+          position: absolute;
+          top: 15px;
+          right: 15px;
+          background: #ea580c;
+          color: #fff !important;
+          padding: 8px 16px;
+          border-radius: 12px;
+          font-weight: 950;
           font-size: 1.2rem;
+          box-shadow: 0 5px 15px rgba(234,88,12,0.6);
+          z-index: 10;
+        }
+
+        .guru-card-body {
+          padding: 25px;
+          flex-grow: 1;
+          display: flex;
+          flex-direction: column;
+        }
+        .guru-card-title {
+          font-size: 24px;
+          font-weight: 900;
+          color: #fff !important;
+          margin-bottom: 12px;
+          line-height: 1.1;
+          text-transform: uppercase;
+        }
+        .guru-card-desc {
+          color: #9ca3af !important;
+          font-size: 14px;
+          line-height: 1.6;
+          margin-bottom: 25px;
+          flex-grow: 1;
+        }
+        .guru-card-btn {
+          background: #eab308;
+          color: #000 !important;
+          text-align: center;
+          padding: 16px;
+          border-radius: 15px;
+          font-weight: 950;
           text-transform: uppercase;
           letter-spacing: 1px;
-          border-radius: 16px;
-          text-decoration: none !important;
-          box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4);
-          border: 2px solid rgba(255, 255, 255, 0.1);
-          transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          font-size: 14px;
+          transition: background 0.3s;
         }
-        .guru-cta-button:hover {
-          transform: translateY(-5px) scale(1.02);
-          box-shadow: 0 15px 40px rgba(249, 115, 22, 0.6);
-          border-color: #fbd38d;
-          color: #ffffff !important;
+        .guru-card:hover .guru-card-btn {
+          background: #facc15;
+        }
+
+        .guru-empty-state {
+          grid-column: 1 / -1;
+          background: rgba(31, 40, 51, 0.95);
+          padding: 80px 20px;
+          border-radius: 30px;
+          border: 1px solid #a855f7;
+          text-align: center;
+          box-shadow: 0 0 40px rgba(168, 85, 247, 0.2);
         }
       `}</style>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="guru-deals-wrapper" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
         
-        {/* Hlavička stránky - GURU STYLE */}
-        <div style={headerCardStyles}>
-          <h1 style={titleStyles}>
+        {/* HLAVIČKA - GURU STYLE */}
+        <div className="guru-header-card">
+          <h1 style={{ 
+            fontSize: 'clamp(2.5rem, 8vw, 4rem)', 
+            fontWeight: '950', 
+            textShadow: '0 0 20px rgba(234, 179, 8, 0.6)',
+            marginBottom: '10px'
+          }}>
             {pageTitle}
           </h1>
-          <p style={{ color: '#eab308', fontSize: '1.2rem', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase' }}>
+          <p style={{ color: '#eab308', fontWeight: '900', letterSpacing: '2px', fontSize: '1.1rem' }}>
             {pageSubtitle}
           </p>
           
-          {/* 🔥 GURU HLAVNÍ CTA TLAČÍTKO 🔥 */}
-          <a
-            href={hrkMainLink}
-            target="_blank"
-            rel="nofollow sponsored"
-            className="guru-cta-button"
-          >
+          <a href={hrkMainLink} target="_blank" rel="nofollow sponsored" className="guru-main-cta">
             {ctaText}
           </a>
         </div>
 
-        {/* Mřížka karet her */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        {/* MŘÍŽKA KARET */}
+        <div className="deals-grid">
           {deals && deals.map((deal) => (
-            /* CELÁ KARTA JE ODKAZ NA HRK (DeepLink) */
-            <a 
-              key={deal.id}
-              href={deal.affiliate_link}
-              target="_blank"
-              rel="nofollow sponsored"
-              className="group block rounded-2xl overflow-hidden transition-all duration-300 transform hover:-translate-y-2 flex flex-col h-full cursor-pointer"
-              style={{ background: 'rgba(17, 19, 24, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(234, 179, 8, 0.3)', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
-            >
-              {/* Obrázek hry */}
-              <div className="relative h-48 w-full overflow-hidden bg-neutral-800 border-b border-neutral-800 transition-colors" style={{ borderBottomColor: 'rgba(234, 179, 8, 0.3)' }}>
+            <a key={deal.id} href={deal.affiliate_link} target="_blank" rel="nofollow sponsored" className="guru-card">
+              <div className="guru-card-img-container">
                 {deal.image_url ? (
-                  <img 
-                    src={deal.image_url} 
-                    alt={deal.title} 
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
+                  <img src={deal.image_url} alt={deal.title} className="guru-card-img" />
                 ) : (
-                  <div className="flex items-center justify-center w-full h-full text-neutral-600 font-bold uppercase tracking-wider">
-                    No Image
-                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#444', fontWeight: '900' }}>NO IMAGE</div>
                 )}
-                {/* Cenovka plovoucí přes obrázek */}
-                <div className="absolute top-4 right-4 bg-orange-600 text-white px-4 py-2 rounded-lg font-black text-lg shadow-[0_0_15px_rgba(234,88,12,0.6)]">
+                <div className="guru-card-badge">
                   {isEn ? deal.price_en : deal.price_cs}
                 </div>
               </div>
 
-              {/* Obsah karty */}
-              <div className="p-6 flex flex-col flex-grow">
-                <h2 className="text-2xl font-black text-white mb-3 line-clamp-2" style={{ letterSpacing: '0.5px' }}>
-                  {deal.title}
-                </h2>
-                
-                <p className="text-neutral-400 text-sm mb-6 flex-grow line-clamp-3">
+              <div className="guru-card-body">
+                <h2 className="guru-card-title">{deal.title}</h2>
+                <p className="guru-card-desc">
                   {isEn ? deal.description_en : deal.description_cs}
                 </p>
-
-                {/* Tlačítko pro vizuální efekt dole na kartě */}
-                <div className="w-full py-3 px-4 text-white font-black text-center rounded-xl transition-all duration-300 shadow-inner" style={{ background: '#eab308', color: '#000', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                <div className="guru-card-btn">
                   {buyText}
                 </div>
               </div>
             </a>
           ))}
           
-          {/* Hláška, když nejsou žádné hry - GURU STYLE */}
+          {/* PRÁZDNÝ STAV */}
           {(!deals || deals.length === 0) && (
-            <div className="col-span-full">
-               <div style={{ background: 'rgba(31, 40, 51, 0.95)', padding: '60px 20px', borderRadius: '25px', border: '1px solid #a855f7', textAlign: 'center', boxShadow: '0 0 30px rgba(168, 85, 247, 0.2)' }}>
-                  <h3 style={{ color: '#a855f7', fontSize: '1.5rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>
-                    {isEn ? "GURU SYSTEMS ARE SCANNING FOR NEW DEALS..." : "GURU SYSTÉMY SKENUJÍ NOVÉ SLEVY..."}
-                  </h3>
-                  <p style={{ color: '#9ca3af', marginTop: '15px', fontSize: '1.1rem' }}>
-                    {isEn ? "No deals available at the moment. Check back later!" : "Momentálně zde nejsou žádné slevy. Zkus to později!"}
-                  </p>
-               </div>
+            <div className="guru-empty-state">
+              <h3 style={{ color: '#a855f7', fontSize: '1.8rem', fontWeight: '950', marginBottom: '15px' }}>
+                {isEn ? "GURU SYSTEMS SCANNING FOR DEALS..." : "GURU SYSTÉMY SKENUJÍ NOVÉ SLEVY..."}
+              </h3>
+              <p style={{ color: '#9ca3af', fontSize: '1.1rem' }}>
+                {isEn ? "No deals available right now. Check back later!" : "Momentálně zde nejsou žádné slevy. Zkus to později!"}
+              </p>
             </div>
           )}
         </div>
