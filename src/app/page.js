@@ -57,7 +57,7 @@ export default function HomePage() {
           supabase.from('darci').select('*').order('amount', { ascending: false }).limit(20),
           supabase.from('partneri').select('*').order('created_at', { ascending: false }).limit(4),
           supabase.from('posts').select('*').eq('type', 'expected').order('created_at', { ascending: false }).limit(3),
-          // 🚀 GURU QUERY: Načtení max 3 připnutých slev pro homepage
+          // 🚀 GURU QUERY: Načtení slev označených v Executoru jako "Featured" (Plamen)
           supabase.from('game_deals').select('*').eq('is_featured', true).limit(3)
         ]);
         setData({ 
@@ -215,7 +215,7 @@ export default function HomePage() {
             </section>
           )}
 
-          {/* --- 🚀 OČEKÁVANÉ HRY --- */}
+          {/* --- 🚀 OČEKÁVANÉ HRY (POSUNUTO O JEDNO DOLŮ) --- */}
           {data.expectedGames && data.expectedGames.length > 0 && (
             <section style={{ ...sectionStyles, marginBottom: '60px' }}>
               <div className="section-title-wrapper" style={{ marginBottom: '30px', borderColor: 'rgba(102, 252, 241, 0.2)' }}>
@@ -256,7 +256,7 @@ export default function HomePage() {
             </section>
           )}
 
-          {/* --- TIPY (POSUNUTÉ DOLŮ) --- */}
+          {/* --- TIPY (POSUNUTÉ O DALŠÍ ÚROVEŇ DOLŮ) --- */}
           <section style={sectionStyles}>
             <div className="section-title-wrapper" style={{ marginBottom: '30px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
