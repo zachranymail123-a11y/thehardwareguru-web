@@ -41,34 +41,43 @@ export default function SupportPage() {
   };
 
   const cardStyle = {
-    background: 'rgba(17, 19, 24, 0.9)',
-    backdropFilter: 'blur(10px)',
-    border: '1px solid #3b0764',
-    borderRadius: '24px',
+    background: 'rgba(17, 19, 24, 0.95)',
+    backdropFilter: 'blur(15px)',
+    border: '1px solid rgba(168, 85, 247, 0.2)',
+    borderRadius: '32px',
     padding: '40px',
-    maxWidth: '500px',
+    maxWidth: '520px',
     width: '100%',
-    boxShadow: '0 0 50px rgba(168, 85, 247, 0.2)',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
     textAlign: 'center'
   };
 
+  // 🚀 GURU UNIFIED BUTTON SYSTEM
   const buttonStyle = (type) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '12px',
-    padding: '16px',
-    borderRadius: '16px',
+    gap: '14px',
+    padding: '18px 24px',
+    borderRadius: '18px',
     textDecoration: 'none',
-    fontWeight: 'bold',
-    fontSize: '16px',
-    transition: '0.3s',
-    marginBottom: '10px',
-    // Logika barvy podle typu tlačítka
-    backgroundColor: type === 'revolut' ? '#0075eb' : type === 'affiliate' ? 'transparent' : '#ffffff',
+    fontWeight: '900',
+    fontSize: '15px',
+    transition: '0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+    marginBottom: '12px',
+    width: '100%',
+    boxSizing: 'border-box',
+    border: '1px solid rgba(255, 255, 255, 0.05)',
+    cursor: 'pointer',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    // Barevná logika pro maximální vizuální sílu
+    backgroundColor: type === 'affiliate' ? 'transparent' : '#161920',
     background: type === 'affiliate' ? 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' : undefined,
-    color: type === 'revolut' ? '#ffffff' : type === 'affiliate' ? '#ffffff' : '#000000',
-    boxShadow: type === 'affiliate' ? '0 4px 15px rgba(249, 115, 22, 0.4)' : 'none',
+    color: '#ffffff',
+    boxShadow: type === 'affiliate' 
+      ? '0 10px 25px rgba(249, 115, 22, 0.4)' 
+      : '0 8px 20px rgba(0,0,0,0.4)',
   });
 
   return (
@@ -90,19 +99,25 @@ export default function SupportPage() {
       </div>
 
       <div style={cardStyle}>
+        <style>{`
+          .guru-btn-hover:hover { transform: translateY(-3px) scale(1.02); filter: brightness(1.1); border-color: rgba(234, 179, 8, 0.4); }
+          /* Úprava pro Google tlačítko aby zmizelo pozadí iframe */
+          button[swg-standard-button] { width: 100% !important; }
+        `}</style>
+
         {/* QR KÓD SEKCE */}
         <div style={{ marginBottom: '35px' }}>
-          <h3 style={{ color: '#eab308', marginBottom: '15px', fontSize: '18px', fontWeight: 'bold' }}>
+          <h3 style={{ color: '#eab308', marginBottom: '18px', fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' }}>
             {isEn ? "Quick QR payment (CZ)" : "Rychlá QR platba (CZ)"}
           </h3>
-          <div style={{ background: '#fff', padding: '15px', borderRadius: '16px', display: 'inline-block', marginBottom: '10px' }}>
+          <div style={{ background: '#fff', padding: '15px', borderRadius: '24px', display: 'inline-block', marginBottom: '12px', boxShadow: '0 0 30px rgba(255,255,255,0.1)' }}>
             <img 
               src="/qr-platba.png" 
               alt="QR Platba" 
               style={{ width: '220px', height: '220px', display: 'block' }} 
             />
           </div>
-          <p style={{ fontSize: '12px', color: '#9ca3af' }}>{isEn ? "Account number:" : "Číslo účtu:"} 1269059093/0800</p>
+          <p style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 'bold' }}>{isEn ? "Account number:" : "Číslo účtu:"} 1269059093/0800</p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', opacity: '0.2' }}>
@@ -111,27 +126,30 @@ export default function SupportPage() {
           <div style={{ height: '1px', flex: 1, backgroundColor: '#ffffff' }}></div>
         </div>
 
-        {/* 🚀 GURU FIX: NATIVNÍ GOOGLE SUBSCRIBE TLAČÍTKO 🚀 */}
-        <div style={{ marginBottom: '10px' }}>
-          <div style={{ background: '#fff', borderRadius: '16px', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '56px', width: '100%' }}>
-            <button swg-standard-button="contribution" style={{ cursor: 'pointer', border: 'none', background: 'transparent' }}></button>
+        {/* 🚀 1. MOŽNOST: GOOGLE SUBSCRIBE 🚀 */}
+        <div style={{ marginBottom: '12px' }}>
+          <div className="guru-btn-hover" style={buttonStyle('google')}>
+            {/* Obal pro Google skript, který zachovává Guru styl */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: '24px' }}>
+               <button swg-standard-button="contribution" style={{ cursor: 'pointer', border: 'none', background: 'transparent' }}></button>
+            </div>
           </div>
         </div>
 
-        {/* STRIPE / KARTA */}
-        <div style={{ marginBottom: '10px' }}>
-          <a href={stripeLink} target="_blank" rel="noreferrer" style={buttonStyle('stripe')}>
-            <span>💳</span> {isEn ? "Credit Card / Apple / Google Pay" : "Karta / Apple / Google Pay"}
+        {/* 🚀 2. MOŽNOST: STRIPE / KARTA 🚀 */}
+        <div style={{ marginBottom: '12px' }}>
+          <a href={stripeLink} target="_blank" rel="noreferrer" className="guru-btn-hover" style={buttonStyle('stripe')}>
+            <span style={{ fontSize: '20px' }}>💳</span> {isEn ? "Credit Card / Apple / Google Pay" : "Karta / Apple / Google Pay"}
           </a>
         </div>
 
-        {/* REVOLUT */}
+        {/* 🚀 3. MOŽNOST: REVOLUT 🚀 */}
         <div style={{ marginBottom: '25px' }}>
-          <a href={`https://revolut.me/${revolutTag}`} target="_blank" rel="noreferrer" style={buttonStyle('revolut')}>
-            <span style={{ background: '#fff', color: '#0075eb', width: '20px', height: '20px', borderRadius: '50%', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>R</span> 
+          <a href={`https://revolut.me/${revolutTag}`} target="_blank" rel="noreferrer" className="guru-btn-hover" style={buttonStyle('revolut')}>
+            <span style={{ background: '#fff', color: '#0075eb', width: '22px', height: '22px', borderRadius: '50%', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'black' }}>R</span> 
             Revolut.me
           </a>
-          <p style={{ fontSize: '12px', color: '#60a5fa', marginTop: '10px' }}>@{revolutTag}</p>
+          <p style={{ fontSize: '11px', color: '#60a5fa', marginTop: '10px', fontWeight: '900', letterSpacing: '1px' }}>@{revolutTag}</p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', opacity: '0.2' }}>
@@ -140,12 +158,10 @@ export default function SupportPage() {
           <div style={{ height: '1px', flex: 1, backgroundColor: '#ffffff' }}></div>
         </div>
 
-        {/* 🚀 ČTVRTÁ MOŽNOST: GURU AFFILIATE NÁKUP HRY 🚀 */}
+        {/* 🚀 4. MOŽNOST: GURU AFFILIATE NÁKUP HRY 🚀 */}
         <div>
-          <a href={hrkLink} target="_blank" rel="nofollow sponsored" style={buttonStyle('affiliate')}
-             onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.filter = 'brightness(1.1)'; }}
-             onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.filter = 'brightness(1)'; }}>
-            🔥 {isEn ? "Buy a game for the best price" : "Koupit hru za nejlepší cenu"}
+          <a href={hrkLink} target="_blank" rel="nofollow sponsored" className="guru-btn-hover" style={buttonStyle('affiliate')}>
+            <span style={{ fontSize: '20px' }}>🔥</span> {isEn ? "Buy a game for the best price" : "Koupit hru za nejlepší cenu"}
           </a>
         </div>
 
