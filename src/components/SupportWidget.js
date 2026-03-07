@@ -15,6 +15,7 @@ try {
  * GURU SUPREME SUPPORT WIDGET
  * Kompletně sjednocený design všech tlačítek, integrace Google Subscribe a plná CZ/EN podpora.
  * Přesně podle tvého zadání: QR, Karta, Revolut + Google + Affiliate Link.
+ * 🔥 UPDATE: Aplikována plná mobilní responzivita 🔥
  */
 export default function SupportWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -60,7 +61,7 @@ export default function SupportWidget() {
   });
 
   return (
-    <div style={{ position: 'fixed', bottom: '110px', right: '20px', zIndex: 9999, fontFamily: 'sans-serif' }}>
+    <div className="guru-support-container" style={{ position: 'fixed', zIndex: 99999, fontFamily: 'sans-serif' }}>
       
       {/* --- Hlavní klikací plocha (Raketka) --- */}
       <button 
@@ -75,7 +76,7 @@ export default function SupportWidget() {
         {!isOpen && (
           <div className="support-label" style={{
             color: '#fff', background: 'rgba(234, 179, 8, 0.1)', border: '2px solid #eab308',
-            padding: '10px 16px', borderRadius: '12px', fontWeight: '900', fontSize: '13px',
+            borderRadius: '12px', fontWeight: '900',
             letterSpacing: '1px', textTransform: 'uppercase', boxShadow: '0 0 15px rgba(234, 179, 8, 0.3)',
             whiteSpace: 'nowrap'
           }}>
@@ -83,11 +84,11 @@ export default function SupportWidget() {
           </div>
         )}
 
-        <div style={{
-          width: '55px', height: '55px', borderRadius: '50%',
+        <div className="rocket-icon" style={{
+          borderRadius: '50%',
           background: 'linear-gradient(45deg, #eab308, #ca8a04)',
           boxShadow: '0 0 25px rgba(234, 179, 8, 0.5)',
-          fontSize: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff'
+          display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff'
         }}>
           {isOpen ? '✕' : '🚀'}
         </div>
@@ -95,13 +96,13 @@ export default function SupportWidget() {
 
       {/* --- Menu podpory --- */}
       {isOpen && (
-        <div style={{
-          position: 'absolute', bottom: '70px', right: '0',
-          width: '300px', backgroundColor: 'rgba(17, 19, 24, 0.98)', border: '2px solid #eab308',
-          borderRadius: '24px', padding: '24px', boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
+        <div className="guru-support-menu" style={{
+          position: 'absolute', right: '0',
+          backgroundColor: 'rgba(17, 19, 24, 0.98)', border: '2px solid #eab308',
+          borderRadius: '24px', boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
           animation: 'fadeIn 0.3s ease', backdropFilter: 'blur(15px)'
         }}>
-          <h4 style={{ color: '#fff', margin: '0 0 12px 0', fontSize: '15px', fontWeight: '900', textAlign: 'center', textTransform: 'uppercase' }}>
+          <h4 style={{ color: '#fff', margin: '0 0 12px 0', fontWeight: '900', textAlign: 'center', textTransform: 'uppercase' }}>
             {isEn ? 'Feeding this ' : 'Krmíš tenhle '} <span style={{ color: '#eab308' }}>{isEn ? 'machine?' : 'stroj?'}</span>
           </h4>
           
@@ -153,8 +154,30 @@ export default function SupportWidget() {
         </div>
       )}
 
-      {/* --- Styl animací --- */}
+      {/* --- Styl animací a MOBILNÍ OPTIMALIZACE --- */}
       <style dangerouslySetInnerHTML={{ __html: `
+        /* Desktop Default */
+        .guru-support-container { bottom: 110px; right: 20px; }
+        .rocket-icon { width: 55px; height: 55px; font-size: 26px; }
+        .support-label { padding: 10px 16px; font-size: 13px; }
+        .guru-support-menu { bottom: 70px; width: 300px; padding: 24px; }
+        .guru-support-menu h4 { font-size: 15px; }
+
+        /* 🔥 MOBILE OPTIMIZATION 🔥 */
+        @media (max-width: 768px) {
+          .guru-support-container { bottom: 20px; right: 15px; } /* Uhne z cesty popupům ve středu */
+          .rocket-icon { width: 48px; height: 48px; font-size: 22px; } /* Zmenšená raketka */
+          .support-label { padding: 8px 12px; font-size: 11px; } /* Zmenšený štítek */
+          .guru-support-menu { 
+            bottom: 60px; 
+            width: calc(100vw - 30px); /* Skoro celá šířka obrazovky */
+            max-width: 320px;
+            right: 0;
+            padding: 20px 15px;
+          }
+          .guru-support-menu h4 { font-size: 14px; }
+        }
+
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
