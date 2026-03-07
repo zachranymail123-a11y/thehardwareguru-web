@@ -52,7 +52,7 @@ export default function SupportPage() {
     textAlign: 'center'
   };
 
-  // 🚀 GURU UNIFIED BUTTON SYSTEM
+  // 🚀 GURU UNIFIED BUTTON SYSTEM - MAXIMUM CONSISTENCY
   const buttonStyle = (type) => ({
     display: 'flex',
     alignItems: 'center',
@@ -71,7 +71,7 @@ export default function SupportPage() {
     cursor: 'pointer',
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
-    // Barevná logika pro maximální vizuální sílu
+    // Všechna tlačítka mají stejné tmavé pozadí, kromě oranžového affiliate magnetu
     backgroundColor: type === 'affiliate' ? 'transparent' : '#161920',
     background: type === 'affiliate' ? 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' : undefined,
     color: '#ffffff',
@@ -101,8 +101,8 @@ export default function SupportPage() {
       <div style={cardStyle}>
         <style>{`
           .guru-btn-hover:hover { transform: translateY(-3px) scale(1.02); filter: brightness(1.1); border-color: rgba(234, 179, 8, 0.4); }
-          /* Úprava pro Google tlačítko aby zmizelo pozadí iframe */
-          button[swg-standard-button] { width: 100% !important; }
+          /* Zajištění viditelnosti Google tlačítka a sjednocení vzhledu */
+          button[swg-standard-button] { width: 100% !important; height: auto !important; min-height: 24px; }
         `}</style>
 
         {/* QR KÓD SEKCE */}
@@ -126,24 +126,23 @@ export default function SupportPage() {
           <div style={{ height: '1px', flex: 1, backgroundColor: '#ffffff' }}></div>
         </div>
 
-        {/* 🚀 1. MOŽNOST: GOOGLE SUBSCRIBE 🚀 */}
+        {/* 🚀 1. MOŽNOST: GOOGLE SUBSCRIBE (Opravený kontejner) 🚀 */}
         <div style={{ marginBottom: '12px' }}>
           <div className="guru-btn-hover" style={buttonStyle('google')}>
-            {/* Obal pro Google skript, který zachovává Guru styl */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: '24px' }}>
                <button swg-standard-button="contribution" style={{ cursor: 'pointer', border: 'none', background: 'transparent' }}></button>
             </div>
           </div>
         </div>
 
-        {/* 🚀 2. MOŽNOST: STRIPE / KARTA 🚀 */}
+        {/* 🚀 2. MOŽNOST: STRIPE / KARTA (Sjednocený design) 🚀 */}
         <div style={{ marginBottom: '12px' }}>
           <a href={stripeLink} target="_blank" rel="noreferrer" className="guru-btn-hover" style={buttonStyle('stripe')}>
             <span style={{ fontSize: '20px' }}>💳</span> {isEn ? "Credit Card / Apple / Google Pay" : "Karta / Apple / Google Pay"}
           </a>
         </div>
 
-        {/* 🚀 3. MOŽNOST: REVOLUT 🚀 */}
+        {/* 🚀 3. MOŽNOST: REVOLUT (Sjednocený design) 🚀 */}
         <div style={{ marginBottom: '25px' }}>
           <a href={`https://revolut.me/${revolutTag}`} target="_blank" rel="noreferrer" className="guru-btn-hover" style={buttonStyle('revolut')}>
             <span style={{ background: '#fff', color: '#0075eb', width: '22px', height: '22px', borderRadius: '50%', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'black' }}>R</span> 
@@ -158,7 +157,7 @@ export default function SupportPage() {
           <div style={{ height: '1px', flex: 1, backgroundColor: '#ffffff' }}></div>
         </div>
 
-        {/* 🚀 4. MOŽNOST: GURU AFFILIATE NÁKUP HRY 🚀 */}
+        {/* 🚀 4. MOŽNOST: GURU AFFILIATE NÁKUP HRY (Zachovaný oranžový styl) 🚀 */}
         <div>
           <a href={hrkLink} target="_blank" rel="nofollow sponsored" className="guru-btn-hover" style={buttonStyle('affiliate')}>
             <span style={{ fontSize: '20px' }}>🔥</span> {isEn ? "Buy a game for the best price" : "Koupit hru za nejlepší cenu"}
