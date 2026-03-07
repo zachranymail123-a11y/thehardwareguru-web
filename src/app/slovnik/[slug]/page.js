@@ -53,7 +53,12 @@ export default async function SlovnikDetail({ params }) {
   // 2. GURU JAZYKOVÁ LOGIKA A FAILSAFES (Ošetření proti null)
   const isEn = term.slug_en === slug && slug !== term.slug;
   const title = isEn && term.title_en ? term.title_en : (term.title || 'Neznámý pojem');
-  const content = isEn && term.content_en ? term.content_en : (term.content || '');
+  
+  // 🚀 GURU FIX: Tabulka slovnik používá 'description', nikoliv 'content'
+  const content = isEn 
+    ? (term.content_en || term.description_en || term.description || '') 
+    : (term.content || term.description || '');
+
   const priceDisplay = isEn ? (term.price_en || '') : (term.price_cs || '');
   const buyBtnText = isEn 
     ? `BUY FOR BEST PRICE ${priceDisplay ? `(${priceDisplay})` : ''}` 
