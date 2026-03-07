@@ -16,7 +16,7 @@ export default function HomePage() {
     nejnovejsiTipy: [], 
     nejnovejsiTweaky: [], 
     expectedGames: [], 
-    featuredDeals: [], // 🚀 GURU DATA: Přidáno pro Slevy na hry
+    featuredDeals: [], // 🚀 GURU DATA: Slevy na hry
     darci: [],
     partneri: [],
     stats: { value: 0 } 
@@ -57,8 +57,8 @@ export default function HomePage() {
           supabase.from('darci').select('*').order('amount', { ascending: false }).limit(20),
           supabase.from('partneri').select('*').order('created_at', { ascending: false }).limit(4),
           supabase.from('posts').select('*').eq('type', 'expected').order('created_at', { ascending: false }).limit(3),
-          // 🚀 GURU QUERY: Načtení slev označených v Executoru jako "Featured" (Plamen)
-          supabase.from('game_deals').select('*').eq('is_featured', true).limit(3)
+          // 🚀 GURU FIX: Načítáme nejnovější slevy (včetně tvého Resident Evilu)
+          supabase.from('game_deals').select('*').order('created_at', { ascending: false }).limit(3)
         ]);
         setData({ 
           posts: p.data || [], 
@@ -187,7 +187,7 @@ export default function HomePage() {
         <div style={{ textAlign: 'center', padding: '100px', color: '#a855f7', fontWeight: 'bold' }}>GURU AKTUALIZUJE SYSTÉMY...</div>
       ) : (
         <>
-          {/* --- 🚀 GURU ŽHAVÉ SLEVY (NA PRVNÍM MÍSTĚ) --- */}
+          {/* --- 🚀 GURU ŽHAVÉ SLEVY (NA PRVNÍM MÍSTĚ OBSAHU) --- */}
           {!loading && data.featuredDeals.length > 0 && (
             <section style={sectionStyles}>
                 <div className="section-title-wrapper" style={{ marginBottom: '30px', borderColor: 'rgba(234, 115, 22, 0.3)', borderLeft: '4px solid #f97316' }}>
