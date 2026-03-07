@@ -28,9 +28,10 @@ export default function SestavyBubble() {
   
   const activePath = pathname || currentPath;
   const isEn = activePath.startsWith('/en');
+  
+  // 🛡️ GURU SHIELD: Pokud jsme v administraci (/admin), bublina se nikdy neukáže
   const isAdmin = activePath.includes('/admin');
 
-  // Pokud není bublina viditelná, NEBO se nacházíme v administraci, nic nevykresluj
   if (!isVisible || isAdmin) return null;
 
   return (
@@ -41,22 +42,20 @@ export default function SestavyBubble() {
           to { transform: translateY(0); opacity: 1; }
         }
         
-        /* Desktop Default */
         .guru-bubble-container {
           position: fixed;
           bottom: 30px;
           left: 30px;
-          z-index: 998; /* Nižší než support widget, aby se nepraly, ale nad obsahem */
+          z-index: 998;
           max-width: 320px;
           animation: guruSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        /* 🔥 MOBILE OPTIMIZATION 🔥 */
         @media (max-width: 768px) {
           .guru-bubble-container {
-            bottom: 90px; /* Posuneme výš, aby bublina nepřekážela raketce SupportWidgetu dole vpravo */
+            bottom: 90px;
             left: 15px;
-            right: 15px; /* Roztáhne se s okrajem */
+            right: 15px;
             max-width: calc(100vw - 30px);
           }
         }
