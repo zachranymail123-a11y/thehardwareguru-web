@@ -24,10 +24,32 @@ export const metadata = {
 
 export default function RootLayout({ children, params }) {
   // GURU JAZYKOVÁ LOGIKA: Zajištění správného locale pro HTML tag a skripty
-  const locale = params?.lang || 'cs';
+  // Používáme locale z params (standard Next.js) s fallbackem na lang z tvého snippetu
+  const locale = params?.locale || params?.lang || 'cs';
+
+  // 🚀 GURU NUCLEAR INJECTION: Načtení proměnných na straně serveru (SSR)
+  const envVars = {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+    NEXT_PUBLIC_MAKE_WEBHOOK2_URL: process.env.NEXT_PUBLIC_MAKE_WEBHOOK2_URL || ""
+  };
 
   return (
     <html lang={locale}>
+      <head>
+        {/* 🛡️ GURU FAILSAFE: Injektujeme proměnné přímo do window objektu před hydratací Reactu */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.__ENV__ = {
+                NEXT_PUBLIC_SUPABASE_URL: "${envVars.NEXT_PUBLIC_SUPABASE_URL}",
+                NEXT_PUBLIC_SUPABASE_ANON_KEY: "${envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY}",
+                NEXT_PUBLIC_MAKE_WEBHOOK2_URL: "${envVars.NEXT_PUBLIC_MAKE_WEBHOOK2_URL}"
+              };
+            `
+          }}
+        />
+      </head>
       <body style={{ 
         margin: 0, 
         padding: 0, 
