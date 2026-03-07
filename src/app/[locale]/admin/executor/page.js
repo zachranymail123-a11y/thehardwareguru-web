@@ -4,23 +4,24 @@ import React, { useState, useEffect } from 'react';
 import { Rocket, Send, Check, AlertCircle, ChevronRight, Flame, RefreshCw } from 'lucide-react';
 
 /**
- * GURU SUPREME EXECUTOR - ULTRA-STABLE EDITION
- * Implementace bezpečných importů pro prostředí náhledu i produkce.
+ * GURU SUPREME EXECUTOR - NUCLEAR FAILSAFE EDITION
+ * Tato verze používá "Runtime Fallback" přes objekt window.__ENV__.
+ * Pokud bundler Next.js selže a nevloží proměnné při buildu, 
+ * kód si je vytáhne přímo z HTML hlavičky, kterou jsme injektovali v layoutu.
  */
 
-// Bezpečné získání parametrů a Supabase klienta pro prostředí, kde moduly nemusí být dostupné
+// Bezpečné získání parametrů a Supabase klienta pro prostředí náhledu
 let useParams = () => ({ locale: 'cs' });
 let createClient = null;
 
 try {
-  // Pokus o dynamické načtení modulů (řeší chybu "Could not resolve" v náhledu)
   const nextNav = require('next/navigation');
   if (nextNav && nextNav.useParams) useParams = nextNav.useParams;
 
   const supabaseJs = require('@supabase/supabase-js');
   if (supabaseJs && supabaseJs.createClient) createClient = supabaseJs.createClient;
 } catch (e) {
-  // Moduly nejsou v tomto prostředí dostupné, použijí se fallbacky
+  // Fallback pro Canvas sandbox
 }
 
 export default function App() {
@@ -28,39 +29,40 @@ export default function App() {
   const locale = params?.locale || 'cs';
   const isEn = locale === 'en';
 
-  // Stavy aplikace
   const [deals, setDeals] = useState([]);
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState({ firing: false, success: null, error: null });
   const [supabaseClient, setSupabaseClient] = useState(null);
   
-  // Bezpečné uložení konfigurace prostředí (řeší ReferenceError: process is not defined)
-  const [env, setEnv] = useState({ 
-    url: '', 
-    key: '', 
-    webhook: '', 
-    isLoaded: false 
-  });
+  // Bezpečné uložení konfigurace
+  const [env, setEnv] = useState({ url: '', key: '', webhook: '', isLoaded: false });
 
   /**
-   * 🚀 GURU SYSTÉMOVÝ BOOTSTRAP
-   * Načte proměnné a inicializuje klienta pouze v prohlížeči.
+   * 🛡️ GURU ENV RESOLVER (The Nuclear Helper)
+   * Zkouší nejdříve standardní cestu (vypálení při buildu), 
+   * pokud selže, bere data z window.__ENV__ (injektováno přes SSR).
    */
+  const getFailsafeEnv = (key) => {
+    // 1. Zkusíme standardní process.env (literal access pro bundler)
+    try {
+      if (key === 'NEXT_PUBLIC_SUPABASE_URL' && process.env.NEXT_PUBLIC_SUPABASE_URL) return process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (key === 'NEXT_PUBLIC_SUPABASE_ANON_KEY' && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (key === 'NEXT_PUBLIC_MAKE_WEBHOOK2_URL' && process.env.NEXT_PUBLIC_MAKE_WEBHOOK2_URL) return process.env.NEXT_PUBLIC_MAKE_WEBHOOK2_URL;
+    } catch (e) {}
+
+    // 2. Fallback na window.__ENV__ (injektováno v layout.js)
+    if (typeof window !== 'undefined' && window.__ENV__) {
+      return window.__ENV__[key] || "";
+    }
+    return "";
+  };
+
   useEffect(() => {
     const bootstrap = async () => {
-      let url = "";
-      let key = "";
-      let webhook = "";
-
-      try {
-        // Přímý přístup ošetřený pro bundler
-        url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-        key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-        webhook = process.env.NEXT_PUBLIC_MAKE_WEBHOOK2_URL || "";
-      } catch (e) {
-        console.warn("Guru Environment Warning: process.env is not accessible.");
-      }
+      const url = getFailsafeEnv('NEXT_PUBLIC_SUPABASE_URL');
+      const key = getFailsafeEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+      const webhook = getFailsafeEnv('NEXT_PUBLIC_MAKE_WEBHOOK2_URL');
 
       setEnv({ url, key, webhook, isLoaded: true });
 
@@ -69,7 +71,6 @@ export default function App() {
           const client = createClient(url, key);
           setSupabaseClient(client);
           
-          // Načtení dat
           const { data, error } = await client
             .from('game_deals')
             .select('*')
@@ -92,42 +93,29 @@ export default function App() {
     bootstrap();
   }, [locale]);
 
-  // Manuální obnova seznamu
   const handleRefresh = async () => {
     if (!supabaseClient) return;
     setLoading(true);
     try {
-      const { data } = await supabaseClient
-        .from('game_deals')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data } = await supabaseClient.from('game_deals').select('*').order('created_at', { ascending: false });
       setDeals(data || []);
     } catch (e) {}
     setLoading(false);
   };
 
-  // Správa připnutí na Homepage
   const toggleFeatured = async (e, deal) => {
     e.stopPropagation();
     if (!supabaseClient) return;
     
     const featuredCount = deals.filter(d => d.is_featured).length;
     if (!deal.is_featured && featuredCount >= 3) {
-      setStatus({ 
-        firing: false, 
-        success: false, 
-        error: isEn ? "MAX 3 DEALS ON HOMEPAGE!" : "MAXIMÁLNĚ 3 DEALY NA HOMEPAGE!" 
-      });
+      setStatus({ firing: false, success: false, error: isEn ? "MAX 3 DEALS!" : "MAXIMÁLNĚ 3 DEALY!" });
       setTimeout(() => setStatus(prev => ({ ...prev, error: null })), 4000);
       return;
     }
 
     try {
-      const { error } = await supabaseClient
-        .from('game_deals')
-        .update({ is_featured: !deal.is_featured })
-        .eq('id', deal.id);
-
+      const { error } = await supabaseClient.from('game_deals').update({ is_featured: !deal.is_featured }).eq('id', deal.id);
       if (error) throw error;
       handleRefresh(); 
     } catch (err) {
@@ -135,10 +123,9 @@ export default function App() {
     }
   };
 
-  // Odeslání dat na Make.com
   const fireToMake = async () => {
     if (!env.webhook) {
-      setStatus({ firing: false, success: false, error: "WEBHOOK 2 URL MISSING!" });
+      setStatus({ firing: false, success: false, error: "WEBHOOK URL MISSING!" });
       return;
     }
     if (!selectedDeal) return;
@@ -168,30 +155,29 @@ export default function App() {
         setStatus({ firing: false, success: true, error: null });
         setTimeout(() => setStatus(prev => ({ ...prev, success: null })), 3000);
       } else {
-        throw new Error(`MAKE STATUS: ${response.status}`);
+        throw new Error(`STATUS: ${response.status}`);
       }
     } catch (err) {
       setStatus({ firing: false, success: false, error: err.message });
     }
   };
 
-  // DIAGNOSTIKA PRO PROSTŘEDÍ NÁHLEDU (Canvas)
-  if (!loading && (!createClient || (env.isLoaded && (!env.url || !env.key)))) {
+  // DIAGNOSTIKA PRO CANVAS / VERCEL
+  if (!loading && env.isLoaded && (!env.url || !env.key)) {
     return (
       <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center p-6 text-center">
         <div className="max-w-md bg-red-950/20 border border-red-500 p-10 rounded-[40px] backdrop-blur-xl shadow-2xl">
           <AlertCircle className="text-red-500 mx-auto mb-6" size={64} />
-          <h2 className="text-2xl font-black text-white uppercase mb-4 italic tracking-tighter">Build Environment Alert!</h2>
+          <h2 className="text-2xl font-black text-white uppercase mb-4 italic tracking-tighter">Nuclear Injection Error!</h2>
           <p className="text-neutral-400 text-sm mb-8 leading-relaxed font-bold uppercase tracking-widest">
-            Kód je připraven pro Vercel, ale v tomto náhledu chybí potřebné moduly nebo proměnné prostředí.
+            Bundler selhal a Runtime Injection v layout.js nebyla provedena.
           </p>
           <div className="text-left bg-black/50 p-5 rounded-2xl font-mono text-[10px] space-y-3 mb-8 border border-red-900/30">
-            <div className="flex justify-between uppercase"><span>Lib Loaded:</span> <span className={createClient ? "text-green-500" : "text-red-500"}>{createClient ? "YES ✅" : "NO ❌"}</span></div>
-            <div className="flex justify-between uppercase"><span>URL Status:</span> <span className={env.url ? "text-green-500" : "text-red-500"}>{env.url ? "FOUND ✅" : "MISSING ❌"}</span></div>
-            <div className="flex justify-between uppercase"><span>Key Status:</span> <span className={env.key ? "text-green-500" : "text-red-500"}>{env.key ? "FOUND ✅" : "MISSING ❌"}</span></div>
+            <div className="flex justify-between uppercase"><span>URL Status:</span> <span className={env.url ? "text-green-500" : "text-red-500"}>{env.url ? "INJECTED ✅" : "MISSING ❌"}</span></div>
+            <div className="flex justify-between uppercase"><span>Key Status:</span> <span className={env.key ? "text-green-500" : "text-red-500"}>{env.key ? "INJECTED ✅" : "MISSING ❌"}</span></div>
           </div>
           <button onClick={() => window.location.reload()} className="w-full py-4 bg-red-600 text-white font-black rounded-xl hover:bg-red-500 transition-all uppercase text-xs tracking-widest shadow-lg shadow-red-600/30">
-            Zkusit obnovit náhled
+            Resetovat Systém
           </button>
         </div>
       </div>
@@ -218,7 +204,7 @@ export default function App() {
             <p className="text-neutral-500 font-black text-[11px] uppercase tracking-[0.4em] mt-3 flex items-center gap-3">
               WEBHOOK 2: 
               <span className={`px-2 py-0.5 rounded ${env.webhook ? 'bg-green-600/20 text-green-500' : 'bg-red-600/20 text-red-500'}`}>
-                {env.webhook ? 'CONNECTED' : 'MISSING'}
+                {env.webhook ? 'NUCLEAR READY' : 'MISSING'}
               </span>
             </p>
           </div>
@@ -232,7 +218,7 @@ export default function App() {
               (!selectedDeal || !env.webhook) ? 'bg-neutral-800 opacity-40 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 hover:scale-[1.03] active:scale-95 shadow-red-600/40'
             }`}
           >
-            {status.firing ? 'PALBA...' : status.success ? <><Check size={28} /> ZÁSAH!</> : <><Send size={28} /> ODESLAT NA MAKE</>}
+            {status.firing ? 'PALBA...' : status.success ? <><Check size={28} /> ZÁSAH!</> : <><Send size={28} /> STŘELIT NA MAKE</>}
           </button>
         </header>
 
@@ -285,21 +271,12 @@ export default function App() {
                 </div>
                 
                 <div className="flex items-center gap-6">
-                    <button 
-                      onClick={(e) => toggleFeatured(e, deal)}
-                      title={deal.is_featured ? (isEn ? "Unpin" : "Odepnout") : (isEn ? "Pin to HP" : "Připnout na HP")}
-                      className={`p-5 rounded-2xl transition-all duration-500 ${
-                        deal.is_featured 
-                        ? 'bg-orange-600 text-white shadow-[0_0_35px_rgba(234,88,12,0.6)] hover:scale-110' 
-                        : 'bg-white/5 text-neutral-800 hover:text-white hover:bg-white/10'
-                      }`}
+                    <button onClick={(e) => toggleFeatured(e, deal)} title={deal.is_featured ? (isEn ? "Unpin" : "Odepnout") : (isEn ? "Pin to HP" : "Připnout na HP")}
+                      className={`p-5 rounded-2xl transition-all duration-500 ${deal.is_featured ? 'bg-orange-600 text-white shadow-[0_0_35px_rgba(234,88,12,0.6)] hover:scale-110' : 'bg-white/5 text-neutral-800 hover:text-white hover:bg-white/10'}`}
                     >
                         <Flame size={28} fill={deal.is_featured ? "currentColor" : "none"} />
                     </button>
-                    
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-700 ${
-                      selectedDeal?.id === deal.id ? 'bg-red-600 text-white rotate-90 scale-125 shadow-[0_0_20px_rgba(220,38,38,0.4)]' : 'bg-white/5 text-neutral-800 opacity-0 group-hover:opacity-100'
-                    }`}>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-700 ${selectedDeal?.id === deal.id ? 'bg-red-600 text-white rotate-90 scale-125 shadow-[0_0_20px_rgba(220,38,38,0.4)]' : 'bg-white/5 text-neutral-800 opacity-0 group-hover:opacity-100'}`}>
                       <ChevronRight size={24} />
                     </div>
                 </div>
