@@ -111,10 +111,17 @@ export default function SupportPage() {
           <div style={{ height: '1px', flex: 1, backgroundColor: '#ffffff' }}></div>
         </div>
 
+        {/* 🚀 GURU FIX: NATIVNÍ GOOGLE SUBSCRIBE TLAČÍTKO 🚀 */}
+        <div style={{ marginBottom: '10px' }}>
+          <div style={{ background: '#fff', borderRadius: '16px', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '56px', width: '100%' }}>
+            <button swg-standard-button="contribution" style={{ cursor: 'pointer', border: 'none', background: 'transparent' }}></button>
+          </div>
+        </div>
+
         {/* STRIPE / KARTA */}
         <div style={{ marginBottom: '10px' }}>
           <a href={stripeLink} target="_blank" rel="noreferrer" style={buttonStyle('stripe')}>
-            <span>💳</span> {isEn ? "Credit Card / Apple Pay" : "Platební karta / Apple Pay"}
+            <span>💳</span> {isEn ? "Credit Card / Apple / Google Pay" : "Karta / Apple / Google Pay"}
           </a>
         </div>
 
