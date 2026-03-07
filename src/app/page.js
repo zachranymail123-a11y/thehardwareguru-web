@@ -143,7 +143,8 @@ export default function HomePage() {
               <Link href={isEn ? "/en/support" : "/support"} className="social-btn-main" style={{ background: '#eab308', color: '#000' }}>{isEn ? 'SUPPORT' : 'PODPOŘIT GURU'}</Link>
               
               {/* 🔥 NOVÉ TLAČÍTKO NA SLEVY 🔥 */}
-              <Link href={isEn ? "/en/deals" : "/deals"} className="social-btn-main" style={{ background: '#f97316', color: '#fff' }}>{isEn ? '🔥 GAME DEALS' : '🔥 SLEVY NA HRY'}</Link>
+              {/* GURU FIX: Změněno z "/deals" na "/cs/deals" pro obejití middleware problému */}
+              <Link href={isEn ? "/en/deals" : "/cs/deals"} className="social-btn-main" style={{ background: '#f97316', color: '#fff' }}>{isEn ? '🔥 GAME DEALS' : '🔥 SLEVY NA HRY'}</Link>
               
               {/* 📰 GOOGLE CONTRIBUTION BUTTON (Integrated into restored design) */}
               <div style={{ background: '#fff', borderRadius: '12px', padding: '0 5px', display: 'flex', alignItems: 'center', height: '48px' }}>
