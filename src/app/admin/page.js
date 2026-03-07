@@ -6,7 +6,7 @@ import {
   ShoppingCart, Activity, ShieldCheck, Zap, AlertTriangle, 
   CheckCircle2, RefreshCw, Send, Sparkles, Flame, Plus, X, 
   ExternalLink, Lightbulb, BookOpen, Wrench, Video, Cpu, Lock, Calendar, Terminal,
-  LayoutDashboard, Image as ImageIcon, CalendarDays
+  LayoutDashboard, Image as ImageIcon, CalendarDays, Layers
 } from 'lucide-react';
 
 // --- BEZPEČNÉ NAČÍTANIE NEXT.JS MODULOV PROTI PÁDOM ---
@@ -84,20 +84,6 @@ export default function AdminApp() {
 
   // --- ABSOLÚTNE URL (OCHRANA PRED /cs/ PREFIXOM) ---
   const BASE_URL = 'https://www.thehardwareguru.cz';
-
-  // 🚀 GURU: ROZDĚLENÍ API ENDPOINTŮ (Generátory vs Executory)
-  const generatorEndpoints = [
-    { id: 'seo', name: 'SEO Generator', url: `${BASE_URL}/api/generate-seo?secret=Wifik500`, icon: <Search size={24}/>, color: '#66fcf1', desc: 'Vygeneruje chybějící meta popisky pro lepší pozice na Googlu.' },
-    { id: 'tip', name: 'Tip Generator', url: `${BASE_URL}/api/generate-tip`, icon: <Lightbulb size={24}/>, color: '#eab308', desc: 'AI vytvoří a uloží nový technologický tip.' },
-    { id: 'slovnik', name: 'Slovník Updater', url: `${BASE_URL}/api/cron/slovnik?secret=Wifik500`, icon: <BookOpen size={24}/>, color: '#a855f7', desc: 'Aktualizace pojmů v hardwarovém slovníku.' },
-    { id: 'planer', name: 'Plánovač Cron', url: `${BASE_URL}/api/cron/planer`, icon: <CalendarClock size={24}/>, color: '#3b82f6', desc: 'Zpracuje a publikuje naplánované články/hry dle kalendáře.' }
-  ];
-
-  const executorEndpoints = [
-    { id: 'tweak_executor', name: 'Tweak Executor', url: `${BASE_URL}/api/cron/tweak-executor`, icon: <Wrench size={24}/>, color: '#10b981', desc: 'Automatické zpracování a odeslání PC tweaků.' },
-    { id: 'main_cron', name: 'Hlavní Cron', url: `${BASE_URL}/api/cron`, icon: <Activity size={24}/>, color: '#ef4444', desc: 'Spustí hlavní údržbové procedury webu.' },
-    { id: 'check_live', name: 'Check Live Stream', url: `${BASE_URL}/api/check-live`, icon: <Video size={24}/>, color: '#8b5cf6', desc: 'Zkontroluje a aktualizuje status živého vysílání (Kick/YT).' }
-  ];
 
   // --- OCHRANA: KONTROLA SESSION ---
   useEffect(() => {
@@ -377,7 +363,7 @@ export default function AdminApp() {
         .stat-card { background: #111318; padding: 25px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
         .stat-card h3 { font-size: 28px; font-weight: 950; margin: 10px 0 5px 0; }
         .stat-card p { font-size: 9px; color: #4b5563; font-weight: 900; letter-spacing: 1.5px; margin: 0; }
-        .stat-card.clickable:hover { border-color: #fff; transform: translateY(-5px); }
+        .stat-card.clickable:hover { border-color: #fff; transform: translateY(-5px); cursor: pointer; }
 
         .deal-form { background: #111318; padding: 30px; border-radius: 24px; border: 1px solid rgba(255,0,85,0.3); margin-bottom: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .form-section-title { grid-column: span 2; font-size: 10px; color: #ff0055; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; }
@@ -412,25 +398,18 @@ export default function AdminApp() {
           <h1 style={{ margin: 0, fontSize: '18px', fontWeight: '950', letterSpacing: '2px', color: '#a855f7' }}>
             <ShieldCheck size={20} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '5px' }}/> GURU <span style={{ color: '#fff' }}>ADMIN</span>
           </h1>
-          <div style={{ fontSize: '9px', color: '#4b5563', fontWeight: '900', marginTop: '5px', textTransform: 'uppercase' }}>Command Center v6.0</div>
+          <div style={{ fontSize: '9px', color: '#4b5563', fontWeight: '900', marginTop: '5px', textTransform: 'uppercase' }}>Command Center v7.0</div>
         </div>
 
         <nav style={{ flex: 1, paddingTop: '10px', overflowY: 'auto' }}>
           <SidebarItemUI id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LayoutDashboard />} label="Dashboard" color="#a855f7" />
           <SidebarItemUI id="terminal" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Terminal />} label="Živý Terminál" color="#22c55e" />
           
-          <div className="sidebar-header">{isEn ? 'GENERATORS & PLANNERS' : 'GENERÁTORY & PLÁNOVAČE'}</div>
-          <SidebarItemUI id="api-generators" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Zap />} label="API: Generátory" color="#eab308" />
-          <SidebarItemUI id="iframe-kalendar" activeTab={activeTab} setActiveTab={setActiveTab} icon={<CalendarDays />} label="Herní Kalendář" color="#3b82f6" />
-          <SidebarItemUI id="planner" activeTab={activeTab} setActiveTab={setActiveTab} icon={<CalendarClock />} label="Plánovač Vydání (DB)" color="#3b82f6" />
-          
-          <div className="sidebar-header">{isEn ? 'EXECUTORS' : 'EXECUTORY'}</div>
-          <SidebarItemUI id="executor" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Send />} label="Social Executor" color="#10b981" />
-          <SidebarItemUI id="api-executors" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Rocket />} label="API: Executory" color="#f97316" />
-          
-          <div className="sidebar-header">{isEn ? 'GURU TOOLS' : 'GURU NÁSTROJE'}</div>
-          <SidebarItemUI id="iframe-en" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Globe />} label="EN Translation Fixer" color="#eab308" />
-          <SidebarItemUI id="iframe-tweak" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Cpu />} label="Tweaky Generator" color="#10b981" />
+          <div className="sidebar-header">{isEn ? 'LOGICAL GROUPS' : 'NÁSTROJE & LOGIKA'}</div>
+          <SidebarItemUI id="social-planner" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Send />} label={isEn ? "Publishing & Planner" : "Publikace & Plánování"} color="#f97316" />
+          <SidebarItemUI id="tweaks" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Cpu />} label={isEn ? "Tweaks (Gen & Exec)" : "Tweaky (Gen & Exec)"} color="#10b981" />
+          <SidebarItemUI id="content-seo" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Globe />} label={isEn ? "SEO & Translations" : "SEO & Překlady"} color="#eab308" />
+          <SidebarItemUI id="automation" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Zap />} label={isEn ? "Automation & Tipy" : "Automatizace & Tipy"} color="#a855f7" />
           
           <div className="sidebar-header">{isEn ? 'CONTENT' : 'OBSAH'}</div>
           <SidebarItemUI id="deals" activeTab={activeTab} setActiveTab={setActiveTab} icon={<ShoppingCart />} label="Správa Slev na hry" color="#ff0055" />
@@ -460,10 +439,10 @@ export default function AdminApp() {
                 <div className="stat-card">
                     <Activity color="#a855f7" /><h3>{data.stats.visits}</h3><p>CELKOVÉ NÁVŠTEVY</p>
                 </div>
-                <div className="stat-card clickable" onClick={() => setActiveTab('api-generators')}>
+                <div className="stat-card clickable" onClick={() => setActiveTab('content-seo')}>
                     <Globe color="#eab308" /><h3 style={{ color: data.stats.missingEn > 0 ? '#ef4444' : '#22c55e' }}>{data.stats.missingEn}</h3><p>CHÝBAJÚCE EN PREKLADY</p>
                 </div>
-                <div className="stat-card clickable" onClick={() => setActiveTab('api-generators')}>
+                <div className="stat-card clickable" onClick={() => setActiveTab('content-seo')}>
                     <Search color="#66fcf1" /><h3 style={{ color: data.stats.missingSeo > 0 ? '#f97316' : '#22c55e' }}>{data.stats.missingSeo}</h3><p>CHÝBAJÚCE SEO META</p>
                 </div>
                 <div className="stat-card clickable" onClick={() => setActiveTab('deals')}>
@@ -496,195 +475,166 @@ export default function AdminApp() {
                             <span className="log-time">[{log.time}]</span> {log.msg}
                         </div>
                     ))}
-                    {consoleLogs.length === 0 && <div className="log-line info">Žiadne záznamy. Spusť nejaký proces z API Hubu.</div>}
+                    {consoleLogs.length === 0 && <div className="log-line info">Žiadne záznamy. Spusť nejaký proces.</div>}
                     <div ref={logEndRef} />
                 </div>
             </section>
         )}
 
-        {/* --- TAB: API GENERÁTORY --- */}
-        {activeTab === 'api-generators' && (
+        {/* --- TAB 1: PUBLIKACE & PLÁNOVÁNÍ (Executor + Planner + Kalendář) --- */}
+        {activeTab === 'social-planner' && (
           <section className="fade-in">
-            <h2 className="tab-title">API <span style={{ color: '#eab308' }}>Generátory</span></h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 className="tab-title" style={{ margin: 0 }}>Publikace & <span style={{ color: '#f97316' }}>Plánování</span></h2>
+              <div style={{ display: 'flex', gap: '15px' }}>
+                 <button onClick={() => runApiTask(`${BASE_URL}/api/cron/planer`, 'Plánovač Cron')} className="add-btn" style={{ background: '#3b82f6', color: '#fff' }}>
+                     <CalendarClock size={16} /> SPUSTIT PLÁNOVAČ CRON
+                 </button>
+                 <button onClick={() => runApiTask(`${BASE_URL}/api/cron/executor`, 'Auto Executor Cron')} className="add-btn" style={{ background: '#10b981', color: '#fff' }}>
+                     <Rocket size={16} /> SPUSTIT EXECUTOR CRON
+                 </button>
+              </div>
+            </div>
+
+            {/* Zóna Social Executor */}
+            <div style={{ marginBottom: '40px', background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h3 style={{ margin: 0, color: '#10b981', display: 'flex', alignItems: 'center', gap: '10px' }}><Send size={20}/> SOCIAL EXECUTOR FRONTA</h3>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                     <span style={{ fontSize: '10px', background: '#000', padding: '8px 12px', borderRadius: '8px', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', fontWeight: '900', letterSpacing: '1px' }}>MAX 14 DNÍ STARÉ</span>
+                     <button onClick={clearQueue} style={{ background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', padding: '8px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}><X size={12} style={{display: 'inline', marginBottom: '-2px'}}/> SMAZAT STAROU</button>
+                  </div>
+               </div>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {unfiredPosts.map(post => (
+                      <div key={post.id} className="item-row" style={{ padding: '10px 20px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', overflow: 'hidden' }}>
+                              <img src={post.image_url || 'https://via.placeholder.com/40'} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} alt="" />
+                              <div style={{ minWidth: 0 }}>
+                                  <div className="row-title" style={{ fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{post.title}</div>
+                                  <div className="row-meta">ČLÁNEK • <span suppressHydrationWarning>{post.created_at.substring(0, 10)}</span></div>
+                              </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                              <button onClick={() => markAsFired(post.id, 'posts')} className="mark-btn"><CheckCircle2 size={14} /> UŽ JE ONLINE (SKRÝT)</button>
+                              <button onClick={() => executeSocialWebhook(post, 'post')} className="fire-btn" style={{ background: '#10b981', padding: '8px 15px' }}><Send size={14} /> ODPÁLIT</button>
+                          </div>
+                      </div>
+                  ))}
+                  {unfiredDeals.map(deal => (
+                      <div key={deal.id} className="item-row" style={{ borderColor: 'rgba(255,0,85,0.2)', padding: '10px 20px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', overflow: 'hidden' }}>
+                              <img src={deal.image_url || 'https://via.placeholder.com/40'} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} alt="" />
+                              <div style={{ minWidth: 0 }}>
+                                  <div className="row-title" style={{ fontSize: '12px', color: '#ff0055', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{deal.title}</div>
+                                  <div className="row-meta">SLEVA • {deal.price_cs}</div>
+                              </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                              <button onClick={() => markAsFired(deal.id, 'game_deals')} className="mark-btn"><CheckCircle2 size={14} /> UŽ JE ONLINE (SKRÝT)</button>
+                              <button onClick={() => executeSocialWebhook(deal, 'deal')} className="fire-btn" style={{ background: '#ff0055', padding: '8px 15px' }}><Send size={14} /> ODPÁLIT</button>
+                          </div>
+                      </div>
+                  ))}
+                  {unfiredPosts.length === 0 && unfiredDeals.length === 0 && (
+                      <div className="empty-state" style={{ padding: '20px' }}>VŠECHNO JE ODESLÁNO! ŽÁDNÁ FRONTA. 🚀</div>
+                  )}
+               </div>
+            </div>
+
+            {/* Zóna Očekávaných her (Plánovač) */}
+            <div style={{ marginBottom: '40px', background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+               <h3 style={{ margin: '0 0 20px 0', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '10px' }}><Database size={20}/> OČEKÁVANÉ HRY V DATABÁZI</h3>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                   {data.posts.filter(p => p.type === 'expected').map(game => (
+                       <div key={game.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#000', padding: '15px 20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                           <div>
+                               <div style={{ fontWeight: '950', fontSize: '14px', textTransform: 'uppercase' }}>{game.title}</div>
+                               <div style={{ fontSize: '10px', color: '#4b5563', marginTop: '3px', fontWeight: 'bold' }}>Vytvořeno: <span suppressHydrationWarning>{game.created_at.substring(0, 10)}</span></div>
+                           </div>
+                           <span style={{ fontSize: '10px', color: '#3b82f6', fontWeight: '900', border: '1px solid #3b82f6', padding: '4px 10px', borderRadius: '6px', background: 'rgba(59, 130, 246, 0.1)' }}>PŘIPRAVENO V DB</span>
+                       </div>
+                   ))}
+                   {data.posts.filter(p => p.type === 'expected').length === 0 && (
+                       <div style={{ color: '#4b5563', fontStyle: 'italic', fontSize: '13px', textAlign: 'center', padding: '20px 0' }}>Žádné očekávané hry na analýzu.</div>
+                   )}
+               </div>
+            </div>
+
+            {/* Zóna Kalendář Iframe */}
+            <div style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                   <h3 style={{ margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '10px' }}><CalendarDays size={20}/> HERNÍ KALENDÁŘ</h3>
+                   <a href={`${BASE_URL}/kalendar`} target="_blank" rel="noreferrer" style={{ color: '#9ca3af', fontSize: '12px', textDecoration: 'none' }}>OTEVŘÍT V NOVÉM OKNĚ <ExternalLink size={12} style={{display: 'inline', marginBottom: '-2px'}}/></a>
+               </div>
+               <iframe src={`${BASE_URL}/kalendar`} style={{ width: '100%', height: '500px', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '15px', background: '#0a0b0d' }}></iframe>
+            </div>
+          </section>
+        )}
+
+        {/* --- TAB 2: TWEAKY (Gen & Exec) --- */}
+        {activeTab === 'tweaks' && (
+          <section className="fade-in" style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 className="tab-title" style={{ margin: 0 }}>Tweaky <span style={{ color: '#10b981' }}>Zázemí</span></h2>
+              <button onClick={() => runApiTask(`${BASE_URL}/api/cron/tweak-executor`, 'Tweak Executor Cron')} className="add-btn" style={{ background: '#10b981', color: '#000' }}>
+                  <Zap size={16} /> SPUSTIT TWEAK EXECUTOR
+              </button>
+            </div>
+            <iframe src={`${BASE_URL}/admin/tweaky-generator`} style={{ width: '100%', flex: 1, border: '1px solid rgba(16,185,129,0.3)', borderRadius: '20px', background: '#fff' }}></iframe>
+          </section>
+        )}
+
+        {/* --- TAB 3: SEO & PŘEKLADY (Gen & Iframe) --- */}
+        {activeTab === 'content-seo' && (
+          <section className="fade-in" style={{ height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 className="tab-title" style={{ margin: 0 }}>SEO & <span style={{ color: '#eab308' }}>Překlady</span></h2>
+              <div style={{ display: 'flex', gap: '15px' }}>
+                 <button onClick={() => runApiTask(`${BASE_URL}/api/generate-seo?secret=Wifik500`, 'SEO Generator')} className="add-btn" style={{ background: '#66fcf1', color: '#000' }}>
+                     <Search size={16} /> GENERATE SEO ({data.stats.missingSeo} CHYBÍ)
+                 </button>
+                 <button onClick={() => runApiTask(`${BASE_URL}/api/cron/slovnik?secret=Wifik500`, 'Slovník Updater')} className="add-btn" style={{ background: '#a855f7', color: '#fff' }}>
+                     <BookOpen size={16} /> UPDATE SLOVNÍK ({data.stats.missingSlovnik} CHYBÍ)
+                 </button>
+              </div>
+            </div>
+            <iframe src={`${BASE_URL}/admin/en-fixer`} style={{ width: '100%', flex: 1, border: '1px solid rgba(234,179,8,0.3)', borderRadius: '20px', background: '#fff' }}></iframe>
+          </section>
+        )}
+
+        {/* --- TAB 4: AUTOMATIZACE & TIPY (Ostatní API) --- */}
+        {activeTab === 'automation' && (
+          <section className="fade-in">
+            <h2 className="tab-title">Automatizace & <span style={{ color: '#a855f7' }}>Tipy</span></h2>
             <p style={{ color: '#9ca3af', marginBottom: '30px', fontSize: '14px' }}>
-                Tvorba a oprava obsahu. Průběh a odpovědi z tvého API uvidíš v živém terminálu.
+                Samostatné crony a služby pro udržení chodu webu. Výstupy jdou rovnou do živého terminálu.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px' }}>
-                {generatorEndpoints.map(api => (
-                    <div key={api.id} className="api-card" style={{ borderColor: `rgba(${hexToRgb(api.color)}, 0.3)` }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
-                            {React.cloneElement(api.icon, { size: 28, color: api.color })}
-                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900' }}>{api.name}</h3>
-                        </div>
-                        <p style={{ color: '#9ca3af', fontSize: '13px', lineHeight: '1.5', flex: 1 }}>{api.desc}</p>
-                        {api.id === 'seo' && (
-                            <div className="missing-info" style={{ color: '#66fcf1', background: 'rgba(102, 252, 241, 0.05)', border: '1px solid rgba(102, 252, 241, 0.2)' }}>
-                                K OPRAVE V DB: <strong>{data.stats.missingSeo}</strong> POPISOV
-                            </div>
-                        )}
-                        {api.id === 'slovnik' && (
-                            <div className="missing-info" style={{ color: '#a855f7', background: 'rgba(168, 85, 247, 0.05)', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
-                                K OPRAVE V DB: <strong>{data.stats.missingSlovnik}</strong> POJMOV
-                            </div>
-                        )}
-                        <button onClick={() => runApiTask(api.url, api.name)} className="action-btn" style={{ background: api.color, color: (api.color === '#66fcf1' || api.color === '#eab308') ? '#000' : '#fff', marginTop: '15px' }}>
-                            <Zap size={16} /> SPUSTIŤ SKRIPT
-                        </button>
-                    </div>
-                ))}
-            </div>
-          </section>
-        )}
-
-        {/* --- TAB: API EXECUTORY --- */}
-        {activeTab === 'api-executors' && (
-          <section className="fade-in">
-            <h2 className="tab-title">API <span style={{ color: '#f97316' }}>Executory</span></h2>
-            <p style={{ color: '#9ca3af', marginBottom: '30px', fontSize: '14px' }}>
-                Systémové crony a exekutory.
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px' }}>
-                {executorEndpoints.map(api => (
-                    <div key={api.id} className="api-card" style={{ borderColor: `rgba(${hexToRgb(api.color)}, 0.3)` }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
-                            {React.cloneElement(api.icon, { size: 28, color: api.color })}
-                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900' }}>{api.name}</h3>
-                        </div>
-                        <p style={{ color: '#9ca3af', fontSize: '13px', lineHeight: '1.5', flex: 1 }}>{api.desc}</p>
-                        <button onClick={() => runApiTask(api.url, api.name)} className="action-btn" style={{ background: api.color, color: '#fff', marginTop: '15px' }}>
-                            <Zap size={16} /> SPUSTIŤ SKRIPT
-                        </button>
-                    </div>
-                ))}
-            </div>
-          </section>
-        )}
-
-        {/* --- TAB: HERNÍ KALENDÁŘ (IFRAME) --- */}
-        {activeTab === 'iframe-kalendar' && (
-          <section className="fade-in" style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h2 className="tab-title" style={{ margin: 0 }}>Herní <span style={{ color: '#3b82f6' }}>Kalendář</span></h2>
-                <a href={`${BASE_URL}/kalendar`} target="_blank" rel="noreferrer" className="add-btn" style={{ background: 'transparent', border: '1px solid #3b82f6', color: '#3b82f6', textDecoration: 'none' }}><ExternalLink size={16}/> OTEVŘÍT V NOVÉM OKNĚ</a>
-            </div>
-            <iframe src={`${BASE_URL}/kalendar`} style={{ width: '100%', flex: 1, border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', background: '#0a0b0d' }}></iframe>
-          </section>
-        )}
-
-        {/* --- TAB: EN TRANSLATION FIXER (IFRAME) --- */}
-        {activeTab === 'iframe-en' && (
-          <section className="fade-in" style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h2 className="tab-title" style={{ margin: 0 }}>EN Translation <span style={{ color: '#eab308' }}>Fixer</span></h2>
-                <a href={`${BASE_URL}/admin/en-fixer`} target="_blank" rel="noreferrer" className="add-btn" style={{ background: 'transparent', border: '1px solid #eab308', color: '#eab308', textDecoration: 'none' }}><ExternalLink size={16}/> OTEVŘÍT V NOVÉM OKNĚ</a>
-            </div>
-            <iframe src={`${BASE_URL}/admin/en-fixer`} style={{ width: '100%', flex: 1, border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', background: '#fff' }}></iframe>
-          </section>
-        )}
-
-        {/* --- TAB: TWEAKY GENERATOR (IFRAME) --- */}
-        {activeTab === 'iframe-tweak' && (
-          <section className="fade-in" style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h2 className="tab-title" style={{ margin: 0 }}>Tweaky <span style={{ color: '#10b981' }}>Generator</span></h2>
-                <a href={`${BASE_URL}/admin/tweaky-generator`} target="_blank" rel="noreferrer" className="add-btn" style={{ background: 'transparent', border: '1px solid #10b981', color: '#10b981', textDecoration: 'none' }}><ExternalLink size={16}/> OTEVŘÍT V NOVÉM OKNĚ</a>
-            </div>
-            <iframe src={`${BASE_URL}/admin/tweaky-generator`} style={{ width: '100%', flex: 1, border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', background: '#fff' }}></iframe>
-          </section>
-        )}
-
-        {/* --- TAB: SOCIAL EXECUTOR --- */}
-        {activeTab === 'executor' && (
-          <section className="fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-                <h2 className="tab-title" style={{ margin: 0 }}>Social <span style={{ color: '#10b981' }}>Executor</span></h2>
-                <div style={{ display: 'flex', gap: '15px' }}>
-                    <button onClick={clearQueue} className="add-btn" style={{ background: 'transparent', border: '1px solid #ef4444', color: '#ef4444' }}>
-                        <X size={16}/> {isEn ? 'CLEAR OLD QUEUE' : 'SMAZAT STAROU FRONTU'}
-                    </button>
-                    <button onClick={() => runApiTask(`${BASE_URL}/api/cron/executor`, 'Auto Executor Cron')} className="add-btn" style={{ background: '#10b981', color: '#000' }}>
-                        <Zap size={16}/> SPUSTIŤ AUTO-CRON
-                    </button>
-                </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                {unfiredPosts.map(post => (
-                    <div key={post.id} className="item-row">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', overflow: 'hidden' }}>
-                            <img src={post.image_url || 'https://via.placeholder.com/60'} className="row-img" alt="" />
-                            <div style={{ minWidth: 0 }}>
-                                <div className="row-title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{post.title}</div>
-                                <div className="row-meta">ČLÁNOK • <span suppressHydrationWarning>{post.created_at.substring(0, 10)}</span></div>
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>
-                            <button onClick={() => markAsFired(post.id, 'posts')} className="mark-btn" title="Skryť z fronty">
-                                <CheckCircle2 size={16} /> UŽ JE ONLINE (SKRYŤ)
-                            </button>
-                            <button onClick={() => executeSocialWebhook(post, 'post')} className="fire-btn" style={{ background: '#10b981' }}>
-                                <Send size={16} /> ODPÁLIŤ
-                            </button>
-                        </div>
-                    </div>
-                ))}
                 
-                {unfiredDeals.map(deal => (
-                    <div key={deal.id} className="item-row" style={{ borderColor: 'rgba(255,0,85,0.2)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', overflow: 'hidden' }}>
-                            <img src={deal.image_url || 'https://via.placeholder.com/60'} className="row-img" alt="" />
-                            <div style={{ minWidth: 0 }}>
-                                <div className="row-title" style={{ color: '#ff0055', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{deal.title}</div>
-                                <div className="row-meta">ZĽAVA • {deal.price_cs}</div>
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>
-                            <button onClick={() => markAsFired(deal.id, 'game_deals')} className="mark-btn" title="Skryť z fronty">
-                                <CheckCircle2 size={16} /> UŽ JE ONLINE (SKRYŤ)
-                            </button>
-                            <button onClick={() => executeSocialWebhook(deal, 'deal')} className="fire-btn" style={{ background: '#ff0055' }}>
-                                <Send size={16} /> ODPÁLIŤ
-                            </button>
-                        </div>
-                    </div>
-                ))}
-
-                {unfiredPosts.length === 0 && unfiredDeals.length === 0 && (
-                    <div className="empty-state">VŠETKO BOLO ÚSPEŠNE ODPÁLENÉ ALEBO VYRADENÉ! ŽIADNA FRONTA. 🚀</div>
-                )}
-            </div>
-          </section>
-        )}
-
-        {/* --- TAB: PLANNER --- */}
-        {activeTab === 'planner' && (
-          <section className="fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-                <h2 className="tab-title" style={{ margin: 0 }}>Plánovač <span style={{ color: '#3b82f6' }}>Vydaní (DB)</span></h2>
-            </div>
-            <div style={{ background: '#111318', borderRadius: '30px', padding: '40px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                <h3 style={{ color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '18px', fontWeight: '950', marginBottom: '25px', textTransform: 'uppercase' }}>
-                    <Calendar size={20} /> Nadchádzajúce herné rozbory v Databáze
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                    {data.posts.filter(p => p.type === 'expected').map(game => (
-                        <div key={game.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#000', padding: '20px 25px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                            <div>
-                                <div style={{ fontWeight: '950', fontSize: '16px', textTransform: 'uppercase' }}>{game.title}</div>
-                                <div style={{ fontSize: '11px', color: '#4b5563', marginTop: '5px', fontWeight: 'bold' }}>Vytvorené: <span suppressHydrationWarning>{game.created_at.substring(0, 10)}</span></div>
-                            </div>
-                            <span style={{ fontSize: '10px', color: '#3b82f6', fontWeight: '900', border: '1px solid #3b82f6', padding: '6px 12px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)' }}>PRIPRAVENÉ V DB</span>
-                        </div>
-                    ))}
-                    {data.posts.filter(p => p.type === 'expected').length === 0 && (
-                        <div style={{ color: '#4b5563', fontStyle: 'italic', fontSize: '14px', textAlign: 'center', padding: '30px 0' }}>Žiadne očakávané hry na analýzu.</div>
-                    )}
+                <div className="api-card" style={{ borderColor: 'rgba(234, 179, 8, 0.3)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}><Lightbulb size={28} color="#eab308" /><h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900' }}>TIP GENERATOR</h3></div>
+                    <p style={{ color: '#9ca3af', fontSize: '13px', lineHeight: '1.5', flex: 1 }}>AI vytvoří a uloží nový technologický tip do databáze.</p>
+                    <button onClick={() => runApiTask(`${BASE_URL}/api/generate-tip`, 'Tip Generator')} className="action-btn" style={{ background: '#eab308', color: '#000', marginTop: '15px' }}><Zap size={16} /> GENERATE TIP</button>
                 </div>
+
+                <div className="api-card" style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}><Activity size={28} color="#ef4444" /><h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900' }}>HLAVNÍ CRON</h3></div>
+                    <p style={{ color: '#9ca3af', fontSize: '13px', lineHeight: '1.5', flex: 1 }}>Spustí hlavní údržbové procedury webu (Cache, čištění).</p>
+                    <button onClick={() => runApiTask(`${BASE_URL}/api/cron`, 'Hlavní Cron')} className="action-btn" style={{ background: '#ef4444', color: '#fff', marginTop: '15px' }}><Zap size={16} /> SPUSTIT ÚDRŽBU</button>
+                </div>
+
+                <div className="api-card" style={{ borderColor: 'rgba(139, 92, 246, 0.3)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}><Video size={28} color="#8b5cf6" /><h3 style={{ margin: 0, fontSize: '18px', fontWeight: '900' }}>CHECK LIVE STREAM</h3></div>
+                    <p style={{ color: '#9ca3af', fontSize: '13px', lineHeight: '1.5', flex: 1 }}>Zkontroluje a aktualizuje status živého vysílání (Kick/YT).</p>
+                    <button onClick={() => runApiTask(`${BASE_URL}/api/check-live`, 'Check Live Stream')} className="action-btn" style={{ background: '#8b5cf6', color: '#fff', marginTop: '15px' }}><Zap size={16} /> CHECK STREAM</button>
+                </div>
+
             </div>
           </section>
         )}
 
-        {/* --- TAB: DEALS --- */}
+        {/* --- TAB 5: DEALS --- */}
         {activeTab === 'deals' && (
           <section className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
