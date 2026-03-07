@@ -3,16 +3,15 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart } from 'lucide-react';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+// 🚀 GURU BEZPEČNOSTNÍ INIT: Pojistka proti prázdným ENV proměnným v buildu
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-// 🚀 GURU SEO: Dynamické Meta Tagy pro vyhledávače a sociální sítě
+// 🚀 GURU SEO: Dynamické Meta Tagy
 export async function generateMetadata({ params }) {
   const { slug } = params;
   
-  // Hledáme podle slug nebo slug_en pro jistotu podpory obou jazyků v tabulce slovnik
   const { data: term } = await supabase
     .from('slovnik')
     .select('title, title_en, seo_description, seo_description_en, image_url, slug, slug_en')
@@ -21,10 +20,9 @@ export async function generateMetadata({ params }) {
 
   if (!term) return { title: '404 | The Hardware Guru' };
 
-  // Detekce angličtiny podle toho, zda URL odpovídá anglickému slugu
   const isEn = term.slug_en === slug && slug !== term.slug;
-  const title = isEn && term.title_en ? term.title_en : term.title;
-  const desc = isEn && term.seo_description_en ? term.seo_description_en : term.seo_description;
+  const title = isEn && term.title_en ? term.title_en : (term.title || 'Slovník');
+  const desc = isEn && term.seo_description_en ? term.seo_description_en : (term.seo_description || '');
 
   return {
     title: `${title} | The Hardware Guru`,
@@ -47,19 +45,23 @@ export default async function SlovnikDetail({ params }) {
     .or(`slug.eq.${slug},slug_en.eq.${slug}`)
     .single();
 
+  // Ochrana proti neexistujícímu pojmu
   if (error || !term) {
     notFound();
   }
 
-  // 2. GURU JAZYKOVÁ LOGIKA (Ošetřeno i bez [locale] v URL)
+  // 2. GURU JAZYKOVÁ LOGIKA A FAILSAFES (Ošetření proti null)
   const isEn = term.slug_en === slug && slug !== term.slug;
-  const title = isEn && term.title_en ? term.title_en : term.title;
-  const content = isEn && term.content_en ? term.content_en : term.content;
+  const title = isEn && term.title_en ? term.title_en : (term.title || 'Neznámý pojem');
+  const content = isEn && term.content_en ? term.content_en : (term.content || '');
   const priceDisplay = isEn ? (term.price_en || '') : (term.price_cs || '');
   const buyBtnText = isEn 
     ? `BUY FOR BEST PRICE ${priceDisplay ? `(${priceDisplay})` : ''}` 
     : `KOUPIT ZA NEJLEPŠÍ CENU ${priceDisplay ? `(${priceDisplay})` : ''}`;
   const backLink = isEn ? '/en/slovnik' : '/slovnik';
+  
+  // Bezpečné datum (fallback na dnešek, pokud chybí)
+  const dateObj = term.created_at ? new Date(term.created_at) : new Date();
 
   return (
     <div style={{ 
@@ -76,7 +78,7 @@ export default async function SlovnikDetail({ params }) {
         {/* --- 🚀 HRDINSKÝ OBRÁZEK POJMU --- */}
         {term.image_url && (
           <div style={{ width: '100%', height: '450px', position: 'relative', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-            <img src={term.image_url} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={term.image_url} alt={title || 'Náhled'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             {/* Přechod do ztracena (Gradient) */}
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15, 17, 21, 1) 0%, transparent 100%)' }}></div>
             
@@ -103,7 +105,10 @@ export default async function SlovnikDetail({ params }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', color: '#9ca3af', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '25px' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#66fcf1' }}><ShieldCheck size={16} /> GURU ENGINE</span>
               <span>•</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={16} /> {new Date(term.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
+              {/* Ochrana proti Hydration Mismatch u data */}
+              <span suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Calendar size={16} /> {dateObj.toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}
+              </span>
             </div>
             
             <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', lineHeight: '1.1', margin: '0', textShadow: '0 0 20px rgba(102, 252, 241, 0.2)' }}>
