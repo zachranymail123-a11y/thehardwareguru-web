@@ -4,24 +4,21 @@ import React, { useState, useEffect } from 'react';
 import { Rocket, Send, Check, AlertCircle, ChevronRight, Flame, RefreshCw } from 'lucide-react';
 
 /**
- * GURU SUPREME ENVIRONMENT RESOLVER - ROBUSTNÍ EDICE
- * Tato verze řeší chyby při kompilaci v náhledovém prostředí (Canvas) 
- * pomocí bezpečných dynamických importů a přímého přístupu k process.env.
+ * GURU SUPREME EXECUTOR - PROD-READY EDITION
+ * Implementace na základě analýzy Next.js build-time inlining.
  */
 
-// Pomocná funkce pro bezpečné získání parametrů z URL v náhledu i produkci
+// Pomocná funkce pro bezpečné získání parametrů v Canvasu i na Vercelu
 const useSafeParams = () => {
   try {
-    // Dynamický import pro zamezení chyb při kompilaci v sandboxu
     const { useParams } = require('next/navigation');
-    const params = useParams();
-    return params || { locale: 'cs' };
+    return useParams() || { locale: 'cs' };
   } catch (e) {
     return { locale: 'cs' };
   }
 };
 
-// Pomocná funkce pro bezpečné vytvoření Supabase klienta
+// Pomocná funkce pro bezpečný import Supabase v Canvasu
 const getSupabaseClient = (url, key) => {
   try {
     const { createClient } = require('@supabase/supabase-js');
@@ -45,37 +42,44 @@ export default function App() {
   const [supabaseClient, setSupabaseClient] = useState(null);
 
   /**
-   * PŘÍMÝ PŘÍSTUP K ENV PROMĚNNÝM
-   * Musí být zapsáno doslovně, aby to Next.js bundler na Vercelu našel.
-   * V sandboxu to může hodit chybu 'process is not defined', kterou zachytíme v initu.
+   * 🚀 GURU STATIC ENVIROMENT INJECTION
+   * Tady k proměnným přistupujeme naprosto doslova. 
+   * Bundler Next.js tyto řetězce při buildu nahradí skutečnými hodnotami.
    */
-  const getEnv = () => {
-    try {
-      return {
-        url: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-        key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-        webhook: process.env.NEXT_PUBLIC_MAKE_WEBHOOK2_URL || ""
-      };
-    } catch (e) {
-      return { url: "", key: "", webhook: "" };
-    }
-  };
+  let SUPABASE_URL = "";
+  let SUPABASE_KEY = "";
+  let WEBHOOK_URL = "";
 
-  const ENV = getEnv();
-  const isConfigValid = Boolean(ENV.url) && Boolean(ENV.key);
+  try {
+    // DOSLOVNÝ PŘÍSTUP - Kompilátor Vercelu toto při buildu "vypálí" do JS
+    SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+    WEBHOOK_URL = process.env.NEXT_PUBLIC_MAKE_WEBHOOK2_URL || "";
+  } catch (e) {
+    // Tichý fallback pro prostředí, kde process neexistuje (např. Canvas)
+  }
+
+  const isConfigValid = Boolean(SUPABASE_URL) && Boolean(SUPABASE_KEY);
 
   /**
-   * 🚀 GURU SYSTÉMOVÁ INICIALIZACE
+   * INICIALIZACE SYSTÉMU (Safe Client Pattern)
    */
   useEffect(() => {
-    const initGuruSystem = async () => {
-      try {
-        if (!isConfigValid) {
-          setLoading(false);
-          return;
-        }
+    // Diagnostický log pro tebe (uvidíš v konzoli F12 na webu)
+    console.log("Guru Env Check:", {
+      url: SUPABASE_URL ? "NALEZENO ✅" : "CHYBÍ ❌",
+      key: SUPABASE_KEY ? "NALEZENO ✅" : "CHYBÍ ❌",
+      webhook: WEBHOOK_URL ? "NALEZENO ✅" : "CHYBÍ ❌"
+    });
 
-        const client = getSupabaseClient(ENV.url, ENV.key);
+    const initGuruSystem = async () => {
+      if (!isConfigValid) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const client = getSupabaseClient(SUPABASE_URL, SUPABASE_KEY);
         if (!client) {
           setLoading(false);
           return;
@@ -93,45 +97,33 @@ export default function App() {
         if (data?.length > 0) setSelectedDeal(data[0]);
 
       } catch (err) {
-        setStatus(prev => ({ 
-          ...prev, 
-          error: isEn ? "DATABASE ERROR!" : "CHYBA DATABÁZE!" 
-        }));
+        setStatus(prev => ({ ...prev, error: isEn ? "DATABASE ERROR!" : "CHYBA DATABÁZE!" }));
       } finally {
         setLoading(false);
       }
     };
 
     initGuruSystem();
-  }, [locale]);
+  }, [locale, SUPABASE_URL, SUPABASE_KEY]);
 
-  // Manuální refresh dat
   const handleRefresh = async () => {
     if (!supabaseClient) return;
     setLoading(true);
     try {
-      const { data } = await supabaseClient
-        .from('game_deals')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data } = await supabaseClient.from('game_deals').select('*').order('created_at', { ascending: false });
       setDeals(data || []);
     } catch (e) {}
     setLoading(false);
   };
 
-  // Toggle připnutí na Homepage (max 3)
   const toggleFeatured = async (e, deal) => {
     e.stopPropagation();
     if (!supabaseClient) return;
     
     const featuredCount = deals.filter(d => d.is_featured).length;
     if (!deal.is_featured && featuredCount >= 3) {
-      setStatus({ 
-        firing: false, 
-        success: false, 
-        error: isEn ? "MAX 3 DEALS ON HOMEPAGE!" : "MAXIMÁLNĚ 3 DEALY NA HOMEPAGE!" 
-      });
-      setTimeout(() => setStatus(prev => ({ ...prev, error: null })), 4000);
+      setStatus({ firing: false, success: false, error: isEn ? "MAX 3 DEALS ON HP!" : "MAXIMÁLNĚ 3 DEALY NA HP!" });
+      setTimeout(() => setStatus(prev => ({ ...prev, error: null })), 3000);
       return;
     }
 
@@ -148,10 +140,9 @@ export default function App() {
     }
   };
 
-  // Odeslání na Make.com (Pouze Webhook 2)
   const fireToMake = async () => {
-    if (!ENV.webhook) {
-      setStatus({ firing: false, success: false, error: "WEBHOOK 2 URL MISSING!" });
+    if (!WEBHOOK_URL) {
+      setStatus({ firing: false, success: false, error: "WEBHOOK 2 MISSING!" });
       return;
     }
     if (!selectedDeal) return;
@@ -171,7 +162,7 @@ export default function App() {
     };
 
     try {
-      const response = await fetch(ENV.webhook, {
+      const response = await fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -181,30 +172,30 @@ export default function App() {
         setStatus({ firing: false, success: true, error: null });
         setTimeout(() => setStatus(prev => ({ ...prev, success: null })), 3000);
       } else {
-        throw new Error(`MAKE STATUS: ${response.status}`);
+        throw new Error(`STATUS: ${response.status}`);
       }
     } catch (err) {
       setStatus({ firing: false, success: false, error: err.message });
     }
   };
 
-  // DIAGNOSTICKÉ UI PRO PŘÍPAD CHYBĚJÍCÍ KONFIGURACE NEBO MODULŮ
-  if (!loading && (!isConfigValid || !supabaseClient)) {
+  // --- DIAGNOSTICKÝ PANEL (Vytvořen na základě rady ChatGPT) ---
+  if (!loading && !isConfigValid) {
     return (
       <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center p-6 text-center">
         <div className="max-w-md bg-red-950/20 border border-red-500 p-10 rounded-[40px] backdrop-blur-xl shadow-2xl">
           <AlertCircle className="text-red-500 mx-auto mb-6" size={64} />
-          <h2 className="text-2xl font-black text-white uppercase mb-4 italic tracking-tighter">Guru System Alert!</h2>
+          <h2 className="text-2xl font-black text-white uppercase mb-4 italic tracking-tighter">Vercel Build Cache Error!</h2>
           <p className="text-neutral-400 text-sm mb-8 leading-relaxed uppercase tracking-widest font-bold">
-            Kód je připraven, ale pro aktivaci v tomto prostředí chybí moduly nebo klíče ve Vercelu.
+            Bundler nenašel tvé proměnné. Proveď Redeploy a zvol <strong>"Build Cache: Disabled"</strong>.
           </p>
           <div className="text-left bg-black/50 p-5 rounded-2xl font-mono text-[10px] space-y-3 mb-8 border border-red-900/30">
-            <div className="flex justify-between"><span>Supabase URL:</span> <span className={ENV.url ? "text-green-500" : "text-red-500"}>{ENV.url ? "OK" : "MISSING"}</span></div>
-            <div className="flex justify-between"><span>Supabase Key:</span> <span className={ENV.key ? "text-green-500" : "text-red-500"}>{ENV.key ? "OK" : "MISSING"}</span></div>
-            <div className="flex justify-between"><span>Webhook 2:</span> <span className={ENV.webhook ? "text-green-500" : "text-red-500"}>{ENV.webhook ? "OK" : "MISSING"}</span></div>
+            <div className="flex justify-between uppercase"><span>URL:</span> <span className={SUPABASE_URL ? "text-green-500" : "text-red-500"}>{SUPABASE_URL ? "OK ✅" : "MISSING ❌"}</span></div>
+            <div className="flex justify-between uppercase"><span>KEY:</span> <span className={SUPABASE_KEY ? "text-green-500" : "text-red-500"}>{SUPABASE_KEY ? "OK ✅" : "MISSING ❌"}</span></div>
+            <div className="flex justify-between uppercase"><span>WEBHOOK 2:</span> <span className={WEBHOOK_URL ? "text-green-500" : "text-red-500"}>{WEBHOOK_URL ? "OK ✅" : "MISSING ❌"}</span></div>
           </div>
           <button onClick={() => window.location.reload()} className="w-full py-4 bg-red-600 text-white font-black rounded-xl hover:bg-red-500 transition-all uppercase text-xs tracking-widest shadow-lg shadow-red-600/30">
-            Obnovit Guru Engine
+            Zkusit Refreshnout Systém
           </button>
         </div>
       </div>
@@ -230,19 +221,19 @@ export default function App() {
             </h1>
             <p className="text-neutral-500 font-black text-[11px] uppercase tracking-[0.4em] mt-3 flex items-center gap-3">
               SYNC STATUS: 
-              <span className={`px-2 py-0.5 rounded ${ENV.webhook ? 'bg-green-600/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
-                {ENV.webhook ? 'READY TO FIRE' : 'WEBHOOK 2 MISSING'}
+              <span className={`px-2 py-0.5 rounded ${WEBHOOK_URL ? 'bg-green-600/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
+                {WEBHOOK_URL ? 'READY TO FIRE' : 'WEBHOOK 2 MISSING'}
               </span>
             </p>
           </div>
           
           <button 
             onClick={fireToMake}
-            disabled={status.firing || !selectedDeal || !ENV.webhook}
+            disabled={status.firing || !selectedDeal || !WEBHOOK_URL}
             className={`relative z-10 px-16 py-7 rounded-2xl font-black text-xl transition-all duration-500 flex items-center gap-4 shadow-2xl ${
               status.success ? 'bg-green-600' :
               status.error ? 'bg-red-800' :
-              (!selectedDeal || !ENV.webhook) ? 'bg-neutral-800 opacity-40 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 hover:scale-[1.03] active:scale-95 shadow-red-600/40'
+              (!selectedDeal || !WEBHOOK_URL) ? 'bg-neutral-800 opacity-40 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 hover:scale-[1.03] active:scale-95 shadow-red-600/40'
             }`}
           >
             {status.firing ? 'PALBA...' : status.success ? <><Check size={28} /> ZÁSAH!</> : <><Send size={28} /> STŘELIT NA MAKE</>}
@@ -278,7 +269,7 @@ export default function App() {
                 }`}
               >
                 <div className="flex items-center gap-10">
-                  <div className="w-24 h-24 rounded-2xl overflow-hidden border border-white/10 flex-shrink-0 bg-black shadow-inner relative">
+                  <div className="w-24 h-24 rounded-2xl overflow-hidden border border-white/10 flex-shrink-0 bg-black shadow-inner relative group-hover:shadow-2xl transition-all duration-500">
                     <img src={deal.image_url} alt="" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
                     <div className={`absolute inset-0 transition-opacity duration-500 ${selectedDeal?.id === deal.id ? 'bg-red-600/10' : 'bg-transparent'}`}></div>
                   </div>
