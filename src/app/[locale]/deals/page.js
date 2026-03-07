@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-// Tvrdé SEO: Meta tagy pro stránku se slevami
+// Tvrdé SEO: Meta tagy pro Google
 export async function generateMetadata({ params }) {
   const locale = params?.locale || 'cs';
   const isEn = locale === 'en';
@@ -26,7 +26,7 @@ export default async function DealsPage({ params }) {
   const locale = params?.locale || 'cs';
   const isEn = locale === 'en';
 
-  // Načtení her z databáze, seřazeno od nejnovější
+  // Načtení her z databáze
   const { data: deals, error } = await supabase
     .from('game_deals')
     .select('*')
@@ -61,11 +61,6 @@ export default async function DealsPage({ params }) {
           text-decoration: none !important;
           color: inherit !important;
         }
-        .guru-deals-wrapper h1, .guru-deals-wrapper h2, .guru-deals-wrapper h3 {
-          text-decoration: none !important;
-          color: #fff !important;
-        }
-        
         .guru-header-card {
           background: rgba(31, 40, 51, 0.95);
           padding: 60px 40px;
@@ -77,7 +72,6 @@ export default async function DealsPage({ params }) {
           margin: 0 auto 80px auto;
           backdrop-filter: blur(10px);
         }
-
         .guru-main-cta {
           display: inline-block;
           margin-top: 35px;
@@ -93,12 +87,6 @@ export default async function DealsPage({ params }) {
           border: 2px solid rgba(255, 255, 255, 0.2);
           transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .guru-main-cta:hover {
-          transform: translateY(-5px) scale(1.03);
-          box-shadow: 0 20px 50px rgba(249, 115, 22, 0.7);
-          border-color: #fff;
-        }
-
         .deals-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -106,7 +94,6 @@ export default async function DealsPage({ params }) {
           max-width: 1200px;
           margin: 0 auto;
         }
-
         .guru-card {
           background: rgba(17, 19, 24, 0.9);
           border: 1px solid rgba(234, 179, 8, 0.3);
@@ -117,30 +104,28 @@ export default async function DealsPage({ params }) {
           height: 100%;
           transition: all 0.4s ease;
           box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+          position: relative;
         }
         .guru-card:hover {
           transform: translateY(-10px);
           border-color: #eab308;
           box-shadow: 0 20px 45px rgba(234, 179, 8, 0.25);
         }
-
         .guru-card-img-container {
           position: relative;
           height: 200px;
           width: 100%;
           background: #000;
           overflow: hidden;
+          display: block !important;
         }
         .guru-card-img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover !important;
+          display: block !important;
           transition: transform 0.6s ease;
         }
-        .guru-card:hover .guru-card-img {
-          transform: scale(1.1);
-        }
-
         .guru-card-badge {
           position: absolute;
           top: 15px;
@@ -150,22 +135,22 @@ export default async function DealsPage({ params }) {
           padding: 8px 16px;
           border-radius: 12px;
           font-weight: 950;
-          font-size: 1.2rem;
+          font-size: 1.1rem;
           box-shadow: 0 5px 15px rgba(234,88,12,0.6);
-          z-index: 10;
+          z-index: 20;
         }
-
         .guru-card-body {
           padding: 25px;
           flex-grow: 1;
           display: flex;
           flex-direction: column;
+          background: rgba(31, 40, 51, 0.5);
         }
         .guru-card-title {
-          font-size: 24px;
+          font-size: 22px;
           font-weight: 900;
           color: #fff !important;
-          margin-bottom: 12px;
+          margin: 0 0 12px 0 !important;
           line-height: 1.1;
           text-transform: uppercase;
         }
@@ -186,26 +171,12 @@ export default async function DealsPage({ params }) {
           text-transform: uppercase;
           letter-spacing: 1px;
           font-size: 14px;
-          transition: background 0.3s;
-        }
-        .guru-card:hover .guru-card-btn {
-          background: #facc15;
-        }
-
-        .guru-empty-state {
-          grid-column: 1 / -1;
-          background: rgba(31, 40, 51, 0.95);
-          padding: 80px 20px;
-          border-radius: 30px;
-          border: 1px solid #a855f7;
-          text-align: center;
-          box-shadow: 0 0 40px rgba(168, 85, 247, 0.2);
         }
       `}</style>
 
       <main className="guru-deals-wrapper" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
         
-        {/* HLAVIČKA - GURU STYLE */}
+        {/* HLAVIČKA */}
         <div className="guru-header-card">
           <h1 style={{ 
             fontSize: 'clamp(2.5rem, 8vw, 4rem)', 
@@ -224,21 +195,34 @@ export default async function DealsPage({ params }) {
           </a>
         </div>
 
-        {/* MŘÍŽKA KARET */}
+        {/* MŘÍŽKA S KARTAMI */}
         <div className="deals-grid">
           {deals && deals.map((deal) => (
             <a key={deal.id} href={deal.affiliate_link} target="_blank" rel="nofollow sponsored" className="guru-card">
+              
+              {/* Sekce obrázku s neprůstřelným zobrazením */}
               <div className="guru-card-img-container">
                 {deal.image_url ? (
-                  <img src={deal.image_url} alt={deal.title} className="guru-card-img" />
+                  <img 
+                    src={deal.image_url} 
+                    alt={deal.title} 
+                    className="guru-card-img" 
+                    referrerPolicy="no-referrer"
+                  />
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#444', fontWeight: '900' }}>NO IMAGE</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#111' }}>
+                    <div style={{ width: '60px', height: '60px', borderRadius: '50%', border: '3px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#66fcf1', fontWeight: '900', fontSize: '1.5rem', boxShadow: '0 0 15px rgba(102, 252, 241, 0.4)' }}>HG</div>
+                    <span style={{ marginTop: '10px', fontSize: '10px', color: '#444', fontWeight: '900' }}>IMAGE MISSING</span>
+                  </div>
                 )}
+                
+                {/* Cenovka */}
                 <div className="guru-card-badge">
                   {isEn ? deal.price_en : deal.price_cs}
                 </div>
               </div>
 
+              {/* Obsah karty */}
               <div className="guru-card-body">
                 <h2 className="guru-card-title">{deal.title}</h2>
                 <p className="guru-card-desc">
@@ -251,9 +235,9 @@ export default async function DealsPage({ params }) {
             </a>
           ))}
           
-          {/* PRÁZDNÝ STAV */}
+          {/* Prázdný stav */}
           {(!deals || deals.length === 0) && (
-            <div className="guru-empty-state">
+            <div className="guru-empty-state" style={{ gridColumn: '1 / -1', background: 'rgba(31, 40, 51, 0.95)', padding: '80px 20px', borderRadius: '30px', border: '1px solid #a855f7', textAlign: 'center', boxShadow: '0 0 40px rgba(168, 85, 247, 0.2)' }}>
               <h3 style={{ color: '#a855f7', fontSize: '1.8rem', fontWeight: '950', marginBottom: '15px' }}>
                 {isEn ? "GURU SYSTEMS SCANNING FOR DEALS..." : "GURU SYSTÉMY SKENUJÍ NOVÉ SLEVY..."}
               </h3>
