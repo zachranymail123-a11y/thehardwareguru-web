@@ -157,7 +157,7 @@ export default async function ArticleDetail({ params }) {
             gap: '25px' 
           }}>
             <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
-              {isEn ? "Enjoyed the article? Support us or grab a game!" : "Líbil se ti článek? Podpoř nás nebo ulov pecku!"}
+              {isEn ? "Enjoyed the article? Support us either by buying games at the best prices or directly." : "Líbil se ti článek? Podpoř nás buď nákupem her za ty nejlepší ceny, nebo přímo."}
             </h4>
             <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
               {/* Odkaz změněn přímo na hlavní HRK affiliate link */}
