@@ -30,6 +30,7 @@ export default function SestavyBubble() {
   const isEn = activePath.startsWith('/en');
   
   // 🛡️ GURU SHIELD: Pokud jsme v administraci (/admin), bublina se nikdy neukáže
+  // Kontrolujeme i URL bez prefixu i s prefixem
   const isAdmin = activePath.includes('/admin');
 
   if (!isVisible || isAdmin) return null;
