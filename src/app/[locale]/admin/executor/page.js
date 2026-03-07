@@ -1,26 +1,18 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Rocket, Send, Check, AlertCircle, ChevronRight, Flame, Settings } from 'lucide-react';
+import { Rocket, Send, Check, AlertCircle, ChevronRight, Flame } from 'lucide-react';
 
 /**
- * GURU ENGINE: Bezpečný přístup k environmentálním proměnným.
- * V Next.js klientských komponentách musíme přistupovat k NEXT_PUBLIC_ proměnným přímo.
- * Ošetřeno pomocí funkce getEnv, aby se předešlo chybě ReferenceError v prostředí bez globálního objektu 'process'.
+ * GURU ENGINE: Přímý přístup k environmentálním proměnným.
+ * V Next.js klientských komponentách musí být přístup DOSLOVNÝ (literal),
+ * aby kompilátor mohl hodnoty "vypálit" do kódu během buildu na Vercelu.
  */
-const getEnv = (key) => {
-  try {
-    return typeof process !== 'undefined' ? process.env[key] : undefined;
-  } catch (e) {
-    return undefined;
-  }
-};
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const MAKE_WEBHOOK = process.env.NEXT_PUBLIC_MAKE_WEBHOOK2_URL || "";
 
-const SUPABASE_URL = getEnv("NEXT_PUBLIC_SUPABASE_URL") || "";
-const SUPABASE_ANON_KEY = getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY") || "";
-const MAKE_WEBHOOK = getEnv("NEXT_PUBLIC_MAKE_WEBHOOK2_URL") || "";
-
-// Dynamický import pro Supabase (zabrání pádu při chybějící knihovně v preview)
+// Dynamický import pro Supabase (zabrání pádu v preview)
 let createClient;
 try {
   createClient = require('@supabase/supabase-js').createClient;
@@ -28,17 +20,23 @@ try {
   createClient = null;
 }
 
-// Inicializace Supabase klienta s ochranou proti prázdným URL
+// Inicializace Supabase klienta s ochranou
 const supabase = (createClient && SUPABASE_URL && SUPABASE_ANON_KEY) 
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
   : null;
 
 /**
  * App komponenta - Guru Social Executor (Lite verze)
+ * Spravuje výběr slev a jejich odesílání na Make.com.
  */
 export default function App() {
-  // Bezpečný přístup k parametrům (lokalizace)
   const [locale, setLocale] = useState('cs');
+  const [deals, setDeals] = useState([]);
+  const [selectedDeal, setSelectedDeal] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState({ firing: false, success: null, error: null });
+
+  // Detekce lokalizace z URL
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const pathParts = window.location.pathname.split('/');
@@ -47,11 +45,6 @@ export default function App() {
   }, []);
 
   const isEn = locale === 'en';
-
-  const [deals, setDeals] = useState([]);
-  const [selectedDeal, setSelectedDeal] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState({ firing: false, success: null, error: null });
 
   // Načtení dat z databáze game_deals
   const fetchDeals = async () => {
@@ -80,7 +73,9 @@ export default function App() {
     fetchDeals();
   }, [locale]);
 
-  // Přepíná status 'is_featured' (max 3)
+  /**
+   * Přepíná status 'is_featured' pro zobrazení na Homepage (max 3 položky).
+   */
   const toggleFeatured = async (e, deal) => {
     e.stopPropagation();
     if (!supabase) return;
@@ -112,7 +107,9 @@ export default function App() {
     }
   };
 
-  // Odeslání na Make.com Webhook 2
+  /**
+   * Odpálí vybraný deal na Webhook 2 (Make.com).
+   */
   const fireToMake = async () => {
     if (!MAKE_WEBHOOK) {
       setStatus({ firing: false, success: false, error: "CHYBÍ NEXT_PUBLIC_MAKE_WEBHOOK2_URL!" });
@@ -152,22 +149,26 @@ export default function App() {
     }
   };
 
-  // --- GURU ZÁCHRANNÁ BRZDA (UI PRO CHYBĚJÍCÍ KONFIGURACI) ---
+  // ZÁCHRANNÁ BRZDA: Pokud proměnné opravdu chybí v JS kontextu
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return (
       <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center p-6 text-center">
         <div className="max-w-md bg-red-950/20 border border-red-500 p-10 rounded-[32px] backdrop-blur-xl">
           <AlertCircle className="text-red-500 mx-auto mb-6" size={64} />
-          <h1 className="text-2xl font-black text-white uppercase mb-4 tracking-tighter">Guru Konfigurace Chybí!</h1>
+          <h1 className="text-2xl font-black text-white uppercase mb-4 tracking-tighter">Konfigurace nebyla načtena!</h1>
           <p className="text-neutral-400 text-sm leading-relaxed mb-8">
-            Next.js nemůže najít tvůj <strong>Supabase URL</strong> nebo <strong>Anon Key</strong>. 
-            Ujisti se, že máš ve Vercelu nastavené proměnné:
+            Next.js nevidí tvé proměnné. Zkontroluj, zda se ve Vercelu jmenují přesně takto a zda jsi po jejich přidání udělal <strong>Redeploy</strong>:
           </p>
-          <div className="text-left bg-black/40 p-4 rounded-xl font-mono text-[10px] text-red-400 space-y-2 mb-8">
+          <div className="text-left bg-black/40 p-4 rounded-xl font-mono text-[10px] text-red-400 space-y-2 mb-8 uppercase tracking-widest">
             <div>NEXT_PUBLIC_SUPABASE_URL</div>
             <div>NEXT_PUBLIC_SUPABASE_ANON_KEY</div>
           </div>
-          <p className="text-xs text-neutral-500 italic">Po přidání proměnných musíš udělat "Redeploy" ve Vercelu.</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-red-600 text-white font-black rounded-xl hover:bg-red-500 transition-all uppercase text-xs"
+          >
+            Zkusit znovu načíst
+          </button>
         </div>
       </div>
     );
@@ -192,8 +193,8 @@ export default function App() {
               Executor <span className="text-red-600">Lite</span>
             </h1>
             <p className="text-neutral-500 font-bold text-[10px] uppercase tracking-[0.2em] mt-1">
-              MAKE WEBHOOK 2: <span className={MAKE_WEBHOOK ? 'text-green-500' : 'text-red-500'}>
-                {MAKE_WEBHOOK ? 'PŘIPOJENO' : 'CHYBÍ (PROSÍM NASTAV VE VERCELU)'}
+              WEBHOOK 2: <span className={MAKE_WEBHOOK ? 'text-green-500' : 'text-red-500'}>
+                {MAKE_WEBHOOK ? 'READY TO FIRE' : 'DISCONNECTED'}
               </span>
             </p>
           </div>
@@ -221,7 +222,7 @@ export default function App() {
         <div className="space-y-4">
           <div className="flex justify-between items-center px-4">
              <h2 className="text-[10px] font-black text-neutral-600 uppercase tracking-[0.5em]">
-               KATALOG NABÍDEK ({deals.filter(d => d.is_featured).length}/3 PŘIPNUTO NA HP)
+               KATALOG ({deals.filter(d => d.is_featured).length}/3 PŘIPNUTO NA HP)
              </h2>
           </div>
           
@@ -248,7 +249,7 @@ export default function App() {
                       <span className="text-red-500 font-black text-sm">{isEn ? deal.price_en : deal.price_cs}</span>
                       {deal.discount_code && (
                         <span className="text-[9px] font-black text-pink-500 uppercase tracking-widest border border-pink-500/30 px-2 py-0.5 rounded">
-                          CODE: {deal.discount_code}
+                          KÓD: {deal.discount_code}
                         </span>
                       )}
                     </div>
@@ -256,7 +257,6 @@ export default function App() {
                 </div>
                 
                 <div className="flex items-center gap-4">
-                    {/* PLAMEN PRO HOMEPAGE */}
                     <button 
                       onClick={(e) => toggleFeatured(e, deal)}
                       title={deal.is_featured ? "Odepnout z Homepage" : "Připnout na Homepage"}
@@ -278,7 +278,7 @@ export default function App() {
               </div>
             )) : (
               <div className="p-20 text-center border border-dashed border-white/5 rounded-[40px] text-neutral-800 font-black uppercase tracking-[0.3em]">
-                Žádná data v databázi
+                Databáze je prázdná
               </div>
             )}
           </div>
