@@ -22,55 +22,92 @@ export default function AdminAddDeal() {
     description_en: '',
     price_cs: '',
     price_en: '',
-    image_url: '',
     affiliate_link: ''
   });
 
+  const [imageFile, setImageFile] = useState(null);
   const [status, setStatus] = useState({ loading: false, error: null, success: false });
 
-  // Zpracování změn v políčkách
+  // Zpracování změn v textových políčkách
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Odeslání formuláře do databáze
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setStatus({ loading: true, error: null, success: false });
-
-    const { error } = await supabase
-      .from('game_deals')
-      .insert([formData]);
-
-    if (error) {
-      console.error("Chyba při ukládání:", error);
-      setStatus({ loading: false, error: error.message, success: false });
-    } else {
-      setStatus({ loading: false, error: null, success: true });
-      // Vyčištění formuláře po úspěšném přidání
-      setFormData({
-        title: '', description_cs: '', description_en: '', price_cs: '', price_en: '', image_url: '', affiliate_link: ''
-      });
-      // Skrytí hlášky o úspěchu po 3 vteřinách
-      setTimeout(() => setStatus(prev => ({ ...prev, success: false })), 3000);
+  // Zpracování výběru souboru
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
     }
   };
 
-  // Texty administrace podle jazyka (Guru style)
+  // Odeslání formuláře a nahrání obrázku
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!imageFile) {
+      setStatus({ loading: false, error: isEn ? "Please select an image!" : "Vyber prosím obrázek!", success: false });
+      return;
+    }
+
+    setStatus({ loading: true, error: null, success: false });
+
+    try {
+      // 1. Nahrání obrázku do Supabase Storage (Bucket: game-deals)
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('game-deals')
+        .upload(filePath, imageFile);
+
+      if (uploadError) throw uploadError;
+
+      // 2. Získání veřejné URL nahraného obrázku
+      const { data: { publicUrl } } = supabase.storage
+        .from('game-deals')
+        .getPublicUrl(filePath);
+
+      // 3. Uložení všech dat do databáze
+      const { error: dbError } = await supabase
+        .from('game_deals')
+        .insert([{
+          ...formData,
+          image_url: publicUrl
+        }]);
+
+      if (dbError) throw dbError;
+
+      // Úspěch!
+      setStatus({ loading: false, error: null, success: true });
+      setFormData({
+        title: '', description_cs: '', description_en: '', price_cs: '', price_en: '', affiliate_link: ''
+      });
+      setImageFile(null);
+      // Reset inputu pro soubor
+      e.target.reset();
+
+      setTimeout(() => setStatus(prev => ({ ...prev, success: false })), 3000);
+
+    } catch (error) {
+      console.error("Guru Error:", error);
+      setStatus({ loading: false, error: error.message, success: false });
+    }
+  };
+
+  // Texty administrace (Guru style)
   const t = {
-    title: isEn ? "ADD NEW GAME DEAL" : "PŘIDAT NOVOU SLEVU NA HRU",
+    title: isEn ? "ADD NEW GAME DEAL (UPLOAD MODE)" : "PŘIDAT NOVOU SLEVU (MÓD NAHRÁVÁNÍ)",
     gameName: isEn ? "Game Title" : "Název hry",
-    imgUrl: isEn ? "Image URL (16:9)" : "URL obrázku (Banner 16:9)",
+    fileLabel: isEn ? "Upload Banner (16:9)" : "Nahrát Banner (16:9)",
     link: isEn ? "HRK Affiliate Link (DeepLink)" : "HRK Affiliate Odkaz (DeepLink)",
     priceCs: isEn ? "Price (CZ - e.g. 1 100 Kč)" : "Cena (CZ - např. 1 100 Kč)",
     priceEn: isEn ? "Price (EN - e.g. 45 €)" : "Cena (EN - např. 45 €)",
     descCs: isEn ? "Short description (CZ)" : "Krátký popis (CZ)",
     descEn: isEn ? "Short description (EN)" : "Krátký popis (EN)",
-    saveBtn: isEn ? "SAVE DEAL TO DATABASE" : "ULOŽIT SLEVU DO DATABÁZE",
-    saving: isEn ? "SAVING DATA..." : "UKLÁDÁM DATA...",
-    success: isEn ? "GURU DEAL SECURED AND PUBLISHED! 🔥" : "GURU SLEVA BYLA ÚSPĚŠNĚ ZVEŘEJNĚNA! 🔥",
-    errorMsg: isEn ? "SYSTEM ERROR:" : "CHYBA SYSTÉMU:"
+    saveBtn: isEn ? "UPLOAD AND PUBLISH" : "NAHRÁT A ZVEŘEJNIT",
+    saving: isEn ? "UPLOADING TO GURU CLOUD..." : "NAHRÁVÁM DO GURU CLOUDU...",
+    success: isEn ? "IMAGE STORED AND DEAL PUBLISHED! 🔥" : "OBRÁZEK ULOŽEN A SLEVA ZVEŘEJNĚNA! 🔥"
   };
 
   // --- GURU MASTER STYLES ---
@@ -85,193 +122,60 @@ export default function AdminAddDeal() {
     paddingBottom: '80px'
   };
 
-  const formCardStyles = {
-    background: 'rgba(31, 40, 51, 0.95)',
-    padding: '40px',
-    borderRadius: '25px',
-    border: '1px solid rgba(234, 179, 8, 0.3)',
-    boxShadow: '0 15px 45px rgba(0,0,0,0.6)',
-    backdropFilter: 'blur(10px)'
-  };
-
-  const inputStyles = {
-    width: '100%',
-    background: 'rgba(10, 11, 13, 0.8)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '12px',
-    padding: '14px 20px',
-    color: '#fff',
-    outline: 'none',
-    transition: 'all 0.3s ease'
-  };
-
   return (
     <div style={globalStyles}>
       <style>{`
-        .guru-input:focus {
-          border-color: #eab308 !important;
-          box-shadow: 0 0 15px rgba(234, 179, 8, 0.2) !important;
-        }
+        .guru-input:focus { border-color: #eab308 !important; box-shadow: 0 0 15px rgba(234, 179, 8, 0.2) !important; }
         .guru-submit-btn {
-          width: 100%;
-          padding: 20px;
+          width: 100%; padding: 20px;
           background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-          color: #ffffff !important;
-          font-weight: 900;
-          font-size: 1.2rem;
-          text-transform: uppercase;
-          letter-spacing: 2px;
-          border-radius: 16px;
-          border: 2px solid rgba(255, 255, 255, 0.1);
-          box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4);
-          cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          color: #ffffff !important; font-weight: 900; font-size: 1.2rem;
+          text-transform: uppercase; letter-spacing: 2px; border-radius: 16px;
+          border: 2px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4);
+          cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .guru-submit-btn:hover:not(:disabled) {
-          transform: translateY(-3px) scale(1.01);
-          box-shadow: 0 15px 40px rgba(249, 115, 22, 0.6);
-          border-color: #fbd38d;
-        }
-        .guru-submit-btn:disabled {
-          background: #333;
-          box-shadow: none;
-          border-color: #555;
-          color: #888 !important;
-          cursor: not-allowed;
-          transform: none;
-        }
+        .guru-submit-btn:hover:not(:disabled) { transform: translateY(-3px) scale(1.01); box-shadow: 0 15px 40px rgba(249, 115, 22, 0.6); }
       `}</style>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <div style={formCardStyles}>
-          <h1 className="text-3xl sm:text-4xl font-black text-white mb-8 border-b border-neutral-800 pb-6 uppercase tracking-wide">
-            <span style={{ color: '#eab308', textShadow: '0 0 15px rgba(234, 179, 8, 0.5)' }}>🔥</span> {t.title}
+      <div className="max-w-4xl mx-auto px-4">
+        <div style={{ background: 'rgba(31, 40, 51, 0.95)', padding: '40px', borderRadius: '25px', border: '1px solid rgba(234, 179, 8, 0.3)', backdropFilter: 'blur(10px)' }}>
+          <h1 className="text-3xl font-black mb-8 border-b border-neutral-800 pb-6">
+            <span style={{ color: '#eab308' }}>🔥</span> {t.title}
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            
-            {/* Název hry a Obrázek */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-xs font-black text-neutral-400 mb-2 uppercase tracking-wider">{t.gameName} *</label>
-                <input
-                  type="text"
-                  name="title"
-                  required
-                  value={formData.title}
-                  onChange={handleChange}
-                  className="guru-input"
-                  style={inputStyles}
-                  placeholder="Např. Cyberpunk 2077"
-                />
+                <label className="block text-xs font-black text-neutral-400 mb-2 uppercase">{t.gameName} *</label>
+                <input type="text" name="title" required value={formData.title} onChange={handleChange} className="guru-input w-full p-4 bg-black/50 border border-white/10 rounded-xl text-white outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-black text-neutral-400 mb-2 uppercase tracking-wider">{t.imgUrl}</label>
-                <input
-                  type="url"
-                  name="image_url"
-                  value={formData.image_url}
-                  onChange={handleChange}
-                  className="guru-input"
-                  style={inputStyles}
-                  placeholder={isEn ? "https://... (ideal 16:9)" : "https://... (ideálně 16:9)"}
-                />
+                <label className="block text-xs font-black text-neutral-400 mb-2 uppercase">{t.fileLabel} *</label>
+                <input type="file" accept="image/*" required onChange={handleFileChange} className="w-full p-3 bg-black/50 border border-white/10 rounded-xl text-white outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-orange-500 file:text-white cursor-pointer" />
               </div>
             </div>
 
-            {/* HRK Affiliate Link */}
             <div>
-              <label className="block text-xs font-black mb-2 uppercase tracking-wider" style={{ color: '#f97316' }}>{t.link} *</label>
-              <input
-                type="url"
-                name="affiliate_link"
-                required
-                value={formData.affiliate_link}
-                onChange={handleChange}
-                className="guru-input"
-                style={{ ...inputStyles, border: '1px solid rgba(249, 115, 22, 0.4)' }}
-                placeholder="https://www.hrkgame.com/cs/games/.../?ref=thehardwareguru"
-              />
+              <label className="block text-xs font-black text-orange-500 mb-2 uppercase">{t.link} *</label>
+              <input type="url" name="affiliate_link" required value={formData.affiliate_link} onChange={handleChange} className="guru-input w-full p-4 bg-black/50 border border-orange-500/30 rounded-xl text-white outline-none" placeholder="https://..." />
             </div>
 
-            {/* Ceny (CZ a EN) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-xs font-black text-neutral-400 mb-2 uppercase tracking-wider">{t.priceCs}</label>
-                <input
-                  type="text"
-                  name="price_cs"
-                  value={formData.price_cs}
-                  onChange={handleChange}
-                  className="guru-input"
-                  style={inputStyles}
-                  placeholder="1 100 Kč"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-black text-neutral-400 mb-2 uppercase tracking-wider">{t.priceEn}</label>
-                <input
-                  type="text"
-                  name="price_en"
-                  value={formData.price_en}
-                  onChange={handleChange}
-                  className="guru-input"
-                  style={inputStyles}
-                  placeholder="45 €"
-                />
-              </div>
+              <input type="text" name="price_cs" value={formData.price_cs} onChange={handleChange} placeholder={t.priceCs} className="guru-input w-full p-4 bg-black/50 border border-white/10 rounded-xl text-white outline-none" />
+              <input type="text" name="price_en" value={formData.price_en} onChange={handleChange} placeholder={t.priceEn} className="guru-input w-full p-4 bg-black/50 border border-white/10 rounded-xl text-white outline-none" />
             </div>
 
-            {/* Popisky (CZ a EN) */}
             <div className="space-y-6">
-              <div>
-                <label className="block text-xs font-black text-neutral-400 mb-2 uppercase tracking-wider">{t.descCs}</label>
-                <textarea
-                  name="description_cs"
-                  rows="3"
-                  value={formData.description_cs}
-                  onChange={handleChange}
-                  className="guru-input"
-                  style={inputStyles}
-                ></textarea>
-              </div>
-              <div>
-                <label className="block text-xs font-black text-neutral-400 mb-2 uppercase tracking-wider">{t.descEn}</label>
-                <textarea
-                  name="description_en"
-                  rows="3"
-                  value={formData.description_en}
-                  onChange={handleChange}
-                  className="guru-input"
-                  style={inputStyles}
-                ></textarea>
-              </div>
+              <textarea name="description_cs" rows="2" value={formData.description_cs} onChange={handleChange} placeholder={t.descCs} className="guru-input w-full p-4 bg-black/50 border border-white/10 rounded-xl text-white outline-none"></textarea>
+              <textarea name="description_en" rows="2" value={formData.description_en} onChange={handleChange} placeholder={t.descEn} className="guru-input w-full p-4 bg-black/50 border border-white/10 rounded-xl text-white outline-none"></textarea>
             </div>
 
-            {/* Chybové a úspěšné hlášky */}
-            {status.error && (
-              <div className="p-5 bg-red-950/80 border border-red-500 text-red-200 rounded-xl font-bold uppercase tracking-wider">
-                {t.errorMsg} {status.error}
-              </div>
-            )}
-            {status.success && (
-              <div className="p-5 bg-green-950/80 border border-green-500 text-green-400 rounded-xl font-black uppercase tracking-wider text-center shadow-[0_0_20px_rgba(34,197,94,0.3)]">
-                {t.success}
-              </div>
-            )}
+            {status.error && <div className="p-4 bg-red-900 border border-red-500 text-white rounded-xl font-bold uppercase">{status.error}</div>}
+            {status.success && <div className="p-4 bg-green-900 border border-green-500 text-green-400 rounded-xl font-black text-center">{t.success}</div>}
 
-            {/* Tlačítko pro odeslání */}
-            <div className="pt-4">
-              <button
-                type="submit"
-                disabled={status.loading}
-                className="guru-submit-btn"
-              >
-                {status.loading ? t.saving : t.saveBtn}
-              </button>
-            </div>
-
+            <button type="submit" disabled={status.loading} className="guru-submit-btn">
+              {status.loading ? t.saving : t.saveBtn}
+            </button>
           </form>
         </div>
       </div>
