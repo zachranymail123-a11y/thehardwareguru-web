@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 // --- BEZPEČNÉ NAČÍTÁNÍ NEXT.JS MODULŮ (PROTI PÁDU V NÁHLEDU) ---
 let usePathname = () => '';
@@ -7,168 +8,165 @@ try {
   const nextNav = require('next/navigation');
   usePathname = nextNav.usePathname;
 } catch (e) {
-  // Silent catch pro Canvas
+  // Silent catch
 }
 
-export default function SupportPage() {
-  // 🚀 GURU JAZYKOVÁ LOGIKA S OCHRANOU
+/**
+ * GURU SUPREME SUPPORT WIDGET
+ * Kompletně sjednocený design všech tlačítek, integrace Google Subscribe a plná CZ/EN podpora.
+ * Přesně podle tvého zadání: QR, Karta, Revolut + Google + Affiliate Link.
+ */
+export default function SupportWidget() {
+  const [isOpen, setIsOpen] = useState(false);
   const [currentPath, setCurrentPath] = useState('');
+
   useEffect(() => {
     setCurrentPath(window.location.pathname);
   }, []);
 
+  // 🚀 GURU JAZYKOVÁ LOGIKA
   let pathname = '';
   try { pathname = usePathname() || ''; } catch (e) {}
-
   const isEn = (pathname || currentPath).startsWith('/en');
 
   const stripeLink = "https://buy.stripe.com/5kQdR900Nc115tSbTD9EI00";
   const revolutTag = "thehardwareguru";
   const hrkLink = "https://www.hrkgame.com/#a_aid=TheHardwareGuru";
 
-  const containerStyle = {
-    backgroundColor: '#0a0b0d',
-    color: '#ffffff',
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: '60px 20px',
-    fontFamily: 'sans-serif',
-    backgroundImage: 'url("/bg-guru.png")',
-    backgroundSize: 'cover',
-    backgroundAttachment: 'fixed'
-  };
-
-  const cardStyle = {
-    background: 'rgba(17, 19, 24, 0.95)',
-    backdropFilter: 'blur(15px)',
-    border: '1px solid rgba(168, 85, 247, 0.2)',
-    borderRadius: '32px',
-    padding: '40px',
-    maxWidth: '520px',
-    width: '100%',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
-    textAlign: 'center'
-  };
-
-  // 🚀 GURU UNIFIED BUTTON SYSTEM - MAXIMUM CONSISTENCY
+  // 🚀 GURU UNIFIED BUTTON SYSTEM - IDENTICKÝ DESIGN PRO VŠECHNA TLAČÍTKA
   const buttonStyle = (type) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '14px',
-    padding: '18px 24px',
-    borderRadius: '18px',
+    gap: '12px',
+    padding: '14px 15px',
+    borderRadius: '16px',
     textDecoration: 'none',
     fontWeight: '900',
-    fontSize: '15px',
+    fontSize: '13px',
     transition: '0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-    marginBottom: '12px',
+    marginBottom: '10px',
     width: '100%',
     boxSizing: 'border-box',
     border: '1px solid rgba(255, 255, 255, 0.05)',
     cursor: 'pointer',
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
-    // Všechna tlačítka mají stejné tmavé pozadí, kromě oranžového affiliate magnetu
+    // Barva: Všechna tmavá pro jednotnost, kromě oranžového affiliate magnetu
     backgroundColor: type === 'affiliate' ? 'transparent' : '#161920',
     background: type === 'affiliate' ? 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' : undefined,
     color: '#ffffff',
-    boxShadow: type === 'affiliate' 
-      ? '0 10px 25px rgba(249, 115, 22, 0.4)' 
-      : '0 8px 20px rgba(0,0,0,0.4)',
+    boxShadow: type === 'affiliate' ? '0 5px 15px rgba(249, 115, 22, 0.3)' : '0 4px 10px rgba(0,0,0,0.3)',
   });
 
   return (
-    <div style={containerStyle}>
-      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <h2 style={{ color: '#eab308', fontSize: '14px', letterSpacing: '3px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-          {isEn ? "PROJECT SUPPORT" : "PODPORA PROJEKTU"}
-        </h2>
-        <h1 style={{ fontSize: 'clamp(32px, 8vw, 48px)', fontWeight: '900', margin: '10px 0', letterSpacing: '-1px' }}>
-          {isEn ? "FEEDING THIS " : "KRMÍŠ TENHLE "} <span style={{ color: '#eab308' }}>{isEn ? "MACHINE" : "STROJ"}</span>
-        </h1>
-        <p style={{ color: '#9ca3af', maxWidth: '600px', margin: '20px auto', fontSize: '15px', lineHeight: '1.6' }}>
-          {isEn ? (
-            <>Hardware Guru was born out of pure passion for technology. My goal is to build a place free of paid ads. Contributions help cover the costs of <strong>high-speed servers, data streams, and tool licensing</strong>. Thanks for keeping the Guru running!</>
-          ) : (
-            <>Hardware Guru vznikl z čisté vášně pro technologie. Mým cílem je vybudovat místo bez nánosu placených reklam. Příspěvky pomáhají pokrýt náklady na <strong>vysokorychlostní servery, datové toky a licencování nástrojů</strong>. Díky, že držíš Guru v běhu!</>
-          )}
-        </p>
-      </div>
-
-      <div style={cardStyle}>
-        <style>{`
-          .guru-btn-hover:hover { transform: translateY(-3px) scale(1.02); filter: brightness(1.1); border-color: rgba(234, 179, 8, 0.4); }
-          /* Zajištění viditelnosti Google tlačítka a sjednocení vzhledu */
-          button[swg-standard-button] { width: 100% !important; height: auto !important; min-height: 24px; }
-        `}</style>
-
-        {/* QR KÓD SEKCE */}
-        <div style={{ marginBottom: '35px' }}>
-          <h3 style={{ color: '#eab308', marginBottom: '18px', fontSize: '18px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-            {isEn ? "Quick QR payment (CZ)" : "Rychlá QR platba (CZ)"}
-          </h3>
-          <div style={{ background: '#fff', padding: '15px', borderRadius: '24px', display: 'inline-block', marginBottom: '12px', boxShadow: '0 0 30px rgba(255,255,255,0.1)' }}>
-            <img 
-              src="/qr-platba.png" 
-              alt="QR Platba" 
-              style={{ width: '220px', height: '220px', display: 'block' }} 
-            />
+    <div style={{ position: 'fixed', bottom: '110px', right: '20px', zIndex: 9999, fontFamily: 'sans-serif' }}>
+      
+      {/* --- Hlavní klikací plocha (Raketka) --- */}
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '12px',
+          background: 'none', border: 'none', cursor: 'pointer',
+          padding: '0', transition: 'transform 0.3s ease'
+        }}
+        className="guru-main-trigger"
+      >
+        {!isOpen && (
+          <div className="support-label" style={{
+            color: '#fff', background: 'rgba(234, 179, 8, 0.1)', border: '2px solid #eab308',
+            padding: '10px 16px', borderRadius: '12px', fontWeight: '900', fontSize: '13px',
+            letterSpacing: '1px', textTransform: 'uppercase', boxShadow: '0 0 15px rgba(234, 179, 8, 0.3)',
+            whiteSpace: 'nowrap'
+          }}>
+            {isEn ? 'Support Guru ⚡' : 'Podpořit Guru ⚡'}
           </div>
-          <p style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 'bold' }}>{isEn ? "Account number:" : "Číslo účtu:"} 1269059093/0800</p>
-        </div>
+        )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', opacity: '0.2' }}>
-          <div style={{ height: '1px', flex: 1, backgroundColor: '#ffffff' }}></div>
-          <span style={{ fontSize: '10px', fontWeight: 'bold' }}>{isEn ? "OR" : "NEBO"}</span>
-          <div style={{ height: '1px', flex: 1, backgroundColor: '#ffffff' }}></div>
+        <div style={{
+          width: '55px', height: '55px', borderRadius: '50%',
+          background: 'linear-gradient(45deg, #eab308, #ca8a04)',
+          boxShadow: '0 0 25px rgba(234, 179, 8, 0.5)',
+          fontSize: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff'
+        }}>
+          {isOpen ? '✕' : '🚀'}
         </div>
+      </button>
 
-        {/* 🚀 1. MOŽNOST: GOOGLE SUBSCRIBE (Opravený kontejner) 🚀 */}
-        <div style={{ marginBottom: '12px' }}>
-          <div className="guru-btn-hover" style={buttonStyle('google')}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: '24px' }}>
-               <button swg-standard-button="contribution" style={{ cursor: 'pointer', border: 'none', background: 'transparent' }}></button>
-            </div>
+      {/* --- Menu podpory --- */}
+      {isOpen && (
+        <div style={{
+          position: 'absolute', bottom: '70px', right: '0',
+          width: '300px', backgroundColor: 'rgba(17, 19, 24, 0.98)', border: '2px solid #eab308',
+          borderRadius: '24px', padding: '24px', boxShadow: '0 20px 60px rgba(0,0,0,0.9)',
+          animation: 'fadeIn 0.3s ease', backdropFilter: 'blur(15px)'
+        }}>
+          <h4 style={{ color: '#fff', margin: '0 0 12px 0', fontSize: '15px', fontWeight: '900', textAlign: 'center', textTransform: 'uppercase' }}>
+            {isEn ? 'Feeding this ' : 'Krmíš tenhle '} <span style={{ color: '#eab308' }}>{isEn ? 'machine?' : 'stroj?'}</span>
+          </h4>
+          
+          <p style={{ color: '#9ca3af', fontSize: '11px', textAlign: 'center', marginBottom: '22px', lineHeight: '1.5' }}>
+            {isEn 
+              ? 'Your contribution covers fixed hosting, server, and infrastructure costs.' 
+              : 'Tvůj příspěvek jde na fixní náklady hostingu, serverů a infrastruktury webu.'}
+          </p>
+
+          <style>{`
+            .guru-w-btn:hover { transform: translateY(-2px); filter: brightness(1.1); border-color: rgba(234, 179, 8, 0.3); }
+            /* Zajištění funkčnosti Google tlačítka uvnitř Guru kontejneru */
+            button[swg-standard-button] { width: 100% !important; height: auto !important; min-height: 20px; }
+          `}</style>
+
+          {/* 🚀 1. GOOGLE SUBSCRIBE 🚀 */}
+          <div className="guru-w-btn" style={buttonStyle('google')}>
+             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                <button swg-standard-button="contribution" style={{ cursor: 'pointer', border: 'none', background: 'transparent' }}></button>
+             </div>
           </div>
-        </div>
 
-        {/* 🚀 2. MOŽNOST: STRIPE / KARTA (Sjednocený design) 🚀 */}
-        <div style={{ marginBottom: '12px' }}>
-          <a href={stripeLink} target="_blank" rel="noreferrer" className="guru-btn-hover" style={buttonStyle('stripe')}>
-            <span style={{ fontSize: '20px' }}>💳</span> {isEn ? "Credit Card / Apple / Google Pay" : "Karta / Apple / Google Pay"}
+          {/* 🚀 2. QR / PŘEVOD (PŘESMĚROVÁNÍ NA STRÁNKU) 🚀 */}
+          <Link href={isEn ? "/en/support" : "/support"} onClick={() => setIsOpen(false)} className="guru-w-btn" style={buttonStyle('qr')}>
+            🤳 {isEn ? 'QR / Bank Transfer' : 'QR / Bankovní převod'}
+          </Link>
+
+          {/* 🚀 3. STRIPE (KARTA) 🚀 */}
+          <a href={stripeLink} target="_blank" rel="noreferrer" className="guru-w-btn" style={buttonStyle('stripe')}>
+            💳 {isEn ? 'Card / Apple / Google' : 'Karta / Apple / Google Pay'}
+          </a>
+
+          {/* 🚀 4. REVOLUT 🚀 */}
+          <a href={`https://revolut.me/${revolutTag}`} target="_blank" rel="noreferrer" className="guru-w-btn" style={buttonStyle('revolut')}>
+            <span style={{ background: '#fff', color: '#0075eb', width: '18px', height: '18px', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold', marginRight: '4px' }}>R</span> 
+            Revolut Me
+          </a>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '15px 0', opacity: '0.2' }}>
+            <div style={{ height: '1px', flex: 1, backgroundColor: '#ffffff' }}></div>
+            <span style={{ fontSize: '9px', fontWeight: '900' }}>{isEn ? 'OR' : 'NEBO'}</span>
+            <div style={{ height: '1px', flex: 1, backgroundColor: '#ffffff' }}></div>
+          </div>
+
+          {/* 🚀 5. GURU AFFILIATE NÁKUP HRY (ORANŽOVÝ STYL) 🚀 */}
+          <a href={hrkLink} target="_blank" rel="nofollow sponsored" className="guru-w-btn" style={buttonStyle('affiliate')}>
+            🔥 {isEn ? 'Buy game: best price' : 'Koupit hru za nejlepší cenu'}
           </a>
         </div>
+      )}
 
-        {/* 🚀 3. MOŽNOST: REVOLUT (Sjednocený design) 🚀 */}
-        <div style={{ marginBottom: '25px' }}>
-          <a href={`https://revolut.me/${revolutTag}`} target="_blank" rel="noreferrer" className="guru-btn-hover" style={buttonStyle('revolut')}>
-            <span style={{ background: '#fff', color: '#0075eb', width: '22px', height: '22px', borderRadius: '50%', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'black' }}>R</span> 
-            Revolut.me
-          </a>
-          <p style={{ fontSize: '11px', color: '#60a5fa', marginTop: '10px', fontWeight: '900', letterSpacing: '1px' }}>@{revolutTag}</p>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '30px', opacity: '0.2' }}>
-          <div style={{ height: '1px', flex: 1, backgroundColor: '#ffffff' }}></div>
-          <span style={{ fontSize: '10px', fontWeight: 'bold' }}>{isEn ? "OR" : "NEBO"}</span>
-          <div style={{ height: '1px', flex: 1, backgroundColor: '#ffffff' }}></div>
-        </div>
-
-        {/* 🚀 4. MOŽNOST: GURU AFFILIATE NÁKUP HRY (Zachovaný oranžový styl) 🚀 */}
-        <div>
-          <a href={hrkLink} target="_blank" rel="nofollow sponsored" className="guru-btn-hover" style={buttonStyle('affiliate')}>
-            <span style={{ fontSize: '20px' }}>🔥</span> {isEn ? "Buy a game for the best price" : "Koupit hru za nejlepší cenu"}
-          </a>
-        </div>
-
-      </div>
-
-      <div style={{ marginTop: '50px', fontSize: '10px', color: '#4b5563', letterSpacing: '2px', fontWeight: 'bold', textAlign: 'center' }}>
-        FIXNÍ NÁKLADY: VERCEL HOSTING • DATABASE • DOMAIN • AUTO-SCRIPTS
-      </div>
+      {/* --- Styl animací --- */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse-border {
+          0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.6); }
+          70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+        }
+        .support-label { animation: pulse-border 2s infinite; }
+        .guru-main-trigger:hover { transform: scale(1.05); }
+      `}} />
     </div>
   );
 }
