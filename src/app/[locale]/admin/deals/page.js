@@ -59,145 +59,221 @@ export default function AdminAddDeal() {
 
   // Texty administrace podle jazyka (Guru style)
   const t = {
-    title: isEn ? "Add New Game Deal" : "Přidat novou slevu na hru",
+    title: isEn ? "ADD NEW GAME DEAL" : "PŘIDAT NOVOU SLEVU NA HRU",
     gameName: isEn ? "Game Title" : "Název hry",
-    imgUrl: isEn ? "Image URL" : "URL obrázku (Odkaz)",
-    link: isEn ? "HRK Affiliate Link" : "HRK Affiliate Odkaz",
+    imgUrl: isEn ? "Image URL" : "URL obrázku (Odkaz na banner)",
+    link: isEn ? "HRK Affiliate Link (DeepLink)" : "HRK Affiliate Odkaz (DeepLink)",
     priceCs: isEn ? "Price (CZ - e.g. 1 100 Kč)" : "Cena (CZ - např. 1 100 Kč)",
     priceEn: isEn ? "Price (EN - e.g. 45 €)" : "Cena (EN - např. 45 €)",
     descCs: isEn ? "Short description (CZ)" : "Krátký popis (CZ)",
     descEn: isEn ? "Short description (EN)" : "Krátký popis (EN)",
-    saveBtn: isEn ? "Save Deal" : "Uložit slevu",
-    saving: isEn ? "Saving..." : "Ukládám...",
-    success: isEn ? "Deal added successfully!" : "Sleva byla úspěšně přidána!",
-    errorMsg: isEn ? "Error saving deal." : "Chyba při ukládání slevy."
+    saveBtn: isEn ? "SAVE DEAL TO DATABASE" : "ULOŽIT SLEVU DO DATABÁZE",
+    saving: isEn ? "SAVING DATA..." : "UKLÁDÁM DATA...",
+    success: isEn ? "GURU DEAL SECURED AND PUBLISHED! 🔥" : "GURU SLEVA BYLA ÚSPĚŠNĚ ZVEŘEJNĚNA! 🔥",
+    errorMsg: isEn ? "SYSTEM ERROR:" : "CHYBA SYSTÉMU:"
+  };
+
+  // --- GURU MASTER STYLES ---
+  const globalStyles = { 
+    minHeight: '100vh', 
+    backgroundColor: '#0a0b0d', 
+    color: '#fff', 
+    backgroundImage: 'url("/bg-guru.png")', 
+    backgroundSize: 'cover', 
+    backgroundAttachment: 'fixed',
+    paddingTop: '100px',
+    paddingBottom: '80px'
+  };
+
+  const formCardStyles = {
+    background: 'rgba(31, 40, 51, 0.95)',
+    padding: '40px',
+    borderRadius: '25px',
+    border: '1px solid rgba(234, 179, 8, 0.3)',
+    boxShadow: '0 15px 45px rgba(0,0,0,0.6)',
+    backdropFilter: 'blur(10px)'
+  };
+
+  const inputStyles = {
+    width: '100%',
+    background: 'rgba(10, 11, 13, 0.8)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '12px',
+    padding: '14px 20px',
+    color: '#fff',
+    outline: 'none',
+    transition: 'all 0.3s ease'
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-200 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto bg-neutral-900 p-8 rounded-2xl shadow-xl border border-neutral-800">
-        
-        <h1 className="text-3xl font-black text-white mb-8 border-b border-neutral-800 pb-4">
-          <span className="text-orange-500">🔥</span> {t.title}
-        </h1>
+    <div style={globalStyles}>
+      <style>{`
+        .guru-input:focus {
+          border-color: #eab308 !important;
+          box-shadow: 0 0 15px rgba(234, 179, 8, 0.2) !important;
+        }
+        .guru-submit-btn {
+          width: 100%;
+          padding: 20px;
+          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+          color: #ffffff !important;
+          font-weight: 900;
+          font-size: 1.2rem;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          border-radius: 16px;
+          border: 2px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4);
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .guru-submit-btn:hover:not(:disabled) {
+          transform: translateY(-3px) scale(1.01);
+          box-shadow: 0 15px 40px rgba(249, 115, 22, 0.6);
+          border-color: #fbd38d;
+        }
+        .guru-submit-btn:disabled {
+          background: #333;
+          box-shadow: none;
+          border-color: #555;
+          color: #888 !important;
+          cursor: not-allowed;
+          transform: none;
+        }
+      `}</style>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          
-          {/* Název hry a Obrázek */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-neutral-400 mb-2">{t.gameName} *</label>
-              <input
-                type="text"
-                name="title"
-                required
-                value={formData.title}
-                onChange={handleChange}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors"
-                placeholder="Např. Cyberpunk 2077"
-              />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div style={formCardStyles}>
+          <h1 className="text-3xl sm:text-4xl font-black text-white mb-8 border-b border-neutral-800 pb-6 uppercase tracking-wide">
+            <span style={{ color: '#eab308', textShadow: '0 0 15px rgba(234, 179, 8, 0.5)' }}>🔥</span> {t.title}
+          </h1>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            
+            {/* Název hry a Obrázek */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-black text-neutral-400 mb-2 uppercase tracking-wider">{t.gameName} *</label>
+                <input
+                  type="text"
+                  name="title"
+                  required
+                  value={formData.title}
+                  onChange={handleChange}
+                  className="guru-input"
+                  style={inputStyles}
+                  placeholder="Např. Cyberpunk 2077"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-black text-neutral-400 mb-2 uppercase tracking-wider">{t.imgUrl}</label>
+                <input
+                  type="url"
+                  name="image_url"
+                  value={formData.image_url}
+                  onChange={handleChange}
+                  className="guru-input"
+                  style={inputStyles}
+                  placeholder="https://..."
+                />
+              </div>
             </div>
+
+            {/* HRK Affiliate Link */}
             <div>
-              <label className="block text-sm font-medium text-neutral-400 mb-2">{t.imgUrl}</label>
+              <label className="block text-xs font-black mb-2 uppercase tracking-wider" style={{ color: '#f97316' }}>{t.link} *</label>
               <input
                 type="url"
-                name="image_url"
-                value={formData.image_url}
+                name="affiliate_link"
+                required
+                value={formData.affiliate_link}
                 onChange={handleChange}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors"
-                placeholder="https://..."
+                className="guru-input"
+                style={{ ...inputStyles, border: '1px solid rgba(249, 115, 22, 0.4)' }}
+                placeholder="https://www.hrkgame.com/cs/games/.../?ref=thehardwareguru"
               />
             </div>
-          </div>
 
-          {/* HRK Affiliate Link */}
-          <div>
-            <label className="block text-sm font-bold text-orange-500 mb-2">{t.link} *</label>
-            <input
-              type="url"
-              name="affiliate_link"
-              required
-              value={formData.affiliate_link}
-              onChange={handleChange}
-              className="w-full bg-neutral-950 border border-orange-500/50 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors"
-              placeholder="https://www.hrkgame.com/cs/games/.../?ref=thehardwareguru"
-            />
-          </div>
+            {/* Ceny (CZ a EN) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-black text-neutral-400 mb-2 uppercase tracking-wider">{t.priceCs}</label>
+                <input
+                  type="text"
+                  name="price_cs"
+                  value={formData.price_cs}
+                  onChange={handleChange}
+                  className="guru-input"
+                  style={inputStyles}
+                  placeholder="1 100 Kč"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-black text-neutral-400 mb-2 uppercase tracking-wider">{t.priceEn}</label>
+                <input
+                  type="text"
+                  name="price_en"
+                  value={formData.price_en}
+                  onChange={handleChange}
+                  className="guru-input"
+                  style={inputStyles}
+                  placeholder="45 €"
+                />
+              </div>
+            </div>
 
-          {/* Ceny (CZ a EN) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-neutral-400 mb-2">{t.priceCs}</label>
-              <input
-                type="text"
-                name="price_cs"
-                value={formData.price_cs}
-                onChange={handleChange}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-colors"
-              />
+            {/* Popisky (CZ a EN) */}
+            <div className="space-y-6">
+              <div>
+                <label className="block text-xs font-black text-neutral-400 mb-2 uppercase tracking-wider">{t.descCs}</label>
+                <textarea
+                  name="description_cs"
+                  rows="3"
+                  value={formData.description_cs}
+                  onChange={handleChange}
+                  className="guru-input"
+                  style={inputStyles}
+                ></textarea>
+              </div>
+              <div>
+                <label className="block text-xs font-black text-neutral-400 mb-2 uppercase tracking-wider">{t.descEn}</label>
+                <textarea
+                  name="description_en"
+                  rows="3"
+                  value={formData.description_en}
+                  onChange={handleChange}
+                  className="guru-input"
+                  style={inputStyles}
+                ></textarea>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-400 mb-2">{t.priceEn}</label>
-              <input
-                type="text"
-                name="price_en"
-                value={formData.price_en}
-                onChange={handleChange}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-colors"
-              />
-            </div>
-          </div>
 
-          {/* Popisky (CZ a EN) */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-neutral-400 mb-2">{t.descCs}</label>
-              <textarea
-                name="description_cs"
-                rows="3"
-                value={formData.description_cs}
-                onChange={handleChange}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-colors"
-              ></textarea>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-400 mb-2">{t.descEn}</label>
-              <textarea
-                name="description_en"
-                rows="3"
-                value={formData.description_en}
-                onChange={handleChange}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-colors"
-              ></textarea>
-            </div>
-          </div>
+            {/* Chybové a úspěšné hlášky */}
+            {status.error && (
+              <div className="p-5 bg-red-950/80 border border-red-500 text-red-200 rounded-xl font-bold uppercase tracking-wider">
+                {t.errorMsg} {status.error}
+              </div>
+            )}
+            {status.success && (
+              <div className="p-5 bg-green-950/80 border border-green-500 text-green-400 rounded-xl font-black uppercase tracking-wider text-center shadow-[0_0_20px_rgba(34,197,94,0.3)]">
+                {t.success}
+              </div>
+            )}
 
-          {/* Chybové a úspěšné hlášky */}
-          {status.error && (
-            <div className="p-4 bg-red-900/50 border border-red-500 text-red-200 rounded-lg">
-              {t.errorMsg} {status.error}
+            {/* Tlačítko pro odeslání */}
+            <div className="pt-4">
+              <button
+                type="submit"
+                disabled={status.loading}
+                className="guru-submit-btn"
+              >
+                {status.loading ? t.saving : t.saveBtn}
+              </button>
             </div>
-          )}
-          {status.success && (
-            <div className="p-4 bg-green-900/50 border border-green-500 text-green-200 rounded-lg">
-              {t.success}
-            </div>
-          )}
 
-          {/* Tlačítko pro odeslání */}
-          <button
-            type="submit"
-            disabled={status.loading}
-            className={`w-full py-4 rounded-xl font-black text-lg transition-all ${
-              status.loading 
-                ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed' 
-                : 'bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-600/20 hover:shadow-orange-500/40'
-            }`}
-          >
-            {status.loading ? t.saving : t.saveBtn}
-          </button>
-
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );
