@@ -1,60 +1,51 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Rocket, Send, Check, AlertCircle, ChevronRight, Flame } from 'lucide-react';
-
-// GURU ENGINE: Bezpečný přístup k environmentálním proměnným
-const getEnv = (key) => {
-  try {
-    if (typeof process !== 'undefined' && process.env) {
-      return process.env[key] || '';
-    }
-  } catch (e) {
-    // Tichý fallback pro prostředí, kde process není definován
-  }
-  return '';
-};
+import { Rocket, Send, Check, AlertCircle, ChevronRight, Flame, Settings } from 'lucide-react';
 
 /**
- * Dynamické importy s fallbackem pro prostředí Canvasu.
- * Toto řeší chybu "Could not resolve", protože v náhledu nemusí být knihovny dostupné.
+ * GURU ENGINE: Bezpečný přístup k environmentálním proměnným.
+ * V Next.js klientských komponentách musíme přistupovat k NEXT_PUBLIC_ proměnným přímo.
+ * Ošetřeno pomocí funkce getEnv, aby se předešlo chybě ReferenceError v prostředí bez globálního objektu 'process'.
  */
-let useParams;
-try {
-  useParams = require('next/navigation').useParams;
-} catch (e) {
-  useParams = () => ({ locale: 'cs' });
-}
+const getEnv = (key) => {
+  try {
+    return typeof process !== 'undefined' ? process.env[key] : undefined;
+  } catch (e) {
+    return undefined;
+  }
+};
 
+const SUPABASE_URL = getEnv("NEXT_PUBLIC_SUPABASE_URL") || "";
+const SUPABASE_ANON_KEY = getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY") || "";
+const MAKE_WEBHOOK = getEnv("NEXT_PUBLIC_MAKE_WEBHOOK2_URL") || "";
+
+// Dynamický import pro Supabase (zabrání pádu při chybějící knihovně v preview)
 let createClient;
 try {
   createClient = require('@supabase/supabase-js').createClient;
 } catch (e) {
-  // Mock pro Supabase klienta pro účely náhledu UI
-  createClient = () => ({
-    from: () => ({
-      select: () => ({ order: () => Promise.resolve({ data: [], error: null }) }),
-      update: () => ({ eq: () => Promise.resolve({ error: null }) })
-    })
-  });
+  createClient = null;
 }
 
-// Inicializace Supabase klienta
-const supabase = createClient(
-  getEnv('NEXT_PUBLIC_SUPABASE_URL'),
-  getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
-);
-
-// 🔥 GURU UPDATE: Nyní používáme unikátní klíč NEXT_PUBLIC_MAKE_WEBHOOK2_URL
-const MAKE_WEBHOOK = getEnv('NEXT_PUBLIC_MAKE_WEBHOOK2_URL');
+// Inicializace Supabase klienta s ochranou proti prázdným URL
+const supabase = (createClient && SUPABASE_URL && SUPABASE_ANON_KEY) 
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+  : null;
 
 /**
- * App komponenta - Guru Social Executor
- * Umožňuje výběr nabídek k odeslání na Make.com a připínání na Homepage.
+ * App komponenta - Guru Social Executor (Lite verze)
  */
 export default function App() {
-  const params = useParams();
-  const locale = params?.locale || 'cs';
+  // Bezpečný přístup k parametrům (lokalizace)
+  const [locale, setLocale] = useState('cs');
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const pathParts = window.location.pathname.split('/');
+      if (pathParts.includes('en')) setLocale('en');
+    }
+  }, []);
+
   const isEn = locale === 'en';
 
   const [deals, setDeals] = useState([]);
@@ -64,6 +55,11 @@ export default function App() {
 
   // Načtení dat z databáze game_deals
   const fetchDeals = async () => {
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('game_deals')
@@ -74,7 +70,7 @@ export default function App() {
       if (data) setDeals(data);
     } catch (err) {
       console.error("Guru Data Error:", err);
-      setStatus(prev => ({ ...prev, error: isEn ? "DATABASE ERROR!" : "CHYBA: NEPOVEDLO SE NAČÍST DATA!" }));
+      setStatus(prev => ({ ...prev, error: isEn ? "DATABASE CONNECTION FAILED!" : "CHYBA SPOJENÍ S DATABÁZÍ!" }));
     } finally {
       setLoading(false);
     }
@@ -82,14 +78,12 @@ export default function App() {
 
   useEffect(() => {
     fetchDeals();
-  }, []);
+  }, [locale]);
 
-  /**
-   * Přepíná status 'is_featured' pro zobrazení na Homepage.
-   * Maximální limit je nastaven na 3 položky.
-   */
+  // Přepíná status 'is_featured' (max 3)
   const toggleFeatured = async (e, deal) => {
-    e.stopPropagation(); // Zabrání výběru řádku při kliknutí na plamen
+    e.stopPropagation();
+    if (!supabase) return;
     
     const featuredCount = deals.filter(d => d.is_featured).length;
     
@@ -98,10 +92,10 @@ export default function App() {
         firing: false, 
         success: false, 
         error: isEn 
-          ? "MAX 3 DEALS ON HOMEPAGE! UNPIN SOMETHING FIRST." 
-          : "MAXIMÁLNĚ 3 DEALY NA HOMEPAGE! NEJDŘÍV NĚKTERÝ OD-PINUJ." 
+          ? "MAX 3 DEALS ON HOMEPAGE!" 
+          : "MAXIMÁLNĚ 3 DEALY NA HOMEPAGE!" 
       });
-      setTimeout(() => setStatus(prev => ({ ...prev, error: null })), 4000);
+      setTimeout(() => setStatus(prev => ({ ...prev, error: null })), 3000);
       return;
     }
 
@@ -112,28 +106,19 @@ export default function App() {
         .eq('id', deal.id);
 
       if (error) throw error;
-      fetchDeals(); // Aktualizace seznamu
+      fetchDeals(); 
     } catch (err) {
-      setStatus({ firing: false, success: false, error: isEn ? "PIN UPDATE FAILED!" : "CHYBA PŘI AKTUALIZACI PŘIPNUTÍ!" });
+      setStatus({ firing: false, success: false, error: "UPDATE FAILED!" });
     }
   };
 
-  /**
-   * Odešle vybranou nabídku na Webhook Make.com
-   */
+  // Odeslání na Make.com Webhook 2
   const fireToMake = async () => {
     if (!MAKE_WEBHOOK) {
-      setStatus({ 
-        firing: false, 
-        success: false, 
-        error: "CHYBÍ NEXT_PUBLIC_MAKE_WEBHOOK2_URL VE VERCELU!" 
-      });
+      setStatus({ firing: false, success: false, error: "CHYBÍ NEXT_PUBLIC_MAKE_WEBHOOK2_URL!" });
       return;
     }
-    if (!selectedDeal) {
-      setStatus({ firing: false, success: false, error: isEn ? "SELECT DEAL FIRST!" : "VYBER NABÍDKU ZE SEZNAMU!" });
-      return;
-    }
+    if (!selectedDeal) return;
 
     setStatus({ firing: true, success: null, error: null });
 
@@ -167,11 +152,30 @@ export default function App() {
     }
   };
 
+  // --- GURU ZÁCHRANNÁ BRZDA (UI PRO CHYBĚJÍCÍ KONFIGURACI) ---
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return (
+      <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center p-6 text-center">
+        <div className="max-w-md bg-red-950/20 border border-red-500 p-10 rounded-[32px] backdrop-blur-xl">
+          <AlertCircle className="text-red-500 mx-auto mb-6" size={64} />
+          <h1 className="text-2xl font-black text-white uppercase mb-4 tracking-tighter">Guru Konfigurace Chybí!</h1>
+          <p className="text-neutral-400 text-sm leading-relaxed mb-8">
+            Next.js nemůže najít tvůj <strong>Supabase URL</strong> nebo <strong>Anon Key</strong>. 
+            Ujisti se, že máš ve Vercelu nastavené proměnné:
+          </p>
+          <div className="text-left bg-black/40 p-4 rounded-xl font-mono text-[10px] text-red-400 space-y-2 mb-8">
+            <div>NEXT_PUBLIC_SUPABASE_URL</div>
+            <div>NEXT_PUBLIC_SUPABASE_ANON_KEY</div>
+          </div>
+          <p className="text-xs text-neutral-500 italic">Po přidání proměnných musíš udělat "Redeploy" ve Vercelu.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) return (
     <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center">
-      <div className="text-orange-500 font-black animate-pulse tracking-widest text-xl uppercase italic">
-        GURU ENGINE LOADING...
-      </div>
+      <div className="text-orange-500 font-black animate-pulse tracking-widest text-xl uppercase italic">Guru Engine Loading...</div>
     </div>
   );
 
@@ -188,8 +192,8 @@ export default function App() {
               Executor <span className="text-red-600">Lite</span>
             </h1>
             <p className="text-neutral-500 font-bold text-[10px] uppercase tracking-[0.2em] mt-1">
-              STATUS: <span className={MAKE_WEBHOOK ? 'text-green-500' : 'text-red-500'}>
-                {MAKE_WEBHOOK ? 'WEBHOOK 2 CONNECTED' : 'WEBHOOK 2 NOT FOUND'}
+              MAKE WEBHOOK 2: <span className={MAKE_WEBHOOK ? 'text-green-500' : 'text-red-500'}>
+                {MAKE_WEBHOOK ? 'PŘIPOJENO' : 'CHYBÍ (PROSÍM NASTAV VE VERCELU)'}
               </span>
             </p>
           </div>
@@ -203,7 +207,7 @@ export default function App() {
               (!selectedDeal || !MAKE_WEBHOOK) ? 'bg-neutral-800 opacity-40 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 active:scale-95'
             }`}
           >
-            {status.firing ? 'STŘÍLÍM...' : status.success ? <><Check /> HOTOVO!</> : <><Send /> STŘELIT NA MAKE</>}
+            {status.firing ? 'STŘÍLÍM...' : status.success ? <><Check /> ZÁSAH!</> : <><Send /> ODESLAT NA MAKE</>}
           </button>
         </header>
 
@@ -217,7 +221,7 @@ export default function App() {
         <div className="space-y-4">
           <div className="flex justify-between items-center px-4">
              <h2 className="text-[10px] font-black text-neutral-600 uppercase tracking-[0.5em]">
-               {isEn ? 'MANAGE DEALS' : 'SPRÁVA NABÍDEK'} ({deals.filter(d => d.is_featured).length}/3 {isEn ? 'PINNED' : 'PŘIPNUTO'})
+               KATALOG NABÍDEK ({deals.filter(d => d.is_featured).length}/3 PŘIPNUTO NA HP)
              </h2>
           </div>
           
@@ -252,10 +256,10 @@ export default function App() {
                 </div>
                 
                 <div className="flex items-center gap-4">
-                    {/* PŘIPNUTÍ NA HOMEPAGE */}
+                    {/* PLAMEN PRO HOMEPAGE */}
                     <button 
                       onClick={(e) => toggleFeatured(e, deal)}
-                      title={deal.is_featured ? (isEn ? "Unpin from Homepage" : "Odepnout z Homepage") : (isEn ? "Pin to Homepage" : "Připnout na Homepage")}
+                      title={deal.is_featured ? "Odepnout z Homepage" : "Připnout na Homepage"}
                       className={`p-3 rounded-xl transition-all ${
                         deal.is_featured 
                         ? 'bg-orange-600 text-white shadow-[0_0_20px_rgba(234,88,12,0.4)]' 
@@ -274,7 +278,7 @@ export default function App() {
               </div>
             )) : (
               <div className="p-20 text-center border border-dashed border-white/5 rounded-[40px] text-neutral-800 font-black uppercase tracking-[0.3em]">
-                {isEn ? 'NO DEALS AVAILABLE' : 'ŽÁDNÉ ZÁZNAMY K DISPOZICI'}
+                Žádná data v databázi
               </div>
             )}
           </div>
