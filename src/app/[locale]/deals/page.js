@@ -79,6 +79,33 @@ export default async function DealsPage({ params }) {
 
   return (
     <div style={globalStyles}>
+      
+      {/* 🚀 NEPRŮSTŘELNÝ GURU STYL PRO CTA TLAČÍTKO 🚀 */}
+      <style>{`
+        .guru-cta-button {
+          display: inline-block;
+          margin-top: 30px;
+          padding: 18px 45px;
+          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+          color: #ffffff !important;
+          font-weight: 900;
+          font-size: 1.2rem;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          border-radius: 16px;
+          text-decoration: none !important;
+          box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4);
+          border: 2px solid rgba(255, 255, 255, 0.1);
+          transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .guru-cta-button:hover {
+          transform: translateY(-5px) scale(1.02);
+          box-shadow: 0 15px 40px rgba(249, 115, 22, 0.6);
+          border-color: #fbd38d;
+          color: #ffffff !important;
+        }
+      `}</style>
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Hlavička stránky - GURU STYLE */}
@@ -95,7 +122,7 @@ export default async function DealsPage({ params }) {
             href={hrkMainLink}
             target="_blank"
             rel="nofollow sponsored"
-            className="inline-block mt-8 px-8 py-3 rounded-xl font-black text-[1rem] sm:text-lg uppercase tracking-wider transition-all duration-300 border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white shadow-[0_0_20px_rgba(249,115,22,0.2)] hover:shadow-[0_0_30px_rgba(249,115,22,0.5)] hover:-translate-y-1"
+            className="guru-cta-button"
           >
             {ctaText}
           </a>
