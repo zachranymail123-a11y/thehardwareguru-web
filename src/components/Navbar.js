@@ -168,6 +168,9 @@ export default function Navbar() {
           <a href={langPrefix + "/tweaky"} style={{...navLinkStyle, color: '#eab308'}}>{isEn ? 'GURU TWEAKS' : 'GURU TWEAKY'}</a>
           <a href={langPrefix + "/slovnik"} style={navLinkStyle}>{isEn ? 'GLOSSARY' : 'SLOVNÍK'}</a>
           <a href={langPrefix + "/rady"} style={navLinkStyle}>{isEn ? 'GUIDES' : 'RADY'}</a>
+          
+          {/* 🔥 NOVÝ ODKAZ NA SLEVY (PLNĚ CZ/EN) 🔥 */}
+          <a href={langPrefix + "/deals"} style={{...navLinkStyle, color: '#f97316'}}>{isEn ? '🔥 GAME DEALS' : '🔥 SLEVY NA HRY'}</a>
         </div>
 
         <div style={{ display: 'flex', gap: '8px' }}>
