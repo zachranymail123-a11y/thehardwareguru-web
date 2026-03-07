@@ -142,6 +142,9 @@ export default function HomePage() {
               <a href="https://kick.com/thehardwareguru" target="_blank" className="social-btn-main" style={{ background: '#53fc18', color: '#000' }}>{isEn ? 'LIVE' : 'SLEDOVAT LIVE'}</a>
               <Link href={isEn ? "/en/support" : "/support"} className="social-btn-main" style={{ background: '#eab308', color: '#000' }}>{isEn ? 'SUPPORT' : 'PODPOŘIT GURU'}</Link>
               
+              {/* 🔥 NOVÉ TLAČÍTKO NA SLEVY 🔥 */}
+              <Link href={isEn ? "/en/deals" : "/deals"} className="social-btn-main" style={{ background: '#f97316', color: '#fff' }}>{isEn ? '🔥 GAME DEALS' : '🔥 SLEVY NA HRY'}</Link>
+              
               {/* 📰 GOOGLE CONTRIBUTION BUTTON (Integrated into restored design) */}
               <div style={{ background: '#fff', borderRadius: '12px', padding: '0 5px', display: 'flex', alignItems: 'center', height: '48px' }}>
                 <button swg-standard-button="contribution" style={{ cursor: 'pointer' }}></button>
