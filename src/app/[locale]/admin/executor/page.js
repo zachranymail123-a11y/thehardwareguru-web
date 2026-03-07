@@ -3,54 +3,57 @@
 import React, { useState, useEffect } from 'react';
 import { Rocket, Send, Check, AlertCircle, ChevronRight, Flame } from 'lucide-react';
 
-// Bezpečný getter pro environmentální proměnné, který předchází ReferenceError: process is not defined
-const getEnvVar = (key) => {
+// GURU ENGINE: Bezpečný přístup k environmentálním proměnným
+const getEnv = (key) => {
   try {
     if (typeof process !== 'undefined' && process.env) {
       return process.env[key] || '';
     }
   } catch (e) {
-    // Tichý fallback
+    // Tichý fallback pro prostředí, kde process není definován
   }
   return '';
 };
 
-// Pomocná funkce pro bezpečný import useParams z next/navigation
-const useSafeParams = () => {
-  try {
-    const { useParams } = require('next/navigation');
-    return useParams();
-  } catch (e) {
-    // Fallback pro lokální vývoj/preview
-    return { locale: 'cs' };
-  }
-};
+/**
+ * Dynamické importy s fallbackem pro prostředí Canvasu.
+ * Toto řeší chybu "Could not resolve", protože v náhledu nemusí být knihovny dostupné.
+ */
+let useParams;
+try {
+  useParams = require('next/navigation').useParams;
+} catch (e) {
+  useParams = () => ({ locale: 'cs' });
+}
 
-// Pomocná funkce pro bezpečné vytvoření Supabase klienta
-const getSupabaseClient = () => {
-  const url = getEnvVar('NEXT_PUBLIC_SUPABASE_URL');
-  const key = getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY');
-  
-  try {
-    const { createClient } = require('@supabase/supabase-js');
-    if (!url || !key) throw new Error("Missing config");
-    return createClient(url, key);
-  } catch (e) {
-    // Mock klient pro prostředí, kde knihovna chybí nebo není konfigurace
-    return {
-      from: () => ({
-        select: () => ({ order: () => Promise.resolve({ data: [], error: null }) }),
-        update: () => ({ eq: () => Promise.resolve({ error: null }) })
-      })
-    };
-  }
-};
+let createClient;
+try {
+  createClient = require('@supabase/supabase-js').createClient;
+} catch (e) {
+  // Mock pro Supabase klienta pro účely náhledu UI
+  createClient = () => ({
+    from: () => ({
+      select: () => ({ order: () => Promise.resolve({ data: [], error: null }) }),
+      update: () => ({ eq: () => Promise.resolve({ error: null }) })
+    })
+  });
+}
 
-const supabase = getSupabaseClient();
-const getMakeWebhook = () => getEnvVar('NEXT_PUBLIC_MAKE_WEBHOOK_URL');
+// Inicializace Supabase klienta
+const supabase = createClient(
+  getEnv('NEXT_PUBLIC_SUPABASE_URL'),
+  getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+);
 
+// 🔥 GURU UPDATE: Nyní používáme unikátní klíč NEXT_PUBLIC_MAKE_WEBHOOK2_URL
+const MAKE_WEBHOOK = getEnv('NEXT_PUBLIC_MAKE_WEBHOOK2_URL');
+
+/**
+ * App komponenta - Guru Social Executor
+ * Umožňuje výběr nabídek k odeslání na Make.com a připínání na Homepage.
+ */
 export default function App() {
-  const params = useSafeParams();
+  const params = useParams();
   const locale = params?.locale || 'cs';
   const isEn = locale === 'en';
 
@@ -58,14 +61,8 @@ export default function App() {
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState({ firing: false, success: null, error: null });
-  const [webhookUrl, setWebhookUrl] = useState('');
 
-  useEffect(() => {
-    setWebhookUrl(getMakeWebhook());
-    fetchDeals();
-  }, []);
-
-  // Načtení dat přímo ze Supabase
+  // Načtení dat z databáze game_deals
   const fetchDeals = async () => {
     try {
       const { data, error } = await supabase
@@ -77,24 +74,34 @@ export default function App() {
       if (data) setDeals(data);
     } catch (err) {
       console.error("Guru Data Error:", err);
-      setStatus(prev => ({ ...prev, error: "CHYBA SPOJENÍ S DATABÁZÍ!" }));
+      setStatus(prev => ({ ...prev, error: isEn ? "DATABASE ERROR!" : "CHYBA: NEPOVEDLO SE NAČÍST DATA!" }));
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchDeals();
+  }, []);
+
   /**
-   * 🔥 GURU FEATURE TOGGLE
-   * Přepíná, zda má být deal zobrazen na Homepage (is_featured).
+   * Přepíná status 'is_featured' pro zobrazení na Homepage.
+   * Maximální limit je nastaven na 3 položky.
    */
   const toggleFeatured = async (e, deal) => {
-    e.stopPropagation(); // Zabrání výběru dealu při kliku na plamen
+    e.stopPropagation(); // Zabrání výběru řádku při kliknutí na plamen
     
     const featuredCount = deals.filter(d => d.is_featured).length;
     
     if (!deal.is_featured && featuredCount >= 3) {
-      setStatus({ firing: false, success: false, error: "MAXIMÁLNĚ 3 DEALY NA HOMEPAGE!" });
-      setTimeout(() => setStatus(prev => ({ ...prev, error: null })), 3000);
+      setStatus({ 
+        firing: false, 
+        success: false, 
+        error: isEn 
+          ? "MAX 3 DEALS ON HOMEPAGE! UNPIN SOMETHING FIRST." 
+          : "MAXIMÁLNĚ 3 DEALY NA HOMEPAGE! NEJDŘÍV NĚKTERÝ OD-PINUJ." 
+      });
+      setTimeout(() => setStatus(prev => ({ ...prev, error: null })), 4000);
       return;
     }
 
@@ -105,21 +112,28 @@ export default function App() {
         .eq('id', deal.id);
 
       if (error) throw error;
-      fetchDeals(); // Refresh seznamu
+      fetchDeals(); // Aktualizace seznamu
     } catch (err) {
-      setStatus({ firing: false, success: false, error: "NEPOVEDLO SE AKTUALIZOVAT PŘIPNUTÍ!" });
+      setStatus({ firing: false, success: false, error: isEn ? "PIN UPDATE FAILED!" : "CHYBA PŘI AKTUALIZACI PŘIPNUTÍ!" });
     }
   };
 
   /**
-   * 🚀 GURU FIRE TO MAKE
+   * Odešle vybranou nabídku na Webhook Make.com
    */
   const fireToMake = async () => {
-    if (!webhookUrl) {
-      setStatus({ firing: false, success: false, error: "CHYBÍ WEBHOOK URL VE VERCELU!" });
+    if (!MAKE_WEBHOOK) {
+      setStatus({ 
+        firing: false, 
+        success: false, 
+        error: "CHYBÍ NEXT_PUBLIC_MAKE_WEBHOOK2_URL VE VERCELU!" 
+      });
       return;
     }
-    if (!selectedDeal) return;
+    if (!selectedDeal) {
+      setStatus({ firing: false, success: false, error: isEn ? "SELECT DEAL FIRST!" : "VYBER NABÍDKU ZE SEZNAMU!" });
+      return;
+    }
 
     setStatus({ firing: true, success: null, error: null });
 
@@ -136,7 +150,7 @@ export default function App() {
     };
 
     try {
-      const response = await fetch(webhookUrl, {
+      const response = await fetch(MAKE_WEBHOOK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -146,7 +160,7 @@ export default function App() {
         setStatus({ firing: false, success: true, error: null });
         setTimeout(() => setStatus(prev => ({ ...prev, success: null })), 3000);
       } else {
-        throw new Error(`CHYBA MAKE.COM: ${response.status}`);
+        throw new Error(`MAKE.COM ERROR: ${response.status}`);
       }
     } catch (err) {
       setStatus({ firing: false, success: false, error: err.message });
@@ -155,8 +169,8 @@ export default function App() {
 
   if (loading) return (
     <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center">
-      <div className="text-orange-500 font-black animate-pulse tracking-widest text-xl uppercase">
-        GURU ENGINE INITIALIZING...
+      <div className="text-orange-500 font-black animate-pulse tracking-widest text-xl uppercase italic">
+        GURU ENGINE LOADING...
       </div>
     </div>
   );
@@ -166,44 +180,44 @@ export default function App() {
          style={{ backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed' }}>
       
       <div className="max-w-4xl mx-auto">
-        {/* HORNÍ LIŠTA S AKCÍ */}
-        <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-[#111318]/90 p-8 rounded-[32px] border border-white/10 backdrop-blur-xl shadow-2xl">
+        {/* HLAVNÍ OVLÁDACÍ PANEL */}
+        <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-[#111318]/95 p-8 rounded-[32px] border border-white/10 backdrop-blur-xl shadow-2xl">
           <div>
             <h1 className="text-3xl font-black uppercase tracking-tighter flex items-center gap-3">
               <Rocket className="text-red-600" size={32} />
               Executor <span className="text-red-600">Lite</span>
             </h1>
             <p className="text-neutral-500 font-bold text-[10px] uppercase tracking-[0.2em] mt-1">
-              Direct Link: <span className={webhookUrl ? 'text-green-500' : 'text-red-500'}>
-                {webhookUrl ? 'CONNECTED TO MAKE' : 'DISCONNECTED'}
+              STATUS: <span className={MAKE_WEBHOOK ? 'text-green-500' : 'text-red-500'}>
+                {MAKE_WEBHOOK ? 'WEBHOOK 2 CONNECTED' : 'WEBHOOK 2 NOT FOUND'}
               </span>
             </p>
           </div>
           
           <button 
             onClick={fireToMake}
-            disabled={status.firing || !selectedDeal || !webhookUrl}
+            disabled={status.firing || !selectedDeal || !MAKE_WEBHOOK}
             className={`px-12 py-5 rounded-2xl font-black text-lg transition-all duration-300 flex items-center gap-3 shadow-xl ${
               status.success ? 'bg-green-600' :
               status.error ? 'bg-red-800' :
-              (!selectedDeal || !webhookUrl) ? 'bg-neutral-800 opacity-40 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 active:scale-95'
+              (!selectedDeal || !MAKE_WEBHOOK) ? 'bg-neutral-800 opacity-40 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 active:scale-95'
             }`}
           >
-            {status.firing ? 'STŘÍLÍM...' : status.success ? <><Check /> ZÁSAH!</> : <><Send /> ODESLAT NA MAKE</>}
+            {status.firing ? 'STŘÍLÍM...' : status.success ? <><Check /> HOTOVO!</> : <><Send /> STŘELIT NA MAKE</>}
           </button>
         </header>
 
         {status.error && (
-          <div className="mb-8 p-5 bg-red-950/50 border border-red-500 rounded-2xl text-red-500 text-xs font-black flex items-center gap-3 uppercase tracking-widest">
+          <div className="mb-8 p-5 bg-red-950/50 border border-red-500 rounded-2xl text-red-500 text-xs font-black flex items-center gap-3 uppercase tracking-widest animate-pulse">
             <AlertCircle size={20} /> {status.error}
           </div>
         )}
 
-        {/* SEZNAM DEALŮ */}
+        {/* SEZNAM NABÍDEK */}
         <div className="space-y-4">
           <div className="flex justify-between items-center px-4">
              <h2 className="text-[10px] font-black text-neutral-600 uppercase tracking-[0.5em]">
-               KATALOG NABÍDEK ({deals.filter(d => d.is_featured).length}/3 PŘIPNUTO)
+               {isEn ? 'MANAGE DEALS' : 'SPRÁVA NABÍDEK'} ({deals.filter(d => d.is_featured).length}/3 {isEn ? 'PINNED' : 'PŘIPNUTO'})
              </h2>
           </div>
           
@@ -220,7 +234,7 @@ export default function App() {
               >
                 <div className="flex items-center gap-6">
                   <div className="w-16 h-16 rounded-xl overflow-hidden border border-white/10 flex-shrink-0 bg-black">
-                    <img src={deal.image_url} alt="" className="w-full h-full object-cover" />
+                    <img src={deal.image_url} alt={deal.title} className="w-full h-full object-cover" />
                   </div>
                   <div>
                     <div className="font-black text-lg uppercase tracking-tight group-hover:text-white transition-colors">
@@ -238,9 +252,10 @@ export default function App() {
                 </div>
                 
                 <div className="flex items-center gap-4">
-                    {/* PLAMEN PRO HOMEPAGE */}
+                    {/* PŘIPNUTÍ NA HOMEPAGE */}
                     <button 
                       onClick={(e) => toggleFeatured(e, deal)}
+                      title={deal.is_featured ? (isEn ? "Unpin from Homepage" : "Odepnout z Homepage") : (isEn ? "Pin to Homepage" : "Připnout na Homepage")}
                       className={`p-3 rounded-xl transition-all ${
                         deal.is_featured 
                         ? 'bg-orange-600 text-white shadow-[0_0_20px_rgba(234,88,12,0.4)]' 
@@ -259,7 +274,7 @@ export default function App() {
               </div>
             )) : (
               <div className="p-20 text-center border border-dashed border-white/5 rounded-[40px] text-neutral-800 font-black uppercase tracking-[0.3em]">
-                Žádná data v databázi
+                {isEn ? 'NO DEALS AVAILABLE' : 'ŽÁDNÉ ZÁZNAMY K DISPOZICI'}
               </div>
             )}
           </div>
