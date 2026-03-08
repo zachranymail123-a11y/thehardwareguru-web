@@ -11,10 +11,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V13.3 - ENV KEY FIX
- * - FIX: Nativní a přímé volání NEXT_PUBLIC_OPENAI_API_KEY na frontendu (zamezuje chybě "CHYBÍ AI KLÍČ").
- * - ZACHOVÁNO: 10 karet na sekci (2 řádky po 5).
- * - ZACHOVÁNO: Odesílání na Make.com se 4 klíči (title, url, image_url, description).
+ * GURU ULTIMATE COMMAND CENTER V13.4 - AI FALLBACK & BADGE FIX
+ * - FIX: Frontend AI Fallback pro případ, že backend selže při skórování virality.
+ * - FIX: Nucený přepis postType na 'leaks', pokud titulek obsahuje 'leak/rumor'.
+ * - ZACHOVÁNO: 10 karet na sekci (dokonalý grid).
+ * - ZACHOVÁNO: Odesílání na Make.com přesně podle screenshotu.
  */
 
 // --- 🚀 GURU ENV ENGINE ---
@@ -177,19 +178,72 @@ export default function AdminApp() {
       const json = await res.json();
       
       if (json.success) {
-        const items = json.data || [];
+        let items = json.data || [];
         
+        // 🚀 GURU FRONTEND AI FALLBACK: Pokud backend selhal s AI skórováním, frontend to převezme
+        const openAiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || getEnv('OPENAI_API_KEY');
+        
+        if (!json._debug?.ai_active && openAiKey) {
+            setAiStatusMsg('FRONTEND AI...');
+            addLog('Backend AI nedostupné. Spouštím Frontend AI Fallback...', 'warning');
+            try {
+                const titles = items.slice(0, 30).map(i => i.title);
+                const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openAiKey}` },
+                    body: JSON.stringify({
+                        model: "gpt-4o-mini",
+                        messages: [
+                            { role: "system", content: "Jsi HW/Game insider. Ohodnoť viralitu (0-100). Vrať JSON { scores: [{ title, score }] }" },
+                            { role: "user", content: JSON.stringify(titles) }
+                        ],
+                        response_format: { type: "json_object" }
+                    })
+                });
+                
+                const r = await aiRes.json();
+                const content = r?.choices?.[0]?.message?.content || r?.output?.[0]?.content?.[0]?.text;
+                
+                if (content) {
+                    const parsed = JSON.parse(content);
+                    const scoreMap = {};
+                    (parsed.scores || []).forEach(item => { if (item.title) scoreMap[item.title.toLowerCase().trim()] = item.score; });
+                    
+                    items = items.map(i => ({
+                        ...i,
+                        viral_score: scoreMap[i.title.toLowerCase().trim()] || i.viral_score || 50
+                    }));
+                    
+                    items.sort((a, b) => b.viral_score - a.viral_score);
+                    setAiActive(true);
+                    setAiStatusMsg('ONLINE (FE)');
+                    addLog('Frontend AI Fallback úspěšně obodoval trendy.', 'success');
+                } else {
+                    throw new Error("Frontend AI Response Empty");
+                }
+            } catch (e) {
+                setAiStatusMsg('OFFLINE');
+                addLog(`Frontend AI Fallback selhal: ${e.message}`, 'error');
+            }
+        } else {
+            // Normální průběh, backend to zvládl
+            setAiActive(json._debug?.ai_active || false);
+            setAiStatusMsg(json._debug?.ai_active ? 'ONLINE' : 'OFFLINE');
+            if (json._debug?.ai_active) addLog(`Sken dokončen. Vyfiltrováno z DB: ${json._debug?.db_filtered}.`, 'success');
+        }
+        
+        // Zobrazí přesně 10 nejvirálnějších položek (2 řádky po 5)
         setHwIntel(items.filter(i => i.intelType === "hw").slice(0, 10));
         setGameIntel(items.filter(i => i.intelType === "game").slice(0, 10));
         setLeaksIntel(items.filter(i => i.intelType === "leaks").slice(0, 10));
         
-        setAiActive(true);
-        setAiStatusMsg('ONLINE');
-        addLog(`Sken dokončen. Vyfiltrováno: ${json._debug?.db_filtered} z DB, odstraněno křížových duplicit: ${json._debug?.cross_duplicates}.`, 'success');
       } else {
         throw new Error(json.error);
       }
-    } catch (err) { addLog(`API Leaks selhalo: ${err.message}`, 'error'); }
+    } catch (err) { 
+      addLog(`API Leaks selhalo: ${err.message}`, 'error'); 
+      setAiStatusMsg('ERROR');
+    }
     finally { setIntelLoading(false); }
   };
 
@@ -201,7 +255,6 @@ export default function AdminApp() {
       return;
     }
 
-    // 🚀 GURU NUKLEÁRNÍ FIX KLÍČE: Přímé čtení, aby si toho Next.js bundler stoprocentně všiml
     const openAiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY || getEnv('OPENAI_API_KEY');
     
     if (!openAiKey || openAiKey === '') {
@@ -234,11 +287,18 @@ export default function AdminApp() {
       if (!content) throw new Error(r?.error?.message || "AI vrátilo prázdnou odpověď.");
 
       const aiData = JSON.parse(content);
-      const postType = item.intelType || 'hardware';
+      
+      // 🚀 GURU OVERRIDE PRO LEAKY: Pokud má článek v titulku "leak" nebo "rumor", VŽDY se uloží jako Leaks,
+      // i když pochází z Hardware nebo Game radaru. Homepage mu pak nekompromisně dá azurový odznak.
+      let postType = item.intelType || 'hardware';
+      const lowerTitle = (item.title || '').toLowerCase();
+      if (lowerTitle.includes('leak') || lowerTitle.includes('rumor')) {
+          postType = 'leaks';
+      }
 
       const newDraft = {
         ...aiData,
-        image_url: item.image_url, 
+        image_url: postType === 'leaks' ? LEAK_PLACEHOLDER_URL : item.image_url, 
         created_at: new Date().toISOString(),
         type: postType,
         original_item: item,
@@ -274,6 +334,7 @@ export default function AdminApp() {
 
       if (articleWebhook && articleWebhook !== "") {
         try {
+          // GURU MAKE.COM FIX: Přesně ty 4 klíče, které jsi měl na screenshotu
           const payload = {
             title: dbData.title,
             url: `${BASE_URL}/clanky/${dbData.slug}`,
@@ -345,6 +406,10 @@ export default function AdminApp() {
         .compact-btn-main { background: #eab30833; border-color: #eab30866; color: #eab308; }
         .compact-btn-main:hover { background: #eab308; color: #000; }
 
+        .terminal-box { background: #000; border: 1px solid #22c55e33; border-radius: 15px; padding: 20px; font-family: monospace; font-size: 12px; overflow-y: auto; color: #22c55e; }
+        .ai-badge { display: flex; align-items: center; gap: 8px; padding: 6px 15px; border-radius: 50px; font-size: 10px; font-weight: 950; border: 1px solid rgba(255,255,255,0.05); }
+        .ai-online { background: rgba(34, 197, 94, 0.1); color: #22c55e; border-color: rgba(34, 197, 94, 0.2); }
+        .ai-offline { background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2); }
         .preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 500; display: flex; flex-direction: row; padding: 0; backdrop-filter: blur(25px); }
         .preview-sidebar { width: 340px; background: #0d0e12; border-right: 1px solid rgba(255,255,255,0.1); padding: 30px 20px; display: flex; flex-direction: column; gap: 15px; height: 100vh; overflow-y: auto; flex-shrink: 0; box-shadow: 10px 0 30px rgba(0,0,0,0.8); z-index: 510; }
         .preview-content-area { flex: 1; padding: 40px; height: 100vh; overflow-y: auto; display: flex; justify-content: center; align-items: flex-start; }
@@ -354,9 +419,6 @@ export default function AdminApp() {
         .mock-card:hover { border-color: #66fcf1; }
         .mock-prose { color: #d1d5db; line-height: 1.8; font-size: 1.1rem; }
         .mock-prose h2 { color: #66fcf1; font-weight: 950; margin: 1.5em 0 0.5em; text-transform: uppercase; }
-        .terminal-box { background: #000; border: 1px solid #22c55e33; border-radius: 15px; padding: 20px; font-family: monospace; font-size: 12px; overflow-y: auto; }
-        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
-        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
       `}} />
 
       {/* --- 🚀 GURU PREVIEW SYSTEM --- */}
