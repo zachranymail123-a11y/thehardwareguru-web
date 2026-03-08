@@ -7,11 +7,12 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * GURU INTEL ENGINE V12.4 - NEW RSS SOURCES
+ * GURU INTEL ENGINE V12.5 - ABSOLUTE IMAGE FALLBACK
  * - Aktualizované RSS zdroje (odporúčanie AI).
  * - Použitie oficiálneho OpenAI SDK.
  * - Striktná separácia zdrojov (Leaks, HW, Game).
  * - Neúprosná kontrola duplicit proti DB a cross-category.
+ * - GURU FIX: 100% garance obrázku pro každý článek (Davinci Placeholder).
  */
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -79,6 +80,9 @@ const getAIScores = async (titles) => {
 
 export async function GET() {
   const debug = { ai_active: false, ai_status: "pending", db_filtered: 0, cross_duplicates: 0 };
+  
+  // 🚀 GURU IMAGE FALLBACK URL
+  const fallbackImage = `${process.env.NEXT_PUBLIC_SUPABASE_URL || ''}/storage/v1/object/public/images/davinci_prompt__a_high_tech__cinematic_placeholder_for_a_g.png`;
 
   try {
     // 🛡️ GURU DB SHIELD: Načítanie všetkých titulov pre filtráciu
@@ -97,15 +101,23 @@ export async function GET() {
           });
           const json = await res.json();
           if (json.status === 'ok') {
-            return (json.items || []).map(item => ({
-              title: item.title,
-              link: item.link,
-              description: item.description,
-              source: src.name,
-              intelType: src.type,
-              pubDate: item.pubDate,
-              image_url: item.enclosure?.link || item.thumbnail || null
-            }));
+            return (json.items || []).map(item => {
+              // 🚀 GURU LOGIKA: Získání obrázku z feedu nebo nasazení Davinci Placeholderu
+              let extractedImg = item.enclosure?.link || item.thumbnail || item.image;
+              if (!extractedImg || typeof extractedImg !== 'string' || extractedImg.trim() === '') {
+                  extractedImg = fallbackImage;
+              }
+
+              return {
+                title: item.title,
+                link: item.link,
+                description: item.description,
+                source: src.name,
+                intelType: src.type,
+                pubDate: item.pubDate,
+                image_url: extractedImg
+              };
+            });
           }
           return [];
         } catch (e) { return []; }
