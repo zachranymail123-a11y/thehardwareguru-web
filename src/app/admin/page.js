@@ -11,11 +11,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V13.4 - AI FALLBACK & BADGE FIX
- * - FIX: Frontend AI Fallback pro případ, že backend selže při skórování virality.
- * - FIX: Nucený přepis postType na 'leaks', pokud titulek obsahuje 'leak/rumor'.
- * - ZACHOVÁNO: 10 karet na sekci (dokonalý grid).
- * - ZACHOVÁNO: Odesílání na Make.com přesně podle screenshotu.
+ * GURU ULTIMATE COMMAND CENTER V15.0 - SEMANTIC FRONTEND SHIELD
+ * - FIX: Implementace inteligentní sémantické deduplikace přímo na frontendu! (Zabíjí Slay the Spire duplikáty)
+ * - FIX: Odesílání na Make.com PŘESNĚ ve 4 polích podle screenshotu.
+ * - ZACHOVÁNO: 10 karet na sekci (přesně 2 řádky po 5).
+ * - ZACHOVÁNO: Bezpečné čtení NEXT_PUBLIC_OPENAI_API_KEY.
  */
 
 // --- 🚀 GURU ENV ENGINE ---
@@ -54,6 +54,21 @@ if (typeof window !== 'undefined') {
   window.swgSubscriptions = window.swgSubscriptions || {};
   if (!window.swgSubscriptions.attachButton) window.swgSubscriptions.attachButton = () => {};
 }
+
+// 🛡️ GURU SEMANTIC ENGINE (Běží přímo u tebe v prohlížeči, Vercel Cache nemá šanci)
+const STOP_WORDS = new Set(['this', 'that', 'with', 'from', 'will', 'over', 'game', 'play', 'about', 'more', 'than', 'have', 'been', 'which', 'what', 'when', 'just', 'only', 'after', 'first', 'adds', 'the', 'and', 'for', 'you', 'can', 'now', 'out']);
+const tokenize = (str) => {
+  if (!str) return new Set();
+  const words = str.toLowerCase().replace(/[^a-z0-9]/g, ' ').split(/\s+/);
+  return new Set(words.filter(w => w.length >= 3 && !STOP_WORDS.has(w)).map(w => (w.length > 4 && w.endsWith('s')) ? w.slice(0, -1) : w));
+};
+const isSemanticDuplicate = (tokens1, tokens2) => {
+  if (tokens1.size === 0 || tokens2.size === 0) return false;
+  let matches = 0;
+  for (const w of tokens1) if (tokens2.has(w)) matches++;
+  const threshold = Math.min(3, Math.ceil(Math.min(tokens1.size, tokens2.size) * 0.6));
+  return matches >= threshold;
+};
 
 const SidebarItemUI = ({ id, activeTab, setActiveTab, icon, label, color, href }) => {
   const active = activeTab === id;
@@ -178,61 +193,43 @@ export default function AdminApp() {
       const json = await res.json();
       
       if (json.success) {
-        let items = json.data || [];
+        let rawItems = json.data || [];
         
-        // 🚀 GURU FRONTEND AI FALLBACK: Pokud backend selhal s AI skórováním, frontend to převezme
-        const openAiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || getEnv('OPENAI_API_KEY');
-        
-        if (!json._debug?.ai_active && openAiKey) {
-            setAiStatusMsg('FRONTEND AI...');
-            addLog('Backend AI nedostupné. Spouštím Frontend AI Fallback...', 'warning');
-            try {
-                const titles = items.slice(0, 30).map(i => i.title);
-                const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openAiKey}` },
-                    body: JSON.stringify({
-                        model: "gpt-4o-mini",
-                        messages: [
-                            { role: "system", content: "Jsi HW/Game insider. Ohodnoť viralitu (0-100). Vrať JSON { scores: [{ title, score }] }" },
-                            { role: "user", content: JSON.stringify(titles) }
-                        ],
-                        response_format: { type: "json_object" }
-                    })
-                });
-                
-                const r = await aiRes.json();
-                const content = r?.choices?.[0]?.message?.content || r?.output?.[0]?.content?.[0]?.text;
-                
-                if (content) {
-                    const parsed = JSON.parse(content);
-                    const scoreMap = {};
-                    (parsed.scores || []).forEach(item => { if (item.title) scoreMap[item.title.toLowerCase().trim()] = item.score; });
-                    
-                    items = items.map(i => ({
-                        ...i,
-                        viral_score: scoreMap[i.title.toLowerCase().trim()] || i.viral_score || 50
-                    }));
-                    
-                    items.sort((a, b) => b.viral_score - a.viral_score);
-                    setAiActive(true);
-                    setAiStatusMsg('ONLINE (FE)');
-                    addLog('Frontend AI Fallback úspěšně obodoval trendy.', 'success');
-                } else {
-                    throw new Error("Frontend AI Response Empty");
-                }
-            } catch (e) {
-                setAiStatusMsg('OFFLINE');
-                addLog(`Frontend AI Fallback selhal: ${e.message}`, 'error');
+        // 🚀 GURU: SÉMANTICKÝ FRONTEND ŠTÍT! Zařezává "Slay the Spire" duplicity přímo v prohlížeči.
+        const dbTokensList = data.posts.flatMap(p => [tokenize(p.title), tokenize(p.title_en)]).filter(s => s.size > 0);
+        const seenTokens = [];
+        let cleanItems = [];
+        let frontendFiltered = 0;
+
+        for (const item of rawItems) {
+            const t = tokenize(item.title);
+            if (t.size === 0) { cleanItems.push(item); continue; }
+            
+            let isDupe = false;
+            // 1. Zkontroluje vydané články v DB
+            for (const dbT of dbTokensList) {
+                if (isSemanticDuplicate(t, dbT)) { isDupe = true; break; }
             }
-        } else {
-            // Normální průběh, backend to zvládl
-            setAiActive(json._debug?.ai_active || false);
-            setAiStatusMsg(json._debug?.ai_active ? 'ONLINE' : 'OFFLINE');
-            if (json._debug?.ai_active) addLog(`Sken dokončen. Vyfiltrováno z DB: ${json._debug?.db_filtered}.`, 'success');
+            if (isDupe) { frontendFiltered++; continue; }
+            
+            // 2. Zkontroluje křížovou duplicitu napříč radary (Leaky mají vždy přednost)
+            for (const seen of seenTokens) {
+                if (isSemanticDuplicate(t, seen)) { isDupe = true; break; }
+            }
+            if (isDupe) { frontendFiltered++; continue; }
+            
+            seenTokens.push(t);
+            cleanItems.push(item);
         }
         
-        // Zobrazí přesně 10 nejvirálnějších položek (2 řádky po 5)
+        let items = cleanItems;
+        if (frontendFiltered > 0) addLog(`Sémantický štít na frontendu zlikvidoval ${frontendFiltered} skrytých duplicit.`, 'success');
+
+        // AI skórování
+        setAiActive(json._debug?.ai_active || false);
+        setAiStatusMsg(json._debug?.ai_active ? 'ONLINE' : 'OFFLINE');
+        
+        // 🚀 GURU FIX: Zobrazí přesně 10 nejvirálnějších položek na radar (2 řádky po 5)
         setHwIntel(items.filter(i => i.intelType === "hw").slice(0, 10));
         setGameIntel(items.filter(i => i.intelType === "game").slice(0, 10));
         setLeaksIntel(items.filter(i => i.intelType === "leaks").slice(0, 10));
@@ -240,10 +237,7 @@ export default function AdminApp() {
       } else {
         throw new Error(json.error);
       }
-    } catch (err) { 
-      addLog(`API Leaks selhalo: ${err.message}`, 'error'); 
-      setAiStatusMsg('ERROR');
-    }
+    } catch (err) { addLog(`API Leaks selhalo: ${err.message}`, 'error'); }
     finally { setIntelLoading(false); }
   };
 
@@ -255,10 +249,10 @@ export default function AdminApp() {
       return;
     }
 
-    const openAiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY || getEnv('OPENAI_API_KEY');
+    const openAiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || getEnv('NEXT_PUBLIC_OPENAI_API_KEY');
     
     if (!openAiKey || openAiKey === '') {
-        return addLog('CHYBÍ AI KLÍČ V ENV!', 'error');
+        return addLog('CHYBÍ AI KLÍČ V ENV (NEXT_PUBLIC_OPENAI_API_KEY)!', 'error');
     }
     
     setProcessingTitle(item.title);
@@ -273,7 +267,7 @@ export default function AdminApp() {
           messages: [
             { 
               role: "system", 
-              content: "Jsi Hardware Guru. Piš úderně, technicky a virálně v CZ i EN. HTML h2, strong, ul. MUSÍŠ vygenerovat JSON se všemi poli: { title_cs, content_cs, description_cs, seo_description_cs, slug_cs, seo_keywords_cs, title_en, content_en, description_en, seo_description_en, slug_en, meta_title_en, seo_keywords_en, image_alt, og_title, trailer }" 
+              content: "Jsi Hardware Guru. Piš úderně, technicky a virálně. ZDROJOVÉ TEXTY JSOU V ANGLIČTINĚ! ABSOLUTNÍ PRAVIDLO: Všechna pole v JSONu končící na '_cs' (title_cs, content_cs, atd.) MUSÍ BÝT STRIKTNĚ PŘELOŽENA DO ČEŠTINY! Všechna pole končící na '_en' zůstávají v angličtině. HTML h2, strong, ul pro obsah. MUSÍŠ vygenerovat JSON: { title_cs, content_cs, description_cs, seo_description_cs, slug_cs, seo_keywords_cs, title_en, content_en, description_en, seo_description_en, slug_en, meta_title_en, seo_keywords_en, image_alt, og_title, trailer }" 
             },
             { role: "user", content: `Vytvoř článek z: ${item.title}. Zdroj: ${item.description || item.title}.` }
           ],
@@ -288,8 +282,6 @@ export default function AdminApp() {
 
       const aiData = JSON.parse(content);
       
-      // 🚀 GURU OVERRIDE PRO LEAKY: Pokud má článek v titulku "leak" nebo "rumor", VŽDY se uloží jako Leaks,
-      // i když pochází z Hardware nebo Game radaru. Homepage mu pak nekompromisně dá azurový odznak.
       let postType = item.intelType || 'hardware';
       const lowerTitle = (item.title || '').toLowerCase();
       if (lowerTitle.includes('leak') || lowerTitle.includes('rumor')) {
@@ -334,7 +326,7 @@ export default function AdminApp() {
 
       if (articleWebhook && articleWebhook !== "") {
         try {
-          // GURU MAKE.COM FIX: Přesně ty 4 klíče, které jsi měl na screenshotu
+          // 🚀 GURU MAKE.COM FIX: Přesně tvůj buffer scénář a 4 pole
           const payload = {
             title: dbData.title,
             url: `${BASE_URL}/clanky/${dbData.slug}`,
@@ -488,7 +480,7 @@ export default function AdminApp() {
         </div>
         <nav style={{ flex: 1, overflowY: 'auto' }}>
           <SidebarItemUI id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LayoutDashboard />} label="PŘEHLED" color="#a855f7" />
-          <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="HW INTEL HUB" color="#eab308" />
+          <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="INTEL HUB" color="#eab308" />
         </nav>
       </aside>
 
