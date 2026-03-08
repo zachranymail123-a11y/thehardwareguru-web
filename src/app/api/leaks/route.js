@@ -6,10 +6,10 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * GURU INTEL ENGINE V11.1 - ROBUST AI EDITION
+ * GURU INTEL ENGINE V11.2 - FINAL STABILITY EDITION
  * - Striktní separace zdrojů.
  * - Neúprosná kontrola duplicit proti DB.
- * - Fixnuté parsování OpenAI odpovědí pro stabilitu.
+ * - Fixnuté parsování OpenAI odpovědí pro maximální stabilitu.
  */
 
 const LEAK_SOURCES = [
@@ -59,10 +59,10 @@ const getAIScores = async (titles, apiKey) => {
     
     if (!response.ok) return {};
     
-    const result = await response.json();
-    if (!result.choices || result.choices.length === 0) return {};
+    const aiResponse = await response.json();
+    if (!aiResponse.choices || aiResponse.choices.length === 0) return {};
 
-    const content = result.choices[0]?.message?.content;
+    const content = aiResponse.choices[0]?.message?.content;
     if (!content) return {};
 
     const parsed = JSON.parse(content);
@@ -82,7 +82,6 @@ export async function GET() {
   const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
 
   try {
-    // 🚀 DB SHIELD - Kontrola existujících článků
     const { data: existingPosts } = await supabase.from('posts').select('title, title_en');
     const dbTitles = new Set((existingPosts || []).flatMap(p => [
       p.title?.toLowerCase().trim(),
@@ -136,7 +135,6 @@ export async function GET() {
 
     const finalItems = Array.from(uniqueMap.values());
 
-    // AI SCORING
     const titlesForAI = finalItems.slice(0, 40).map(i => i.title);
     const aiScores = await getAIScores(titlesForAI, apiKey);
     
