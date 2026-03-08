@@ -6,10 +6,10 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * GURU INTEL ENGINE V11.2 - FINAL STABILITY EDITION
- * - Striktní separace zdrojů.
- * - Neúprosná kontrola duplicit proti DB.
- * - Fixnuté parsování OpenAI odpovědí pro maximální stabilitu.
+ * GURU INTEL ENGINE V11.3 - SUPREME STABILITY & DEDUPLICATION
+ * - Striktní separace zdrojů (Leaks, HW, Game).
+ * - Neúprosná kontrola duplicit proti DB a cross-category.
+ * - Safeguard pro OpenAI odpovědi.
  */
 
 const LEAK_SOURCES = [
@@ -59,29 +59,26 @@ const getAIScores = async (titles, apiKey) => {
     
     if (!response.ok) return {};
     
-    const aiResponse = await response.json();
-    if (!aiResponse.choices || aiResponse.choices.length === 0) return {};
+    const result = await response.json();
+    if (!result?.choices?.[0]?.message?.content) return {};
 
-    const content = aiResponse.choices[0]?.message?.content;
-    if (!content) return {};
-
-    const parsed = JSON.parse(content);
+    const parsed = JSON.parse(result.choices[0].message.content);
     const scoreMap = {};
     (parsed.scores || []).forEach(item => { 
-      if(item.title) scoreMap[item.title.toLowerCase().trim()] = item.score; 
+      if (item.title) scoreMap[item.title.toLowerCase().trim()] = item.score; 
     });
     return scoreMap;
   } catch (err) { 
-    console.error("Guru AI Scoring Fail:", err.message);
     return {}; 
   }
 };
 
 export async function GET() {
-  const debug = { ai_active: false, ai_status: "pending", db_filtered: 0, sources_active: [] };
+  const debug = { ai_active: false, ai_status: "pending", db_filtered: 0, cross_duplicates: 0 };
   const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
 
   try {
+    // 🛡️ GURU DB SHIELD: Načtení všech titulů pro filtraci
     const { data: existingPosts } = await supabase.from('posts').select('title, title_en');
     const dbTitles = new Set((existingPosts || []).flatMap(p => [
       p.title?.toLowerCase().trim(),
@@ -97,7 +94,6 @@ export async function GET() {
           });
           const json = await res.json();
           if (json.status === 'ok') {
-            debug.sources_active.push(src.name);
             return (json.items || []).map(item => ({
               title: item.title,
               link: item.link,
@@ -114,22 +110,29 @@ export async function GET() {
       return results.flat();
     };
 
-    const [leaks, hw, games] = await Promise.all([
+    const [leaksRaw, hwRaw, gamesRaw] = await Promise.all([
       fetchItems(LEAK_SOURCES),
       fetchItems(HW_SOURCES),
       fetchItems(GAME_SOURCES)
     ]);
 
-    const combined = [...leaks, ...hw, ...games];
+    const combined = [...leaksRaw, ...hwRaw, ...gamesRaw];
     const uniqueMap = new Map();
     
+    // 🚀 GURU CROSS-CATEGORY DEDUPLICATION
     combined.forEach(item => {
       if (!item.title) return;
       const key = item.title.toLowerCase().trim();
-      if (!dbTitles.has(key) && !uniqueMap.has(key)) {
-        uniqueMap.set(key, item);
-      } else if (dbTitles.has(key)) {
+      
+      if (dbTitles.has(key)) {
         debug.db_filtered++;
+        return;
+      }
+
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, item);
+      } else {
+        debug.cross_duplicates++;
       }
     });
 
