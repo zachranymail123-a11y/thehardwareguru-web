@@ -17,15 +17,20 @@ import {
  * Engine: OpenAI GPT-4o-mini + Supabase
  */
 
-// --- BEZPEČNÉ ZÍSKÁVÁNÍ ENV PROMĚNNÝCH PROHLÍŽEČEM ---
+// --- 🚀 GURU ENV ENGINE: STATICKÉ MAPOVÁNÍ PRO NEXT.JS ---
 const getEnv = (key, fallback = '') => {
-  try {
-    if (typeof window !== 'undefined') {
-      // Priorita: Systémové proměnné (Vercel/Environment)
-      return process.env[key] || fallback;
-    }
-  } catch (e) {}
-  return fallback;
+  if (typeof window === 'undefined') return fallback;
+
+  // Next.js bundler nahrazuje tyto hodnoty při buildu pouze při statickém přístupu
+  const envMap = {
+    'OPENAI_API_KEY': process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+    'NEXT_PUBLIC_SUPABASE_URL': process.env.NEXT_PUBLIC_SUPABASE_URL,
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    'NEXT_PUBLIC_ADMIN_PASSWORD': process.env.NEXT_PUBLIC_ADMIN_PASSWORD,
+    'NEXT_PUBLIC_MAKE_WEBHOOK2_URL': process.env.NEXT_PUBLIC_MAKE_WEBHOOK2_URL
+  };
+
+  return envMap[key] || fallback;
 };
 
 // --- GURU ENGINE INIT (SUPABASE) ---
@@ -125,29 +130,31 @@ export default function AdminApp() {
   // --- 🚀 GURU SYNC: RSS FEED ---
   const fetchIntelFeed = async () => {
     setIntelLoading(true);
-    addLog('Stahuji data z Tom\'s Hardware...', 'warning');
+    addLog('Stahuji nejnovější novinky z Tom\'s Hardware...', 'warning');
     try {
-      const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=https://www.tomshardware.com/feeds.xml`);
+      // Používáme rss2json s cache busterem pro čerstvá data
+      const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=https://www.tomshardware.com/feeds.xml&t=${Date.now()}`);
       const resData = await res.json();
       if (resData.status === 'ok') {
         setIntelFeed(resData.items || []);
-        addLog(`Načteno ${resData.items.length} novinek.`, 'success');
-      } else throw new Error('RSS feed nedostupný.');
+        addLog(`Načteno ${resData.items.length} novinek. Připraveno k analýze.`, 'success');
+      } else throw new Error('RSS feed je momentálně nedostupný.');
     } catch (err) { addLog(`Chyba feedu: ${err.message}`, 'error'); }
     finally { setIntelLoading(false); }
   };
 
   // --- 🚀 GURU AI: OPENAI (GPT-4o) ---
   const createDraftFromIntel = async (item) => {
-    // 🚀 GURU FIX: Načítáme klíč z proměnné OPENAI_API_KEY
+    // 🚀 GURU FIX: Načítáme klíč z proměnné OPENAI_API_KEY staticky
     const openAiKey = getEnv('OPENAI_API_KEY');
+    
     if (!openAiKey) {
-      addLog('CHYBÍ KLÍČ! Nastav OPENAI_API_KEY v Vercelu.', 'error');
+      addLog('CHYBÍ KLÍČ! Nastav OPENAI_API_KEY v administraci Vercelu.', 'error');
       return;
     }
 
     setIsTranslating(true);
-    addLog(`GPT-4o-mini připravuje koncept...`, 'warning');
+    addLog(`GPT-4o-mini připravuje český koncept: ${item.title.substring(0, 30)}...`, 'warning');
     
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -185,7 +192,7 @@ export default function AdminApp() {
       if (result.error) throw new Error(result.error.message);
       
       const content = result.choices[0].message.content;
-      // Vyčištění pro parsování
+      // Vyčištění pro parsování (pro jistotu, i když response_format je json_object)
       const cleanJson = content.replace(/```json/g, "").replace(/```/g, "").trim();
       const aiData = JSON.parse(cleanJson);
 
@@ -198,7 +205,7 @@ export default function AdminApp() {
       });
       
       setPreviewMode('card');
-      addLog('Koncept připraven v náhledu.', 'success');
+      addLog('Koncept připraven k revizi v náhledovém okně.', 'success');
     } catch (err) {
       addLog(`AI fail: ${err.message}`, 'error');
     } finally {
@@ -208,7 +215,7 @@ export default function AdminApp() {
 
   const publishDraft = async () => {
     if (!draft) return;
-    addLog('Zveřejňuji článek...', 'warning');
+    addLog('Zveřejňuji článek na web...', 'warning');
     try {
       const { error } = await supabase.from('posts').insert([{
         title: draft.title_cs,
@@ -221,7 +228,7 @@ export default function AdminApp() {
         is_fired: false
       }]);
       if (error) throw error;
-      addLog('ZVEŘEJNĚNO! 🔥', 'success');
+      addLog('ZVEŘEJNĚNO! Článek je nyní online. 🔥', 'success');
       setDraft(null); setPreviewMode('none');
       fetchAndScanData();
     } catch (err) { addLog(`Chyba publikace: ${err.message}`, 'error'); }
@@ -235,26 +242,26 @@ export default function AdminApp() {
 
   const markAsFired = async (id, table) => {
     await supabase.from(table).update({ is_fired: true }).eq('id', id);
-    addLog(`Skryto.`, 'success');
+    addLog(`Položka ${id} skryta.`, 'success');
     fetchAndScanData();
   };
 
   const clearQueueItems = async (list, tabName) => {
-    if (!confirm(`Vyčistit ${tabName}?`)) return;
+    if (!confirm(`Opravdu vyčistit: ${tabName}?`)) return;
     for (const item of list) {
         const table = (item.type === 'expected' || tabName === 'Plánovač' || tabName === 'Články') ? 'posts' : 'game_deals';
         await supabase.from(table).update({ is_fired: true }).eq('id', item.id);
     }
-    addLog('Vyčištěno.', 'success');
+    addLog('Fronta vyčištěna.', 'success');
     fetchAndScanData();
   };
 
   const executeSocial = async (item, type) => {
     setActiveTab('terminal');
-    addLog(`Odesílám na Make...`, 'warning');
+    addLog(`Odesílám na Make: ${item.title}`, 'warning');
     const webhook = getEnv('NEXT_PUBLIC_MAKE_WEBHOOK2_URL');
     fetch(webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...item, guru_type: type, fired_at: new Date().toISOString() }) })
-      .then(() => { supabase.from(type === 'deal' ? 'game_deals' : 'posts').update({ is_fired: true }).eq('id', item.id); addLog('Odesláno!', 'success'); fetchAndScanData(); })
+      .then(() => { supabase.from(type === 'deal' ? 'game_deals' : 'posts').update({ is_fired: true }).eq('id', item.id); addLog('ODESLÁNO!', 'success'); fetchAndScanData(); })
       .catch(e => addLog(`Fail: ${e.message}`, 'error'));
   };
 
@@ -264,7 +271,7 @@ export default function AdminApp() {
     <div style={{ minHeight: '100vh', background: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
       <form onSubmit={handleLogin} style={{ background: '#111318', padding: '50px', borderRadius: '30px', border: '1px solid #eab30866', textAlign: 'center', maxWidth: '400px', width: '100%' }}>
         <Lock size={50} color="#eab308" style={{ margin: '0 auto 20px' }} />
-        <h1>GURU VELÍN</h1>
+        <h1 style={{ fontWeight: 900 }}>GURU VELÍN</h1>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Guru heslo..." style={{ width: '100%', padding: '15px', borderRadius: '12px', background: '#000', border: '1px solid #333', color: '#fff', marginBottom: '20px', textAlign: 'center' }} />
         <button type="submit" style={{ width: '100%', padding: '15px', background: '#eab308', color: '#000', border: 'none', borderRadius: '12px', fontWeight: '900', cursor: 'pointer' }}>VSTOUPIT</button>
       </form>
@@ -300,18 +307,18 @@ export default function AdminApp() {
         iframe { width: 100%; height: 650px; border-radius: 20px; background: #fff; border: none; margin-top: 15px; }
       `}} />
 
-      {/* --- GURU PREVIEW --- */}
+      {/* --- GURU PREVIEW SYSTEM --- */}
       {previewMode !== 'none' && draft && (
         <div className="preview-overlay">
           <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ width: 'auto', background: '#333' }}><ArrowLeft size={16}/> ZPĚT</button>
+                <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ width: 'auto', background: '#333' }}><ArrowLeft size={16}/> ZPĚT DO VELÍNA</button>
                 <div style={{ display: 'flex', gap: '15px' }}>
                     <button onClick={() => setPreviewMode(previewMode === 'card' ? 'slug' : 'card')} className="sidebar-btn" style={{ width: 'auto', background: '#a855f7', color: '#fff' }}>
                         {previewMode === 'card' ? <Eye size={16}/> : <LayoutDashboard size={16}/>}
-                        {previewMode === 'card' ? 'ZOBRAZIT ČLÁNEK' : 'ZOBRAZIT KARTU'}
+                        {previewMode === 'card' ? 'ZOBRAZIT DETAIL ČLÁNKU' : 'ZOBRAZIT KARTU NA HP'}
                     </button>
-                    <button onClick={publishDraft} className="sidebar-btn" style={{ width: 'auto', background: '#10b981', color: '#fff' }}><Check size={16}/> PUBLIKOVAT</button>
+                    <button onClick={publishDraft} className="sidebar-btn" style={{ width: 'auto', background: '#10b981', color: '#fff' }}><Check size={16}/> PUBLIKOVAT NA WEB</button>
                 </div>
             </div>
 
@@ -350,9 +357,9 @@ export default function AdminApp() {
           <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 900 }}>GURU <span style={{ color: '#a855f7' }}>ADMIN</span></h2>
         </div>
         <nav style={{ flex: 1, overflowY: 'auto' }}>
-          <SidebarItemUI id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LayoutDashboard />} label="Přehled" color="#a855f7" />
-          <SidebarItemUI id="terminal" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Terminal />} label="Terminál" color="#22c55e" />
-          <div className="sidebar-header">CENTRÁLNÍ LOGIKA</div>
+          <SidebarItemUI id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LayoutDashboard />} label="Dashboard" color="#a855f7" />
+          <SidebarItemUI id="terminal" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Terminal />} label="Živý Terminál" color="#22c55e" />
+          <div className="sidebar-header">LOGIKA</div>
           <SidebarItemUI id="pub-plan" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Send />} label="Publikace" color="#f97316" />
           <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="HW Intel Hub" color="#eab308" />
           <SidebarItemUI id="tweaks-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Cpu />} label="Tweaky" color="#10b981" />
