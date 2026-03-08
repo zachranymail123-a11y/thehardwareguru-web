@@ -10,25 +10,28 @@ import {
 } from 'lucide-react';
 
 /**
- * 🚀 GURU ADMIN DASHBOARD V9.4 - ULTIMATE STABILITY
- * - Fix pro TypeError: window.swgSubscriptions.attachButton
- * - Odstraněno Supabase (způsobovalo chyby kompilace)
- * - Propojeno s V9.2 AI Backendem (OpenAI scoring)
- * - Styl: Hardware Guru Premium (Czech / English ready)
+ * 🚀 GURU ADMIN DASHBOARD V9.5 - TOTAL ARMORED EDITION
+ * - ODSTRANĚN SUPABASE (Kritické pro build)
+ * - Polyfill pro SWG s ochranou proti SES intrinzikám.
+ * - Intel Hub s automatickou filtrací Radarů.
  */
 
-// 🛡️ GURU GLOBAL SHIELD - Polyfill proti pádům externích skriptů
+// 🛡️ GURU GLOBAL SHIELD - Okamžitá blokace pádů z externích skriptů
 if (typeof window !== 'undefined') {
-  window.swgSubscriptions = window.swgSubscriptions || {};
-  if (!window.swgSubscriptions.attachButton) {
-    window.swgSubscriptions.attachButton = () => { /* Bypass */ };
+  try {
+    window.swgSubscriptions = window.swgSubscriptions || {};
+    if (!window.swgSubscriptions.attachButton) {
+      window.swgSubscriptions.attachButton = () => { console.warn("Guru Bypass: attachButton blocked."); };
+    }
+  } catch (e) {
+    console.error("Guru Shield Error:", e);
   }
 }
 
 export default function AdminApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
-  const [activeTab, setActiveTab] = useState('intel-hub'); // Výchozí na Intel Hub
+  const [activeTab, setActiveTab] = useState('intel-hub');
   const [consoleLogs, setConsoleLogs] = useState([]);
   const logEndRef = useRef(null);
 
@@ -45,13 +48,13 @@ export default function AdminApp() {
   };
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && sessionStorage.getItem('guru_admin_auth') === 'true') {
-      setIsAuthenticated(true);
-    }
-    // Pojistka uvnitř komponenty
     if (typeof window !== 'undefined') {
-      window.swgSubscriptions = window.swgSubscriptions || {};
-      window.swgSubscriptions.attachButton = window.swgSubscriptions.attachButton || (() => {});
+        if (sessionStorage.getItem('guru_admin_auth') === 'true') {
+            setIsAuthenticated(true);
+        }
+        // Polyfill pojistka uvnitř lifecycle
+        window.swgSubscriptions = window.swgSubscriptions || {};
+        window.swgSubscriptions.attachButton = window.swgSubscriptions.attachButton || (() => {});
     }
   }, []);
 
@@ -61,20 +64,19 @@ export default function AdminApp() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // Bezpečné heslo Guru Mastera
-    if (password === 'Wifik500' || password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
+    if (password === 'Wifik500' || (process.env.NEXT_PUBLIC_ADMIN_PASSWORD && password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD)) {
       setIsAuthenticated(true);
       sessionStorage.setItem('guru_admin_auth', 'true');
-      addLog('Systém autorizován. Vítejte, Guru.', 'success');
+      addLog('Systém autorizován. Vítejte zpět ve velíně.', 'success');
     } else {
-      addLog('Přístup odepřen: Neplatné heslo.', 'error');
+      addLog('Neplatné heslo! Přístup zamítnut.', 'error');
     }
   };
 
   const fetchIntelFeed = async () => {
     setIntelLoading(true);
     setAiActive(false);
-    addLog('Spouštím Unified Intel Engine V9.2 (OpenAI Enabled)...', 'warning');
+    addLog('Spouštím Unified Intel Engine V9.2...', 'warning');
     
     try {
       const res = await fetch('/api/leaks');
@@ -83,34 +85,32 @@ export default function AdminApp() {
       if (json.success) {
         const items = json.data || [];
         
-        // 🚀 INTELIGENTNÍ FILTRACE PRO RADARY
-        // Hardware Radar (VideoCardz + HW kličová slova)
+        // 🚀 FILTRACE PRO RADARY
         setHwIntel(items.filter(i => 
           i.source === "VideoCardz" || 
-          /rtx|amd|intel|cpu|gpu|blackwell|zen|core|benchmark|specs/i.test(i.title)
+          /rtx|amd|intel|cpu|gpu|blackwell|zen|core|specs/i.test(i.title)
         ).slice(0, 10));
 
-        // Gaming Radar (Wccftech + Gaming kličová slova)
         setGameIntel(items.filter(i => 
           i.source === "Wccftech" || 
           /gta|ps5|xbox|switch|game|launch|play|nintendo|sony/i.test(i.title)
         ).slice(0, 10));
 
-        // Leaks & Rumors (Reddit + Chiphell)
         setLeaksIntel(items.filter(i => i.source === "Reddit Leaks" || i.source === "Chiphell").slice(0, 15));
         
-        // 🧠 AI MOZEK STATUS
         if (json._debug?.ai_active) {
             setAiActive(true);
             setAiStatusMsg('ONLINE');
-            addLog('GURU AI: Virální skórování dokončeno pomocí OpenAI.', 'success');
+            addLog('GURU AI: Trendy ohodnoceny skóre virality.', 'success');
         } else {
             setAiStatusMsg(json._debug?.ai_status || 'ERROR');
-            addLog(`AI Mozek: ${json._debug?.ai_status || 'nedostupný'}`, 'error');
+            addLog(`AI Mozek: ${json._debug?.ai_status || 'nenaskočil'}`, 'error');
         }
+      } else {
+          addLog(`Backend Error: ${json.error || 'Unknown'}`, 'error');
       }
     } catch (err) {
-      addLog(`Kritická chyba enginu: ${err.message}`, 'error');
+      addLog(`Chyba spojení: ${err.message}`, 'error');
     } finally {
       setIntelLoading(false);
     }
@@ -118,21 +118,19 @@ export default function AdminApp() {
 
   if (!isAuthenticated) return (
     <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center text-white p-6 font-sans">
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 pointer-events-none"></div>
-      <form onSubmit={handleLogin} className="bg-[#111318] p-10 rounded-[40px] border border-orange-500/20 text-center max-w-sm w-full shadow-2xl relative z-10">
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 bg-orange-600 rounded-3xl flex items-center justify-center shadow-xl shadow-orange-600/40">
-            <Lock size={40} className="text-white" />
-        </div>
-        <h1 className="text-3xl font-black mb-2 mt-6 tracking-tighter uppercase italic">Guru Velín</h1>
-        <p className="text-neutral-500 text-[10px] font-bold mb-8 uppercase tracking-widest">Master Authorization Required</p>
+      <form onSubmit={handleLogin} className="bg-[#111318] p-10 rounded-[40px] border border-orange-500/20 text-center max-w-sm w-full shadow-2xl relative">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-purple-600"></div>
+        <Lock size={48} className="text-orange-500 mx-auto mb-6" />
+        <h1 className="text-3xl font-black mb-2 tracking-tighter uppercase italic">Guru Velín</h1>
+        <p className="text-neutral-500 text-[10px] font-bold mb-8 uppercase tracking-widest tracking-[0.3em]">Authorization Required</p>
         <input 
           type="password" 
           value={password} 
           onChange={(e) => setPassword(e.target.value)} 
-          placeholder="HESLO GURU..." 
+          placeholder="HESLO..." 
           className="w-full p-5 rounded-2xl bg-black border border-neutral-800 text-white mb-6 text-center focus:border-orange-500 transition-all outline-none text-xl tracking-[0.3em]" 
         />
-        <button type="submit" className="w-full p-5 bg-orange-600 text-white rounded-2xl font-black hover:bg-orange-500 transition-all shadow-lg shadow-orange-600/30 active:scale-95 uppercase">Vstoupit do Hubu</button>
+        <button type="submit" className="w-full p-5 bg-orange-600 text-white rounded-2xl font-black hover:bg-orange-500 transition-all shadow-lg shadow-orange-600/30">VSTOUPIT</button>
       </form>
     </div>
   );
@@ -145,27 +143,20 @@ export default function AdminApp() {
             <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-600/30">
                 <Zap size={24} className="text-white" fill="currentColor" />
             </div>
-            <div>
-                <h2 className="text-xl font-black tracking-tighter leading-none">GURU</h2>
-                <span className="text-[10px] font-black text-purple-500 uppercase tracking-widest">Command Center</span>
-            </div>
+            <h2 className="text-xl font-black tracking-tighter italic">GURU HUB</h2>
          </div>
 
          <nav className="space-y-4 flex-1">
             <button onClick={() => setActiveTab('dashboard')} className={`w-full flex items-center gap-4 p-4 rounded-2xl font-black text-xs uppercase tracking-tight transition-all ${activeTab === 'dashboard' ? 'bg-purple-600/10 text-purple-500 border border-purple-600/20' : 'text-neutral-500 hover:text-white hover:bg-white/5'}`}>
-                <LayoutDashboard size={18} /> Přehled
+                <LayoutDashboard size={18} /> PŘEHLED
             </button>
             <button onClick={() => setActiveTab('intel-hub')} className={`w-full flex items-center gap-4 p-4 rounded-2xl font-black text-xs uppercase tracking-tight transition-all ${activeTab === 'intel-hub' ? 'bg-orange-600/10 text-orange-500 border border-orange-600/20' : 'text-neutral-500 hover:text-white hover:bg-white/5'}`}>
-                <Layers size={18} /> Intel Radar Hub
+                <Layers size={18} /> INTEL RADAR
             </button>
          </nav>
 
          <div className="p-4 bg-white/5 rounded-2xl border border-white/5 mt-auto">
-            <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">System Stable</p>
-            </div>
-            <p className="text-xs font-black text-white">Guru Engine v9.4</p>
+            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1 text-center">Version 9.5 Stable</p>
          </div>
       </aside>
 
@@ -181,13 +172,9 @@ export default function AdminApp() {
                   <div>
                     <h2 className="text-6xl font-black tracking-tighter leading-none mb-4 uppercase italic">Intel <span className="text-orange-500">Radar</span></h2>
                     <div className="flex items-center gap-3">
-                        {/* 🧠 GURU AI BADGE */}
                         <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all ${aiActive ? 'bg-green-600/10 text-green-500 border-green-600/30 shadow-[0_0_20px_rgba(34,197,94,0.3)]' : 'bg-red-600/10 text-red-500 border-red-600/30'}`}>
                            <Brain size={14} className={intelLoading ? 'animate-pulse' : ''} />
                            AI MOZEK: {aiActive ? 'ONLINE' : aiStatusMsg}
-                        </div>
-                        <div className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[11px] font-black text-neutral-500 uppercase tracking-widest">
-                            Global Sync: {new Date().toLocaleTimeString()}
                         </div>
                     </div>
                   </div>
@@ -197,13 +184,13 @@ export default function AdminApp() {
                  disabled={intelLoading}
                  className="px-10 py-5 bg-orange-600 text-white rounded-2xl font-black uppercase flex items-center gap-4 hover:bg-orange-500 transition-all shadow-xl shadow-orange-600/20 active:scale-95 disabled:opacity-50 group"
                >
-                 <RefreshCw size={22} className={intelLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-700'} />
-                 {intelLoading ? 'Analyzuji svět...' : 'Spustit globální sken'}
+                 <RefreshCw size={22} className={intelLoading ? 'animate-spin' : ''} />
+                 {intelLoading ? 'Skenuji...' : 'Spustit sken trendů'}
                </button>
             </header>
 
             <div className="grid grid-cols-1 gap-20 pb-40">
-                {/* PILÍŘ 1: LEAKS & RUMORS */}
+                {/* RADAR: LEAKS */}
                 <section>
                     <div className="flex items-center gap-4 mb-10 border-l-8 border-cyan-400 pl-6 py-2">
                         <Ghost className="text-cyan-400" size={36} />
@@ -228,12 +215,12 @@ export default function AdminApp() {
                                 </div>
                             </div>
                         )) : (
-                          <div className="col-span-full py-20 text-center text-neutral-800 font-black text-2xl uppercase italic border-2 border-dashed border-white/5 rounded-[40px]">Radar je prázdný. Spusť skenování.</div>
+                          <div className="col-span-full py-16 text-center text-neutral-800 font-black text-xl uppercase italic border-2 border-dashed border-white/5 rounded-[40px]">Žádné čerstvé leaky. Spusť sken.</div>
                         )}
                     </div>
                 </section>
 
-                {/* PILÍŘ 2: HARDWARE RADAR */}
+                {/* RADAR: HARDWARE */}
                 <section>
                     <div className="flex items-center gap-4 mb-10 border-l-8 border-orange-500 pl-6 py-2">
                         <Monitor className="text-orange-500" size={36} />
@@ -250,13 +237,13 @@ export default function AdminApp() {
                                     <div className="px-2.5 py-1 bg-orange-500 text-white rounded-lg font-black text-[11px]">{item.viral_score}%</div>
                                 </div>
                                 <h4 className="text-sm font-bold leading-tight mb-8 h-16 overflow-hidden group-hover:text-orange-400 transition-colors">{item.title}</h4>
-                                <button className="mt-auto w-full py-3.5 bg-orange-500/10 rounded-2xl text-[10px] font-black text-orange-500 border border-orange-500/20 uppercase tracking-tighter hover:bg-orange-500 hover:text-white transition-all">Vytvořit článek</button>
+                                <button className="mt-auto w-full py-3.5 bg-orange-500/10 rounded-2xl text-[10px] font-black text-orange-500 border border-orange-500/20 uppercase tracking-tighter hover:bg-orange-500 hover:text-white transition-all">Článek</button>
                             </div>
                         ))}
                     </div>
                 </section>
 
-                {/* PILÍŘ 3: GAMING RADAR */}
+                {/* RADAR: GAMING */}
                 <section>
                     <div className="flex items-center gap-4 mb-10 border-l-8 border-purple-500 pl-6 py-2">
                         <Play className="text-purple-500" size={36} />
@@ -273,7 +260,7 @@ export default function AdminApp() {
                                     <div className="px-2.5 py-1 bg-purple-500 text-white rounded-lg font-black text-[11px]">{item.viral_score}%</div>
                                 </div>
                                 <h4 className="text-sm font-bold leading-tight mb-8 h-16 overflow-hidden group-hover:text-purple-400 transition-colors">{item.title}</h4>
-                                <button className="mt-auto w-full py-3.5 bg-purple-500/10 rounded-2xl text-[10px] font-black text-purple-500 border border-purple-500/20 uppercase tracking-tighter hover:bg-purple-500 hover:text-white transition-all">Publikovat bleskovku</button>
+                                <button className="mt-auto w-full py-3.5 bg-purple-500/10 rounded-2xl text-[10px] font-black text-purple-500 border border-purple-500/20 uppercase tracking-tighter hover:bg-purple-500 hover:text-white transition-all">Bleskovka</button>
                             </div>
                         ))}
                     </div>
@@ -288,13 +275,13 @@ export default function AdminApp() {
         <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
            <div className="flex items-center gap-3">
               <Terminal size={16} className="text-neutral-500" />
-              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-neutral-400">Guru System Console</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-neutral-400">Guru Console</span>
            </div>
            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
         </div>
         <div className="p-6 h-56 overflow-y-auto space-y-3 font-mono text-[11px] custom-scrollbar">
            {consoleLogs.map((log, i) => (
-             <div key={i} className={`${log.type === 'error' ? 'text-red-400' : log.type === 'warning' ? 'text-orange-400' : log.type === 'success' ? 'text-green-400' : 'text-neutral-500'} flex gap-3`}>
+             <div key={i} className={`${log.type === 'error' ? 'text-red-400' : log.type === 'warning' ? 'text-orange-400' : 'text-green-400'} flex gap-3`}>
                 <span className="opacity-30 flex-shrink-0">[{log.time}]</span>
                 <span className="font-bold tracking-tight">{log.msg}</span>
              </div>
@@ -307,7 +294,6 @@ export default function AdminApp() {
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
       `}</style>
     </div>
   );
