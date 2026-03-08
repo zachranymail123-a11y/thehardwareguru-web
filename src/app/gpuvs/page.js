@@ -6,14 +6,15 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS INDEX - MASTER LOGIC V10.1 (STABLE BUILD)
+ * GURU GPU DUELS INDEX - MASTER LOGIC V11.1 (BUILD SHIELD RECOVERY)
  * Cesta: src/app/gpuvs/page.js
- * Funkce: Výběr karet pro srovnání v GURU designu.
- * FIX: Robustní načítání modulů (Build Shield) pro prevenci chyb v náhledu.
+ * Design: Brutální GURU styl (obří růžové nadpisy, skleněný panel, neonové tečky).
+ * FIX: Dynamické načítání modulů pro kompilátor (Build Shield) + "use client".
+ * SYNC: Přímé propojení s tabulkami 'gpus' a 'gpu_duels'.
  */
 
 // --- 🛡️ GURU BUILD SHIELD: Dynamické ošetření modulů pro prostředí náhledu ---
-const safeRequire = (path) => {
+const getModule = (path) => {
   try {
     return require(path);
   } catch (e) {
@@ -21,19 +22,18 @@ const safeRequire = (path) => {
   }
 };
 
-const supabaseLib = safeRequire('@supabase/supabase-js');
-const nextNav = safeRequire('next/navigation');
-const nextLinkModule = safeRequire('next/link');
+const supabaseLib = getModule('@supabase/supabase-js');
+const nextNav = getModule('next/navigation');
+const nextLinkModule = getModule('next/link');
 
-// Fallbacky a inicializace pro prostředí, kde moduly nejsou dostupné
 const createClient = supabaseLib ? supabaseLib.createClient : null;
-const useRouter = nextNav ? nextNav.useRouter : () => ({ push: () => {} });
+const useRouter = nextNav ? nextNav.useRouter : () => ({ push: (url) => console.log(`Navigace: ${url}`) });
 const usePathname = nextNav ? nextNav.usePathname : () => '/gpuvs';
 const Link = nextLinkModule ? (nextLinkModule.default || nextLinkModule) : ({ children, href, className, ...props }) => (
   <a href={href} className={className} {...props}>{children}</a>
 );
 
-// Inicializace Supabase s ochranou proti chybějícím ENV proměnným
+// Inicializace Supabase s ochranou (Bere ENV z tvého Vercelu)
 const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
   ? createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -64,7 +64,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 🚀 GURU DATA SYNC: Načítání z DB
+  // 🚀 GURU DATA SYNC: Načítání karet a duelů přímo z DB
   useEffect(() => {
     async function loadData() {
       if (!createClient) {
@@ -74,6 +74,7 @@ export default function App() {
       setLoading(true);
       setError(null);
       try {
+        // Načítáme karty pro dropdowny a už existující duely
         const [gData, dData] = await Promise.all([
           supabase.from('gpus').select('id, name').order('name', { ascending: true }),
           supabase.from('gpu_duels').select('id, title_cs, title_en, slug').order('created_at', { ascending: false }).limit(20)
@@ -86,7 +87,7 @@ export default function App() {
         setExistingDuels(dData.data || []);
       } catch (err) {
         console.error("Guru Sync Error:", err);
-        setError(isEn ? "Database sync failed. Refresh page." : "Synchronizace s DB selhala. Zkuste obnovit stránku.");
+        setError(isEn ? "Database sync failed. Refresh page." : "Synchronizace s DB selhala. Zkus obnovit stránku.");
       } finally {
         setLoading(false);
       }
@@ -101,22 +102,21 @@ export default function App() {
     const cardB = gpus.find(g => g.id === gpuB);
     if (!cardA || !cardB) return;
 
+    // Slug pattern: karta-a-vs-karta-b
     const rawSlug = `${cardA.name}-vs-${cardB.name}`
       .toLowerCase()
       .replace(/[^a-z0-9-]/g, '-')
       .replace(/-+/g, '-');
     
-    if (isEn) {
-      router.push(`/en/gpuvs/en-${rawSlug}`);
-    } else {
-      router.push(`/gpuvs/${rawSlug}`);
-    }
+    // Přesměrování na detail
+    const target = isEn ? `/en/gpuvs/en-${rawSlug}` : `/gpuvs/${rawSlug}`;
+    router.push(target);
   };
 
   return (
     <div className="min-h-screen bg-[#0a0b0d] text-white font-sans selection:bg-[#ff0055]" style={{ backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '140px', paddingBottom: '100px' }}>
       
-      {/* 🛡️ GURU HYPER-SHIELD: Okamžitá prevence černé obrazovky (TypeError u SwG) */}
+      {/* 🛡️ GURU HYPER-SHIELD: Okamžitá prevence černé obrazovky v SPA navigaci */}
       <script dangerouslySetInnerHTML={{__html: `
         (function() {
           window.swgSubscriptions = window.swgSubscriptions || {};
@@ -140,27 +140,33 @@ export default function App() {
         .duel-list-item { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 25px 30px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: #fff; transition: 0.3s; margin-bottom: 12px; }
         .duel-list-item:hover { background: rgba(255,255,255,0.05); border-color: #ff0055; transform: translateX(10px); }
         
-        .gpu-label { display: block; color: #ff0055; font-size: 11px; font-weight: 950; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 2px; }
-        .guru-main-title { font-size: 90px; font-weight: 950; font-style: italic; color: #ff0055; text-transform: uppercase; line-height: 0.9; margin-bottom: 30px; }
+        .gpu-label { display: block; color: #ff0055; font-size: 11px; font-weight: 950; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 2px; display: flex; align-items: center; gap: 8px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+        .guru-main-title { font-size: 90px; font-weight: 950; font-style: italic; color: #ff0055; text-transform: uppercase; line-height: 0.9; margin-bottom: 10px; }
+        .guru-sub-title { font-size: 80px; font-weight: 950; font-style: italic; color: #fff; text-transform: uppercase; line-height: 0.9; margin-bottom: 30px; }
         
         @media (max-width: 768px) { 
           .grid-select { grid-template-columns: 1fr !important; } 
           .guru-glass-card { padding: 40px 20px; }
           .guru-main-title { font-size: 50px; }
+          .guru-sub-title { font-size: 45px; }
         }
       `}} />
 
       <main className="max-w-4xl mx-auto px-4">
         
-        {/* HERO HLAVIČKA */}
+        {/* HERO HLAVIČKA (GURU STYLE) */}
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 text-[#ff0055] text-xs font-black uppercase tracking-[0.4em] mb-8 px-6 py-2 border border-[#ff0055] rounded-full bg-[#ff0055]/10 animate-pulse shadow-[0_0_15px_rgba(255,0,85,0.2)]">
             <Swords size={18} /> GURU VS ENGINE
           </div>
           <h1 className="guru-main-title">
-            {isEn ? "COMPARE ANY" : "POROVNEJTE"} <br/> 
-            <span style={{ color: '#fff' }}>{isEn ? "GRAPHICS CARDS" : "GRAFICKÉ KARTY"}</span>
+            {isEn ? "COMPARE ANY" : "POROVNEJTE"}
           </h1>
+          <h2 className="guru-sub-title">
+            {isEn ? "GRAPHICS CARDS" : "GRAFICKÉ KARTY"}
+          </h2>
           <p className="text-[#9ca3af] text-xl max-w-xl mx-auto italic font-medium">
             {isEn ? "Detailed technical analysis and AI verdict by Hardware Guru." : "Detailní technická analýza a AI verdikt přímo od Hardware Guruho."}
           </p>
@@ -176,24 +182,30 @@ export default function App() {
             
             <div className="grid-select grid grid-cols-1 md:grid-cols-2 gap-10 mb-12">
                 <div>
-                  <label className="gpu-label">🔴 {isEn ? "FIRST GPU" : "PRVNÍ GRAFIKA"}</label>
+                  <label className="gpu-label">
+                    <span className="dot bg-[#ff0055]"></span>
+                    {isEn ? "FIRST GPU" : "PRVNÍ GRAFIKA"}
+                  </label>
                   <select 
                     className="guru-dropdown" 
                     value={gpuA} 
                     onChange={e => setGpuA(e.target.value)}
                   >
-                    <option value="" className="bg-[#0a0b0d]">{loading ? "..." : (isEn ? "-- Select GPU --" : "-- Vyber grafiku --")}</option>
+                    <option value="">{loading ? "..." : (isEn ? "-- Select GPU --" : "-- Vyber grafiku --")}</option>
                     {gpus.map(g => <option key={g.id} value={g.id} className="bg-[#0a0b0d]">{g.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="gpu-label" style={{ color: '#3b82f6' }}>🔵 {isEn ? "SECOND GPU" : "DRUHÁ GRAFIKA"}</label>
+                  <label className="gpu-label" style={{ color: '#3b82f6' }}>
+                    <span className="dot bg-[#3b82f6]"></span>
+                    {isEn ? "SECOND GPU" : "DRUHÁ GRAFIKA"}
+                  </label>
                   <select 
                     className="guru-dropdown" 
                     value={gpuB} 
                     onChange={e => setGpuB(e.target.value)}
                   >
-                    <option value="" className="bg-[#0a0b0d]">{loading ? "..." : (isEn ? "-- Select GPU --" : "-- Vyber grafiku --")}</option>
+                    <option value="">{loading ? "..." : (isEn ? "-- Select GPU --" : "-- Vyber grafiku --")}</option>
                     {gpus.map(g => <option key={g.id} value={g.id} className="bg-[#0a0b0d]">{g.name}</option>)}
                   </select>
                 </div>
@@ -212,7 +224,7 @@ export default function App() {
             
             {gpuA === gpuB && gpuA !== '' && (
               <p className="text-[#ff0055] text-[10px] font-black text-center mt-6 uppercase tracking-[0.3em]">
-                {isEn ? "Critical Error: Select different hardware!" : "Kritická chyba: Vyberte dvě různé karty!"}
+                {isEn ? "Critical Error: Select different cards!" : "Kritická chyba: Vyberte dvě různé karty!"}
               </p>
             )}
         </section>
@@ -250,7 +262,7 @@ export default function App() {
                 </Link>
               )) : (
                 <div className="text-center py-20 border-2 border-dashed border-white/5 rounded-[40px] bg-black/20 text-gray-600 font-black uppercase tracking-[0.5em] text-xs italic">
-                   {isEn ? "Database is empty. Start the first battle!" : "V databázi zatím nejsou žádné souboje. Odpal to první!"}
+                   {isEn ? "No duels found. Be the first to start one!" : "V databázi zatím nejsou žádné souboje. Odpal to první!"}
                 </div>
               )}
             </div>
