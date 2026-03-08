@@ -6,14 +6,15 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS INDEX - MASTER LOGIC V11.1 (BUILD SHIELD RECOVERY)
+ * GURU GPU DUELS INDEX - MASTER LOGIC V12.1 (BUILD SHIELD)
  * Cesta: src/app/gpuvs/page.js
- * Design: Brutální GURU styl (obří růžové nadpisy, skleněný panel, neonové tečky).
- * FIX: Dynamické načítání modulů pro kompilátor (Build Shield) + "use client".
- * SYNC: Přímé propojení s tabulkami 'gpus' a 'gpu_duels'.
+ * Funkce: Výběr karet pro srovnání v nekompromisním GURU designu.
+ * FIX: Implementace "Build Shield" pro dynamické načítání modulů, což řeší chyby kompilace v náhledu.
+ * SYNC: Přímé propojení s tabulkou 'gpus' (RTX 5090, RX 9070 atd.).
  */
 
-// --- 🛡️ GURU BUILD SHIELD: Dynamické ošetření modulů pro prostředí náhledu ---
+// --- 🛡️ GURU BUILD SHIELD ---
+// Pomocná funkce pro bezpečné načítání modulů v prostředí Canvas/Preview
 const getModule = (path) => {
   try {
     return require(path);
@@ -27,7 +28,7 @@ const nextNav = getModule('next/navigation');
 const nextLinkModule = getModule('next/link');
 
 const createClient = supabaseLib ? supabaseLib.createClient : null;
-const useRouter = nextNav ? nextNav.useRouter : () => ({ push: (url) => console.log(`Navigace: ${url}`) });
+const useRouter = nextNav ? nextNav.useRouter : () => ({ push: (url) => console.log(`Navigace na: ${url}`) });
 const usePathname = nextNav ? nextNav.usePathname : () => '/gpuvs';
 const Link = nextLinkModule ? (nextLinkModule.default || nextLinkModule) : ({ children, href, className, ...props }) => (
   <a href={href} className={className} {...props}>{children}</a>
@@ -44,7 +45,6 @@ const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
         select: () => ({ 
           order: () => {
             const chain = Promise.resolve({ data: [] });
-            // @ts-ignore
             chain.limit = () => Promise.resolve({ data: [] });
             return chain;
           }
@@ -64,7 +64,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 🚀 GURU DATA SYNC: Načítání karet a duelů přímo z DB
+  // 🚀 GURU DATA SYNC: Načítání karet přímo z DB tabulky 'gpus'
   useEffect(() => {
     async function loadData() {
       if (!createClient) {
@@ -77,7 +77,7 @@ export default function App() {
         // Načítáme karty pro dropdowny a už existující duely
         const [gData, dData] = await Promise.all([
           supabase.from('gpus').select('id, name').order('name', { ascending: true }),
-          supabase.from('gpu_duels').select('id, title_cs, title_en, slug').order('created_at', { ascending: false }).limit(20)
+          supabase.from('gpu_duels').select('id, title_cs, title_en, slug').order('created_at', { ascending: false }).limit(10)
         ]);
 
         if (gData.error) throw gData.error;
@@ -143,36 +143,33 @@ export default function App() {
         .gpu-label { display: block; color: #ff0055; font-size: 11px; font-weight: 950; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 2px; display: flex; align-items: center; gap: 8px; }
         .dot { width: 8px; height: 8px; border-radius: 50%; }
 
-        .guru-main-title { font-size: 90px; font-weight: 950; font-style: italic; color: #ff0055; text-transform: uppercase; line-height: 0.9; margin-bottom: 10px; }
-        .guru-sub-title { font-size: 80px; font-weight: 950; font-style: italic; color: #fff; text-transform: uppercase; line-height: 0.9; margin-bottom: 30px; }
+        .guru-main-title { font-size: 90px; font-weight: 950; font-style: italic; color: #fff; text-transform: uppercase; line-height: 0.9; margin-bottom: 10px; text-align: center; }
+        .guru-highlight-title { color: #ff0055; }
         
         @media (max-width: 768px) { 
           .grid-select { grid-template-columns: 1fr !important; } 
           .guru-glass-card { padding: 40px 20px; }
           .guru-main-title { font-size: 50px; }
-          .guru-sub-title { font-size: 45px; }
         }
       `}} />
 
       <main className="max-w-4xl mx-auto px-4">
         
-        {/* HERO HLAVIČKA (GURU STYLE) */}
+        {/* HERO HLAVIČKA (OBNOVA BRUTÁLNÍHO STYLU) */}
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 text-[#ff0055] text-xs font-black uppercase tracking-[0.4em] mb-8 px-6 py-2 border border-[#ff0055] rounded-full bg-[#ff0055]/10 animate-pulse shadow-[0_0_15px_rgba(255,0,85,0.2)]">
             <Swords size={18} /> GURU VS ENGINE
           </div>
           <h1 className="guru-main-title">
-            {isEn ? "COMPARE ANY" : "POROVNEJTE"}
+            {isEn ? "COMPARE ANY" : "POROVNEJTE"} <br/>
+            <span className="guru-highlight-title">{isEn ? "GRAPHICS CARDS" : "GRAFICKÉ KARTY"}</span>
           </h1>
-          <h2 className="guru-sub-title">
-            {isEn ? "GRAPHICS CARDS" : "GRAFICKÉ KARTY"}
-          </h2>
           <p className="text-[#9ca3af] text-xl max-w-xl mx-auto italic font-medium">
-            {isEn ? "Detailed technical analysis and AI verdict by Hardware Guru." : "Detailní technická analýza a AI verdikt přímo od Hardware Guruho."}
+            {isEn ? "Detailed technical analysis, FPS estimation and AI verdict by Guru." : "Detailní technická analýza, odhad FPS a AI verdikt přímo od Guruho."}
           </p>
         </div>
 
-        {/* VÝBĚROVÝ PANEL */}
+        {/* VÝBĚROVÝ PANEL (OPRAVA DROPDOWNŮ) */}
         <section className="guru-glass-card mb-24 shadow-2xl">
             {error && (
               <div className="bg-red-500/10 border border-red-500 text-red-500 p-6 rounded-2xl text-center font-black mb-10 uppercase tracking-widest text-sm">
@@ -191,8 +188,12 @@ export default function App() {
                     value={gpuA} 
                     onChange={e => setGpuA(e.target.value)}
                   >
-                    <option value="">{loading ? "..." : (isEn ? "-- Select GPU --" : "-- Vyber grafiku --")}</option>
-                    {gpus.map(g => <option key={g.id} value={g.id} className="bg-[#0a0b0d]">{g.name}</option>)}
+                    <option value="" className="bg-[#0a0b0d]">{loading ? "..." : (isEn ? "-- Select GPU --" : "-- Vyber grafiku --")}</option>
+                    {gpus.map(g => (
+                      <option key={g.id} value={g.id} className="bg-[#0a0b0d] text-white">
+                        {g.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -205,8 +206,12 @@ export default function App() {
                     value={gpuB} 
                     onChange={e => setGpuB(e.target.value)}
                   >
-                    <option value="">{loading ? "..." : (isEn ? "-- Select GPU --" : "-- Vyber grafiku --")}</option>
-                    {gpus.map(g => <option key={g.id} value={g.id} className="bg-[#0a0b0d]">{g.name}</option>)}
+                    <option value="" className="bg-[#0a0b0d]">{loading ? "..." : (isEn ? "-- Select GPU --" : "-- Vyber grafiku --")}</option>
+                    {gpus.map(g => (
+                      <option key={g.id} value={g.id} className="bg-[#0a0b0d] text-white">
+                        {g.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
             </div>
@@ -224,7 +229,7 @@ export default function App() {
             
             {gpuA === gpuB && gpuA !== '' && (
               <p className="text-[#ff0055] text-[10px] font-black text-center mt-6 uppercase tracking-[0.3em]">
-                {isEn ? "Critical Error: Select different cards!" : "Kritická chyba: Vyberte dvě různé karty!"}
+                {isEn ? "Critical Error: Select different hardware!" : "Kritická chyba: Vyberte dvě různé karty!"}
               </p>
             )}
         </section>
