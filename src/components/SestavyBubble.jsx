@@ -5,16 +5,21 @@ import { usePathname } from 'next/navigation';
 import { Brain, ChevronRight, X, Activity, Target, Cpu, Gamepad2, Flame, Lightbulb, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-// --- 🚀 GURU INIT: Čisté napojení na tvé reálné prostředí (Bez falešných URL) ---
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+// --- 🚀 GURU INIT: Základní klient (Bude přepsán Data Bridgem, pokud selže ENV) ---
+let initialUrl = 'https://placeholder.supabase.co';
+let initialKey = 'placeholder';
+try {
+  initialUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || initialUrl;
+  initialKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || initialKey;
+} catch (e) {}
+
+const defaultSupabase = createClient(initialUrl, initialKey);
 
 /**
  * GURU AI NAVIGATOR - COMPACT ULTIMATE EDITION
  * Obsahuje: Behaviorální archetypy, Anti-Fatigue paměť, 
  * Contextual Keyword Matching a kompaktní design.
+ * FIX: GURU DATA BRIDGE, Supabase Error Handling a Filter Fallback.
  */
 export default function SestavyBubble() {
   const [isVisible, setIsVisible] = useState(false);
@@ -50,6 +55,17 @@ export default function SestavyBubble() {
       if (isMounted) setIsScanning(true);
       
       try {
+        // 🚀 GURU DATA BRIDGE FIX: Získání 100% platných klíčů z layout.js
+        let activeSupabase = defaultSupabase;
+        const bridge = document.getElementById('guru-env-bridge');
+        if (bridge) {
+          const bUrl = bridge.getAttribute('data-url');
+          const bKey = bridge.getAttribute('data-key');
+          if (bUrl && bKey && bUrl !== initialUrl) {
+            activeSupabase = createClient(bUrl, bKey);
+          }
+        }
+
         // 1. NAČTENÍ PROFILU A HISTORIE
         let profile = JSON.parse(localStorage.getItem('guru_archetype') || '{"hw":0, "games":0, "deals":0, "tips":0}');
         let seenItems = JSON.parse(localStorage.getItem('guru_ai_seen') || '[]');
@@ -77,46 +93,63 @@ export default function SestavyBubble() {
         const currentSlug = pathname.split('/').pop() || '';
         const keywords = currentSlug.split('-').filter(w => w.length > 3);
 
-        // 4. BEZPEČNÝ FETCH Z REÁLNÉ DATABÁZE
-        const safeFetch = (promise) => promise.catch(err => { console.error("Guru Fetch Error:", err); return { data: [] }; });
+        // 4. BEZPEČNÝ FETCH (Záchranná síť přečte objekt error z API Supabase)
+        const safeFetch = async (promise) => {
+          try {
+            const res = await promise;
+            if (res.error) {
+              console.error("Guru DB Error:", res.error.message);
+              return { data: [] };
+            }
+            return { data: res.data || [] };
+          } catch (err) {
+            console.error("Guru Fetch Critical Error:", err);
+            return { data: [] };
+          }
+        };
 
         const [postsRes, dealsRes, tipsRes] = await Promise.all([
-          safeFetch(supabase.from('posts').select('title, title_en, slug, slug_en, image_url, type').order('created_at', { ascending: false }).limit(15)),
-          safeFetch(supabase.from('game_deals').select('title, title_en:title, slug:id, slug_en:id, image_url, price_cs, price_en, affiliate_link').order('created_at', { ascending: false }).limit(5)),
-          safeFetch(supabase.from('tipy').select('title, title_en, slug, slug_en, image_url').order('created_at', { ascending: false }).limit(5))
+          safeFetch(activeSupabase.from('posts').select('title, title_en, slug, slug_en, image_url, type').order('created_at', { ascending: false }).limit(15)),
+          safeFetch(activeSupabase.from('game_deals').select('title, title_en:title, slug:id, slug_en:id, image_url, price_cs, price_en, affiliate_link').order('created_at', { ascending: false }).limit(5)),
+          safeFetch(activeSupabase.from('tipy').select('title, title_en, slug, slug_en, image_url').order('created_at', { ascending: false }).limit(5))
         ]);
 
         let combinedPool = [];
-        (postsRes.data || []).forEach(p => combinedPool.push({ ...p, sourceTable: 'posts', finalUrl: `${langPrefix}/${p.type === 'expected' ? 'ocekavane-hry' : 'clanky'}/${isEn ? (p.slug_en || p.slug) : p.slug}` }));
-        (dealsRes.data || []).forEach(d => combinedPool.push({ ...d, type: 'deal', sourceTable: 'deals', finalUrl: d.affiliate_link || `${langPrefix}/deals` }));
-        (tipsRes.data || []).forEach(t => combinedPool.push({ ...t, type: 'tip', sourceTable: 'tipy', finalUrl: `${langPrefix}/tipy/${isEn ? (t.slug_en || t.slug) : t.slug}` }));
+        postsRes.data.forEach(p => combinedPool.push({ ...p, sourceTable: 'posts', finalUrl: `${langPrefix}/${p.type === 'expected' ? 'ocekavane-hry' : 'clanky'}/${isEn ? (p.slug_en || p.slug) : p.slug}` }));
+        dealsRes.data.forEach(d => combinedPool.push({ ...d, type: 'deal', sourceTable: 'deals', finalUrl: d.affiliate_link || `${langPrefix}/deals` }));
+        tipsRes.data.forEach(t => combinedPool.push({ ...t, type: 'tip', sourceTable: 'tipy', finalUrl: `${langPrefix}/tipy/${isEn ? (t.slug_en || t.slug) : t.slug}` }));
 
-        // 5. GURU DEEP SCORING
-        let scoredItems = combinedPool
-          .filter(item => item.slug !== currentSlug && item.slug_en !== currentSlug)
-          .map(item => {
-            let itemScore = Math.random() * 3;
+        // 5. GURU DEEP SCORING & FILTER FIX
+        let scoredItems = combinedPool.filter(item => item.slug !== currentSlug && item.slug_en !== currentSlug);
 
-            const itemTitle = (item.title || '').toLowerCase();
-            const itemTitleEn = (item.title_en || '').toLowerCase();
+        // 🚀 GURU FALLBACK: Pokud filtrace vyřadila veškerý obsah (např. na webu je zatím jen 1 článek a zrovna ho čteme), vrátíme ho, ať widget není prázdný.
+        if (scoredItems.length === 0 && combinedPool.length > 0) {
+          scoredItems = combinedPool;
+        }
 
-            // A) Archetype Boost
-            if (dominantType === 'hw' && item.type === 'hardware') itemScore += 15;
-            if (dominantType === 'games' && item.type === 'game') itemScore += 15;
-            if (dominantType === 'games' && item.type === 'expected') itemScore += 18; 
-            if (dominantType === 'deals' && item.type === 'deal') itemScore += 20;
-            if (dominantType === 'tips' && item.type === 'tip') itemScore += 15;
+        scoredItems = scoredItems.map(item => {
+          let itemScore = Math.random() * 3;
 
-            // B) Sémantický match
-            keywords.forEach(kw => {
-               if (itemTitle.includes(kw) || itemTitleEn.includes(kw)) itemScore += 8;
-            });
+          const itemTitle = (item.title || '').toLowerCase();
+          const itemTitleEn = (item.title_en || '').toLowerCase();
 
-            // C) Anti-Fatigue
-            if (seenItems.includes(item.slug)) itemScore -= 50;
+          // A) Archetype Boost
+          if (dominantType === 'hw' && item.type === 'hardware') itemScore += 15;
+          if (dominantType === 'games' && item.type === 'game') itemScore += 15;
+          if (dominantType === 'games' && item.type === 'expected') itemScore += 18; 
+          if (dominantType === 'deals' && item.type === 'deal') itemScore += 20;
+          if (dominantType === 'tips' && item.type === 'tip') itemScore += 15;
 
-            return { ...item, itemScore };
+          // B) Sémantický match
+          keywords.forEach(kw => {
+             if (itemTitle.includes(kw) || itemTitleEn.includes(kw)) itemScore += 8;
           });
+
+          // C) Anti-Fatigue
+          if (seenItems.includes(item.slug)) itemScore -= 50;
+
+          return { ...item, itemScore };
+        });
 
         const top3 = scoredItems.sort((a, b) => b.itemScore - a.itemScore).slice(0, 3);
         
@@ -230,7 +263,6 @@ export default function SestavyBubble() {
                 <Brain color="#fff" size={20} className={isScanning ? "animate-pulse" : ""} />
               </div>
               <div style={{ paddingTop: '2px', paddingRight: '15px' }}>
-                {/* 🚀 GURU TEXT FIX: Upraveno přesně podle zadání */}
                 <h4 style={{ color: '#fff', margin: 0, fontSize: '11px', fontWeight: '950', letterSpacing: '0.2px', lineHeight: '1.4' }}>
                   {isEn 
                     ? "HI, I'M GURU, YOUR PERSONAL GUIDE THROUGH THIS AWESOME SITE." 
