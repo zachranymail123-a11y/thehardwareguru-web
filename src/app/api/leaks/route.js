@@ -6,13 +6,12 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * GURU INTEL ENGINE V11.0 - FINAL RECOVERY EDITION
- * - Striktní separace zdrojů (Reddit, Chiphell, ResetEra, Insider Gaming, VGC, N4G).
- * - Oprava fetchingu pro zamezení dominance jednoho zdroje.
+ * GURU INTEL ENGINE V11.1 - ROBUST AI EDITION
+ * - Striktní separace zdrojů.
  * - Neúprosná kontrola duplicit proti DB.
+ * - Fixnuté parsování OpenAI odpovědí pro stabilitu.
  */
 
-// 📂 1. LEAKS & RUMORS (Všechny tvoje zdroje)
 const LEAK_SOURCES = [
   { name: "Reddit GL&R", url: "https://www.reddit.com/r/GamingLeaksAndRumours/new/.rss", type: "leaks" },
   { name: "Chiphell", url: "https://www.chiphell.com/forum.php?mod=rss&fid=224", type: "leaks" },
@@ -22,14 +21,12 @@ const LEAK_SOURCES = [
   { name: "N4G", url: "https://n4g.com/rss/news", type: "leaks" }
 ];
 
-// 📂 2. HARDWARE RADAR
 const HW_SOURCES = [
   { name: "VideoCardz", url: "https://videocardz.com/feed", type: "hw" },
   { name: "Tom's Hardware", url: "https://www.tomshardware.com/feeds.xml", type: "hw" },
   { name: "Wccftech HW", url: "https://wccftech.com/category/hardware/feed/", type: "hw" }
 ];
 
-// 📂 3. GAMING RADAR
 const GAME_SOURCES = [
   { name: "IGN", url: "https://feeds.ign.com/ign/games-all", type: "game" },
   { name: "GameSpot", url: "https://www.gamespot.com/feeds/news/", type: "game" },
@@ -59,53 +56,65 @@ const getAIScores = async (titles, apiKey) => {
         response_format: { type: "json_object" }
       })
     });
+    
+    if (!response.ok) return {};
+    
     const result = await response.json();
-    const parsed = JSON.parse(result.choices[0].message.content);
+    if (!result.choices || result.choices.length === 0) return {};
+
+    const content = result.choices[0]?.message?.content;
+    if (!content) return {};
+
+    const parsed = JSON.parse(content);
     const scoreMap = {};
-    (parsed.scores || []).forEach(item => { if(item.title) scoreMap[item.title.toLowerCase().trim()] = item.score; });
+    (parsed.scores || []).forEach(item => { 
+      if(item.title) scoreMap[item.title.toLowerCase().trim()] = item.score; 
+    });
     return scoreMap;
-  } catch (err) { return {}; }
+  } catch (err) { 
+    console.error("Guru AI Scoring Fail:", err.message);
+    return {}; 
+  }
 };
 
 export async function GET() {
   const debug = { ai_active: false, ai_status: "pending", db_filtered: 0, sources_active: [] };
   const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
 
-  // 🚀 DB SHIELD
-  const { data: existingPosts } = await supabase.from('posts').select('title, title_en');
-  const dbTitles = new Set((existingPosts || []).flatMap(p => [
-    p.title?.toLowerCase().trim(),
-    p.title_en?.toLowerCase().trim()
-  ]).filter(Boolean));
-
-  const fetchItems = async (sources) => {
-    const results = await Promise.all(sources.map(async (src) => {
-      try {
-        // Používáme cache bypass a unikátní timestamp pro každý zdroj
-        const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(src.url)}&api_key=${process.env.RSS2JSON_API_KEY || ''}&t=${Date.now()}`, { 
-          headers: BROWSER_HEADERS,
-          next: { revalidate: 0 } 
-        });
-        const json = await res.json();
-        if (json.status === 'ok') {
-          debug.sources_active.push(src.name);
-          return (json.items || []).map(item => ({
-            title: item.title,
-            link: item.link,
-            description: item.description,
-            source: src.name,
-            intelType: src.type,
-            pubDate: item.pubDate,
-            image_url: item.enclosure?.link || item.thumbnail || null
-          }));
-        }
-        return [];
-      } catch (e) { return []; }
-    }));
-    return results.flat();
-  };
-
   try {
+    // 🚀 DB SHIELD - Kontrola existujících článků
+    const { data: existingPosts } = await supabase.from('posts').select('title, title_en');
+    const dbTitles = new Set((existingPosts || []).flatMap(p => [
+      p.title?.toLowerCase().trim(),
+      p.title_en?.toLowerCase().trim()
+    ]).filter(Boolean));
+
+    const fetchItems = async (sources) => {
+      const results = await Promise.all(sources.map(async (src) => {
+        try {
+          const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(src.url)}&api_key=${process.env.RSS2JSON_API_KEY || ''}&t=${Date.now()}`, { 
+            headers: BROWSER_HEADERS,
+            next: { revalidate: 0 } 
+          });
+          const json = await res.json();
+          if (json.status === 'ok') {
+            debug.sources_active.push(src.name);
+            return (json.items || []).map(item => ({
+              title: item.title,
+              link: item.link,
+              description: item.description,
+              source: src.name,
+              intelType: src.type,
+              pubDate: item.pubDate,
+              image_url: item.enclosure?.link || item.thumbnail || null
+            }));
+          }
+          return [];
+        } catch (e) { return []; }
+      }));
+      return results.flat();
+    };
+
     const [leaks, hw, games] = await Promise.all([
       fetchItems(LEAK_SOURCES),
       fetchItems(HW_SOURCES),
@@ -139,7 +148,6 @@ export async function GET() {
       });
     }
 
-    // Seřazení podle virality
     finalItems.sort((a, b) => (b.viral_score || 0) - (a.viral_score || 0));
 
     return NextResponse.json({ 
