@@ -11,9 +11,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V8.33 - VERCEL BUILD FIX
- * - Odstraněny veškeré vazby na server-side knihovny (jako fast-xml-parser) z klientského kódu.
- * - Leaks & Rumors se stahují bezpečně POUZE přes interní backend API routu (/api/leaks).
+ * GURU ULTIMATE COMMAND CENTER V8.34 - ULTIMATE LEAKS BYPASS
+ * Zaveden inteligentní Fallback Bypass. Pokud selže interní API, 
+ * data se stáhnou bezpečně rovnou přes klientské Proxy.
+ * (Očištěno o VideoCardz, pouze původní zdroje Reddit a Chiphell)
  */
 
 // --- 🚀 GURU ENV ENGINE (Fix pro ReferenceError) ---
@@ -192,16 +193,59 @@ export default function AdminApp() {
         return results.flat();
       };
 
-      // 🚀 GURU BYPASS: Leaks stahujeme z našeho vlastního server-side backendu
+      // 🚀 GURU ULTIMATE BYPASS: Spolehlivé získání Leaks bez ohledu na stav backendu
       const fetchLeaksBackend = async () => {
         try {
           const res = await fetch('/api/leaks');
-          if (!res.ok) throw new Error(`Backend vrátit status ${res.status}`);
+          if (!res.ok) throw new Error(`Status ${res.status}`);
           const json = await res.json();
           return json.data || [];
         } catch (e) {
           console.warn("Leaks API error:", e.message);
-          addLog("Načtení Leaks z backendu selhalo.", "warning");
+          addLog(`API routa pro úniky selhala (${e.message}). Aktivuji GURU Záchranný Bypass...`, "warning");
+          
+          // Záchranná vrstva (100% jistota dodání dat na klienta přes public Proxy)
+          try {
+            const fallbackLeaks = [];
+            
+            // 1. Reddit přes AllOrigins Proxy (Obejítí 429 Erroru u rss2json)
+            const redditRes = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://www.reddit.com/r/GamingLeaksAndRumours/new.json?limit=15')}`);
+            if (redditRes.ok) {
+              const redditJson = await redditRes.json();
+              let redditData = {};
+              try { redditData = JSON.parse(redditJson.contents); } catch(err){}
+              
+              const redditPosts = (redditData?.data?.children || []).map(p => ({
+                title: p.data.title,
+                link: `https://reddit.com${p.data.permalink}`,
+                description: p.data.selftext || p.data.title,
+                source: "Reddit Leaks",
+                intelType: "leaks"
+              }));
+              fallbackLeaks.push(...redditPosts);
+            }
+
+            // 2. Chiphell (Původní zdroj pro úniky HW a Tech)
+            const chiphellRes = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://www.chiphell.com/forum.php?mod=rss&fid=224')}&t=${Date.now()}`);
+            if (chiphellRes.ok) {
+              const chipData = await chiphellRes.json();
+              const chipPosts = (chipData.items || []).map(item => ({ 
+                ...item, 
+                source: "Chiphell", 
+                intelType: "leaks" 
+              }));
+              fallbackLeaks.push(...chipPosts);
+            }
+
+            if (fallbackLeaks.length > 0) {
+              addLog("Záložní bypass úspěšně načetl data ze zákulisí!", "success");
+              return fallbackLeaks;
+            }
+          } catch (fallbackErr) {
+            console.warn("Záložní bypass selhal:", fallbackErr);
+          }
+
+          addLog("Načtení Leaks kompletně selhalo.", "error");
           return [];
         }
       };
@@ -253,7 +297,7 @@ export default function AdminApp() {
       setHwIntel(scoredHw);
       setGameIntel(scoredGame);
       setLeaksIntel(scoredLeaks);
-      addLog('Intel Hub aktualizován přes API Bypass.', 'success');
+      addLog('Intel Hub aktualizován. Systém připraven.', 'success');
     } catch (err) { addLog(`Chyba Intel Enginu: ${err.message}`, 'error'); }
     finally { setIntelLoading(false); }
   };
@@ -563,7 +607,7 @@ export default function AdminApp() {
               ))}
             </div>
 
-            {/* 🚀 GURU: Leaks & Rumors Radar (Přepojeno na bezpečný Backend) */}
+            {/* 🚀 GURU: Leaks & Rumors Radar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', borderLeft: '4px solid #66fcf1', paddingLeft: '15px' }}>
                 <Ghost color="#66fcf1" size={18} />
                 <h3 style={{ fontSize: '16px', fontWeight: 950, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Leaks & <span style={{ color: '#66fcf1' }}>Rumors</span></h3>
