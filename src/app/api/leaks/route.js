@@ -6,16 +6,14 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * GURU 后端引擎 - 泄露与传闻核能屏蔽 V8.4 (WHITELIST & MULTI-SOURCE)
+ * GURU 后端引擎 - 泄露与传闻核能屏蔽 V8.5 (GOD MODE)
  * 路径: src/app/api/leaks/route.js
- * 功能: 全球硬件泄露汇总系统，支持智能清洗和关键词优先。
+ * 功能: 修复 Reddit 和 Chiphell 的抓取，结合全球硬件站，打造顶级情报中心。
  */
 
 // 1. 全球数据源配置
-const REDDIT_SOURCES = [
-  "https://www.reddit.com/r/GamingLeaksAndRumours/new.json?limit=30",
-  "https://www.reddit.com/r/hardware/new.json?limit=20"
-];
+const REDDIT_URL = "https://www.reddit.com/r/GamingLeaksAndRumours/new.json?limit=40";
+const REDDIT_RSS = "https://www.reddit.com/r/GamingLeaksAndRumours/.rss";
 
 const CHIPHELL_SOURCES = [
   "https://www.chiphell.com/forum.php?mod=rss&fid=183", // 传闻与爆料 (Rumors)
@@ -27,26 +25,30 @@ const GLOBAL_FEEDS = [
   "https://wccftech.com/feed"
 ];
 
-// 2. 模拟真实浏览器指纹
+// 2. 模拟真实浏览器指纹 (Supreme Spoofing)
 const BROWSER_HEADERS = {
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
   "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
   "Accept-Language": "en-US,en;q=0.9,cs;q=0.8",
   "Cache-Control": "no-cache",
-  "Referer": "https://www.google.com/"
+  "Referer": "https://www.google.com/",
+  "Sec-Fetch-Dest": "document",
+  "Sec-Fetch-Mode": "navigate",
+  "Sec-Fetch-Site": "none",
+  "Upgrade-Insecure-Requests": "1"
 };
 
 // 3. 硬件关键词白名单 (优先通过)
 const HARDWARE_KEYWORDS = [
   "NVIDIA", "AMD", "Intel", "RTX", "Ryzen", "Core", "GPU", "CPU", "Zen", 
-  "RDNA", "Ada", "Blackwell", "Arrow Lake", "Snapdragon", "Apple M", "GeForce", "Radeon"
+  "RDNA", "Ada", "Blackwell", "Arrow Lake", "Snapdragon", "Apple M", "GeForce", "Radeon", "PlayStation", "Xbox", "Switch"
 ];
 
-// 4. 垃圾信息黑名单 (严防 每日签到)
+// 4. 垃圾信息黑名单
 const SPAM_BLACKLIST = ['签到', '每日', '回复', '领取', 'Check-in', 'Daily', 'posted', '积分', '奖励', '任务', '申请'];
 
 /**
- * 递归提取文本并清洗标题
+ * 递归提取文本
  */
 const getDeepText = (obj) => {
   if (!obj) return "";
@@ -62,74 +64,103 @@ const getDeepText = (obj) => {
 
 const cleanTitle = (t) => {
   return t
-    .replace(/<!\[CDATA\[|\]\]>/g, "") // 清理 CDATA
-    .replace(/\[.*?\]/g, "")           // 清理 [显卡] 等前缀
+    .replace(/<!\[CDATA\[|\]\]>/g, "")
+    .replace(/\[.*?\]/g, "")
     .trim();
 };
 
-async function fetchWithTimeout(url, options = {}, ms = 8000) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), ms);
-  try {
-    const res = await fetch(url, { ...options, signal: controller.signal });
-    return res;
-  } finally {
-    clearTimeout(id);
+/**
+ * GURU SUPREME FETCH - 带有代理回退的抓取逻辑
+ */
+async function supremeProxyFetch(url, isJson = false) {
+  const proxies = [
+    (u) => u, // 尝试直连
+    (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}&t=${Date.now()}`,
+    (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`
+  ];
+
+  for (const proxyFn of proxies) {
+    try {
+      const target = proxyFn(url);
+      const res = await fetch(target, { headers: BROWSER_HEADERS, cache: "no-store", next: { revalidate: 0 } });
+      
+      if (res.ok) {
+        const text = await res.text();
+        if (text.length > 300) {
+          if (isJson && text.trim().startsWith('{')) return { type: 'json', data: text };
+          if (!isJson && (text.includes('<?xml') || text.includes('<rss') || text.includes('<feed'))) return { type: 'xml', data: text };
+        }
+      }
+    } catch (e) {}
   }
+  return null;
 }
 
 export async function GET() {
   const leaks = [];
-  const debug = { reddit: 0, chiphell: 0, global: 0, sources_total: 0 };
+  const debug = { reddit: 0, chiphell: 0, global: 0, sources_failed: [] };
   
   const parser = new XMLParser({ 
-    ignoreAttributes: false, trimValues: true, attributeNamePrefix: "@_"
+    ignoreAttributes: false, trimValues: true, attributeNamePrefix: "@_", parseAttributeValue: true
   });
 
   try {
-    // --- A. REDDIT 引擎 ---
-    for (const url of REDDIT_SOURCES) {
+    // --- A. REDDIT 引擎 (JSON First, RSS Fallback) ---
+    const redditResult = await supremeProxyFetch(REDDIT_URL, true);
+    if (redditResult && redditResult.type === 'json') {
       try {
-        const res = await fetchWithTimeout(url, { headers: BROWSER_HEADERS, cache: "no-store" });
-        if (res.ok) {
-          const json = await res.json();
-          (json?.data?.children || []).forEach(post => {
-            const p = post.data;
-            if (p.title) {
-              leaks.push({
-                title: p.title,
-                link: `https://reddit.com${p.permalink}`,
-                description: p.selftext || p.title,
-                source: "Reddit Leaks",
-                intelType: "leaks",
-                pubDate: new Date(p.created_utc * 1000).toISOString()
-              });
-              debug.reddit++;
-            }
-          });
-        }
-      } catch (e) { console.error(`Reddit Error: ${url}`); }
+        const json = JSON.parse(redditResult.data);
+        (json?.data?.children || []).forEach(post => {
+          const p = post.data;
+          if (p.title) {
+            leaks.push({
+              title: p.title,
+              link: `https://reddit.com${p.permalink}`,
+              description: p.selftext || p.title,
+              source: "Reddit Leaks",
+              intelType: "leaks",
+              pubDate: new Date(p.created_utc * 1000).toISOString()
+            });
+            debug.reddit++;
+          }
+        });
+      } catch (e) { debug.sources_failed.push("reddit_json_parse"); }
+    } else {
+       // 如果 JSON 彻底挂了，尝试 RSS
+       const redditRss = await supremeProxyFetch(REDDIT_RSS, false);
+       if (redditRss) {
+         const json = parser.parse(redditRss.data);
+         const entries = json?.feed?.entry || [];
+         const arr = Array.isArray(entries) ? entries : [entries];
+         arr.forEach(entry => {
+           const title = getDeepText(entry.title);
+           if (title && title !== "GamingLeaksAndRumours") {
+             leaks.push({
+               title, link: entry.link?.["@_href"] || "", description: title,
+               source: "Reddit Leaks", intelType: "leaks", pubDate: entry.updated || new Date().toISOString()
+             });
+             debug.reddit++;
+           }
+         });
+       } else { debug.sources_failed.push("reddit_total_block"); }
     }
 
-    // --- B. CHIPHELL 引擎 (智能白名单模式) ---
+    // --- B. CHIPHELL 引擎 (智能代理白名单模式) ---
     for (const url of CHIPHELL_SOURCES) {
-      try {
-        const res = await fetchWithTimeout(url, { headers: BROWSER_HEADERS, cache: "no-store" });
-        if (res.ok) {
-          const xml = await res.text();
-          const json = parser.parse(xml);
+      const chipResult = await supremeProxyFetch(url, false);
+      if (chipResult) {
+        try {
+          const json = parser.parse(chipResult.data);
           const items = json?.rss?.channel?.item || [];
           const itemsArray = Array.isArray(items) ? items : [items];
           
           itemsArray.forEach(item => {
             if (!item) return;
             let t = cleanTitle(getDeepText(item.title));
-            
             const isSpam = SPAM_BLACKLIST.some(term => t.includes(term));
             const isHardware = HARDWARE_KEYWORDS.some(k => t.toLowerCase().includes(k.toLowerCase()));
             
-            // 只有非垃圾且包含硬件关键词，或长度足够的标题才会被允许
-            if (!isSpam && (isHardware || t.length > 15) && t.length > 5) {
+            if (!isSpam && (isHardware || t.length > 20) && t.length > 5) {
               leaks.push({
                 title: t,
                 link: getDeepText(item.link),
@@ -141,14 +172,14 @@ export async function GET() {
               debug.chiphell++;
             }
           });
-        }
-      } catch (e) { console.error(`Chiphell Error: ${url}`); }
+        } catch (e) { debug.sources_failed.push(`chiphell_parse_${url.split('fid=')[1]}`); }
+      } else { debug.sources_failed.push(`chiphell_fetch_${url.split('fid=')[1]}`); }
     }
 
     // --- C. 全球顶级硬件站引擎 (VideoCardz / Wccftech) ---
     for (const url of GLOBAL_FEEDS) {
       try {
-        const res = await fetchWithTimeout(url, { headers: BROWSER_HEADERS, cache: "no-store" });
+        const res = await fetch(url, { headers: BROWSER_HEADERS, cache: "no-store" });
         if (res.ok) {
           const xml = await res.text();
           const json = parser.parse(xml);
@@ -173,7 +204,7 @@ export async function GET() {
       } catch (e) { console.error(`Global Feed Error: ${url}`); }
     }
 
-    // 全局去重：基于标题进行清理
+    // 全局去重并按日期排序
     const uniqueLeaks = Array.from(new Map(leaks.map(item => [item.title.toLowerCase(), item])).values());
     uniqueLeaks.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
 
