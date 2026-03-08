@@ -27,6 +27,26 @@ export default function SupportWidget() {
   const revolutTag = "thehardwareguru";
   const hrkLink = "https://www.hrkgame.com/#a_aid=TheHardwareGuru";
 
+  // 🚀 GURU SPA SWG ATTACHMENT 🚀
+  // Čisté připojení tlačítka po klientské navigaci přes nativní SWG API
+  useEffect(() => {
+    let attempts = 0;
+    const attachTimer = setInterval(() => {
+      attempts++;
+      if (typeof window !== 'undefined' && window.swgSubscriptions) {
+        const btn = document.getElementById('guru-widget-swg-btn');
+        if (btn && !btn.querySelector('iframe')) {
+          window.swgSubscriptions.attachButton(btn, "contribution");
+        }
+        clearInterval(attachTimer);
+      } else if (attempts > 20) {
+        clearInterval(attachTimer); // Timeout po 10 vteřinách
+      }
+    }, 500);
+
+    return () => clearInterval(attachTimer);
+  }, [isEn]); // Reaguje i na změnu jazyka, aby se překreslil iframe
+
   const buttonStyle = (type) => ({
     display: 'flex',
     alignItems: 'center',
@@ -101,7 +121,6 @@ export default function SupportWidget() {
           {isEn ? 'Feeding this ' : 'Krmíš tenhle '} <span style={{ color: '#eab308' }}>{isEn ? 'machine?' : 'stroj?'}</span>
         </h4>
         
-        {/* 🚀 GURU FIX: ZMĚNA TEXTU POUZE NA PROMO WEBU, STREAMŮ A SÍTÍ 🚀 */}
         <p style={{ color: '#9ca3af', fontSize: '11px', textAlign: 'center', marginBottom: '22px', lineHeight: '1.5' }}>
           {isEn 
             ? 'Contributions go directly to website promotion, live stream support, and social media growth.' 
@@ -114,7 +133,7 @@ export default function SupportWidget() {
           button[swg-standard-button] { width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; outline: none; }
         `}</style>
 
-        {/* 1. GOOGLE SUBSCRIBE (ČISTÝ OVERLAY BEZ HACKŮ) */}
+        {/* 1. GOOGLE SUBSCRIBE (ČISTÝ OVERLAY S NATIVNÍM SPA ATTACHEM) */}
         <div className="guru-w-btn" style={{ ...buttonStyle('google'), position: 'relative', overflow: 'hidden' }}>
            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', pointerEvents: 'none', width: '100%' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -125,9 +144,9 @@ export default function SupportWidget() {
               </svg>
               <span>{isEn ? 'Google Subscribe' : 'Přispět s Googlem'}</span>
            </div>
-           {/* Přesná neviditelná vrstva, která elegantně převezme roli kliknutí */}
+           {/* Přesná neviditelná vrstva s UNIKÁTNÍM ID pro widget */}
            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.001, zIndex: 10 }}>
-              <button swg-standard-button="contribution" style={{ width: '100%', height: '100%', cursor: 'pointer', border: 'none', background: 'transparent' }}></button>
+              <button id="guru-widget-swg-btn" swg-standard-button="contribution" style={{ width: '100%', height: '100%', cursor: 'pointer', border: 'none', background: 'transparent' }}></button>
            </div>
         </div>
 
