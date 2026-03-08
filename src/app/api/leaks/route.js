@@ -6,9 +6,9 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * GURU 后端引擎 - 泄露与传闻核能屏蔽 V8.5 (GOD MODE)
+ * GURU 后端引擎 - 泄露与传闻核能屏蔽 V8.6 (ULTIMATE PROXY ROTATION)
  * 路径: src/app/api/leaks/route.js
- * 功能: 修复 Reddit 和 Chiphell 的抓取，结合全球硬件站，打造顶级情报中心。
+ * 功能: 修复 Chiphell 抓取失败问题，通过增强型代理轮询绕过 Cloudflare 封锁。
  */
 
 // 1. 全球数据源配置
@@ -29,7 +29,7 @@ const GLOBAL_FEEDS = [
 const BROWSER_HEADERS = {
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
   "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-  "Accept-Language": "en-US,en;q=0.9,cs;q=0.8",
+  "Accept-Language": "en-US,en;q=0.9,cs;q=0.8,zh-CN;q=0.7,zh;q=0.6", // 增加中文支持以绕过检测
   "Cache-Control": "no-cache",
   "Referer": "https://www.google.com/",
   "Sec-Fetch-Dest": "document",
@@ -70,28 +70,42 @@ const cleanTitle = (t) => {
 };
 
 /**
- * GURU SUPREME FETCH - 带有代理回退的抓取逻辑
+ * GURU SUPREME FETCH - 增强型代理轮询逻辑
+ * 支持多种代理接口以应对 Chiphell 的严苛封锁
  */
 async function supremeProxyFetch(url, isJson = false) {
   const proxies = [
-    (u) => u, // 尝试直连
-    (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}&t=${Date.now()}`,
-    (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`
+    { name: 'Direct', fn: (u) => u },
+    { name: 'AllOrigins-Raw', fn: (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}&t=${Date.now()}` },
+    { name: 'Codetabs', fn: (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}` },
+    { name: 'CorsProxy', fn: (u) => `https://corsproxy.io/?${encodeURIComponent(u)}` },
+    { name: 'AllOrigins-Get', fn: (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}&t=${Date.now()}` }
   ];
 
-  for (const proxyFn of proxies) {
+  for (const proxy of proxies) {
     try {
-      const target = proxyFn(url);
+      const target = proxy.fn(url);
       const res = await fetch(target, { headers: BROWSER_HEADERS, cache: "no-store", next: { revalidate: 0 } });
       
       if (res.ok) {
-        const text = await res.text();
-        if (text.length > 300) {
-          if (isJson && text.trim().startsWith('{')) return { type: 'json', data: text };
+        let text = await res.text();
+        
+        // 如果是 AllOrigins-Get 包装器，需要解析内部内容
+        if (proxy.name === 'AllOrigins-Get') {
+          try {
+            const wrapper = JSON.parse(text);
+            if (wrapper.contents) text = wrapper.contents;
+          } catch (e) { continue; }
+        }
+
+        if (text && text.length > 200) {
+          if (isJson && (text.trim().startsWith('{') || text.trim().startsWith('['))) return { type: 'json', data: text };
           if (!isJson && (text.includes('<?xml') || text.includes('<rss') || text.includes('<feed'))) return { type: 'xml', data: text };
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn(`GURU Proxy ${proxy.name} failed for ${url}`);
+    }
   }
   return null;
 }
@@ -126,7 +140,6 @@ export async function GET() {
         });
       } catch (e) { debug.sources_failed.push("reddit_json_parse"); }
     } else {
-       // 如果 JSON 彻底挂了，尝试 RSS
        const redditRss = await supremeProxyFetch(REDDIT_RSS, false);
        if (redditRss) {
          const json = parser.parse(redditRss.data);
