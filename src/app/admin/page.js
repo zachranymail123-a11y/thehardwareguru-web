@@ -1,37 +1,27 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-
-// --- BEZPEČNÉ NAČÍTÁNÍ NEXT.JS MODULŮ ---
-let usePathname = () => '';
-try {
-  const nextNav = require('next/navigation');
-  usePathname = nextNav.usePathname;
-} catch (e) {}
+import { usePathname } from 'next/navigation';
 
 export default function SestavyBubble() {
   const [isVisible, setIsVisible] = useState(false);
-  const [currentPath, setCurrentPath] = useState('');
   const pathname = usePathname() || '';
 
-  useEffect(() => {
-    const path = window.location.pathname;
-    setCurrentPath(path);
-    
-    // 🛡️ GURU SHIELD: Pokud je v URL 'admin', komponenta se ani neaktivuje
-    if (!path.includes('/admin')) {
-      const timer = setTimeout(() => setIsVisible(true), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [pathname]);
+  // 🛡️ GURU SHIELD: Okamžitá a neprůstřelná kontrola adminu
+  // Pokud URL obsahuje "/admin", komponenta vrací null dřív, než se cokoli stane.
+  const isAdmin = pathname.includes('/admin') || (typeof window !== 'undefined' && window.location.pathname.includes('/admin'));
 
-  // Finální pojistka: Kontrola pathname i syrového window.location
-  const activePath = pathname || currentPath;
-  const isAdmin = activePath.includes('/admin') || (typeof window !== 'undefined' && window.location.href.includes('/admin'));
+  useEffect(() => {
+    // Pokud jsme v adminu, nepouštíme ani časovač
+    if (isAdmin) return;
+
+    const timer = setTimeout(() => setIsVisible(true), 4000);
+    return () => clearTimeout(timer);
+  }, [isAdmin]);
 
   if (!isVisible || isAdmin) return null;
 
-  const isEn = activePath.startsWith('/en');
+  const isEn = pathname.startsWith('/en');
 
   return (
     <div className="guru-bubble-container">
