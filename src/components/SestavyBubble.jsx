@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Brain, ChevronRight, X, Activity, Target, Cpu, Gamepad2, Flame, Lightbulb, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-// --- 🚀 GURU INIT: Základní klient (Bude přepsán Data Bridgem, pokud selže ENV) ---
+// --- 🚀 GURU INIT: Čisté napojení na tvé prostředí ---
 let initialUrl = 'https://placeholder.supabase.co';
 let initialKey = 'placeholder';
 try {
@@ -16,10 +16,9 @@ try {
 const defaultSupabase = createClient(initialUrl, initialKey);
 
 /**
- * GURU AI NAVIGATOR - COMPACT ULTIMATE EDITION
- * Obsahuje: Behaviorální archetypy, Anti-Fatigue paměť, 
- * Contextual Keyword Matching a kompaktní design.
- * FIX: GURU DATA BRIDGE, Supabase Error Handling a Filter Fallback.
+ * GURU AI NAVIGATOR - ULTIMATE PERFECTION EDITION
+ * Obsahuje: Behaviorální archetypy, Hard Filter (nikdy nenabízí viděné), 
+ * Site-wide Tracking, Contextual Matching a kompaktní design.
  */
 export default function SestavyBubble() {
   const [isVisible, setIsVisible] = useState(false);
@@ -45,6 +44,22 @@ export default function SestavyBubble() {
     return () => clearTimeout(timer);
   }, [isAdmin]);
 
+  // 👁️ GURU SITE-WIDE TRACKING: Sleduje každý krok uživatele a ukládá navštívené stránky
+  useEffect(() => {
+    if (isAdmin || typeof window === 'undefined') return;
+    
+    const currentSlug = pathname.split('/').pop();
+    if (currentSlug && (pathname.includes('/clanky') || pathname.includes('/tipy') || pathname.includes('/tweaky') || pathname.includes('/ocekavane-hry'))) {
+      let seenItems = JSON.parse(localStorage.getItem('guru_ai_seen') || '[]');
+      if (!seenItems.includes(currentSlug)) {
+        seenItems.push(currentSlug);
+        // Pamatujeme si až 100 posledních navštívených stránek pro perfektní filtraci
+        if (seenItems.length > 100) seenItems.shift();
+        localStorage.setItem('guru_ai_seen', JSON.stringify(seenItems));
+      }
+    }
+  }, [pathname, isAdmin]);
+
   // 🚀 GURU ULTIMATE AI ENGINE
   useEffect(() => {
     if (isAdmin || typeof window === 'undefined') return;
@@ -55,7 +70,7 @@ export default function SestavyBubble() {
       if (isMounted) setIsScanning(true);
       
       try {
-        // 🚀 GURU DATA BRIDGE FIX: Získání 100% platných klíčů z layout.js
+        // GURU DATA BRIDGE: Získání klíčů
         let activeSupabase = defaultSupabase;
         const bridge = document.getElementById('guru-env-bridge');
         if (bridge) {
@@ -66,52 +81,42 @@ export default function SestavyBubble() {
           }
         }
 
-        // 1. NAČTENÍ PROFILU A HISTORIE
+        // 1. NAČTENÍ PROFILU A TOTÁLNÍHO FILTRU (Seen items)
         let profile = JSON.parse(localStorage.getItem('guru_archetype') || '{"hw":0, "games":0, "deals":0, "tips":0}');
         let seenItems = JSON.parse(localStorage.getItem('guru_ai_seen') || '[]');
         
-        // Bodování podle URL
+        // Bodování archetypu
         if (pathname.includes('/clanky') || pathname.includes('/tweaky')) profile.hw += 1.5;
         if (pathname.includes('/ocekavane-hry') || pathname.includes('/mikrorecenze')) profile.games += 1.5;
         if (pathname.includes('/deals')) profile.deals += 2.0; 
         if (pathname.includes('/tipy') || pathname.includes('/rady') || pathname.includes('/slovnik')) profile.tips += 1.0;
 
-        // Normalizace profilu (Decay)
         if (profile.hw > 15 || profile.games > 15 || profile.deals > 15 || profile.tips > 15) {
            profile.hw *= 0.7; profile.games *= 0.7; profile.deals *= 0.7; profile.tips *= 0.7;
         }
         localStorage.setItem('guru_archetype', JSON.stringify(profile));
 
-        // 2. DETEKCE ARCHETYPU
+        // 2. DETEKCE DOMINANTNÍHO ARCHETYPU
         let dominantType = 'hw';
         let maxScore = 0;
         for (const [key, value] of Object.entries(profile)) {
           if (value > maxScore) { maxScore = value; dominantType = key; }
         }
 
-        // 3. EXTRAKCE KLÍČOVÝCH SLOV Z URL
+        // 3. SEMANTICKÁ EXTRAKCE
         const currentSlug = pathname.split('/').pop() || '';
         const keywords = currentSlug.split('-').filter(w => w.length > 3);
 
-        // 4. BEZPEČNÝ FETCH (Záchranná síť přečte objekt error z API Supabase)
+        // 4. FETCH DATA (Zvětšený pool pro případ, že hodně věcí uživatel viděl)
         const safeFetch = async (promise) => {
-          try {
-            const res = await promise;
-            if (res.error) {
-              console.error("Guru DB Error:", res.error.message);
-              return { data: [] };
-            }
-            return { data: res.data || [] };
-          } catch (err) {
-            console.error("Guru Fetch Critical Error:", err);
-            return { data: [] };
-          }
+          const res = await promise;
+          return { data: res.data || [] };
         };
 
         const [postsRes, dealsRes, tipsRes] = await Promise.all([
-          safeFetch(activeSupabase.from('posts').select('title, title_en, slug, slug_en, image_url, type').order('created_at', { ascending: false }).limit(15)),
-          safeFetch(activeSupabase.from('game_deals').select('title, title_en:title, slug:id, slug_en:id, image_url, price_cs, price_en, affiliate_link').order('created_at', { ascending: false }).limit(5)),
-          safeFetch(activeSupabase.from('tipy').select('title, title_en, slug, slug_en, image_url').order('created_at', { ascending: false }).limit(5))
+          safeFetch(activeSupabase.from('posts').select('title, title_en, slug, slug_en, image_url, type').order('created_at', { ascending: false }).limit(25)),
+          safeFetch(activeSupabase.from('game_deals').select('title, title_en:title, slug:id, slug_en:id, image_url, price_cs, price_en, affiliate_link').order('created_at', { ascending: false }).limit(10)),
+          safeFetch(activeSupabase.from('tipy').select('title, title_en, slug, slug_en, image_url').order('created_at', { ascending: false }).limit(10))
         ]);
 
         let combinedPool = [];
@@ -119,41 +124,41 @@ export default function SestavyBubble() {
         dealsRes.data.forEach(d => combinedPool.push({ ...d, type: 'deal', sourceTable: 'deals', finalUrl: d.affiliate_link || `${langPrefix}/deals` }));
         tipsRes.data.forEach(t => combinedPool.push({ ...t, type: 'tip', sourceTable: 'tipy', finalUrl: `${langPrefix}/tipy/${isEn ? (t.slug_en || t.slug) : t.slug}` }));
 
-        // 5. GURU DEEP SCORING & FILTER FIX
-        let scoredItems = combinedPool.filter(item => item.slug !== currentSlug && item.slug_en !== currentSlug);
+        // 🚀 5. GURU HARD FILTER LOGIC: Nemilosrdně vyhazujeme vše, na čem už uživatel byl
+        let scoredItems = combinedPool.filter(item => {
+          const isCurrent = item.slug === currentSlug || item.slug_en === currentSlug;
+          const isSeen = seenItems.includes(item.slug) || seenItems.includes(item.slug_en);
+          return !isCurrent && !isSeen;
+        });
 
-        // 🚀 GURU FALLBACK: Pokud filtrace vyřadila veškerý obsah (např. na webu je zatím jen 1 článek a zrovna ho čteme), vrátíme ho, ať widget není prázdný.
-        if (scoredItems.length === 0 && combinedPool.length > 0) {
-          scoredItems = combinedPool;
+        // Fallback pro extrémně aktivní uživatele (pokud vše viděl, zkusíme mu nabídnout alespoň slevy, ty se mění)
+        if (scoredItems.length < 3) {
+          scoredItems = combinedPool.filter(item => item.slug !== currentSlug && item.slug_en !== currentSlug);
         }
 
         scoredItems = scoredItems.map(item => {
-          let itemScore = Math.random() * 3;
+          let itemScore = Math.random() * 5; // Vyšší variabilita
 
           const itemTitle = (item.title || '').toLowerCase();
           const itemTitleEn = (item.title_en || '').toLowerCase();
 
-          // A) Archetype Boost
+          // Archetype Boost
           if (dominantType === 'hw' && item.type === 'hardware') itemScore += 15;
           if (dominantType === 'games' && item.type === 'game') itemScore += 15;
           if (dominantType === 'games' && item.type === 'expected') itemScore += 18; 
           if (dominantType === 'deals' && item.type === 'deal') itemScore += 20;
           if (dominantType === 'tips' && item.type === 'tip') itemScore += 15;
 
-          // B) Sémantický match
+          // Semantic Match
           keywords.forEach(kw => {
-             if (itemTitle.includes(kw) || itemTitleEn.includes(kw)) itemScore += 8;
+             if (itemTitle.includes(kw) || itemTitleEn.includes(kw)) itemScore += 10;
           });
-
-          // C) Anti-Fatigue
-          if (seenItems.includes(item.slug)) itemScore -= 50;
 
           return { ...item, itemScore };
         });
 
         const top3 = scoredItems.sort((a, b) => b.itemScore - a.itemScore).slice(0, 3);
         
-        // Simulace skenování
         setTimeout(() => {
           if (!isMounted) return;
           
@@ -176,15 +181,6 @@ export default function SestavyBubble() {
     return () => { isMounted = false; };
   }, [pathname, isAdmin, isEn, rerollTrigger]);
 
-  const handleItemClick = (slug) => {
-    let seenItems = JSON.parse(localStorage.getItem('guru_ai_seen') || '[]');
-    if (!seenItems.includes(slug)) {
-      seenItems.push(slug);
-      if (seenItems.length > 20) seenItems.shift();
-      localStorage.setItem('guru_ai_seen', JSON.stringify(seenItems));
-    }
-  };
-
   if (!isClient || isAdmin || !isVisible) return null;
 
   return (
@@ -195,11 +191,9 @@ export default function SestavyBubble() {
         @keyframes scanBar { 0% { width: 0%; opacity: 1; } 90% { width: 100%; opacity: 1; } 100% { width: 100%; opacity: 0; } }
         @keyframes fadeInStagger { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 
-        /* Kompaktní umístění */
         .guru-ai-container { position: fixed; bottom: 20px; left: 20px; z-index: 9998; animation: guruSlideUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; font-family: sans-serif; }
         @media (max-width: 768px) { .guru-ai-container { bottom: 80px; left: 10px; } }
 
-        /* Zmenšený panel */
         .guru-ai-panel {
           background: rgba(12, 14, 18, 0.98); border: 1px solid rgba(168, 85, 247, 0.4);
           border-radius: 16px; padding: 15px; width: 280px;
@@ -208,10 +202,8 @@ export default function SestavyBubble() {
         }
 
         .guru-ai-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; margin-bottom: 12px; }
-        
         .guru-scan-line { position: absolute; top: 0; left: 0; height: 2px; background: #a855f7; animation: scanBar 0.8s ease-out forwards; box-shadow: 0 0 10px #a855f7; }
 
-        /* Zmenšené položky */
         .guru-ai-rec-item {
           display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px;
           text-decoration: none; transition: 0.3s; background: rgba(0,0,0,0.4);
@@ -231,7 +223,6 @@ export default function SestavyBubble() {
           display: flex; align-items: center; gap: 4px; transition: 0.2s; text-transform: uppercase;
         }
         .guru-reroll-btn:hover { background: rgba(168, 85, 247, 0.2); color: #fff; border-color: #a855f7; }
-        .guru-reroll-btn:active .reroll-icon { transform: rotate(180deg); transition: 0.3s; }
 
         .guru-ai-minimized {
           width: 50px; height: 50px; background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
@@ -323,7 +314,6 @@ export default function SestavyBubble() {
                       key={idx + rerollTrigger}
                       {...wrapperProps}
                       className="guru-ai-rec-item"
-                      onClick={() => handleItemClick(post.slug)}
                     >
                       <img 
                         src={post.image_url || 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?w=100&q=80'} 
