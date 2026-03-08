@@ -94,6 +94,9 @@ export default function RootLayout({ children, params }) {
         <Script id="google-news-swg-init" strategy="afterInteractive">
           {`
             (self.SWG_BASIC = self.SWG_BASIC || []).push( basicSubscriptions => {
+              // 🚀 GURU FIX: ZACHOVÁNO pro funkční SPA tlačítka na podstránkách!
+              window.swgSubscriptions = basicSubscriptions;
+              
               basicSubscriptions.init({
                 type: "NewsArticle",
                 isPartOfType: ["Product"],
