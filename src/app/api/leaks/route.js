@@ -1,125 +1,147 @@
 import { NextResponse } from 'next/server';
 import { XMLParser } from "fast-xml-parser";
 
-// 强制动态渲染，确保 Guru 获得秒级更新的数据
+// Vynucené dynamické renderování pro čerstvá data a AI analýzu v reálném čase
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * GURU 后端引擎 - 泄露与传闻核能屏蔽 V8.6 (ULTIMATE PROXY ROTATION)
- * 路径: src/app/api/leaks/route.js
- * 功能: 修复 Chiphell 抓取失败问题，通过增强型代理轮询绕过 Cloudflare 封锁。
+ * GURU BACKEND ENGINE - UNIFIED AI SCORING V8.9
+ * Cesta: src/app/api/leaks/route.js
+ * Funkce: Globální agregátor HW/Gaming novinek s AI scoringem pro 3 klíčové pilíře:
+ * 1. Hardware Radar (NVIDIA, AMD, Intel, SoC...)
+ * 2. Gaming Radar (AAA tituly, konzole, handheldy...)
+ * 3. Leaks & Rumors (Průmyslové úniky, uniklé fotky, benchmarky...)
  */
 
-// 1. 全球数据源配置
+// 1. GLOBÁLNÍ KONFIGURACE ZDROJŮ (Multi-Radar)
 const REDDIT_URL = "https://www.reddit.com/r/GamingLeaksAndRumours/new.json?limit=40";
-const REDDIT_RSS = "https://www.reddit.com/r/GamingLeaksAndRumours/.rss";
-
 const CHIPHELL_SOURCES = [
-  "https://www.chiphell.com/forum.php?mod=rss&fid=183", // 传闻与爆料 (Rumors)
-  "https://www.chiphell.com/forum.php?mod=rss&fid=52"   // 硬件资讯 (Hardware Info)
+  "https://www.chiphell.com/forum.php?mod=rss&fid=183", // Rumors & Leaks
+  "https://www.chiphell.com/forum.php?mod=rss&fid=52"   // Hardware Info
 ];
-
 const GLOBAL_FEEDS = [
   "https://videocardz.com/feed",
   "https://wccftech.com/feed"
 ];
 
-// 2. 模拟真实浏览器指纹 (Supreme Spoofing)
 const BROWSER_HEADERS = {
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
   "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-  "Accept-Language": "en-US,en;q=0.9,cs;q=0.8,zh-CN;q=0.7,zh;q=0.6", // 增加中文支持以绕过检测
+  "Accept-Language": "en-US,en;q=0.9,cs;q=0.8,zh-CN;q=0.7",
   "Cache-Control": "no-cache",
-  "Referer": "https://www.google.com/",
-  "Sec-Fetch-Dest": "document",
-  "Sec-Fetch-Mode": "navigate",
-  "Sec-Fetch-Site": "none",
-  "Upgrade-Insecure-Requests": "1"
+  "Referer": "https://www.google.com/"
 };
 
-// 3. 硬件关键词白名单 (优先通过)
-const HARDWARE_KEYWORDS = [
-  "NVIDIA", "AMD", "Intel", "RTX", "Ryzen", "Core", "GPU", "CPU", "Zen", 
-  "RDNA", "Ada", "Blackwell", "Arrow Lake", "Snapdragon", "Apple M", "GeForce", "Radeon", "PlayStation", "Xbox", "Switch"
-];
-
-// 4. 垃圾信息黑名单
+// Seznam zakázaných slov (čínský "Daily check-in" spam)
 const SPAM_BLACKLIST = ['签到', '每日', '回复', '领取', 'Check-in', 'Daily', 'posted', '积分', '奖励', '任务', '申请'];
 
 /**
- * 递归提取文本
+ * 🧠 GURU UNIFIED AI SCORING ENGINE
+ * Provádí hloubkovou analýzu virálního potenciálu napříč všemi Radary.
  */
+const getAIScores = async (titles) => {
+  const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+  if (!apiKey || titles.length === 0) return {};
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `Jsi Hardware Guru AI. Jsi elitní technologický insider a expert na globální trendy.
+            Tvým úkolem je ohodnotit virální potenciál (skóre 0-100) pro tři sekce webu:
+            
+            1. HARDWARE RADAR: Zaměř se na Blackwell (RTX 50), Zen 6, Arrow Lake, Strix Halo, nové ARM čipy.
+            2. GAMING RADAR: Zaměř se na PS5 Pro, Switch 2, GTA VI, Valve Deckard, Steam Deck 2, handheldy.
+            3. LEAKS & RUMORS: Hodnoť vysoce uniklé fotky, benchmarky prototypů, finanční zprávy o akvizicích a zrušených projektech.
+            
+            Skóre 90+ dávej jen věcem, které způsobí v komunitě zemětřesení. Vracej POUZE čistý JSON: { scores: [{ title: string, score: number }] }`
+          },
+          {
+            role: "user",
+            content: `Zanalyzuj tyto tituly a vrať skóre podle aktuální důležitosti v HW/Gaming komunitě: ${JSON.stringify(titles)}`
+          }
+        ],
+        response_format: { type: "json_object" }
+      })
+    });
+
+    const result = await response.json();
+    const parsed = JSON.parse(result.choices[0].message.content);
+    
+    const scoreMap = {};
+    parsed.scores.forEach(item => {
+      scoreMap[item.title.toLowerCase()] = item.score;
+    });
+    return scoreMap;
+  } catch (err) {
+    console.error("Guru AI Scoring Error:", err);
+    return {};
+  }
+};
+
 const getDeepText = (obj) => {
   if (!obj) return "";
   if (typeof obj === 'string') return obj;
   if (obj["#text"]) return String(obj["#text"]);
   if (obj["cdata"]) return String(obj["cdata"]);
   if (Array.isArray(obj)) return obj.map(getDeepText).join(" ");
-  if (typeof obj === 'object') {
-    return Object.values(obj).map(val => getDeepText(val)).join(" ");
-  }
+  if (typeof obj === 'object') return Object.values(obj).map(val => getDeepText(val)).join(" ");
   return String(obj);
 };
 
 const cleanTitle = (t) => {
-  return t
-    .replace(/<!\[CDATA\[|\]\]>/g, "")
-    .replace(/\[.*?\]/g, "")
-    .trim();
+  return t.replace(/<!\[CDATA\[|\]\]>/g, "").replace(/\[.*?\]/g, "").trim();
 };
 
 /**
- * GURU SUPREME FETCH - 增强型代理轮询逻辑
- * 支持多种代理接口以应对 Chiphell 的严苛封锁
+ * Supreme Fetch Engine - Agresivní obcházení Cloudflare proxy serverů
  */
 async function supremeProxyFetch(url, isJson = false) {
   const proxies = [
     { name: 'Direct', fn: (u) => u },
-    { name: 'AllOrigins-Raw', fn: (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}&t=${Date.now()}` },
+    { name: 'AllOrigins-Get', fn: (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}&t=${Date.now()}` },
     { name: 'Codetabs', fn: (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}` },
-    { name: 'CorsProxy', fn: (u) => `https://corsproxy.io/?${encodeURIComponent(u)}` },
-    { name: 'AllOrigins-Get', fn: (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}&t=${Date.now()}` }
+    { name: 'CorsProxy', fn: (u) => `https://corsproxy.io/?${encodeURIComponent(u)}` }
   ];
 
   for (const proxy of proxies) {
     try {
-      const target = proxy.fn(url);
-      const res = await fetch(target, { headers: BROWSER_HEADERS, cache: "no-store", next: { revalidate: 0 } });
-      
-      if (res.ok) {
-        let text = await res.text();
-        
-        // 如果是 AllOrigins-Get 包装器，需要解析内部内容
-        if (proxy.name === 'AllOrigins-Get') {
-          try {
-            const wrapper = JSON.parse(text);
-            if (wrapper.contents) text = wrapper.contents;
-          } catch (e) { continue; }
-        }
+      const res = await fetch(proxy.fn(url), { headers: BROWSER_HEADERS, cache: "no-store" });
+      if (!res.ok) continue;
 
-        if (text && text.length > 200) {
-          if (isJson && (text.trim().startsWith('{') || text.trim().startsWith('['))) return { type: 'json', data: text };
-          if (!isJson && (text.includes('<?xml') || text.includes('<rss') || text.includes('<feed'))) return { type: 'xml', data: text };
-        }
+      let text = await res.text();
+      if (text.trim().startsWith('{')) {
+        try {
+          const json = JSON.parse(text);
+          if (json.contents) text = json.contents;
+        } catch(e) {}
       }
-    } catch (e) {
-      console.warn(`GURU Proxy ${proxy.name} failed for ${url}`);
-    }
+
+      if (text && text.length > 300) {
+        if (isJson && (text.trim().startsWith('{') || text.trim().startsWith('['))) return { type: 'json', data: text };
+        if (!isJson && (text.includes('<?xml') || text.includes('<rss') || text.includes('<feed'))) return { type: 'xml', data: text };
+      }
+    } catch (e) {}
   }
   return null;
 }
 
 export async function GET() {
   const leaks = [];
-  const debug = { reddit: 0, chiphell: 0, global: 0, sources_failed: [] };
-  
-  const parser = new XMLParser({ 
-    ignoreAttributes: false, trimValues: true, attributeNamePrefix: "@_", parseAttributeValue: true
-  });
+  const debug = { reddit: 0, chiphell: 0, global: 0, sources_failed: [], ai_active: false };
+  const parser = new XMLParser({ ignoreAttributes: false, trimValues: true, attributeNamePrefix: "@_", parseAttributeValue: true });
 
   try {
-    // --- A. REDDIT 引擎 (JSON First, RSS Fallback) ---
+    // --- PILÍŘ 1: REDDIT LEAKS ENGINE ---
     const redditResult = await supremeProxyFetch(REDDIT_URL, true);
     if (redditResult && redditResult.type === 'json') {
       try {
@@ -139,41 +161,21 @@ export async function GET() {
           }
         });
       } catch (e) { debug.sources_failed.push("reddit_json_parse"); }
-    } else {
-       const redditRss = await supremeProxyFetch(REDDIT_RSS, false);
-       if (redditRss) {
-         const json = parser.parse(redditRss.data);
-         const entries = json?.feed?.entry || [];
-         const arr = Array.isArray(entries) ? entries : [entries];
-         arr.forEach(entry => {
-           const title = getDeepText(entry.title);
-           if (title && title !== "GamingLeaksAndRumours") {
-             leaks.push({
-               title, link: entry.link?.["@_href"] || "", description: title,
-               source: "Reddit Leaks", intelType: "leaks", pubDate: entry.updated || new Date().toISOString()
-             });
-             debug.reddit++;
-           }
-         });
-       } else { debug.sources_failed.push("reddit_total_block"); }
-    }
+    } else { debug.sources_failed.push("reddit_fetch_failed"); }
 
-    // --- B. CHIPHELL 引擎 (智能代理白名单模式) ---
+    // --- PILÍŘ 2: CHIPHELL RUMORS ENGINE ---
     for (const url of CHIPHELL_SOURCES) {
       const chipResult = await supremeProxyFetch(url, false);
       if (chipResult) {
         try {
           const json = parser.parse(chipResult.data);
-          const items = json?.rss?.channel?.item || [];
-          const itemsArray = Array.isArray(items) ? items : [items];
+          const itemsArray = Array.isArray(json?.rss?.channel?.item) ? json.rss.channel.item : [json?.rss?.channel?.item];
           
           itemsArray.forEach(item => {
             if (!item) return;
             let t = cleanTitle(getDeepText(item.title));
             const isSpam = SPAM_BLACKLIST.some(term => t.includes(term));
-            const isHardware = HARDWARE_KEYWORDS.some(k => t.toLowerCase().includes(k.toLowerCase()));
-            
-            if (!isSpam && (isHardware || t.length > 20) && t.length > 5) {
+            if (!isSpam && t.length > 8 && !t.includes("[object Object]")) {
               leaks.push({
                 title: t,
                 link: getDeepText(item.link),
@@ -189,19 +191,18 @@ export async function GET() {
       } else { debug.sources_failed.push(`chiphell_fetch_${url.split('fid=')[1]}`); }
     }
 
-    // --- C. 全球顶级硬件站引擎 (VideoCardz / Wccftech) ---
+    // --- PILÍŘ 3: GLOBAL FEED RADARS (Wccftech / VideoCardz) ---
     for (const url of GLOBAL_FEEDS) {
       try {
         const res = await fetch(url, { headers: BROWSER_HEADERS, cache: "no-store" });
         if (res.ok) {
           const xml = await res.text();
           const json = parser.parse(xml);
-          const items = json?.rss?.channel?.item || [];
-          const itemsArray = Array.isArray(items) ? items : [items];
+          const itemsArray = Array.isArray(json?.rss?.channel?.item) ? json.rss.channel.item : [json?.rss?.channel?.item];
           
           itemsArray.forEach(item => {
             const t = cleanTitle(getDeepText(item.title));
-            if (t) {
+            if (t && t.length > 5) {
               leaks.push({
                 title: t,
                 link: getDeepText(item.link),
@@ -214,17 +215,41 @@ export async function GET() {
             }
           });
         }
-      } catch (e) { console.error(`Global Feed Error: ${url}`); }
+      } catch (e) {}
     }
 
-    // 全局去重并按日期排序
-    const uniqueLeaks = Array.from(new Map(leaks.map(item => [item.title.toLowerCase(), item])).values());
-    uniqueLeaks.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+    // --- 🚀 GURU ANTI-DUPLICITY & FILTERING ---
+    const uniqueMap = new Map();
+    leaks.forEach(item => {
+      const key = item.title.toLowerCase().trim();
+      if (!uniqueMap.has(key)) uniqueMap.set(key, item);
+    });
+    const finalItems = Array.from(uniqueMap.values());
+
+    // --- 🧠 UNIFIED AI SCORING (Hardware Radar / Gaming Radar / Leaks) ---
+    const titlesForAI = finalItems.slice(0, 50).map(i => i.title);
+    const aiScores = await getAIScores(titlesForAI);
+    
+    if (Object.keys(aiScores).length > 0) {
+      debug.ai_active = true;
+      finalItems.forEach(item => {
+        item.viral_score = aiScores[item.title.toLowerCase()] || 45;
+      });
+    } else {
+      // Emergency Fallback
+      finalItems.forEach(item => { item.viral_score = 50; });
+    }
+
+    // Radíme nekompromisně podle AI virálního skóre, pak podle data
+    finalItems.sort((a, b) => {
+      if (b.viral_score !== a.viral_score) return b.viral_score - a.viral_score;
+      return new Date(b.pubDate) - new Date(a.pubDate);
+    });
 
     return NextResponse.json({
       success: true,
-      count: uniqueLeaks.length,
-      data: uniqueLeaks.slice(0, 80),
+      count: finalItems.length,
+      data: finalItems.slice(0, 100),
       _debug: debug
     });
 
