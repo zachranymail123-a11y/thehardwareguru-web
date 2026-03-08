@@ -15,18 +15,17 @@ export default function SestavyBubble() {
   const pathname = usePathname() || '';
 
   useEffect(() => {
-    // Okamžitá synchronizace cesty
-    setCurrentPath(window.location.pathname);
+    const path = window.location.pathname;
+    setCurrentPath(path);
     
-    // Časovač pro zobrazení (pouze pokud nejsme v adminu)
-    if (!window.location.pathname.includes('/admin')) {
+    // 🛡️ GURU SHIELD: Pokud je v URL 'admin', komponenta se ani neaktivuje
+    if (!path.includes('/admin')) {
       const timer = setTimeout(() => setIsVisible(true), 4000);
       return () => clearTimeout(timer);
     }
-  }, [pathname]); // Reaguje na změnu cesty v Next.js
+  }, [pathname]);
 
-  // 🛡️ GURU SHIELD: Absolutní blokace v administraci
-  // Kontrolujeme pathname z hooku i syrové URL okna
+  // Finální pojistka: Kontrola pathname i syrového window.location
   const activePath = pathname || currentPath;
   const isAdmin = activePath.includes('/admin') || (typeof window !== 'undefined' && window.location.href.includes('/admin'));
 
