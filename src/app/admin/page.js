@@ -3,22 +3,25 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+/**
+ * GURU SESTAVY BUBBLE
+ * Komponenta se nezobrazí v administraci (/admin).
+ */
 export default function SestavyBubble() {
   const [isVisible, setIsVisible] = useState(false);
   const pathname = usePathname() || '';
 
-  // 🛡️ GURU SHIELD: Okamžitá a neprůstřelná kontrola adminu
+  // 🛡️ GURU SHIELD: Okamžitá a neprůstřelná blokace adminu
   // Pokud URL obsahuje "/admin", komponenta vrací null dřív, než se cokoli stane.
   const isAdmin = pathname.includes('/admin') || (typeof window !== 'undefined' && window.location.pathname.includes('/admin'));
 
   useEffect(() => {
-    // Pokud jsme v adminu, nepouštíme ani časovač
     if (isAdmin) return;
-
     const timer = setTimeout(() => setIsVisible(true), 4000);
     return () => clearTimeout(timer);
   }, [isAdmin]);
 
+  // Finální render check
   if (!isVisible || isAdmin) return null;
 
   const isEn = pathname.startsWith('/en');
@@ -34,7 +37,7 @@ export default function SestavyBubble() {
           position: fixed;
           bottom: 30px;
           left: 30px;
-          z-index: 998;
+          z-index: 9998;
           max-width: 320px;
           animation: guruSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
