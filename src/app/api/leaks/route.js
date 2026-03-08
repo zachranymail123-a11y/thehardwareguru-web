@@ -5,9 +5,9 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * GURU BACKEND ENGINE - LEAKS & RUMORS NUCLEAR SHIELD V8.0
+ * GURU BACKEND ENGINE - LEAKS & RUMORS NUCLEAR SHIELD V8.1
  * Cesta: src/app/api/leaks/route.js
- * Oprava: Vylepšený parsovací engine pro Chiphell (vytahování textu z objektů).
+ * Oprava: Deep-text parser pro Chiphell (vytahuje text z jakkoliv vnořených objektů).
  */
 
 const REDDIT_SOURCES = [
@@ -30,6 +30,19 @@ const BROWSER_HEADERS = {
 const SPAM_BLACKLIST = [
   '签到', '每日', '回复', '领取', 'Check-in', 'Daily', 'posted', '版块', '积分', '奖励', '领取', '金币', '任务'
 ];
+
+// 🚀 GURU RECURSIVE TEXT EXTRACTOR
+const getDeepText = (obj) => {
+  if (!obj) return "";
+  if (typeof obj === 'string') return obj;
+  if (obj["#text"]) return String(obj["#text"]);
+  if (obj["cdata"]) return String(obj["cdata"]);
+  if (Array.isArray(obj)) return obj.map(getDeepText).join(" ");
+  if (typeof obj === 'object') {
+    return Object.values(obj).map(val => typeof val === 'string' ? val : getDeepText(val)).join(" ");
+  }
+  return String(obj);
+};
 
 async function fetchWithTimeout(url, options = {}, ms = 8000) {
   const controller = new AbortController();
@@ -61,7 +74,12 @@ async function fetchReddit() {
 
 export async function GET() {
   const leaks = [];
-  const debug = { reddit: "pending", chiphell: "pending", chiphell_raw_count: 0 };
+  const debug = { 
+    reddit: "pending", 
+    chiphell: "pending", 
+    chiphell_raw_count: 0,
+    chiphell_final_count: 0 
+  };
   
   const parser = new XMLParser({ 
     ignoreAttributes: false, 
@@ -94,7 +112,7 @@ export async function GET() {
           const arr = Array.isArray(entries) ? entries : [entries];
           
           arr.forEach(entry => {
-            const title = entry.title?.["#text"] || entry.title || "";
+            const title = getDeepText(entry.title);
             if (title && title !== "GamingLeaksAndRumours") {
               const link = entry.link?.["@_href"] || entry.link || "";
               const date = entry.updated || entry.pubDate || new Date().toISOString();
@@ -110,7 +128,7 @@ export async function GET() {
       } catch (e) { debug.reddit = "parse_error"; }
     } else { debug.reddit = "blocked_or_failed"; }
 
-    // --- 2. CHIPHELL ENGINE (Vylepšené parsování) ---
+    // --- 2. CHIPHELL ENGINE (Supreme Deep-Parsing) ---
     try {
       const res = await fetchWithTimeout(CHIPHELL_RSS, { headers: BROWSER_HEADERS, cache: "no-store" });
       if (res.ok) {
@@ -123,19 +141,15 @@ export async function GET() {
         itemsArray.forEach(item => {
           if (!item) return;
           
-          // 🚀 GURU FIX: Vytahování textu z titulku (může být objekt s #text nebo CDATA)
-          let t = "";
-          if (typeof item.title === 'string') t = item.title;
-          else if (item.title?.["#text"]) t = item.title["#text"];
-          else if (typeof item.title === 'object') t = JSON.stringify(item.title);
-
+          // 🚀 GURU SUPREME EXTRACT: Vytahujeme titulky a linky z Chiphell hlubin
+          let t = getDeepText(item.title);
           t = t.toString().replace(/<!\[CDATA\[|\]\]>/g, "").trim();
           
-          // 🚀 GURU FIX: Vytahování linku (někdy bývá též v #text)
-          const l = item.link?.["#text"] || item.link || "";
+          let l = getDeepText(item.link);
           
+          // 🛡️ GURU FILTR: Čistíme balast a spam
           const isSpam = SPAM_BLACKLIST.some(term => t.includes(term));
-          if (!isSpam && t.length > 5 && !t.includes("[object Object]")) {
+          if (!isSpam && t.length > 8 && !t.includes("[object Object]")) {
             leaks.push({
               title: t,
               link: l,
@@ -144,6 +158,7 @@ export async function GET() {
               intelType: "leaks",
               pubDate: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString()
             });
+            debug.chiphell_final_count++;
           }
         });
         debug.chiphell = "ok";
