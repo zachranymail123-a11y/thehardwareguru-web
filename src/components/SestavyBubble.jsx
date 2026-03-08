@@ -5,10 +5,11 @@ import { Brain, ChevronRight, X, Activity, Target, Cpu, Gamepad2, Flame, Lightbu
 /**
  * GURU AI NAVIGATOR - ULTIMATE PERFECTION EDITION (Fix & Filter V2)
  * * Změny:
- * 1. Syntax Fix: Opraven mismatch tagu span/h4, který shazoval build.
- * 2. Module Recovery: Robustní fallback pro next/link a supabase v Canvasu.
- * 3. Supreme Anti-Cron Filter: Totální filtrace streamů (🔴) a shorts.
- * 4. UX: Zachován osobní pozdrav GURU průvodce.
+ * 1. Expand to 5: Nyní nabízí 5 článků pro vyšší CTR.
+ * 2. Syntax Fix: Opraven mismatch tagu span/h4, který shazoval build.
+ * 3. Module Recovery: Robustní fallback pro next/link a supabase v Canvasu.
+ * 4. Supreme Anti-Cron Filter: Totální filtrace streamů (🔴) a shorts.
+ * 5. UX: Zachován osobní pozdrav GURU průvodce.
  */
 
 // --- 🛡️ GURU SAFE MODULE LOADER (Fix pro chyby resolve/build) ---
@@ -130,7 +131,7 @@ export default function SestavyBubble() {
         const currentSlug = pathname.split('/').pop() || '';
         const keywords = currentSlug.split('-').filter(w => w.length > 3);
 
-        // 2. Fetch Data (Zvětšený pool pro lepší filtraci)
+        // 2. Fetch Data (Pool pro 5 doporučení)
         const safeFetch = async (promise) => {
           const res = await promise;
           return { data: res.data || [] };
@@ -147,20 +148,17 @@ export default function SestavyBubble() {
         (dealsRes.data || []).forEach(d => combinedPool.push({ ...d, type: 'deal', source: 'deals', finalUrl: d.affiliate_link || `${langPrefix}/deals`, slug: d.title }));
         (tipsRes.data || []).forEach(t => combinedPool.push({ ...t, type: 'tip', source: 'tipy', finalUrl: `${langPrefix}/tipy/${isEn ? (t.slug_en || t.slug) : t.slug}` }));
 
-        // 🚀 3. SUPREME ANTI-CRON FILTER (Likvidace 🔴 Streamů a Shorts)
+        // 🚀 3. SUPREME ANTI-CRON FILTER
         let filteredItems = combinedPool.filter(item => {
           const title = (item.title || '').toLowerCase();
           const isCurrent = item.slug === currentSlug || item.slug_en === currentSlug;
           const isSeen = seenItems.includes(item.slug) || seenItems.includes(item.slug_en);
-          
-          // Klíčová slova, která cron hází k streamům a youtube balastu
           const trashWords = ['🔴', 'live', 'guru je live', 'stream', 'shorts', '#shorts', 'záznam'];
           const isTrash = trashWords.some(word => title.includes(word));
-          
           return !isCurrent && !isSeen && !isTrash;
         });
 
-        if (filteredItems.length < 3) filteredItems = combinedPool.slice(0, 10);
+        if (filteredItems.length < 5) filteredItems = combinedPool.slice(0, 15);
 
         // 4. Scoring
         let scoredItems = filteredItems.map(item => {
@@ -177,7 +175,8 @@ export default function SestavyBubble() {
           return { ...item, score };
         });
 
-        const top3 = scoredItems.sort((a, b) => b.score - a.score).slice(0, 3);
+        // 🚀 GURU FIX: TOP 5 místo TOP 3
+        const top5 = scoredItems.sort((a, b) => b.score - a.score).slice(0, 5);
         
         setTimeout(() => {
           if (!isMounted) return;
@@ -186,7 +185,7 @@ export default function SestavyBubble() {
           else if (dominantType === 'deals') { setUserProfile(isEn ? 'Deal Hunter' : 'Lovec Slev'); setArchetypeIcon(<Flame size={12} color="#f97316" />); }
           else { setUserProfile(isEn ? 'Tech Padawan' : 'Tech Učeň'); setArchetypeIcon(<Lightbulb size={12} color="#a855f7" />); }
           
-          setRecommendations(top3);
+          setRecommendations(top5);
           setIsScanning(false);
         }, 800);
 
@@ -232,6 +231,8 @@ export default function SestavyBubble() {
         .guru-ai-rec-item:nth-child(1) { animation-delay: 0.1s; }
         .guru-ai-rec-item:nth-child(2) { animation-delay: 0.2s; }
         .guru-ai-rec-item:nth-child(3) { animation-delay: 0.3s; }
+        .guru-ai-rec-item:nth-child(4) { animation-delay: 0.4s; }
+        .guru-ai-rec-item:nth-child(5) { animation-delay: 0.5s; }
 
         .guru-ai-rec-item:hover { background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); transform: translateX(5px); }
         .guru-ai-rec-item:last-child { margin-bottom: 0; }
@@ -298,9 +299,10 @@ export default function SestavyBubble() {
             </div>
           </div>
 
-          <div className="guru-ai-list" style={{ minHeight: '170px' }}>
+          {/* 🚀 GURU FIX: Zvýšena minHeight pro 5 položek */}
+          <div className="guru-ai-list" style={{ minHeight: '270px' }}>
             {isScanning ? (
-              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '12px', opacity: 0.5, paddingTop: '40px' }}>
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '12px', opacity: 0.5, paddingTop: '100px' }}>
                 <Activity className="animate-spin" size={24} color="#a855f7" />
                 <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#a855f7' }}>{isEn ? "COMPUTING..." : "HLEDÁM OBSAH..."}</span>
               </div>
@@ -341,7 +343,6 @@ export default function SestavyBubble() {
                         <h5 style={{ color: '#e5e7eb', fontSize: '12px', fontWeight: 'bold', margin: '0 0 3px 0', lineHeight: '1.2', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                           {title}
                         </h5>
-                        {/* 🚀 GURU FIX: Opraven mismatch tagu z </h4> na </span> */}
                         <span style={{ color: badgeColor, fontSize: '9px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                           {badgeText}
                         </span>
