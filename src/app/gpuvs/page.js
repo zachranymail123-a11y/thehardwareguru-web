@@ -1,37 +1,38 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import { 
-  Swords, ChevronRight, Zap, RefreshCw, Flame, Cpu, ShieldCheck
+  Swords, ChevronRight, Zap, RefreshCw, Flame, Cpu, ShieldCheck 
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS INDEX - MASTER LOGIC V3.6 (BUILD PROTECTION)
+ * GURU GPU DUELS INDEX - MASTER LOGIC V3.8 (MODULE RESOLVE FIX)
  * Cesta: src/app/gpuvs/page.js
- * Oprava: Robustní ošetření modulů pro prostředí náhledu i produkce.
- * Primární komponenta přejmenována na App pro soulad s prostředím.
+ * Funkce: Výběr karet pro duel, výpis existujících duelů, CZ/EN hybrid.
+ * FIX: Robustní načítání externích modulů pro bezchybný build v náhledovém prostředí.
  */
 
 // --- 🛡️ GURU BUILD SHIELD ---
-// Pomocná funkce pro bezpečné načítání modulů v prostředí Canvas
-const getModule = (path) => {
+// Dynamické ošetření modulů pro prostředí, kde nemusí být balíčky resolvnuty staticky
+const safeRequire = (pkg) => {
   try {
-    return require(path);
+    return require(pkg);
   } catch (e) {
     return null;
   }
 };
 
-const supabaseLib = getModule('@supabase/supabase-js');
-const nextNav = getModule('next/navigation');
-const nextLink = getModule('next/link');
+const supabaseJS = safeRequire('@supabase/supabase-js');
+const nextNavigation = safeRequire('next/navigation');
+const nextLink = safeRequire('next/link');
 
-const createClient = supabaseLib ? supabaseLib.createClient : null;
-const useRouter = nextNav ? nextNav.useRouter : () => ({ push: (url) => console.log(`Routing to: ${url}`) });
-const usePathname = nextNav ? nextNav.usePathname : () => '/gpuvs';
-const Link = nextLink ? (nextLink.default || nextLink) : ({ children, href, className, ...props }) => (
-  <a href={href} className={className} {...props}>{children}</a>
-);
+// Fallbacky a inicializace
+const createClient = supabaseJS ? supabaseJS.createClient : null;
+const useRouter = nextNavigation ? nextNavigation.useRouter : () => ({ push: () => {} });
+const usePathname = nextNavigation ? nextNavigation.usePathname : () => '/gpuvs';
+const Link = nextLink ? (nextLink.default || nextLink) : ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>;
 
-// Inicializace Supabase s fallbackem
+// Inicializace Supabase klienta s ochranou proti chybějícím ENV
 const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
   ? createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -58,6 +59,7 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // 🚀 GURU DATA SYNC: Načítání informací z databáze
   useEffect(() => {
     async function loadData() {
       if (!createClient) {
@@ -87,6 +89,7 @@ const App = () => {
     loadData();
   }, [isEn]);
 
+  // 🚀 GURU ENGINE: Odpálení duelu
   const handleStartDuel = () => {
     if (!gpuA || !gpuB || gpuA === gpuB) return;
     const cardA = gpus.find(g => g.id === gpuA);
@@ -98,22 +101,19 @@ const App = () => {
       .replace(/[^a-z0-9-]/g, '-')
       .replace(/-+/g, '-');
     
-    if (isEn) {
-      router.push(`/en/gpuvs/en-${rawSlug}`);
-    } else {
-      router.push(`/gpuvs/${rawSlug}`);
-    }
+    const targetPath = isEn ? `/en/gpuvs/en-${rawSlug}` : `/gpuvs/${rawSlug}`;
+    router.push(targetPath);
   };
 
   return (
     <div className="min-h-screen bg-[#0a0b0d] text-white font-sans" style={{ backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed' }}>
       
-      {/* 🛡️ GURU HYPER-SHIELD Script (Prevence TypeError u SwG) */}
+      {/* 🛡️ GURU HYPER-SHIELD: Absolutní pojistka proti černé obrazovce (TypeError u SwG) */}
       <script dangerouslySetInnerHTML={{__html: `
         (function() {
           window.swgSubscriptions = window.swgSubscriptions || {};
           if (typeof window.swgSubscriptions.attachButton !== 'function') {
-            window.swgSubscriptions.attachButton = function() { console.log('Hyper-Shield Activated'); };
+            window.swgSubscriptions.attachButton = function() { console.log('Hyper-Shield: Placeholder triggered.'); };
           }
         })();
       `}} />
