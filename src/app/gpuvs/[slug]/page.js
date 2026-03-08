@@ -4,32 +4,38 @@ import {
   Swords, 
   ShieldCheck, 
   Zap, 
-  ShoppingCart 
+  ShoppingCart,
+  Cpu
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V17.1 (PREVIEW COMPATIBILITY FIX)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V17.9 (PREVIEW COMPATIBILITY FIX)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * Design: Brutální GURU styl (obří růžové nadpisy, skleněný panel, neonové prvky).
- * FIX: Implementace "Preview Shield" pro vyřešení chyb kompilace (Could not resolve) 
- * v tomto prostředí, zatímco logika zůstává 100% věrná doporučení ChatGPT.
+ * FIX: Implementace "Compatibility Shield" pro vyřešení chyb kompilace v prostředí Preview,
+ * zatímco jádro logiky zůstává věrné produkčním doporučením (limit(1), slug fix).
+ * PERFORMANCE: Single Query Join + React Cache.
  */
 
-// --- 🛡️ GURU PREVIEW SHIELD: Bezpečné načtení pro funkčnost náhledu ---
-const safeGet = (path) => {
-  try { return require(path); } catch (e) { return null; }
+// --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení modulů pro preview ---
+const safeLoad = (modPath) => {
+  try {
+    return require(modPath);
+  } catch (e) {
+    return null;
+  }
 };
 
-const supabaseLib = safeGet('@supabase/supabase-js');
-const nextNav = safeGet('next/navigation');
-const nextLinkMod = safeGet('next/link');
+const supabaseLib = safeLoad('@supabase/supabase-js');
+const nextNav = safeLoad('next/navigation');
+const nextLinkMod = safeLoad('next/link');
 
-// Fallbacky pro klientské a serverové funkce
+// Inicializace klientských a serverových funkcí s fallbacky
 const createClient = supabaseLib ? supabaseLib.createClient : null;
 const notFound = nextNav ? nextNav.notFound : () => {};
 const Link = nextLinkMod ? (nextLinkMod.default || nextLinkMod) : ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>;
 
-// 🚀 GURU: Inicializace Supabase klienta (Konfigurace pro Server Components)
+// 🚀 GURU: Inicializace Supabase klienta s konfigurací pro Server Components
 const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
   ? createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -38,33 +44,37 @@ const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
     )
   : null;
 
-// 🚀 GURU: Cache dotazu pro deduplikaci (Single Query Join podle ChatGPT)
+// 🚀 GURU: Cache dotazu pro deduplikaci (Single Query Join s robustním lookupem)
 const getDuelData = cache(async (slug) => {
-  if (!supabase) return null;
+  if (!supabase || !slug) return null;
 
-  // 🚀 GURU: Slug používáme přímo z URL (včetně případného en- prefixu)
-  const { data: duel, error } = await supabase
+  // 🚀 GURU FIX: Vytvoříme variantu bez prefixu pro křížovou kontrolu
+  const cleanSlug = slug.replace(/^en-/, '');
+
+  const { data, error } = await supabase
     .from('gpu_duels')
     .select(`
       *,
       gpuA:gpus!gpu_a_id(*),
       gpuB:gpus!gpu_b_id(*)
     `)
-    .eq('slug', slug)
-    .single();
+    // 🚀 GURU FIX: Hledáme obě varianty a používáme limit(1) pro prevenci 404 při CZ/EN kolizi
+    .or(`slug.eq.${slug},slug.eq.${cleanSlug}`)
+    .limit(1);
 
-  if (error || !duel) return null;
-  return duel;
+  if (error || !data || data.length === 0) return null;
+  
+  return data[0];
 });
 
 // 🚀 GURU SEO: Dynamické Meta Tagy
 export async function generateMetadata({ params }) {
-  const { slug } = params;
+  const slug = params?.slug ?? null;
   const duel = await getDuelData(slug);
 
   if (!duel) return { title: 'Duel nenalezen | The Hardware Guru' };
 
-  const isEn = slug.startsWith('en-');
+  const isEn = slug?.startsWith('en-');
   const title = isEn && duel.title_en ? duel.title_en : (duel.title_cs || 'GPU Duel');
   const description = isEn && duel.seo_description_en ? duel.seo_description_en : (duel.seo_description_cs || '');
 
@@ -75,7 +85,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function App({ params }) {
-  const { slug } = params;
+  const slug = params?.slug ?? null;
   const duel = await getDuelData(slug);
 
   if (!duel) {
@@ -83,19 +93,19 @@ export default async function App({ params }) {
     return <div className="p-20 text-center text-white">404 - Duel nenalezen</div>;
   }
 
-  // 1. Detekce jazyka
-  const isEn = slug.startsWith('en-');
+  // 1. Detekce jazyka na základě slugu v URL
+  const isEn = slug?.startsWith('en-');
   const { gpuA, gpuB } = duel;
 
   if (!gpuA || !gpuB) {
-    return <div className="p-20 text-center text-white">Chyba: Data grafických karet nebyla nalezena.</div>;
+    return <div className="p-20 text-center text-white font-black italic uppercase tracking-tighter text-2xl">DATA CORRUPTION: GPU MISSING IN DATABASE</div>;
   }
 
   // 2. Lokalizované texty
   const title = isEn && duel.title_en ? duel.title_en : duel.title_cs;
   const content = isEn && duel.content_en ? duel.content_en : (duel.content_cs || duel.content);
   
-  // 3. Formátování data (Stabilní hydratace pomocí Intl)
+  // 3. Formátování data pomocí Intl (Fix hydratace)
   const dateObj = new Date(duel.created_at || Date.now());
   const formattedDate = new Intl.DateTimeFormat(isEn ? 'en-US' : 'cs-CZ', { 
     year: 'numeric', month: 'long', day: 'numeric' 
@@ -120,7 +130,7 @@ export default async function App({ params }) {
         backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', 
         backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px'
     }}>
-      {/* 🛡️ GURU HYPER-SHIELD: Ochrana pro navigaci */}
+      {/* 🛡️ GURU HYPER-SHIELD: Ochrana pro navigaci v SPA prostředí */}
       <script dangerouslySetInnerHTML={{__html: `
         (function() {
           window.swgSubscriptions = window.swgSubscriptions || {};
@@ -141,7 +151,10 @@ export default async function App({ params }) {
         .guru-affiliate-cta { display: inline-flex; align-items: center; justify-content: center; gap: 15px; padding: 22px 50px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 20px; text-transform: uppercase; border-radius: 20px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 35px rgba(234, 88, 12, 0.4); border: 1px solid rgba(255,255,255,0.1); }
         .guru-affiliate-cta:hover { transform: translateY(-5px) scale(1.03); box-shadow: 0 20px 50px rgba(234, 88, 12, 0.6); }
         .text-green-400 { color: #4ade80; } .text-red-500 { color: #ef4444; } .font-black { font-weight: 900; }
-        @media (max-width: 768px) { .vs-badge-supreme { margin: 20px auto; } .ring-grid-system { grid-template-columns: 1fr !important; } .vs-badge-supreme { margin: -20px auto; } }
+        @media (max-width: 768px) { 
+          .ring-grid-system { flex-direction: column; }
+          .vs-badge-supreme { margin: 20px auto; } 
+        }
       `}} />
 
       <article className="max-w-5xl mx-auto">
