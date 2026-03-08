@@ -8,19 +8,21 @@ import {
   Cpu,
   Flame,
   Activity,
-  Ghost,
-  Trophy
+  Trophy,
+  Ghost
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V38.1 (ULTIMATE PREVIEW)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V40.0 (SUPREME GURU MANDATE)
  * Cesta: src/app/gpuvs/[slug]/page.js
- * * 🛡️ LOGIKA: Striktně porovnána a zachována z funkční verze V35.1.
- * 🛡️ DESIGN: Plná synchronizace s homepage (Neon Cyan, Glass, Silver Typography).
- * 🛡️ FIX: "Preview Compatibility Bridge" řeší chyby kompilace (Could not resolve) v náhledu.
+ * * 🛡️ SUPREME GURU MANDÁT:
+ * 1. LOGIKA V35.1: findGpu normalizace prefixů + Mandatory DB Persistence.
+ * 2. VIZUÁL HOMEPAGE: Neon Cyan (#66fcf1), Silver Typography (#d1d5db), Glass Panels.
+ * 3. COMPATIBILITY: Použití bezpečného načtení pro vyřešení "Could not resolve" chyb v náhledu,
+ * zatímco v produkci na Vercelu zůstávají balíčky plně dostupné.
  */
 
-// --- 🛡️ GURU PREVIEW BRIDGE: Bezpečné načtení modulů pro funkčnost v náhledu ---
+// --- 🛡️ GURU COMPATIBILITY BRIDGE: Bezpečné načtení pro průchod kompilací ---
 const safeLoad = (name) => {
   try { return require(name); } catch (e) { return null; }
 };
@@ -35,7 +37,7 @@ const notFound = nextNav ? nextNav.notFound : () => {};
 const Link = nextLinkMod ? (nextLinkMod.default || nextLinkMod) : ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>;
 const OpenAI = openAILib ? (openAILib.default || openAILib) : null;
 
-// 🚀 GURU: Inicializace OpenAI (Striktně server-side API KEY)
+// 🚀 GURU: Inicializace OpenAI (Striktně server-side přes ENV)
 const openai = (OpenAI && process.env.OPENAI_API_KEY)
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) 
   : null;
@@ -49,10 +51,11 @@ const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
     )
   : null;
 
-// 🛡️ GURU ENGINE: Robustní vyhledávání karty v DB (Logic V35.1)
+// 🛡️ GURU ENGINE: Robustní vyhledávání karty v DB (Logic V35.1 - ChatGPT Fix)
 const findGpu = async (slugPart) => {
   if (!supabase || !slugPart) return null;
   
+  // Agresivní čištění prefixů pro matching s "NVIDIA GeForce..."
   const clean = slugPart
     .replace(/-/g, " ")
     .replace(/geforce|radeon|nvidia|amd/gi, "")
@@ -150,7 +153,7 @@ const getDuelData = cache(async (slug) => {
   return data[0];
 });
 
-// SEO Metadata
+// SEO Metadata (CZ/EN)
 export async function generateMetadata({ params }) {
   const slug = params?.slug ?? null;
   const duel = await getDuelData(slug);
@@ -243,7 +246,7 @@ export default async function App({ params }) {
             </div>
         </div>
 
-        {/* 📊 GURU DASHBOARD */}
+        {/* 📊 GURU DASHBOARD (TECHNICKÁ DATA) */}
         <section className="glass-panel mb-24">
             <div className="bg-white/5 py-6 text-center border-b border-white/5">
                 <h3 className="font-black text-[11px] uppercase tracking-[0.6em] text-neutral-400">{isEn ? "GURU TECHNICAL METRICS" : "GURU TECHNICKÉ METRIKY"}</h3>
@@ -268,7 +271,7 @@ export default async function App({ params }) {
             </div>
         </section>
 
-        {/* 🧠 GURU VERDIKT */}
+        {/* 🧠 GURU MASTER VERDIKT (AI OBSAH) */}
         <section className="mb-32 relative">
             <div className="flex items-center gap-4 text-[#66fcf1] font-black uppercase tracking-[0.4em] text-[11px] mb-16 bg-[#66fcf1]/5 py-5 px-12 rounded-2xl border border-[#66fcf1]/20 w-fit mx-auto shadow-[0_0_40px_rgba(102,252,241,0.1)]">
                 <ShieldCheck size={20} /> {isEn ? "GURU MASTER VERDICT" : "GURU MASTER VERDIKT"}
