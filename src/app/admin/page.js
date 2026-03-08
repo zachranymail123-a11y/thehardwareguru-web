@@ -10,11 +10,19 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V9.3
- * - Opravena chyba kompilace odstraněním nedostupné knihovny Supabase.
- * - Zachována logika přihlášení a správy dat přes Intel Engine.
- * - Plná integrace AI Status Badge pro monitoring skórování.
+ * 🚀 GURU ULTIMATE COMMAND CENTER V9.4 - NUCLEAR STABILITY FIX
+ * - Polyfill pro SWG (Subscribe with Google) proti pádům UI.
+ * - Oprava filtrace Radarů a synchronizace s AI skórováním.
+ * - Odstraněny neexistující závislosti (Supabase-js).
  */
+
+// 🛡️ GURU GLOBAL SHIELD - Prevence TypeError dřív než začne React
+if (typeof window !== 'undefined') {
+  window.swgSubscriptions = window.swgSubscriptions || {};
+  if (!window.swgSubscriptions.attachButton) {
+    window.swgSubscriptions.attachButton = () => {};
+  }
+}
 
 export default function AdminApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -40,10 +48,6 @@ export default function AdminApp() {
     if (typeof window !== 'undefined' && sessionStorage.getItem('guru_admin_auth') === 'true') {
       setIsAuthenticated(true);
     }
-    // 🛡️ GURU UI SHIELD: Ochrana proti pádům způsobeným nefunkčním SWG skriptem
-    if (typeof window !== 'undefined' && window.swgSubscriptions && !window.swgSubscriptions.attachButton) {
-        window.swgSubscriptions.attachButton = () => { console.warn("SWG bypass: attachButton is missing."); };
-    }
   }, []);
 
   const handleLogin = (e) => {
@@ -51,16 +55,16 @@ export default function AdminApp() {
     if (password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD || password === 'Wifik500') {
       setIsAuthenticated(true);
       sessionStorage.setItem('guru_admin_auth', 'true');
-      addLog('Přihlášení úspěšné. Vítej zpět, Guru.', 'success');
+      addLog('Přihlášení úspěšné. Vítej ve velíně.', 'success');
     } else {
-      addLog('Nesprávné heslo! Přístup odepřen.', 'error');
+      addLog('Nesprávné heslo!', 'error');
     }
   };
 
   const fetchIntelFeed = async () => {
     setIntelLoading(true);
     setAiActive(false);
-    addLog('Skenuji globální sítě (V9.1 Backend)...', 'warning');
+    addLog('Spouštím Guru Unified Intel Engine V9.2...', 'warning');
     
     try {
       const res = await fetch('/api/leaks');
@@ -69,42 +73,40 @@ export default function AdminApp() {
       if (json.success) {
         const items = json.data || [];
         
-        // 🚀 FILTRACE PRO RADARY DLE ZDROJŮ A OBSAHU
+        // 🚀 FILTRACE PRO RADARY (Chytřejší dělení dle zdrojů)
         setHwIntel(items.filter(i => 
           i.source === "VideoCardz" || 
-          i.source === "Tom's Hardware" ||
-          (i.source === "Wccftech" && /rtx|amd|intel|cpu|gpu|gpu|ti|leak|blackwell/i.test(i.title))
+          (i.source === "Wccftech" && /rtx|amd|intel|cpu|gpu|gpu|ti|leak|blackwell|zen|core/i.test(i.title))
         ).slice(0, 10));
 
         setGameIntel(items.filter(i => 
           i.source === "IGN" || 
-          i.source === "Gamespot" ||
           (i.source === "Wccftech" && !/rtx|amd|intel|cpu|gpu/i.test(i.title)) ||
-          (i.source === "Reddit Leaks" && /gta|ps5|xbox|switch|game|launch|play/i.test(i.title))
+          (i.source === "Reddit Leaks" && /gta|ps5|xbox|switch|game|launch|play|exclusive/i.test(i.title))
         ).slice(0, 10));
 
         setLeaksIntel(items.filter(i => i.source === "Reddit Leaks" || i.source === "Chiphell").slice(0, 15));
         
-        // 🧠 SYNCHRONIZACE AI STAVU
+        // 🧠 SYNCHRONIZACE AI STAVU (Zobrazení AI MOZEK: ONLINE)
         if (json._debug?.ai_active) {
             setAiActive(true);
             setAiStatusMsg('ONLINE');
-            addLog('GURU AI: Trendy úspěšně ohodnoceny.', 'success');
+            addLog('GURU AI: Skórování trendů na základě globálních statistik hotovo.', 'success');
         } else {
             setAiStatusMsg(json._debug?.ai_status || 'OFFLINE');
-            addLog(`AI Mozek: ${json._debug?.ai_status || 'chyba komunikace'}`, 'error');
+            addLog(`AI Mozek: ${json._debug?.ai_status}`, 'error');
         }
       }
     } catch (err) {
-      addLog(`Chyba Intel Enginu: ${err.message}`, 'error');
+      addLog(`Chyba Enginu: ${err.message}`, 'error');
     } finally {
       setIntelLoading(false);
     }
   };
 
   if (!isAuthenticated) return (
-    <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center text-white p-6">
-      <form onSubmit={handleLogin} className="bg-[#111318] p-10 rounded-[40px] border border-[#eab30833] text-center max-w-sm w-full shadow-2xl relative overflow-hidden">
+    <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center text-white p-6 font-sans">
+      <form onSubmit={handleLogin} className="bg-[#111318] p-10 rounded-[40px] border border-[#eab30833] text-center max-w-sm w-full shadow-2xl relative">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-purple-600"></div>
         <Lock size={48} className="text-orange-500 mx-auto mb-6" />
         <h1 className="text-3xl font-black mb-2 tracking-tighter uppercase italic">Guru Velín</h1>
@@ -116,13 +118,13 @@ export default function AdminApp() {
           placeholder="••••••••" 
           className="w-full p-5 rounded-2xl bg-black border border-neutral-800 text-white mb-6 text-center focus:border-orange-500 transition-all outline-none text-xl tracking-widest" 
         />
-        <button type="submit" className="w-full p-5 bg-orange-600 text-white rounded-2xl font-black hover:bg-orange-500 transition-all shadow-lg shadow-orange-600/30 active:scale-95 uppercase tracking-tighter">Vstoupit do systému</button>
+        <button type="submit" className="w-full p-5 bg-orange-600 text-white rounded-2xl font-black hover:bg-orange-500 transition-all shadow-lg shadow-orange-600/30 active:scale-95 uppercase tracking-tighter">Vstoupit</button>
       </form>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#0a0b0d] text-white flex font-sans">
+    <div className="min-h-screen bg-[#0a0b0d] text-white flex font-sans overflow-hidden">
       {/* SIDEBAR */}
       <aside className="w-72 bg-[#0d0e12] border-r border-white/5 fixed h-screen p-8 flex flex-col">
          <div className="flex items-center gap-3 mb-12">
@@ -134,7 +136,7 @@ export default function AdminApp() {
 
          <nav className="space-y-3 flex-1">
             <button onClick={() => setActiveTab('dashboard')} className={`w-full flex items-center gap-4 p-4 rounded-2xl font-black text-xs uppercase tracking-tight transition-all ${activeTab === 'dashboard' ? 'bg-purple-600/10 text-purple-500 border border-purple-600/20' : 'text-neutral-500 hover:text-white hover:bg-white/5'}`}>
-                <LayoutDashboard size={18} /> Přehled Systému
+                <LayoutDashboard size={18} /> Přehled
             </button>
             <button onClick={() => setActiveTab('intel-hub')} className={`w-full flex items-center gap-4 p-4 rounded-2xl font-black text-xs uppercase tracking-tight transition-all ${activeTab === 'intel-hub' ? 'bg-orange-600/10 text-orange-500 border border-orange-600/20' : 'text-neutral-500 hover:text-white hover:bg-white/5'}`}>
                 <Layers size={18} /> Intel Radar Hub
@@ -142,13 +144,12 @@ export default function AdminApp() {
          </nav>
 
          <div className="p-4 bg-white/5 rounded-2xl border border-white/5 mt-auto">
-            <p className="text-[10px] font-bold text-neutral-500 uppercase mb-2">Aktuální verze</p>
-            <p className="text-xs font-black text-white">Guru Master v9.3</p>
+            <p className="text-[10px] font-bold text-neutral-500 uppercase mb-2 text-center tracking-widest">Verze 9.4 Stable</p>
          </div>
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 ml-72 p-12 overflow-y-auto">
+      <main className="flex-1 ml-72 p-12 h-screen overflow-y-auto custom-scrollbar">
         {activeTab === 'intel-hub' && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             <header className="flex justify-between items-end mb-16">
@@ -157,15 +158,11 @@ export default function AdminApp() {
                     <Cpu className="text-orange-500 group-hover:scale-110 transition-transform" size={40} />
                   </div>
                   <div>
-                    <h2 className="text-5xl font-black tracking-tighter leading-none mb-4">Intel <span className="text-orange-500 italic">Radar</span></h2>
+                    <h2 className="text-5xl font-black tracking-tighter leading-none mb-4 uppercase">Intel <span className="text-orange-500 italic">Radar</span></h2>
                     <div className="flex items-center gap-3">
-                        {/* 🧠 GURU AI BADGE - DYNAMICKÝ STAV */}
                         <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all ${aiActive ? 'bg-green-600/10 text-green-500 border-green-600/30 shadow-[0_0_20px_rgba(34,197,94,0.2)]' : 'bg-red-600/10 text-red-500 border-red-600/30'}`}>
                            <Brain size={14} className={intelLoading ? 'animate-pulse' : ''} />
                            AI MOZEK: {aiActive ? 'ONLINE' : aiStatusMsg || 'OFFLINE'}
-                        </div>
-                        <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] font-black text-neutral-400 uppercase tracking-widest">
-                            Sync: {new Date().toLocaleTimeString()}
                         </div>
                     </div>
                   </div>
@@ -175,52 +172,42 @@ export default function AdminApp() {
                  disabled={intelLoading}
                  className="px-10 py-5 bg-orange-600 text-white rounded-2xl font-black uppercase flex items-center gap-3 hover:bg-orange-500 transition-all shadow-xl shadow-orange-600/20 active:scale-95 disabled:opacity-50 group"
                >
-                 <RefreshCw size={20} className={`${intelLoading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
-                 {intelLoading ? 'Analýza světa...' : 'Spustit globální sken'}
+                 <RefreshCw size={20} className={intelLoading ? 'animate-spin' : ''} />
+                 {intelLoading ? 'Skenuji...' : 'Spustit sken trendů'}
                </button>
             </header>
 
-            <div className="space-y-20">
-                {/* PILÍŘ 1: LEAKS & RUMORS */}
+            <div className="space-y-20 pb-32">
+                {/* RADAR: LEAKS & RUMORS */}
                 <section>
                     <div className="flex items-center gap-4 mb-10 border-l-8 border-cyan-400 pl-6 py-2">
                         <Ghost className="text-cyan-400" size={32} />
-                        <div>
-                           <h3 className="font-black uppercase tracking-tighter text-2xl">Leaks & <span className="text-cyan-400 italic">Rumors</span></h3>
-                           <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest">Šeptanda ze zákulisí a úniky z Reddit / Chiphell</p>
-                        </div>
+                        <h3 className="font-black uppercase tracking-tighter text-2xl">Leaks & <span className="text-cyan-400 italic">Rumors</span></h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                         {leaksIntel.length > 0 ? leaksIntel.map((item, i) => (
-                            <div key={i} className="bg-[#111318] p-6 rounded-[35px] border border-white/5 hover:border-cyan-400/40 hover:shadow-[0_15px_40px_rgb(34,211,238,0.15)] transition-all group relative">
+                            <div key={i} className="bg-[#111318] p-6 rounded-[35px] border border-white/5 hover:border-cyan-400/40 transition-all group relative overflow-hidden">
                                 <div className="flex justify-between items-start mb-6">
-                                    <span className="text-[10px] font-black text-neutral-600 uppercase tracking-tight">{item.source}</span>
-                                    <div className={`px-2.5 py-1 rounded-lg font-black text-[11px] ${item.viral_score > 80 ? 'bg-red-500 text-white animate-pulse' : 'bg-cyan-400 text-black'}`}>
+                                    <span className="text-[10px] font-black text-neutral-600 uppercase">{item.source}</span>
+                                    <div className={`px-2.5 py-1 rounded-lg font-black text-[11px] ${item.viral_score > 80 ? 'bg-red-500 text-white' : 'bg-cyan-400 text-black'}`}>
                                         {item.viral_score}%
                                     </div>
                                 </div>
-                                <h4 className="text-sm font-bold leading-tight mb-8 h-16 overflow-hidden group-hover:text-cyan-400 transition-colors">{item.title}</h4>
+                                <h4 className="text-sm font-bold leading-tight mb-8 h-16 overflow-hidden group-hover:text-cyan-400">{item.title}</h4>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <a href={item.link} target="_blank" className="py-3 bg-neutral-900 rounded-2xl text-[10px] font-black text-center text-neutral-500 hover:text-white border border-white/5 transition-all">ZDROJ</a>
-                                    <button className="py-3 bg-cyan-400/10 rounded-2xl text-[10px] font-black text-cyan-400 border border-cyan-400/20 hover:bg-cyan-400 hover:text-black transition-all">DETAIL</button>
+                                    <a href={item.link} target="_blank" className="py-3 bg-neutral-900 rounded-2xl text-[10px] font-black text-center text-neutral-500 hover:text-white border border-white/5 uppercase">Zdroj</a>
+                                    <button className="py-3 bg-cyan-400/10 rounded-2xl text-[10px] font-black text-cyan-400 border border-cyan-400/20 uppercase hover:bg-cyan-400 hover:text-black">Koncept</button>
                                 </div>
                             </div>
-                        )) : (
-                          <div className="col-span-full py-20 text-center text-neutral-700 font-black text-xl uppercase italic opacity-30">
-                            Radar Leaks je zatím prázdný...
-                          </div>
-                        )}
+                        )) : <div className="col-span-full py-10 text-center text-neutral-700 font-bold uppercase italic opacity-50">Žádná data. Spusť sken.</div>}
                     </div>
                 </section>
 
-                {/* PILÍŘ 2: HARDWARE RADAR */}
+                {/* RADAR: HARDWARE RADAR */}
                 <section>
                     <div className="flex items-center gap-4 mb-10 border-l-8 border-orange-500 pl-6 py-2">
                         <Monitor className="text-orange-500" size={32} />
-                        <div>
-                           <h3 className="font-black uppercase tracking-tighter text-2xl">Hardware <span className="text-orange-500 italic">Radar</span></h3>
-                           <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest">Křemík, čipy a komponenty pod drobnohledem</p>
-                        </div>
+                        <h3 className="font-black uppercase tracking-tighter text-2xl">Hardware <span className="text-orange-500 italic">Radar</span></h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                         {hwIntel.map((item, i) => (
@@ -229,31 +216,28 @@ export default function AdminApp() {
                                     <span className="text-[10px] font-black text-neutral-600 uppercase">{item.source}</span>
                                     <div className="px-2.5 py-1 bg-orange-500 text-white rounded-lg font-black text-[11px]">{item.viral_score}%</div>
                                 </div>
-                                <h4 className="text-sm font-bold leading-tight mb-8 h-16 overflow-hidden group-hover:text-orange-400 transition-colors">{item.title}</h4>
-                                <button className="w-full py-3 bg-orange-500/10 rounded-2xl text-[10px] font-black text-orange-500 border border-orange-500/20 hover:bg-orange-500 hover:text-white transition-all uppercase tracking-tighter">Vytvořit článek</button>
+                                <h4 className="text-sm font-bold leading-tight mb-8 h-16 overflow-hidden group-hover:text-orange-400">{item.title}</h4>
+                                <button className="w-full py-3 bg-orange-500/10 rounded-2xl text-[10px] font-black text-orange-500 border border-orange-500/20 uppercase tracking-tighter hover:bg-orange-500 hover:text-white">Vytvořit článek</button>
                             </div>
                         ))}
                     </div>
                 </section>
 
-                {/* PILÍŘ 3: GAMING RADAR */}
+                {/* RADAR: GAMING RADAR */}
                 <section>
                     <div className="flex items-center gap-4 mb-10 border-l-8 border-purple-500 pl-6 py-2">
                         <Play className="text-purple-500" size={32} />
-                        <div>
-                           <h3 className="font-black uppercase tracking-tighter text-2xl">Gaming <span className="text-purple-500 italic">Radar</span></h3>
-                           <p className="text-xs font-bold text-neutral-500 uppercase tracking-widest">Svět her, konzolí a digitální zábavy</p>
-                        </div>
+                        <h3 className="font-black uppercase tracking-tighter text-2xl">Gaming <span className="text-purple-500 italic">Radar</span></h3>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 pb-24">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                         {gameIntel.map((item, i) => (
                             <div key={i} className="bg-[#111318] p-6 rounded-[35px] border border-white/5 hover:border-purple-500/40 transition-all group">
                                 <div className="flex justify-between items-start mb-6">
                                     <span className="text-[10px] font-black text-neutral-600 uppercase">{item.source}</span>
                                     <div className="px-2.5 py-1 bg-purple-500 text-white rounded-lg font-black text-[11px]">{item.viral_score}%</div>
                                 </div>
-                                <h4 className="text-sm font-bold leading-tight mb-8 h-16 overflow-hidden group-hover:text-purple-400 transition-colors">{item.title}</h4>
-                                <button className="w-full py-3 bg-purple-500/10 rounded-2xl text-[10px] font-black text-purple-500 border border-purple-500/20 hover:bg-purple-500 hover:text-white transition-all uppercase tracking-tighter">Vytvořit bleskovku</button>
+                                <h4 className="text-sm font-bold leading-tight mb-8 h-16 overflow-hidden group-hover:text-purple-400">{item.title}</h4>
+                                <button className="w-full py-3 bg-purple-500/10 rounded-2xl text-[10px] font-black text-purple-500 border border-purple-500/20 uppercase tracking-tighter hover:bg-purple-500 hover:text-white">Bleskovka</button>
                             </div>
                         ))}
                     </div>
@@ -263,7 +247,7 @@ export default function AdminApp() {
         )}
       </main>
 
-      {/* GURU FLOATING LOGS */}
+      {/* GURU FLOATING CONSOLE */}
       <div className="fixed bottom-8 right-8 w-96 bg-[#0d0e12]/90 backdrop-blur-2xl rounded-[30px] border border-white/10 shadow-2xl overflow-hidden z-50">
         <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
            <div className="flex items-center gap-3">
@@ -272,7 +256,7 @@ export default function AdminApp() {
            </div>
            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
         </div>
-        <div className="p-6 h-48 overflow-y-auto space-y-2.5 font-mono text-[11px]">
+        <div className="p-6 h-48 overflow-y-auto space-y-2.5 font-mono text-[11px] custom-scrollbar">
            {consoleLogs.map((log, i) => (
              <div key={i} className={`${log.type === 'error' ? 'text-red-400' : log.type === 'warning' ? 'text-orange-400' : log.type === 'success' ? 'text-green-400' : 'text-neutral-500'}`}>
                 <span className="opacity-40 mr-3">[{log.time}]</span>
@@ -282,6 +266,11 @@ export default function AdminApp() {
            <div ref={logEndRef} />
         </div>
       </div>
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+      `}</style>
     </div>
   );
 }
