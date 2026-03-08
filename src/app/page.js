@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart } from 'lucide-react';
+import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost } from 'lucide-react';
 
 // --- BEZPEČNÉ NAČÍTÁNÍ MODULŮ (Fix pro zamezení chyb kompilace) ---
 let Link = ({ children, ...props }) => <a {...props}>{children}</a>;
@@ -61,16 +61,26 @@ export default function HomePage() {
   };
 
   const getThumbnail = (post) => {
+    const typeStr = (post.type || '').toLowerCase().trim();
+    // 🚀 GURU PŘÍKAZ: Leaks mají VŽDY natvrdo přiřazený tvůj Davinci placeholder ze Supabase
+    if (typeStr.includes('leak')) {
+      return `${supabaseUrl}/storage/v1/object/public/images/davinci_prompt__a_high_tech__cinematic_placeholder_for_a_g.png`;
+    }
     if (post.image_url) return post.image_url;
     if (post.video_id && post.video_id.length > 5) return `https://img.youtube.com/vi/${post.video_id}/maxresdefault.jpg`;
     return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop';
   };
 
   const getBadgeInfo = (post) => {
-    if (post.video_id && post.video_id.length > 5) return { text: 'VIDEO / SHORT', color: '#66fcf1', textColor: '#0b0c10' };
-    const isGame = post.type === 'game' || post.title.toLowerCase().includes('recenze');
-    if (isGame) return { text: isEn ? 'GAME NEWS' : 'HERNÍ NOVINKA', color: '#ff0055', textColor: '#fff' };
-    return { text: isEn ? 'HW NEWS' : 'HW NOVINKA', color: '#ff0000', textColor: '#fff' };
+    const typeStr = (post.type || '').toLowerCase().trim();
+    // 🚀 GURU BULLETPROOF LEAK DETECTOR
+    if (typeStr.includes('leak')) return { text: 'LEAK', color: '#66fcf1', textColor: '#0b0c10', isLeak: true };
+    if (post.video_id && post.video_id.length > 5) return { text: 'VIDEO / SHORT', color: '#66fcf1', textColor: '#0b0c10', isLeak: false };
+    
+    const isGame = typeStr.includes('game') || (post.title && post.title.toLowerCase().includes('recenze'));
+    if (isGame) return { text: isEn ? 'GAME NEWS' : 'HERNÍ NOVINKA', color: '#ff0055', textColor: '#fff', isLeak: false };
+    
+    return { text: isEn ? 'HW NEWS' : 'HW NOVINKA', color: '#ff0000', textColor: '#fff', isLeak: false };
   };
 
   useEffect(() => {
@@ -336,7 +346,7 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* --- ČLÁNKY --- */}
+          {/* --- ČLÁNKY (S GURU BADGE SYSTÉMEM) --- */}
           <main style={{ ...sectionStyles, marginTop: '80px' }}>
             <div className="section-title-wrapper" style={{ margin: '0 auto 40px', display: 'block', textAlign: 'center', maxWidth: 'fit-content' }}>
               <h2 style={{ color: '#fff', fontSize: '2.2rem', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>{isEn ? 'Latest Articles & Videos' : 'Nejnovější články & Videa'}</h2>
@@ -349,7 +359,12 @@ export default function HomePage() {
                     <div className="game-card" style={{ borderRadius: '12px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
                       <div style={{ position: 'relative', paddingTop: '56.25%' }}>
                         <img src={getThumbnail(post)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-                        <div style={{ position: 'absolute', top: '10px', right: '10px', background: badge.color, color: badge.textColor, padding: '5px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem' }}>{badge.text}</div>
+                        
+                        {/* 🚀 GURU BADGE RENDER (Opraveno na neprůstřelný štítek) */}
+                        <div style={{ position: 'absolute', top: '10px', right: '10px', background: badge.color, color: badge.textColor, padding: '5px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          {badge.isLeak && <Ghost size={14} />} {badge.text}
+                        </div>
+
                       </div>
                       <div style={{ padding: '25px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <h3 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '1.2rem', fontWeight: 'bold' }}>{isEn ? (post.title_en || post.title) : post.title}</h3>
