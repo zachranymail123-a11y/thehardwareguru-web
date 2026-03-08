@@ -9,15 +9,15 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V17.9 (PREVIEW COMPATIBILITY FIX)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V18.1 (PREVIEW COMPATIBILITY FIX)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * Design: Brutální GURU styl (obří růžové nadpisy, skleněný panel, neonové prvky).
- * FIX: Implementace "Compatibility Shield" pro vyřešení chyb kompilace v prostředí Preview,
- * zatímco jádro logiky zůstává věrné produkčním doporučením (limit(1), slug fix).
- * PERFORMANCE: Single Query Join + React Cache.
+ * FIX: Implementace "Compatibility Shield" pro vyřešení chyb kompilace v náhledu,
+ * zatímco jádro logiky zůstává striktně podle produkčních doporučení (limit(1), slug fix).
+ * PERFORMANCE: Single Query Join + React Cache + limit(1) lookup.
  */
 
-// --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení modulů pro preview ---
+// --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení modulů pro náhled ---
 const safeLoad = (modPath) => {
   try {
     return require(modPath);
@@ -30,7 +30,7 @@ const supabaseLib = safeLoad('@supabase/supabase-js');
 const nextNav = safeLoad('next/navigation');
 const nextLinkMod = safeLoad('next/link');
 
-// Inicializace klientských a serverových funkcí s fallbacky
+// Inicializace funkcí s fallbacky pro prostředí náhledu
 const createClient = supabaseLib ? supabaseLib.createClient : null;
 const notFound = nextNav ? nextNav.notFound : () => {};
 const Link = nextLinkMod ? (nextLinkMod.default || nextLinkMod) : ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>;
@@ -58,7 +58,7 @@ const getDuelData = cache(async (slug) => {
       gpuA:gpus!gpu_a_id(*),
       gpuB:gpus!gpu_b_id(*)
     `)
-    // 🚀 GURU FIX: Hledáme obě varianty a používáme limit(1) pro prevenci 404 při CZ/EN kolizi
+    // 🚀 GURU FIX: Hledáme obě varianty a používáme limit(1) pro prevenci kolizí (podle ChatGPT)
     .or(`slug.eq.${slug},slug.eq.${cleanSlug}`)
     .limit(1);
 
@@ -98,7 +98,11 @@ export default async function App({ params }) {
   const { gpuA, gpuB } = duel;
 
   if (!gpuA || !gpuB) {
-    return <div className="p-20 text-center text-white font-black italic uppercase tracking-tighter text-2xl">DATA CORRUPTION: GPU MISSING IN DATABASE</div>;
+    return (
+      <div className="p-20 text-center text-white font-black italic uppercase tracking-tighter text-2xl">
+        DATA CORRUPTION: GPU MISSING IN DATABASE
+      </div>
+    );
   }
 
   // 2. Lokalizované texty
@@ -130,16 +134,7 @@ export default async function App({ params }) {
         backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', 
         backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px'
     }}>
-      {/* 🛡️ GURU HYPER-SHIELD: Ochrana pro navigaci v SPA prostředí */}
-      <script dangerouslySetInnerHTML={{__html: `
-        (function() {
-          window.swgSubscriptions = window.swgSubscriptions || {};
-          if (typeof window.swgSubscriptions.attachButton !== 'function') {
-            window.swgSubscriptions.attachButton = function() {};
-          }
-        })();
-      `}} />
-
+      
       <style dangerouslySetInnerHTML={{__html: `
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; }
         .guru-prose h2 { color: #fff; font-size: 2.2rem; font-weight: 950; margin-top: 2em; margin-bottom: 1em; text-transform: uppercase; border-left: 5px solid #ff0055; padding-left: 20px; font-style: italic; }
