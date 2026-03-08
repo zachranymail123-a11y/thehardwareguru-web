@@ -6,13 +6,13 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS INDEX - SUPREME LOGIC V6.1 (BUILD SHIELD)
+ * GURU GPU DUELS INDEX - MASTER LOGIC V8.1 (BUILD SHIELD)
  * Cesta: src/app/gpuvs/page.js
- * FIX: Robustní načítání externích modulů (Build Shield) pro prevenci chyb v náhledu.
- * Design: Zachování prémiového "Guru" vizuálu s neonovými efekty.
+ * Funkce: Výběr karet pro srovnání, seznam existujících duelů.
+ * FIX: Robustní načítání modulů pro kompilátor (Build Shield), prevence TypeError u SwG.
  */
 
-// --- 🛡️ GURU BUILD SHIELD: Dynamické ošetření modulů ---
+// --- 🛡️ GURU BUILD SHIELD: Dynamické načtení pro kompatibilitu s prostředím náhledu ---
 const getModule = (path) => {
   try {
     return require(path);
@@ -47,7 +47,7 @@ const supabase = (createClient && typeof process !== 'undefined' && process.env.
       }) 
     };
 
-export default function App() {
+const App = () => {
   const router = useRouter();
   const pathname = usePathname() || '';
   const isEn = pathname.startsWith('/en');
@@ -59,7 +59,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 🚀 GURU DATA SYNC: Načítání informací z databáze
+  // 🚀 GURU DATA SYNC: Načítání z DB
   useEffect(() => {
     async function loadData() {
       if (!createClient) {
@@ -81,7 +81,7 @@ export default function App() {
         setExistingDuels(dData.data || []);
       } catch (err) {
         console.error("Guru Sync Error:", err);
-        setError(isEn ? "Database sync failed. Check RLS policies." : "Synchronizace s DB selhala. Zkontroluj RLS pravidla!");
+        setError(isEn ? "Database sync failed. Refresh page." : "Synchronizace s DB selhala. Zkuste obnovit stránku.");
       } finally {
         setLoading(false);
       }
@@ -111,12 +111,12 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#0a0b0d] text-white font-sans selection:bg-[#ff0055]" style={{ backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed' }}>
       
-      {/* 🛡️ GURU HYPER-SHIELD: Prevence TypeError u SwG v náhledu i produkci */}
+      {/* 🛡️ GURU HYPER-SHIELD: Okamžitá prevence černé obrazovky (TypeError u SwG) */}
       <script dangerouslySetInnerHTML={{__html: `
         (function() {
           window.swgSubscriptions = window.swgSubscriptions || {};
           if (typeof window.swgSubscriptions.attachButton !== 'function') {
-            window.swgSubscriptions.attachButton = function() {};
+            window.swgSubscriptions.attachButton = function() { console.log('Hyper-Shield: Placeholder called.'); };
           }
         })();
       `}} />
@@ -196,7 +196,7 @@ export default function App() {
             
             {gpuA === gpuB && gpuA !== '' && (
               <p className="text-[#ff0055] text-[10px] font-black text-center mt-6 uppercase tracking-[0.3em]">
-                {isEn ? "Error: Select different cards!" : "Chyba: Vyberte dvě různé karty!"}
+                {isEn ? "Critical Error: Select different hardware!" : "Chyba: Vyberte dvě různé karty!"}
               </p>
             )}
         </section>
@@ -207,7 +207,7 @@ export default function App() {
             <h2 className="text-3xl font-black uppercase italic whitespace-nowrap tracking-tighter">
               {isEn ? "POPULAR" : "POPULÁRNÍ"} <span className="text-[#ff0055]">{isEn ? "BATTLES" : "SOUBOJE"}</span>
             </h2>
-            <div className="h-px bg-gradient-to-r from-white/10 to-transparent w-full"></div>
+            <div className="h-px bg-white/10 w-full"></div>
           </div>
 
           {loading ? (
@@ -234,7 +234,7 @@ export default function App() {
                 </Link>
               )) : (
                 <div className="text-center py-20 border-2 border-dashed border-white/5 rounded-[40px] bg-black/20 text-gray-600 font-black uppercase tracking-[0.5em] text-xs italic">
-                   {isEn ? "Guru database is empty." : "Guru databáze je prázdná."}
+                   {isEn ? "No duels found. Be the first to start one!" : "V databázi zatím nejsou žádné souboje. Odpal to první!"}
                 </div>
               )}
             </div>
@@ -245,3 +245,5 @@ export default function App() {
     </div>
   );
 }
+
+export default App;
