@@ -1,54 +1,26 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { 
   Swords, Zap, RefreshCw, ChevronRight, ArrowLeftRight
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V16.2 (STABLE COMPATIBILITY)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V16.7 (PRODUCTION FINAL)
  * Cesta: src/app/gpuvs/page.js
  * Design: Brutální GURU styl (obří růžové nadpisy, skleněný panel, neonové prvky).
- * * FIX: Implementace "Compatibility Shield" pro vyřešení chyb kompilace (Could not resolve) 
- * v náhledovém prostředí při zachování 100% produkční logiky doporučené ChatGPT.
+ * FIX: Odstraněny require() anti-patterny, statické importy, přímá Supabase init.
+ * SYNC: Plné propojení s tabulkou 'gpus' (UUID) a 'gpu_duels'.
  */
 
-// --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení modulů pro preview ---
-const safeLoad = (modPath) => {
-  try { return require(modPath); } catch (e) { return null; }
-};
-
-const supabaseLib = safeLoad('@supabase/supabase-js');
-const nextNav = safeLoad('next/navigation');
-const nextLinkMod = safeLoad('next/link');
-
-// Inicializace klientských funkcí s fallbacky
-const createClient = supabaseLib ? supabaseLib.createClient : null;
-const useRouter = nextNav ? nextNav.useRouter : () => ({ push: () => {} });
-const usePathname = nextNav ? nextNav.usePathname : () => '/gpuvs';
-const Link = nextLinkMod ? (nextLinkMod.default || nextLinkMod) : ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>;
-
-// 🚀 GURU: Striktní inicializace Supabase (Fail Fast)
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-let supabase = null;
-if (createClient && SUPABASE_URL && SUPABASE_KEY) {
-  supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-} else {
-  // Mock pro preview bez ENV proměnných
-  supabase = {
-    from: () => ({
-      select: () => ({
-        order: () => ({
-          limit: () => Promise.resolve({ data: [] }),
-          then: (cb) => cb({ data: [] })
-        }),
-        then: (cb) => cb({ data: [] })
-      })
-    })
-  };
-}
+// 🚀 GURU: Inicializace Supabase klienta (Striktní verze bez fallbacků)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 export default function App() {
   const router = useRouter();
@@ -62,10 +34,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 🚀 GURU DATA SYNC: Načítání z DB (Optimalizováno pro první load)
+  // 🚀 GURU DATA SYNC: Načítání z DB (RTX 5090, 4080, RX 9070...)
   useEffect(() => {
     async function loadData() {
-      if (!supabase.from) return;
       try {
         setLoading(true);
         setError(null);
@@ -95,7 +66,7 @@ export default function App() {
       }
     }
     loadData();
-  }, []);
+  }, [isEn]);
 
   // 🚀 GURU: Robustní slugify engine (zvládá diakritiku i speciální znaky)
   const slugify = (text) => {
@@ -120,7 +91,7 @@ export default function App() {
   const handleStartDuel = () => {
     if (!gpuA || !gpuB || gpuA === gpuB) return;
     
-    // String conversion pro bezpečné porovnání ID
+    // Typová kontrola String(id) pro UUID safety
     const cardA = gpus.find(g => String(g.id) === gpuA);
     const cardB = gpus.find(g => String(g.id) === gpuB);
     
@@ -142,7 +113,7 @@ export default function App() {
       paddingBottom: '100px' 
     }}>
       
-      {/* 🛡️ GURU HYPER-SHIELD: Ochrana před TypeError v navigaci způsobenou skripty */}
+      {/* 🛡️ GURU HYPER-SHIELD */}
       <script dangerouslySetInnerHTML={{__html: `
         (function() {
           window.swgSubscriptions = window.swgSubscriptions || {};
@@ -177,7 +148,7 @@ export default function App() {
         .guru-battle-btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 10px 30px rgba(255, 0, 85, 0.4); }
         .guru-battle-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-        .guru-swap-btn { background: #111; border: 1px solid #333; color: #9ca3af; padding: 10px; border-radius: 50%; cursor: pointer; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; }
+        .guru-swap-btn { background: #111; border: 1px solid #333; color: #9ca3af; padding: 10px; border-radius: 50%; cursor: pointer; transition: 0.4s; display: flex; align-items: center; justify-content: center; }
         .guru-swap-btn:hover { border-color: #ff0055; color: #ff0055; transform: rotate(180deg) scale(1.1); }
         
         .duel-list-item { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05); padding: 18px 24px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: #fff; transition: 0.3s; margin-bottom: 12px; }
@@ -199,7 +170,7 @@ export default function App() {
         
         {/* HERO HLAVIČKA */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 text-[#ff0055] text-xs font-black uppercase tracking-[0.4em] mb-8 px-6 py-2 border border-[#ff0055] rounded-full bg-[#ff0055]/10 animate-pulse shadow-[0_0_15px_rgba(255,0,85,0.2)]">
+          <div className="inline-flex items-center gap-2 text-[#ff0055] text-xs font-black uppercase tracking-[0.4em] mb-8 px-6 py-2 border border-[#ff0055] rounded-full bg-[#ff0055]/10 animate-pulse shadow-[0_0_20px_rgba(255,0,85,0.2)]">
             <Swords size={18} /> GURU VS ENGINE
           </div>
           <h1 className="guru-main-title">{isEn ? "COMPARE" : "POROVNEJTE"}</h1>
@@ -239,14 +210,8 @@ export default function App() {
                   </select>
                 </div>
 
-                {/* 🚀 GURU: Swap Button */}
                 <div style={{ marginBottom: '10px' }}>
-                  <button 
-                    onClick={swapGPUs} 
-                    className="guru-swap-btn" 
-                    title={isEn ? "Swap" : "Prohodit"}
-                    disabled={loading}
-                  >
+                  <button onClick={swapGPUs} className="guru-swap-btn" title={isEn ? "Swap" : "Prohodit"}>
                     <ArrowLeftRight size={20} />
                   </button>
                 </div>
