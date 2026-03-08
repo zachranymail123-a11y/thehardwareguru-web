@@ -13,7 +13,7 @@ import {
 /**
  * GURU ULTIMATE COMMAND CENTER
  * Cesta: /admin
- * Jazyk: Čeština
+ * Jazyk: Čeština + Angličtina
  * Engine: OpenAI GPT-4o-mini + Supabase
  */
 
@@ -21,10 +21,9 @@ import {
 const getEnv = (key, fallback = '') => {
   if (typeof window === 'undefined') return fallback;
 
-  // Next.js vyžaduje statický přístup, aby proměnné propustil do prohlížeče
+  // 🛡️ GURU SHIELD: V Next.js na klientovi MUSÍ být prefix NEXT_PUBLIC_
   const envMap = {
-    // 🚀 GURU: Mapujeme přímo tvou variable OPENAI_API_KEY
-    'OPENAI_API_KEY': process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
+    'OPENAI_API_KEY': process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY || '',
     'NEXT_PUBLIC_SUPABASE_URL': process.env.NEXT_PUBLIC_SUPABASE_URL || '',
     'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
     'NEXT_PUBLIC_ADMIN_PASSWORD': process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Wifik500',
@@ -125,7 +124,7 @@ export default function AdminApp() {
         deals: dealsRes.data || [],
         stats: { visits: statsRes.data?.value || 0 }
       }));
-      addLog('Synchronizace s databází dokončena.', 'success');
+      addLog('Synchronizace s databází hotova.', 'success');
     } catch (err) { addLog(`Chyba skenu: ${err.message}`, 'error'); }
     finally { setLoading(false); }
   };
@@ -133,14 +132,13 @@ export default function AdminApp() {
   // --- 🚀 GURU SYNC: RSS FEED ---
   const fetchIntelFeed = async () => {
     setIntelLoading(true);
-    addLog('Stahuji nejnovější intel z Tom\'s Hardware (RSS)...', 'warning');
+    addLog('Stahuji nejnovější intel z Tom\'s Hardware...', 'warning');
     try {
-      // Používáme rss2json s cache busterem pro čerstvá data
       const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=https://www.tomshardware.com/feeds.xml&t=${Date.now()}`);
       const resData = await res.json();
       if (resData.status === 'ok') {
         setIntelFeed(resData.items || []);
-        addLog(`Načteno ${resData.items.length} novinek. Připraveno k analýze.`, 'success');
+        addLog(`Načteno ${resData.items.length} novinek.`, 'success');
       } else throw new Error('RSS feed nedostupný.');
     } catch (err) { addLog(`Chyba feedu: ${err.message}`, 'error'); }
     finally { setIntelLoading(false); }
@@ -148,16 +146,16 @@ export default function AdminApp() {
 
   // --- 🚀 GURU AI: OPENAI (GPT-4o) ---
   const createDraftFromIntel = async (item) => {
-    // 🚀 GURU FIX: Načítáme klíč z proměnné OPENAI_API_KEY
+    // 🚀 GURU FIX: Načítáme klíč z proměnné NEXT_PUBLIC_OPENAI_API_KEY
     const openAiKey = getEnv('OPENAI_API_KEY');
     
     if (!openAiKey || openAiKey === '') {
-      addLog('CHYBÍ OPENAI KLÍČ! Ujisti se, že proměnná OPENAI_API_KEY je ve Vercelu správně.', 'error');
+      addLog('KLÍČ NENALEZEN! Nastav ve Vercelu: NEXT_PUBLIC_OPENAI_API_KEY', 'error');
       return;
     }
 
     setIsTranslating(true);
-    addLog(`GPT-4o-mini připravuje český koncept...`, 'warning');
+    addLog(`GPT-4o připravuje český koncept...`, 'warning');
     
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -179,7 +177,7 @@ export default function AdminApp() {
               Vrať JSON s poli: 
               title_cs (chytlavý český nadpis), 
               seo_description_cs (popis pro vyhledávače), 
-              content_cs (článek v HTML formátu, použij h2 pro podnadpisy, odstavce, odrážky),
+              content_cs (článek v HTML formátu, použij h2 pro podnadpisy, odstavce, odrážky. Aspoň 400 slov.),
               slug_cs (url-friendly slug z nadpisu).
               
               ZDROJ:
@@ -218,7 +216,7 @@ export default function AdminApp() {
 
   const publishDraft = async () => {
     if (!draft) return;
-    addLog('Publikuji článek na web...', 'warning');
+    addLog('Zveřejňuji článek na web...', 'warning');
     try {
       const { error } = await supabase.from('posts').insert([{
         title: draft.title_cs,
@@ -239,7 +237,7 @@ export default function AdminApp() {
 
   const runApiTask = (url, name) => {
     setActiveTab('terminal');
-    addLog(`SPOUŠTÍM: ${name}`, 'info');
+    addLog(`START: ${name}`, 'info');
     fetch(url).then(res => res.text()).then(txt => addLog(`OK: ${txt.substring(0,100)}`, 'success')).catch(e => addLog(`CHYBA: ${e.message}`, 'error'));
   };
 
@@ -250,7 +248,7 @@ export default function AdminApp() {
   };
 
   const clearQueueItems = async (list, tabName) => {
-    if (!confirm(`Opravdu vyčistit vše v: ${tabName}?`)) return;
+    if (!confirm(`Opravdu vyčistit: ${tabName}?`)) return;
     for (const item of list) {
         const table = (item.type === 'expected' || tabName === 'Plánovač' || tabName === 'Články') ? 'posts' : 'game_deals';
         await supabase.from(table).update({ is_fired: true }).eq('id', item.id);
@@ -337,7 +335,7 @@ export default function AdminApp() {
                          <img src={draft.image_url} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
                          <div style={{ padding: '20px' }}>
                             <span style={{ color: '#ff0000', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>HW NOVINKA</span>
-                            <h3 style={{ color: '#fff', fontSize: '1.1rem', margin: '10px 0', fontWeight: '900', lineHeight: 1.3 }}>{draft.title_cs}</h3>
+                            <h3 style={{ color: '#fff', fontSize: '1.1rem', margin: '10px 0', fontWeight: '900' }}>{draft.title_cs}</h3>
                             <div style={{ color: '#66fcf1', fontWeight: 'bold', fontSize: '12px' }}>ČÍST VÍCE →</div>
                          </div>
                       </div>
