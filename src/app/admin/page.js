@@ -11,8 +11,9 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V8.10
+ * GURU ULTIMATE COMMAND CENTER V8.11
  * Funkce: Multi-Source Intelligence (HW + Gaming), AI Viral Scoring, Deduplikace, Compact Grid 5x2
+ * OPRAVA: Odstraněn ReferenceError (intelFeed)
  */
 
 // --- 🚀 GURU ENV ENGINE ---
@@ -169,7 +170,7 @@ export default function AdminApp() {
             messages: [
               {
                 role: "system",
-                content: "Jsi technologický analytik. Vyhodnoť virální potenciál (0-100) novinek pro thehardwareguru.cz. Hledej Blackwell, RDNA, AI hardware, tech faily a AAA herní hity. Vrať JSON { scores: [{ title, score }] }."
+                content: "Jsi technologický analytik pro web thehardwareguru.cz. Vyhodnoť virální potenciál (0-100). Hledej zásadní HW trendy (NVIDIA Blackwell, AMD RDNA, Intel Arrow Lake, AI hardware, tech faily) i AAA herní hity. Vrať JSON { scores: [{ title, score }] }."
               },
               { role: "user", content: `Zanalyzuj: ${JSON.stringify(batch.map(i => i.title))}` }
             ],
@@ -287,14 +288,14 @@ export default function AdminApp() {
         .terminal-box { background: #000; border: 1px solid #22c55e33; border-radius: 15px; padding: 20px; font-family: monospace; font-size: 13px; overflow-y: auto; height: 100%; }
         
         /* 🚀 GURU COMPACT GRID 5x2 */
-        .hub-compact-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 40px; }
-        .compact-card { background: #0d0e12; border: 1px solid #ffffff08; border-radius: 14px; padding: 15px; display: flex; flex-direction: column; transition: 0.3s; position: relative; min-height: 200px; }
-        .compact-card:hover { border-color: #eab308; transform: translateY(-3px); }
-        .compact-badge { position: absolute; top: 10px; right: 10px; background: #ff0055; color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 9px; font-weight: 950; z-index: 5; }
-        .compact-title { font-size: 12px; font-weight: 900; color: #fff; line-height: 1.3; margin-bottom: 15px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; height: 62px; }
-        .compact-source { font-size: 8px; color: #4b5563; font-weight: 900; text-transform: uppercase; margin-bottom: 8px; }
-        .compact-actions { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
-        .compact-btn { width: 100%; padding: 6px; border-radius: 6px; font-size: 9px; font-weight: 900; text-transform: uppercase; cursor: pointer; text-align: center; border: 1px solid #333; background: transparent; color: #9ca3af; transition: 0.2s; }
+        .hub-compact-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 40px; }
+        .compact-card { background: #0d0e12; border: 1px solid #ffffff08; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; transition: 0.3s; position: relative; min-height: 180px; }
+        .compact-card:hover { border-color: #eab308; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .compact-badge { position: absolute; top: 8px; right: 8px; background: #ff0055; color: #fff; padding: 2px 6px; border-radius: 5px; font-size: 8px; font-weight: 950; z-index: 5; }
+        .compact-title { font-size: 11px; font-weight: 900; color: #fff; line-height: 1.25; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; height: 55px; }
+        .compact-source { font-size: 7px; color: #4b5563; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; }
+        .compact-actions { margin-top: auto; display: flex; flex-direction: column; gap: 6px; }
+        .compact-btn { width: 100%; padding: 5px; border-radius: 5px; font-size: 8px; font-weight: 900; text-transform: uppercase; cursor: pointer; text-align: center; border: 1px solid #333; background: transparent; color: #9ca3af; transition: 0.2s; }
         .compact-btn:hover { border-color: #eab308; color: #eab308; }
         .compact-btn-main { background: #eab30833; border-color: #eab30866; color: #eab308; }
         .compact-btn-main:hover { background: #eab308; color: #000; }
@@ -369,9 +370,15 @@ export default function AdminApp() {
           <div className="fade-in">
             <h2 style={{ fontSize: '32px', fontWeight: 950, marginBottom: '30px', textTransform: 'uppercase' }}>STATUS</h2>
             <div className="stats-grid">
-              <div className="stat-card"><h3>{data.stats.visits}</h3><p>NÁVŠTĚVY</p></div>
-              <div className="stat-card"><h3>{data.posts.length}</h3><p>ČLÁNKY</p></div>
-              <div className="stat-card"><h3>{data.deals.length}</h3><p>SLEVY</p></div>
+              <div className="stat-card" style={{ background: '#111318', padding: '20px', borderRadius: '20px', border: '1px solid #333', textAlign: 'center' }}>
+                <h3>{data.stats.visits}</h3><p style={{fontSize: '10px', color: '#4b5563'}}>NÁVŠTĚVY</p>
+              </div>
+              <div className="stat-card" style={{ background: '#111318', padding: '20px', borderRadius: '20px', border: '1px solid #333', textAlign: 'center' }}>
+                <h3>{data.posts.length}</h3><p style={{fontSize: '10px', color: '#4b5563'}}>ČLÁNKY</p>
+              </div>
+              <div className="stat-card" style={{ background: '#111318', padding: '20px', borderRadius: '20px', border: '1px solid #333', textAlign: 'center' }}>
+                <h3>{data.deals.length}</h3><p style={{fontSize: '10px', color: '#4b5563'}}>SLEVY</p>
+              </div>
             </div>
           </div>
         )}
@@ -391,12 +398,12 @@ export default function AdminApp() {
 
             {/* SEKCE: HARDWARE INTEL */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderLeft: '4px solid #eab308', paddingLeft: '15px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 950, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Hardware <span style={{ color: '#eab308' }}>Intel</span> (Top 10)</h3>
+                <h3 style={{ fontSize: '18px', fontWeight: 950, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Hardware <span style={{ color: '#eab308' }}>Trend Radar</span> (Top 10)</h3>
             </div>
             <div className="hub-compact-grid">
               {hwIntel.map((item, i) => (
                 <div key={i} className="compact-card">
-                  {isTranslating && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '14px' }}><RefreshCw className="animate-spin" color="#eab308" size={16}/></div>}
+                  {isTranslating && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}><RefreshCw className="animate-spin" color="#eab308" size={16}/></div>}
                   <div className="compact-badge" style={{ background: item.viral_score > 85 ? '#ff0055' : '#10b981' }}>{item.viral_score}%</div>
                   <span className="compact-source">{item.source}</span>
                   <h4 className="compact-title">{item.title}</h4>
@@ -410,12 +417,12 @@ export default function AdminApp() {
 
             {/* SEKCE: GAMING INTEL */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderLeft: '4px solid #a855f7', paddingLeft: '15px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 950, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Gaming <span style={{ color: '#a855f7' }}>Intel</span> (Top 10)</h3>
+                <h3 style={{ fontSize: '18px', fontWeight: 950, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Gaming <span style={{ color: '#a855f7' }}>Hit Radar</span> (Top 10)</h3>
             </div>
             <div className="hub-compact-grid">
               {gameIntel.map((item, i) => (
                 <div key={i} className="compact-card">
-                  {isTranslating && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '14px' }}><RefreshCw className="animate-spin" color="#a855f7" size={16}/></div>}
+                  {isTranslating && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}><RefreshCw className="animate-spin" color="#a855f7" size={16}/></div>}
                   <div className="compact-badge" style={{ background: item.viral_score > 85 ? '#ff0055' : '#10b981' }}>{item.viral_score}%</div>
                   <span className="compact-source">{item.source}</span>
                   <h4 className="compact-title">{item.title}</h4>
@@ -427,11 +434,30 @@ export default function AdminApp() {
               ))}
             </div>
 
-            {intelFeed.length === 0 && !intelLoading && hwIntel.length === 0 && <div style={{ textAlign: 'center', padding: '100px', color: '#444', fontWeight: 'bold' }}>ŽÁDNÁ DATA. SPUSTI SYNCHRONIZACI.</div>}
+            {!intelLoading && hwIntel.length === 0 && gameIntel.length === 0 && <div style={{ textAlign: 'center', padding: '100px', color: '#444', fontWeight: 'bold' }}>ŽÁDNÁ DATA. SPUSTI SYNCHRONIZACI.</div>}
           </div>
         )}
 
-        {/* ... Ostatní sekce (Publikace atd.) zůstávají dle funkční verze ... */}
+        {activeTab === 'pub-plan' && (
+          <div className="fade-in">
+             <div style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
+              <button onClick={() => runApiTask(`${BASE_URL}/api/cron/executor`, 'Executor')} className="sidebar-btn" style={{ background: '#10b981', color: '#000', width: 'auto' }}>EXECUTOR</button>
+              <button onClick={() => runApiTask(`${BASE_URL}/api/cron/planer`, 'Planner')} className="sidebar-btn" style={{ background: '#3b82f6', color: '#fff', width: 'auto' }}>PLANNER</button>
+            </div>
+            <div className="section-box">
+              <h3 style={{ color: '#10b981', marginBottom: '20px' }}>Fronta k odeslání</h3>
+              {[...data.posts.filter(p => !p.is_fired && p.type !== 'expected'), ...data.deals.filter(d => !d.is_fired)].map(item => (
+                <div key={item.id} className="item-row">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><img src={item.image_url} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} /><span>{item.title}</span></div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button onClick={() => markAsFired(item.id, item.type ? 'posts' : 'game_deals')} className="action-btn-small">SKRÝT</button>
+                    <button onClick={() => executeSocial(item, item.type ? 'post' : 'deal')} className="action-btn-small btn-fire">ODPÁLIT</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
