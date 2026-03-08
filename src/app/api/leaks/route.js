@@ -7,10 +7,9 @@ export const revalidate = 0;
 /**
  * GURU BACKEND ENGINE - LEAKS & RUMORS NUCLEAR SHIELD V8.0
  * Cesta: src/app/api/leaks/route.js
- * Oprava: Reddit RSS URL fix, Header spoofing, JSON/RSS Fallback a CDATA cleaning.
+ * Oprava: Vylepšený parsovací engine pro Chiphell (vytahování textu z objektů).
  */
 
-// Seznam zdrojů pro Reddit (RSS je stabilnější, JSON je záloha)
 const REDDIT_SOURCES = [
   "https://www.reddit.com/r/GamingLeaksAndRumours/.rss",
   "https://www.reddit.com/r/GamingLeaksAndRumours/new.json?limit=25"
@@ -18,10 +17,9 @@ const REDDIT_SOURCES = [
 
 const CHIPHELL_RSS = "https://www.chiphell.com/forum.php?mod=rss&fid=224";
 
-// Vylepšený fingerprint pro oklamání moderní detekce (Cloudflare/Reddit)
 const BROWSER_HEADERS = {
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
   "Accept-Language": "en-US,en;q=0.9,cs;q=0.8",
   "Cache-Control": "no-cache",
   "Pragma": "no-cache",
@@ -29,12 +27,10 @@ const BROWSER_HEADERS = {
   "Upgrade-Insecure-Requests": "1"
 };
 
-// Seznam zakázaných slov pro Chiphell (Nuclear Spam Filter)
 const SPAM_BLACKLIST = [
   '签到', '每日', '回复', '领取', 'Check-in', 'Daily', 'posted', '版块', '积分', '奖励', '领取', '金币', '任务'
 ];
 
-// Pomocná funkce pro fetch s timeoutem (8 vteřin)
 async function fetchWithTimeout(url, options = {}, ms = 8000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), ms);
@@ -53,7 +49,6 @@ async function fetchReddit() {
       if (!res.ok) continue;
 
       const text = await res.text();
-      // Kontrola, zda jsme nedostali HTML block page
       if (text.length > 200 && (text.includes('<?xml') || text.includes('<rss') || text.includes('<feed') || (url.includes('json') && text.trim().startsWith('{')))) {
         return { type: url.includes("json") ? "json" : "rss", data: text };
       }
@@ -66,7 +61,7 @@ async function fetchReddit() {
 
 export async function GET() {
   const leaks = [];
-  const debug = { reddit: "pending", chiphell: "pending" };
+  const debug = { reddit: "pending", chiphell: "pending", chiphell_raw_count: 0 };
   
   const parser = new XMLParser({ 
     ignoreAttributes: false, 
@@ -76,7 +71,7 @@ export async function GET() {
   });
 
   try {
-    // --- 1. REDDIT ENGINE (Hybrid JSON/RSS) ---
+    // --- 1. REDDIT ENGINE ---
     const redditResult = await fetchReddit();
     if (redditResult) {
       try {
@@ -104,11 +99,8 @@ export async function GET() {
               const link = entry.link?.["@_href"] || entry.link || "";
               const date = entry.updated || entry.pubDate || new Date().toISOString();
               leaks.push({
-                title,
-                link,
-                description: title,
-                source: "Reddit Leaks",
-                intelType: "leaks",
+                title, link, description: title,
+                source: "Reddit Leaks", intelType: "leaks",
                 pubDate: new Date(date).toISOString()
               });
             }
@@ -118,7 +110,7 @@ export async function GET() {
       } catch (e) { debug.reddit = "parse_error"; }
     } else { debug.reddit = "blocked_or_failed"; }
 
-    // --- 2. CHIPHELL ENGINE (RSS + CDATA Fix + Hard Filter) ---
+    // --- 2. CHIPHELL ENGINE (Vylepšené parsování) ---
     try {
       const res = await fetchWithTimeout(CHIPHELL_RSS, { headers: BROWSER_HEADERS, cache: "no-store" });
       if (res.ok) {
@@ -126,18 +118,28 @@ export async function GET() {
         const json = parser.parse(xml);
         const items = json?.rss?.channel?.item || [];
         const itemsArray = Array.isArray(items) ? items : [items];
+        debug.chiphell_raw_count = itemsArray.length;
 
         itemsArray.forEach(item => {
-          if (!item?.title) return;
-          // Vyčištění CDATA a balastu z titulku
-          const t = item.title.toString().replace(/<!\[CDATA\[|\]\]>/g, "").trim();
+          if (!item) return;
+          
+          // 🚀 GURU FIX: Vytahování textu z titulku (může být objekt s #text nebo CDATA)
+          let t = "";
+          if (typeof item.title === 'string') t = item.title;
+          else if (item.title?.["#text"]) t = item.title["#text"];
+          else if (typeof item.title === 'object') t = JSON.stringify(item.title);
+
+          t = t.toString().replace(/<!\[CDATA\[|\]\]>/g, "").trim();
+          
+          // 🚀 GURU FIX: Vytahování linku (někdy bývá též v #text)
+          const l = item.link?.["#text"] || item.link || "";
           
           const isSpam = SPAM_BLACKLIST.some(term => t.includes(term));
-          if (!isSpam && t.length > 10) {
+          if (!isSpam && t.length > 5 && !t.includes("[object Object]")) {
             leaks.push({
               title: t,
-              link: item.link || "",
-              description: item.description || t,
+              link: l,
+              description: t,
               source: "Chiphell",
               intelType: "leaks",
               pubDate: item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString()
@@ -145,10 +147,10 @@ export async function GET() {
           }
         });
         debug.chiphell = "ok";
-      } else { debug.chiphell = "fetch_failed"; }
-    } catch (e) { debug.chiphell = "error"; }
+      } else { debug.chiphell = `fetch_failed: ${res.status}`; }
+    } catch (e) { debug.chiphell = `error: ${e.message}`; }
 
-    // --- SJEDNOCENÍ ---
+    // --- SJEDNOCENÍ & FINÁLNÍ FILTR ---
     leaks.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
 
     return NextResponse.json({
@@ -160,10 +162,7 @@ export async function GET() {
 
   } catch (err) {
     return NextResponse.json({
-      success: false,
-      count: 0,
-      data: [],
-      error: err.message
+      success: false, count: 0, data: [], error: err.message
     });
   }
 }
