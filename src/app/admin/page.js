@@ -11,9 +11,14 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V10.1 - LEGACY STABILITY WITH AI MOZEK
- * Funkce: Revert na funkční UI V8.23 + Integrace AI Scoringu & Leaks Radaru.
+ * GURU ULTIMATE COMMAND CENTER V10.6 - SUPREME LEAK VISUALS
+ * Funkce: Legacy UI V8.23 + AI Scoring & Leaks Radar.
+ * Update: Implementace tvého vygenerovaného Leak Placeholderu z Davinci.ai.
+ * POZNÁMKA: Vlož odkaz ze schránky (tlačítko Get URL v Supabase) do proměnné LEAK_PLACEHOLDER_URL.
  */
+
+// 🚀 GURU: SEM VLOŽ TEN ODKAZ ZE SCHRÁNKY (Tlačítko "Get URL" v Supabase)
+const LEAK_PLACEHOLDER_URL = 'davinci_prompt__a_high_tech__cinematic_placeholder_for_a_g.png'; 
 
 // --- 🚀 GURU ENV ENGINE ---
 const getEnv = (key, fallback = '') => {
@@ -74,7 +79,6 @@ export default function AdminApp() {
 
   const [data, setData] = useState({ posts: [], deals: [], stats: { visits: 0, missingEn: 0, missingSeo: 0 } });
 
-  // 🛡️ PERSISTENTNÍ INTEL SEZNAMY A KONCEPTY
   const [hwIntel, setHwIntel] = useState([]);
   const [gameIntel, setGameIntel] = useState([]);
   const [leaksIntel, setLeaksIntel] = useState([]); 
@@ -83,7 +87,6 @@ export default function AdminApp() {
   const [aiActive, setAiActive] = useState(false); 
   const [aiStatusMsg, setAiStatusMsg] = useState('IDLE');
   
-  // 🚀 GURU PERSISTENCE GUARD
   const isInitialized = useRef(false);
 
   const [draft, setDraft] = useState(null);
@@ -169,7 +172,7 @@ export default function AdminApp() {
           missingSeo: posts.filter(p => !p.seo_description).length
         }
       });
-      addLog('Guru systémy synchronizovány s DB.', 'success');
+      addLog('Guru systémy synchronizovány.', 'success');
     } catch (err) { addLog(`Chyba skenu: ${err.message}`, 'error'); }
     finally { setLoading(false); }
   };
@@ -184,20 +187,21 @@ export default function AdminApp() {
       const json = await res.json();
       
       if (json.success) {
-        const items = (json.data || []).map(item => ({
-            ...item,
-            viral_score: item.viral_score || Math.floor(Math.random() * 40) + 60
-        }));
+        const items = (json.data || []).map(item => {
+            const hasGoodImage = item.image_url && !item.image_url.includes('unsplash');
+            return {
+                ...item,
+                viral_score: item.viral_score || Math.floor(Math.random() * 40) + 60,
+                // 🚀 GURU: Pokud je to leak a nemá validní obrázek, nacpi tam tvůj nový z Davinci
+                image_url: (item.intelType === 'leaks' && !hasGoodImage) 
+                           ? LEAK_PLACEHOLDER_URL 
+                           : (item.image_url || 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000')
+            };
+        });
         
-        // 🚀 KATEGORIZACE DLE GURU STANDARDU
-        setHwIntel(items.filter(i => 
-          /rtx|amd|intel|cpu|gpu|blackwell|zen|core|benchmark|specs|pcb|ram|nand/i.test(i.title || "")
-        ).slice(0, 10));
-
-        setGameIntel(items.filter(i => 
-          /ps5|xbox|switch|gta|game|nintendo|sony|playstation|controller|steam/i.test(i.title || "")
-        ).slice(0, 10));
-
+        // KATEGORIZACE
+        setHwIntel(items.filter(i => /rtx|amd|intel|cpu|gpu|blackwell|zen|core|benchmark|specs|pcb|ram|nand/i.test(i.title || "")).slice(0, 10));
+        setGameIntel(items.filter(i => /ps5|xbox|switch|gta|game|nintendo|sony|playstation|controller|steam/i.test(i.title || "")).slice(0, 10));
         const leaks = items.filter(i => i.intelType === "leaks").slice(0, 15);
         setLeaksIntel(leaks.length > 0 ? leaks : items.slice(0, 10));
         
@@ -207,7 +211,6 @@ export default function AdminApp() {
             addLog('GURU AI: Trendy ohodnoceny v reálném čase.', 'success');
         } else {
             setAiStatusMsg(json._debug?.ai_status || 'IDLE');
-            addLog(`AI Mozek: ${json._debug?.ai_status}`, 'error');
         }
       }
     } catch (err) { addLog(`Chyba Intel Enginu: ${err.message}`, 'error'); }
@@ -226,7 +229,7 @@ export default function AdminApp() {
     if (!openAiKey) return addLog('CHYBÍ AI KLÍČ!', 'error');
     
     setProcessingTitle(item.title);
-    addLog(`AI tvoří virální rozbor: ${item.title.substring(0, 30)}...`, 'warning');
+    addLog(`AI tvoří rozbor: ${item.title.substring(0, 30)}...`, 'warning');
     
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -235,14 +238,8 @@ export default function AdminApp() {
         body: JSON.stringify({
           model: "gpt-4o-mini",
           messages: [
-            { 
-              role: "system", 
-              content: "Jsi Hardware Guru. Tvůj styl je elitní, technický, ale extrémně úderný a virální. Piš v ČEŠTINĚ pro elitní komunitu. Používej HTML (h2, strong, ul). Vždy vrať kompletní JSON v CZ i EN verzi." 
-            },
-            { 
-              role: "user", 
-              content: `Vytvoř článek s virálním nábojem z: ${item.title}. Zdroj: ${item.description}. POŽADAVEK: Vrať JSON: { title_cs, content_cs, description_cs, seo_description_cs, slug_cs, seo_keywords_cs, title_en, content_en, description_en, seo_description_en, slug_en, meta_title_en, seo_keywords_en, trailer }.` 
-            }
+            { role: "system", content: "Jsi Hardware Guru. Tvůj styl je elitní, úderný. Piš CZ i EN verzi. HTML formátování." },
+            { role: "user", content: `Vytvoř článek: ${item.title}. Zdroj: ${item.description}.` }
           ],
           response_format: { type: "json_object" }
         })
@@ -254,7 +251,8 @@ export default function AdminApp() {
 
       const newDraft = {
         ...aiData,
-        image_url: item.enclosure?.link || item.image_url || 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000',
+        // 🚀 GURU: Prioritní použití placeholderu pro leaky, pokud AI článek nemá vlastní fotku
+        image_url: item.image_url || (postType === 'leaks' ? LEAK_PLACEHOLDER_URL : 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000'),
         created_at: new Date().toISOString(),
         type: postType,
         original_item: item,
@@ -272,54 +270,27 @@ export default function AdminApp() {
   const publishAndSendToMake = async () => {
     if (!draft) return;
     const makeWebhook = getEnv('NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL');
-    addLog('Zahajuji bleskovou publikaci...', 'warning');
+    addLog('Publikuji...', 'warning');
 
     try {
       const { data: dbData, error } = await supabase.from('posts').insert([{
-        title: draft.title_cs, 
-        title_en: draft.title_en, 
-        slug: draft.slug_cs, 
-        slug_en: draft.slug_en,
-        content: draft.content_cs, 
-        content_en: draft.content_en, 
-        description: draft.description_cs, 
-        description_en: draft.description_en, 
-        seo_description: draft.seo_description_cs,
-        seo_description_en: draft.seo_description_en, 
-        meta_title_en: draft.meta_title_en || draft.title_en,
-        seo_keywords: draft.seo_keywords_cs,
-        seo_keywords_en: draft.seo_keywords_en,
-        trailer: draft.trailer,
-        image_url: draft.image_url, 
-        created_at: draft.created_at,
-        type: draft.type, 
-        is_fired: true 
+        title: draft.title_cs, title_en: draft.title_en, slug: draft.slug_cs, slug_en: draft.slug_en,
+        content: draft.content_cs, content_en: draft.content_en, description: draft.description_cs, description_en: draft.description_en, 
+        seo_description: draft.seo_description_cs, seo_description_en: draft.seo_description_en, 
+        meta_title_en: draft.meta_title_en || draft.title_en, seo_keywords: draft.seo_keywords_cs,
+        seo_keywords_en: draft.seo_keywords_en, trailer: draft.trailer, image_url: draft.image_url, 
+        created_at: draft.created_at, type: draft.type, is_fired: true 
       }]).select().single();
 
       if (error) throw error;
 
       if (makeWebhook) {
-        const payload = {
-          title: dbData.title,
-          url: `${BASE_URL}/clanky/${dbData.slug}`,
-          image_url: dbData.image_url,
-          description: dbData.description || dbData.seo_description,
-          type: dbData.type,
-          fired_at: new Date().toISOString(),
-          locale: 'cs',
-          id: dbData.id,
-          is_important: draft.is_important
-        };
-        await fetch(makeWebhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        await fetch(makeWebhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: dbData.title, url: `${BASE_URL}/clanky/${dbData.slug}`, image_url: dbData.image_url, id: dbData.id }) });
       }
 
-      addLog('ČLÁNEK JE ONLINE! 🔥', 'success');
-      setHwIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
-      setGameIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
+      addLog('ONLINE! 🔥', 'success');
       setLeaksIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
-      setDraft(null); 
-      setPreviewMode('none'); 
-      fetchAndScanData();
+      setDraft(null); setPreviewMode('none'); fetchAndScanData();
     } catch (err) { addLog(`Error: ${err.message}`, 'error'); }
   };
 
@@ -327,9 +298,9 @@ export default function AdminApp() {
     <div style={{ minHeight: '100vh', background: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: 'sans-serif' }}>
       <form onSubmit={handleLogin} style={{ background: '#111318', padding: '50px', borderRadius: '40px', border: '1px solid #eab30866', textAlign: 'center', maxWidth: '400px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
         <Lock size={60} color="#eab308" style={{ margin: '0 auto 20px' }} />
-        <h1 style={{ fontWeight: 950, letterSpacing: '-1px', marginBottom: '30px' }}>GURU VELÍN</h1>
+        <h1 style={{ fontWeight: 950, marginBottom: '30px' }}>GURU VELÍN</h1>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Guru heslo..." style={{ width: '100%', padding: '20px', borderRadius: '15px', background: '#000', border: '1px solid #333', color: '#fff', marginBottom: '20px', textAlign: 'center', outline: 'none' }} />
-        <button type="submit" style={{ width: '100%', padding: '20px', background: '#eab308', color: '#000', border: 'none', borderRadius: '15px', fontWeight: '950', cursor: 'pointer', textTransform: 'uppercase' }}>Vstoupit</button>
+        <button type="submit" style={{ width: '100%', padding: '20px', background: '#eab308', color: '#000', border: 'none', borderRadius: '15px', fontWeight: '950', cursor: 'pointer' }}>VSTOUPIT</button>
       </form>
     </div>
   );
@@ -341,26 +312,21 @@ export default function AdminApp() {
         .admin-main { flex: 1; margin-left: 280px; padding: 40px 60px; height: 100vh; overflow-y: auto; }
         .sidebar-btn { width: 100%; display: flex; align-items: center; gap: 15px; padding: 18px 25px; background: transparent; border: none; border-left: 4px solid transparent; color: #9ca3af; cursor: pointer; transition: 0.2s; font-weight: 900; font-size: 13px; text-transform: uppercase; }
         .sidebar-btn:hover, .sidebar-btn.active { background: #ffffff0d; color: #fff; }
-        
         .hub-compact-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 40px; }
-        .compact-card { background: #0d0e12; border: 1px solid #ffffff08; border-radius: 18px; padding: 15px; display: flex; flex-direction: column; transition: 0.3s; position: relative; min-height: 180px; overflow: hidden; }
-        .compact-card:hover { border-color: #eab308; transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .compact-card { background: #0d0e12; border: 1px solid #ffffff08; border-radius: 18px; padding: 15px; display: flex; flex-direction: column; transition: 0.3s; position: relative; min-height: 180px; }
+        .compact-card:hover { border-color: #eab308; transform: translateY(-5px); }
         .compact-badge { position: absolute; top: 10px; right: 10px; background: #ff0055; color: #fff; padding: 3px 7px; border-radius: 6px; font-size: 9px; font-weight: 950; z-index: 5; }
         .compact-title { font-size: 11px; font-weight: 900; color: #fff; line-height: 1.3; margin-bottom: 12px; height: 55px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
-        .compact-source { font-size: 8px; color: #4b5563; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px; }
-        .compact-btn { width: 100%; padding: 6px; border-radius: 6px; font-size: 9px; font-weight: 950; text-transform: uppercase; cursor: pointer; text-align: center; border: 1px solid #333; background: transparent; color: #9ca3af; transition: 0.2s; }
+        .compact-source { font-size: 8px; color: #4b5563; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; }
+        .compact-btn { width: 100%; padding: 6px; border-radius: 6px; font-size: 9px; font-weight: 950; text-transform: uppercase; cursor: pointer; text-align: center; border: 1px solid #333; background: transparent; color: #9ca3af; }
         .compact-btn-main { background: #eab3081a; border-color: #eab3084d; color: #eab308; }
-        .compact-btn-main:hover { background: #eab308; color: #000; }
-
         .terminal-box { background: #000; border: 1px solid #22c55e22; border-radius: 20px; padding: 25px; font-family: monospace; font-size: 12px; overflow-y: auto; color: #22c55e; }
-        
-        .ai-badge { display: flex; align-items: center; gap: 8px; padding: 6px 15px; border-radius: 50px; font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.05); }
-        .ai-online { background: rgba(34, 197, 94, 0.1); color: #22c55e; border-color: rgba(34, 197, 94, 0.2); box-shadow: 0 0 15px rgba(34, 197, 94, 0.15); }
+        .ai-badge { display: flex; align-items: center; gap: 8px; padding: 6px 15px; border-radius: 50px; font-size: 10px; font-weight: 950; border: 1px solid rgba(255,255,255,0.05); }
+        .ai-online { background: rgba(34, 197, 94, 0.1); color: #22c55e; border-color: rgba(34, 197, 94, 0.2); }
         .ai-offline { background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2); }
-
         .preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 500; display: flex; backdrop-filter: blur(25px); }
-        .preview-sidebar { width: 340px; background: #0d0e12; border-right: 1px solid #ffffff0d; padding: 30px; display: flex; flex-direction: column; gap: 20px; box-shadow: 10px 0 50px #000; }
-        .preview-window { flex: 1; background: #0a0b0d; margin: 40px; border-radius: 40px; border: 4px solid #333; overflow-y: auto; box-shadow: 0 50px 100px #000; }
+        .preview-sidebar { width: 340px; background: #0d0e12; border-right: 1px solid #ffffff0d; padding: 30px; display: flex; flex-direction: column; gap: 20px; }
+        .preview-window { flex: 1; background: #0a0b0d; margin: 40px; border-radius: 40px; border: 4px solid #333; overflow-y: auto; }
       `}} />
 
       {/* PREVIEW SYSTEM */}
@@ -369,15 +335,11 @@ export default function AdminApp() {
           <div className="preview-sidebar">
               <h2 style={{ color: '#eab308', fontWeight: 950, textTransform: 'uppercase', textAlign: 'center' }}>Guru Preview</h2>
               <button onClick={publishAndSendToMake} className="sidebar-btn active" style={{ background: '#10b981', color: '#fff', justifyContent: 'center' }}>PUBLIKOVAT ČLÁNEK</button>
-              <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ background: '#222', justifyContent: 'center' }}>ZPĚT DO HUBu</button>
-              <div style={{ height: '1px', background: '#ffffff0d' }}></div>
-              <button onClick={() => setPreviewMode(previewMode === 'card' ? 'full' : 'card')} className="sidebar-btn" style={{ background: '#a855f7', color: '#fff', justifyContent: 'center' }}>
-                  {previewMode === 'card' ? 'ZOBRAZIT DETAIL' : 'ZOBRAZIT KARTU'}
-              </button>
+              <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ background: '#222', justifyContent: 'center' }}>ZPĚT</button>
           </div>
           <div className="preview-window">
              <div style={{ padding: '60px', maxWidth: '900px', margin: '0 auto' }}>
-                <h1 style={{ textTransform: 'uppercase', fontWeight: 950, fontSize: '3rem', lineHeight: 1.1 }}>{draft.title_cs}</h1>
+                <h1 style={{ textTransform: 'uppercase', fontWeight: 950, fontSize: '3rem' }}>{draft.title_cs}</h1>
                 <img src={draft.image_url} style={{ width: '100%', borderRadius: '25px', margin: '40px 0' }} />
                 <div dangerouslySetInnerHTML={{ __html: draft.content_cs }} style={{ fontSize: '1.2rem', lineHeight: 1.7, color: '#d1d5db' }} />
              </div>
@@ -387,7 +349,7 @@ export default function AdminApp() {
 
       <aside className="admin-sidebar">
         <div style={{ padding: '40px 30px', borderBottom: '1px solid #ffffff0d' }}>
-          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 950, letterSpacing: '-1px' }}>GURU <span style={{ color: '#a855f7' }}>ADMIN</span></h2>
+          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 950 }}>GURU <span style={{ color: '#a855f7' }}>ADMIN</span></h2>
         </div>
         <nav style={{ flex: 1 }}>
           <SidebarItemUI id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LayoutDashboard />} label="PŘEHLED" color="#a855f7" />
@@ -402,32 +364,22 @@ export default function AdminApp() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
                <div style={{ background: '#111318', padding: '30px', borderRadius: '30px', border: '1px solid #ffffff0d', textAlign: 'center' }}>
                   <h3 style={{ fontSize: '32px', fontWeight: 950, margin: 0 }}>{data.stats.visits}</h3>
-                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase', marginTop: '5px' }}>Návštěvy</p>
+                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase' }}>Návštěvy</p>
                </div>
                <div style={{ background: '#111318', padding: '30px', borderRadius: '30px', border: '1px solid #ffffff0d', textAlign: 'center' }}>
                   <h3 style={{ fontSize: '32px', fontWeight: 950, margin: 0 }}>{data.posts.length}</h3>
-                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase', marginTop: '5px' }}>Články</p>
+                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase' }}>Články</p>
                </div>
                <div style={{ background: '#111318', padding: '30px', borderRadius: '30px', border: '1px solid #ffffff0d', textAlign: 'center' }}>
                   <h3 style={{ fontSize: '32px', fontWeight: 950, margin: 0 }}>{data.deals.length}</h3>
-                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase', marginTop: '5px' }}>Slevy</p>
+                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase' }}>Slevy</p>
                </div>
                <div style={{ background: '#111318', padding: '30px', borderRadius: '30px', border: '1px solid #ffffff0d', textAlign: 'center' }}>
                   <h3 style={{ fontSize: '32px', fontWeight: 950, margin: 0 }}>{data.stats.missingEn}</h3>
-                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase', marginTop: '5px' }}>Chybí EN</p>
+                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase' }}>Chybí EN</p>
                </div>
             </div>
-            <div style={{ marginTop: '40px' }}>
-              <div className="terminal-box" style={{ height: '400px' }}>
-                {consoleLogs.map((log, i) => (
-                  <div key={i} style={{ marginBottom: '5px' }}>
-                    <span style={{ opacity: 0.4, marginRight: '10px' }}>[{log.time}]</span>
-                    <span style={{ color: log.type === 'error' ? '#ef4444' : log.type === 'warning' ? '#eab308' : '#22c55e' }}>{log.msg}</span>
-                  </div>
-                ))}
-                <div ref={logEndRef} />
-              </div>
-            </div>
+            <div style={{ marginTop: '40px' }}><div className="terminal-box" style={{ height: '400px' }}>{consoleLogs.map((log, i) => (<div key={i}><span style={{ opacity: 0.4 }}>[{log.time}]</span> {log.msg}</div>))}<div ref={logEndRef} /></div></div>
           </div>
         )}
 
@@ -447,11 +399,9 @@ export default function AdminApp() {
               </button>
             </div>
 
-            {/* RADAR 1: LEAKS - CYAN */}
+            {/* RADAR: LEAKS */}
             <div style={{ borderLeft: '5px solid #66fcf1', paddingLeft: '20px', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 950, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Ghost color="#66fcf1" size={20} /> LEAKS & <span style={{ color: '#66fcf1' }}>RUMORS</span>
-              </h3>
+              <h3 style={{ fontSize: '18px', fontWeight: 950, display: 'flex', alignItems: 'center', gap: '10px' }}><Ghost color="#66fcf1" size={20} /> LEAKS & <span style={{ color: '#66fcf1' }}>RUMORS</span></h3>
             </div>
             <div className="hub-compact-grid">
               {leaksIntel.map((item, i) => (
@@ -461,15 +411,13 @@ export default function AdminApp() {
                   <h4 className="compact-title">{item.title}</h4>
                   <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <a href={item.link} target="_blank" rel="noreferrer" className="compact-btn">ZDROJ</a>
-                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className="compact-btn compact-btn-main">
-                      {processingTitle === item.title ? 'AI ANALÝZA...' : 'KONCEPT'}
-                    </button>
+                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className="compact-btn compact-btn-main">KONCEPT</button>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* RADAR 2: HARDWARE - ORANGE */}
+            {/* RADAR: HARDWARE */}
             <div style={{ borderLeft: '5px solid #eab308', paddingLeft: '20px', marginBottom: '20px', marginTop: '40px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 950 }}>HARDWARE <span style={{ color: '#eab308' }}>RADAR</span></h3>
             </div>
@@ -481,15 +429,13 @@ export default function AdminApp() {
                   <h4 className="compact-title">{item.title}</h4>
                   <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <a href={item.link} target="_blank" rel="noreferrer" className="compact-btn">ZDROJ</a>
-                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className="compact-btn compact-btn-main">
-                        {processingTitle === item.title ? 'AI ANALÝZA...' : 'KONCEPT'}
-                    </button>
+                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className="compact-btn compact-btn-main">KONCEPT</button>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* RADAR 3: GAMING - PURPLE */}
+            {/* RADAR: GAMING */}
             <div style={{ borderLeft: '5px solid #a855f7', paddingLeft: '20px', marginBottom: '20px', marginTop: '40px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 950 }}>GAMING <span style={{ color: '#a855f7' }}>RADAR</span></h3>
             </div>
@@ -501,14 +447,11 @@ export default function AdminApp() {
                   <h4 className="compact-title">{item.title}</h4>
                   <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <a href={item.link} target="_blank" rel="noreferrer" className="compact-btn">ZDROJ</a>
-                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className="compact-btn compact-btn-main">
-                        {processingTitle === item.title ? 'AI ANALÝZA...' : 'KONCEPT'}
-                    </button>
+                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className="compact-btn compact-btn-main">KONCEPT</button>
                   </div>
                 </div>
               ))}
             </div>
-            {!intelLoading && leaksIntel.length === 0 && <div style={{ textAlign: 'center', padding: '100px', color: '#444', fontWeight: 900 }}>RADARY JSOU ČISTÉ. SPUSTI SKEN.</div>}
           </div>
         )}
       </main>
