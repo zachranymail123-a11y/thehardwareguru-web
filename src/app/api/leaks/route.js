@@ -6,12 +6,10 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * GURU BACKEND ENGINE - UNIFIED AI SCORING V8.9
+ * GURU BACKEND ENGINE - UNIFIED AI SCORING V9.0
  * Cesta: src/app/api/leaks/route.js
- * Funkce: Globální agregátor HW/Gaming novinek s AI scoringem pro 3 klíčové pilíře:
- * 1. Hardware Radar (NVIDIA, AMD, Intel, SoC...)
- * 2. Gaming Radar (AAA tituly, konzole, handheldy...)
- * 3. Leaks & Rumors (Průmyslové úniky, uniklé fotky, benchmarky...)
+ * Funkce: Globální agregátor HW/Gaming novinek s AI scoringem pro 3 klíčové pilíře.
+ * Verze 9.0: Vylepšený AI debug a reporting pro frontend.
  */
 
 // 1. GLOBÁLNÍ KONFIGURACE ZDROJŮ (Multi-Radar)
@@ -40,9 +38,18 @@ const SPAM_BLACKLIST = ['签到', '每日', '回复', '领取', 'Check-in', 'Dai
  * 🧠 GURU UNIFIED AI SCORING ENGINE
  * Provádí hloubkovou analýzu virálního potenciálu napříč všemi Radary.
  */
-const getAIScores = async (titles) => {
-  const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-  if (!apiKey || titles.length === 0) return {};
+const getAIScores = async (titles, debugObj) => {
+  const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY || "";
+  
+  if (!apiKey) {
+    debugObj.ai_status = "error: missing_api_key";
+    return {};
+  }
+
+  if (titles.length === 0) {
+    debugObj.ai_status = "idle: no_titles";
+    return {};
+  }
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -74,16 +81,33 @@ const getAIScores = async (titles) => {
       })
     });
 
+    if (!response.ok) {
+      const errData = await response.json();
+      debugObj.ai_status = `error: openai_api_${response.status}`;
+      debugObj.ai_error_detail = errData.error?.message || "Unknown error";
+      return {};
+    }
+
     const result = await response.json();
-    const parsed = JSON.parse(result.choices[0].message.content);
+    const content = result.choices[0]?.message?.content;
     
+    if (!content) {
+      debugObj.ai_status = "error: empty_ai_response";
+      return {};
+    }
+
+    const parsed = JSON.parse(content);
     const scoreMap = {};
-    parsed.scores.forEach(item => {
-      scoreMap[item.title.toLowerCase()] = item.score;
+    (parsed.scores || []).forEach(item => {
+      scoreMap[item.title.toLowerCase().trim()] = item.score;
     });
+    
+    debugObj.ai_status = "success";
+    debugObj.ai_active = true;
     return scoreMap;
   } catch (err) {
-    console.error("Guru AI Scoring Error:", err);
+    debugObj.ai_status = "error: exception";
+    debugObj.ai_error_detail = err.message;
     return {};
   }
 };
@@ -137,7 +161,14 @@ async function supremeProxyFetch(url, isJson = false) {
 
 export async function GET() {
   const leaks = [];
-  const debug = { reddit: 0, chiphell: 0, global: 0, sources_failed: [], ai_active: false };
+  const debug = { 
+    reddit: 0, 
+    chiphell: 0, 
+    global: 0, 
+    sources_failed: [], 
+    ai_active: false,
+    ai_status: "pending" 
+  };
   const parser = new XMLParser({ ignoreAttributes: false, trimValues: true, attributeNamePrefix: "@_", parseAttributeValue: true });
 
   try {
@@ -227,18 +258,14 @@ export async function GET() {
     const finalItems = Array.from(uniqueMap.values());
 
     // --- 🧠 UNIFIED AI SCORING (Hardware Radar / Gaming Radar / Leaks) ---
-    const titlesForAI = finalItems.slice(0, 50).map(i => i.title);
-    const aiScores = await getAIScores(titlesForAI);
+    // Posíláme AI kousky po 40, aby to bylo stabilní
+    const titlesForAI = finalItems.slice(0, 40).map(i => i.title);
+    const aiScores = await getAIScores(titlesForAI, debug);
     
-    if (Object.keys(aiScores).length > 0) {
-      debug.ai_active = true;
-      finalItems.forEach(item => {
-        item.viral_score = aiScores[item.title.toLowerCase()] || 45;
-      });
-    } else {
-      // Emergency Fallback
-      finalItems.forEach(item => { item.viral_score = 50; });
-    }
+    finalItems.forEach(item => {
+      const key = item.title.toLowerCase().trim();
+      item.viral_score = aiScores[key] || 45;
+    });
 
     // Radíme nekompromisně podle AI virálního skóre, pak podle data
     finalItems.sort((a, b) => {
