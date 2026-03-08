@@ -1,58 +1,26 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { 
   Swords, Zap, RefreshCw, ChevronRight
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS INDEX - MASTER LOGIC V14.1 (BUILD SHIELD RECOVERY)
+ * GURU GPU DUELS INDEX - MASTER LOGIC V14.3 (STABLE PRODUCTION)
  * Cesta: src/app/gpuvs/page.js
  * Design: Brutální GURU styl (obří růžové nadpisy, skleněný panel, neonové tečky).
- * FIX: Dynamické načítání modulů (Build Shield) pro vyřešení chyb kompilace v náhledovém prostředí.
- * SYNC: Přímé propojení s tabulkou 'gpus' (RTX 5090, 4080 atd.).
+ * ARCHITEKTURA: Čisté ESM importy, standardní inicializace Supabase, žádné anti-patterny.
+ * FIX: Oprava řazení v DB (id), implementace UX pojistky pro výběr GPU.
  */
 
-// --- 🛡️ GURU BUILD SHIELD ---
-// Pomocná funkce pro bezpečné načítání modulů v prostředí náhledu/kompilátoru
-const getModule = (path) => {
-  try {
-    return require(path);
-  } catch (e) {
-    return null;
-  }
-};
-
-const supabaseLib = getModule('@supabase/supabase-js');
-const nextNav = getModule('next/navigation');
-const nextLinkModule = getModule('next/link');
-
-// Fallbacky pro prostředí, kde moduly nejsou dostupné v bundle času
-const createClient = supabaseLib ? supabaseLib.createClient : null;
-const useRouter = nextNav ? nextNav.useRouter : () => ({ push: (url) => console.log(`Navigace: ${url}`) });
-const usePathname = nextNav ? nextNav.usePathname : () => '/gpuvs';
-const Link = nextLinkModule ? (nextLinkModule.default || nextLinkModule) : ({ children, href, className, ...props }) => (
-  <a href={href} className={className} {...props}>{children}</a>
+// Inicializace Supabase klienta (Bere ENV z tvého Vercelu)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
-
-// Inicializace Supabase s ochranou (Bere ENV z tvého Vercelu)
-const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
-  ? createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    )
-  : { 
-      from: () => ({ 
-        select: () => ({ 
-          order: () => {
-            const chain = Promise.resolve({ data: [] });
-            // @ts-ignore
-            chain.limit = () => Promise.resolve({ data: [] });
-            return chain;
-          }
-        }) 
-      }) 
-    };
 
 export default function App() {
   const router = useRouter();
@@ -69,16 +37,14 @@ export default function App() {
   // 🚀 GURU DATA SYNC: Načítání z tabulek 'gpus' a 'gpu_duels'
   useEffect(() => {
     async function loadData() {
-      if (!createClient) {
-        setLoading(false);
-        return;
-      }
       setLoading(true);
       setError(null);
       try {
+        // Načítáme karty pro dropdowny a už existující duely
+        // Používáme řazení podle 'id' místo 'created_at' pro maximální stabilitu query
         const [gData, dData] = await Promise.all([
           supabase.from('gpus').select('id, name').order('name', { ascending: true }),
-          supabase.from('gpu_duels').select('id, title_cs, title_en, slug').order('created_at', { ascending: false }).limit(10)
+          supabase.from('gpu_duels').select('id, title_cs, title_en, slug').order('id', { ascending: false }).limit(10)
         ]);
 
         if (gData.error) throw gData.error;
@@ -113,6 +79,7 @@ export default function App() {
 
     const rawSlug = `${slugify(cardA.name)}-vs-${slugify(cardB.name)}`;
     
+    // Přesměrování na detail (Master Proxy pattern)
     const target = isEn ? `/en/gpuvs/en-${rawSlug}` : `/gpuvs/${rawSlug}`;
     router.push(target);
   };
@@ -230,7 +197,12 @@ export default function App() {
                   >
                     <option value="" className="bg-[#0a0b0d]">{loading ? "..." : (isEn ? "-- Select GPU --" : "-- Vyber grafiku --")}</option>
                     {gpus.map(g => (
-                      <option key={g.id} value={g.id} className="bg-[#0a0b0d] text-white">
+                      <option 
+                        key={g.id} 
+                        value={g.id} 
+                        className="bg-[#0a0b0d] text-white"
+                        disabled={g.id === gpuA}
+                      >
                         {g.name}
                       </option>
                     ))}
