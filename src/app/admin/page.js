@@ -158,10 +158,10 @@ export default function AdminApp() {
       if (json.success) {
         const items = json.data || [];
         
-        // Zobrazí pouze čistá deduplikovaná data roztříděná backendem
-        setHwIntel(items.filter(i => i.intelType === "hw").slice(0, 15));
-        setGameIntel(items.filter(i => i.intelType === "game").slice(0, 15));
-        setLeaksIntel(items.filter(i => i.intelType === "leaks").slice(0, 20));
+        // 🚀 GURU FIX: Zobrazí přesně 10 nejvirálnějších položek pro dokonalý grid (2 řádky x 5 karet)
+        setHwIntel(items.filter(i => i.intelType === "hw").slice(0, 10));
+        setGameIntel(items.filter(i => i.intelType === "game").slice(0, 10));
+        setLeaksIntel(items.filter(i => i.intelType === "leaks").slice(0, 10));
         
         setAiActive(true);
         setAiStatusMsg('ONLINE');
