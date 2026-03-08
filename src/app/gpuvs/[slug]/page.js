@@ -1,4 +1,4 @@
-import { cache } from 'react';
+import React, { cache } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -9,19 +9,22 @@ import {
   ShieldCheck, 
   Zap, 
   ShoppingCart,
-  Cpu
+  Cpu,
+  Trophy,
+  Flame,
+  Activity
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V21.1 (STRICT PRODUCTION)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V22.1 (SUPREME OVERHAUL)
  * Cesta: src/app/gpuvs/[slug]/page.js
- * Design: Brutální GURU styl (obří růžové nadpisy, skleněný panel, neonové prvky).
- * FEATURE: Automatické generování chybějících duelů přes AI (Programmatic SEO).
- * FIX: Čisté ESM importy pro produkční prostředí Next.js 14.
- * FIX: Oprava logic-flow pro zápis a okamžité zobrazení nového duelu.
+ * Design: Totální GURU upgrade. Odstraněny nudné bílé texty a široké boxy.
+ * Styl: Neonové akcenty, skleněné panely, stříbrná typografie, agresivní layout.
+ * FEATURE: On-demand AI generování chybějících duelů a zápis do DB.
+ * FIX: Striktní ESM importy pro produkční Next.js 14 prostředí.
  */
 
-// 🚀 GURU: Inicializace OpenAI (Ujisti se, že máš nastavený klíč v .env)
+// 🚀 GURU: Inicializace OpenAI pro on-demand generování obsahu
 const openai = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY || ''
 });
@@ -33,17 +36,17 @@ const supabase = createClient(
   { auth: { persistSession: false } }
 );
 
-// 🚀 GURU ENGINE: Funkce pro vygenerování duelu za běhu, pokud v DB chybí
+// 🚀 GURU ENGINE: Automatické generování duelu, pokud v DB chybí
 async function generateDuelOnTheFly(slug) {
   try {
     const cleanSlug = slug.replace(/^en-/, '');
     const parts = cleanSlug.split('-vs-');
     if (parts.length !== 2) return null;
 
-    // 1. Vyhledání karet v DB (Fuzzy search pro identifikaci GPU)
     const nameA = parts[0].replace(/-/g, ' ');
     const nameB = parts[1].replace(/-/g, ' ');
 
+    // Vyhledání podkladových dat o GPU v tabulce gpus
     const [resA, resB] = await Promise.all([
       supabase.from('gpus').select('*').ilike('name', `%${nameA}%`).limit(1).maybeSingle(),
       supabase.from('gpus').select('*').ilike('name', `%${nameB}%`).limit(1).maybeSingle()
@@ -51,21 +54,19 @@ async function generateDuelOnTheFly(slug) {
 
     const cardA = resA.data;
     const cardB = resB.data;
-
-    // Pokud karty v DB vůbec nejsou, nemůžeme duel vygenerovat
     if (!cardA || !cardB) return null;
 
-    // 2. AI Generování verdiktu (Striktně technický a úderný GURU styl)
+    // AI Generování odborného verdiktu v CZ i EN
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { 
           role: "system", 
-          content: "Jsi Hardware Guru. Tvoříš SEO duely grafických karet. Tvůj styl je brutální, upřímný a technicky precizní. Používej HTML tagy <h2>, <strong>, <ul> pro formátování obsahu. Všechna pole '_cs' musí být v češtině, pole '_en' v angličtině. JSON struktura: { \"title_cs\": \"...\", \"title_en\": \"...\", \"content_cs\": \"...\", \"content_en\": \"...\", \"seo_description_cs\": \"...\", \"seo_description_en\": \"...\" }" 
+          content: "Jsi Hardware Guru. Tvoříš SEO duely grafických karet. Tvůj styl je brutální, technický a virální. Piš v HTML (h2, strong, ul). Pole: title_cs, title_en, content_cs, content_en, seo_description_cs, seo_description_en." 
         },
         { 
           role: "user", 
-          content: `Vytvoř profesionální srovnání: ${cardA.name} ($${cardA.release_price_usd}, ${cardA.vram_gb}GB VRAM) VS ${cardB.name} ($${cardB.release_price_usd}, ${cardB.vram_gb}GB VRAM). Zaměř se na výkon, cenu a efektivitu.` 
+          content: `Porovnej karty: ${cardA.name} VS ${cardB.name}. Která je králem poměru cena/výkon?` 
         }
       ],
       response_format: { type: "json_object" }
@@ -73,7 +74,7 @@ async function generateDuelOnTheFly(slug) {
 
     const aiResult = JSON.parse(completion.choices[0].message.content);
 
-    // 3. Zápis nového duelu do databáze
+    // Zápis do DB pro budoucí návštěvy
     const { data: newDuel, error: insertError } = await supabase
       .from('gpu_duels')
       .insert([{
@@ -92,17 +93,10 @@ async function generateDuelOnTheFly(slug) {
       .select(`*, gpuA:gpus!gpu_a_id(*), gpuB:gpus!gpu_b_id(*)`)
       .single();
 
-    if (insertError) {
-      // Ošetření race-condition (pokud někdo vygeneroval duel ve stejnou milisekundu)
-      if (insertError.code === '23505') {
-        const { data } = await supabase
-          .from('gpu_duels')
-          .select(`*, gpuA:gpus!gpu_a_id(*), gpuB:gpus!gpu_b_id(*)`)
-          .eq('slug', cleanSlug)
-          .single();
-        return data;
-      }
-      throw insertError;
+    if (insertError && insertError.code === '23505') {
+       // Ošetření race condition (duel už byl vytvořen jiným vláknem)
+       const { data } = await supabase.from('gpu_duels').select(`*, gpuA:gpus!gpu_a_id(*), gpuB:gpus!gpu_b_id(*)`).eq('slug', cleanSlug).single();
+       return data;
     }
 
     return newDuel;
@@ -112,32 +106,27 @@ async function generateDuelOnTheFly(slug) {
   }
 }
 
-// 🚀 GURU: Cache dotazu pro maximální výkon Next.js
+// 🚀 GURU: Cache dotazu pro deduplikaci a bleskové načítání
 const getDuelData = cache(async (slug) => {
   if (!slug) return null;
-
   const cleanSlug = slug.replace(/^en-/, '');
   const normalizedSlug = cleanSlug.replace('geforce-', '').replace('radeon-', '');
 
   const { data, error } = await supabase
     .from('gpu_duels')
-    .select(`
-      *,
-      gpuA:gpus!gpu_a_id(*),
-      gpuB:gpus!gpu_b_id(*)
-    `)
+    .select(`*, gpuA:gpus!gpu_a_id(*), gpuB:gpus!gpu_b_id(*)`)
     .or(`slug.eq.${slug},slug.eq.${cleanSlug},slug.eq.${normalizedSlug},slug_en.eq.${slug}`)
     .limit(1);
 
   if (error || !data || data.length === 0) {
-    // ⚡ GURU TRIGGER: Pokud duel neexistuje, vygenerujeme ho on-the-fly
+    // ⚡ Pokud v DB není, zkusíme ho vygenerovat a hned zapsat
     return await generateDuelOnTheFly(slug);
   }
   
   return data[0];
 });
 
-// 🚀 GURU SEO: Dynamické Meta Tagy pro vyhledávače
+// 🚀 GURU SEO: Dynamické Meta Tagy
 export async function generateMetadata({ params }) {
   const slug = params?.slug ?? null;
   const duel = await getDuelData(slug);
@@ -147,10 +136,7 @@ export async function generateMetadata({ params }) {
   const title = isEn ? (duel.title_en || duel.title_cs) : duel.title_cs;
   const description = isEn ? (duel.seo_description_en || duel.seo_description_cs) : duel.seo_description_cs;
 
-  return { 
-    title: `${title} | Hardware Guru`, 
-    description: description 
-  };
+  return { title: `${title} | Hardware Guru`, description };
 }
 
 export default async function App({ params }) {
@@ -166,112 +152,121 @@ export default async function App({ params }) {
 
   const title = isEn ? (duel.title_en || duel.title_cs) : duel.title_cs;
   const content = isEn ? (duel.content_en || duel.content_cs) : (duel.content_cs || duel.content);
-  const dateObj = new Date(duel.created_at || Date.now());
   const formattedDate = new Intl.DateTimeFormat(isEn ? 'en-US' : 'cs-CZ', { 
     year: 'numeric', month: 'long', day: 'numeric' 
-  }).format(dateObj);
-  
-  const backLink = isEn ? '/en/gpuvs' : '/gpuvs';
-  const buyBtnText = isEn ? "VIEW BEST DEALS" : "ZOBRAZIT NEJLEPŠÍ CENY";
+  }).format(new Date(duel.created_at || Date.now()));
   
   const getWinnerClass = (valA, valB, lowerIsBetter = false) => {
     if (valA === valB) return 'text-neutral-500';
-    if (lowerIsBetter) return valA < valB ? 'text-green-400 font-black' : 'text-red-500';
-    return valA > valB ? 'text-green-400 font-black' : 'text-red-500';
+    if (lowerIsBetter) return valA < valB ? 'text-[#66fcf1] font-black drop-shadow-[0_0_12px_#66fcf1]' : 'text-neutral-500 opacity-30';
+    return valA > valB ? 'text-[#66fcf1] font-black drop-shadow-[0_0_12px_#66fcf1]' : 'text-neutral-500 opacity-30';
   };
 
   const getVendorColor = (vendor) => {
     const v = (vendor || '').toUpperCase();
-    return v === 'NVIDIA' ? '#76b900' : (v === 'AMD' ? '#ed1c24' : '#3b82f6');
+    return v === 'NVIDIA' ? '#76b900' : (v === 'AMD' ? '#ed1c24' : '#ff0055');
   };
 
   return (
-    <main className="min-h-screen text-neutral-200 py-12 px-4 sm:px-6 lg:px-8" style={{ 
+    <main className="min-h-screen text-[#d1d5db] py-12 px-4 sm:px-6 lg:px-8" style={{ 
         backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', 
-        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px'
+        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '140px'
     }}>
       <style dangerouslySetInnerHTML={{__html: `
-        .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; }
-        .guru-prose h2 { color: #fff; font-size: 2.2rem; font-weight: 950; margin-top: 2em; margin-bottom: 1em; text-transform: uppercase; border-left: 5px solid #ff0055; padding-left: 20px; font-style: italic; }
-        .guru-prose strong { color: #fff; font-weight: 900; }
-        .guru-prose ul { list-style-type: none; padding-left: 0; }
-        .guru-prose li { position: relative; padding-left: 25px; margin-bottom: 10px; }
-        .guru-prose li::before { content: '→'; position: absolute; left: 0; color: #ff0055; font-weight: 900; }
-        .spec-row { display: flex; justify-content: space-between; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center; transition: 0.3s; }
-        .spec-row:hover { background: rgba(255,255,255,0.03); }
-        .gpu-card-box { padding: 45px 30px; border-radius: 32px; text-align: center; border-top: 6px solid; background: rgba(17, 19, 24, 0.95); backdrop-filter: blur(15px); box-shadow: 0 20px 50px rgba(0,0,0,0.6); width: 100%; }
-        .vs-badge-supreme { background: #ff0055; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 950; font-size: 28px; border: 6px solid #0a0b0d; box-shadow: 0 0 40px rgba(255,0,85,0.6); z-index: 10; margin: 0 -40px; }
-        .guru-affiliate-cta { display: inline-flex; align-items: center; justify-content: center; gap: 15px; padding: 22px 50px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 20px; text-transform: uppercase; border-radius: 20px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 35px rgba(234, 88, 12, 0.4); border: 1px solid rgba(255,255,255,0.1); }
-        .guru-affiliate-cta:hover { transform: translateY(-5px) scale(1.03); box-shadow: 0 20px 50px rgba(234, 88, 12, 0.6); }
-        .text-green-400 { color: #4ade80; } .text-red-500 { color: #ef4444; } .font-black { font-weight: 900; }
-        @media (max-width: 768px) { .ring-grid-system { flex-direction: column; } .vs-badge-supreme { margin: 20px auto; } }
+        .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; max-width: 750px; margin: 0 auto; }
+        .guru-prose h2 { color: #fff; font-size: 2.2rem; font-weight: 950; margin-top: 2.5em; margin-bottom: 1.2em; text-transform: uppercase; border-left: 6px solid #ff0055; padding-left: 20px; font-style: italic; letter-spacing: -1px; }
+        .guru-prose strong { color: #fff; font-weight: 950; }
+        .guru-prose ul { list-style: none; padding: 0; margin-bottom: 2.5em; }
+        .guru-prose li { padding: 15px 30px; position: relative; margin-bottom: 12px; background: rgba(255,255,255,0.02); border-radius: 12px; border-left: 3px solid rgba(255,0,85,0.3); }
+        .guru-prose li::before { content: '⚡'; position: absolute; left: 10px; color: #ff0055; }
+        
+        .glass-panel { background: rgba(17, 19, 24, 0.92); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.06); border-radius: 40px; overflow: hidden; box-shadow: 0 40px 120px rgba(0,0,0,0.9); }
+        .spec-grid-row { display: grid; grid-template-columns: 1fr auto 1fr; padding: 25px 40px; border-bottom: 1px solid rgba(255,255,255,0.03); align-items: center; transition: 0.4s; }
+        .spec-grid-row:hover { background: rgba(255,255,255,0.025); }
+        .vs-token { width: 90px; height: 90px; background: #ff0055; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 950; font-size: 28px; border: 10px solid #0a0b0d; box-shadow: 0 0 50px rgba(255,0,85,0.6); z-index: 30; margin: 0 -45px; transform: rotate(-8deg); color: #fff; }
+        
+        .buy-action-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; padding: 26px 65px; border-radius: 24px; text-transform: uppercase; font-size: 22px; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: inline-flex; align-items: center; gap: 15px; box-shadow: 0 20px 50px rgba(234, 88, 12, 0.5); border: 1px solid rgba(255,255,255,0.1); }
+        .buy-action-btn:hover { transform: translateY(-10px) scale(1.05); box-shadow: 0 30px 70px rgba(234, 88, 12, 0.7); filter: brightness(1.15); }
+        .guru-highlight { color: #fff; font-weight: 900; text-transform: uppercase; font-style: italic; }
       `}} />
 
-      <article className="max-w-5xl mx-auto">
-        <div className="mb-10">
-          <Link href={backLink} className="text-[#ff0055] hover:text-[#ff0055]/80 transition-colors font-black uppercase tracking-widest text-sm flex items-center gap-2">
-            <ChevronLeft size={18} /> {isEn ? "Back to selection" : "Zpět na výběr"}
-          </Link>
-        </div>
+      <article className="max-w-3xl mx-auto">
+        <Link href={isEn ? '/en/gpuvs' : '/gpuvs'} className="text-[#ff0055] hover:text-[#ff0055]/80 transition-all font-black uppercase tracking-[0.3em] text-[10px] flex items-center gap-2 mb-12">
+          <ChevronLeft size={14} /> {isEn ? "BACK TO SELECTION" : "ZPĚT NA VÝBĚR"}
+        </Link>
 
-        <header className="mb-12 text-center">
-          <div className="flex items-center justify-center gap-4 text-neutral-400 text-sm font-black uppercase tracking-[0.3em] mb-6">
-            <span className="text-[#ff0055] flex items-center gap-2"><Swords size={18}/> {isEn ? "GURU VERSUS" : "GURU SOUBOJ"}</span>
-            <span className="opacity-30">•</span>
-            <span>{formattedDate}</span>
+        <header className="mb-20 text-center">
+          <div className="flex items-center justify-center gap-5 text-neutral-500 text-[10px] font-black uppercase tracking-[0.5em] mb-8">
+            <span className="text-[#ff0055] flex items-center gap-2"><Flame size={14}/> {isEn ? "ELITE DUEL" : "ELITNÍ SOUBOJ"}</span>
+            <span className="opacity-20">|</span>
+            <span className="flex items-center gap-2"><Activity size={14}/> {formattedDate}</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight uppercase italic underline decoration-[#ff0055]/30 leading-tight tracking-tight">
-            {title}
+          <h1 className="text-5xl md:text-8xl font-black text-white mb-6 tracking-tighter uppercase italic leading-[0.9] drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+            {title.split(' vs ')[0]} <br/> 
+            <span className="text-[#ff0055] drop-shadow-[0_0_15px_#ff0055]">VS</span> <br/> 
+            {title.split(' vs ')[1]}
           </h1>
         </header>
 
         {/* 🥊 RING SYSTÉM (DUEL KARET) */}
-        <div className="ring-grid-system flex flex-col md:flex-row items-center mb-16 relative">
-            <div className="gpu-card-box" style={{ borderColor: getVendorColor(gpuA.vendor) }}>
-                <span style={{ fontSize: '12px', fontWeight: '950', color: getVendorColor(gpuA.vendor), textTransform: 'uppercase', letterSpacing: '2px' }}>{gpuA.vendor} • {gpuA.architecture}</span>
-                <h2 className="text-3xl font-black text-white mt-2 uppercase">{gpuA.name}</h2>
+        <div className="flex flex-col md:flex-row items-center justify-center mb-16 relative gap-4 md:gap-0">
+            <div className="glass-panel w-full p-12 text-center border-t-8" style={{ borderColor: getVendorColor(gpuA.vendor) }}>
+                <div style={{ fontSize: '12px', fontWeight: '950', color: getVendorColor(gpuA.vendor), textTransform: 'uppercase', letterSpacing: '4px', marginBottom: '10px' }}>{gpuA.vendor} • {gpuA.architecture}</div>
+                <h2 className="text-3xl md:text-5xl font-black text-white uppercase italic tracking-tighter">{gpuA.name.replace('GeForce ', '').replace('Radeon ', '')}</h2>
             </div>
-            <div className="vs-badge-supreme">VS</div>
-            <div className="gpu-card-box" style={{ borderColor: getVendorColor(gpuB.vendor) }}>
-                <span style={{ fontSize: '12px', fontWeight: '950', color: getVendorColor(gpuB.vendor), textTransform: 'uppercase', letterSpacing: '2px' }}>{gpuB.vendor} • {gpuB.architecture}</span>
-                <h2 className="text-3xl font-black text-white mt-2 uppercase">{gpuB.name}</h2>
+            <div className="vs-token">VS</div>
+            <div className="glass-panel w-full p-12 text-center border-t-8" style={{ borderColor: getVendorColor(gpuB.vendor) }}>
+                <div style={{ fontSize: '12px', fontWeight: '950', color: getVendorColor(gpuB.vendor), textTransform: 'uppercase', letterSpacing: '4px', marginBottom: '10px' }}>{gpuB.vendor} • {gpuB.architecture}</div>
+                <h2 className="text-3xl md:text-5xl font-black text-white uppercase italic tracking-tighter">{gpuB.name.replace('GeForce ', '').replace('Radeon ', '')}</h2>
             </div>
         </div>
 
-        {/* 📊 TECHNICKÉ PARAMETRY */}
-        <section className="bg-neutral-900/80 border-2 border-white/5 rounded-[40px] overflow-hidden shadow-2xl mb-16 backdrop-blur-md">
+        {/* 📊 GURU DASHBOARD (TECHNICKÁ TABULKA) */}
+        <section className="glass-panel mb-24">
             <div className="bg-white/5 py-5 text-center border-b border-white/5">
-                <h3 className="font-black text-sm uppercase tracking-[0.4em] text-white tracking-widest">{isEn ? "RAW SPECIFICATIONS" : "TECHNICKÉ PARAMETRY"}</h3>
+                <h3 className="font-black text-[10px] uppercase tracking-[0.6em] text-neutral-500">{isEn ? "GURU TECHNICAL METRICS" : "GURU TECHNICKÉ METRIKY"}</h3>
             </div>
-            <div className="spec-row">
-                <div className={`flex-1 text-center text-xl ${getWinnerClass(gpuA.vram_gb, gpuB.vram_gb)}`}>{gpuA.vram_gb} GB</div>
-                <div className="flex-1 text-center text-[10px] font-black text-neutral-500 uppercase tracking-widest italic">VRAM</div>
-                <div className={`flex-1 text-center text-xl ${getWinnerClass(gpuB.vram_gb, gpuA.vram_gb)}`}>{gpuB.vram_gb} GB</div>
+            
+            <div className="spec-grid-row">
+                <div className={`text-right text-3xl ${getWinnerClass(gpuA.vram_gb, gpuB.vram_gb)}`}>{gpuA.vram_gb} GB</div>
+                <div className="px-10 text-[9px] font-black text-neutral-600 uppercase tracking-[0.3em] italic">VRAM</div>
+                <div className={`text-left text-3xl ${getWinnerClass(gpuB.vram_gb, gpuA.vram_gb)}`}>{gpuB.vram_gb} GB</div>
             </div>
-            <div className="spec-row">
-                <div className={`flex-1 text-center text-xl ${getWinnerClass(gpuA.release_price_usd, gpuB.release_price_usd, true)}`}>${gpuA.release_price_usd}</div>
-                <div className="flex-1 text-center text-[10px] font-black text-neutral-500 uppercase tracking-widest italic">{isEn ? "MSRP PRICE" : "ZAVÁDĚCÍ CENA"}</div>
-                <div className={`flex-1 text-center text-xl ${getWinnerClass(gpuB.release_price_usd, gpuA.release_price_usd, true)}`}>${gpuB.release_price_usd}</div>
+
+            <div className="spec-grid-row">
+                <div className="text-right text-xl font-black text-[#fff]">{gpuA.memory_bus}</div>
+                <div className="px-10 text-[9px] font-black text-neutral-600 uppercase tracking-[0.3em] italic">{isEn ? "BUS WIDTH" : "SBĚRNICE"}</div>
+                <div className="text-left text-xl font-black text-[#fff]">{gpuB.memory_bus}</div>
+            </div>
+
+            <div className="spec-grid-row border-none">
+                <div className={`text-right text-3xl ${getWinnerClass(gpuA.release_price_usd, gpuB.release_price_usd, true)}`}>${gpuA.release_price_usd}</div>
+                <div className="px-10 text-[9px] font-black text-neutral-600 uppercase tracking-[0.3em] italic">{isEn ? "LAUNCH PRICE" : "ZAVÁDĚCÍ CENA"}</div>
+                <div className={`text-left text-3xl ${getWinnerClass(gpuB.release_price_usd, gpuA.release_price_usd, true)}`}>${gpuB.release_price_usd}</div>
             </div>
         </section>
 
-        {/* 🧠 VERDIKT HARDWARE GURU */}
-        <section className="mb-16">
-            <div className="flex items-center gap-3 text-[#a855f7] font-black uppercase tracking-widest text-xs mb-8">
-                <ShieldCheck size={20} /> {isEn ? "GURU AI VERDICT" : "GURU AI VERDIKT"}
+        {/* 🧠 GURU VERDIKT */}
+        <section className="mb-32 relative">
+            <div className="flex items-center gap-4 text-[#ff0055] font-black uppercase tracking-[0.4em] text-[10px] mb-16 bg-[#ff0055]/5 py-4 px-10 rounded-2xl border border-[#ff0055]/20 w-fit mx-auto shadow-[0_0_30px_rgba(255,0,85,0.1)]">
+                <ShieldCheck size={20} /> {isEn ? "GURU MASTER VERDICT" : "GURU MASTER VERDIKT"}
             </div>
             <div className="guru-prose" dangerouslySetInnerHTML={{ __html: content }} />
         </section>
 
-        {/* 💰 AFILIÁTNÍ CTA */}
-        <section className="mt-20 p-12 bg-neutral-900 border-2 border-orange-500/50 rounded-[50px] text-center shadow-[0_25px_60px_rgba(249,115,22,0.2)] relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500 to-transparent opacity-70" />
-            <h3 className="text-4xl font-black text-white mb-6 uppercase tracking-tighter italic tracking-tight">{isEn ? "Upgrade your machine!" : "Nakopni svůj stroj!"}</h3>
-            <p className="text-neutral-400 mb-10 max-w-2xl mx-auto font-medium text-lg italic leading-relaxed">
-              {isEn ? "Looking for a new GPU? We found the best deals for you." : "Hledáš novou grafiku? Našli jsme pro tebe ty nejlepší ceny na trhu."}
+        {/* 💰 GURU CALL TO ACTION */}
+        <section className="mt-40 p-20 bg-[#0c0d10] border-2 border-orange-500/20 rounded-[60px] text-center shadow-[0_50px_150px_rgba(0,0,0,1)] relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500 to-transparent opacity-50" />
+            <div className="absolute -right-32 -bottom-32 opacity-[0.03] rotate-[-15deg] pointer-events-none"><Cpu size={500} color="#f97316"/></div>
+            
+            <h3 className="text-5xl md:text-7xl font-black text-white mb-8 uppercase tracking-tighter italic leading-none">
+              {isEn ? "GEAR UP, GURU!" : "NAKOPNI TO, GURU!"}
+            </h3>
+            <p className="text-neutral-400 mb-14 max-w-xl mx-auto font-black text-xl italic leading-relaxed uppercase tracking-tight">
+              {isEn ? "Don't let your gaming rig starve. Get the maximum power for every dollar." : "Nenech svou herní mašinu hladovět. Vytřískaj z každý koruny maximum FPS."}
             </p>
-            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-affiliate-cta">
-              <ShoppingCart size={28} /> {buyBtnText}
+            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="buy-action-btn">
+              <ShoppingCart size={36} /> {isEn ? "VIEW BEST DEALS" : "ZOBRAZIT NEJLEPŠÍ CENY"}
             </a>
         </section>
       </article>
