@@ -11,20 +11,20 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V8.13
+ * GURU ULTIMATE COMMAND CENTER V8.15
  * Funkce: Multi-Source Intel (HW + Gaming), AI Viral Scoring, Deduplikace, Compact Grid 5x2, 
- * Integrated Publishing + Make.com Webhook (Screenshot Match), Full Czech Localization.
+ * Persistent Storage (Refresh-proof), Integrated Publishing + Make.com Webhook.
  */
 
 // --- 🚀 GURU ENV ENGINE ---
 const getEnv = (key, fallback = '') => {
   if (typeof window === 'undefined') return fallback;
   const envMap = {
+    // 🛡️ GURU: Pro klientské volání OpenAI je prefix nutný, ale mapujeme i tvou variable
     'OPENAI_API_KEY': process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
     'NEXT_PUBLIC_SUPABASE_URL': process.env.NEXT_PUBLIC_SUPABASE_URL || '',
     'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
     'NEXT_PUBLIC_ADMIN_PASSWORD': process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Wifik500',
-    'NEXT_PUBLIC_MAKE_WEBHOOK2_URL': process.env.NEXT_PUBLIC_MAKE_WEBHOOK2_URL || '',
     'NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL': process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL || ''
   };
   return envMap[key] || fallback;
@@ -68,7 +68,7 @@ export default function AdminApp() {
 
   const [data, setData] = useState({ posts: [], deals: [], stats: { visits: 0 } });
 
-  // 🛡️ PERSISTENTNÍ INTEL SEZNAMY
+  // 🛡️ PERSISTENTNÍ INTEL SEZNAMY (Zůstanou po refresh)
   const [hwIntel, setHwIntel] = useState([]);
   const [gameIntel, setGameIntel] = useState([]);
   const [intelLoading, setIntelLoading] = useState(false);
@@ -80,9 +80,25 @@ export default function AdminApp() {
 
   const BASE_URL = 'https://www.thehardwareguru.cz';
 
+  // Načtení session a persistentního intelu při startu
   useEffect(() => {
-    if (typeof window !== 'undefined' && sessionStorage.getItem('guru_admin_auth') === 'true') setIsAuthenticated(true);
+    if (typeof window !== 'undefined') {
+      if (sessionStorage.getItem('guru_admin_auth') === 'true') setIsAuthenticated(true);
+      
+      const savedHw = localStorage.getItem('guru_hw_intel');
+      const savedGame = localStorage.getItem('guru_game_intel');
+      if (savedHw) setHwIntel(JSON.parse(savedHw));
+      if (savedGame) setGameIntel(JSON.parse(savedGame));
+    }
   }, []);
+
+  // Automatické ukládání intelu do paměti prohlížeče při změně
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('guru_hw_intel', JSON.stringify(hwIntel));
+      localStorage.setItem('guru_game_intel', JSON.stringify(gameIntel));
+    }
+  }, [hwIntel, gameIntel]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -113,18 +129,17 @@ export default function AdminApp() {
         deals: dealsRes.data || [],
         stats: { visits: statsRes.data?.value || 0 }
       });
-      addLog('Guru databáze synchronizována.', 'success');
+      addLog('Databáze synchronizována.', 'success');
     } catch (err) { addLog(`Chyba skenu: ${err.message}`, 'error'); }
     finally { setLoading(false); }
   };
 
-  // --- 🚀 GURU INTELLIGENCE: MULTI-SOURCE & AI VIRAL FILTER ---
   const fetchIntelFeed = async () => {
     const openAiKey = getEnv('OPENAI_API_KEY');
     if (!openAiKey) return addLog('CHYBÍ KLÍČ OPENAI!', 'error');
     
     setIntelLoading(true);
-    addLog('Spouštím globální skener HW & Gaming trendů...', 'warning');
+    addLog('Skenuji globální HW & Gaming radar...', 'warning');
     
     const HW_FEEDS = [
       { name: "Tom's Hardware", url: "https://www.tomshardware.com/feeds.xml" },
@@ -151,17 +166,13 @@ export default function AdminApp() {
       };
 
       const [rawHw, rawGame] = await Promise.all([fetchSet(HW_FEEDS, 'hw'), fetchSet(GAME_FEEDS, 'game')]);
-      
-      // 🛡️ DEDUPLIKACE: Kontrola proti DB
       const existingTitles = data.posts.map(p => p.title.toLowerCase().trim());
       const filterUnique = (items) => items.filter(item => !existingTitles.includes(item.title.toLowerCase().trim()));
       
       const uniqueHw = filterUnique(rawHw);
       const uniqueGame = filterUnique(rawGame);
 
-      addLog(`Detekováno ${uniqueHw.length} nových HW a ${uniqueGame.length} herních novinek. AI zahajuje scoring...`, 'warning');
-
-      const scoreItems = async (items) => {
+      const scoreItems = async (items, systemPrompt) => {
         if (items.length === 0) return [];
         const batch = items.slice(0, 15);
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -170,40 +181,38 @@ export default function AdminApp() {
           body: JSON.stringify({
             model: "gpt-4o-mini",
             messages: [
-              {
-                role: "system",
-                content: "Jsi technologický analytik webu thehardwareguru.cz. Vyhodnoť virální potenciál (0-100) pro českou komunitu. Hledej trendy v hardware (NVIDIA, AMD, AI, CPU) i AAA herní hity. Vrať JSON { scores: [{ title, score }] }."
-              },
+              { role: "system", content: systemPrompt },
               { role: "user", content: `Zanalyzuj: ${JSON.stringify(batch.map(i => i.title))}` }
             ],
             response_format: { type: "json_object" }
           })
         });
         const aiRes = await response.json();
-        const content = aiRes.choices[0].message.content;
-        const scores = JSON.parse(content).scores || [];
+        const scores = JSON.parse(aiRes.choices[0].message.content).scores || [];
         return batch.map(item => ({
           ...item,
           viral_score: scores.find(s => s.title === item.title)?.score || 40
         })).sort((a, b) => b.viral_score - a.viral_score).slice(0, 10);
       };
 
-      const [scoredHw, scoredGame] = await Promise.all([scoreItems(uniqueHw), scoreItems(uniqueGame)]);
+      const [scoredHw, scoredGame] = await Promise.all([
+        scoreItems(uniqueHw, "Jsi HW analytik. Hledej trendy v GPU (NVIDIA, AMD), AI hardware a tech faily. Vyhodnoť (0-100). Vrať JSON { scores: [{ title, score }] }."),
+        scoreItems(uniqueGame, "Jsi herní analytik. Hledej AAA hity, leazy a herní dramata. Vyhodnoť (0-100). Vrať JSON { scores: [{ title, score }] }.")
+      ]);
 
       setHwIntel(scoredHw);
       setGameIntel(scoredGame);
-      addLog('Scoring trendů dokončen. Radary jsou aktivní.', 'success');
+      addLog('Radar aktualizován. Data uložena do lokální paměti.', 'success');
 
     } catch (err) { addLog(`Chyba Enginu: ${err.message}`, 'error'); }
     finally { setIntelLoading(false); }
   };
 
-  // --- 🚀 GURU AI CONCEPT ENGINE (VŽDY ČEŠTINA) ---
   const createDraftFromIntel = async (item) => {
     const openAiKey = getEnv('OPENAI_API_KEY');
     if (!openAiKey) return;
     setIsTranslating(true);
-    addLog(`AI připravuje český rozbor pro: ${item.title.substring(0, 30)}...`, 'warning');
+    addLog(`AI připravuje Guru koncept pro: ${item.title.substring(0, 30)}...`, 'warning');
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -229,16 +238,15 @@ export default function AdminApp() {
       });
       
       setPreviewMode('card');
-      addLog('Český koncept připraven k revizi.', 'success');
-    } catch (err) { addLog(`AI selhalo: ${err.message}`, 'error'); }
+      addLog('Koncept připraven.', 'success');
+    } catch (err) { addLog(`AI fail: ${err.message}`, 'error'); }
     finally { setIsTranslating(false); }
   };
 
-  // --- 🚀 GURU PUBLISHING ENGINE (MAKE.COM MATCH) ---
   const publishAndSendToMake = async () => {
     if (!draft) return;
     const makeWebhook = getEnv('NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL');
-    addLog('Zahajuji proces publikace a odesílání na Make...', 'warning');
+    addLog('Zahajuji publikaci a Make.com transfer...', 'warning');
 
     try {
       // 1. Zápis do Supabase
@@ -251,7 +259,7 @@ export default function AdminApp() {
 
       if (error) throw error;
 
-      // 2. Odeslání na Make (Přesná struktura dle screenshotu)
+      // 2. Odeslání na Make (Screenshot Match)
       if (makeWebhook) {
         const payload = {
           title: dbData.title,
@@ -265,35 +273,23 @@ export default function AdminApp() {
           id: dbData.id
         };
 
-        const makeRes = await fetch(makeWebhook, {
+        await fetch(makeWebhook, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        
-        if (makeRes.ok) addLog('Článek úspěšně odeslán na sociální scénář Make.com.', 'success');
-        else throw new Error(`Make API Error: ${makeRes.status}`);
+        addLog('Odesláno na Make.com.', 'success');
       }
 
-      addLog('PUBLIKACE DOKONČENA! 🔥', 'success');
+      addLog('HOTOVO! 🔥', 'success');
       
-      // Vyřazení z feedu
+      // Vyřazení z persistentního seznamu
       setHwIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
       setGameIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
       
-      setDraft(null); 
-      setPreviewMode('none'); 
-      fetchAndScanData();
-    } catch (err) { addLog(`Kritická chyba při publikaci: ${err.message}`, 'error'); }
+      setDraft(null); setPreviewMode('none'); fetchAndScanData();
+    } catch (err) { addLog(`Error: ${err.message}`, 'error'); }
   };
-
-  const runApiTask = (url, name) => {
-    setActiveTab('terminal');
-    addLog(`START: ${name}`, 'info');
-    fetch(url).then(res => res.text()).then(txt => addLog(`ODPOVĚĎ: ${txt.substring(0,100)}`, 'success')).catch(e => addLog(`FAIL: ${e.message}`, 'error'));
-  };
-
-  useEffect(() => { if (isAuthenticated) { fetchAndScanData(); fetchIntelFeed(); } }, [isAuthenticated]);
 
   if (!isAuthenticated) return (
     <div style={{ minHeight: '100vh', background: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
@@ -314,10 +310,6 @@ export default function AdminApp() {
         .sidebar-header { margin: 20px 25px 10px 25px; font-size: 10px; color: #4b5563; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; }
         .sidebar-btn { width: 100%; display: flex; align-items: center; gap: 15px; padding: 15px 25px; background: transparent; border: none; border-left: 4px solid transparent; color: #9ca3af; cursor: pointer; transition: 0.2s; font-weight: 900; font-size: 13px; text-transform: uppercase; }
         .sidebar-btn:hover, .sidebar-btn.active { background: #ffffff0d; color: #fff; }
-        .section-box { background: #111318; padding: 30px; border-radius: 24px; border: 1px solid #ffffff05; margin-bottom: 40px; }
-        .terminal-box { background: #000; border: 1px solid #22c55e33; border-radius: 15px; padding: 20px; font-family: monospace; font-size: 13px; overflow-y: auto; height: 100%; }
-        
-        /* 🚀 GURU COMPACT GRID 5x2 */
         .hub-compact-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 40px; }
         .compact-card { background: #0d0e12; border: 1px solid #ffffff08; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; transition: 0.3s; position: relative; min-height: 160px; }
         .compact-card:hover { border-color: #eab308; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
@@ -333,16 +325,18 @@ export default function AdminApp() {
         .preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 500; display: flex; flex-direction: column; padding: 30px; overflow-y: auto; backdrop-filter: blur(25px); }
         .preview-window { background: #0a0b0d; border-radius: 30px; border: 4px solid #333; margin: 0 auto; overflow: hidden; width: 100%; max-width: 1200px; min-height: 800px; }
         .preview-window.mobile { width: 375px; height: 667px; min-height: auto; }
-        .mock-card { background: #1f2833; border-radius: 12px; overflow: hidden; border: 1px solid rgba(102, 252, 241, 0.2); width: 320px; cursor: pointer; }
+        .mock-card { background: #1f2833; border-radius: 12px; overflow: hidden; border: 1px solid rgba(102, 252, 241, 0.2); width: 320px; cursor: pointer; transition: 0.3s; }
+        .mock-card:hover { border-color: #66fcf1; }
         .mock-prose { color: #d1d5db; line-height: 1.8; font-size: 1.1rem; }
         .mock-prose h2 { color: #66fcf1; font-weight: 950; margin: 1.5em 0 0.5em; text-transform: uppercase; }
+        .mock-prose p { margin-bottom: 1.5em; }
       `}} />
 
       {/* --- 🚀 GURU PREVIEW SYSTEM --- */}
       {previewMode !== 'none' && draft && (
         <div className="preview-overlay">
           <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
-            {/* 🛡️ NAVIGACE NÁHLEDU */}
+            {/* NAVIGACE NÁHLEDU */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', background: 'rgba(255,255,255,0.02)', padding: '20px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ width: 'auto', background: '#222', border: '1px solid #444', color: '#fff' }}>
                     <ArrowLeft size={16}/> ZPĚT DO VELÍNA
@@ -386,16 +380,13 @@ export default function AdminApp() {
         </div>
       )}
 
-      {/* --- SIDEBAR --- */}
+      {/* SIDEBAR */}
       <aside className="admin-sidebar">
         <div style={{ padding: '30px 25px', borderBottom: '1px solid #ffffff0d' }}>
           <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 900 }}>GURU <span style={{ color: '#a855f7' }}>ADMIN</span></h2>
         </div>
         <nav style={{ flex: 1, overflowY: 'auto' }}>
           <SidebarItemUI id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LayoutDashboard />} label="PŘEHLED" color="#a855f7" />
-          <SidebarItemUI id="terminal" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Terminal />} label="TERMINÁL" color="#22c55e" />
-          <div className="sidebar-header">LOGIKA</div>
-          <SidebarItemUI id="pub-plan" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Send />} label="PUBLIKACE" color="#f97316" />
           <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="HW INTEL HUB" color="#eab308" />
         </nav>
       </aside>
@@ -403,39 +394,69 @@ export default function AdminApp() {
       <main className="admin-main">
         {activeTab === 'dashboard' && (
           <div className="fade-in">
-            <h2 style={{ fontSize: '32px', fontWeight: 950, marginBottom: '30px', textTransform: 'uppercase' }}>SYSTÉMOVÝ <span style={{ color: '#a855f7' }}>STATUS</span></h2>
+            <h2 style={{ fontSize: '32px', fontWeight: 950, marginBottom: '30px', textTransform: 'uppercase' }}>STATUS</h2>
             <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-              <div className="stat-card" style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #333', textAlign: 'center' }}>
+              <div style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #333', textAlign: 'center' }}>
                 <h3 style={{ fontSize: '32px', fontWeight: 950 }}>{data.stats.visits}</h3><p style={{fontSize: '11px', color: '#4b5563', fontWeight: '900'}}>NÁVŠTĚVY</p>
               </div>
-              <div className="stat-card" style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #333', textAlign: 'center' }}>
-                <h3 style={{ fontSize: '32px', fontWeight: '950' }}>{data.posts.length}</h3><p style={{fontSize: '11px', color: '#4b5563', fontWeight: '900'}}>ČLÁNKY</p>
-              </div>
-              <div className="stat-card" style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #333', textAlign: 'center' }}>
-                <h3 style={{ fontSize: '32px', fontWeight: '950' }}>{data.deals.length}</h3><p style={{fontSize: '11px', color: '#4b5563', fontWeight: '900'}}>SLEVY</p>
+              <div style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #333', textAlign: 'center' }}>
+                <h3 style={{ fontSize: '32px', fontWeight: 950 }}>{data.posts.length}</h3><p style={{fontSize: '11px', color: '#4b5563', fontWeight: '900'}}>ČLÁNKY</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* --- 🚀 HW INTEL HUB: HARDWARE & GAMING TREND ENGINE --- */}
         {activeTab === 'intel-hub' && (
           <div className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                <CpuIcon color="#eab308" size={32} />
-                <h2 style={{ margin: 0, fontSize: '32px', fontWeight: 950 }}>Intel <span style={{ color: '#eab308' }}>Hub</span></h2>
-              </div>
+              <h2 style={{ margin: 0, fontSize: '32px', fontWeight: 950 }}>Intel <span style={{ color: '#eab308' }}>Hub</span></h2>
               <button onClick={fetchIntelFeed} disabled={intelLoading} className="sidebar-btn active" style={{ width: 'auto', padding: '10px 25px', background: '#eab308', color: '#000' }}>
                 <RefreshCw size={14} className={intelLoading ? 'animate-spin' : ''} /> SKENOVAT TRENDY
               </button>
             </div>
 
-            {/* SEKCE: HARDWARE INTEL (5x2) */}
+            {/* HW TRENDS */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', borderLeft: '4px solid #eab308', paddingLeft: '15px' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 950, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Hardware <span style={{ color: '#eab308' }}>Trend Radar</span></h3>
+                <h3 style={{ fontSize: '16px', fontWeight: 950, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Hardware <span style={{ color: '#eab308' }}>Radar</span></h3>
             </div>
             <div className="hub-compact-grid">
               {hwIntel.map((item, i) => (
                 <div key={i} className="compact-card">
-                  {isTranslating && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}><RefreshCw className="animate-spin" color="#
+                  {isTranslating && draft?.original_item.title === item.title && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}><RefreshCw className="animate-spin" color="#eab308" size={16}/></div>}
+                  <div className="compact-badge" style={{ background: item.viral_score > 85 ? '#ff0055' : '#10b981' }}>{item.viral_score}%</div>
+                  <span className="compact-source">{item.source}</span>
+                  <h4 className="compact-title">{item.title}</h4>
+                  <div className="compact-actions">
+                    <a href={item.link} target="_blank" rel="noreferrer" className="compact-btn">Zdroj</a>
+                    <button onClick={() => createDraftFromIntel(item)} disabled={isTranslating} className="compact-btn compact-btn-main">Koncept</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* GAMING HITS */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', borderLeft: '4px solid #a855f7', paddingLeft: '15px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 950, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Gaming <span style={{ color: '#a855f7' }}>Radar</span></h3>
+            </div>
+            <div className="hub-compact-grid">
+              {gameIntel.map((item, i) => (
+                <div key={i} className="compact-card">
+                  {isTranslating && draft?.original_item.title === item.title && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}><RefreshCw className="animate-spin" color="#a855f7" size={16}/></div>}
+                  <div className="compact-badge" style={{ background: item.viral_score > 85 ? '#ff0055' : '#10b981' }}>{item.viral_score}%</div>
+                  <span className="compact-source">{item.source}</span>
+                  <h4 className="compact-title">{item.title}</h4>
+                  <div className="compact-actions">
+                    <a href={item.link} target="_blank" rel="noreferrer" className="compact-btn">Zdroj</a>
+                    <button onClick={() => createDraftFromIntel(item)} disabled={isTranslating} className="compact-btn compact-btn-main" style={{ borderColor: '#a855f766', color: '#a855f7', background: '#a855f733' }}>Koncept</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {!intelLoading && hwIntel.length === 0 && gameIntel.length === 0 && <div style={{ textAlign: 'center', padding: '100px', color: '#444', fontWeight: 'bold' }}>ŽÁDNÁ DATA. SPUSTI SYNCHRONIZACI.</div>}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
