@@ -11,16 +11,16 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V29.1 (PREVIEW COMPATIBILITY)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V30.1 (PREVIEW COMPATIBILITY)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * Design: Supreme GURU Style (Neon, Glass, Silver Typography, max-w-3xl).
  * Logic: On-demand AI generation + MANDATORY Database persistence.
  * FIX: Implementace "Compatibility Shield" pro vyřešení chyb kompilace (Could not resolve) 
- * v tomto náhledovém okně, zatímco logika zůstává věrná produkční verzi V29.0.
+ * v tomto prostředí, zatímco logika zůstává 100% věrná verzi V30.0 (Production Architecture).
  */
 
 // --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení pro funkčnost v tomto náhledu ---
-const getModule = (name) => {
+const safeLoad = (name) => {
   try {
     return require(name);
   } catch (e) {
@@ -28,10 +28,10 @@ const getModule = (name) => {
   }
 };
 
-const supabaseLib = getModule('@supabase/supabase-js');
-const nextNav = getModule('next/navigation');
-const nextLinkMod = getModule('next/link');
-const openAILib = getModule('openai');
+const supabaseLib = safeLoad('@supabase/supabase-js');
+const nextNav = safeLoad('next/navigation');
+const nextLinkMod = safeLoad('next/link');
+const openAILib = safeLoad('openai');
 
 const createClient = supabaseLib ? supabaseLib.createClient : null;
 const notFound = nextNav ? nextNav.notFound : () => {};
@@ -52,10 +52,27 @@ const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
     )
   : null;
 
+// 🛡️ GURU ENGINE: Robustní vyhledávání karty v DB (Doporučeno ChatGPT)
+const findGpu = async (slugPart) => {
+  if (!supabase || !slugPart) return null;
+  
+  // Převod 'geforce-rtx-3090' na 'geforce rtx 3090'
+  const name = slugPart.replace(/-/g, " ");
+
+  const { data } = await supabase
+    .from("gpus")
+    .select("*")
+    .ilike("name", `%${name}%`)
+    .limit(1)
+    .maybeSingle();
+
+  return data;
+};
+
 // 🚀 GURU ENGINE: Funkce pro vygenerování duelu a ZÁPIS do DB za běhu
 async function generateAndPersistDuel(slug) {
   if (!supabase || !openai) {
-    console.error("GURU: Inicializace OpenAI nebo Supabase selhala. Zkontroluj ENV klíče.");
+    console.error("GURU: Chybí inicializace API pro generování obsahu.");
     return null;
   }
 
@@ -64,43 +81,16 @@ async function generateAndPersistDuel(slug) {
     const parts = cleanSlug.split('-vs-');
     if (parts.length !== 2) return null;
 
-    // 🛡️ GURU LOGIC: Normalizace názvů a extrakce modelu pro přesný matching
-    const normalize = (s) => s.replace(/-/g, ' ').replace(/geforce|radeon/gi, '').trim();
-    
-    const extractModel = (s) => {
-      const match = s.match(/(rtx|rx|arc)\s*\d+/i);
-      return match ? match[0] : s;
-    };
-
-    const searchA = normalize(parts[0]);
-    const modelA = extractModel(searchA);
-    
-    const searchB = normalize(parts[1]);
-    const modelB = extractModel(searchB);
-
-    // 1. Robustní vyhledání karet v DB (Matchne model i celý název)
-    const [resA, resB] = await Promise.all([
-      supabase.from('gpus')
-        .select('*')
-        .or(`name.ilike.%${modelA}%,name.ilike.%${searchA}%`)
-        .limit(1)
-        .maybeSingle(),
-      supabase.from('gpus')
-        .select('*')
-        .or(`name.ilike.%${modelB}%,name.ilike.%${searchB}%`)
-        .limit(1)
-        .maybeSingle()
-    ]);
-
-    const cardA = resA.data;
-    const cardB = resB.data;
+    // 1. Vyhledání karet v DB pomocí robustního engine
+    const cardA = await findGpu(parts[0]);
+    const cardB = await findGpu(parts[1]);
 
     if (!cardA || !cardB) {
-      console.error(`GURU: Karty nespárovány v gpus tabulce. A: ${modelA}, B: ${modelB}`);
+      console.error(`GURU: Karty nenalezeny v gpus tabulce. A: ${parts[0]}, B: ${parts[1]}`);
       return null;
     }
 
-    // 2. AI Generování verdiktu (GURU Styl)
+    // 2. AI Generování odborného verdiktu (GURU Styl)
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -110,7 +100,7 @@ async function generateAndPersistDuel(slug) {
         },
         { 
           role: "user", 
-          content: `Vytvoř profesionální srovnání: ${cardA.name} VS ${cardB.name}. Zaměř se na výkon, cenu a efektivitu.` 
+          content: `Vytvoř profesionální srovnání pro web: ${cardA.name} VS ${cardB.name}.` 
         }
       ],
       response_format: { type: "json_object" }
@@ -146,12 +136,12 @@ async function generateAndPersistDuel(slug) {
 
     return newDuel;
   } catch (err) {
-    console.error("GURU PERSISTENCE ERROR:", err);
+    console.error("GURU PERSISTENCE CRASH:", err);
     return null;
   }
 }
 
-// 🚀 GURU: Cache dotazu pro deduplikaci
+// 🚀 GURU: Cache dotazu pro deduplikaci a rychlost
 const getDuelData = cache(async (slug) => {
   if (!supabase || !slug) return null;
 
@@ -169,14 +159,13 @@ const getDuelData = cache(async (slug) => {
     .limit(1);
 
   if (error || !data || data.length === 0) {
-    // ⚡ Pokud v DB není, vygenerujeme ho s robustním matchingem a zapíšeme
+    // ⚡ Pokud duel v DB není, okamžitě generujeme a ZAPISUJEME
     return await generateAndPersistDuel(slug);
   }
   
   return data[0];
 });
 
-// 🚀 GURU SEO: Dynamická Metadata
 export async function generateMetadata({ params }) {
   const slug = params?.slug ?? null;
   const duel = await getDuelData(slug);
