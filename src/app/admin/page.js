@@ -11,26 +11,24 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V8.34 - ULTIMATE LEAKS BYPASS
- * Zaveden inteligentní Fallback Bypass. Pokud selže interní API, 
- * data se stáhnou bezpečně rovnou přes klientské Proxy.
- * (Očištěno o VideoCardz, pouze původní zdroje Reddit a Chiphell)
+ * GURU ULTIMATE COMMAND CENTER V8.35 - VERCEL BUILD FIX
+ * - Opraveno čtení process.env pro klientské prostředí.
+ * - Leaks & Rumors ponechány pouze s povolenými zdroji (Reddit, Chiphell).
  */
 
-// --- 🚀 GURU ENV ENGINE (Fix pro ReferenceError) ---
-const getEnv = (key, fallback = '') => {
-  try {
-    const envMap = {
-      'OPENAI_API_KEY': process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
-      'NEXT_PUBLIC_SUPABASE_URL': process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      'NEXT_PUBLIC_ADMIN_PASSWORD': process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Wifik500',
-      'NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL': process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL || ''
-    };
-    return envMap[key] || fallback;
-  } catch (e) {
-    return fallback;
-  }
+// --- 🚀 GURU ENV ENGINE (Bezpečné pro klientský build) ---
+// V Next.js na klientu lze bezpečně číst pouze NEXT_PUBLIC_* proměnné.
+// Není potřeba složitý try-catch, pokud se vyhneme skrytým proměnným.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const makeWebhookUrl = process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL || '';
+
+// Pro OpenAI klíč použijeme opatrný přístup (neměl by ideálně být na klientu)
+const getOpenAiKey = () => {
+    if (typeof process !== 'undefined' && process.env) {
+        return process.env.NEXT_PUBLIC_OPENAI_API_KEY || '';
+    }
+    return '';
 };
 
 const initSupabase = () => {
@@ -41,9 +39,7 @@ const initSupabase = () => {
   } catch (e) {
     return { from: () => ({ select: () => ({ order: () => ({ limit: () => Promise.resolve({ data: [] }) }), eq: () => ({ single: () => Promise.resolve({ data: {} }) }) }), update: () => ({ eq: () => Promise.resolve({ error: null }) }), insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: {}, error: null }) }) }) }) };
   }
-  const url = getEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://placeholder.supabase.co');
-  const key = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'placeholder');
-  return createClient(url, key);
+  return createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseKey || 'placeholder');
 };
 
 const SidebarItemUI = ({ id, activeTab, setActiveTab, icon, label, color, href }) => {
@@ -120,7 +116,8 @@ export default function AdminApp() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (password === getEnv('NEXT_PUBLIC_ADMIN_PASSWORD', 'Wifik500')) {
+    const adminPassword = (typeof process !== 'undefined' && process.env) ? process.env.NEXT_PUBLIC_ADMIN_PASSWORD : '';
+    if (password === (adminPassword || 'Wifik500')) {
       setIsAuthenticated(true);
       if (typeof window !== 'undefined') sessionStorage.setItem('guru_admin_auth', 'true');
     }
@@ -158,7 +155,7 @@ export default function AdminApp() {
   };
 
   const fetchIntelFeed = async () => {
-    const openAiKey = getEnv('OPENAI_API_KEY');
+    const openAiKey = getOpenAiKey();
     if (!openAiKey) return addLog('CHYBÍ KLÍČ OPENAI!', 'error');
     setIntelLoading(true);
     addLog('Spouštím globální skener HW, Gaming & Leaks trendů...', 'warning');
@@ -194,21 +191,26 @@ export default function AdminApp() {
       };
 
       // 🚀 GURU ULTIMATE BYPASS: Spolehlivé získání Leaks bez ohledu na stav backendu
+      // Striktně ponechány pouze dva zdroje: Reddit a Chiphell
       const fetchLeaksBackend = async () => {
         try {
           const res = await fetch('/api/leaks');
           if (!res.ok) throw new Error(`Status ${res.status}`);
           const json = await res.json();
-          return json.data || [];
+          if (json.data && json.data.length > 0) {
+             addLog("Úniky načteny z backendu.", "success");
+             return json.data;
+          }
+          throw new Error("Backend vrátil prázdná data.");
         } catch (e) {
           console.warn("Leaks API error:", e.message);
-          addLog(`API routa pro úniky selhala (${e.message}). Aktivuji GURU Záchranný Bypass...`, "warning");
+          addLog(`API routa pro úniky selhala. Aktivuji GURU Záchranný Bypass...`, "warning");
           
-          // Záchranná vrstva (100% jistota dodání dat na klienta přes public Proxy)
+          // Záchranná vrstva
           try {
             const fallbackLeaks = [];
             
-            // 1. Reddit přes AllOrigins Proxy (Obejítí 429 Erroru u rss2json)
+            // 1. Reddit přes AllOrigins Proxy
             const redditRes = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://www.reddit.com/r/GamingLeaksAndRumours/new.json?limit=15')}`);
             if (redditRes.ok) {
               const redditJson = await redditRes.json();
@@ -225,7 +227,7 @@ export default function AdminApp() {
               fallbackLeaks.push(...redditPosts);
             }
 
-            // 2. Chiphell (Původní zdroj pro úniky HW a Tech)
+            // 2. Chiphell
             const chiphellRes = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://www.chiphell.com/forum.php?mod=rss&fid=224')}&t=${Date.now()}`);
             if (chiphellRes.ok) {
               const chipData = await chiphellRes.json();
@@ -310,7 +312,7 @@ export default function AdminApp() {
       return;
     }
 
-    const openAiKey = getEnv('OPENAI_API_KEY');
+    const openAiKey = getOpenAiKey();
     if (!openAiKey) return;
     
     setProcessingTitle(item.title);
@@ -360,7 +362,7 @@ export default function AdminApp() {
 
   const publishAndSendToMake = async () => {
     if (!draft) return;
-    const makeWebhook = getEnv('NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL');
+    const makeWebhook = makeWebhookUrl;
     addLog('Zahajuji bleskovou publikaci a Make.com transfer...', 'warning');
 
     try {
@@ -607,7 +609,7 @@ export default function AdminApp() {
               ))}
             </div>
 
-            {/* 🚀 GURU: Leaks & Rumors Radar */}
+            {/* 🚀 GURU: Leaks & Rumors Radar (Přepojeno na bezpečný Záchranný Bypass) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', borderLeft: '4px solid #66fcf1', paddingLeft: '15px' }}>
                 <Ghost color="#66fcf1" size={18} />
                 <h3 style={{ fontSize: '16px', fontWeight: 950, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Leaks & <span style={{ color: '#66fcf1' }}>Rumors</span></h3>
