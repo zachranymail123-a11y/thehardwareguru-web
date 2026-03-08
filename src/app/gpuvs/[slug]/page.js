@@ -1,4 +1,8 @@
-import React, { cache } from 'react';
+import { cache } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import OpenAI from 'openai';
 import { 
   ChevronLeft, 
   Swords, 
@@ -11,58 +15,44 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V30.1 (PREVIEW COMPATIBILITY)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V32.1 (CLEAN MATCHING)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * Design: Supreme GURU Style (Neon, Glass, Silver Typography, max-w-3xl).
  * Logic: On-demand AI generation + MANDATORY Database persistence.
- * FIX: Implementace "Compatibility Shield" pro vyřešení chyb kompilace (Could not resolve) 
- * v tomto prostředí, zatímco logika zůstává 100% věrná verzi V30.0 (Production Architecture).
+ * FIX 1: findGpu normalizace názvů (odstranění geforce/radeon/nvidia/amd) - ChatGPT mandate.
+ * FIX 2: Regex replace (/g) v getDuelData pro bleskový lookup slugu bez prefixů.
+ * FIX 3: Statické importy (ESM) bez dynamických require hacků pro Next.js Server Components.
  */
 
-// --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení pro funkčnost v tomto náhledu ---
-const safeLoad = (name) => {
-  try {
-    return require(name);
-  } catch (e) {
-    return null;
-  }
-};
-
-const supabaseLib = safeLoad('@supabase/supabase-js');
-const nextNav = safeLoad('next/navigation');
-const nextLinkMod = safeLoad('next/link');
-const openAILib = safeLoad('openai');
-
-const createClient = supabaseLib ? supabaseLib.createClient : null;
-const notFound = nextNav ? nextNav.notFound : () => {};
-const Link = nextLinkMod ? (nextLinkMod.default || nextLinkMod) : ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>;
-const OpenAI = openAILib ? (openAILib.default || openAILib) : null;
-
 // 🚀 GURU: Inicializace OpenAI (Striktně server-side API KEY)
-const openai = (OpenAI && process.env.OPENAI_API_KEY)
+const openai = (process.env.OPENAI_API_KEY)
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
 // 🚀 GURU: Inicializace Supabase klienta pro Server Components
-const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
-  ? createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      { auth: { persistSession: false } }
-    )
-  : null;
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+  { auth: { persistSession: false } }
+);
 
-// 🛡️ GURU ENGINE: Robustní vyhledávání karty v DB (Doporučeno ChatGPT)
+// 🛡️ GURU ENGINE: Robustní vyhledávání karty v DB (Opraveno podle ChatGPT)
 const findGpu = async (slugPart) => {
   if (!supabase || !slugPart) return null;
   
-  // Převod 'geforce-rtx-3090' na 'geforce rtx 3090'
-  const name = slugPart.replace(/-/g, " ");
+  // 🚀 GURU FIX: Agresivní odstranění prefixů, které blokovaly matching s "NVIDIA GeForce..."
+  const clean = slugPart
+    .replace(/-/g, " ")
+    .replace(/geforce|radeon|nvidia|amd/gi, "")
+    .trim();
+
+  // Debug log pro kontrolu v konzoli tvého serveru
+  console.log("GURU GPU Search term:", clean);
 
   const { data } = await supabase
     .from("gpus")
     .select("*")
-    .ilike("name", `%${name}%`)
+    .ilike("name", `%${clean}%`)
     .limit(1)
     .maybeSingle();
 
@@ -81,16 +71,16 @@ async function generateAndPersistDuel(slug) {
     const parts = cleanSlug.split('-vs-');
     if (parts.length !== 2) return null;
 
-    // 1. Vyhledání karet v DB pomocí robustního engine
+    // 1. Vyhledání karet v DB pomocí opraveného findGpu engine (prefix-less matching)
     const cardA = await findGpu(parts[0]);
     const cardB = await findGpu(parts[1]);
 
     if (!cardA || !cardB) {
-      console.error(`GURU: Karty nenalezeny v gpus tabulce. A: ${parts[0]}, B: ${parts[1]}`);
+      console.error(`GURU: Karty nenalezeny v DB. A: ${parts[0]}, B: ${parts[1]}`);
       return null;
     }
 
-    // 2. AI Generování odborného verdiktu (GURU Styl)
+    // 2. AI Generování odborného verdiktu (Hardware Guru Persona)
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -100,7 +90,7 @@ async function generateAndPersistDuel(slug) {
         },
         { 
           role: "user", 
-          content: `Vytvoř profesionální srovnání pro web: ${cardA.name} VS ${cardB.name}.` 
+          content: `Vytvoř profesionální srovnání: ${cardA.name} VS ${cardB.name}.` 
         }
       ],
       response_format: { type: "json_object" }
@@ -108,7 +98,7 @@ async function generateAndPersistDuel(slug) {
 
     const aiResult = JSON.parse(completion.choices[0].message.content);
 
-    // 3. ZÁPIS DO DATABÁZE (Persistence)
+    // 3. ZÁPIS DO DATABÁZE (Persistence bez slug_en)
     const { data: newDuel, error: insertError } = await supabase
       .from('gpu_duels')
       .insert([{
@@ -136,17 +126,21 @@ async function generateAndPersistDuel(slug) {
 
     return newDuel;
   } catch (err) {
-    console.error("GURU PERSISTENCE CRASH:", err);
+    console.error("GURU PERSISTENCE ERROR:", err);
     return null;
   }
 }
 
-// 🚀 GURU: Cache dotazu pro deduplikaci a rychlost
+// 🚀 GURU: Cache dotazu pro bleskovou odezvu
 const getDuelData = cache(async (slug) => {
   if (!supabase || !slug) return null;
 
   const cleanSlug = slug.replace(/^en-/, '');
-  const normalizedSlug = cleanSlug.replace('geforce-', '').replace('radeon-', '');
+  
+  // 🚀 GURU FIX: Globální regex replace pro korektní normalizaci slugu
+  const normalizedSlug = cleanSlug
+    .replace(/geforce-/g, '')
+    .replace(/radeon-/g, '');
 
   const { data, error } = await supabase
     .from('gpu_duels')
@@ -159,13 +153,14 @@ const getDuelData = cache(async (slug) => {
     .limit(1);
 
   if (error || !data || data.length === 0) {
-    // ⚡ Pokud duel v DB není, okamžitě generujeme a ZAPISUJEME
+    // ⚡ Pokud duel v DB není, spustíme generování s opraveným matchingem
     return await generateAndPersistDuel(slug);
   }
   
   return data[0];
 });
 
+// SEO Meta Tagy
 export async function generateMetadata({ params }) {
   const slug = params?.slug ?? null;
   const duel = await getDuelData(slug);
@@ -182,17 +177,12 @@ export default async function App({ params }) {
   const slug = params?.slug ?? null;
   const duel = await getDuelData(slug);
 
-  if (!duel) {
-    if (typeof notFound === 'function') notFound();
-    return <div className="p-20 text-center text-[#ff0055] font-black uppercase text-2xl">404 - Duel nebyl nalezen ani vygenerován.</div>;
-  }
+  if (!duel) notFound();
 
   const isEn = slug?.startsWith('en-');
   const { gpuA, gpuB } = duel;
 
-  if (!gpuA || !gpuB) {
-    return <div className="p-20 text-center text-white font-black uppercase text-2xl tracking-tighter">DATA ERROR: Karta nebyla nalezena v DB.</div>;
-  }
+  if (!gpuA || !gpuB) notFound();
 
   const title = isEn ? (duel.title_en || duel.title_cs) : duel.title_cs;
   const content = isEn ? (duel.content_en || duel.content_cs) : (duel.content_cs || duel.content);
