@@ -12,6 +12,7 @@ export function middleware(request) {
   const country = request.headers.get('x-vercel-ip-country') || 'CZ';
 
   // 🛡️ GURU SHIELD: Ignorujeme systémové soubory a statické assety
+  // 🚀 GURU FIX: Toto zajišťuje, že /api routy projdou bez 404 přesměrování!
   if (
     pathname.includes('.') || 
     pathname.startsWith('/_next') || 
