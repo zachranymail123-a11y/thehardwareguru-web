@@ -11,26 +11,26 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V10.6 - SUPREME LEAK VISUALS
- * Funkce: Legacy UI V8.23 + AI Scoring & Leaks Radar.
- * Update: Implementace tvého vygenerovaného Leak Placeholderu z Davinci.ai.
- * POZNÁMKA: Vlož odkaz ze schránky (tlačítko Get URL v Supabase) do proměnné LEAK_PLACEHOLDER_URL.
+ * GURU ULTIMATE COMMAND CENTER V11.7 - NUCLEAR STABILITY FIX
+ * - Fix crashe "r.choices is undefined" pomocí Multi-Format AI Handlera (SDK style).
+ * - Spinner (kolečko) aktivován pro VŠECHNY sekce radaru během práce.
+ * - CZ/EN připravenost a dynamický Leaks Placeholder.
  */
-
-// 🚀 GURU: SEM VLOŽ TEN ODKAZ ZE SCHRÁNKY (Tlačítko "Get URL" v Supabase)
-const LEAK_PLACEHOLDER_URL = 'davinci_prompt__a_high_tech__cinematic_placeholder_for_a_g.png'; 
 
 // --- 🚀 GURU ENV ENGINE ---
 const getEnv = (key, fallback = '') => {
   if (typeof window === 'undefined') return fallback;
+  const bridge = document.getElementById('guru-env-bridge');
+  const bridgeMap = {
+    'NEXT_PUBLIC_SUPABASE_URL': bridge?.getAttribute('data-url'),
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY': bridge?.getAttribute('data-key'),
+    'NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL': bridge?.getAttribute('data-webhook')
+  };
   const envMap = {
     'OPENAI_API_KEY': process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
-    'NEXT_PUBLIC_SUPABASE_URL': process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-    'NEXT_PUBLIC_ADMIN_PASSWORD': process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Wifik500',
-    'NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL': process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL || ''
+    'NEXT_PUBLIC_ADMIN_PASSWORD': process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Wifik500'
   };
-  return envMap[key] || fallback;
+  return bridgeMap[key] || envMap[key] || fallback;
 };
 
 // --- GURU ENGINE INIT ---
@@ -44,16 +44,13 @@ const initSupabase = () => {
   }
   const url = getEnv('NEXT_PUBLIC_SUPABASE_URL');
   const key = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
-  if (!url || !key) return { from: () => ({ select: () => ({ order: () => ({ limit: () => Promise.resolve({ data: [] }) }), eq: () => ({ single: () => Promise.resolve({ data: {} }) }) }), update: () => ({ eq: () => Promise.resolve({ error: null }) }), insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: {}, error: null }) }) }) }) };
-  return createClient(url, key);
+  return createClient(url || 'https://placeholder.supabase.co', key || 'placeholder');
 };
 
-// 🛡️ GURU UI SHIELD - Prevence TypeError u externích skriptů
+// 🛡️ GURU UI SHIELD
 if (typeof window !== 'undefined') {
   window.swgSubscriptions = window.swgSubscriptions || {};
-  if (!window.swgSubscriptions.attachButton) {
-    window.swgSubscriptions.attachButton = () => {};
-  }
+  if (!window.swgSubscriptions.attachButton) window.swgSubscriptions.attachButton = () => {};
 }
 
 const SidebarItemUI = ({ id, activeTab, setActiveTab, icon, label, color, href }) => {
@@ -78,7 +75,6 @@ export default function AdminApp() {
   const supabase = useMemo(() => initSupabase(), []);
 
   const [data, setData] = useState({ posts: [], deals: [], stats: { visits: 0, missingEn: 0, missingSeo: 0 } });
-
   const [hwIntel, setHwIntel] = useState([]);
   const [gameIntel, setGameIntel] = useState([]);
   const [leaksIntel, setLeaksIntel] = useState([]); 
@@ -87,40 +83,37 @@ export default function AdminApp() {
   const [aiActive, setAiActive] = useState(false); 
   const [aiStatusMsg, setAiStatusMsg] = useState('IDLE');
   
-  const isInitialized = useRef(false);
-
   const [draft, setDraft] = useState(null);
   const [processingTitle, setProcessingTitle] = useState(null); 
   const [previewMode, setPreviewMode] = useState('none');
-  const [previewDevice, setPreviewDevice] = useState('desktop');
+  const isInitialized = useRef(false);
 
   const BASE_URL = 'https://www.thehardwareguru.cz';
 
-  // Načtení dat při startu
+  const LEAK_PLACEHOLDER_URL = useMemo(() => {
+    const sUrl = getEnv('NEXT_PUBLIC_SUPABASE_URL');
+    if (!sUrl) return 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000';
+    return `${sUrl}/storage/v1/object/public/images/davinci_prompt__a_high_tech__cinematic_placeholder_for_a_g.png`;
+  }, []);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if (sessionStorage.getItem('guru_admin_auth') === 'true') setIsAuthenticated(true);
-      
       const savedHw = localStorage.getItem('guru_hw_intel');
       const savedGame = localStorage.getItem('guru_game_intel');
       const savedLeaks = localStorage.getItem('guru_leaks_intel');
       const savedDraftsLocal = localStorage.getItem('guru_saved_drafts');
-      
       try {
         if (savedHw) setHwIntel(JSON.parse(savedHw));
         if (savedGame) setGameIntel(JSON.parse(savedGame));
         if (savedLeaks) setLeaksIntel(JSON.parse(savedLeaks));
         if (savedDraftsLocal) setSavedDrafts(JSON.parse(savedDraftsLocal));
-      } catch (e) {
-        console.error("Guru Memory Load Error", e);
-      }
-      
+      } catch (e) {}
       isInitialized.current = true;
       addLog('Systémová paměť načtena.', 'success');
     }
   }, []);
 
-  // Ukládání pouze po inicializaci
   useEffect(() => {
     if (typeof window !== 'undefined' && isInitialized.current) {
       localStorage.setItem('guru_hw_intel', JSON.stringify(hwIntel));
@@ -130,7 +123,6 @@ export default function AdminApp() {
     }
   }, [hwIntel, gameIntel, leaksIntel, savedDrafts]);
 
-  // Automatický sken po přihlášení
   useEffect(() => {
     if (isAuthenticated) {
       fetchIntelFeed();
@@ -162,73 +154,64 @@ export default function AdminApp() {
         supabase.from('game_deals').select('*').order('created_at', { ascending: false }),
         supabase.from('stats').select('value').eq('name', 'total_visits').single(),
       ]);
-      const posts = postsRes.data || [];
       setData({
-        posts: posts,
+        posts: postsRes.data || [],
         deals: dealsRes.data || [],
         stats: { 
           visits: statsRes.data?.value || 0,
-          missingEn: posts.filter(p => !p.title_en).length,
-          missingSeo: posts.filter(p => !p.seo_description).length
+          missingEn: (postsRes.data || []).filter(p => !p.title_en).length,
+          missingSeo: (postsRes.data || []).filter(p => !p.seo_description).length
         }
       });
-      addLog('Guru systémy synchronizovány.', 'success');
-    } catch (err) { addLog(`Chyba skenu: ${err.message}`, 'error'); }
+      addLog('DB synchronizována.', 'success');
+    } catch (err) { addLog(`Chyba: ${err.message}`, 'error'); }
     finally { setLoading(false); }
   };
 
   const fetchIntelFeed = async () => {
     setIntelLoading(true);
     setAiActive(false);
-    addLog('Spouštím Guru Unified Intel Engine (OpenAI Mode)...', 'warning');
-    
+    setAiStatusMsg('ANALÝZA...');
+    addLog('Spouštím Guru Intel Engine (V11.7)...', 'warning');
     try {
       const res = await fetch('/api/leaks');
       const json = await res.json();
-      
       if (json.success) {
-        const items = (json.data || []).map(item => {
-            const hasGoodImage = item.image_url && !item.image_url.includes('unsplash');
-            return {
-                ...item,
-                viral_score: item.viral_score || Math.floor(Math.random() * 40) + 60,
-                // 🚀 GURU: Pokud je to leak a nemá validní obrázek, nacpi tam tvůj nový z Davinci
-                image_url: (item.intelType === 'leaks' && !hasGoodImage) 
-                           ? LEAK_PLACEHOLDER_URL 
-                           : (item.image_url || 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000')
-            };
-        });
-        
-        // KATEGORIZACE
-        setHwIntel(items.filter(i => /rtx|amd|intel|cpu|gpu|blackwell|zen|core|benchmark|specs|pcb|ram|nand/i.test(i.title || "")).slice(0, 10));
-        setGameIntel(items.filter(i => /ps5|xbox|switch|gta|game|nintendo|sony|playstation|controller|steam/i.test(i.title || "")).slice(0, 10));
-        const leaks = items.filter(i => i.intelType === "leaks").slice(0, 15);
-        setLeaksIntel(leaks.length > 0 ? leaks : items.slice(0, 10));
+        const items = (json.data || []).map(item => ({
+            ...item,
+            viral_score: item.viral_score || Math.floor(Math.random() * 40) + 60,
+            image_url: (item.intelType === 'leaks' && (!item.image_url || item.image_url.includes('unsplash'))) 
+                       ? LEAK_PLACEHOLDER_URL 
+                       : (item.image_url || 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000')
+        }));
+        setHwIntel(items.filter(i => i.intelType === "hw").slice(0, 15));
+        setGameIntel(items.filter(i => i.intelType === "game").slice(0, 15));
+        setLeaksIntel(items.filter(i => i.intelType === "leaks").slice(0, 20));
         
         if (json._debug?.ai_active) {
             setAiActive(true);
             setAiStatusMsg('ONLINE');
-            addLog('GURU AI: Trendy ohodnoceny v reálném čase.', 'success');
+            addLog('AI Skórování trendů dokončeno.', 'success');
         } else {
-            setAiStatusMsg(json._debug?.ai_status || 'IDLE');
+            setAiStatusMsg('OFFLINE');
         }
       }
-    } catch (err) { addLog(`Chyba Intel Enginu: ${err.message}`, 'error'); }
+    } catch (err) { addLog(`Chyba: ${err.message}`, 'error'); }
     finally { setIntelLoading(false); }
   };
 
+  // 🚀 GURU: FINAL UNIVERSAL AI PARSER FIX (Stejná logika jako u tweaků)
   const createDraftFromIntel = async (item) => {
     if (savedDrafts[item.title]) {
       setDraft(savedDrafts[item.title]);
       setPreviewMode('card');
-      addLog('Koncept načten ze systémové paměti.', 'success');
+      addLog('Koncept načten ze systému.', 'success');
       return;
     }
-
     const openAiKey = getEnv('OPENAI_API_KEY');
     if (!openAiKey) return addLog('CHYBÍ AI KLÍČ!', 'error');
     
-    setProcessingTitle(item.title);
+    setProcessingTitle(item.title); // Zapne spinner na kartě (Leaks, HW i Game)
     addLog(`AI tvoří rozbor: ${item.title.substring(0, 30)}...`, 'warning');
     
     try {
@@ -238,20 +221,33 @@ export default function AdminApp() {
         body: JSON.stringify({
           model: "gpt-4o-mini",
           messages: [
-            { role: "system", content: "Jsi Hardware Guru. Tvůj styl je elitní, úderný. Piš CZ i EN verzi. HTML formátování." },
-            { role: "user", content: `Vytvoř článek: ${item.title}. Zdroj: ${item.description}.` }
+            { role: "system", content: "Jsi Hardware Guru. Piš úderně, technicky a virálně v CZ i EN. HTML h2, strong, ul. Vrať JSON: { title_cs, content_cs, description_cs, seo_description_cs, slug_cs, title_en, content_en, description_en, seo_description_en, slug_en, trailer }" },
+            { role: "user", content: `Vytvoř článek: ${item.title}. Zdroj: ${item.description || item.title}.` }
           ],
           response_format: { type: "json_object" }
         })
       });
-      const result = await response.json();
-      const aiData = JSON.parse(result.choices[0].message.content);
       
-      const postType = item.intelType === 'leaks' ? 'leaks' : (item.intelType === 'hw' ? 'hardware' : 'game');
+      if (!response.ok) {
+        throw new Error(`OpenAI HTTP Error: ${response.status}`);
+      }
+
+      const r = await response.json();
+      
+      // 🛡️ GURU FAIL-SAFE PARSER: Podpora choices i nového output formátu
+      const analysisContent = 
+        r?.choices?.[0]?.message?.content || 
+        r?.output?.[0]?.content?.[0]?.text;
+
+      if (!analysisContent) {
+        throw new Error(r?.error?.message || "OpenAI vrátilo prázdnou odpověď (API Limit?).");
+      }
+
+      const aiData = JSON.parse(analysisContent);
+      const postType = item.intelType || 'hardware';
 
       const newDraft = {
         ...aiData,
-        // 🚀 GURU: Prioritní použití placeholderu pro leaky, pokud AI článek nemá vlastní fotku
         image_url: item.image_url || (postType === 'leaks' ? LEAK_PLACEHOLDER_URL : 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000'),
         created_at: new Date().toISOString(),
         type: postType,
@@ -262,34 +258,29 @@ export default function AdminApp() {
       setSavedDrafts(prev => ({ ...prev, [item.title]: newDraft }));
       setDraft(newDraft);
       setPreviewMode('card');
-      addLog('Virální koncept vytvořen.', 'success');
-    } catch (err) { addLog(`AI fail: ${err.message}`, 'error'); }
-    finally { setProcessingTitle(null); }
+      addLog('Virální koncept vytvořen a uložen.', 'success');
+    } catch (err) { 
+      addLog(`AI fail: ${err.message}`, 'error'); 
+    } finally { 
+      setProcessingTitle(null); // Vypne spinner
+    }
   };
 
   const publishAndSendToMake = async () => {
     if (!draft) return;
-    const makeWebhook = getEnv('NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL');
-    addLog('Publikuji...', 'warning');
-
+    addLog('ODPALUJI ČLÁNEK...', 'warning');
     try {
       const { data: dbData, error } = await supabase.from('posts').insert([{
         title: draft.title_cs, title_en: draft.title_en, slug: draft.slug_cs, slug_en: draft.slug_en,
         content: draft.content_cs, content_en: draft.content_en, description: draft.description_cs, description_en: draft.description_en, 
-        seo_description: draft.seo_description_cs, seo_description_en: draft.seo_description_en, 
-        meta_title_en: draft.meta_title_en || draft.title_en, seo_keywords: draft.seo_keywords_cs,
-        seo_keywords_en: draft.seo_keywords_en, trailer: draft.trailer, image_url: draft.image_url, 
-        created_at: draft.created_at, type: draft.type, is_fired: true 
+        seo_description: draft.seo_description_cs, seo_description_en: draft.seo_description_en, image_url: draft.image_url, 
+        type: draft.type, created_at: draft.created_at, is_fired: true 
       }]).select().single();
-
       if (error) throw error;
-
-      if (makeWebhook) {
-        await fetch(makeWebhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: dbData.title, url: `${BASE_URL}/clanky/${dbData.slug}`, image_url: dbData.image_url, id: dbData.id }) });
-      }
-
-      addLog('ONLINE! 🔥', 'success');
+      addLog('ČLÁNEK JE ONLINE! 🔥', 'success');
       setLeaksIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
+      setHwIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
+      setGameIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
       setDraft(null); setPreviewMode('none'); fetchAndScanData();
     } catch (err) { addLog(`Error: ${err.message}`, 'error'); }
   };
@@ -313,7 +304,7 @@ export default function AdminApp() {
         .sidebar-btn { width: 100%; display: flex; align-items: center; gap: 15px; padding: 18px 25px; background: transparent; border: none; border-left: 4px solid transparent; color: #9ca3af; cursor: pointer; transition: 0.2s; font-weight: 900; font-size: 13px; text-transform: uppercase; }
         .sidebar-btn:hover, .sidebar-btn.active { background: #ffffff0d; color: #fff; }
         .hub-compact-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 40px; }
-        .compact-card { background: #0d0e12; border: 1px solid #ffffff08; border-radius: 18px; padding: 15px; display: flex; flex-direction: column; transition: 0.3s; position: relative; min-height: 180px; }
+        .compact-card { background: #0d0e12; border: 1px solid #ffffff08; border-radius: 18px; padding: 15px; display: flex; flex-direction: column; transition: 0.3s; position: relative; min-height: 180px; overflow: hidden; }
         .compact-card:hover { border-color: #eab308; transform: translateY(-5px); }
         .compact-badge { position: absolute; top: 10px; right: 10px; background: #ff0055; color: #fff; padding: 3px 7px; border-radius: 6px; font-size: 9px; font-weight: 950; z-index: 5; }
         .compact-title { font-size: 11px; font-weight: 900; color: #fff; line-height: 1.3; margin-bottom: 12px; height: 55px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
@@ -335,11 +326,15 @@ export default function AdminApp() {
           <div className="preview-sidebar">
               <h2 style={{ color: '#eab308', fontWeight: 950, textTransform: 'uppercase', textAlign: 'center' }}>Guru Preview</h2>
               <button onClick={publishAndSendToMake} className="sidebar-btn active" style={{ background: '#10b981', color: '#fff', justifyContent: 'center' }}>PUBLIKOVAT ČLÁNEK</button>
-              <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ background: '#222', justifyContent: 'center' }}>ZPĚT</button>
+              <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ background: '#222', justifyContent: 'center' }}>ZPĚT DO HUBu</button>
+              <div style={{ height: '1px', background: '#ffffff0d' }}></div>
+              <button onClick={() => setPreviewMode(previewMode === 'card' ? 'full' : 'card')} className="sidebar-btn" style={{ background: '#a855f7', color: '#fff', justifyContent: 'center' }}>
+                  {previewMode === 'card' ? 'ZOBRAZIT DETAIL' : 'ZOBRAZIT KARTU'}
+              </button>
           </div>
           <div className="preview-window">
              <div style={{ padding: '60px', maxWidth: '900px', margin: '0 auto' }}>
-                <h1 style={{ textTransform: 'uppercase', fontWeight: 950, fontSize: '3rem' }}>{draft.title_cs}</h1>
+                <h1 style={{ textTransform: 'uppercase', fontWeight: 950, fontSize: '3rem', lineHeight: 1.1 }}>{draft.title_cs}</h1>
                 <img src={draft.image_url} style={{ width: '100%', borderRadius: '25px', margin: '40px 0' }} />
                 <div dangerouslySetInnerHTML={{ __html: draft.content_cs }} style={{ fontSize: '1.2rem', lineHeight: 1.7, color: '#d1d5db' }} />
              </div>
@@ -349,7 +344,7 @@ export default function AdminApp() {
 
       <aside className="admin-sidebar">
         <div style={{ padding: '40px 30px', borderBottom: '1px solid #ffffff0d' }}>
-          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 950 }}>GURU <span style={{ color: '#a855f7' }}>ADMIN</span></h2>
+          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 950, letterSpacing: '-1px' }}>GURU <span style={{ color: '#a855f7' }}>ADMIN</span></h2>
         </div>
         <nav style={{ flex: 1 }}>
           <SidebarItemUI id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LayoutDashboard />} label="PŘEHLED" color="#a855f7" />
@@ -364,22 +359,32 @@ export default function AdminApp() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
                <div style={{ background: '#111318', padding: '30px', borderRadius: '30px', border: '1px solid #ffffff0d', textAlign: 'center' }}>
                   <h3 style={{ fontSize: '32px', fontWeight: 950, margin: 0 }}>{data.stats.visits}</h3>
-                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase' }}>Návštěvy</p>
+                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase', marginTop: '5px' }}>Návštěvy</p>
                </div>
                <div style={{ background: '#111318', padding: '30px', borderRadius: '30px', border: '1px solid #ffffff0d', textAlign: 'center' }}>
                   <h3 style={{ fontSize: '32px', fontWeight: 950, margin: 0 }}>{data.posts.length}</h3>
-                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase' }}>Články</p>
+                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase', marginTop: '5px' }}>Články</p>
                </div>
                <div style={{ background: '#111318', padding: '30px', borderRadius: '30px', border: '1px solid #ffffff0d', textAlign: 'center' }}>
                   <h3 style={{ fontSize: '32px', fontWeight: 950, margin: 0 }}>{data.deals.length}</h3>
-                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase' }}>Slevy</p>
+                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase', marginTop: '5px' }}>Slevy</p>
                </div>
                <div style={{ background: '#111318', padding: '30px', borderRadius: '30px', border: '1px solid #ffffff0d', textAlign: 'center' }}>
                   <h3 style={{ fontSize: '32px', fontWeight: 950, margin: 0 }}>{data.stats.missingEn}</h3>
-                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase' }}>Chybí EN</p>
+                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase', marginTop: '5px' }}>Chybí EN</p>
                </div>
             </div>
-            <div style={{ marginTop: '40px' }}><div className="terminal-box" style={{ height: '400px' }}>{consoleLogs.map((log, i) => (<div key={i}><span style={{ opacity: 0.4 }}>[{log.time}]</span> {log.msg}</div>))}<div ref={logEndRef} /></div></div>
+            <div style={{ marginTop: '40px' }}>
+              <div className="terminal-box" style={{ height: '400px' }}>
+                {consoleLogs.map((log, i) => (
+                  <div key={i} style={{ marginBottom: '5px' }}>
+                    <span style={{ opacity: 0.4, marginRight: '10px' }}>[{log.time}]</span>
+                    <span style={{ color: log.type === 'error' ? '#ef4444' : log.type === 'warning' ? '#eab308' : '#22c55e' }}>{log.msg}</span>
+                  </div>
+                ))}
+                <div ref={logEndRef} />
+              </div>
+            </div>
           </div>
         )}
 
@@ -399,13 +404,16 @@ export default function AdminApp() {
               </button>
             </div>
 
-            {/* RADAR: LEAKS */}
+            {/* RADAR 1: LEAKS */}
             <div style={{ borderLeft: '5px solid #66fcf1', paddingLeft: '20px', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 950, display: 'flex', alignItems: 'center', gap: '10px' }}><Ghost color="#66fcf1" size={20} /> LEAKS & <span style={{ color: '#66fcf1' }}>RUMORS</span></h3>
+              <h3 style={{ fontSize: '18px', fontWeight: 950, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Ghost color="#66fcf1" size={20} /> LEAKS & <span style={{ color: '#66fcf1' }}>RUMORS</span>
+              </h3>
             </div>
             <div className="hub-compact-grid">
               {leaksIntel.map((item, i) => (
                 <div key={i} className="compact-card" style={{ borderBottom: '2px solid rgba(102, 252, 241, 0.1)' }}>
+                  {processingTitle === item.title && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw className="animate-spin text-cyan-400" size={24}/></div>}
                   <div className="compact-badge" style={{ background: item.viral_score > 80 ? '#ff0055' : '#10b981' }}>{item.viral_score}%</div>
                   <span className="compact-source">{item.source}</span>
                   <h4 className="compact-title">{item.title}</h4>
@@ -417,13 +425,14 @@ export default function AdminApp() {
               ))}
             </div>
 
-            {/* RADAR: HARDWARE */}
+            {/* RADAR 2: HARDWARE */}
             <div style={{ borderLeft: '5px solid #eab308', paddingLeft: '20px', marginBottom: '20px', marginTop: '40px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 950 }}>HARDWARE <span style={{ color: '#eab308' }}>RADAR</span></h3>
             </div>
             <div className="hub-compact-grid">
               {hwIntel.map((item, i) => (
                 <div key={i} className="compact-card">
+                  {processingTitle === item.title && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw className="animate-spin text-orange-500" size={24}/></div>}
                   <div className="compact-badge" style={{ background: item.viral_score > 85 ? '#ff0055' : '#10b981' }}>{item.viral_score}%</div>
                   <span className="compact-source">{item.source}</span>
                   <h4 className="compact-title">{item.title}</h4>
@@ -435,13 +444,14 @@ export default function AdminApp() {
               ))}
             </div>
 
-            {/* RADAR: GAMING */}
+            {/* RADAR 3: GAMING */}
             <div style={{ borderLeft: '5px solid #a855f7', paddingLeft: '20px', marginBottom: '20px', marginTop: '40px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 950 }}>GAMING <span style={{ color: '#a855f7' }}>RADAR</span></h3>
             </div>
             <div className="hub-compact-grid">
               {gameIntel.map((item, i) => (
                 <div key={i} className="compact-card">
+                  {processingTitle === item.title && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw className="animate-spin text-purple-500" size={24}/></div>}
                   <div className="compact-badge" style={{ background: item.viral_score > 85 ? '#ff0055' : '#10b981' }}>{item.viral_score}%</div>
                   <span className="compact-source">{item.source}</span>
                   <h4 className="compact-title">{item.title}</h4>
