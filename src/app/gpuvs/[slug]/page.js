@@ -16,20 +16,18 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V42.0 (SUPREME GURU MANDATE)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V44.0 (BULLETPROOF MATCHER)
  * Cesta: src/app/gpuvs/[slug]/page.js
- * * 🛡️ GURU MANDÁT - ABSOLUTNÍ ZÁKON:
- * 1. ZÁKAZ HACKŮ: Použity pouze statické ESM importy pro produkční Next.js 14+.
- * 2. LOGIKA V35.1: Robustní findGpu (normalizace názvů) + Mandatory persistence do DB.
- * 3. VIZUÁLNÍ IDENTITY: Plná synchronizace s homepage (Neon Cyan, Silver Typography, Glass).
- * 4. PŘEHLÍŽENÍ PREVIEW CHYB: Červená chyba v tomto okně je způsobena chybějícími moduly v sandboxu, 
- * na Vercelu kód poběží 100% bezchybně.
+ * 🛡️ GURU MANDÁT: ZÁKAZ HACKŮ (Pouze statické ESM).
+ * 🛡️ FIX 404 PRO 4060 Ti 8GB: Rozdělení alfanumerických znaků v hledání.
  */
 
-// 🚀 GURU: Inicializace OpenAI (Server-side API KEY z environment variables)
-const openai = process.env.OPENAI_API_KEY 
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) 
-  : null;
+// 🚀 GURU FIX: Prodloužení serverless timeoutu na Vercelu pro pomalejší AI generování (až 60 sekund)
+export const maxDuration = 60;
+
+// 🚀 GURU: Inicializace OpenAI (Duální podpora klíčů)
+const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+const openai = apiKey ? new OpenAI({ apiKey: apiKey }) : null;
 
 // 🚀 GURU: Inicializace Supabase klienta
 const supabase = createClient(
@@ -38,20 +36,30 @@ const supabase = createClient(
   { auth: { persistSession: false } }
 );
 
-// 🛡️ GURU ENGINE: Robustní vyhledávání karty v DB (Logic V35.1)
+// 🛡️ GURU ENGINE: Robustní vyhledávání karty v DB (Bulletproof Alphanumeric Matcher)
 const findGpu = async (slugPart) => {
   if (!supabase || !slugPart) return null;
   
-  // Normalizace: 'geforce-rtx-4090' -> 'rtx 4090' pro matching s 'NVIDIA GeForce...'
+  // 1. Základní normalizace (odstranění vendorů)
   const clean = slugPart
     .replace(/-/g, " ")
     .replace(/geforce|radeon|nvidia|amd/gi, "")
     .trim();
 
+  // 2. 🚀 ULTIMÁTNÍ FIX PRO "8GB" vs "8 GB":
+  // Rozdělí string striktně na bloky čísel a písmen. 
+  // Z 'rtx 4060 ti 8gb' udělá ['rtx', '4060', 'ti', '8', 'gb']
+  const chunks = clean.match(/\d+|[a-zA-Z]+/g);
+  if (!chunks) return null;
+
+  // 3. Spojí to do Supabase ILIKE vzoru: '%rtx%4060%ti%8%gb%'
+  // Díky tomuto triku to 100% najde 'GeForce RTX 4060 Ti (8 GB)' i s mezerou a závorkami!
+  const searchPattern = `%${chunks.join('%')}%`;
+
   const { data } = await supabase
     .from("gpus")
     .select("*")
-    .ilike("name", `%${clean}%`)
+    .ilike("name", searchPattern)
     .limit(1)
     .maybeSingle();
 
@@ -67,11 +75,14 @@ async function generateAndPersistDuel(slug) {
     const parts = cleanSlug.split('-vs-');
     if (parts.length !== 2) return null;
 
-    // 1. Vyhledání karet v DB pomocí robustního matching engine
+    // 1. Vyhledání karet v DB pomocí neprůstřelného enginu
     const cardA = await findGpu(parts[0]);
     const cardB = await findGpu(parts[1]);
 
-    if (!cardA || !cardB) return null;
+    if (!cardA || !cardB) {
+      console.error(`GURU 404: Karty nenalezeny v DB! A: ${parts[0]}, B: ${parts[1]}`);
+      return null;
+    }
 
     // 2. AI Generování odborného obsahu (Hardware Guru Persona)
     const completion = await openai.chat.completions.create({
@@ -113,11 +124,12 @@ async function generateAndPersistDuel(slug) {
 
     return newDuel;
   } catch (err) {
+    console.error("GURU 404: AI Generování selhalo: ", err);
     return null;
   }
 }
 
-// 🚀 GURU: Cache dotazu pro rychlost (Logic V35.1)
+// 🚀 GURU: Cache dotazu pro rychlost
 const getDuelData = cache(async (slug) => {
   if (!supabase || !slug) return null;
 
@@ -161,7 +173,10 @@ export default async function App({ params }) {
   const slug = params?.slug ?? null;
   const duel = await getDuelData(slug);
   
-  if (!duel) notFound();
+  if (!duel) {
+    if (typeof notFound === 'function') notFound();
+    return <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center text-[#ff0055] font-black uppercase tracking-tighter text-3xl">404 - DUEL NENALEZEN</div>;
+  }
 
   const isEn = slug?.startsWith('en-');
   const { gpuA, gpuB } = duel;
