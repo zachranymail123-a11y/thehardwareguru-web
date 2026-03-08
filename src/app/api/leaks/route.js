@@ -6,10 +6,10 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * GURU INTEL ENGINE V11.3 - SUPREME STABILITY & DEDUPLICATION
+ * GURU INTEL ENGINE V11.4 - SUPREME STABILITY & DEDUPLICATION
  * - Striktní separace zdrojů (Leaks, HW, Game).
- * - Neúprosná kontrola duplicit proti DB a cross-category.
- * - Safeguard pro OpenAI odpovědi.
+ * - Neúprosná kontrola duplicit proti DB a cross-category v Adminu.
+ * - Safeguard pro OpenAI odpovědi (choices check).
  */
 
 const LEAK_SOURCES = [
@@ -60,6 +60,7 @@ const getAIScores = async (titles, apiKey) => {
     if (!response.ok) return {};
     
     const result = await response.json();
+    // 🛡️ GURU ATOMIC SHIELD: Kontrola existence choices
     if (!result?.choices?.[0]?.message?.content) return {};
 
     const parsed = JSON.parse(result.choices[0].message.content);
@@ -78,7 +79,7 @@ export async function GET() {
   const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
 
   try {
-    // 🛡️ GURU DB SHIELD: Načtení všech titulů pro filtraci
+    // 🛡️ GURU DB SHIELD: Načtení titulů pro křížovou filtraci
     const { data: existingPosts } = await supabase.from('posts').select('title, title_en');
     const dbTitles = new Set((existingPosts || []).flatMap(p => [
       p.title?.toLowerCase().trim(),
@@ -119,16 +120,18 @@ export async function GET() {
     const combined = [...leaksRaw, ...hwRaw, ...gamesRaw];
     const uniqueMap = new Map();
     
-    // 🚀 GURU CROSS-CATEGORY DEDUPLICATION
+    // 🚀 GURU CROSS-CATEGORY DEDUPLICATION LOGIC
     combined.forEach(item => {
       if (!item.title) return;
       const key = item.title.toLowerCase().trim();
       
+      // 1. Kontrola proti databázi
       if (dbTitles.has(key)) {
         debug.db_filtered++;
         return;
       }
 
+      // 2. Kontrola proti duplicitám v radarech (cross-category)
       if (!uniqueMap.has(key)) {
         uniqueMap.set(key, item);
       } else {
