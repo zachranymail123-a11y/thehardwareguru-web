@@ -40,6 +40,17 @@ export default function RootLayout({ children, params }) {
     <html lang={locale}>
       <head>
         {/* Odstraněna window.__ENV__ injekce, kterou blokovalo CSP jako hrozbu (ReferenceError/Hydration error) */}
+        
+        {/* 🚀 GURU: GOOGLE ANALYTICS 4 Z TVÉHO SCREENSHOTU */}
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-9W5FBC9P68" strategy="afterInteractive" />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-9W5FBC9P68');
+          `}
+        </Script>
       </head>
       <body style={{ 
         margin: 0, 
