@@ -11,30 +11,37 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V23.1 (COMPATIBILITY FIX)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V25.1 (PREVIEW COMPATIBILITY)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * Design: Supreme GURU Style (Neon, Glass, Silver Typography).
- * Logic: Stabilní vyhledávání (bez AI generování, V23.0 základ).
- * FIX: Implementace "Compatibility Shield" pro vyřešení chyb kompilace v prostředí Preview.
+ * Logic: On-demand AI generation + Database persistence (Programmatic SEO).
+ * FIX: Implementace "Compatibility Shield" pro vyřešení chyb kompilace v náhledu.
+ * PERSISTENCE: Automatické generování a ZÁPIS do DB zůstává plně aktivní.
  */
 
 // --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení pro funkčnost náhledu ---
-const safeGet = (path) => {
+const getModule = (name) => {
   try {
-    return require(path);
+    return require(name);
   } catch (e) {
     return null;
   }
 };
 
-const supabaseLib = safeGet('@supabase/supabase-js');
-const nextNav = safeGet('next/navigation');
-const nextLinkMod = safeGet('next/link');
+const supabaseLib = getModule('@supabase/supabase-js');
+const nextNav = getModule('next/navigation');
+const nextLinkMod = getModule('next/link');
+const openAILib = getModule('openai');
 
-// Fallbacky pro prostředí náhledu
 const createClient = supabaseLib ? supabaseLib.createClient : null;
 const notFound = nextNav ? nextNav.notFound : () => {};
 const Link = nextLinkMod ? (nextLinkMod.default || nextLinkMod) : ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>;
+const OpenAI = openAILib ? (openAILib.default || openAILib) : null;
+
+// 🚀 GURU: Inicializace OpenAI
+const openai = (OpenAI && (process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY))
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY })
+  : null;
 
 // 🚀 GURU: Inicializace Supabase klienta pro Server Components
 const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
@@ -45,11 +52,87 @@ const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
     )
   : null;
 
-// 🚀 GURU: Cache dotazu pro deduplikaci (Single Query Join s robustním lookupem)
+// 🚀 GURU ENGINE: Funkce pro vygenerování duelu a ZÁPIS do DB za běhu
+async function generateAndPersistDuel(slug) {
+  if (!supabase || !openai) {
+    console.error("GURU: Supabase nebo OpenAI není inicializováno.");
+    return null;
+  }
+  
+  try {
+    const cleanSlug = slug.replace(/^en-/, '');
+    const parts = cleanSlug.split('-vs-');
+    if (parts.length !== 2) return null;
+
+    // 1. Vyhledání karet v DB (Fuzzy search)
+    const nameA = parts[0].replace(/-/g, ' ');
+    const nameB = parts[1].replace(/-/g, ' ');
+
+    const [resA, resB] = await Promise.all([
+      supabase.from('gpus').select('*').ilike('name', `%${nameA}%`).limit(1).maybeSingle(),
+      supabase.from('gpus').select('*').ilike('name', `%${nameB}%`).limit(1).maybeSingle()
+    ]);
+
+    const cardA = resA.data;
+    const cardB = resB.data;
+    if (!cardA || !cardB) return null;
+
+    // 2. AI Generování verdiktu (GURU Styl)
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { 
+          role: "system", 
+          content: "Jsi Hardware Guru. Tvoříš SEO duely grafických karet. Tvůj styl je brutální, technický a virální. Piš v HTML (h2, strong, ul). Všechna pole '_cs' v češtině, '_en' v angličtině. JSON struktura: { \"title_cs\", \"title_en\", \"content_cs\", \"content_en\", \"seo_description_cs\", \"seo_description_en\" }" 
+        },
+        { 
+          role: "user", 
+          content: `Porovnej tyto karty pro souboj na webu: ${cardA.name} VS ${cardB.name}.` 
+        }
+      ],
+      response_format: { type: "json_object" }
+    });
+
+    const aiResult = JSON.parse(completion.choices[0].message.content);
+
+    // 3. ZÁPIS DO DATABÁZE (Aby příště nebyla 404)
+    const { data: newDuel, error: insertError } = await supabase
+      .from('gpu_duels')
+      .insert([{
+        slug: cleanSlug,
+        slug_en: `en-${cleanSlug}`,
+        gpu_a_id: cardA.id,
+        gpu_b_id: cardB.id,
+        title_cs: aiResult.title_cs,
+        title_en: aiResult.title_en,
+        content_cs: aiResult.content_cs,
+        content_en: aiResult.content_en,
+        seo_description_cs: aiResult.seo_description_cs,
+        seo_description_en: aiResult.seo_description_en,
+        created_at: new Date().toISOString()
+      }])
+      .select(`*, gpuA:gpus!gpu_a_id(*), gpuB:gpus!gpu_b_id(*)`)
+      .single();
+
+    if (insertError) {
+       if (insertError.code === '23505') {
+         const { data } = await supabase.from('gpu_duels').select(`*, gpuA:gpus!gpu_a_id(*), gpuB:gpus!gpu_b_id(*)`).eq('slug', cleanSlug).single();
+         return data;
+       }
+       throw insertError;
+    }
+
+    return newDuel;
+  } catch (err) {
+    console.error("GURU PERSISTENCE ERROR:", err);
+    return null;
+  }
+}
+
+// 🚀 GURU: Cache dotazu pro deduplikaci
 const getDuelData = cache(async (slug) => {
   if (!supabase || !slug) return null;
 
-  // 🚀 GURU: Příprava variant slugu pro eliminaci 404
   const cleanSlug = slug.replace(/^en-/, '');
   const normalizedSlug = cleanSlug
     .replace('geforce-', '')
@@ -62,16 +145,17 @@ const getDuelData = cache(async (slug) => {
       gpuA:gpus!gpu_a_id(*),
       gpuB:gpus!gpu_b_id(*)
     `)
-    // 🚀 GURU: Hledáme všechny 3 možné varianty slugu pro maximální kompatibilitu
     .or(`slug.eq.${slug},slug.eq.${cleanSlug},slug.eq.${normalizedSlug},slug_en.eq.${slug}`)
     .limit(1);
 
-  if (error || !data || data.length === 0) return null;
+  if (error || !data || data.length === 0) {
+    // ⚡ GURU TRIGGER: Pokud duel v DB není, vygenerujeme ho a ZAPÍŠEME
+    return await generateAndPersistDuel(slug);
+  }
   
   return data[0];
 });
 
-// 🚀 GURU SEO: Dynamické Meta Tagy
 export async function generateMetadata({ params }) {
   const slug = params?.slug ?? null;
   const duel = await getDuelData(slug);
@@ -90,17 +174,16 @@ export default async function App({ params }) {
 
   if (!duel) {
     if (typeof notFound === 'function') notFound();
-    return <div className="p-20 text-center text-[#ff0055] font-black uppercase tracking-tighter text-2xl">404 - Duel nenalezen v databázi</div>;
+    return <div className="p-20 text-center text-white font-black uppercase text-2xl">404 - Duel nebyl nalezen ani vygenerován.</div>;
   }
 
   const isEn = slug?.startsWith('en-');
   const { gpuA, gpuB } = duel;
 
   if (!gpuA || !gpuB) {
-    return <div className="p-20 text-center text-white font-black italic uppercase tracking-tighter text-2xl">DATA CORRUPTION: GPU MISSING IN DATABASE</div>;
+    return <div className="p-20 text-center text-white font-black uppercase text-2xl tracking-tighter">DATA ERROR: Karta nebyla nalezena v DB.</div>;
   }
 
-  // Lokalizované texty a data
   const title = isEn ? (duel.title_en || duel.title_cs) : duel.title_cs;
   const content = isEn ? (duel.content_en || duel.content_cs) : (duel.content_cs || duel.content);
   const formattedDate = new Intl.DateTimeFormat(isEn ? 'en-US' : 'cs-CZ', { 
