@@ -21,13 +21,14 @@ import {
 const getEnv = (key, fallback = '') => {
   if (typeof window === 'undefined') return fallback;
 
-  // Next.js bundler nahrazuje tyto hodnoty při buildu pouze při statickém přístupu
+  // Next.js vyžaduje statický přístup, aby proměnné propustil do prohlížeče
   const envMap = {
-    'OPENAI_API_KEY': process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-    'NEXT_PUBLIC_SUPABASE_URL': process.env.NEXT_PUBLIC_SUPABASE_URL,
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    'NEXT_PUBLIC_ADMIN_PASSWORD': process.env.NEXT_PUBLIC_ADMIN_PASSWORD,
-    'NEXT_PUBLIC_MAKE_WEBHOOK2_URL': process.env.NEXT_PUBLIC_MAKE_WEBHOOK2_URL
+    // 🚀 GURU: Mapujeme přímo tvou variable OPENAI_API_KEY
+    'OPENAI_API_KEY': process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
+    'NEXT_PUBLIC_SUPABASE_URL': process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+    'NEXT_PUBLIC_ADMIN_PASSWORD': process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Wifik500',
+    'NEXT_PUBLIC_MAKE_WEBHOOK2_URL': process.env.NEXT_PUBLIC_MAKE_WEBHOOK2_URL || ''
   };
 
   return envMap[key] || fallback;
@@ -42,13 +43,15 @@ const initSupabase = () => {
   } catch (e) {
     return { from: () => ({ select: () => ({ order: () => ({ limit: () => Promise.resolve({ data: [] }) }), eq: () => ({ single: () => Promise.resolve({ data: {} }) }) }), update: () => ({ eq: () => Promise.resolve({ error: null }) }), insert: () => Promise.resolve({ error: null }) }) };
   }
+  
   const url = getEnv('NEXT_PUBLIC_SUPABASE_URL');
   const key = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  
   if (!url || !key) return { from: () => ({ select: () => ({ order: () => ({ limit: () => Promise.resolve({ data: [] }) }), eq: () => ({ single: () => Promise.resolve({ data: {} }) }) }), update: () => ({ eq: () => Promise.resolve({ error: null }) }), insert: () => Promise.resolve({ error: null }) }) };
   return createClient(url, key);
 };
 
-// Pomocná komponenta Sidebar
+// Pomocná komponenta pro Sidebar
 const SidebarItemUI = ({ id, activeTab, setActiveTab, icon, label, color, href }) => {
   const active = activeTab === id;
   const content = (
@@ -109,7 +112,7 @@ export default function AdminApp() {
   const fetchAndScanData = async () => {
     if (!isAuthenticated) return;
     setLoading(true);
-    addLog('Skenuji Guru systémy...', 'info');
+    addLog('Skenuji systémy Guru...', 'info');
     try {
       const [postsRes, dealsRes, statsRes] = await Promise.all([
         supabase.from('posts').select('*').order('created_at', { ascending: false }),
@@ -122,7 +125,7 @@ export default function AdminApp() {
         deals: dealsRes.data || [],
         stats: { visits: statsRes.data?.value || 0 }
       }));
-      addLog('Synchronizace s databází hotova.', 'success');
+      addLog('Synchronizace s databází dokončena.', 'success');
     } catch (err) { addLog(`Chyba skenu: ${err.message}`, 'error'); }
     finally { setLoading(false); }
   };
@@ -130,7 +133,7 @@ export default function AdminApp() {
   // --- 🚀 GURU SYNC: RSS FEED ---
   const fetchIntelFeed = async () => {
     setIntelLoading(true);
-    addLog('Stahuji nejnovější novinky z Tom\'s Hardware...', 'warning');
+    addLog('Stahuji nejnovější intel z Tom\'s Hardware (RSS)...', 'warning');
     try {
       // Používáme rss2json s cache busterem pro čerstvá data
       const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=https://www.tomshardware.com/feeds.xml&t=${Date.now()}`);
@@ -138,23 +141,23 @@ export default function AdminApp() {
       if (resData.status === 'ok') {
         setIntelFeed(resData.items || []);
         addLog(`Načteno ${resData.items.length} novinek. Připraveno k analýze.`, 'success');
-      } else throw new Error('RSS feed je momentálně nedostupný.');
+      } else throw new Error('RSS feed nedostupný.');
     } catch (err) { addLog(`Chyba feedu: ${err.message}`, 'error'); }
     finally { setIntelLoading(false); }
   };
 
   // --- 🚀 GURU AI: OPENAI (GPT-4o) ---
   const createDraftFromIntel = async (item) => {
-    // 🚀 GURU FIX: Načítáme klíč z proměnné OPENAI_API_KEY staticky
+    // 🚀 GURU FIX: Načítáme klíč z proměnné OPENAI_API_KEY
     const openAiKey = getEnv('OPENAI_API_KEY');
     
-    if (!openAiKey) {
-      addLog('CHYBÍ KLÍČ! Nastav OPENAI_API_KEY v administraci Vercelu.', 'error');
+    if (!openAiKey || openAiKey === '') {
+      addLog('CHYBÍ OPENAI KLÍČ! Ujisti se, že proměnná OPENAI_API_KEY je ve Vercelu správně.', 'error');
       return;
     }
 
     setIsTranslating(true);
-    addLog(`GPT-4o-mini připravuje český koncept: ${item.title.substring(0, 30)}...`, 'warning');
+    addLog(`GPT-4o-mini připravuje český koncept...`, 'warning');
     
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -192,7 +195,7 @@ export default function AdminApp() {
       if (result.error) throw new Error(result.error.message);
       
       const content = result.choices[0].message.content;
-      // Vyčištění pro parsování (pro jistotu, i když response_format je json_object)
+      // Vyčištění pro parsování
       const cleanJson = content.replace(/```json/g, "").replace(/```/g, "").trim();
       const aiData = JSON.parse(cleanJson);
 
@@ -205,7 +208,7 @@ export default function AdminApp() {
       });
       
       setPreviewMode('card');
-      addLog('Koncept připraven k revizi v náhledovém okně.', 'success');
+      addLog('Koncept připraven k revizi v náhledu.', 'success');
     } catch (err) {
       addLog(`AI fail: ${err.message}`, 'error');
     } finally {
@@ -215,7 +218,7 @@ export default function AdminApp() {
 
   const publishDraft = async () => {
     if (!draft) return;
-    addLog('Zveřejňuji článek na web...', 'warning');
+    addLog('Publikuji článek na web...', 'warning');
     try {
       const { error } = await supabase.from('posts').insert([{
         title: draft.title_cs,
@@ -228,7 +231,7 @@ export default function AdminApp() {
         is_fired: false
       }]);
       if (error) throw error;
-      addLog('ZVEŘEJNĚNO! Článek je nyní online. 🔥', 'success');
+      addLog('ZVEŘEJNĚNO! 🔥', 'success');
       setDraft(null); setPreviewMode('none');
       fetchAndScanData();
     } catch (err) { addLog(`Chyba publikace: ${err.message}`, 'error'); }
@@ -236,7 +239,7 @@ export default function AdminApp() {
 
   const runApiTask = (url, name) => {
     setActiveTab('terminal');
-    addLog(`START: ${name}`, 'info');
+    addLog(`SPOUŠTÍM: ${name}`, 'info');
     fetch(url).then(res => res.text()).then(txt => addLog(`OK: ${txt.substring(0,100)}`, 'success')).catch(e => addLog(`CHYBA: ${e.message}`, 'error'));
   };
 
@@ -247,7 +250,7 @@ export default function AdminApp() {
   };
 
   const clearQueueItems = async (list, tabName) => {
-    if (!confirm(`Opravdu vyčistit: ${tabName}?`)) return;
+    if (!confirm(`Opravdu vyčistit vše v: ${tabName}?`)) return;
     for (const item of list) {
         const table = (item.type === 'expected' || tabName === 'Plánovač' || tabName === 'Články') ? 'posts' : 'game_deals';
         await supabase.from(table).update({ is_fired: true }).eq('id', item.id);
@@ -258,7 +261,7 @@ export default function AdminApp() {
 
   const executeSocial = async (item, type) => {
     setActiveTab('terminal');
-    addLog(`Odesílám na Make: ${item.title}`, 'warning');
+    addLog(`ODPALUJI NA MAKE: ${item.title}`, 'warning');
     const webhook = getEnv('NEXT_PUBLIC_MAKE_WEBHOOK2_URL');
     fetch(webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...item, guru_type: type, fired_at: new Date().toISOString() }) })
       .then(() => { supabase.from(type === 'deal' ? 'game_deals' : 'posts').update({ is_fired: true }).eq('id', item.id); addLog('ODESLÁNO!', 'success'); fetchAndScanData(); })
@@ -312,13 +315,13 @@ export default function AdminApp() {
         <div className="preview-overlay">
           <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ width: 'auto', background: '#333' }}><ArrowLeft size={16}/> ZPĚT DO VELÍNA</button>
+                <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ width: 'auto', background: '#333' }}><ArrowLeft size={16}/> ZPĚT</button>
                 <div style={{ display: 'flex', gap: '15px' }}>
                     <button onClick={() => setPreviewMode(previewMode === 'card' ? 'slug' : 'card')} className="sidebar-btn" style={{ width: 'auto', background: '#a855f7', color: '#fff' }}>
                         {previewMode === 'card' ? <Eye size={16}/> : <LayoutDashboard size={16}/>}
-                        {previewMode === 'card' ? 'ZOBRAZIT DETAIL ČLÁNKU' : 'ZOBRAZIT KARTU NA HP'}
+                        {previewMode === 'card' ? 'ZOBRAZIT ČLÁNEK' : 'ZOBRAZIT KARTU'}
                     </button>
-                    <button onClick={publishDraft} className="sidebar-btn" style={{ width: 'auto', background: '#10b981', color: '#fff' }}><Check size={16}/> PUBLIKOVAT NA WEB</button>
+                    <button onClick={publishDraft} className="sidebar-btn" style={{ width: 'auto', background: '#10b981', color: '#fff' }}><Check size={16}/> PUBLIKOVAT</button>
                 </div>
             </div>
 
@@ -334,7 +337,7 @@ export default function AdminApp() {
                          <img src={draft.image_url} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
                          <div style={{ padding: '20px' }}>
                             <span style={{ color: '#ff0000', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>HW NOVINKA</span>
-                            <h3 style={{ color: '#fff', fontSize: '1.1rem', margin: '10px 0', fontWeight: '900' }}>{draft.title_cs}</h3>
+                            <h3 style={{ color: '#fff', fontSize: '1.1rem', margin: '10px 0', fontWeight: '900', lineHeight: 1.3 }}>{draft.title_cs}</h3>
                             <div style={{ color: '#66fcf1', fontWeight: 'bold', fontSize: '12px' }}>ČÍST VÍCE →</div>
                          </div>
                       </div>
@@ -357,17 +360,17 @@ export default function AdminApp() {
           <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 900 }}>GURU <span style={{ color: '#a855f7' }}>ADMIN</span></h2>
         </div>
         <nav style={{ flex: 1, overflowY: 'auto' }}>
-          <SidebarItemUI id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LayoutDashboard />} label="Dashboard" color="#a855f7" />
-          <SidebarItemUI id="terminal" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Terminal />} label="Živý Terminál" color="#22c55e" />
+          <SidebarItemUI id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LayoutDashboard />} label="PŘEHLED" color="#a855f7" />
+          <SidebarItemUI id="terminal" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Terminal />} label="ŽIVÝ TERMINÁL" color="#22c55e" />
           <div className="sidebar-header">LOGIKA</div>
-          <SidebarItemUI id="pub-plan" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Send />} label="Publikace" color="#f97316" />
-          <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="HW Intel Hub" color="#eab308" />
-          <SidebarItemUI id="tweaks-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Cpu />} label="Tweaky" color="#10b981" />
+          <SidebarItemUI id="pub-plan" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Send />} label="PUBLIKACE" color="#f97316" />
+          <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="HW INTEL HUB" color="#eab308" />
+          <SidebarItemUI id="tweaks-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Cpu />} label="TWEAKY" color="#10b981" />
           <SidebarItemUI id="seo-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Globe />} label="SEO" color="#eab308" />
-          <SidebarItemUI id="automation" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Zap />} label="Automatizace" color="#a855f7" />
+          <SidebarItemUI id="automation" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Zap />} label="AUTOMATIZACE" color="#a855f7" />
           <div className="sidebar-header">OBSAH</div>
-          <SidebarItemUI id="deals" activeTab={activeTab} setActiveTab={setActiveTab} icon={<ShoppingCart />} label="Slevy" color="#ff0055" />
-          <SidebarItemUI id="kal" activeTab={activeTab} setActiveTab={setActiveTab} icon={<CalendarDays />} label="Kalendář" color="#3b82f6" href="/kalendar" />
+          <SidebarItemUI id="deals" activeTab={activeTab} setActiveTab={setActiveTab} icon={<ShoppingCart />} label="SLEVY" color="#ff0055" />
+          <SidebarItemUI id="kal" activeTab={activeTab} setActiveTab={setActiveTab} icon={<CalendarDays />} label="KALENDÁŘ" color="#3b82f6" href="/kalendar" />
         </nav>
         <div style={{ padding: '20px' }}>
           <button onClick={() => { if(typeof window !== 'undefined') { sessionStorage.removeItem('guru_admin_auth'); setIsAuthenticated(false); } }} className="action-btn-small" style={{ width: '100%', borderColor: '#ef444466' }}>ODHLÁSIT</button>
