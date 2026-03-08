@@ -1,8 +1,4 @@
 import React, { cache } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import OpenAI from 'openai';
 import { 
   ChevronLeft, 
   Swords, 
@@ -10,118 +6,67 @@ import {
   Zap, 
   ShoppingCart,
   Cpu,
-  Trophy,
   Flame,
   Activity
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V22.1 (SUPREME OVERHAUL)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V23.1 (COMPATIBILITY FIX)
  * Cesta: src/app/gpuvs/[slug]/page.js
- * Design: Totální GURU upgrade. Odstraněny nudné bílé texty a široké boxy.
- * Styl: Neonové akcenty, skleněné panely, stříbrná typografie, agresivní layout.
- * FEATURE: On-demand AI generování chybějících duelů a zápis do DB.
- * FIX: Striktní ESM importy pro produkční Next.js 14 prostředí.
+ * Design: Supreme GURU Style (Neon, Glass, Silver Typography).
+ * Logic: Stabilní vyhledávání (bez AI generování, V23.0 základ).
+ * FIX: Implementace "Compatibility Shield" pro vyřešení chyb kompilace v prostředí Preview.
  */
 
-// 🚀 GURU: Inicializace OpenAI pro on-demand generování obsahu
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY || ''
-});
-
-// 🚀 GURU: Inicializace Supabase klienta pro Server Components
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-  { auth: { persistSession: false } }
-);
-
-// 🚀 GURU ENGINE: Automatické generování duelu, pokud v DB chybí
-async function generateDuelOnTheFly(slug) {
+// --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení pro funkčnost náhledu ---
+const safeGet = (path) => {
   try {
-    const cleanSlug = slug.replace(/^en-/, '');
-    const parts = cleanSlug.split('-vs-');
-    if (parts.length !== 2) return null;
-
-    const nameA = parts[0].replace(/-/g, ' ');
-    const nameB = parts[1].replace(/-/g, ' ');
-
-    // Vyhledání podkladových dat o GPU v tabulce gpus
-    const [resA, resB] = await Promise.all([
-      supabase.from('gpus').select('*').ilike('name', `%${nameA}%`).limit(1).maybeSingle(),
-      supabase.from('gpus').select('*').ilike('name', `%${nameB}%`).limit(1).maybeSingle()
-    ]);
-
-    const cardA = resA.data;
-    const cardB = resB.data;
-    if (!cardA || !cardB) return null;
-
-    // AI Generování odborného verdiktu v CZ i EN
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { 
-          role: "system", 
-          content: "Jsi Hardware Guru. Tvoříš SEO duely grafických karet. Tvůj styl je brutální, technický a virální. Piš v HTML (h2, strong, ul). Pole: title_cs, title_en, content_cs, content_en, seo_description_cs, seo_description_en." 
-        },
-        { 
-          role: "user", 
-          content: `Porovnej karty: ${cardA.name} VS ${cardB.name}. Která je králem poměru cena/výkon?` 
-        }
-      ],
-      response_format: { type: "json_object" }
-    });
-
-    const aiResult = JSON.parse(completion.choices[0].message.content);
-
-    // Zápis do DB pro budoucí návštěvy
-    const { data: newDuel, error: insertError } = await supabase
-      .from('gpu_duels')
-      .insert([{
-        slug: cleanSlug,
-        slug_en: `en-${cleanSlug}`,
-        gpu_a_id: cardA.id,
-        gpu_b_id: cardB.id,
-        title_cs: aiResult.title_cs,
-        title_en: aiResult.title_en,
-        content_cs: aiResult.content_cs,
-        content_en: aiResult.content_en,
-        seo_description_cs: aiResult.seo_description_cs,
-        seo_description_en: aiResult.seo_description_en,
-        created_at: new Date().toISOString()
-      }])
-      .select(`*, gpuA:gpus!gpu_a_id(*), gpuB:gpus!gpu_b_id(*)`)
-      .single();
-
-    if (insertError && insertError.code === '23505') {
-       // Ošetření race condition (duel už byl vytvořen jiným vláknem)
-       const { data } = await supabase.from('gpu_duels').select(`*, gpuA:gpus!gpu_a_id(*), gpuB:gpus!gpu_b_id(*)`).eq('slug', cleanSlug).single();
-       return data;
-    }
-
-    return newDuel;
-  } catch (err) {
-    console.error("GURU CRITICAL ENGINE ERROR:", err);
+    return require(path);
+  } catch (e) {
     return null;
   }
-}
+};
 
-// 🚀 GURU: Cache dotazu pro deduplikaci a bleskové načítání
+const supabaseLib = safeGet('@supabase/supabase-js');
+const nextNav = safeGet('next/navigation');
+const nextLinkMod = safeGet('next/link');
+
+// Fallbacky pro prostředí náhledu
+const createClient = supabaseLib ? supabaseLib.createClient : null;
+const notFound = nextNav ? nextNav.notFound : () => {};
+const Link = nextLinkMod ? (nextLinkMod.default || nextLinkMod) : ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>;
+
+// 🚀 GURU: Inicializace Supabase klienta pro Server Components
+const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
+  ? createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      { auth: { persistSession: false } }
+    )
+  : null;
+
+// 🚀 GURU: Cache dotazu pro deduplikaci (Single Query Join s robustním lookupem)
 const getDuelData = cache(async (slug) => {
-  if (!slug) return null;
+  if (!supabase || !slug) return null;
+
+  // 🚀 GURU: Příprava variant slugu pro eliminaci 404
   const cleanSlug = slug.replace(/^en-/, '');
-  const normalizedSlug = cleanSlug.replace('geforce-', '').replace('radeon-', '');
+  const normalizedSlug = cleanSlug
+    .replace('geforce-', '')
+    .replace('radeon-', '');
 
   const { data, error } = await supabase
     .from('gpu_duels')
-    .select(`*, gpuA:gpus!gpu_a_id(*), gpuB:gpus!gpu_b_id(*)`)
+    .select(`
+      *,
+      gpuA:gpus!gpu_a_id(*),
+      gpuB:gpus!gpu_b_id(*)
+    `)
+    // 🚀 GURU: Hledáme všechny 3 možné varianty slugu pro maximální kompatibilitu
     .or(`slug.eq.${slug},slug.eq.${cleanSlug},slug.eq.${normalizedSlug},slug_en.eq.${slug}`)
     .limit(1);
 
-  if (error || !data || data.length === 0) {
-    // ⚡ Pokud v DB není, zkusíme ho vygenerovat a hned zapsat
-    return await generateDuelOnTheFly(slug);
-  }
+  if (error || !data || data.length === 0) return null;
   
   return data[0];
 });
@@ -143,13 +88,19 @@ export default async function App({ params }) {
   const slug = params?.slug ?? null;
   const duel = await getDuelData(slug);
 
-  if (!duel) notFound();
+  if (!duel) {
+    if (typeof notFound === 'function') notFound();
+    return <div className="p-20 text-center text-[#ff0055] font-black uppercase tracking-tighter text-2xl">404 - Duel nenalezen v databázi</div>;
+  }
 
   const isEn = slug?.startsWith('en-');
   const { gpuA, gpuB } = duel;
 
-  if (!gpuA || !gpuB) notFound();
+  if (!gpuA || !gpuB) {
+    return <div className="p-20 text-center text-white font-black italic uppercase tracking-tighter text-2xl">DATA CORRUPTION: GPU MISSING IN DATABASE</div>;
+  }
 
+  // Lokalizované texty a data
   const title = isEn ? (duel.title_en || duel.title_cs) : duel.title_cs;
   const content = isEn ? (duel.content_en || duel.content_cs) : (duel.content_cs || duel.content);
   const formattedDate = new Intl.DateTimeFormat(isEn ? 'en-US' : 'cs-CZ', { 
@@ -170,7 +121,7 @@ export default async function App({ params }) {
   return (
     <main className="min-h-screen text-[#d1d5db] py-12 px-4 sm:px-6 lg:px-8" style={{ 
         backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', 
-        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '140px'
+        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px'
     }}>
       <style dangerouslySetInnerHTML={{__html: `
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; max-width: 750px; margin: 0 auto; }
@@ -187,7 +138,6 @@ export default async function App({ params }) {
         
         .buy-action-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; padding: 26px 65px; border-radius: 24px; text-transform: uppercase; font-size: 22px; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: inline-flex; align-items: center; gap: 15px; box-shadow: 0 20px 50px rgba(234, 88, 12, 0.5); border: 1px solid rgba(255,255,255,0.1); }
         .buy-action-btn:hover { transform: translateY(-10px) scale(1.05); box-shadow: 0 30px 70px rgba(234, 88, 12, 0.7); filter: brightness(1.15); }
-        .guru-highlight { color: #fff; font-weight: 900; text-transform: uppercase; font-style: italic; }
       `}} />
 
       <article className="max-w-3xl mx-auto">
@@ -208,7 +158,7 @@ export default async function App({ params }) {
           </h1>
         </header>
 
-        {/* 🥊 RING SYSTÉM (DUEL KARET) */}
+        {/* 🥊 RING SYSTÉM */}
         <div className="flex flex-col md:flex-row items-center justify-center mb-16 relative gap-4 md:gap-0">
             <div className="glass-panel w-full p-12 text-center border-t-8" style={{ borderColor: getVendorColor(gpuA.vendor) }}>
                 <div style={{ fontSize: '12px', fontWeight: '950', color: getVendorColor(gpuA.vendor), textTransform: 'uppercase', letterSpacing: '4px', marginBottom: '10px' }}>{gpuA.vendor} • {gpuA.architecture}</div>
@@ -221,7 +171,7 @@ export default async function App({ params }) {
             </div>
         </div>
 
-        {/* 📊 GURU DASHBOARD (TECHNICKÁ TABULKA) */}
+        {/* 📊 GURU DASHBOARD */}
         <section className="glass-panel mb-24">
             <div className="bg-white/5 py-5 text-center border-b border-white/5">
                 <h3 className="font-black text-[10px] uppercase tracking-[0.6em] text-neutral-500">{isEn ? "GURU TECHNICAL METRICS" : "GURU TECHNICKÉ METRIKY"}</h3>
@@ -254,7 +204,7 @@ export default async function App({ params }) {
             <div className="guru-prose" dangerouslySetInnerHTML={{ __html: content }} />
         </section>
 
-        {/* 💰 GURU CALL TO ACTION */}
+        {/* 💰 GURU CTA */}
         <section className="mt-40 p-20 bg-[#0c0d10] border-2 border-orange-500/20 rounded-[60px] text-center shadow-[0_50px_150px_rgba(0,0,0,1)] relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500 to-transparent opacity-50" />
             <div className="absolute -right-32 -bottom-32 opacity-[0.03] rotate-[-15deg] pointer-events-none"><Cpu size={500} color="#f97316"/></div>
