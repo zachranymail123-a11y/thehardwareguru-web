@@ -11,10 +11,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V8.20 - VIRAL EDITION & SIDEBAR PREVIEW
+ * GURU ULTIMATE COMMAND CENTER V8.22 - VIRAL EDITION & FULL DB MAPPING
  * Funkce: Multi-Source Intel, AI Viral Scoring, Deduplikace, Compact Grid 5x2, 
  * Persistent Storage, Integrated Publishing + Make.com Webhook.
- * FIX: Pevný levý panel v náhledu (vždy viditelná tlačítka publikovat/zpět).
+ * FIX: AI nyní povinně generuje a ukládá i meta_title_en, trailer a seo_keywords.
  */
 
 // --- 🚀 GURU ENV ENGINE ---
@@ -71,7 +71,7 @@ export default function AdminApp() {
   // 🛡️ PERSISTENTNÍ INTEL SEZNAMY A KONCEPTY
   const [hwIntel, setHwIntel] = useState([]);
   const [gameIntel, setGameIntel] = useState([]);
-  const [savedDrafts, setSavedDrafts] = useState({}); // Paměť na vytvořené koncepty
+  const [savedDrafts, setSavedDrafts] = useState({}); 
   const [intelLoading, setIntelLoading] = useState(false);
   
   const [draft, setDraft] = useState(null);
@@ -81,7 +81,6 @@ export default function AdminApp() {
 
   const BASE_URL = 'https://www.thehardwareguru.cz';
 
-  // Načtení session a persistentního intelu & konceptů při startu
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if (sessionStorage.getItem('guru_admin_auth') === 'true') setIsAuthenticated(true);
@@ -95,7 +94,6 @@ export default function AdminApp() {
     }
   }, []);
 
-  // Sync do localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('guru_hw_intel', JSON.stringify(hwIntel));
@@ -143,7 +141,6 @@ export default function AdminApp() {
     finally { setLoading(false); }
   };
 
-  // --- 🚀 GURU INTELLIGENCE ENGINE: HARDWARE & GAMING ---
   const fetchIntelFeed = async () => {
     const openAiKey = getEnv('OPENAI_API_KEY');
     if (!openAiKey) return addLog('CHYBÍ KLÍČ OPENAI!', 'error');
@@ -218,7 +215,6 @@ export default function AdminApp() {
   };
 
   const createDraftFromIntel = async (item) => {
-    // 🚀 GURU: Paměťový blok - pokud už koncept existuje, zbytečně nevoláme AI, jen ho zobrazíme
     if (savedDrafts[item.title]) {
       setDraft(savedDrafts[item.title]);
       setPreviewMode('card');
@@ -241,11 +237,24 @@ export default function AdminApp() {
           messages: [
             { 
               role: "system", 
-              content: "Jsi Hardware Guru. Tvůj styl je elitní, technický, ale extrémně úderný a virální. Piš v ČEŠTINĚ pro elitní komunitu. Používej HTML (h2, strong, ul). Vždy vrať kompletní JSON v CZ i EN verzi." 
+              content: "Jsi Hardware Guru. Tvůj styl je elitní, technický, ale extrémně úderný a virální. Piš v ČEŠTINĚ pro elitní komunitu. Používej HTML (h2, strong, ul). Vždy vrať kompletní JSON v CZ i EN verzi včetně meta polí a případného traileru." 
             },
             { 
               role: "user", 
-              content: `Vytvoř článek s virálním nábojem z: ${item.title}. Zdroj: ${item.description}. POŽADAVEK: Vrať JSON: { title_cs, content_cs, seo_description_cs, slug_cs, title_en, content_en, seo_description_en, slug_en }. Texty _cs MUSÍ být v perfektní, dravé češtině. Obsah min 450 slov.` 
+              content: `Vytvoř článek s virálním nábojem z: ${item.title}. Zdroj: ${item.description}. 
+              POŽADAVEK: Vrať JSON s TĚMITO PŘESNÝMI POLI: 
+              { 
+                "title_cs": "...", "content_cs": "...", "description_cs": "...", "seo_description_cs": "...", "slug_cs": "...", "seo_keywords_cs": "...",
+                "title_en": "...", "content_en": "...", "description_en": "...", "seo_description_en": "...", "slug_en": "...", "meta_title_en": "...", "seo_keywords_en": "...",
+                "trailer": "..." 
+              }. 
+              VYSVĚTLENÍ:
+              description_cs/en = Krátký úderný popisek pro sítě a web (max 150 znaků).
+              seo_description_cs/en = Meta popisek pro vyhledávače.
+              meta_title_en = Krátký chytlavý SEO nadpis v EN.
+              seo_keywords_cs/en = Čárkou oddělená klíčová slova pro Google.
+              trailer = Odkaz na YouTube video (pokud je dostupný v původním zdroji nebo zjevně souvisí, jinak nech prázdný string).
+              Obsah (content_cs/en) musí mít min 450 slov v perfektní dravé češtině.` 
             }
           ],
           response_format: { type: "json_object" }
@@ -263,11 +272,10 @@ export default function AdminApp() {
         is_important: false
       };
 
-      // Uložíme si ho do paměti a zobrazíme
       setSavedDrafts(prev => ({ ...prev, [item.title]: newDraft }));
       setDraft(newDraft);
       setPreviewMode('card');
-      addLog('Virální koncept vytvořen a bezpečně uložen do paměti.', 'success');
+      addLog('Virální koncept včetně meta polí a tagů byl vytvořen.', 'success');
     } catch (err) { addLog(`AI fail: ${err.message}`, 'error'); }
     finally { setProcessingTitle(null); }
   };
@@ -278,21 +286,37 @@ export default function AdminApp() {
     addLog('Zahajuji bleskovou publikaci a Make.com transfer...', 'warning');
 
     try {
+      // 1. Zápis do Supabase (VŠECHNA POLE)
       const { data: dbData, error } = await supabase.from('posts').insert([{
-        title: draft.title_cs, title_en: draft.title_en, slug: draft.slug_cs, slug_en: draft.slug_en,
-        content: draft.content_cs, content_en: draft.content_en, seo_description: draft.seo_description_cs,
-        seo_description_en: draft.seo_description_en, image_url: draft.image_url, created_at: draft.created_at,
-        type: draft.type, is_fired: true 
+        title: draft.title_cs, 
+        title_en: draft.title_en, 
+        slug: draft.slug_cs, 
+        slug_en: draft.slug_en,
+        content: draft.content_cs, 
+        content_en: draft.content_en, 
+        description: draft.description_cs, 
+        description_en: draft.description_en, 
+        seo_description: draft.seo_description_cs,
+        seo_description_en: draft.seo_description_en, 
+        meta_title_en: draft.meta_title_en || draft.title_en, // Zápis EN meta
+        seo_keywords: draft.seo_keywords_cs || null,          // Zápis CZ klíčových slov
+        seo_keywords_en: draft.seo_keywords_en || null,       // Zápis EN klíčových slov
+        trailer: draft.trailer || null,                       // Zápis traileru
+        image_url: draft.image_url, 
+        created_at: draft.created_at,
+        type: draft.type, 
+        is_fired: true 
       }]).select().single();
 
       if (error) throw error;
 
+      // 2. Odeslání na Make (Přesně podle screenshotu)
       if (makeWebhook) {
         const payload = {
           title: dbData.title,
           url: `${BASE_URL}/clanky/${dbData.slug}`,
           image_url: dbData.image_url,
-          description: dbData.seo_description,
+          description: dbData.description || dbData.seo_description,
           type: dbData.type,
           fired_at: new Date().toISOString(),
           locale: 'cs',
@@ -306,7 +330,6 @@ export default function AdminApp() {
 
       addLog('ČLÁNEK JE ONLINE! 🔥', 'success');
       
-      // Úklid po publikaci - odstranění z feedů a z paměti draftů
       setHwIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
       setGameIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
       
@@ -340,7 +363,6 @@ export default function AdminApp() {
         .sidebar-btn { width: 100%; display: flex; align-items: center; gap: 15px; padding: 15px 25px; background: transparent; border: none; border-left: 4px solid transparent; color: #9ca3af; cursor: pointer; transition: 0.2s; font-weight: 900; font-size: 13px; text-transform: uppercase; }
         .sidebar-btn:hover, .sidebar-btn.active { background: #ffffff0d; color: #fff; }
         
-        /* 🚀 GURU COMPACT GRID 5x2 */
         .hub-compact-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 40px; }
         .compact-card { background: #0d0e12; border: 1px solid #ffffff08; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; transition: 0.3s; position: relative; min-height: 160px; overflow: hidden; }
         .compact-card:hover { border-color: #eab308; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
@@ -353,10 +375,10 @@ export default function AdminApp() {
         .compact-btn-main { background: #eab30833; border-color: #eab30866; color: #eab308; }
         .compact-btn-main:hover { background: #eab308; color: #000; }
 
-        /* 🚀 GURU PREVIEW SIDEBAR LAYOUT (NEPRŮSTŘELNÉ) */
+        /* 🚀 GURU PREVIEW SIDEBAR LAYOUT */
         .preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 500; display: flex; flex-direction: row; padding: 0; backdrop-filter: blur(25px); }
         
-        .preview-sidebar { width: 320px; background: #0d0e12; border-right: 1px solid rgba(255,255,255,0.1); padding: 30px 20px; display: flex; flex-direction: column; gap: 15px; height: 100vh; overflow-y: auto; flex-shrink: 0; box-shadow: 10px 0 30px rgba(0,0,0,0.8); z-index: 510; }
+        .preview-sidebar { width: 340px; background: #0d0e12; border-right: 1px solid rgba(255,255,255,0.1); padding: 30px 20px; display: flex; flex-direction: column; gap: 15px; height: 100vh; overflow-y: auto; flex-shrink: 0; box-shadow: 10px 0 30px rgba(0,0,0,0.8); z-index: 510; }
         
         .preview-content-area { flex: 1; padding: 40px; height: 100vh; overflow-y: auto; display: flex; justify-content: center; align-items: flex-start; }
         
@@ -370,50 +392,45 @@ export default function AdminApp() {
         .mock-prose p { margin-bottom: 1.5em; }
         .terminal-box { background: #000; border: 1px solid #22c55e33; border-radius: 15px; padding: 20px; font-family: monospace; font-size: 12px; overflow-y: auto; }
         
-        /* 🚀 GURU PREVIEW BOTTOM BUTTONS */
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
-        .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
-        .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
       `}} />
 
       {/* --- 🚀 GURU PREVIEW SYSTEM --- */}
       {previewMode !== 'none' && draft && (
         <div className="preview-overlay">
           
-          {/* 🛡️ LEVÁ POSTRANNÍ LIŠTA NÁHLEDU (VŽDY VIDITELNÁ A FUNKČNÍ) */}
+          {/* 🛡️ LEVÁ POSTRANNÍ LIŠTA NÁHLEDU */}
           <div className="preview-sidebar">
-              <h2 style={{ color: '#eab308', fontSize: '18px', fontWeight: '950', marginBottom: '10px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              <h2 style={{ color: '#eab308', fontSize: '18px', fontWeight: '950', marginBottom: '15px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>
                 Guru Náhled
               </h2>
-              
+
+              <button onClick={publishAndSendToMake} className="sidebar-btn" style={{ width: '100%', background: '#10b981', color: '#fff', border: '1px solid #10b981', justifyContent: 'center', padding: '15px', fontSize: '15px', boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)', marginBottom: '10px' }}>
+                  <Check size={20}/> PUBLIKOVAT ČLÁNEK
+              </button>
+
               <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ width: '100%', background: '#222', border: '1px solid #444', color: '#fff', justifyContent: 'center' }}>
                   <ArrowLeft size={16}/> ZPĚT DO VELÍNA
               </button>
 
-              <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '10px 0' }}></div>
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '15px 0' }}></div>
 
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '15px' }}>
                   <button onClick={() => setPreviewDevice('desktop')} style={{ flex: 1, padding: '12px', background: previewDevice === 'desktop' ? '#eab308' : '#222', borderRadius: '12px', border: 'none', display: 'flex', justifyContent: 'center', color: previewDevice === 'desktop' ? '#000' : '#fff', cursor: 'pointer' }}><Monitor size={18}/></button>
                   <button onClick={() => setPreviewDevice('mobile')} style={{ flex: 1, padding: '12px', background: previewDevice === 'mobile' ? '#eab308' : '#222', borderRadius: '12px', border: 'none', display: 'flex', justifyContent: 'center', color: previewDevice === 'mobile' ? '#000' : '#fff', cursor: 'pointer' }}><Smartphone size={18}/></button>
               </div>
 
               <button 
                 onClick={() => setDraft({...draft, is_important: !draft.is_important})} 
-                style={{ background: draft.is_important ? '#ff0055' : 'transparent', border: '1px solid #ff0055', color: draft.is_important ? '#fff' : '#ff0055', padding: '15px', borderRadius: '12px', fontWeight: '900', fontSize: '12px', display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: '0.2s' }}
+                style={{ background: draft.is_important ? '#ff0055' : 'transparent', border: '1px solid #ff0055', color: draft.is_important ? '#fff' : '#ff0055', padding: '15px', borderRadius: '12px', fontWeight: '900', fontSize: '12px', display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: '0.2s', marginBottom: '15px' }}
               >
                 <Star size={16} fill={draft.is_important ? "currentColor" : "none"} /> OZNAČIT JAKO DŮLEŽITÉ
               </button>
 
-              <button onClick={() => setPreviewMode(previewMode === 'card' ? 'slug' : 'card')} className="sidebar-btn" style={{ width: '100%', background: '#a855f7', color: '#fff', justifyContent: 'center', marginTop: '10px' }}>
+              <button onClick={() => setPreviewMode(previewMode === 'card' ? 'slug' : 'card')} className="sidebar-btn" style={{ width: '100%', background: '#a855f7', color: '#fff', justifyContent: 'center' }}>
                   {previewMode === 'card' ? 'PŘEPNOUT NA DETAIL' : 'PŘEPNOUT NA KARTU'}
               </button>
-
-              <div style={{ marginTop: 'auto' }}>
-                  <button onClick={publishAndSendToMake} className="sidebar-btn" style={{ width: '100%', background: '#10b981', color: '#fff', border: '1px solid #10b981', justifyContent: 'center', padding: '20px 15px', fontSize: '15px', boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)' }}>
-                      <Check size={20}/> PUBLIKOVAT ČLÁNEK
-                  </button>
-              </div>
           </div>
 
           {/* 🛡️ PRAVÁ ČÁST: OBSAH NÁHLEDU */}
@@ -426,18 +443,26 @@ export default function AdminApp() {
                          <div style={{ padding: '20px' }}>
                             <span style={{ color: '#ff0000', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>{draft.type === 'hardware' ? 'TECH ROZBOR' : 'GAME NEWS'}</span>
                             <h3 style={{ color: '#fff', fontSize: '1.1rem', margin: '10px 0', fontWeight: '900' }}>{draft.title_cs}</h3>
+                            <p style={{ color: '#9ca3af', fontSize: '14px', lineHeight: '1.4', marginBottom: '15px' }}>{draft.description_cs}</p>
                             <div style={{ color: '#66fcf1', fontWeight: 'bold', fontSize: '12px' }}>ČÍST VÍCE →</div>
                          </div>
                       </div>
                    </div>
                 ) : (
                    <div style={{ padding: '60px 40px', maxWidth: '850px', margin: '0 auto', background: '#0a0b0d' }}>
-                      <h1 style={{ color: '#fff', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', textTransform: 'uppercase', marginBottom: '40px', lineHeight: 1.1 }}>{draft.title_cs}</h1>
+                      <h1 style={{ color: '#fff', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', textTransform: 'uppercase', marginBottom: '20px', lineHeight: 1.1 }}>{draft.title_cs}</h1>
                       <div style={{ color: '#444', fontWeight: '900', fontSize: '12px', marginBottom: '40px' }}>GURU ENGINE • {new Date().toLocaleDateString('cs-CZ')}</div>
+                      
+                      {/* Ochrana zobrazení traileru v náhledu (pokud ho AI chytla z feedu) */}
+                      {draft.trailer && draft.trailer.includes('youtube') && (
+                        <div style={{ marginBottom: '40px', padding: '15px', background: 'rgba(255,0,85,0.1)', borderLeft: '4px solid #ff0055', color: '#ff0055', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                          <Play size={16} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }}/> Nalezen trailer: {draft.trailer}
+                        </div>
+                      )}
+
                       <img src={draft.image_url} style={{ width: '100%', borderRadius: '20px', marginBottom: '40px', border: '1px solid #ffffff10' }} />
                       <div className="mock-prose" dangerouslySetInnerHTML={{ __html: draft.content_cs }} />
                       
-                      {/* 🚀 GURU CTA NA KONCI DETAILU */}
                       <div style={{ marginTop: '70px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
                         <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
                           Líbil se ti článek? Podpoř nás buď nákupem her za ty nejlepší ceny, nebo přímo.
