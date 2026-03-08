@@ -11,29 +11,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V12.2 - NUCLEAR SYNC
- * - FIX: Striktní kontrola duplicity proti DB přímo v Intel Hubu.
- * - FIX: Odesílání čistých dat na Make.com (title, url, image_url, description).
- * - FIX: Kompletní vyplnění všech SEO a Meta polí (konec NULL hodnot).
- * - FIX: Robustní AI parser a vizuální spinner (kolečko) na kartách.
+ * GURU ULTIMATE COMMAND CENTER V12.3 - NUCLEAR SYNC & MAKE.COM FIX
+ * - FIX: Odesílání na NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL napřímo bez DOM bridge.
+ * - FIX: Struktura pro Make.com přesně podle screenshotu {title, url, image_url, description}.
+ * - FIX: Leaks mají VŽDY natvrdo přiřazený Davinci placeholder obrázek.
+ * - FIX: Antiduplicita napřímo z DB 'posts', nikoliv z lokálního stavu 'data.posts'.
  */
-
-// --- 🚀 GURU ENV ENGINE ---
-const getEnv = (key, fallback = '') => {
-  if (typeof window === 'undefined') return fallback;
-  const bridge = document.getElementById('guru-env-bridge');
-  const bridgeMap = {
-    'NEXT_PUBLIC_SUPABASE_URL': bridge?.getAttribute('data-url'),
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY': bridge?.getAttribute('data-key'),
-    'NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL': bridge?.getAttribute('data-webhook-article'),
-    'NEXT_PUBLIC_MAKE_WEBHOOK2_URL': bridge?.getAttribute('data-webhook-social')
-  };
-  const envMap = {
-    'OPENAI_API_KEY': process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
-    'NEXT_PUBLIC_ADMIN_PASSWORD': process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Wifik500'
-  };
-  return bridgeMap[key] || envMap[key] || fallback;
-};
 
 // --- GURU ENGINE INIT ---
 const initSupabase = () => {
@@ -44,9 +27,9 @@ const initSupabase = () => {
   } catch (e) {
     return { from: () => ({ select: () => ({ order: () => ({ limit: () => Promise.resolve({ data: [] }) }), eq: () => ({ single: () => Promise.resolve({ data: {} }) }) }), update: () => ({ eq: () => Promise.resolve({ error: null }) }), insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: {}, error: null }) }) }) }) };
   }
-  const url = getEnv('NEXT_PUBLIC_SUPABASE_URL');
-  const key = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
-  return createClient(url || 'https://placeholder.supabase.co', key || 'placeholder');
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
+  return createClient(url, key);
 };
 
 // 🛡️ GURU UI SHIELD
@@ -92,11 +75,8 @@ export default function AdminApp() {
 
   const BASE_URL = 'https://www.thehardwareguru.cz';
 
-  const LEAK_PLACEHOLDER_URL = useMemo(() => {
-    const sUrl = getEnv('NEXT_PUBLIC_SUPABASE_URL');
-    if (!sUrl) return 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000';
-    return `${sUrl}/storage/v1/object/public/images/davinci_prompt__a_high_tech__cinematic_placeholder_for_a_g.png`;
-  }, []);
+  // 🚀 GURU: Cesta k tvému vygenerovanému Davinci obrázku
+  const LEAK_PLACEHOLDER_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL || ''}/storage/v1/object/public/images/davinci_prompt__a_high_tech__cinematic_placeholder_for_a_g.png`;
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -134,7 +114,8 @@ export default function AdminApp() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (password === getEnv('NEXT_PUBLIC_ADMIN_PASSWORD', 'Wifik500')) {
+    const validPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Wifik500';
+    if (password === validPassword) {
       setIsAuthenticated(true);
       if (typeof window !== 'undefined') sessionStorage.setItem('guru_admin_auth', 'true');
     }
@@ -165,7 +146,7 @@ export default function AdminApp() {
           missingSeo: (postsRes.data || []).filter(p => !p.seo_description).length
         }
       });
-      addLog('DB synchronizována.', 'success');
+      addLog('DB administrace synchronizována.', 'success');
     } catch (err) { addLog(`Chyba: ${err.message}`, 'error'); }
     finally { setLoading(false); }
   };
@@ -174,24 +155,29 @@ export default function AdminApp() {
     setIntelLoading(true);
     setAiActive(false);
     setAiStatusMsg('ANALÝZA...');
-    addLog('Spouštím Guru Intel Engine (V12.2)...', 'warning');
+    addLog('Spouštím Guru Intel Engine...', 'warning');
     try {
+      // 🚀 GURU ANTI-DUPLICITY FIX: Načtení titulů NAPŘÍMO z DB tabulky 'posts', ne z lokálního stavu!
+      const { data: dbPosts, error: dbError } = await supabase.from('posts').select('title, title_en');
+      if (dbError) throw new Error('Nepodařilo se načíst existující články pro deduplikaci.');
+      
+      const existingTitles = new Set((dbPosts || []).flatMap(p => [
+          p.title?.toLowerCase().trim(),
+          p.title_en?.toLowerCase().trim()
+      ]).filter(Boolean));
+
       const res = await fetch('/api/leaks');
       const json = await res.json();
+      
       if (json.success) {
-        // 🛡️ GURU ANTI-DUPLICITY: Odstranění položek, které už jsou v DB
-        const existingTitles = new Set(data.posts.flatMap(p => [
-            p.title?.toLowerCase().trim(),
-            p.title_en?.toLowerCase().trim()
-        ]).filter(Boolean));
-
         const filteredItems = (json.data || []).filter(item => {
             const t = item.title?.toLowerCase().trim();
-            return !existingTitles.has(t);
+            return !existingTitles.has(t); // Pustíme jen to, co ještě není v databázi posts
         }).map(item => ({
             ...item,
             viral_score: item.viral_score || Math.floor(Math.random() * 40) + 60,
-            image_url: (item.intelType === 'leaks' && (!item.image_url || item.image_url.includes('unsplash'))) 
+            // 🚀 GURU: Leaky mají VŽDY tvůj obrázek bez jakékoliv další podmínky!
+            image_url: item.intelType === 'leaks' 
                        ? LEAK_PLACEHOLDER_URL 
                        : (item.image_url || 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000')
         }));
@@ -220,8 +206,10 @@ export default function AdminApp() {
       addLog('Koncept načten ze systému.', 'success');
       return;
     }
-    const openAiKey = getEnv('OPENAI_API_KEY');
-    if (!openAiKey) return addLog('CHYBÍ AI KLÍČ!', 'error');
+    
+    // Čtení API klíče
+    const openAiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+    if (!openAiKey) return addLog('CHYBÍ AI KLÍČ V ENV!', 'error');
     
     setProcessingTitle(item.title);
     addLog(`AI tvoří rozbor: ${item.title.substring(0, 30)}...`, 'warning');
@@ -257,7 +245,8 @@ export default function AdminApp() {
 
       const newDraft = {
         ...aiData,
-        image_url: item.image_url || (postType === 'leaks' ? LEAK_PLACEHOLDER_URL : 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000'),
+        // 🚀 GURU: VŽDY tvůj obrázek pro leaky
+        image_url: postType === 'leaks' ? LEAK_PLACEHOLDER_URL : (item.image_url || 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000'),
         created_at: new Date().toISOString(),
         type: postType,
         original_item: item,
@@ -278,7 +267,10 @@ export default function AdminApp() {
   // 🚀 GURU: MASTER SYNC PRO MAKE.COM + DATABASE 🚀
   const publishAndSendToMake = async () => {
     if (!draft) return;
-    const articleWebhook = getEnv('NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL');
+    
+    // FIX: Správné čtení Next.js env proměnné pro klienta
+    const articleWebhook = process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL;
+    
     addLog('ODPALUJI ČLÁNEK DO SYSTÉMU...', 'warning');
     
     try {
@@ -312,20 +304,15 @@ export default function AdminApp() {
       if (error) throw error;
       addLog('DATABÁZE SYNCHRONIZOVÁNA. 🔥', 'success');
 
-      // 2. ODESLÁNÍ NA MAKE.COM (Struktura title, url, image_url, description)
+      // 2. ODESLÁNÍ NA MAKE.COM 
+      // FIX: Payload má PŘESNĚ a pouze tu strukturu, kterou jsi poslal na screenshotu
       if (articleWebhook && articleWebhook !== "") {
         try {
           const payload = {
             title: dbData.title,
             url: `${BASE_URL}/clanky/${dbData.slug}`,
             image_url: dbData.image_url,
-            description: dbData.description || dbData.seo_description,
-            // Rozšířená metadata
-            id: dbData.id,
-            type: dbData.type,
-            locale: 'cs',
-            fired_at: new Date().toISOString(),
-            is_important: draft.is_important
+            description: dbData.description || dbData.seo_description
           };
           
           const makeRes = await fetch(articleWebhook, {
@@ -343,7 +330,7 @@ export default function AdminApp() {
           addLog(`Make.com selhal: ${mErr.message}`, 'error');
         }
       } else {
-        addLog('CHYBÍ WEBHOOK URL PRO ČLÁNKY!', 'error');
+        addLog('CHYBÍ WEBHOOK URL PRO ČLÁNKY (process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL)!', 'error');
       }
       
       // Vyčištění UI a synchronizace
@@ -358,7 +345,7 @@ export default function AdminApp() {
     <div style={{ minHeight: '100vh', background: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: 'sans-serif' }}>
       <form onSubmit={handleLogin} style={{ background: '#111318', padding: '50px', borderRadius: '40px', border: '1px solid #eab30866', textAlign: 'center', maxWidth: '400px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
         <Lock size={60} color="#eab308" style={{ margin: '0 auto 20px' }} />
-        <h1>GURU VELÍN</h1>
+        <h1 style={{ fontWeight: 950, marginBottom: '30px' }}>GURU VELÍN</h1>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Guru heslo..." style={{ width: '100%', padding: '20px', borderRadius: '15px', background: '#000', border: '1px solid #333', color: '#fff', marginBottom: '20px', textAlign: 'center', outline: 'none' }} />
         <button type="submit" style={{ width: '100%', padding: '20px', background: '#eab308', color: '#000', border: 'none', borderRadius: '15px', fontWeight: '950', cursor: 'pointer' }}>VSTOUPIT</button>
       </form>
