@@ -27,23 +27,24 @@ export default function SupportPage() {
   const revolutTag = "thehardwareguru";
   const hrkLink = "https://www.hrkgame.com/#a_aid=TheHardwareGuru";
 
-  // 🚀 GURU FIX: ZCELA ODSTRANĚN DESTRUKTIVNÍ RELOAD HACK 🚀
-  // Žádné smyčky, žádné pády widgetů. Pouze jemná inicializace, pokud skript běží.
+  // 🚀 GURU SPA SWG ATTACHMENT 🚀
+  // Čisté připojení tlačítka po klientské navigaci přes nativní SWG API
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.SWG_BASIC) {
-      try {
-        window.SWG_BASIC.push( basicSubscriptions => {
-          basicSubscriptions.init({
-            type: "NewsArticle",
-            isPartOfType: ["Product"],
-            isPartOfProductId: "CAow2M_FDA:openaccess",
-            clientOptions: { theme: "light", lang: isEn ? "en" : "cs" },
-          });
-        });
-      } catch (err) {
-        console.warn("Guru SWG Init:", err);
+    let attempts = 0;
+    const attachTimer = setInterval(() => {
+      attempts++;
+      if (typeof window !== 'undefined' && window.swgSubscriptions) {
+        const btn = document.getElementById('support-page-swg-btn');
+        if (btn && !btn.querySelector('iframe')) {
+          window.swgSubscriptions.attachButton(btn, "contribution");
+        }
+        clearInterval(attachTimer);
+      } else if (attempts > 20) {
+        clearInterval(attachTimer); // Timeout po 10 vteřinách, pokud by Google skript vůbec nenaběhl
       }
-    }
+    }, 500);
+
+    return () => clearInterval(attachTimer);
   }, [isEn]);
 
   const containerStyle = {
@@ -72,7 +73,7 @@ export default function SupportPage() {
     textAlign: 'center'
   };
 
-  // 🚀 GURU UNIFIED BUTTON SYSTEM - MAXIMUM CONSISTENCY
+  // 🚀 GURU UNIFIED BUTTON SYSTEM
   const buttonStyle = (type) => ({
     display: 'flex',
     alignItems: 'center',
@@ -121,7 +122,7 @@ export default function SupportPage() {
       <div style={cardStyle}>
         <style>{`
           .guru-btn-hover:hover { transform: translateY(-3px) scale(1.02); filter: brightness(1.1); border-color: rgba(234, 179, 8, 0.4); }
-          /* Pojištění, aby Google tlačítko neovlivňovaly globální styly a překrylo celou oblast */
+          /* Pojištění, aby Google iframe správně vyplnil celou neviditelnou plochu tlačítka */
           button[swg-standard-button] { width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; outline: none; }
         `}</style>
 
@@ -146,7 +147,7 @@ export default function SupportPage() {
           <div style={{ height: '1px', flex: 1, backgroundColor: '#ffffff' }}></div>
         </div>
 
-        {/* 🚀 1. MOŽNOST: GOOGLE SUBSCRIBE (ČISTÝ OVERLAY BEZ HACKŮ) 🚀 */}
+        {/* 🚀 1. MOŽNOST: GOOGLE SUBSCRIBE (ČISTÝ OVERLAY S NATIVNÍM SPA ATTACHEM) 🚀 */}
         <div style={{ marginBottom: '12px' }}>
           <div className="guru-btn-hover" style={{ ...buttonStyle('google'), position: 'relative', overflow: 'hidden' }}>
              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', pointerEvents: 'none', width: '100%' }}>
@@ -159,9 +160,13 @@ export default function SupportPage() {
                 <span>{isEn ? 'Google Subscribe' : 'Přispět s Googlem'}</span>
              </div>
              
-             {/* Čisté tlačítko, na které si Google pověsí iframe automaticky */}
+             {/* Neviditelná vrstva pro originální tlačítko s unikátním ID pro dynamický SPA attach */}
              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.001, zIndex: 10 }}>
-                <button swg-standard-button="contribution" style={{ width: '100%', height: '100%', cursor: 'pointer', border: 'none', background: 'transparent' }}></button>
+                <button 
+                  id="support-page-swg-btn" 
+                  swg-standard-button="contribution" 
+                  style={{ width: '100%', height: '100%', cursor: 'pointer', border: 'none', background: 'transparent' }}
+                ></button>
              </div>
           </div>
         </div>
