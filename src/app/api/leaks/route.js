@@ -5,9 +5,9 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * GURU BACKEND ENGINE - LEAKS & RUMORS NUCLEAR SHIELD V8.1
- * Cesta: src/app/api/leaks/route.js
- * Oprava: Deep-text parser pro Chiphell (vytahuje text z jakkoliv vnořených objektů).
+ * GURU BACKEND ENGINE - LEAKS & RUMORS NUCLEAR SHIELD V8.2
+ * Njira: src/app/api/leaks/route.js
+ * Kukonza: Njira yozama yopezerapo mauthenga (Deep-text parser) ya Chiphell ndi kuonjezera debug sample.
  */
 
 const REDDIT_SOURCES = [
@@ -31,7 +31,10 @@ const SPAM_BLACKLIST = [
   '签到', '每日', '回复', '领取', 'Check-in', 'Daily', 'posted', '版块', '积分', '奖励', '领取', '金币', '任务'
 ];
 
-// 🚀 GURU RECURSIVE TEXT EXTRACTOR
+/**
+ * Funso lochotsera mawu mozama mu ma objects a XML
+ * (Njira yochotsera mauthenga obisika)
+ */
 const getDeepText = (obj) => {
   if (!obj) return "";
   if (typeof obj === 'string') return obj;
@@ -44,6 +47,10 @@ const getDeepText = (obj) => {
   return String(obj);
 };
 
+/**
+ * Funso lotenga mauthenga ndi nthawi yochepa
+ * (Kuyesa kutenga mauthenga mwachangu)
+ */
 async function fetchWithTimeout(url, options = {}, ms = 8000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), ms);
@@ -55,6 +62,10 @@ async function fetchWithTimeout(url, options = {}, ms = 8000) {
   }
 }
 
+/**
+ * Funso lotenga mauthenga a Reddit
+ * (Kufufuza nkhani mu Reddit)
+ */
 async function fetchReddit() {
   for (const url of REDDIT_SOURCES) {
     try {
@@ -62,11 +73,12 @@ async function fetchReddit() {
       if (!res.ok) continue;
 
       const text = await res.text();
+      // Onani ngati ndi XML kapena JSON
       if (text.length > 200 && (text.includes('<?xml') || text.includes('<rss') || text.includes('<feed') || (url.includes('json') && text.trim().startsWith('{')))) {
         return { type: url.includes("json") ? "json" : "rss", data: text };
       }
     } catch (e) {
-      console.warn(`Reddit fetch attempt failed for ${url}`);
+      console.warn(`Vuto pakutenga Reddit pa: ${url}`);
     }
   }
   return null;
@@ -78,7 +90,8 @@ export async function GET() {
     reddit: "pending", 
     chiphell: "pending", 
     chiphell_raw_count: 0,
-    chiphell_final_count: 0 
+    chiphell_final_count: 0,
+    chiphell_first_raw: "" // Zitsanzo za nkhani yoyamba ya Chiphell
   };
   
   const parser = new XMLParser({ 
@@ -125,10 +138,10 @@ export async function GET() {
           });
         }
         debug.reddit = "ok";
-      } catch (e) { debug.reddit = "parse_error"; }
-    } else { debug.reddit = "blocked_or_failed"; }
+      } catch (e) { debug.reddit = "vuto_loyala_mauthenga"; }
+    } else { debug.reddit = "reddit_yatsekedwa_kapena_yalephera"; }
 
-    // --- 2. CHIPHELL ENGINE (Supreme Deep-Parsing) ---
+    // --- 2. CHIPHELL ENGINE (Zotsatira Zozama) ---
     try {
       const res = await fetchWithTimeout(CHIPHELL_RSS, { headers: BROWSER_HEADERS, cache: "no-store" });
       if (res.ok) {
@@ -138,18 +151,22 @@ export async function GET() {
         const itemsArray = Array.isArray(items) ? items : [items];
         debug.chiphell_raw_count = itemsArray.length;
 
+        if (itemsArray.length > 0) {
+          debug.chiphell_first_raw = getDeepText(itemsArray[0].title).substring(0, 50);
+        }
+
         itemsArray.forEach(item => {
           if (!item) return;
           
-          // 🚀 GURU SUPREME EXTRACT: Vytahujeme titulky a linky z Chiphell hlubin
+          // Kufufuza mauthenga mu Chiphell
           let t = getDeepText(item.title);
           t = t.toString().replace(/<!\[CDATA\[|\]\]>/g, "").trim();
           
           let l = getDeepText(item.link);
           
-          // 🛡️ GURU FILTR: Čistíme balast a spam
+          // Kuyeretsa mauthenga onama (spam filter)
           const isSpam = SPAM_BLACKLIST.some(term => t.includes(term));
-          if (!isSpam && t.length > 8 && !t.includes("[object Object]")) {
+          if (!isSpam && t.length > 5 && !t.includes("[object Object]")) {
             leaks.push({
               title: t,
               link: l,
@@ -162,10 +179,10 @@ export async function GET() {
           }
         });
         debug.chiphell = "ok";
-      } else { debug.chiphell = `fetch_failed: ${res.status}`; }
-    } catch (e) { debug.chiphell = `error: ${e.message}`; }
+      } else { debug.chiphell = `vuto_pakutenga: ${res.status}`; }
+    } catch (e) { debug.chiphell = `vuto: ${e.message}`; }
 
-    // --- SJEDNOCENÍ & FINÁLNÍ FILTR ---
+    // Kuyala mauthenga kuyambira yatsopano
     leaks.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
 
     return NextResponse.json({
