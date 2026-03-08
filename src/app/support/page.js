@@ -52,7 +52,7 @@ export default function SupportPage() {
     textAlign: 'center'
   };
 
-  // 🚀 GURU UNIFIED BUTTON SYSTEM
+  // 🚀 GURU UNIFIED BUTTON SYSTEM - MAXIMUM CONSISTENCY
   const buttonStyle = (type) => ({
     display: 'flex',
     alignItems: 'center',
@@ -71,7 +71,7 @@ export default function SupportPage() {
     cursor: 'pointer',
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
-    // Barevná logika pro maximální vizuální sílu
+    // Všechna tlačítka mají stejné tmavé pozadí, kromě oranžového affiliate magnetu
     backgroundColor: type === 'affiliate' ? 'transparent' : '#161920',
     background: type === 'affiliate' ? 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' : undefined,
     color: '#ffffff',
@@ -89,11 +89,13 @@ export default function SupportPage() {
         <h1 style={{ fontSize: 'clamp(32px, 8vw, 48px)', fontWeight: '900', margin: '10px 0', letterSpacing: '-1px' }}>
           {isEn ? "FEEDING THIS " : "KRMÍŠ TENHLE "} <span style={{ color: '#eab308' }}>{isEn ? "MACHINE" : "STROJ"}</span>
         </h1>
+        
+        {/* 🚀 GURU FIX: ZMĚNA TEXTU POUZE NA PROMO WEBU, STREAMŮ A SÍTÍ 🚀 */}
         <p style={{ color: '#9ca3af', maxWidth: '600px', margin: '20px auto', fontSize: '15px', lineHeight: '1.6' }}>
           {isEn ? (
-            <>Hardware Guru was born out of pure passion for technology. My goal is to build a place free of paid ads. Contributions help cover the costs of <strong>high-speed servers, data streams, and tool licensing</strong>. Thanks for keeping the Guru running!</>
+            "Contributions go directly to website promotion, live stream support, and social media growth."
           ) : (
-            <>Hardware Guru vznikl z čisté vášně pro technologie. Mým cílem je vybudovat místo bez nánosu placených reklam. Příspěvky pomáhají pokrýt náklady na <strong>vysokorychlostní servery, datové toky a licencování nástrojů</strong>. Díky, že držíš Guru v běhu!</>
+            "Příspěvky jdou přímo na propagaci webu, podporu live streamů a rozvoj sociálních sítí."
           )}
         </p>
       </div>
@@ -101,8 +103,8 @@ export default function SupportPage() {
       <div style={cardStyle}>
         <style>{`
           .guru-btn-hover:hover { transform: translateY(-3px) scale(1.02); filter: brightness(1.1); border-color: rgba(234, 179, 8, 0.4); }
-          /* Úprava pro Google tlačítko aby zmizelo pozadí iframe */
-          button[swg-standard-button] { width: 100% !important; }
+          /* Zajištění viditelnosti Google tlačítka a sjednocení vzhledu */
+          button[swg-standard-button] { width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; outline: none; }
         `}</style>
 
         {/* QR KÓD SEKCE */}
@@ -126,13 +128,21 @@ export default function SupportPage() {
           <div style={{ height: '1px', flex: 1, backgroundColor: '#ffffff' }}></div>
         </div>
 
-        {/* 🚀 1. MOŽNOST: GOOGLE SUBSCRIBE 🚀 */}
+        {/* 🚀 1. MOŽNOST: GOOGLE SUBSCRIBE (OVERLAY HACK PŘENOSENÝ Z WIDGETU) 🚀 */}
         <div style={{ marginBottom: '12px' }}>
-          <div className="guru-btn-hover" style={buttonStyle('google')}>
-            {/* Obal pro Google skript, který zachovává Guru styl */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: '24px' }}>
-               <button swg-standard-button="contribution" style={{ cursor: 'pointer', border: 'none', background: 'transparent' }}></button>
-            </div>
+          <div className="guru-btn-hover" style={{ ...buttonStyle('google'), position: 'relative', overflow: 'hidden' }}>
+             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', pointerEvents: 'none', width: '100%' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                <span>{isEn ? 'Google Subscribe' : 'Přispět s Googlem'}</span>
+             </div>
+             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.001, zIndex: 10 }}>
+                <button swg-standard-button="contribution" style={{ width: '100%', height: '100%', cursor: 'pointer', border: 'none', background: 'transparent' }}></button>
+             </div>
           </div>
         </div>
 
@@ -168,7 +178,7 @@ export default function SupportPage() {
       </div>
 
       <div style={{ marginTop: '50px', fontSize: '10px', color: '#4b5563', letterSpacing: '2px', fontWeight: 'bold', textAlign: 'center' }}>
-        FIXNÍ NÁKLADY: VERCEL HOSTING • DATABASE • DOMAIN • AUTO-SCRIPTS
+        {isEn ? "PROJECT SUPPORT: WEBSITE • LIVE STREAM • SOCIAL NETWORKS" : "PODPORA PROJEKTU: WEB • LIVE STREAM • SOCIÁLNÍ SÍTĚ"}
       </div>
     </div>
   );
