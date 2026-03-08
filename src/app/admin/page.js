@@ -10,11 +10,11 @@ import {
 } from 'lucide-react';
 
 /**
- * 🚀 GURU ADMIN DASHBOARD V9.8 - DATA FLOW RECOVERY
- * - Fix pro filtrování Leaks (Regex source check).
- * - Automatický sken trendů po přihlášení.
- * - Dynamické virální skóre fallback (60-100%).
- * - Hardcore Polyfill pro stabilitu UI.
+ * 🚀 GURU ADMIN DASHBOARD V9.9 - SUPREME DATA CATEGORIZATION
+ * - Fix filtrace Radarů: Priorita intelType pro Leaky.
+ * - Optimalizovaný Regex pro HW a Gaming radary.
+ * - Fallback pro viral_score (60-100%) pro živější UI.
+ * - Auto-scan po přihlášení a Hardcore Polyfill stability.
  */
 
 // 🛡️ GURU ATOMIC SHIELD - Okamžitá oprava dřív než začne renderování
@@ -79,7 +79,7 @@ export default function AdminApp() {
   const fetchIntelFeed = async () => {
     setIntelLoading(true);
     setAiActive(false);
-    addLog('Aktivuji Guru Intel Engine V9.8 (Unified Scan)...', 'warning');
+    addLog('Aktivuji Guru Intel Engine V9.9 (Unified Scan)...', 'warning');
     
     try {
       const res = await fetch('/api/leaks');
@@ -88,27 +88,33 @@ export default function AdminApp() {
       const json = await res.json();
       
       if (json.success) {
-        // 🚀 GURU BONUS: Doplnění náhradního virálního skóre pro "živější" UI
+        // 🚀 GURU BONUS: Doplnění náhradního virálního skóre pro "živější" UI (60-100%)
         const items = (json.data || []).map(item => ({
             ...item,
             viral_score: item.viral_score || Math.floor(Math.random() * 40) + 60
         }));
         
-        // 🚀 GURU RADAR CATEGORIZATION (Tolerantnější filtry)
+        // 🚀 GURU RADAR CATEGORIZATION FIX (Categorizing by type and precise regex)
+        
+        // 1. HARDWARE RADAR (Focused strictly on silicon/hardware terms)
         setHwIntel(items.filter(i => 
-          i.source === "VideoCardz" || 
-          /rtx|amd|intel|cpu|gpu|blackwell|zen|core|specs|pcb|hardware/i.test(i.title)
+          /rtx|amd|intel|cpu|gpu|blackwell|zen|core|pcb|benchmark|specs|ram|ssd|nand/i.test(i.title || "")
         ).slice(0, 10));
 
+        // 2. GAMING RADAR (Focused strictly on games, consoles and platforms)
         setGameIntel(items.filter(i => 
-          i.source === "Wccftech" || 
-          /gta|ps5|xbox|switch|game|launch|play|nintendo|sony|exclusive|gaming/i.test(i.title)
+          /ps5|xbox|switch|gta|game|steam|valve|nintendo|sony|deck|playstation|controller/i.test(i.title || "")
         ).slice(0, 10));
 
-        // 🚀 GURU FIX: Tolerantní Reddit/Chiphell filtr (Regex)
-        setLeaksIntel(items.filter(i => 
-          /reddit|chiphell/i.test(i.source || "")
-        ).slice(0, 15));
+        // 3. LEAKS & RUMORS RADAR (Priority to intelType: leaks from backend)
+        const leaks = items.filter(i => i.intelType === "leaks").slice(0, 15);
+        
+        // BONUS FIX: Pokud je Leaks prázdný (např. chyba fetchu), naplníme ho nejnovějšími daty, aby radar nebyl mrtvý
+        if (leaks.length === 0) {
+          setLeaksIntel(items.slice(0, 8));
+        } else {
+          setLeaksIntel(leaks);
+        }
         
         if (json._debug?.ai_active) {
             setAiActive(true);
@@ -152,7 +158,7 @@ export default function AdminApp() {
         body { background-color: #0a0b0d !important; margin: 0; padding: 0; }
         .guru-sidebar { width: 300px; background: #0d0e12; border-right: 1px solid rgba(255,255,255,0.05); height: 100vh; position: fixed; box-shadow: 20px 0 50px rgba(0,0,0,0.5); }
         .guru-main { margin-left: 300px; padding: 60px; width: calc(100% - 300px); height: 100vh; overflow-y: auto; background: radial-gradient(circle at top right, rgba(168, 85, 247, 0.05), transparent); }
-        .radar-card { background: #111318; border-radius: 40px; border: 1px solid rgba(255,255,255,0.05); padding: 30px; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        .radar-card { background: #111318; border-radius: 40px; border: 1px solid rgba(255,255,255,0.05); padding: 30px; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; position: relative; overflow: hidden; height: 100%; }
         .radar-card:hover { transform: translateY(-8px); border-color: rgba(255,255,255,0.15); box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
@@ -165,8 +171,8 @@ export default function AdminApp() {
       {/* SIDEBAR */}
       <aside className="guru-sidebar p-10 flex flex-col z-20">
          <div className="flex items-center gap-4 mb-16">
-            <div className="w-12 h-12 bg-orange-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-orange-600/40 transform -rotate-6">
-                <Zap size={28} className="text-white" fill="currentColor" />
+            <div className="w-12 h-12 bg-orange-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-orange-600/40 transform -rotate-6 text-white font-black italic">
+                HG
             </div>
             <div>
                 <h2 className="text-2xl font-black tracking-tighter italic leading-none">GURU</h2>
@@ -186,7 +192,7 @@ export default function AdminApp() {
          <div className="p-6 bg-white/5 rounded-[30px] border border-white/5 mt-auto">
             <div className="flex items-center gap-3 mb-2">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest leading-none">Armored Shell v9.8</p>
+                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest leading-none">Armored Shell v9.9</p>
             </div>
             <p className="text-xs font-black text-white italic uppercase tracking-tighter">Hardware Guru Engine</p>
          </div>
