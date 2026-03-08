@@ -1,15 +1,23 @@
 import React, { cache } from 'react';
+import { 
+  ChevronLeft, 
+  Swords, 
+  ShieldCheck, 
+  Zap, 
+  ShoppingCart 
+} from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V16.4 (SERVER COMPONENT PREVIEW FIX)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V16.9 (PREVIEW COMPATIBILITY FIX)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * Design: Brutální GURU styl (obří růžové nadpisy, skleněný panel, neonové prvky).
- * FIX: Implementace "Build Shield" pro vyřešení chyb kompilace v Preview při zachování 
- * striktní optimalizace (Single Query Join, Cache, Server Supabase Client).
+ * FIX: Implementace dynamického načítání modulů pro vyřešení chyb kompilace v prostředí Canvas.
+ * FIX: Implementace cleanSlug pro vyřešení 404 u EN verzí.
+ * PERFORMANCE: Single Query Join + React Cache.
  */
 
-// --- 🛡️ GURU BUILD SHIELD: Dynamické načítání modulů pro prostředí náhledu ---
-const safeGet = (path) => {
+// --- 🛡️ GURU BUILD SHIELD: Dynamické načítání pro prostředí náhledu ---
+const getModule = (path) => {
   try {
     return require(path);
   } catch (e) {
@@ -17,10 +25,11 @@ const safeGet = (path) => {
   }
 };
 
-const supabaseLib = safeGet('@supabase/supabase-js');
-const nextNav = safeGet('next/navigation');
-const nextLinkModule = safeGet('next/link');
+const supabaseLib = getModule('@supabase/supabase-js');
+const nextNav = getModule('next/navigation');
+const nextLinkModule = getModule('next/link');
 
+// Fallbacky pro prostředí, kde moduly nejsou dostupné přímo
 const createClient = supabaseLib ? supabaseLib.createClient : null;
 const notFound = nextNav ? nextNav.notFound : () => {};
 const Link = nextLinkModule ? (nextLinkModule.default || nextLinkModule) : ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>;
@@ -34,9 +43,12 @@ const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
     )
   : null;
 
-// 🚀 GURU: Cache dotazu pro deduplikaci (Single Query Join)
+// 🚀 GURU: Cache dotazu pro deduplikaci (Single Query Join s fixem pro slug)
 const getDuelData = cache(async (slug) => {
   if (!supabase) return null;
+
+  // 🚀 GURU FIX: Odstranění prefixu 'en-' pro správné nalezení v DB
+  const cleanSlug = slug.replace(/^en-/, '');
   
   const { data: duel, error } = await supabase
     .from('gpu_duels')
@@ -45,14 +57,14 @@ const getDuelData = cache(async (slug) => {
       gpuA:gpus!gpu_a_id(*),
       gpuB:gpus!gpu_b_id(*)
     `)
-    .eq('slug', slug)
+    .eq('slug', cleanSlug)
     .single();
 
   if (error || !duel) return null;
   return duel;
 });
 
-// 🚀 GURU SEO: Dynamické Meta Tagy s využitím cache
+// 🚀 GURU SEO: Dynamické Meta Tagy
 export async function generateMetadata({ params }) {
   const { slug } = params;
   const duel = await getDuelData(slug);
@@ -75,23 +87,23 @@ export default async function App({ params }) {
 
   if (!duel) {
     if (typeof notFound === 'function') notFound();
-    return <div>404 - Duel not found</div>;
+    return <div>404 - Duel nenalezen</div>;
   }
 
-  // 1. DETEKCE JAZYKA
+  // 1. Detekce jazyka na základě slugu
   const isEn = slug.startsWith('en-');
   const { gpuA, gpuB } = duel;
 
   if (!gpuA || !gpuB) {
-     if (typeof notFound === 'function') notFound();
-     return <div>Invalid GPU data</div>;
+    if (typeof notFound === 'function') notFound();
+    return <div>Neplatná data GPU</div>;
   }
 
-  // 2. LOKALIZOVANÉ TEXTY
+  // 2. Lokalizované texty
   const title = isEn && duel.title_en ? duel.title_en : duel.title_cs;
   const content = isEn && duel.content_en ? duel.content_en : (duel.content_cs || duel.content);
   
-  // 3. FORMÁTOVÁNÍ DATA (Podle ChatGPT doporučení pro hydrataci)
+  // 3. Formátování data pomocí Intl
   const dateObj = new Date(duel.created_at || Date.now());
   const formattedDate = new Intl.DateTimeFormat(isEn ? 'en-US' : 'cs-CZ', { 
     year: 'numeric', month: 'long', day: 'numeric' 
@@ -116,7 +128,7 @@ export default async function App({ params }) {
         backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', 
         backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px'
     }}>
-      {/* 🛡️ GURU HYPER-SHIELD: Ochrana před chybami v klientské navigaci */}
+      {/* 🛡️ GURU HYPER-SHIELD: Ochrana pro Google News skripty */}
       <script dangerouslySetInnerHTML={{__html: `
         (function() {
           window.swgSubscriptions = window.swgSubscriptions || {};
@@ -158,7 +170,7 @@ export default async function App({ params }) {
           </h1>
         </header>
 
-        {/* 🥊 RING SYSTÉM (Karty grafik) */}
+        {/* 🥊 RING SYSTÉM */}
         <div className="ring-grid-system grid grid-cols-[1fr_auto_1fr] items-center mb-16 relative">
             <div className="gpu-card-box" style={{ borderColor: getVendorColor(gpuA.vendor) }}>
                 <span style={{ fontSize: '12px', fontWeight: '950', color: getVendorColor(gpuA.vendor), textTransform: 'uppercase', letterSpacing: '2px' }}>{gpuA.vendor} • {gpuA.architecture}</span>
