@@ -7,29 +7,30 @@ import {
   CheckCircle2, RefreshCw, Send, Sparkles, Flame, Plus, X, 
   ExternalLink, Lightbulb, BookOpen, Wrench, Video, Cpu, Lock, Calendar, Terminal,
   LayoutDashboard, Image as ImageIcon, CalendarDays, Layers, ChevronRight, Play,
-  Download, Eye, Check, RotateCcw, Smartphone, Monitor, ArrowLeft, TrendingUp, Cpu as CpuIcon, Gamepad2, Star, Heart
+  Download, Eye, Check, RotateCcw, Smartphone, Monitor, ArrowLeft, TrendingUp, Cpu as CpuIcon, Gamepad2, Star, Heart, Ghost
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V8.23 - PERSISTENCE FIX
- * Funkce: Multi-Source Intel, AI Viral Scoring, 
- * Persistent Storage FIX: Ochrana proti přemazání localStorage při startu.
+ * GURU ULTIMATE COMMAND CENTER V8.31 - LEAKS & PERSISTENCE
+ * Ochrana před chybou process is not defined a plně zapracované Leaks zdroje.
  */
 
-// --- 🚀 GURU ENV ENGINE ---
+// --- 🚀 GURU ENV ENGINE (Fix pro ReferenceError) ---
 const getEnv = (key, fallback = '') => {
-  if (typeof window === 'undefined') return fallback;
-  const envMap = {
-    'OPENAI_API_KEY': process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
-    'NEXT_PUBLIC_SUPABASE_URL': process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-    'NEXT_PUBLIC_ADMIN_PASSWORD': process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Wifik500',
-    'NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL': process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL || ''
-  };
-  return envMap[key] || fallback;
+  try {
+    const envMap = {
+      'OPENAI_API_KEY': process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
+      'NEXT_PUBLIC_SUPABASE_URL': process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      'NEXT_PUBLIC_ADMIN_PASSWORD': process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Wifik500',
+      'NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL': process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL || ''
+    };
+    return envMap[key] || fallback;
+  } catch (e) {
+    return fallback;
+  }
 };
 
-// --- GURU ENGINE INIT ---
 const initSupabase = () => {
   let createClient;
   try {
@@ -38,9 +39,8 @@ const initSupabase = () => {
   } catch (e) {
     return { from: () => ({ select: () => ({ order: () => ({ limit: () => Promise.resolve({ data: [] }) }), eq: () => ({ single: () => Promise.resolve({ data: {} }) }) }), update: () => ({ eq: () => Promise.resolve({ error: null }) }), insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: {}, error: null }) }) }) }) };
   }
-  const url = getEnv('NEXT_PUBLIC_SUPABASE_URL');
-  const key = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
-  if (!url || !key) return { from: () => ({ select: () => ({ order: () => ({ limit: () => Promise.resolve({ data: [] }) }), eq: () => ({ single: () => Promise.resolve({ data: {} }) }) }), update: () => ({ eq: () => Promise.resolve({ error: null }) }), insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: {}, error: null }) }) }) }) };
+  const url = getEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://placeholder.supabase.co');
+  const key = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'placeholder');
   return createClient(url, key);
 };
 
@@ -70,10 +70,11 @@ export default function AdminApp() {
   // 🛡️ PERSISTENTNÍ INTEL SEZNAMY A KONCEPTY
   const [hwIntel, setHwIntel] = useState([]);
   const [gameIntel, setGameIntel] = useState([]);
+  const [leaksIntel, setLeaksIntel] = useState([]); // 🚀 GURU DATA
   const [savedDrafts, setSavedDrafts] = useState({}); 
   const [intelLoading, setIntelLoading] = useState(false);
   
-  // 🚀 GURU PERSISTENCE GUARD: Zabraňuje přemazání dat při startu aplikace
+  // 🚀 GURU PERSISTENCE GUARD
   const isInitialized = useRef(false);
 
   const [draft, setDraft] = useState(null);
@@ -83,37 +84,37 @@ export default function AdminApp() {
 
   const BASE_URL = 'https://www.thehardwareguru.cz';
 
-  // Načtení dat při startu
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if (sessionStorage.getItem('guru_admin_auth') === 'true') setIsAuthenticated(true);
       
       const savedHw = localStorage.getItem('guru_hw_intel');
       const savedGame = localStorage.getItem('guru_game_intel');
+      const savedLeaks = localStorage.getItem('guru_leaks_intel');
       const savedDraftsLocal = localStorage.getItem('guru_saved_drafts');
       
       try {
         if (savedHw) setHwIntel(JSON.parse(savedHw));
         if (savedGame) setGameIntel(JSON.parse(savedGame));
+        if (savedLeaks) setLeaksIntel(JSON.parse(savedLeaks));
         if (savedDraftsLocal) setSavedDrafts(JSON.parse(savedDraftsLocal));
       } catch (e) {
         console.error("Guru Memory Load Error", e);
       }
       
-      // 🚀 GURU: Teď je bezpečné začít ukládat
       isInitialized.current = true;
       addLog('Systémová paměť načtena.', 'success');
     }
   }, []);
 
-  // 🚀 GURU PERSISTENCE GUARD: Ukládání pouze po inicializaci
   useEffect(() => {
     if (typeof window !== 'undefined' && isInitialized.current) {
       localStorage.setItem('guru_hw_intel', JSON.stringify(hwIntel));
       localStorage.setItem('guru_game_intel', JSON.stringify(gameIntel));
+      localStorage.setItem('guru_leaks_intel', JSON.stringify(leaksIntel));
       localStorage.setItem('guru_saved_drafts', JSON.stringify(savedDrafts));
     }
-  }, [hwIntel, gameIntel, savedDrafts]);
+  }, [hwIntel, gameIntel, leaksIntel, savedDrafts]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -158,7 +159,7 @@ export default function AdminApp() {
     const openAiKey = getEnv('OPENAI_API_KEY');
     if (!openAiKey) return addLog('CHYBÍ KLÍČ OPENAI!', 'error');
     setIntelLoading(true);
-    addLog('Spouštím globální skener HW & Gaming trendů...', 'warning');
+    addLog('Spouštím globální skener HW, Gaming & Leaks trendů...', 'warning');
     
     const HW_FEEDS = [
       { name: "Tom's Hardware", url: "https://www.tomshardware.com/feeds.xml" },
@@ -172,6 +173,10 @@ export default function AdminApp() {
       { name: "VGC", url: "https://www.videogameschronicle.com/feed/" },
       { name: "Insider Gaming", url: "https://insider-gaming.com/feed/" }
     ];
+    const LEAKS_FEEDS = [
+      { name: "Reddit Leaks", url: "https://www.reddit.com/r/GamingLeaksAndRumours/new/.rss" },
+      { name: "Chiphell", url: "https://www.chiphell.com/forum.php?mod=rss&fid=224" }
+    ];
 
     try {
       const fetchSet = async (list, type) => {
@@ -183,14 +188,20 @@ export default function AdminApp() {
         return results.flat();
       };
 
-      const [rawHw, rawGame] = await Promise.all([fetchSet(HW_FEEDS, 'hw'), fetchSet(GAME_FEEDS, 'game')]);
+      const [rawHw, rawGame, rawLeaks] = await Promise.all([
+        fetchSet(HW_FEEDS, 'hw'), 
+        fetchSet(GAME_FEEDS, 'game'),
+        fetchSet(LEAKS_FEEDS, 'leaks')
+      ]);
+      
       const existingTitles = data.posts.map(p => p.title.toLowerCase().trim());
       const filterUnique = (items) => items.filter(item => !existingTitles.includes(item.title.toLowerCase().trim()));
       
       const uniqueHw = filterUnique(rawHw);
       const uniqueGame = filterUnique(rawGame);
+      const uniqueLeaks = filterUnique(rawLeaks);
 
-      addLog(`Detekováno ${uniqueHw.length} HW a ${uniqueGame.length} herních novinek.`, 'warning');
+      addLog(`Detekováno ${uniqueHw.length} HW, ${uniqueGame.length} herních novinek a ${uniqueLeaks.length} úniků.`, 'warning');
 
       const scoreItems = async (items, systemPrompt) => {
         if (items.length === 0) return [];
@@ -215,13 +226,15 @@ export default function AdminApp() {
         })).sort((a, b) => b.viral_score - a.viral_score).slice(0, 10);
       };
 
-      const [scoredHw, scoredGame] = await Promise.all([
+      const [scoredHw, scoredGame, scoredLeaks] = await Promise.all([
         scoreItems(uniqueHw, "Jsi HW expert. Vyhodnoť virální sílu (0-100). Vrať JSON { scores: [{ title, score }] }."),
-        scoreItems(uniqueGame, "Jsi herní insider. Vyhodnoť virální sílu (0-100). Vrať JSON { scores: [{ title, score }] }.")
+        scoreItems(uniqueGame, "Jsi herní insider. Vyhodnoť virální sílu (0-100). Vrať JSON { scores: [{ title, score }] }."),
+        scoreItems(uniqueLeaks, "Jsi specialista na leaky a uniklé informace. Vyhodnoť virální sílu a důvěryhodnost (0-100). Vrať JSON { scores: [{ title, score }] }.")
       ]);
 
       setHwIntel(scoredHw);
       setGameIntel(scoredGame);
+      setLeaksIntel(scoredLeaks);
       addLog('Intel Hub aktualizován a připraven k akci.', 'success');
     } catch (err) { addLog(`Chyba Intel Enginu: ${err.message}`, 'error'); }
     finally { setIntelLoading(false); }
@@ -263,11 +276,13 @@ export default function AdminApp() {
       const result = await response.json();
       const aiData = JSON.parse(result.choices[0].message.content);
       
+      const postType = item.intelType === 'leaks' ? 'leaks' : (item.intelType === 'hw' ? 'hardware' : 'game');
+
       const newDraft = {
         ...aiData,
         image_url: item.enclosure?.link || item.thumbnail || 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000',
         created_at: new Date().toISOString(),
-        type: item.intelType === 'hw' ? 'hardware' : 'game',
+        type: postType,
         original_item: item,
         is_important: false
       };
@@ -330,6 +345,7 @@ export default function AdminApp() {
       
       setHwIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
       setGameIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
+      setLeaksIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
       
       const newSavedDrafts = { ...savedDrafts };
       delete newSavedDrafts[draft.original_item.title];
@@ -418,7 +434,9 @@ export default function AdminApp() {
                       <div className="mock-card" onClick={() => setPreviewMode('slug')}>
                          <img src={draft.image_url} style={{ width: '100%', height: '180px', objectFit: 'cover' }} alt="" />
                          <div style={{ padding: '20px' }}>
-                            <span style={{ color: '#ff0000', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>{draft.type === 'hardware' ? 'TECH ROZBOR' : 'GAME NEWS'}</span>
+                            <span style={{ color: draft.type === 'leaks' ? '#66fcf1' : '#ff0000', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                              {draft.type === 'leaks' ? 'LEAKS & RUMORS' : (draft.type === 'hardware' ? 'TECH ROZBOR' : 'GAME NEWS')}
+                            </span>
                             <h3 style={{ color: '#fff', fontSize: '1.1rem', margin: '10px 0', fontWeight: '900' }}>{draft.title_cs}</h3>
                             <p style={{ color: '#9ca3af', fontSize: '14px', lineHeight: '1.4', marginBottom: '15px' }}>{draft.description_cs}</p>
                             <div style={{ color: '#66fcf1', fontWeight: 'bold', fontSize: '12px' }}>ČÍST VÍCE →</div>
@@ -525,7 +543,28 @@ export default function AdminApp() {
                 </div>
               ))}
             </div>
-            {!intelLoading && hwIntel.length === 0 && gameIntel.length === 0 && <div style={{ textAlign: 'center', padding: '100px', color: '#444', fontWeight: 'bold' }}>ŽÁDNÁ DATA. SPUSTI SKENER.</div>}
+
+            {/* 🚀 GURU: Leaks & Rumors Radar (NOVÁ SEKCE PŘIDÁNA) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', borderLeft: '4px solid #66fcf1', paddingLeft: '15px' }}>
+                <Ghost color="#66fcf1" size={18} />
+                <h3 style={{ fontSize: '16px', fontWeight: 950, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Leaks & <span style={{ color: '#66fcf1' }}>Rumors</span></h3>
+            </div>
+            <div className="hub-compact-grid">
+              {leaksIntel.map((item, i) => (
+                <div key={i} className="compact-card" style={{ borderColor: 'rgba(102, 252, 241, 0.1)' }}>
+                  {processingTitle === item.title && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw className="animate-spin text-cyan-400" size={24}/></div>}
+                  <div className="compact-badge" style={{ background: item.viral_score > 80 ? '#66fcf1' : '#10b981', color: item.viral_score > 80 ? '#000' : '#fff' }}>{item.viral_score}%</div>
+                  <span className="compact-source">{item.source}</span>
+                  <h4 className="compact-title">{item.title}</h4>
+                  <div className="compact-actions">
+                    <a href={item.link} target="_blank" rel="noreferrer" className="compact-btn">Zdroj</a>
+                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className={`compact-btn ${savedDrafts[item.title] ? '' : 'compact-btn-main'}`} style={savedDrafts[item.title] ? { borderColor: '#66fcf166', color: '#66fcf1', background: '#66fcf122' } : { borderColor: '#66fcf166', color: '#66fcf1', background: 'transparent' }}>{savedDrafts[item.title] ? 'MÁM KONCEPT' : 'KONCEPT'}</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {!intelLoading && hwIntel.length === 0 && gameIntel.length === 0 && leaksIntel.length === 0 && <div style={{ textAlign: 'center', padding: '100px', color: '#444', fontWeight: 'bold' }}>ŽÁDNÁ DATA. SPUSTI SKENER.</div>}
           </div>
         )}
       </main>
