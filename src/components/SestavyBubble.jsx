@@ -5,15 +5,16 @@ import { usePathname } from 'next/navigation';
 import { Brain, ChevronRight, X, Activity, Target, Cpu, Gamepad2, Flame, Lightbulb, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-// --- BEZPEČNÁ INICIALIZÁCIA SUPABASE (Oprava prázdneho poľa) ---
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// --- 🚀 GURU INIT: Čisté napojení na tvé reálné prostředí (Bez falešných URL) ---
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 /**
  * GURU AI NAVIGATOR - COMPACT ULTIMATE EDITION
- * Obsahuje: Behaviorálne archetypy, Anti-Fatigue pamäť, 
- * Contextual Keyword Matching a kompaktný dizajn (zmenšené).
+ * Obsahuje: Behaviorální archetypy, Anti-Fatigue paměť, 
+ * Contextual Keyword Matching a kompaktní design.
  */
 export default function SestavyBubble() {
   const [isVisible, setIsVisible] = useState(false);
@@ -29,7 +30,7 @@ export default function SestavyBubble() {
   const isEn = pathname.startsWith('/en');
   const langPrefix = isEn ? '/en' : '';
 
-  // 🛡️ GURU SHIELD: Blokovanie adminu
+  // 🛡️ GURU SHIELD: Blokování adminu
   const isAdmin = pathname.includes('/admin') || (typeof window !== 'undefined' && window.location.pathname.includes('/admin'));
 
   useEffect(() => {
@@ -49,35 +50,35 @@ export default function SestavyBubble() {
       if (isMounted) setIsScanning(true);
       
       try {
-        // 1. NAČÍTANIE PROFILU A HISTÓRIE
+        // 1. NAČTENÍ PROFILU A HISTORIE
         let profile = JSON.parse(localStorage.getItem('guru_archetype') || '{"hw":0, "games":0, "deals":0, "tips":0}');
         let seenItems = JSON.parse(localStorage.getItem('guru_ai_seen') || '[]');
         
-        // Bodovanie podľa URL
+        // Bodování podle URL
         if (pathname.includes('/clanky') || pathname.includes('/tweaky')) profile.hw += 1.5;
         if (pathname.includes('/ocekavane-hry') || pathname.includes('/mikrorecenze')) profile.games += 1.5;
         if (pathname.includes('/deals')) profile.deals += 2.0; 
         if (pathname.includes('/tipy') || pathname.includes('/rady') || pathname.includes('/slovnik')) profile.tips += 1.0;
 
-        // Normalizácia profilu (Decay)
+        // Normalizace profilu (Decay)
         if (profile.hw > 15 || profile.games > 15 || profile.deals > 15 || profile.tips > 15) {
            profile.hw *= 0.7; profile.games *= 0.7; profile.deals *= 0.7; profile.tips *= 0.7;
         }
         localStorage.setItem('guru_archetype', JSON.stringify(profile));
 
-        // 2. DETEKCIA ARCHETYPU
+        // 2. DETEKCE ARCHETYPU
         let dominantType = 'hw';
         let maxScore = 0;
         for (const [key, value] of Object.entries(profile)) {
           if (value > maxScore) { maxScore = value; dominantType = key; }
         }
 
-        // 3. EXTRAKCIA KĽÚČOVÝCH SLOV Z URL
+        // 3. EXTRAKCE KLÍČOVÝCH SLOV Z URL
         const currentSlug = pathname.split('/').pop() || '';
         const keywords = currentSlug.split('-').filter(w => w.length > 3);
 
-        // 4. BEZPEČNÝ FETCH (Záchranná sieť pre prípadné RLS chyby)
-        const safeFetch = (promise) => promise.catch(err => { console.error("Fetch zlyhal:", err); return { data: [] }; });
+        // 4. BEZPEČNÝ FETCH Z REÁLNÉ DATABÁZE
+        const safeFetch = (promise) => promise.catch(err => { console.error("Guru Fetch Error:", err); return { data: [] }; });
 
         const [postsRes, dealsRes, tipsRes] = await Promise.all([
           safeFetch(supabase.from('posts').select('title, title_en, slug, slug_en, image_url, type').order('created_at', { ascending: false }).limit(15)),
@@ -119,7 +120,7 @@ export default function SestavyBubble() {
 
         const top3 = scoredItems.sort((a, b) => b.itemScore - a.itemScore).slice(0, 3);
         
-        // Simulácia skenovania
+        // Simulace skenování
         setTimeout(() => {
           if (!isMounted) return;
           
@@ -161,7 +162,7 @@ export default function SestavyBubble() {
         @keyframes scanBar { 0% { width: 0%; opacity: 1; } 90% { width: 100%; opacity: 1; } 100% { width: 100%; opacity: 0; } }
         @keyframes fadeInStagger { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 
-        /* Kompaktné umiestnenie */
+        /* Kompaktní umístění */
         .guru-ai-container { position: fixed; bottom: 20px; left: 20px; z-index: 9998; animation: guruSlideUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; font-family: sans-serif; }
         @media (max-width: 768px) { .guru-ai-container { bottom: 80px; left: 10px; } }
 
@@ -173,7 +174,7 @@ export default function SestavyBubble() {
           backdrop-filter: blur(20px); transition: all 0.4s ease; position: relative; overflow: hidden;
         }
 
-        .guru-ai-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; margin-bottom: 10px; }
+        .guru-ai-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; margin-bottom: 12px; }
         
         .guru-scan-line { position: absolute; top: 0; left: 0; height: 2px; background: #a855f7; animation: scanBar 0.8s ease-out forwards; box-shadow: 0 0 10px #a855f7; }
 
@@ -224,18 +225,22 @@ export default function SestavyBubble() {
           </button>
 
           <div className="guru-ai-header">
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
               <div style={{ background: isScanning ? '#374151' : '#a855f7', padding: '8px', borderRadius: '10px', display: 'flex', transition: '0.3s', alignItems: 'center' }}>
-                <Brain color="#fff" size={18} className={isScanning ? "animate-pulse" : ""} />
+                <Brain color="#fff" size={20} className={isScanning ? "animate-pulse" : ""} />
               </div>
-              <div style={{ paddingTop: '2px' }}>
-                <h4 style={{ color: '#fff', margin: 0, fontSize: '13px', fontWeight: '950', letterSpacing: '0.5px' }}>
-                  GURU AI NAVIGATOR
+              <div style={{ paddingTop: '2px', paddingRight: '15px' }}>
+                {/* 🚀 GURU TEXT FIX: Upraveno přesně podle zadání */}
+                <h4 style={{ color: '#fff', margin: 0, fontSize: '11px', fontWeight: '950', letterSpacing: '0.2px', lineHeight: '1.4' }}>
+                  {isEn 
+                    ? "HI, I'M GURU, YOUR PERSONAL GUIDE THROUGH THIS AWESOME SITE." 
+                    : "AHOJ, JSEM GURU, TVŮJ OSOBNÍ PRŮVODCE TÍMTO VYMAKANÝM WEBEM."}
                 </h4>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '6px' }}>
                   {isScanning ? (
                     <span style={{ color: '#9ca3af', fontSize: '9px', fontFamily: 'monospace', fontWeight: 'bold' }}>
-                      {isEn ? '> scanning...' : '> analyzuji...'}
+                      {isEn ? '> scanning profile...' : '> skenuji profil...'}
                     </span>
                   ) : (
                     <>
@@ -257,7 +262,7 @@ export default function SestavyBubble() {
             {isScanning ? (
               <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '12px', opacity: 0.5, paddingTop: '40px' }}>
                 <Activity className="animate-spin" size={24} color="#a855f7" />
-                <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#a855f7' }}>{isEn ? "COMPUTING..." : "VÝPOČET TRAS..."}</span>
+                <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#a855f7' }}>{isEn ? "COMPUTING PATHS..." : "HLEDÁM NEJLEPŠÍ OBSAH..."}</span>
               </div>
             ) : recommendations.length > 0 ? (
               <>
@@ -313,7 +318,7 @@ export default function SestavyBubble() {
               </>
             ) : (
               <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '11px', marginTop: '40px', fontWeight: 'bold' }}>
-                {isEn ? "NO DATA FOUND" : "ŽÁDNÁ DATA NENALEZENA"}
+                {isEn ? "NO NEW DATA FOUND" : "NENAŠEL JSEM ŽÁDNÉ NOVÉ DATA"}
               </div>
             )}
           </div>
