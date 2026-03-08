@@ -1,4 +1,7 @@
 import React, { cache } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { 
   ChevronLeft, 
   Swords, 
@@ -9,46 +12,27 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V18.1 (PREVIEW COMPATIBILITY FIX)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V18.2 (DIAGNOSTIC BUILD)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * Design: Brutální GURU styl (obří růžové nadpisy, skleněný panel, neonové prvky).
- * FIX: Implementace "Compatibility Shield" pro vyřešení chyb kompilace v náhledu,
- * zatímco jádro logiky zůstává striktně podle produkčních doporučení (limit(1), slug fix).
+ * FIX: Striktní ESM importy (odstraněny require() hacky v souladu s doporučením ChatGPT).
+ * DEBUG: Implementace debugovacího výpisu slugu pro odhalení příčiny 404.
  * PERFORMANCE: Single Query Join + React Cache + limit(1) lookup.
  */
 
-// --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení modulů pro náhled ---
-const safeLoad = (modPath) => {
-  try {
-    return require(modPath);
-  } catch (e) {
-    return null;
-  }
-};
-
-const supabaseLib = safeLoad('@supabase/supabase-js');
-const nextNav = safeLoad('next/navigation');
-const nextLinkMod = safeLoad('next/link');
-
-// Inicializace funkcí s fallbacky pro prostředí náhledu
-const createClient = supabaseLib ? supabaseLib.createClient : null;
-const notFound = nextNav ? nextNav.notFound : () => {};
-const Link = nextLinkMod ? (nextLinkMod.default || nextLinkMod) : ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>;
-
-// 🚀 GURU: Inicializace Supabase klienta s konfigurací pro Server Components
-const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
-  ? createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      { auth: { persistSession: false } }
-    )
-  : null;
+// 🚀 GURU: Produkční inicializace Supabase klienta pro Server Components
+// Používáme čisté proměnné prostředí bez fallbacků pro "fail-fast" chování
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+  { auth: { persistSession: false } }
+);
 
 // 🚀 GURU: Cache dotazu pro deduplikaci (Single Query Join s robustním lookupem)
 const getDuelData = cache(async (slug) => {
-  if (!supabase || !slug) return null;
+  if (!slug) return null;
 
-  // 🚀 GURU FIX: Vytvoříme variantu bez prefixu pro křížovou kontrolu
+  // 🚀 GURU FIX: Vytvoříme variantu bez prefixu pro křížovou kontrolu (podpora CZ/EN slugů)
   const cleanSlug = slug.replace(/^en-/, '');
 
   const { data, error } = await supabase
@@ -58,7 +42,7 @@ const getDuelData = cache(async (slug) => {
       gpuA:gpus!gpu_a_id(*),
       gpuB:gpus!gpu_b_id(*)
     `)
-    // 🚀 GURU FIX: Hledáme obě varianty a používáme limit(1) pro prevenci kolizí (podle ChatGPT)
+    // 🚀 GURU: Hledáme obě varianty a používáme limit(1) pro prevenci kolizí
     .or(`slug.eq.${slug},slug.eq.${cleanSlug}`)
     .limit(1);
 
@@ -88,9 +72,28 @@ export default async function App({ params }) {
   const slug = params?.slug ?? null;
   const duel = await getDuelData(slug);
 
+  // 🚀 GURU DEBUG FIX: Místo 404 zobrazíme debug info pro identifikaci slug mismatch
   if (!duel) {
-    if (typeof notFound === 'function') notFound();
-    return <div className="p-20 text-center text-white">404 - Duel nenalezen</div>;
+    return (
+      <div className="p-20 text-white font-mono bg-black min-h-screen">
+        <h1 className="text-[#ff0055] text-2xl font-black mb-6 uppercase italic tracking-tighter">
+          GURU DIAGNOSTIC: DUEL NOT FOUND IN DATABASE
+        </h1>
+        <div className="bg-[#111] p-8 border border-white/10 rounded-2xl">
+          <p className="text-[#66fcf1] mb-2 uppercase text-xs font-black">Received Slug Parameter:</p>
+          <pre className="text-white text-lg bg-black/50 p-4 rounded-lg mb-6">
+            {JSON.stringify({ slug }, null, 2)}
+          </pre>
+          
+          <p className="text-gray-500 text-sm leading-relaxed">
+            Pravděpodobné příčiny:<br/>
+            1. Slug v DB neobsahuje "geforce-" nebo "radeon-" prefix, ale URL ano.<br/>
+            2. Duel v DB vůbec neexistuje.<br/>
+            3. GPU ID v tabulce gpu_duels neodpovídají ID v tabulce gpus.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   // 1. Detekce jazyka na základě slugu v URL
@@ -109,7 +112,7 @@ export default async function App({ params }) {
   const title = isEn && duel.title_en ? duel.title_en : duel.title_cs;
   const content = isEn && duel.content_en ? duel.content_en : (duel.content_cs || duel.content);
   
-  // 3. Formátování data pomocí Intl (Fix hydratace)
+  // 3. Formátování data pomocí Intl (Zajišťuje stabilní hydrataci mezi serverem a klientem)
   const dateObj = new Date(duel.created_at || Date.now());
   const formattedDate = new Intl.DateTimeFormat(isEn ? 'en-US' : 'cs-CZ', { 
     year: 'numeric', month: 'long', day: 'numeric' 
@@ -170,7 +173,7 @@ export default async function App({ params }) {
           </h1>
         </header>
 
-        {/* 🥊 RING SYSTÉM */}
+        {/* 🥊 RING SYSTÉM (Srovnání karet) */}
         <div className="ring-grid-system flex flex-col md:flex-row items-center mb-16 relative">
             <div className="gpu-card-box" style={{ borderColor: getVendorColor(gpuA.vendor) }}>
                 <span style={{ fontSize: '12px', fontWeight: '950', color: getVendorColor(gpuA.vendor), textTransform: 'uppercase', letterSpacing: '2px' }}>{gpuA.vendor} • {gpuA.architecture}</span>
