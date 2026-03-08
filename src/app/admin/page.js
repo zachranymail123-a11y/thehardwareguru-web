@@ -1,21 +1,47 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
-  Rocket, Activity, ShieldCheck, Zap, AlertTriangle, 
+  Rocket, Settings, Globe, Search, Database, CalendarClock, 
+  ShoppingCart, Activity, ShieldCheck, Zap, AlertTriangle, 
   CheckCircle2, RefreshCw, Send, Sparkles, Flame, Plus, X, 
-  ExternalLink, Lightbulb, Cpu, Lock, Terminal,
-  LayoutDashboard, Layers, ChevronRight, Play,
-  Smartphone, Monitor, ArrowLeft, Star, Heart, Ghost, Brain
+  ExternalLink, Lightbulb, BookOpen, Wrench, Video, Cpu, Lock, Calendar, Terminal,
+  LayoutDashboard, Image as ImageIcon, CalendarDays, Layers, ChevronRight, Play,
+  Download, Eye, Check, RotateCcw, Smartphone, Monitor, ArrowLeft, TrendingUp, Cpu as CpuIcon, Gamepad2, Star, Heart, Ghost, Brain
 } from 'lucide-react';
 
 /**
- * 🚀 GURU ADMIN DASHBOARD V10.0 - STABLE AI INTEGRATION
- * - Revert na stabilní build s čistou integrací AI logic.
- * - Opravená kategorizace (intelType + Regex).
- * - Funkční AI Status Badge (Online/Offline).
- * - Polyfill proti pádům externích skriptů.
+ * GURU ULTIMATE COMMAND CENTER V10.1 - LEGACY STABILITY WITH AI MOZEK
+ * Funkce: Revert na funkční UI V8.23 + Integrace AI Scoringu & Leaks Radaru.
  */
+
+// --- 🚀 GURU ENV ENGINE ---
+const getEnv = (key, fallback = '') => {
+  if (typeof window === 'undefined') return fallback;
+  const envMap = {
+    'OPENAI_API_KEY': process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
+    'NEXT_PUBLIC_SUPABASE_URL': process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+    'NEXT_PUBLIC_ADMIN_PASSWORD': process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Wifik500',
+    'NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL': process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL || ''
+  };
+  return envMap[key] || fallback;
+};
+
+// --- GURU ENGINE INIT ---
+const initSupabase = () => {
+  let createClient;
+  try {
+    const supabaseModule = require('@supabase/supabase-js');
+    createClient = supabaseModule.createClient;
+  } catch (e) {
+    return { from: () => ({ select: () => ({ order: () => ({ limit: () => Promise.resolve({ data: [] }) }), eq: () => ({ single: () => Promise.resolve({ data: {} }) }) }), update: () => ({ eq: () => Promise.resolve({ error: null }) }), insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: {}, error: null }) }) }) }) };
+  }
+  const url = getEnv('NEXT_PUBLIC_SUPABASE_URL');
+  const key = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  if (!url || !key) return { from: () => ({ select: () => ({ order: () => ({ limit: () => Promise.resolve({ data: [] }) }), eq: () => ({ single: () => Promise.resolve({ data: {} }) }) }), update: () => ({ eq: () => Promise.resolve({ error: null }) }), insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: {}, error: null }) }) }) }) };
+  return createClient(url, key);
+};
 
 // 🛡️ GURU UI SHIELD - Prevence TypeError u externích skriptů
 if (typeof window !== 'undefined') {
@@ -25,278 +51,467 @@ if (typeof window !== 'undefined') {
   }
 }
 
+const SidebarItemUI = ({ id, activeTab, setActiveTab, icon, label, color, href }) => {
+  const active = activeTab === id;
+  const content = (
+    <>
+      {React.cloneElement(icon, { size: 18, color: active ? color : '#9ca3af' })}
+      <span style={{ flex: 1, textAlign: 'left' }}>{label}</span>
+    </>
+  );
+  if (href) return <a href={href} target="_blank" rel="noreferrer" className="sidebar-btn" style={{ textDecoration: 'none' }}>{content} <ExternalLink size={12} color="#4b5563" /></a>;
+  return <button onClick={() => setActiveTab(id)} className={`sidebar-btn ${active ? 'active' : ''}`} style={{ borderLeftColor: active ? color : 'transparent' }}>{content}</button>;
+};
+
 export default function AdminApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState('intel-hub');
+  const [loading, setLoading] = useState(false);
   const [consoleLogs, setConsoleLogs] = useState([]);
   const logEndRef = useRef(null);
+  const supabase = useMemo(() => initSupabase(), []);
 
+  const [data, setData] = useState({ posts: [], deals: [], stats: { visits: 0, missingEn: 0, missingSeo: 0 } });
+
+  // 🛡️ PERSISTENTNÍ INTEL SEZNAMY A KONCEPTY
   const [hwIntel, setHwIntel] = useState([]);
   const [gameIntel, setGameIntel] = useState([]);
   const [leaksIntel, setLeaksIntel] = useState([]); 
+  const [savedDrafts, setSavedDrafts] = useState({}); 
   const [intelLoading, setIntelLoading] = useState(false);
   const [aiActive, setAiActive] = useState(false); 
   const [aiStatusMsg, setAiStatusMsg] = useState('IDLE');
+  
+  // 🚀 GURU PERSISTENCE GUARD
+  const isInitialized = useRef(false);
+
+  const [draft, setDraft] = useState(null);
+  const [processingTitle, setProcessingTitle] = useState(null); 
+  const [previewMode, setPreviewMode] = useState('none');
+  const [previewDevice, setPreviewDevice] = useState('desktop');
+
+  const BASE_URL = 'https://www.thehardwareguru.cz';
+
+  // Načtení dat při startu
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (sessionStorage.getItem('guru_admin_auth') === 'true') setIsAuthenticated(true);
+      
+      const savedHw = localStorage.getItem('guru_hw_intel');
+      const savedGame = localStorage.getItem('guru_game_intel');
+      const savedLeaks = localStorage.getItem('guru_leaks_intel');
+      const savedDraftsLocal = localStorage.getItem('guru_saved_drafts');
+      
+      try {
+        if (savedHw) setHwIntel(JSON.parse(savedHw));
+        if (savedGame) setGameIntel(JSON.parse(savedGame));
+        if (savedLeaks) setLeaksIntel(JSON.parse(savedLeaks));
+        if (savedDraftsLocal) setSavedDrafts(JSON.parse(savedDraftsLocal));
+      } catch (e) {
+        console.error("Guru Memory Load Error", e);
+      }
+      
+      isInitialized.current = true;
+      addLog('Systémová paměť načtena.', 'success');
+    }
+  }, []);
+
+  // Ukládání pouze po inicializaci
+  useEffect(() => {
+    if (typeof window !== 'undefined' && isInitialized.current) {
+      localStorage.setItem('guru_hw_intel', JSON.stringify(hwIntel));
+      localStorage.setItem('guru_game_intel', JSON.stringify(gameIntel));
+      localStorage.setItem('guru_leaks_intel', JSON.stringify(leaksIntel));
+      localStorage.setItem('guru_saved_drafts', JSON.stringify(savedDrafts));
+    }
+  }, [hwIntel, gameIntel, leaksIntel, savedDrafts]);
+
+  // Automatický sken po přihlášení
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchIntelFeed();
+      fetchAndScanData();
+    }
+  }, [isAuthenticated]);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (password === getEnv('NEXT_PUBLIC_ADMIN_PASSWORD', 'Wifik500')) {
+      setIsAuthenticated(true);
+      if (typeof window !== 'undefined') sessionStorage.setItem('guru_admin_auth', 'true');
+    }
+  };
 
   const addLog = (msg, type = 'info') => {
     const timeStr = new Date().toTimeString().split(' ')[0]; 
     setConsoleLogs(prev => [...prev, { time: timeStr, msg, type }]);
   };
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-        if (sessionStorage.getItem('guru_admin_auth') === 'true') {
-            setIsAuthenticated(true);
+  useEffect(() => { if (logEndRef.current) logEndRef.current.scrollIntoView({ behavior: 'smooth' }); }, [consoleLogs]);
+
+  const fetchAndScanData = async () => {
+    if (!isAuthenticated) return;
+    setLoading(true);
+    try {
+      const [postsRes, dealsRes, statsRes] = await Promise.all([
+        supabase.from('posts').select('id, title, slug, title_en, seo_description, created_at').order('created_at', { ascending: false }),
+        supabase.from('game_deals').select('*').order('created_at', { ascending: false }),
+        supabase.from('stats').select('value').eq('name', 'total_visits').single(),
+      ]);
+      const posts = postsRes.data || [];
+      setData({
+        posts: posts,
+        deals: dealsRes.data || [],
+        stats: { 
+          visits: statsRes.data?.value || 0,
+          missingEn: posts.filter(p => !p.title_en).length,
+          missingSeo: posts.filter(p => !p.seo_description).length
         }
-    }
-  }, []);
-
-  // Automatický sken po přihlášení
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchIntelFeed();
-    }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [consoleLogs]);
-
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (password === 'Wifik500' || (process.env.NEXT_PUBLIC_ADMIN_PASSWORD && password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD)) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('guru_admin_auth', 'true');
-      addLog('Systém autorizován.', 'success');
-    } else {
-      addLog('Neplatné heslo!', 'error');
-    }
+      });
+      addLog('Guru systémy synchronizovány s DB.', 'success');
+    } catch (err) { addLog(`Chyba skenu: ${err.message}`, 'error'); }
+    finally { setLoading(false); }
   };
 
   const fetchIntelFeed = async () => {
     setIntelLoading(true);
     setAiActive(false);
-    addLog('Spouštím Guru Intel Engine (OpenAI Sync)...', 'warning');
+    addLog('Spouštím Guru Unified Intel Engine (OpenAI Mode)...', 'warning');
     
     try {
       const res = await fetch('/api/leaks');
-      if (!res.ok) throw new Error(`API Error: ${res.status}`);
-
       const json = await res.json();
       
       if (json.success) {
-        // Fallback pro viral_score, aby UI bylo živé
         const items = (json.data || []).map(item => ({
             ...item,
             viral_score: item.viral_score || Math.floor(Math.random() * 40) + 60
         }));
         
-        // 🚀 KATEGORIZACE DLE DOPORUČENÍ (Využití intelType + Regex)
-        
-        // 1. HARDWARE RADAR
+        // 🚀 KATEGORIZACE DLE GURU STANDARDU
         setHwIntel(items.filter(i => 
-          /rtx|amd|intel|cpu|gpu|blackwell|zen|core|benchmark|specs|pcb/i.test(i.title || "")
+          /rtx|amd|intel|cpu|gpu|blackwell|zen|core|benchmark|specs|pcb|ram|nand/i.test(i.title || "")
         ).slice(0, 10));
 
-        // 2. GAMING RADAR
         setGameIntel(items.filter(i => 
-          /ps5|xbox|switch|gta|game|nintendo|sony|playstation/i.test(i.title || "")
+          /ps5|xbox|switch|gta|game|nintendo|sony|playstation|controller|steam/i.test(i.title || "")
         ).slice(0, 10));
 
-        // 3. LEAKS & RUMORS RADAR (Priorita na intelType z backendu)
         const leaks = items.filter(i => i.intelType === "leaks").slice(0, 15);
-        if (leaks.length === 0) {
-            setLeaksIntel(items.slice(0, 10)); // Fallback pokud backend neoznačil leaky
-        } else {
-            setLeaksIntel(leaks);
-        }
+        setLeaksIntel(leaks.length > 0 ? leaks : items.slice(0, 10));
         
-        // 🧠 AI MOZEK STATUS
         if (json._debug?.ai_active) {
             setAiActive(true);
             setAiStatusMsg('ONLINE');
-            addLog('GURU AI: Skórování trendů dokončeno.', 'success');
+            addLog('GURU AI: Trendy ohodnoceny v reálném čase.', 'success');
         } else {
             setAiStatusMsg(json._debug?.ai_status || 'IDLE');
-            addLog(`AI Mozek Status: ${json._debug?.ai_status}`, 'error');
+            addLog(`AI Mozek: ${json._debug?.ai_status}`, 'error');
         }
       }
-    } catch (err) {
-      addLog(`Chyba: ${err.message}`, 'error');
-    } finally {
-      setIntelLoading(false);
+    } catch (err) { addLog(`Chyba Intel Enginu: ${err.message}`, 'error'); }
+    finally { setIntelLoading(false); }
+  };
+
+  const createDraftFromIntel = async (item) => {
+    if (savedDrafts[item.title]) {
+      setDraft(savedDrafts[item.title]);
+      setPreviewMode('card');
+      addLog('Koncept načten ze systémové paměti.', 'success');
+      return;
     }
+
+    const openAiKey = getEnv('OPENAI_API_KEY');
+    if (!openAiKey) return addLog('CHYBÍ AI KLÍČ!', 'error');
+    
+    setProcessingTitle(item.title);
+    addLog(`AI tvoří virální rozbor: ${item.title.substring(0, 30)}...`, 'warning');
+    
+    try {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openAiKey}` },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { 
+              role: "system", 
+              content: "Jsi Hardware Guru. Tvůj styl je elitní, technický, ale extrémně úderný a virální. Piš v ČEŠTINĚ pro elitní komunitu. Používej HTML (h2, strong, ul). Vždy vrať kompletní JSON v CZ i EN verzi." 
+            },
+            { 
+              role: "user", 
+              content: `Vytvoř článek s virálním nábojem z: ${item.title}. Zdroj: ${item.description}. POŽADAVEK: Vrať JSON: { title_cs, content_cs, description_cs, seo_description_cs, slug_cs, seo_keywords_cs, title_en, content_en, description_en, seo_description_en, slug_en, meta_title_en, seo_keywords_en, trailer }.` 
+            }
+          ],
+          response_format: { type: "json_object" }
+        })
+      });
+      const result = await response.json();
+      const aiData = JSON.parse(result.choices[0].message.content);
+      
+      const postType = item.intelType === 'leaks' ? 'leaks' : (item.intelType === 'hw' ? 'hardware' : 'game');
+
+      const newDraft = {
+        ...aiData,
+        image_url: item.enclosure?.link || item.image_url || 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000',
+        created_at: new Date().toISOString(),
+        type: postType,
+        original_item: item,
+        is_important: false
+      };
+
+      setSavedDrafts(prev => ({ ...prev, [item.title]: newDraft }));
+      setDraft(newDraft);
+      setPreviewMode('card');
+      addLog('Virální koncept vytvořen.', 'success');
+    } catch (err) { addLog(`AI fail: ${err.message}`, 'error'); }
+    finally { setProcessingTitle(null); }
+  };
+
+  const publishAndSendToMake = async () => {
+    if (!draft) return;
+    const makeWebhook = getEnv('NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL');
+    addLog('Zahajuji bleskovou publikaci...', 'warning');
+
+    try {
+      const { data: dbData, error } = await supabase.from('posts').insert([{
+        title: draft.title_cs, 
+        title_en: draft.title_en, 
+        slug: draft.slug_cs, 
+        slug_en: draft.slug_en,
+        content: draft.content_cs, 
+        content_en: draft.content_en, 
+        description: draft.description_cs, 
+        description_en: draft.description_en, 
+        seo_description: draft.seo_description_cs,
+        seo_description_en: draft.seo_description_en, 
+        meta_title_en: draft.meta_title_en || draft.title_en,
+        seo_keywords: draft.seo_keywords_cs,
+        seo_keywords_en: draft.seo_keywords_en,
+        trailer: draft.trailer,
+        image_url: draft.image_url, 
+        created_at: draft.created_at,
+        type: draft.type, 
+        is_fired: true 
+      }]).select().single();
+
+      if (error) throw error;
+
+      if (makeWebhook) {
+        const payload = {
+          title: dbData.title,
+          url: `${BASE_URL}/clanky/${dbData.slug}`,
+          image_url: dbData.image_url,
+          description: dbData.description || dbData.seo_description,
+          type: dbData.type,
+          fired_at: new Date().toISOString(),
+          locale: 'cs',
+          id: dbData.id,
+          is_important: draft.is_important
+        };
+        await fetch(makeWebhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      }
+
+      addLog('ČLÁNEK JE ONLINE! 🔥', 'success');
+      setHwIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
+      setGameIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
+      setLeaksIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
+      setDraft(null); 
+      setPreviewMode('none'); 
+      fetchAndScanData();
+    } catch (err) { addLog(`Error: ${err.message}`, 'error'); }
   };
 
   if (!isAuthenticated) return (
-    <div className="min-h-screen bg-[#0a0b0d] flex items-center justify-center text-white p-6 font-sans">
-      <form onSubmit={handleLogin} className="bg-[#111318] p-10 rounded-[40px] border border-orange-500/20 text-center max-w-sm w-full shadow-2xl relative">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-purple-600"></div>
-        <Lock size={48} className="text-orange-500 mx-auto mb-6" />
-        <h1 className="text-3xl font-black mb-8 tracking-tighter uppercase italic">Guru Velín</h1>
-        <input 
-          type="password" 
-          value={password} 
-          onChange={(e) => setPassword(e.target.value)} 
-          placeholder="••••••••" 
-          className="w-full p-5 rounded-2xl bg-black border border-neutral-800 text-white mb-6 text-center focus:border-orange-500 transition-all outline-none text-xl tracking-[0.3em]" 
-        />
-        <button type="submit" className="w-full p-5 bg-orange-600 text-white rounded-2xl font-black hover:bg-orange-500 transition-all uppercase tracking-tighter">Vstoupit</button>
+    <div style={{ minHeight: '100vh', background: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: 'sans-serif' }}>
+      <form onSubmit={handleLogin} style={{ background: '#111318', padding: '50px', borderRadius: '40px', border: '1px solid #eab30866', textAlign: 'center', maxWidth: '400px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+        <Lock size={60} color="#eab308" style={{ margin: '0 auto 20px' }} />
+        <h1 style={{ fontWeight: 950, letterSpacing: '-1px', marginBottom: '30px' }}>GURU VELÍN</h1>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Guru heslo..." style={{ width: '100%', padding: '20px', borderRadius: '15px', background: '#000', border: '1px solid #333', color: '#fff', marginBottom: '20px', textAlign: 'center', outline: 'none' }} />
+        <button type="submit" style={{ width: '100%', padding: '20px', background: '#eab308', color: '#000', border: 'none', borderRadius: '15px', fontWeight: '950', cursor: 'pointer', textTransform: 'uppercase' }}>Vstoupit</button>
       </form>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#0a0b0d] text-white flex font-sans overflow-hidden">
-      {/* SIDEBAR */}
-      <aside className="w-72 bg-[#0d0e12] border-r border-white/5 fixed h-screen p-8 flex flex-col z-20">
-         <div className="flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-600/30">
-                <Zap size={24} className="text-white" fill="currentColor" />
-            </div>
-            <h2 className="text-xl font-black tracking-tighter italic uppercase">Guru Hub</h2>
-         </div>
+    <div style={{ minHeight: '100vh', background: '#0a0b0d', display: 'flex', color: '#fff', fontFamily: 'sans-serif' }}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .admin-sidebar { width: 280px; background: #0d0e12; border-right: 1px solid #ffffff0d; position: fixed; height: 100vh; z-index: 100; display: flex; flex-direction: column; }
+        .admin-main { flex: 1; margin-left: 280px; padding: 40px 60px; height: 100vh; overflow-y: auto; }
+        .sidebar-btn { width: 100%; display: flex; align-items: center; gap: 15px; padding: 18px 25px; background: transparent; border: none; border-left: 4px solid transparent; color: #9ca3af; cursor: pointer; transition: 0.2s; font-weight: 900; font-size: 13px; text-transform: uppercase; }
+        .sidebar-btn:hover, .sidebar-btn.active { background: #ffffff0d; color: #fff; }
+        
+        .hub-compact-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 40px; }
+        .compact-card { background: #0d0e12; border: 1px solid #ffffff08; border-radius: 18px; padding: 15px; display: flex; flex-direction: column; transition: 0.3s; position: relative; min-height: 180px; overflow: hidden; }
+        .compact-card:hover { border-color: #eab308; transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .compact-badge { position: absolute; top: 10px; right: 10px; background: #ff0055; color: #fff; padding: 3px 7px; border-radius: 6px; font-size: 9px; font-weight: 950; z-index: 5; }
+        .compact-title { font-size: 11px; font-weight: 900; color: #fff; line-height: 1.3; margin-bottom: 12px; height: 55px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
+        .compact-source { font-size: 8px; color: #4b5563; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px; }
+        .compact-btn { width: 100%; padding: 6px; border-radius: 6px; font-size: 9px; font-weight: 950; text-transform: uppercase; cursor: pointer; text-align: center; border: 1px solid #333; background: transparent; color: #9ca3af; transition: 0.2s; }
+        .compact-btn-main { background: #eab3081a; border-color: #eab3084d; color: #eab308; }
+        .compact-btn-main:hover { background: #eab308; color: #000; }
 
-         <nav className="space-y-4 flex-1">
-            <button onClick={() => setActiveTab('dashboard')} className={`w-full flex items-center gap-4 p-4 rounded-2xl font-black text-xs uppercase tracking-tight transition-all ${activeTab === 'dashboard' ? 'bg-purple-600/10 text-purple-500 border border-purple-600/20' : 'text-neutral-500 hover:text-white hover:bg-white/5'}`}>
-                <LayoutDashboard size={18} /> Přehled
-            </button>
-            <button onClick={() => setActiveTab('intel-hub')} className={`w-full flex items-center gap-4 p-4 rounded-2xl font-black text-xs uppercase tracking-tight transition-all ${activeTab === 'intel-hub' ? 'bg-orange-600/10 text-orange-500 border border-orange-600/20' : 'text-neutral-500 hover:text-white hover:bg-white/5'}`}>
-                <Layers size={18} /> Intel Radar
-            </button>
-         </nav>
+        .terminal-box { background: #000; border: 1px solid #22c55e22; border-radius: 20px; padding: 25px; font-family: monospace; font-size: 12px; overflow-y: auto; color: #22c55e; }
+        
+        .ai-badge { display: flex; align-items: center; gap: 8px; padding: 6px 15px; border-radius: 50px; font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.05); }
+        .ai-online { background: rgba(34, 197, 94, 0.1); color: #22c55e; border-color: rgba(34, 197, 94, 0.2); box-shadow: 0 0 15px rgba(34, 197, 94, 0.15); }
+        .ai-offline { background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2); }
 
-         <div className="p-4 bg-white/5 rounded-2xl border border-white/5 mt-auto">
-            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest text-center">Version 10.0 Stable</p>
-         </div>
+        .preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 500; display: flex; backdrop-filter: blur(25px); }
+        .preview-sidebar { width: 340px; background: #0d0e12; border-right: 1px solid #ffffff0d; padding: 30px; display: flex; flex-direction: column; gap: 20px; box-shadow: 10px 0 50px #000; }
+        .preview-window { flex: 1; background: #0a0b0d; margin: 40px; border-radius: 40px; border: 4px solid #333; overflow-y: auto; box-shadow: 0 50px 100px #000; }
+      `}} />
+
+      {/* PREVIEW SYSTEM */}
+      {previewMode !== 'none' && draft && (
+        <div className="preview-overlay">
+          <div className="preview-sidebar">
+              <h2 style={{ color: '#eab308', fontWeight: 950, textTransform: 'uppercase', textAlign: 'center' }}>Guru Preview</h2>
+              <button onClick={publishAndSendToMake} className="sidebar-btn active" style={{ background: '#10b981', color: '#fff', justifyContent: 'center' }}>PUBLIKOVAT ČLÁNEK</button>
+              <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ background: '#222', justifyContent: 'center' }}>ZPĚT DO HUBu</button>
+              <div style={{ height: '1px', background: '#ffffff0d' }}></div>
+              <button onClick={() => setPreviewMode(previewMode === 'card' ? 'full' : 'card')} className="sidebar-btn" style={{ background: '#a855f7', color: '#fff', justifyContent: 'center' }}>
+                  {previewMode === 'card' ? 'ZOBRAZIT DETAIL' : 'ZOBRAZIT KARTU'}
+              </button>
+          </div>
+          <div className="preview-window">
+             <div style={{ padding: '60px', maxWidth: '900px', margin: '0 auto' }}>
+                <h1 style={{ textTransform: 'uppercase', fontWeight: 950, fontSize: '3rem', lineHeight: 1.1 }}>{draft.title_cs}</h1>
+                <img src={draft.image_url} style={{ width: '100%', borderRadius: '25px', margin: '40px 0' }} />
+                <div dangerouslySetInnerHTML={{ __html: draft.content_cs }} style={{ fontSize: '1.2rem', lineHeight: 1.7, color: '#d1d5db' }} />
+             </div>
+          </div>
+        </div>
+      )}
+
+      <aside className="admin-sidebar">
+        <div style={{ padding: '40px 30px', borderBottom: '1px solid #ffffff0d' }}>
+          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 950, letterSpacing: '-1px' }}>GURU <span style={{ color: '#a855f7' }}>ADMIN</span></h2>
+        </div>
+        <nav style={{ flex: 1 }}>
+          <SidebarItemUI id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LayoutDashboard />} label="PŘEHLED" color="#a855f7" />
+          <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="INTEL HUB" color="#eab308" />
+        </nav>
       </aside>
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 ml-72 p-12 h-screen overflow-y-auto custom-scrollbar relative">
-        {activeTab === 'intel-hub' && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <header className="flex justify-between items-end mb-16">
-               <div className="flex items-center gap-8">
-                  <div className="p-5 bg-orange-600/10 rounded-3xl border border-orange-600/20 shadow-inner group transition-all">
-                    <Cpu className="text-orange-500 group-hover:rotate-90 transition-transform duration-500" size={40} />
-                  </div>
-                  <div>
-                    <h2 className="text-5xl font-black tracking-tighter leading-none mb-4 uppercase italic">Intel <span className="text-orange-500">Radar</span></h2>
-                    <div className="flex items-center gap-3">
-                        {/* 🧠 AI STATUS BADGE */}
-                        <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all ${aiActive ? 'bg-green-600/10 text-green-500 border-green-600/30' : 'bg-red-600/10 text-red-500 border-red-600/30'}`}>
-                           <Brain size={14} className={intelLoading ? 'animate-pulse' : ''} />
-                           AI MOZEK: {aiActive ? 'ONLINE' : aiStatusMsg}
-                        </div>
-                    </div>
-                  </div>
+      <main className="admin-main">
+        {activeTab === 'dashboard' && (
+          <div>
+            <h2 style={{ fontSize: '32px', fontWeight: 950, marginBottom: '30px' }}>SYSTÉMOVÝ <span style={{ color: '#a855f7' }}>STATUS</span></h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+               <div style={{ background: '#111318', padding: '30px', borderRadius: '30px', border: '1px solid #ffffff0d', textAlign: 'center' }}>
+                  <h3 style={{ fontSize: '32px', fontWeight: 950, margin: 0 }}>{data.stats.visits}</h3>
+                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase', marginTop: '5px' }}>Návštěvy</p>
                </div>
-               <button 
-                 onClick={fetchIntelFeed} 
-                 disabled={intelLoading}
-                 className="px-10 py-5 bg-orange-600 text-white rounded-2xl font-black uppercase flex items-center gap-3 hover:bg-orange-500 transition-all shadow-xl shadow-orange-600/20 active:scale-95 disabled:opacity-50"
-               >
-                 <RefreshCw size={20} className={intelLoading ? 'animate-spin' : ''} />
-                 {intelLoading ? 'Skenuji...' : 'Skenovat trendy'}
-               </button>
-            </header>
-
-            <div className="space-y-20 pb-32">
-                {/* RADAR 1: LEAKS & RUMORS */}
-                <section>
-                    <div className="flex items-center gap-4 mb-10 border-l-8 border-cyan-400 pl-6 py-2">
-                        <Ghost className="text-cyan-400" size={32} />
-                        <h3 className="font-black uppercase tracking-tighter text-2xl">Leaks & <span className="text-cyan-400 italic">Rumors</span></h3>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                        {leaksIntel.map((item, i) => (
-                            <div key={i} className="bg-[#111318] p-6 rounded-[35px] border border-white/5 hover:border-cyan-400/40 transition-all group flex flex-col">
-                                <div className="flex justify-between items-start mb-6">
-                                    <span className="text-[10px] font-black text-neutral-600 uppercase tracking-tight">{item.source}</span>
-                                    <div className={`px-2.5 py-1 rounded-lg font-black text-[11px] ${item.viral_score > 80 ? 'bg-red-500 text-white' : 'bg-cyan-400 text-black'}`}>
-                                        {item.viral_score}%
-                                    </div>
-                                </div>
-                                <h4 className="text-sm font-bold leading-tight mb-8 h-16 overflow-hidden group-hover:text-cyan-400 transition-colors uppercase">{item.title}</h4>
-                                <div className="mt-auto grid grid-cols-2 gap-3">
-                                    <a href={item.link} target="_blank" className="py-3 bg-neutral-900 rounded-2xl text-[10px] font-black text-center text-neutral-500 hover:text-white border border-white/5 uppercase transition-all">Zdroj</a>
-                                    <button className="py-3 bg-cyan-400/10 rounded-2xl text-[10px] font-black text-cyan-400 border border-cyan-400/20 hover:bg-cyan-400 hover:text-black transition-all">Koncept</button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-
-                {/* RADAR 2: HARDWARE RADAR */}
-                <section>
-                    <div className="flex items-center gap-4 mb-10 border-l-8 border-orange-500 pl-6 py-2">
-                        <Monitor className="text-orange-500" size={32} />
-                        <h3 className="font-black uppercase tracking-tighter text-2xl">Hardware <span className="text-orange-500 italic">Radar</span></h3>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                        {hwIntel.map((item, i) => (
-                            <div key={i} className="bg-[#111318] p-6 rounded-[35px] border border-white/5 hover:border-orange-500/40 transition-all group flex flex-col">
-                                <div className="flex justify-between items-start mb-6">
-                                    <span className="text-[10px] font-black text-neutral-600 uppercase">{item.source}</span>
-                                    <div className="px-2.5 py-1 bg-orange-500 text-white rounded-lg font-black text-[11px]">{item.viral_score}%</div>
-                                </div>
-                                <h4 className="text-sm font-bold leading-tight mb-8 h-16 overflow-hidden group-hover:text-orange-400 transition-colors uppercase">{item.title}</h4>
-                                <button className="mt-auto w-full py-3 bg-orange-500/10 rounded-2xl text-[10px] font-black text-orange-500 border border-orange-500/20 hover:bg-orange-500 hover:text-white transition-all uppercase tracking-tighter">Článek</button>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-
-                {/* RADAR 3: GAMING RADAR */}
-                <section>
-                    <div className="flex items-center gap-4 mb-10 border-l-8 border-purple-500 pl-6 py-2">
-                        <Play className="text-purple-500" size={32} />
-                        <h3 className="font-black uppercase tracking-tighter text-2xl">Gaming <span className="text-purple-500 italic">Radar</span></h3>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 pb-24">
-                        {gameIntel.map((item, i) => (
-                            <div key={i} className="bg-[#111318] p-6 rounded-[35px] border border-white/5 hover:border-purple-500/40 transition-all group flex flex-col">
-                                <div className="flex justify-between items-start mb-6">
-                                    <span className="text-[10px] font-black text-neutral-600 uppercase">{item.source}</span>
-                                    <div className="px-2.5 py-1 bg-purple-500 text-white rounded-lg font-black text-[11px]">{item.viral_score}%</div>
-                                </div>
-                                <h4 className="text-sm font-bold leading-tight mb-8 h-16 overflow-hidden group-hover:text-purple-400 transition-colors uppercase">{item.title}</h4>
-                                <button className="mt-auto w-full py-3 bg-purple-500/10 rounded-2xl text-[10px] font-black text-purple-500 border border-purple-500/20 hover:bg-purple-500 hover:text-white transition-all uppercase tracking-tighter">Bleskovka</button>
-                            </div>
-                        ))}
-                    </div>
-                </section>
+               <div style={{ background: '#111318', padding: '30px', borderRadius: '30px', border: '1px solid #ffffff0d', textAlign: 'center' }}>
+                  <h3 style={{ fontSize: '32px', fontWeight: 950, margin: 0 }}>{data.posts.length}</h3>
+                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase', marginTop: '5px' }}>Články</p>
+               </div>
+               <div style={{ background: '#111318', padding: '30px', borderRadius: '30px', border: '1px solid #ffffff0d', textAlign: 'center' }}>
+                  <h3 style={{ fontSize: '32px', fontWeight: 950, margin: 0 }}>{data.deals.length}</h3>
+                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase', marginTop: '5px' }}>Slevy</p>
+               </div>
+               <div style={{ background: '#111318', padding: '30px', borderRadius: '30px', border: '1px solid #ffffff0d', textAlign: 'center' }}>
+                  <h3 style={{ fontSize: '32px', fontWeight: 950, margin: 0 }}>{data.stats.missingEn}</h3>
+                  <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 900, textTransform: 'uppercase', marginTop: '5px' }}>Chybí EN</p>
+               </div>
+            </div>
+            <div style={{ marginTop: '40px' }}>
+              <div className="terminal-box" style={{ height: '400px' }}>
+                {consoleLogs.map((log, i) => (
+                  <div key={i} style={{ marginBottom: '5px' }}>
+                    <span style={{ opacity: 0.4, marginRight: '10px' }}>[{log.time}]</span>
+                    <span style={{ color: log.type === 'error' ? '#ef4444' : log.type === 'warning' ? '#eab308' : '#22c55e' }}>{log.msg}</span>
+                  </div>
+                ))}
+                <div ref={logEndRef} />
+              </div>
             </div>
           </div>
         )}
+
+        {activeTab === 'intel-hub' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <CpuIcon color="#eab308" size={36} />
+                <h2 style={{ fontSize: '32px', fontWeight: 950, margin: 0 }}>INTEL <span style={{ color: '#eab308' }}>RADAR</span></h2>
+                <div className={`ai-badge ${aiActive ? 'ai-online' : 'ai-offline'}`}>
+                  <Brain size={14} className={intelLoading ? 'animate-pulse' : ''} />
+                  AI MOZEK: {aiActive ? 'ONLINE' : aiStatusMsg}
+                </div>
+              </div>
+              <button onClick={fetchIntelFeed} disabled={intelLoading} className="sidebar-btn active" style={{ width: 'auto', padding: '12px 30px', background: '#eab308', color: '#000', borderRadius: '15px' }}>
+                <RefreshCw size={14} className={intelLoading ? 'animate-spin' : ''} /> SKENOVAT TRENDY
+              </button>
+            </div>
+
+            {/* RADAR 1: LEAKS - CYAN */}
+            <div style={{ borderLeft: '5px solid #66fcf1', paddingLeft: '20px', marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 950, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Ghost color="#66fcf1" size={20} /> LEAKS & <span style={{ color: '#66fcf1' }}>RUMORS</span>
+              </h3>
+            </div>
+            <div className="hub-compact-grid">
+              {leaksIntel.map((item, i) => (
+                <div key={i} className="compact-card" style={{ borderBottom: '2px solid rgba(102, 252, 241, 0.1)' }}>
+                  <div className="compact-badge" style={{ background: item.viral_score > 80 ? '#ff0055' : '#10b981' }}>{item.viral_score}%</div>
+                  <span className="compact-source">{item.source}</span>
+                  <h4 className="compact-title">{item.title}</h4>
+                  <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <a href={item.link} target="_blank" rel="noreferrer" className="compact-btn">ZDROJ</a>
+                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className="compact-btn compact-btn-main">
+                      {processingTitle === item.title ? 'AI ANALÝZA...' : 'KONCEPT'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* RADAR 2: HARDWARE - ORANGE */}
+            <div style={{ borderLeft: '5px solid #eab308', paddingLeft: '20px', marginBottom: '20px', marginTop: '40px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 950 }}>HARDWARE <span style={{ color: '#eab308' }}>RADAR</span></h3>
+            </div>
+            <div className="hub-compact-grid">
+              {hwIntel.map((item, i) => (
+                <div key={i} className="compact-card">
+                  <div className="compact-badge" style={{ background: item.viral_score > 85 ? '#ff0055' : '#10b981' }}>{item.viral_score}%</div>
+                  <span className="compact-source">{item.source}</span>
+                  <h4 className="compact-title">{item.title}</h4>
+                  <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <a href={item.link} target="_blank" rel="noreferrer" className="compact-btn">ZDROJ</a>
+                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className="compact-btn compact-btn-main">
+                        {processingTitle === item.title ? 'AI ANALÝZA...' : 'KONCEPT'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* RADAR 3: GAMING - PURPLE */}
+            <div style={{ borderLeft: '5px solid #a855f7', paddingLeft: '20px', marginBottom: '20px', marginTop: '40px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 950 }}>GAMING <span style={{ color: '#a855f7' }}>RADAR</span></h3>
+            </div>
+            <div className="hub-compact-grid">
+              {gameIntel.map((item, i) => (
+                <div key={i} className="compact-card">
+                  <div className="compact-badge" style={{ background: item.viral_score > 85 ? '#ff0055' : '#10b981' }}>{item.viral_score}%</div>
+                  <span className="compact-source">{item.source}</span>
+                  <h4 className="compact-title">{item.title}</h4>
+                  <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <a href={item.link} target="_blank" rel="noreferrer" className="compact-btn">ZDROJ</a>
+                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className="compact-btn compact-btn-main">
+                        {processingTitle === item.title ? 'AI ANALÝZA...' : 'KONCEPT'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {!intelLoading && leaksIntel.length === 0 && <div style={{ textAlign: 'center', padding: '100px', color: '#444', fontWeight: 900 }}>RADARY JSOU ČISTÉ. SPUSTI SKEN.</div>}
+          </div>
+        )}
       </main>
-
-      {/* GURU SYSTEM CONSOLE */}
-      <div className="fixed bottom-8 right-8 w-96 bg-[#0d0e12]/95 backdrop-blur-2xl rounded-[30px] border border-white/10 shadow-2xl overflow-hidden z-50">
-        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/5">
-           <div className="flex items-center gap-3">
-              <Terminal size={16} className="text-neutral-500" />
-              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-neutral-400">Guru Console</span>
-           </div>
-           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-        </div>
-        <div className="p-6 h-56 overflow-y-auto space-y-3 font-mono text-[11px] custom-scrollbar">
-           {consoleLogs.map((log, i) => (
-             <div key={i} className={`${log.type === 'error' ? 'text-red-400' : log.type === 'warning' ? 'text-orange-400' : 'text-green-400'} flex gap-3`}>
-                <span className="opacity-30 flex-shrink-0">[{log.time}]</span>
-                <span className="font-bold tracking-tight uppercase">{log.msg}</span>
-             </div>
-           ))}
-           <div ref={logEndRef} />
-        </div>
-      </div>
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-      `}</style>
     </div>
   );
 }
