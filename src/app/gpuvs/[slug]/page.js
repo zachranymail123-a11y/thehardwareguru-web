@@ -15,39 +15,36 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V32.1 (CLEAN MATCHING)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V33.1 (PRODUCTION STABILITY)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * Design: Supreme GURU Style (Neon, Glass, Silver Typography, max-w-3xl).
  * Logic: On-demand AI generation + MANDATORY Database persistence.
- * FIX 1: findGpu normalizace názvů (odstranění geforce/radeon/nvidia/amd) - ChatGPT mandate.
- * FIX 2: Regex replace (/g) v getDuelData pro bleskový lookup slugu bez prefixů.
- * FIX 3: Statické importy (ESM) bez dynamických require hacků pro Next.js Server Components.
+ * FIX: Revert k čistým statickým importům pro plnou kompatibilitu s Next.js 14 produkcí.
+ * MATCHING: Robustní findGpu engine čistící prefixy (Nvidia/AMD/Geforce/Radeon).
+ * PERSISTENCE: Automatický zápis do DB při chybějícím duelu.
  */
 
-// 🚀 GURU: Inicializace OpenAI (Striktně server-side API KEY)
+// 🚀 GURU: Inicializace OpenAI (Striktně server-side přes ENV)
 const openai = (process.env.OPENAI_API_KEY)
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
-// 🚀 GURU: Inicializace Supabase klienta pro Server Components
+// 🚀 GURU: Inicializace Supabase klienta
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
   { auth: { persistSession: false } }
 );
 
-// 🛡️ GURU ENGINE: Robustní vyhledávání karty v DB (Opraveno podle ChatGPT)
+// 🛡️ GURU ENGINE: Robustní vyhledávání karty v DB (Prefix-less matching)
 const findGpu = async (slugPart) => {
   if (!supabase || !slugPart) return null;
   
-  // 🚀 GURU FIX: Agresivní odstranění prefixů, které blokovaly matching s "NVIDIA GeForce..."
+  // Čištění slugu: rtx-3090 -> rtx 3090
   const clean = slugPart
     .replace(/-/g, " ")
     .replace(/geforce|radeon|nvidia|amd/gi, "")
     .trim();
-
-  // Debug log pro kontrolu v konzoli tvého serveru
-  console.log("GURU GPU Search term:", clean);
 
   const { data } = await supabase
     .from("gpus")
@@ -62,7 +59,7 @@ const findGpu = async (slugPart) => {
 // 🚀 GURU ENGINE: Funkce pro vygenerování duelu a ZÁPIS do DB za běhu
 async function generateAndPersistDuel(slug) {
   if (!supabase || !openai) {
-    console.error("GURU: Chybí inicializace API pro generování obsahu.");
+    console.error("GURU: Chybí API klíče pro on-demand generování.");
     return null;
   }
 
@@ -71,22 +68,22 @@ async function generateAndPersistDuel(slug) {
     const parts = cleanSlug.split('-vs-');
     if (parts.length !== 2) return null;
 
-    // 1. Vyhledání karet v DB pomocí opraveného findGpu engine (prefix-less matching)
+    // 1. Vyhledání karet v gpus tabulce
     const cardA = await findGpu(parts[0]);
     const cardB = await findGpu(parts[1]);
 
     if (!cardA || !cardB) {
-      console.error(`GURU: Karty nenalezeny v DB. A: ${parts[0]}, B: ${parts[1]}`);
+      console.error(`GURU: Karty nenalezeny. A: ${parts[0]}, B: ${parts[1]}`);
       return null;
     }
 
-    // 2. AI Generování odborného verdiktu (Hardware Guru Persona)
+    // 2. AI Generování obsahu (Hardware Guru Persona)
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { 
           role: "system", 
-          content: "Jsi Hardware Guru. Tvoříš SEO duely grafických karet. Tvůj styl je brutální, technický a virální. Piš v HTML (h2, strong, ul). Všechna pole '_cs' v češtině, '_en' v angličtině. JSON struktura: { \"title_cs\", \"title_en\", \"content_cs\", \"content_en\", \"seo_description_cs\", \"seo_description_en\" }" 
+          content: "Jsi Hardware Guru. Tvoříš SEO duely grafických karet. Tvůj styl je brutální, technický a virální. Piš v HTML (h2, strong, ul). Pole: title_cs, title_en, content_cs, content_en, seo_description_cs, seo_description_en." 
         },
         { 
           role: "user", 
@@ -98,7 +95,7 @@ async function generateAndPersistDuel(slug) {
 
     const aiResult = JSON.parse(completion.choices[0].message.content);
 
-    // 3. ZÁPIS DO DATABÁZE (Persistence bez slug_en)
+    // 3. ZÁPIS DO DATABÁZE (Persistence)
     const { data: newDuel, error: insertError } = await supabase
       .from('gpu_duels')
       .insert([{
@@ -131,13 +128,11 @@ async function generateAndPersistDuel(slug) {
   }
 }
 
-// 🚀 GURU: Cache dotazu pro bleskovou odezvu
+// 🚀 GURU: Cache dotazu pro rychlost a stabilitu
 const getDuelData = cache(async (slug) => {
   if (!supabase || !slug) return null;
 
   const cleanSlug = slug.replace(/^en-/, '');
-  
-  // 🚀 GURU FIX: Globální regex replace pro korektní normalizaci slugu
   const normalizedSlug = cleanSlug
     .replace(/geforce-/g, '')
     .replace(/radeon-/g, '');
@@ -153,14 +148,14 @@ const getDuelData = cache(async (slug) => {
     .limit(1);
 
   if (error || !data || data.length === 0) {
-    // ⚡ Pokud duel v DB není, spustíme generování s opraveným matchingem
+    // ⚡ Pokud duel v DB není, okamžitě generujeme a ZAPÍŠEME
     return await generateAndPersistDuel(slug);
   }
   
   return data[0];
 });
 
-// SEO Meta Tagy
+// Metadata
 export async function generateMetadata({ params }) {
   const slug = params?.slug ?? null;
   const duel = await getDuelData(slug);
@@ -204,7 +199,7 @@ export default async function App({ params }) {
   return (
     <main className="min-h-screen text-[#d1d5db] py-12 px-4 sm:px-6 lg:px-8" style={{ 
         backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', 
-        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px'
+        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '140px'
     }}>
       <style dangerouslySetInnerHTML={{__html: `
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; max-width: 750px; margin: 0 auto; }
@@ -221,6 +216,7 @@ export default async function App({ params }) {
         
         .buy-action-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; padding: 26px 65px; border-radius: 24px; text-transform: uppercase; font-size: 22px; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: inline-flex; align-items: center; gap: 15px; box-shadow: 0 20px 50px rgba(234, 88, 12, 0.5); border: 1px solid rgba(255,255,255,0.1); }
         .buy-action-btn:hover { transform: translateY(-10px) scale(1.05); box-shadow: 0 30px 70px rgba(234, 88, 12, 0.7); filter: brightness(1.15); }
+        @media (max-width: 768px) { .vs-token { margin: 20px auto; } }
       `}} />
 
       <article className="max-w-3xl mx-auto">
@@ -241,7 +237,7 @@ export default async function App({ params }) {
           </h1>
         </header>
 
-        {/* 🥊 RING SYSTÉM */}
+        {/* 🥊 RING SYSTÉM (DUEL KARET) */}
         <div className="flex flex-col md:flex-row items-center justify-center mb-16 relative gap-4 md:gap-0">
             <div className="glass-panel w-full p-12 text-center border-t-8" style={{ borderColor: getVendorColor(gpuA.vendor) }}>
                 <div style={{ fontSize: '12px', fontWeight: '950', color: getVendorColor(gpuA.vendor), textTransform: 'uppercase', letterSpacing: '4px', marginBottom: '10px' }}>{gpuA.vendor} • {gpuA.architecture}</div>
@@ -254,7 +250,7 @@ export default async function App({ params }) {
             </div>
         </div>
 
-        {/* 📊 GURU DASHBOARD */}
+        {/* 📊 GURU DASHBOARD (TECHNICKÁ TABULKA) */}
         <section className="glass-panel mb-24">
             <div className="bg-white/5 py-5 text-center border-b border-white/5">
                 <h3 className="font-black text-[10px] uppercase tracking-[0.6em] text-neutral-500">{isEn ? "GURU TECHNICAL METRICS" : "GURU TECHNICKÉ METRIKY"}</h3>
@@ -279,7 +275,7 @@ export default async function App({ params }) {
             </div>
         </section>
 
-        {/* 🧠 GURU VERDIKT */}
+        {/* 🧠 GURU MASTER VERDIKT */}
         <section className="mb-32 relative">
             <div className="flex items-center gap-4 text-[#ff0055] font-black uppercase tracking-[0.4em] text-[10px] mb-16 bg-[#ff0055]/5 py-4 px-10 rounded-2xl border border-[#ff0055]/20 w-fit mx-auto shadow-[0_0_30px_rgba(255,0,85,0.1)]">
                 <ShieldCheck size={20} /> {isEn ? "GURU MASTER VERDICT" : "GURU MASTER VERDIKT"}
@@ -287,7 +283,7 @@ export default async function App({ params }) {
             <div className="guru-prose" dangerouslySetInnerHTML={{ __html: content }} />
         </section>
 
-        {/* 💰 GURU CTA */}
+        {/* 💰 AFILIÁTNÍ ODPAL (CTA) */}
         <section className="mt-40 p-20 bg-[#0c0d10] border-2 border-orange-500/20 rounded-[60px] text-center shadow-[0_50px_150px_rgba(0,0,0,1)] relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500 to-transparent opacity-50" />
             <div className="absolute -right-32 -bottom-32 opacity-[0.03] rotate-[-15deg] pointer-events-none"><Cpu size={500} color="#f97316"/></div>
