@@ -11,16 +11,16 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V27.1 (PREVIEW COMPATIBILITY)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V28.1 (PREVIEW COMPATIBILITY)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * Design: Supreme GURU Style (Neon, Glass, Silver Typography, max-w-3xl).
  * Logic: On-demand AI generation + MANDATORY Database persistence.
- * FIX: Implementace "Compatibility Shield" pro vyřešení chyb kompilace (Could not resolve) 
- * v tomto prostředí, zatímco logika zůstává 100% věrná verzi V27.0 (Fixed Persistence).
+ * FIX: Implementace "Compatibility Shield" pro vyřešení chyb kompilace v náhledu.
+ * PERSISTENCE: Automatické generování, zápis do DB a normalizované vyhledávání zůstává zachováno.
  */
 
-// --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení pro funkčnost v tomto náhledu ---
-const safeLoad = (name) => {
+// --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení pro funkčnost v tomto prostředí ---
+const getModule = (name) => {
   try {
     return require(name);
   } catch (e) {
@@ -28,17 +28,17 @@ const safeLoad = (name) => {
   }
 };
 
-const supabaseLib = safeLoad('@supabase/supabase-js');
-const nextNav = safeLoad('next/navigation');
-const nextLinkMod = safeLoad('next/link');
-const openAILib = safeLoad('openai');
+const supabaseLib = getModule('@supabase/supabase-js');
+const nextNav = getModule('next/navigation');
+const nextLinkMod = getModule('next/link');
+const openAILib = getModule('openai');
 
 const createClient = supabaseLib ? supabaseLib.createClient : null;
 const notFound = nextNav ? nextNav.notFound : () => {};
 const Link = nextLinkMod ? (nextLinkMod.default || nextLinkMod) : ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>;
 const OpenAI = openAILib ? (openAILib.default || openAILib) : null;
 
-// 🚀 GURU: Inicializace OpenAI (Pouze server-side API KEY)
+// 🚀 GURU: Inicializace OpenAI (Striktně server-side API KEY)
 const openai = (OpenAI && process.env.OPENAI_API_KEY)
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
@@ -55,7 +55,7 @@ const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
 // 🚀 GURU ENGINE: Funkce pro vygenerování duelu a ZÁPIS do DB za běhu
 async function generateAndPersistDuel(slug) {
   if (!supabase || !openai) {
-    console.error("GURU: Inicializace selhala. OpenAI klíč nebo Supabase chybí.");
+    console.error("GURU: Inicializace OpenAI nebo Supabase selhala. Zkontroluj ENV klíče.");
     return null;
   }
 
@@ -64,10 +64,16 @@ async function generateAndPersistDuel(slug) {
     const parts = cleanSlug.split('-vs-');
     if (parts.length !== 2) return null;
 
-    // 1. Vyhledání karet v DB (Fuzzy search)
-    const nameA = parts[0].replace(/-/g, ' ');
-    const nameB = parts[1].replace(/-/g, ' ');
+    // 🛡️ GURU FIX: Normalizace názvů podle doporučení ChatGPT
+    const normalize = (s) =>
+      s.replace(/-/g, ' ')
+       .replace(/geforce|radeon/gi, '')
+       .trim();
 
+    const nameA = normalize(parts[0]);
+    const nameB = normalize(parts[1]);
+
+    // 1. Vyhledání karet v DB (Matchne i "NVIDIA GeForce RTX...")
     const [resA, resB] = await Promise.all([
       supabase.from('gpus').select('*').ilike('name', `%${nameA}%`).limit(1).maybeSingle(),
       supabase.from('gpus').select('*').ilike('name', `%${nameB}%`).limit(1).maybeSingle()
@@ -75,7 +81,11 @@ async function generateAndPersistDuel(slug) {
 
     const cardA = resA.data;
     const cardB = resB.data;
-    if (!cardA || !cardB) return null;
+
+    if (!cardA || !cardB) {
+      console.error(`GURU: Karty nenalezeny v DB: ${nameA} nebo ${nameB}`);
+      return null;
+    }
 
     // 2. AI Generování verdiktu (GURU Styl)
     const completion = await openai.chat.completions.create({
@@ -95,7 +105,7 @@ async function generateAndPersistDuel(slug) {
 
     const aiResult = JSON.parse(completion.choices[0].message.content);
 
-    // 3. ZÁPIS DO DATABÁZE (Persistence bez slug_en podle návodu)
+    // 3. ZÁPIS DO DATABÁZE (Persistence)
     const { data: newDuel, error: insertError } = await supabase
       .from('gpu_duels')
       .insert([{
@@ -142,12 +152,11 @@ const getDuelData = cache(async (slug) => {
       gpuA:gpus!gpu_a_id(*),
       gpuB:gpus!gpu_b_id(*)
     `)
-    // 🚀 GURU: Lookup bez slug_en (ChatGPT mandate)
     .or(`slug.eq.${slug},slug.eq.${cleanSlug},slug.eq.${normalizedSlug}`)
     .limit(1);
 
   if (error || !data || data.length === 0) {
-    // ⚡ Pokud duel v DB není, okamžitě generujeme a ZAPISUJEME
+    // ⚡ Pokud v DB není, okamžitě generujeme a ZAPISUJEME
     return await generateAndPersistDuel(slug);
   }
   
@@ -173,7 +182,7 @@ export default async function App({ params }) {
 
   if (!duel) {
     if (typeof notFound === 'function') notFound();
-    return <div className="p-20 text-center text-white font-black uppercase text-2xl">404 - Duel nebyl nalezen ani vygenerován.</div>;
+    return <div className="p-20 text-center text-[#ff0055] font-black uppercase text-2xl">404 - Duel nebyl nalezen ani vygenerován.</div>;
   }
 
   const isEn = slug?.startsWith('en-');
