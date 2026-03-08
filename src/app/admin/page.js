@@ -7,13 +7,13 @@ import {
   CheckCircle2, RefreshCw, Send, Sparkles, Flame, Plus, X, 
   ExternalLink, Lightbulb, BookOpen, Wrench, Video, Cpu, Lock, Calendar, Terminal,
   LayoutDashboard, Image as ImageIcon, CalendarDays, Layers, ChevronRight, Play,
-  Download, Eye, Check, RotateCcw, Smartphone, Monitor, ArrowLeft, TrendingUp, Cpu as CpuIcon, Gamepad2, Star
+  Download, Eye, Check, RotateCcw, Smartphone, Monitor, ArrowLeft, TrendingUp, Cpu as CpuIcon, Gamepad2, Star, Heart
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V8.18 - VIRAL EDITION
- * Funkce: Multi-Source Intel (HW + Gaming), AI Viral Scoring, Deduplikace, Compact Grid 5x2, 
- * Persistent Storage (localStorage), Integrated Publishing + Make.com Webhook (Elite Payload).
+ * GURU ULTIMATE COMMAND CENTER V8.19 - VIRAL EDITION & PERSISTENCE FIX
+ * Funkce: Multi-Source Intel, AI Viral Scoring, Deduplikace, Compact Grid 5x2, 
+ * Persistent Storage (localStorage for Feeds & Drafts), Integrated Publishing + Make.com Webhook.
  */
 
 // --- 🚀 GURU ENV ENGINE ---
@@ -67,9 +67,10 @@ export default function AdminApp() {
 
   const [data, setData] = useState({ posts: [], deals: [], stats: { visits: 0, missingEn: 0, missingSeo: 0 } });
 
-  // 🛡️ PERSISTENTNÍ INTEL SEZNAMY
+  // 🛡️ PERSISTENTNÍ INTEL SEZNAMY A KONCEPTY
   const [hwIntel, setHwIntel] = useState([]);
   const [gameIntel, setGameIntel] = useState([]);
+  const [savedDrafts, setSavedDrafts] = useState({}); // Paměť na vytvořené koncepty
   const [intelLoading, setIntelLoading] = useState(false);
   
   const [draft, setDraft] = useState(null);
@@ -79,14 +80,17 @@ export default function AdminApp() {
 
   const BASE_URL = 'https://www.thehardwareguru.cz';
 
-  // Načtení session a persistentního intelu při startu
+  // Načtení session a persistentního intelu & konceptů při startu
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if (sessionStorage.getItem('guru_admin_auth') === 'true') setIsAuthenticated(true);
       const savedHw = localStorage.getItem('guru_hw_intel');
       const savedGame = localStorage.getItem('guru_game_intel');
+      const savedDraftsLocal = localStorage.getItem('guru_saved_drafts');
+      
       if (savedHw) setHwIntel(JSON.parse(savedHw));
       if (savedGame) setGameIntel(JSON.parse(savedGame));
+      if (savedDraftsLocal) setSavedDrafts(JSON.parse(savedDraftsLocal));
     }
   }, []);
 
@@ -95,8 +99,9 @@ export default function AdminApp() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('guru_hw_intel', JSON.stringify(hwIntel));
       localStorage.setItem('guru_game_intel', JSON.stringify(gameIntel));
+      localStorage.setItem('guru_saved_drafts', JSON.stringify(savedDrafts));
     }
-  }, [hwIntel, gameIntel]);
+  }, [hwIntel, gameIntel, savedDrafts]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -174,6 +179,8 @@ export default function AdminApp() {
       const uniqueHw = filterUnique(rawHw);
       const uniqueGame = filterUnique(rawGame);
 
+      addLog(`Detekováno ${uniqueHw.length} nových HW a ${uniqueGame.length} herních novinek. AI zahajuje scoring...`, 'warning');
+
       const scoreItems = async (items, systemPrompt) => {
         if (items.length === 0) return [];
         const batch = items.slice(0, 15);
@@ -210,6 +217,14 @@ export default function AdminApp() {
   };
 
   const createDraftFromIntel = async (item) => {
+    // 🚀 GURU: Paměťový blok - pokud už koncept existuje, zbytečně nevoláme AI
+    if (savedDrafts[item.title]) {
+      setDraft(savedDrafts[item.title]);
+      setPreviewMode('card');
+      addLog('Koncept načten ze systémové paměti.', 'success');
+      return;
+    }
+
     const openAiKey = getEnv('OPENAI_API_KEY');
     if (!openAiKey) return;
     
@@ -238,17 +253,20 @@ export default function AdminApp() {
       const result = await response.json();
       const aiData = JSON.parse(result.choices[0].message.content);
       
-      setDraft({
+      const newDraft = {
         ...aiData,
         image_url: item.enclosure?.link || item.thumbnail || 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000',
         created_at: new Date().toISOString(),
         type: item.intelType === 'hw' ? 'hardware' : 'game',
         original_item: item,
         is_important: false
-      });
-      
+      };
+
+      // Uložíme si ho do paměti a zobrazíme
+      setSavedDrafts(prev => ({ ...prev, [item.title]: newDraft }));
+      setDraft(newDraft);
       setPreviewMode('card');
-      addLog('Virální koncept připraven k publikaci.', 'success');
+      addLog('Virální koncept vytvořen a bezpečně uložen.', 'success');
     } catch (err) { addLog(`AI fail: ${err.message}`, 'error'); }
     finally { setProcessingTitle(null); }
   };
@@ -286,9 +304,18 @@ export default function AdminApp() {
       }
 
       addLog('ČLÁNEK JE ONLINE! 🔥', 'success');
+      
+      // Úklid po publikaci
       setHwIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
       setGameIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
-      setDraft(null); setPreviewMode('none'); fetchAndScanData();
+      
+      const newSavedDrafts = { ...savedDrafts };
+      delete newSavedDrafts[draft.original_item.title];
+      setSavedDrafts(newSavedDrafts);
+
+      setDraft(null); 
+      setPreviewMode('none'); 
+      fetchAndScanData();
     } catch (err) { addLog(`Error: ${err.message}`, 'error'); }
   };
 
@@ -325,8 +352,9 @@ export default function AdminApp() {
         .compact-btn-main { background: #eab30833; border-color: #eab30866; color: #eab308; }
         .compact-btn-main:hover { background: #eab308; color: #000; }
 
+        /* 🚀 GURU PREVIEW NAV FIX (Správná syntaxe CSS) */
         .preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 500; display: flex; flex-direction: column; padding: 0; overflow-y: auto; backdrop-filter: blur(25px); }
-        .preview-nav { position: sticky; top: 0; display: flex; justify-content: space-between; alignItems: center; zIndex: 600; background: rgba(17, 19, 24, 0.95); padding: 20px 40px; borderBottom: 1px solid rgba(255, 255, 255, 0.1); backdropFilter: blur(10px); }
+        .preview-nav { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; z-index: 600; background: rgba(17, 19, 24, 0.95); padding: 20px 40px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); }
         .preview-window { background: #0a0b0d; border-radius: 30px; border: 4px solid #333; margin: 40px auto; overflow: hidden; width: 100%; max-width: 1200px; min-height: 800px; box-shadow: 0 40px 120px rgba(0,0,0,0.8); }
         .preview-window.mobile { width: 375px; height: 667px; min-height: auto; }
         .mock-card { background: #1f2833; border-radius: 12px; overflow: hidden; border: 1px solid rgba(102, 252, 241, 0.2); width: 320px; cursor: pointer; transition: 0.3s; }
@@ -335,6 +363,12 @@ export default function AdminApp() {
         .mock-prose h2 { color: #66fcf1; font-weight: 950; margin: 1.5em 0 0.5em; text-transform: uppercase; }
         .mock-prose p { margin-bottom: 1.5em; }
         .terminal-box { background: #000; border: 1px solid #22c55e33; border-radius: 15px; padding: 20px; font-family: monospace; font-size: 12px; overflow-y: auto; }
+        
+        /* 🚀 GURU PREVIEW BOTTOM BUTTONS */
+        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
+        .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
+        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
+        .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
       `}} />
 
       {/* --- 🚀 GURU PREVIEW SYSTEM --- */}
@@ -383,6 +417,21 @@ export default function AdminApp() {
                       <div style={{ color: '#444', fontWeight: '900', fontSize: '12px', marginBottom: '40px' }}>GURU ENGINE • {new Date().toLocaleDateString('cs-CZ')}</div>
                       <img src={draft.image_url} style={{ width: '100%', borderRadius: '20px', marginBottom: '40px', border: '1px solid #ffffff10' }} />
                       <div className="mock-prose" dangerouslySetInnerHTML={{ __html: draft.content_cs }} />
+                      
+                      {/* 🚀 GURU: Spodní tlačítka detailu, aby náhled přesně odpovídal frontendu */}
+                      <div style={{ marginTop: '70px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
+                        <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
+                          Líbil se ti článek? Podpoř nás buď nákupem her za ty nejlepší ceny, nebo přímo.
+                        </h4>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
+                          <div className="guru-deals-btn" style={{ flex: '1 1 280px', cursor: 'default' }}>
+                            <Flame size={20} /> HRY ZA NEJLEPŠÍ CENY
+                          </div>
+                          <div className="guru-support-btn" style={{ flex: '1 1 280px', cursor: 'default' }}>
+                            <Heart size={20} /> PODPOŘIT GURU
+                          </div>
+                        </div>
+                      </div>
                    </div>
                 )}
             </div>
@@ -452,7 +501,14 @@ export default function AdminApp() {
                   <h4 className="compact-title">{item.title}</h4>
                   <div className="compact-actions">
                     <a href={item.link} target="_blank" rel="noreferrer" className="compact-btn">Zdroj</a>
-                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className="compact-btn compact-btn-main">Koncept</button>
+                    <button 
+                      onClick={() => createDraftFromIntel(item)} 
+                      disabled={!!processingTitle} 
+                      className={`compact-btn ${savedDrafts[item.title] ? '' : 'compact-btn-main'}`}
+                      style={savedDrafts[item.title] ? { background: '#10b98133', borderColor: '#10b98166', color: '#10b981' } : {}}
+                    >
+                      {savedDrafts[item.title] ? 'MÁM KONCEPT' : 'KONCEPT'}
+                    </button>
                   </div>
                 </div>
               ))}
@@ -475,7 +531,14 @@ export default function AdminApp() {
                   <h4 className="compact-title">{item.title}</h4>
                   <div className="compact-actions">
                     <a href={item.link} target="_blank" rel="noreferrer" className="compact-btn">Zdroj</a>
-                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className="compact-btn compact-btn-main" style={{ borderColor: '#a855f766', color: '#a855f7', background: '#a855f733' }}>Koncept</button>
+                    <button 
+                      onClick={() => createDraftFromIntel(item)} 
+                      disabled={!!processingTitle} 
+                      className={`compact-btn ${savedDrafts[item.title] ? '' : 'compact-btn-main'}`}
+                      style={savedDrafts[item.title] ? { borderColor: '#a855f766', color: '#a855f7', background: '#a855f733' } : { borderColor: '#a855f766', color: '#a855f7', background: 'transparent' }}
+                    >
+                      {savedDrafts[item.title] ? 'MÁM KONCEPT' : 'KONCEPT'}
+                    </button>
                   </div>
                 </div>
               ))}
