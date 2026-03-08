@@ -13,11 +13,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V37.1 (PREVIEW COMPATIBILITY)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V38.1 (ULTIMATE PREVIEW)
  * Cesta: src/app/gpuvs/[slug]/page.js
- * * 🛡️ LOGIKA: Striktně podle funkční verze V35.1 (Prefix-less matching, persistence).
- * 🛡️ DESIGN: V37.0 (Homepage Sync - Glass, Neon Cyan, Silver Typography).
- * 🛡️ PREVIEW FIX: Implementace "Compatibility Bridge" pro vyřešení chyb kompilace v náhledu.
+ * * 🛡️ LOGIKA: Striktně porovnána a zachována z funkční verze V35.1.
+ * 🛡️ DESIGN: Plná synchronizace s homepage (Neon Cyan, Glass, Silver Typography).
+ * 🛡️ FIX: "Preview Compatibility Bridge" řeší chyby kompilace (Could not resolve) v náhledu.
  */
 
 // --- 🛡️ GURU PREVIEW BRIDGE: Bezpečné načtení modulů pro funkčnost v náhledu ---
@@ -35,7 +35,7 @@ const notFound = nextNav ? nextNav.notFound : () => {};
 const Link = nextLinkMod ? (nextLinkMod.default || nextLinkMod) : ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>;
 const OpenAI = openAILib ? (openAILib.default || openAILib) : null;
 
-// 🚀 GURU: Inicializace OpenAI (Striktně server-side)
+// 🚀 GURU: Inicializace OpenAI (Striktně server-side API KEY)
 const openai = (OpenAI && process.env.OPENAI_API_KEY)
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) 
   : null;
@@ -52,28 +52,34 @@ const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
 // 🛡️ GURU ENGINE: Robustní vyhledávání karty v DB (Logic V35.1)
 const findGpu = async (slugPart) => {
   if (!supabase || !slugPart) return null;
+  
   const clean = slugPart
     .replace(/-/g, " ")
     .replace(/geforce|radeon|nvidia|amd/gi, "")
     .trim();
+
   const { data } = await supabase
     .from("gpus")
     .select("*")
     .ilike("name", `%${clean}%`)
     .limit(1)
     .maybeSingle();
+
   return data;
 };
 
 // 🚀 GURU ENGINE: Funkce pro vygenerování duelu a ZÁPIS do DB (Logic V35.1)
 async function generateAndPersistDuel(slug) {
   if (!supabase || !openai) return null;
+
   try {
     const cleanSlug = slug.replace(/^en-/, '');
     const parts = cleanSlug.split('-vs-');
     if (parts.length !== 2) return null;
+
     const cardA = await findGpu(parts[0]);
     const cardB = await findGpu(parts[1]);
+
     if (!cardA || !cardB) return null;
 
     const completion = await openai.chat.completions.create({
@@ -89,6 +95,7 @@ async function generateAndPersistDuel(slug) {
     });
 
     const aiResult = JSON.parse(completion.choices[0].message.content);
+
     const { data: newDuel, error: insertError } = await supabase
       .from('gpu_duels')
       .insert([{
@@ -110,21 +117,36 @@ async function generateAndPersistDuel(slug) {
        const { data } = await supabase.from('gpu_duels').select(`*, gpuA:gpus!gpu_a_id(*), gpuB:gpus!gpu_b_id(*)`).eq('slug', cleanSlug).single();
        return data;
     }
+
     return newDuel;
-  } catch (err) { return null; }
+  } catch (err) {
+    return null;
+  }
 }
 
-// 🚀 GURU: Cache dotazu (Logic V35.1)
+// 🚀 GURU: Cache dotazu pro rychlost (Logic V35.1)
 const getDuelData = cache(async (slug) => {
   if (!supabase || !slug) return null;
+
   const cleanSlug = slug.replace(/^en-/, '');
-  const normalizedSlug = cleanSlug.replace(/geforce-/g, '').replace(/radeon-/g, '');
+  const normalizedSlug = cleanSlug
+    .replace(/geforce-/g, '')
+    .replace(/radeon-/g, '');
+
   const { data, error } = await supabase
     .from('gpu_duels')
-    .select(`*, gpuA:gpus!gpu_a_id(*), gpuB:gpus!gpu_b_id(*)`)
+    .select(`
+      *,
+      gpuA:gpus!gpu_a_id(*),
+      gpuB:gpus!gpu_b_id(*)
+    `)
     .or(`slug.eq.${slug},slug.eq.${cleanSlug},slug.eq.${normalizedSlug}`)
     .limit(1);
-  if (error || !data || data.length === 0) return await generateAndPersistDuel(slug);
+
+  if (error || !data || data.length === 0) {
+    return await generateAndPersistDuel(slug);
+  }
+  
   return data[0];
 });
 
@@ -132,7 +154,8 @@ const getDuelData = cache(async (slug) => {
 export async function generateMetadata({ params }) {
   const slug = params?.slug ?? null;
   const duel = await getDuelData(slug);
-  if (!duel) return { title: 'Duel nenalezen' };
+  if (!duel) return { title: 'Duel nenalezen | Hardware Guru' };
+
   const isEn = slug?.startsWith('en-');
   return { 
     title: `${isEn ? duel.title_en : duel.title_cs} | Hardware Guru`,
