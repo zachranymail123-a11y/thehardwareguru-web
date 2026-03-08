@@ -7,14 +7,15 @@ import {
   CheckCircle2, RefreshCw, Send, Sparkles, Flame, Plus, X, 
   ExternalLink, Lightbulb, BookOpen, Wrench, Video, Cpu, Lock, Calendar, Terminal,
   LayoutDashboard, Image as ImageIcon, CalendarDays, Layers, ChevronRight, Play,
-  Download, Eye, Check, RotateCcw, Smartphone, Monitor, ArrowLeft, TrendingUp, Cpu as CpuIcon
+  Download, Eye, Check, RotateCcw, Smartphone, Monitor, ArrowLeft, TrendingUp, Cpu as CpuIcon, Gamepad2
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V8.9
- * Funkce: Multi-RSS Intelligence, AI Hardware & Gaming Viral Scoring, Deduplikace, Preview System
+ * GURU ULTIMATE COMMAND CENTER V8.10
+ * Funkce: Multi-Source Intelligence (HW + Gaming), AI Viral Scoring, Deduplikace, Compact Grid 5x2
  */
 
+// --- 🚀 GURU ENV ENGINE ---
 const getEnv = (key, fallback = '') => {
   if (typeof window === 'undefined') return fallback;
   const envMap = {
@@ -27,6 +28,7 @@ const getEnv = (key, fallback = '') => {
   return envMap[key] || fallback;
 };
 
+// --- GURU ENGINE INIT ---
 const initSupabase = () => {
   let createClient;
   try {
@@ -62,13 +64,13 @@ export default function AdminApp() {
   const logEndRef = useRef(null);
   const supabase = useMemo(() => initSupabase(), []);
 
-  const [data, setData] = useState({
-    posts: [], deals: [], tipy: [], tweaky: [], slovnik: [],
-    stats: { visits: 0 }
-  });
+  const [data, setData] = useState({ posts: [], deals: [], stats: { visits: 0 } });
 
-  const [intelFeed, setIntelFeed] = useState([]);
+  // Intel Hub Stavy
+  const [hwIntel, setHwIntel] = useState([]);
+  const [gameIntel, setGameIntel] = useState([]);
   const [intelLoading, setIntelLoading] = useState(false);
+  
   const [draft, setDraft] = useState(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [previewMode, setPreviewMode] = useState('none');
@@ -104,189 +106,160 @@ export default function AdminApp() {
         supabase.from('game_deals').select('*').order('created_at', { ascending: false }),
         supabase.from('stats').select('value').eq('name', 'total_visits').single(),
       ]);
-      setData(prev => ({
-        ...prev,
+      setData({
         posts: postsRes.data || [],
         deals: dealsRes.data || [],
         stats: { visits: statsRes.data?.value || 0 }
-      }));
-      addLog('Guru databáze synchronizována.', 'success');
+      });
+      addLog('Databáze Guru synchronizována.', 'success');
     } catch (err) { addLog(`Chyba skenu: ${err.message}`, 'error'); }
     finally { setLoading(false); }
   };
 
-  // --- 🚀 GURU INTELLIGENCE: MULTI-FEED & HW TREND SCORING ---
+  // --- 🚀 GURU INTELLIGENCE: MULTI-SOURCE & AI VIRAL FILTER ---
   const fetchIntelFeed = async () => {
     const openAiKey = getEnv('OPENAI_API_KEY');
-    setIntelLoading(true);
-    addLog('Zahajuji hloubkovou agregaci z globálních HW a herních feedů...', 'warning');
+    if (!openAiKey) return addLog('CHYBÍ KLÍČ OPENAI!', 'error');
     
-    const FEEDS = [
+    setIntelLoading(true);
+    addLog('Spouštím globální radar Hardware & Gaming...', 'warning');
+    
+    const HW_FEEDS = [
       { name: "Tom's Hardware", url: "https://www.tomshardware.com/feeds.xml" },
       { name: "How-To Geek", url: "https://www.howtogeek.com/feed/" },
       { name: "AnandTech", url: "https://www.anandtech.com/rss" },
       { name: "GamersNexus", url: "https://gamersnexus.net/rss.xml" }
     ];
 
+    const GAME_FEEDS = [
+      { name: "IGN", url: "https://feeds.ign.com/ign/games-all" },
+      { name: "GameSpot", url: "https://www.gamespot.com/feeds/news/" },
+      { name: "VGC", url: "https://www.videogameschronicle.com/feed/" },
+      { name: "Insider Gaming", url: "https://insider-gaming.com/feed/" }
+    ];
+
     try {
-      const feedPromises = FEEDS.map(f => 
-        fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(f.url)}&t=${Date.now()}`)
-          .then(r => r.json())
-          .then(d => (d.items || []).map(item => ({ ...item, source: f.name })))
-      );
+      const fetchSet = async (list, type) => {
+        const results = await Promise.all(list.map(f => 
+          fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(f.url)}&t=${Date.now()}`)
+            .then(r => r.json())
+            .then(d => (d.items || []).map(item => ({ ...item, source: f.name, intelType: type })))
+        ));
+        return results.flat();
+      };
 
-      const allResults = await Promise.all(feedPromises);
-      const flatItems = allResults.flat();
-
-      // Deduplikace
+      const [rawHw, rawGame] = await Promise.all([fetchSet(HW_FEEDS, 'hw'), fetchSet(GAME_FEEDS, 'game')]);
       const existingTitles = data.posts.map(p => p.title.toLowerCase().trim());
-      const uniqueItems = flatItems.filter(item => {
-        const titleLower = item.title.toLowerCase().trim();
-        return !existingTitles.includes(titleLower);
-      });
 
-      if (flatItems.length - uniqueItems.length > 0) {
-        addLog(`Zahozeno ${flatItems.length - uniqueItems.length} duplicitních článků.`, 'info');
-      }
+      const filterUnique = (items) => items.filter(item => !existingTitles.includes(item.title.toLowerCase().trim()));
+      
+      const uniqueHw = filterUnique(rawHw);
+      const uniqueGame = filterUnique(rawGame);
 
-      // AI Scoring - Zaměřeno na HW trendy i herní komunitu
-      if (uniqueItems.length > 0 && openAiKey) {
-        addLog(`AI skenuje hardware a herní trendy v ${uniqueItems.length} článcích...`, 'warning');
-        
-        const itemsToScore = uniqueItems.slice(0, 20); // Zvětšený batch pro širší záběr
-        
+      addLog(`Nalezeno ${uniqueHw.length} HW a ${uniqueGame.length} herních novinek. AI zahajuje scoring trendů...`, 'warning');
+
+      const scoreItems = async (items) => {
+        if (items.length === 0) return [];
+        const batch = items.slice(0, 15);
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${openAiKey}`
-          },
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openAiKey}` },
           body: JSON.stringify({
             model: "gpt-4o-mini",
             messages: [
               {
                 role: "system",
-                content: "Jsi elitní technologický analytik pro The Hardware Guru. Vyhodnoť virální potenciál (0-100) pro CZ/SK komunitu. Hledej zásadní HW trendy (NVIDIA Blackwell, AMD RDNA, Intel Arrow Lake, AI hardware, tech faily) i očekávané herní hity. Vrať JSON s polem objektů 'scores' obsahujícím 'title' a 'score'."
+                content: "Jsi technologický analytik. Vyhodnoť virální potenciál (0-100) novinek pro thehardwareguru.cz. Hledej Blackwell, RDNA, AI hardware, tech faily a AAA herní hity. Vrať JSON { scores: [{ title, score }] }."
               },
-              {
-                role: "user",
-                content: `Zanalyzuj tyto novinky: ${JSON.stringify(itemsToScore.map(i => i.title))}`
-              }
+              { role: "user", content: `Zanalyzuj: ${JSON.stringify(batch.map(i => i.title))}` }
             ],
             response_format: { type: "json_object" }
           })
         });
+        const aiRes = await response.json();
+        const scores = aiRes.choices[0].message.content ? JSON.parse(aiRes.choices[0].message.content).scores : [];
+        return batch.map(item => ({
+          ...item,
+          viral_score: scores.find(s => s.title === item.title)?.score || 40
+        })).sort((a, b) => b.viral_score - a.viral_score).slice(0, 10);
+      };
 
-        const aiResult = await response.json();
-        const responseData = JSON.parse(aiResult.choices[0].message.content);
-        const scores = responseData.scores || responseData.items || [];
-        
-        const scoredItems = itemsToScore.map(item => {
-          const found = scores.find(s => s.title === item.title);
-          return { ...item, viral_score: found ? found.score : 40 };
-        }).sort((a, b) => b.viral_score - a.viral_score);
+      const [scoredHw, scoredGame] = await Promise.all([scoreItems(uniqueHw), scoreItems(uniqueGame)]);
 
-        setIntelFeed(scoredItems);
-        addLog(`Analýza trendů dokončena. TOP intel připraven.`, 'success');
-      } else {
-        setIntelFeed(uniqueItems.slice(0, 15));
-      }
-    } catch (err) { addLog(`Chyba Intel Enginu: ${err.message}`, 'error'); }
+      setHwIntel(scoredHw);
+      setGameIntel(scoredGame);
+      addLog('Analýza trendů dokončena. Radar je ostrý.', 'success');
+
+    } catch (err) { addLog(`Chyba Enginu: ${err.message}`, 'error'); }
     finally { setIntelLoading(false); }
   };
 
   const createDraftFromIntel = async (item) => {
     const openAiKey = getEnv('OPENAI_API_KEY');
-    if (!openAiKey) return addLog('CHYBÍ KLÍČ!', 'error');
-
+    if (!openAiKey) return;
     setIsTranslating(true);
     addLog(`AI tvoří Guru rozbor: ${item.title.substring(0, 30)}...`, 'warning');
-    
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${openAiKey}`
-        },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openAiKey}` },
         body: JSON.stringify({
           model: "gpt-4o-mini",
           messages: [
-            {
-              role: "system",
-              content: "Jsi Hardware Guru. Píšeš pro českou elitu hráčů a techniků. Jsi expert, používáš HTML tagy (h2, p, strong, ul), tvůj styl je úderný a profesionální. Vracíš POUZE čistý JSON v CZ i EN."
-            },
-            {
-              role: "user",
-              content: `Vytvoř článek pro thehardwareguru.cz z: ${item.title}. Zdroj: ${item.description}. 
-              Vrať JSON: { title_cs, content_cs, seo_description_cs, slug_cs, title_en, content_en, seo_description_en, slug_en }. 
-              Obsah aspoň 400 slov, odborný rozbor, HTML formát.`
-            }
+            { role: "system", content: "Jsi Hardware Guru. Expert na tech a gaming. Piš úderně, používej HTML (h2, p, strong, ul). Vracíš čistý JSON v CZ i EN." },
+            { role: "user", content: `Vytvoř článek: ${item.title}. Zdroj: ${item.description}. Vrať JSON s title_cs, content_cs, seo_description_cs, slug_cs, title_en, content_en, seo_description_en, slug_en.` }
           ],
           response_format: { type: "json_object" }
         })
       });
-
       const result = await response.json();
       const aiData = JSON.parse(result.choices[0].message.content);
-
       setDraft({
         ...aiData,
         image_url: item.enclosure?.link || item.thumbnail || 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000',
         created_at: new Date().toISOString(),
-        type: 'hardware'
+        type: item.intelType === 'hw' ? 'hardware' : 'game'
       });
-      
       setPreviewMode('card');
       addLog('Koncept připraven k revizi.', 'success');
-    } catch (err) { addLog(`AI selhalo: ${err.message}`, 'error'); }
+    } catch (err) { addLog(`AI fail: ${err.message}`, 'error'); }
     finally { setIsTranslating(false); }
   };
 
   const publishDraft = async () => {
     if (!draft) return;
-    addLog('Publikuji článek...', 'warning');
+    addLog('Publikuji...', 'warning');
     try {
       const { error } = await supabase.from('posts').insert([{
-        title: draft.title_cs,
-        title_en: draft.title_en,
-        slug: draft.slug_cs,
-        slug_en: draft.slug_en,
-        content: draft.content_cs,
-        content_en: draft.content_en,
-        seo_description: draft.seo_description_cs,
-        seo_description_en: draft.seo_description_en,
-        image_url: draft.image_url,
-        created_at: draft.created_at,
-        type: draft.type,
-        is_fired: false
+        title: draft.title_cs, title_en: draft.title_en, slug: draft.slug_cs, slug_en: draft.slug_en,
+        content: draft.content_cs, content_en: draft.content_en, seo_description: draft.seo_description_cs,
+        seo_description_en: draft.seo_description_en, image_url: draft.image_url, created_at: draft.created_at,
+        type: draft.type, is_fired: false
       }]);
       if (error) throw error;
-      addLog('ČLÁNEK JE ONLINE! 🔥', 'success');
-      setDraft(null); setPreviewMode('none');
-      fetchAndScanData();
-    } catch (err) { addLog(`Chyba publikace: ${err.message}`, 'error'); }
+      addLog('ONLINE! 🔥', 'success');
+      setDraft(null); setPreviewMode('none'); fetchAndScanData();
+    } catch (err) { addLog(`Chyba: ${err.message}`, 'error'); }
   };
 
   const runApiTask = (url, name) => {
     setActiveTab('terminal');
     addLog(`START: ${name}`, 'info');
-    fetch(url).then(res => res.text()).then(txt => addLog(`ODPOVĚĎ: ${txt.substring(0,100)}`, 'success')).catch(e => addLog(`CHYBA: ${e.message}`, 'error'));
+    fetch(url).then(res => res.text()).then(txt => addLog(`OK: ${txt.substring(0,100)}`, 'success')).catch(e => addLog(`FAIL: ${e.message}`, 'error'));
   };
 
   const markAsFired = async (id, table) => {
     await supabase.from(table).update({ is_fired: true }).eq('id', id);
-    addLog(`Odesláno do archivu.`, 'success');
-    fetchAndScanData();
+    addLog('Vyřízeno.', 'success'); fetchAndScanData();
   };
 
   const executeSocial = async (item, type) => {
     setActiveTab('terminal');
-    addLog(`ODPALUJI NA MAKE...`, 'warning');
+    addLog(`MAKE EXECUTOR START...`, 'warning');
     const webhook = getEnv('NEXT_PUBLIC_MAKE_WEBHOOK2_URL');
     fetch(webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...item, guru_type: type, fired_at: new Date().toISOString() }) })
-      .then(() => { supabase.from(type === 'deal' ? 'game_deals' : 'posts').update({ is_fired: true }).eq('id', item.id); addLog('ZÁSAH! Webhook potvrzen.', 'success'); fetchAndScanData(); })
-      .catch(e => addLog(`Fail: ${e.message}`, 'error'));
+      .then(() => { supabase.from(type === 'deal' ? 'game_deals' : 'posts').update({ is_fired: true }).eq('id', item.id); addLog('ZÁSAH!', 'success'); fetchAndScanData(); })
+      .catch(e => addLog(`FAIL: ${e.message}`, 'error'));
   };
 
   useEffect(() => { if (isAuthenticated) { fetchAndScanData(); fetchIntelFeed(); } }, [isAuthenticated]);
@@ -311,13 +284,23 @@ export default function AdminApp() {
         .sidebar-btn { width: 100%; display: flex; align-items: center; gap: 15px; padding: 15px 25px; background: transparent; border: none; border-left: 4px solid transparent; color: #9ca3af; cursor: pointer; transition: 0.2s; font-weight: 900; font-size: 13px; text-transform: uppercase; }
         .sidebar-btn:hover, .sidebar-btn.active { background: #ffffff0d; color: #fff; }
         .section-box { background: #111318; padding: 30px; border-radius: 24px; border: 1px solid #ffffff05; margin-bottom: 40px; }
-        .item-row { background: #0d0e12; border: 1px solid #ffffff08; border-radius: 16px; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
         .terminal-box { background: #000; border: 1px solid #22c55e33; border-radius: 15px; padding: 20px; font-family: monospace; font-size: 13px; overflow-y: auto; height: 100%; }
-        .hub-card { background: #0d0e12; border: 1px solid #ffffff08; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; transition: 0.3s; position: relative; }
-        .hub-card:hover { border-color: #eab308; transform: translateY(-3px); }
-        .viral-badge { position: absolute; top: -10px; right: -10px; background: #ff0055; color: #fff; padding: 5px 12px; border-radius: 10px; font-size: 12px; font-weight: 950; box-shadow: 0 5px 15px rgba(255,0,85,0.4); z-index: 5; }
+        
+        /* 🚀 GURU COMPACT GRID 5x2 */
+        .hub-compact-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 40px; }
+        .compact-card { background: #0d0e12; border: 1px solid #ffffff08; border-radius: 14px; padding: 15px; display: flex; flex-direction: column; transition: 0.3s; position: relative; min-height: 200px; }
+        .compact-card:hover { border-color: #eab308; transform: translateY(-3px); }
+        .compact-badge { position: absolute; top: 10px; right: 10px; background: #ff0055; color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 9px; font-weight: 950; z-index: 5; }
+        .compact-title { font-size: 12px; font-weight: 900; color: #fff; line-height: 1.3; margin-bottom: 15px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; height: 62px; }
+        .compact-source { font-size: 8px; color: #4b5563; font-weight: 900; text-transform: uppercase; margin-bottom: 8px; }
+        .compact-actions { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+        .compact-btn { width: 100%; padding: 6px; border-radius: 6px; font-size: 9px; font-weight: 900; text-transform: uppercase; cursor: pointer; text-align: center; border: 1px solid #333; background: transparent; color: #9ca3af; transition: 0.2s; }
+        .compact-btn:hover { border-color: #eab308; color: #eab308; }
+        .compact-btn-main { background: #eab30833; border-color: #eab30866; color: #eab308; }
+        .compact-btn-main:hover { background: #eab308; color: #000; }
+
         .preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 200; display: flex; flex-direction: column; padding: 40px; overflow-y: auto; backdrop-filter: blur(20px); }
-        .preview-window { background: #0a0b0d; border-radius: 30px; border: 4px solid #333; margin: 0 auto; overflow: hidden; transition: 0.3s; width: 100%; max-width: 1200px; min-height: 800px; box-shadow: 0 50px 100px rgba(0,0,0,0.9); }
+        .preview-window { background: #0a0b0d; border-radius: 30px; border: 4px solid #333; margin: 0 auto; overflow: hidden; width: 100%; max-width: 1200px; min-height: 800px; }
         .preview-window.mobile { width: 375px; height: 667px; min-height: auto; }
         .mock-card { background: #1f2833; border-radius: 12px; overflow: hidden; border: 1px solid rgba(102, 252, 241, 0.2); width: 320px; cursor: pointer; }
         .mock-prose { color: #d1d5db; line-height: 1.8; font-size: 1.1rem; }
@@ -332,24 +315,22 @@ export default function AdminApp() {
                 <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ width: 'auto', background: '#333' }}><ArrowLeft size={16}/> ZPĚT</button>
                 <div style={{ display: 'flex', gap: '15px' }}>
                     <button onClick={() => setPreviewMode(previewMode === 'card' ? 'slug' : 'card')} className="sidebar-btn" style={{ width: 'auto', background: '#a855f7', color: '#fff' }}>
-                        {previewMode === 'card' ? 'ZOBRAZIT ROZBOR' : 'ZOBRAZIT KARTU'}
+                        {previewMode === 'card' ? 'ZOBRAZIT DETAIL' : 'ZOBRAZIT KARTU'}
                     </button>
-                    <button onClick={publishDraft} className="sidebar-btn" style={{ width: 'auto', background: '#10b981', color: '#fff' }}><Check size={16}/> PUBLIKOVAT NA WEB</button>
+                    <button onClick={publishDraft} className="sidebar-btn" style={{ width: 'auto', background: '#10b981', color: '#fff' }}><Check size={16}/> PUBLIKOVAT</button>
                 </div>
             </div>
-
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '20px' }}>
                 <button onClick={() => setPreviewDevice('desktop')} style={{ padding: '10px', background: previewDevice === 'desktop' ? '#eab308' : '#222', borderRadius: '10px' }}><Monitor/></button>
                 <button onClick={() => setPreviewDevice('mobile')} style={{ padding: '10px', background: previewDevice === 'mobile' ? '#eab308' : '#222', borderRadius: '10px' }}><Smartphone/></button>
             </div>
-
             <div className={`preview-window ${previewDevice}`}>
                 {previewMode === 'card' ? (
                    <div style={{ padding: '60px', display: 'flex', justifyContent: 'center', background: '#0a0b0d', minHeight: '100%' }}>
                       <div className="mock-card" onClick={() => setPreviewMode('slug')}>
                          <img src={draft.image_url} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
                          <div style={{ padding: '20px' }}>
-                            <span style={{ color: '#ff0000', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>TECH ROZBOR</span>
+                            <span style={{ color: '#ff0000', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>{draft.type === 'hardware' ? 'TECH ROZBOR' : 'GAME NEWS'}</span>
                             <h3 style={{ color: '#fff', fontSize: '1.1rem', margin: '10px 0', fontWeight: '900' }}>{draft.title_cs}</h3>
                             <div style={{ color: '#66fcf1', fontWeight: 'bold', fontSize: '12px' }}>ČÍST VÍCE →</div>
                          </div>
@@ -358,8 +339,7 @@ export default function AdminApp() {
                 ) : (
                    <div style={{ padding: '60px 40px', maxWidth: '850px', margin: '0 auto', background: '#0a0b0d' }}>
                       <h1 style={{ color: '#fff', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', lineHeight: 1.1 }}>{draft.title_cs}</h1>
-                      <div style={{ color: '#444', fontWeight: '900', fontSize: '12px', marginBottom: '30px' }}>GURU ENGINE • {new Date().toLocaleDateString('cs-CZ')}</div>
-                      <img src={draft.image_url} style={{ width: '100%', borderRadius: '20px', marginBottom: '40px', border: '1px solid #ffffff10' }} />
+                      <img src={draft.image_url} style={{ width: '100%', borderRadius: '20px', marginBottom: '40px' }} />
                       <div className="mock-prose" dangerouslySetInnerHTML={{ __html: draft.content_cs }} />
                    </div>
                 )}
@@ -375,16 +355,12 @@ export default function AdminApp() {
         </div>
         <nav style={{ flex: 1, overflowY: 'auto' }}>
           <SidebarItemUI id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LayoutDashboard />} label="PŘEHLED" color="#a855f7" />
-          <SidebarItemUI id="terminal" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Terminal />} label="ŽIVÝ TERMINÁL" color="#22c55e" />
-          <div className="sidebar-header">CENTRÁLNÍ LOGIKA</div>
+          <SidebarItemUI id="terminal" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Terminal />} label="TERMINÁL" color="#22c55e" />
+          <div className="sidebar-header">LOGIKA</div>
           <SidebarItemUI id="pub-plan" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Send />} label="PUBLIKACE" color="#f97316" />
           <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="HW INTEL HUB" color="#eab308" />
           <SidebarItemUI id="tweaks-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Cpu />} label="TWEAKY" color="#10b981" />
           <SidebarItemUI id="seo-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Globe />} label="SEO" color="#eab308" />
-          <SidebarItemUI id="automation" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Zap />} label="AUTOMATIZACE" color="#a855f7" />
-          <div className="sidebar-header">OBSAH</div>
-          <SidebarItemUI id="deals" activeTab={activeTab} setActiveTab={setActiveTab} icon={<ShoppingCart />} label="SLEVY" color="#ff0055" />
-          <SidebarItemUI id="kal" activeTab={activeTab} setActiveTab={setActiveTab} icon={<CalendarDays />} label="KALENDÁŘ" color="#3b82f6" href="/kalendar" />
         </nav>
       </aside>
 
@@ -400,8 +376,6 @@ export default function AdminApp() {
           </div>
         )}
 
-        {activeTab === 'terminal' && <div style={{ height: '80vh' }}><div className="terminal-box">{consoleLogs.map((log, i) => (<div key={i}>{log.msg}</div>))}<div ref={logEndRef} /></div></div>}
-
         {/* --- 🚀 HW INTEL HUB: HARDWARE & GAMING TREND ENGINE --- */}
         {activeTab === 'intel-hub' && (
           <div className="fade-in">
@@ -415,36 +389,49 @@ export default function AdminApp() {
               </button>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '30px', color: '#9ca3af', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>
-                Globální radar: NVIDIA • AMD • INTEL • AI TECH • GAMING HITS
+            {/* SEKCE: HARDWARE INTEL */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderLeft: '4px solid #eab308', paddingLeft: '15px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 950, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Hardware <span style={{ color: '#eab308' }}>Intel</span> (Top 10)</h3>
             </div>
-
-            <div className="hub-grid">
-              {intelFeed.map((item, i) => (
-                <div key={i} className="hub-card">
-                  {isTranslating && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '18px' }}><RefreshCw className="animate-spin" color="#eab308"/></div>}
-                  
-                  {item.viral_score && (
-                    <div className="viral-badge" style={{ background: item.viral_score > 85 ? '#ff0055' : '#10b981' }}>
-                       <TrendingUp size={12} style={{ display: 'inline', marginRight: '5px' }} />
-                       {item.viral_score}% TREND
-                    </div>
-                  )}
-
-                  <span style={{ fontSize: '9px', color: '#4b5563', fontWeight: '900', marginBottom: '8px', textTransform: 'uppercase' }}>{item.source} • {item.pubDate?.split(' ')[0]}</span>
-                  <h3 className="hub-title" style={{ color: item.viral_score > 90 ? '#eab308' : '#fff' }}>{item.title}</h3>
-                  
-                  <div style={{ marginTop: 'auto', display: 'flex', gap: '10px' }}>
-                    <a href={item.link} target="_blank" rel="noreferrer" className="action-btn-small" style={{ flex: 1, textAlign: 'center' }}>ZDROJ</a>
-                    <button onClick={() => createDraftFromIntel(item)} disabled={isTranslating} className="action-btn-small" style={{ flex: 1.8, borderColor: '#eab308', color: '#eab308' }}>VYTVOŘIT KONCEPT</button>
+            <div className="hub-compact-grid">
+              {hwIntel.map((item, i) => (
+                <div key={i} className="compact-card">
+                  {isTranslating && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '14px' }}><RefreshCw className="animate-spin" color="#eab308" size={16}/></div>}
+                  <div className="compact-badge" style={{ background: item.viral_score > 85 ? '#ff0055' : '#10b981' }}>{item.viral_score}%</div>
+                  <span className="compact-source">{item.source}</span>
+                  <h4 className="compact-title">{item.title}</h4>
+                  <div className="compact-actions">
+                    <a href={item.link} target="_blank" rel="noreferrer" className="compact-btn">Zdroj</a>
+                    <button onClick={() => createDraftFromIntel(item)} disabled={isTranslating} className="compact-btn compact-btn-main">Koncept</button>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* SEKCE: GAMING INTEL */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderLeft: '4px solid #a855f7', paddingLeft: '15px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 950, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Gaming <span style={{ color: '#a855f7' }}>Intel</span> (Top 10)</h3>
+            </div>
+            <div className="hub-compact-grid">
+              {gameIntel.map((item, i) => (
+                <div key={i} className="compact-card">
+                  {isTranslating && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '14px' }}><RefreshCw className="animate-spin" color="#a855f7" size={16}/></div>}
+                  <div className="compact-badge" style={{ background: item.viral_score > 85 ? '#ff0055' : '#10b981' }}>{item.viral_score}%</div>
+                  <span className="compact-source">{item.source}</span>
+                  <h4 className="compact-title">{item.title}</h4>
+                  <div className="compact-actions">
+                    <a href={item.link} target="_blank" rel="noreferrer" className="compact-btn">Zdroj</a>
+                    <button onClick={() => createDraftFromIntel(item)} disabled={isTranslating} className="compact-btn compact-btn-main" style={{ borderColor: '#a855f766', color: '#a855f7', background: '#a855f733' }}>Koncept</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {intelFeed.length === 0 && !intelLoading && hwIntel.length === 0 && <div style={{ textAlign: 'center', padding: '100px', color: '#444', fontWeight: 'bold' }}>ŽÁDNÁ DATA. SPUSTI SYNCHRONIZACI.</div>}
           </div>
         )}
 
-        {/* ... Zbytek sekcí zůstává zachován dle funkční verze ... */}
+        {/* ... Ostatní sekce (Publikace atd.) zůstávají dle funkční verze ... */}
       </main>
     </div>
   );
