@@ -1,16 +1,19 @@
 import { NextResponse } from 'next/server';
 import { XMLParser } from "fast-xml-parser";
 import { createClient } from '@supabase/supabase-js';
+import OpenAI from 'openai';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * GURU INTEL ENGINE V11.5 - NUCLEAR STABILITY & DEDUPLICATION
- * - Striktní separace zdrojů.
+ * GURU INTEL ENGINE V11.6 - SDK STABILITY & DEDUPLICATION
+ * - Použití oficiálního OpenAI SDK (stejně jako u tweaků).
+ * - Striktní separace zdrojů (Leaks, HW, Game).
  * - Neúprosná kontrola duplicit proti DB a cross-category.
- * - Universal AI Parser (choices vs output format).
  */
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const LEAK_SOURCES = [
   { name: "Reddit GL&R", url: "https://www.reddit.com/r/GamingLeaksAndRumours/new/.rss", type: "leaks" },
@@ -41,32 +44,23 @@ const BROWSER_HEADERS = {
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY // Používáme admin klíč pro bypass RLS při kontrole duplicit
 );
 
-// 🛡️ UNIVERSAL AI PARSER - Fix pro r.choices is undefined
-const getAIScores = async (titles, apiKey) => {
-  if (!apiKey || titles.length === 0) return {};
+// 🛡️ SDK AI SCORER - Fix pro choices undefined
+const getAIScores = async (titles) => {
+  if (!process.env.OPENAI_API_KEY || titles.length === 0) return {};
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [{ role: "system", content: "Jsi HW/Game insider. Ohodnoť viralitu (0-100). Vrať JSON { scores: [{ title, score }] }" }, { role: "user", content: JSON.stringify(titles) }],
-        response_format: { type: "json_object" }
-      })
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: "Jsi HW/Game insider. Ohodnoť viralitu (0-100). Vrať JSON { scores: [{ title, score }] }" },
+        { role: "user", content: JSON.stringify(titles) }
+      ],
+      response_format: { type: "json_object" }
     });
     
-    if (!response.ok) return {};
-    
-    const result = await response.json();
-    
-    // 🚀 GURU MULTI-FORMAT HANDLER
-    const content = 
-      result?.choices?.[0]?.message?.content || 
-      result?.output?.[0]?.content?.[0]?.text;
-
+    const content = completion.choices[0]?.message?.content;
     if (!content) return {};
 
     const parsed = JSON.parse(content);
@@ -76,15 +70,16 @@ const getAIScores = async (titles, apiKey) => {
     });
     return scoreMap;
   } catch (err) { 
+    console.error("Guru AI Scoring Error:", err.message);
     return {}; 
   }
 };
 
 export async function GET() {
   const debug = { ai_active: false, ai_status: "pending", db_filtered: 0, cross_duplicates: 0 };
-  const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
 
   try {
+    // 🛡️ GURU DB SHIELD: Načtení všech titulů pro filtraci
     const { data: existingPosts } = await supabase.from('posts').select('title, title_en');
     const dbTitles = new Set((existingPosts || []).flatMap(p => [
       p.title?.toLowerCase().trim(),
@@ -125,6 +120,7 @@ export async function GET() {
     const combined = [...leaksRaw, ...hwRaw, ...gamesRaw];
     const uniqueMap = new Map();
     
+    // 🚀 GURU CROSS-CATEGORY DEDUPLICATION
     combined.forEach(item => {
       if (!item.title) return;
       const key = item.title.toLowerCase().trim();
@@ -143,8 +139,9 @@ export async function GET() {
 
     const finalItems = Array.from(uniqueMap.values());
 
+    // AI SCORING přes SDK
     const titlesForAI = finalItems.slice(0, 40).map(i => i.title);
-    const aiScores = await getAIScores(titlesForAI, apiKey);
+    const aiScores = await getAIScores(titlesForAI);
     
     if (Object.keys(aiScores).length > 0) {
       debug.ai_active = true;
