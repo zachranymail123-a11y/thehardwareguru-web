@@ -11,11 +11,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V12.1 - MAKE.COM ABSOLUTE SYNC
- * - FIX: Odesílání dat na Make.com přesně podle struktury ze screenshotu.
- * - FIX: Kompletní vyplnění všech SEO a Meta polí v DB (konec NULL hodnot).
- * - FIX: Robustní AI parser zabraňující pádu "r.choices is undefined".
- * - SYNC: Synchronizace s NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL.
+ * GURU ULTIMATE COMMAND CENTER V12.2 - NUCLEAR SYNC
+ * - FIX: Striktní kontrola duplicity proti DB přímo v Intel Hubu.
+ * - FIX: Odesílání čistých dat na Make.com (title, url, image_url, description).
+ * - FIX: Kompletní vyplnění všech SEO a Meta polí (konec NULL hodnot).
+ * - FIX: Robustní AI parser a vizuální spinner (kolečko) na kartách.
  */
 
 // --- 🚀 GURU ENV ENGINE ---
@@ -174,21 +174,31 @@ export default function AdminApp() {
     setIntelLoading(true);
     setAiActive(false);
     setAiStatusMsg('ANALÝZA...');
-    addLog('Spouštím Guru Intel Engine (V12.1)...', 'warning');
+    addLog('Spouštím Guru Intel Engine (V12.2)...', 'warning');
     try {
       const res = await fetch('/api/leaks');
       const json = await res.json();
       if (json.success) {
-        const items = (json.data || []).map(item => ({
+        // 🛡️ GURU ANTI-DUPLICITY: Odstranění položek, které už jsou v DB
+        const existingTitles = new Set(data.posts.flatMap(p => [
+            p.title?.toLowerCase().trim(),
+            p.title_en?.toLowerCase().trim()
+        ]).filter(Boolean));
+
+        const filteredItems = (json.data || []).filter(item => {
+            const t = item.title?.toLowerCase().trim();
+            return !existingTitles.has(t);
+        }).map(item => ({
             ...item,
             viral_score: item.viral_score || Math.floor(Math.random() * 40) + 60,
             image_url: (item.intelType === 'leaks' && (!item.image_url || item.image_url.includes('unsplash'))) 
                        ? LEAK_PLACEHOLDER_URL 
                        : (item.image_url || 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000')
         }));
-        setHwIntel(items.filter(i => i.intelType === "hw").slice(0, 15));
-        setGameIntel(items.filter(i => i.intelType === "game").slice(0, 15));
-        setLeaksIntel(items.filter(i => i.intelType === "leaks").slice(0, 20));
+
+        setHwIntel(filteredItems.filter(i => i.intelType === "hw").slice(0, 15));
+        setGameIntel(filteredItems.filter(i => i.intelType === "game").slice(0, 15));
+        setLeaksIntel(filteredItems.filter(i => i.intelType === "leaks").slice(0, 20));
         
         if (json._debug?.ai_active) {
             setAiActive(true);
@@ -202,7 +212,7 @@ export default function AdminApp() {
     finally { setIntelLoading(false); }
   };
 
-  // 🚀 GURU: FINAL ROBUST AI SHIELD + FULL SEO FIELDS
+  // 🚀 GURU: ROBUSTNÍ AI GENERÁTOR - KOMPLETNÍ POLE
   const createDraftFromIntel = async (item) => {
     if (savedDrafts[item.title]) {
       setDraft(savedDrafts[item.title]);
@@ -225,7 +235,7 @@ export default function AdminApp() {
           messages: [
             { 
               role: "system", 
-              content: "Jsi Hardware Guru. Piš úderně a technicky v CZ i EN. HTML h2, strong, ul. Vrať JSON se VŠEMI poli: { title_cs, content_cs, description_cs, seo_description_cs, slug_cs, seo_keywords_cs, title_en, content_en, description_en, seo_description_en, slug_en, meta_title_en, seo_keywords_en, image_alt, og_title, trailer }" 
+              content: "Jsi Hardware Guru. Piš úderně a technicky v CZ i EN. HTML h2, strong, ul. MUSÍŠ vygenerovat VŠECHNA pole v JSON: { title_cs, content_cs, description_cs, seo_description_cs, slug_cs, seo_keywords_cs, title_en, content_en, description_en, seo_description_en, slug_en, meta_title_en, seo_keywords_en, image_alt, og_title, trailer }" 
             },
             { role: "user", content: `Vytvoř článek z: ${item.title}. Zdroj: ${item.description || item.title}.` }
           ],
@@ -236,13 +246,13 @@ export default function AdminApp() {
       const r = await response.json();
       
       // 🛡️ GURU FAIL-SAFE PARSER
-      const analysisContent = r?.choices?.[0]?.message?.content || r?.output?.[0]?.content?.[0]?.text;
+      const content = r?.choices?.[0]?.message?.content || r?.output?.[0]?.content?.[0]?.text;
 
-      if (!analysisContent) {
+      if (!content) {
         throw new Error(r?.error?.message || "AI vrátilo prázdnou odpověď.");
       }
 
-      const aiData = JSON.parse(analysisContent);
+      const aiData = JSON.parse(content);
       const postType = item.intelType || 'hardware';
 
       const newDraft = {
@@ -302,7 +312,7 @@ export default function AdminApp() {
       if (error) throw error;
       addLog('DATABÁZE SYNCHRONIZOVÁNA. 🔥', 'success');
 
-      // 2. ODESLÁNÍ NA MAKE.COM (Struktura přesně podle screenshotu)
+      // 2. ODESLÁNÍ NA MAKE.COM (Struktura title, url, image_url, description)
       if (articleWebhook && articleWebhook !== "") {
         try {
           const payload = {
@@ -310,7 +320,7 @@ export default function AdminApp() {
             url: `${BASE_URL}/clanky/${dbData.slug}`,
             image_url: dbData.image_url,
             description: dbData.description || dbData.seo_description,
-            // Rozšířená data pro sociální logiku
+            // Rozšířená metadata
             id: dbData.id,
             type: dbData.type,
             locale: 'cs',
@@ -336,7 +346,7 @@ export default function AdminApp() {
         addLog('CHYBÍ WEBHOOK URL PRO ČLÁNKY!', 'error');
       }
       
-      // Úklid
+      // Vyčištění UI a synchronizace
       setLeaksIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
       setHwIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
       setGameIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
@@ -505,7 +515,7 @@ export default function AdminApp() {
 
             {/* RADAR 3: GAMING */}
             <div style={{ borderLeft: '5px solid #a855f7', paddingLeft: '20px', marginBottom: '20px', marginTop: '40px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '950' }}>GAMING <span style={{ color: '#a855f7' }}>RADAR</span></h3>
+              <h3 style={{ fontSize: '18px', fontWeight: 950 }}>GAMING <span style={{ color: '#a855f7' }}>RADAR</span></h3>
             </div>
             <div className="hub-compact-grid">
               {gameIntel.map((item, i) => (
