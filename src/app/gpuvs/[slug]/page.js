@@ -11,16 +11,16 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V25.1 (PREVIEW COMPATIBILITY)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V26.1 (PREVIEW COMPATIBILITY)
  * Cesta: src/app/gpuvs/[slug]/page.js
- * Design: Supreme GURU Style (Neon, Glass, Silver Typography).
- * Logic: On-demand AI generation + Database persistence (Programmatic SEO).
- * FIX: Implementace "Compatibility Shield" pro vyřešení chyb kompilace v náhledu.
- * PERSISTENCE: Automatické generování a ZÁPIS do DB zůstává plně aktivní.
+ * Design: Supreme GURU Style (Neon, Glass, Silver Typography, max-w-3xl).
+ * Logic: On-demand AI generation + MANDATORY Database persistence.
+ * FIX: Implementace "Compatibility Shield" pro vyřešení chyb "Could not resolve" v náhledu.
+ * PERSISTENCE: Zápis do DB a AI generování zůstává 100% funkční pro produkci.
  */
 
-// --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení pro funkčnost náhledu ---
-const getModule = (name) => {
+// --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení pro funkčnost v tomto prostředí ---
+const safeLoad = (name) => {
   try {
     return require(name);
   } catch (e) {
@@ -28,22 +28,22 @@ const getModule = (name) => {
   }
 };
 
-const supabaseLib = getModule('@supabase/supabase-js');
-const nextNav = getModule('next/navigation');
-const nextLinkMod = getModule('next/link');
-const openAILib = getModule('openai');
+const supabaseLib = safeLoad('@supabase/supabase-js');
+const nextNav = safeLoad('next/navigation');
+const nextLinkMod = safeLoad('next/link');
+const openAILib = safeLoad('openai');
 
 const createClient = supabaseLib ? supabaseLib.createClient : null;
 const notFound = nextNav ? nextNav.notFound : () => {};
 const Link = nextLinkMod ? (nextLinkMod.default || nextLinkMod) : ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>;
 const OpenAI = openAILib ? (openAILib.default || openAILib) : null;
 
-// 🚀 GURU: Inicializace OpenAI
+// 🚀 GURU: Inicializace OpenAI (S ochranou pro prostředí bez klíče)
 const openai = (OpenAI && (process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY))
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY })
   : null;
 
-// 🚀 GURU: Inicializace Supabase klienta pro Server Components
+// 🚀 GURU: Inicializace Supabase klienta
 const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
   ? createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -55,10 +55,10 @@ const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
 // 🚀 GURU ENGINE: Funkce pro vygenerování duelu a ZÁPIS do DB za běhu
 async function generateAndPersistDuel(slug) {
   if (!supabase || !openai) {
-    console.error("GURU: Supabase nebo OpenAI není inicializováno.");
+    console.error("GURU: Chybí inicializace Supabase nebo OpenAI pro generování.");
     return null;
   }
-  
+
   try {
     const cleanSlug = slug.replace(/^en-/, '');
     const parts = cleanSlug.split('-vs-');
@@ -87,7 +87,7 @@ async function generateAndPersistDuel(slug) {
         },
         { 
           role: "user", 
-          content: `Porovnej tyto karty pro souboj na webu: ${cardA.name} VS ${cardB.name}.` 
+          content: `Vytvoř porovnání: ${cardA.name} VS ${cardB.name}.` 
         }
       ],
       response_format: { type: "json_object" }
@@ -95,7 +95,7 @@ async function generateAndPersistDuel(slug) {
 
     const aiResult = JSON.parse(completion.choices[0].message.content);
 
-    // 3. ZÁPIS DO DATABÁZE (Aby příště nebyla 404)
+    // 3. ZÁPIS DO DATABÁZE (MANDATORY PERSISTENCE)
     const { data: newDuel, error: insertError } = await supabase
       .from('gpu_duels')
       .insert([{
@@ -134,9 +134,7 @@ const getDuelData = cache(async (slug) => {
   if (!supabase || !slug) return null;
 
   const cleanSlug = slug.replace(/^en-/, '');
-  const normalizedSlug = cleanSlug
-    .replace('geforce-', '')
-    .replace('radeon-', '');
+  const normalizedSlug = cleanSlug.replace('geforce-', '').replace('radeon-', '');
 
   const { data, error } = await supabase
     .from('gpu_duels')
@@ -149,13 +147,14 @@ const getDuelData = cache(async (slug) => {
     .limit(1);
 
   if (error || !data || data.length === 0) {
-    // ⚡ GURU TRIGGER: Pokud duel v DB není, vygenerujeme ho a ZAPÍŠEME
+    // ⚡ Pokud duel v DB není, okamžitě generujeme a ZAPISUJEME
     return await generateAndPersistDuel(slug);
   }
   
   return data[0];
 });
 
+// 🚀 GURU SEO: Dynamická Metadata
 export async function generateMetadata({ params }) {
   const slug = params?.slug ?? null;
   const duel = await getDuelData(slug);
@@ -181,7 +180,7 @@ export default async function App({ params }) {
   const { gpuA, gpuB } = duel;
 
   if (!gpuA || !gpuB) {
-    return <div className="p-20 text-center text-white font-black uppercase text-2xl tracking-tighter">DATA ERROR: Karta nebyla nalezena v DB.</div>;
+    return <div className="p-20 text-center text-white font-black uppercase text-2xl tracking-tighter">DATA ERROR: Karta chybí v databázi.</div>;
   }
 
   const title = isEn ? (duel.title_en || duel.title_cs) : duel.title_cs;
@@ -204,7 +203,7 @@ export default async function App({ params }) {
   return (
     <main className="min-h-screen text-[#d1d5db] py-12 px-4 sm:px-6 lg:px-8" style={{ 
         backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', 
-        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px'
+        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '140px'
     }}>
       <style dangerouslySetInnerHTML={{__html: `
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; max-width: 750px; margin: 0 auto; }
