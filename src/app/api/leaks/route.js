@@ -6,13 +6,13 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * GURU INTEL ENGINE V10.9 - ANTI-DUPLICITY EDITION
- * - Striktní separace zdrojů.
- * - Kontrola proti existujícím článkům v databázi.
- * - Prevence duplicit mezi kategoriemi v Admin UI.
+ * GURU INTEL ENGINE V11.0 - FINAL RECOVERY EDITION
+ * - Striktní separace zdrojů (Reddit, Chiphell, ResetEra, Insider Gaming, VGC, N4G).
+ * - Oprava fetchingu pro zamezení dominance jednoho zdroje.
+ * - Neúprosná kontrola duplicit proti DB.
  */
 
-// 📂 1. LEAKS & RUMORS
+// 📂 1. LEAKS & RUMORS (Všechny tvoje zdroje)
 const LEAK_SOURCES = [
   { name: "Reddit GL&R", url: "https://www.reddit.com/r/GamingLeaksAndRumours/new/.rss", type: "leaks" },
   { name: "Chiphell", url: "https://www.chiphell.com/forum.php?mod=rss&fid=224", type: "leaks" },
@@ -42,7 +42,6 @@ const BROWSER_HEADERS = {
   "Cache-Control": "no-cache"
 };
 
-// Inicializace Supabase pro kontrolu existujících článků
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -63,17 +62,16 @@ const getAIScores = async (titles, apiKey) => {
     const result = await response.json();
     const parsed = JSON.parse(result.choices[0].message.content);
     const scoreMap = {};
-    (parsed.scores || []).forEach(item => { scoreMap[item.title.toLowerCase().trim()] = item.score; });
+    (parsed.scores || []).forEach(item => { if(item.title) scoreMap[item.title.toLowerCase().trim()] = item.score; });
     return scoreMap;
   } catch (err) { return {}; }
 };
 
 export async function GET() {
-  const allData = [];
-  const debug = { ai_active: false, ai_status: "pending", duplicates_removed: 0, db_filtered: 0 };
+  const debug = { ai_active: false, ai_status: "pending", db_filtered: 0, sources_active: [] };
   const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
 
-  // 🚀 GURU DATA SHIELD: Načtení publikovaných článků z DB pro filtraci
+  // 🚀 DB SHIELD
   const { data: existingPosts } = await supabase.from('posts').select('title, title_en');
   const dbTitles = new Set((existingPosts || []).flatMap(p => [
     p.title?.toLowerCase().trim(),
@@ -83,17 +81,25 @@ export async function GET() {
   const fetchItems = async (sources) => {
     const results = await Promise.all(sources.map(async (src) => {
       try {
-        const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(src.url)}&t=${Date.now()}`, { headers: BROWSER_HEADERS });
+        // Používáme cache bypass a unikátní timestamp pro každý zdroj
+        const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(src.url)}&api_key=${process.env.RSS2JSON_API_KEY || ''}&t=${Date.now()}`, { 
+          headers: BROWSER_HEADERS,
+          next: { revalidate: 0 } 
+        });
         const json = await res.json();
-        return (json.items || []).map(item => ({
-          title: item.title,
-          link: item.link,
-          description: item.description,
-          source: src.name,
-          intelType: src.type,
-          pubDate: item.pubDate,
-          image_url: item.enclosure?.link || item.thumbnail || null
-        }));
+        if (json.status === 'ok') {
+          debug.sources_active.push(src.name);
+          return (json.items || []).map(item => ({
+            title: item.title,
+            link: item.link,
+            description: item.description,
+            source: src.name,
+            intelType: src.type,
+            pubDate: item.pubDate,
+            image_url: item.enclosure?.link || item.thumbnail || null
+          }));
+        }
+        return [];
       } catch (e) { return []; }
     }));
     return results.flat();
@@ -107,39 +113,34 @@ export async function GET() {
     ]);
 
     const combined = [...leaks, ...hw, ...games];
-    
-    // 🚀 GURU DEDUPLICATION ENGINE
     const uniqueMap = new Map();
+    
     combined.forEach(item => {
       if (!item.title) return;
       const key = item.title.toLowerCase().trim();
-      
-      // 1. Kontrola proti DB (nepropustíme to, co už máme na webu)
-      if (dbTitles.has(key)) {
-        debug.db_filtered++;
-        return;
-      }
-
-      // 2. Kontrola proti duplicitám v rámci aktuálního skenu (cross-category)
-      // Pokud už titulek v mapě je, ignorujeme další výskyty
-      if (!uniqueMap.has(key)) {
+      if (!dbTitles.has(key) && !uniqueMap.has(key)) {
         uniqueMap.set(key, item);
-      } else {
-        debug.duplicates_removed++;
+      } else if (dbTitles.has(key)) {
+        debug.db_filtered++;
       }
     });
 
     const finalItems = Array.from(uniqueMap.values());
 
-    // AI SCORING - Pouze pro unikátní kousky
+    // AI SCORING
     const titlesForAI = finalItems.slice(0, 40).map(i => i.title);
     const aiScores = await getAIScores(titlesForAI, apiKey);
     
     if (Object.keys(aiScores).length > 0) {
       debug.ai_active = true;
       debug.ai_status = "success";
-      finalItems.forEach(i => { i.viral_score = aiScores[i.title.toLowerCase().trim()] || 50; });
+      finalItems.forEach(i => { 
+        i.viral_score = aiScores[i.title.toLowerCase().trim()] || 50; 
+      });
     }
+
+    // Seřazení podle virality
+    finalItems.sort((a, b) => (b.viral_score || 0) - (a.viral_score || 0));
 
     return NextResponse.json({ 
       success: true, 
