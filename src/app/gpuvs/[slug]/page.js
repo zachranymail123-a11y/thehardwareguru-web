@@ -11,15 +11,15 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V28.1 (PREVIEW COMPATIBILITY)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V29.1 (PREVIEW COMPATIBILITY)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * Design: Supreme GURU Style (Neon, Glass, Silver Typography, max-w-3xl).
  * Logic: On-demand AI generation + MANDATORY Database persistence.
- * FIX: Implementace "Compatibility Shield" pro vyřešení chyb kompilace v náhledu.
- * PERSISTENCE: Automatické generování, zápis do DB a normalizované vyhledávání zůstává zachováno.
+ * FIX: Implementace "Compatibility Shield" pro vyřešení chyb kompilace (Could not resolve) 
+ * v tomto náhledovém okně, zatímco logika zůstává věrná produkční verzi V29.0.
  */
 
-// --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení pro funkčnost v tomto prostředí ---
+// --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení pro funkčnost v tomto náhledu ---
 const getModule = (name) => {
   try {
     return require(name);
@@ -64,26 +64,39 @@ async function generateAndPersistDuel(slug) {
     const parts = cleanSlug.split('-vs-');
     if (parts.length !== 2) return null;
 
-    // 🛡️ GURU FIX: Normalizace názvů podle doporučení ChatGPT
-    const normalize = (s) =>
-      s.replace(/-/g, ' ')
-       .replace(/geforce|radeon/gi, '')
-       .trim();
+    // 🛡️ GURU LOGIC: Normalizace názvů a extrakce modelu pro přesný matching
+    const normalize = (s) => s.replace(/-/g, ' ').replace(/geforce|radeon/gi, '').trim();
+    
+    const extractModel = (s) => {
+      const match = s.match(/(rtx|rx|arc)\s*\d+/i);
+      return match ? match[0] : s;
+    };
 
-    const nameA = normalize(parts[0]);
-    const nameB = normalize(parts[1]);
+    const searchA = normalize(parts[0]);
+    const modelA = extractModel(searchA);
+    
+    const searchB = normalize(parts[1]);
+    const modelB = extractModel(searchB);
 
-    // 1. Vyhledání karet v DB (Matchne i "NVIDIA GeForce RTX...")
+    // 1. Robustní vyhledání karet v DB (Matchne model i celý název)
     const [resA, resB] = await Promise.all([
-      supabase.from('gpus').select('*').ilike('name', `%${nameA}%`).limit(1).maybeSingle(),
-      supabase.from('gpus').select('*').ilike('name', `%${nameB}%`).limit(1).maybeSingle()
+      supabase.from('gpus')
+        .select('*')
+        .or(`name.ilike.%${modelA}%,name.ilike.%${searchA}%`)
+        .limit(1)
+        .maybeSingle(),
+      supabase.from('gpus')
+        .select('*')
+        .or(`name.ilike.%${modelB}%,name.ilike.%${searchB}%`)
+        .limit(1)
+        .maybeSingle()
     ]);
 
     const cardA = resA.data;
     const cardB = resB.data;
 
     if (!cardA || !cardB) {
-      console.error(`GURU: Karty nenalezeny v DB: ${nameA} nebo ${nameB}`);
+      console.error(`GURU: Karty nespárovány v gpus tabulce. A: ${modelA}, B: ${modelB}`);
       return null;
     }
 
@@ -97,7 +110,7 @@ async function generateAndPersistDuel(slug) {
         },
         { 
           role: "user", 
-          content: `Vytvoř profesionální srovnání: ${cardA.name} VS ${cardB.name}.` 
+          content: `Vytvoř profesionální srovnání: ${cardA.name} VS ${cardB.name}. Zaměř se na výkon, cenu a efektivitu.` 
         }
       ],
       response_format: { type: "json_object" }
@@ -156,7 +169,7 @@ const getDuelData = cache(async (slug) => {
     .limit(1);
 
   if (error || !data || data.length === 0) {
-    // ⚡ Pokud v DB není, okamžitě generujeme a ZAPISUJEME
+    // ⚡ Pokud v DB není, vygenerujeme ho s robustním matchingem a zapíšeme
     return await generateAndPersistDuel(slug);
   }
   
@@ -189,7 +202,7 @@ export default async function App({ params }) {
   const { gpuA, gpuB } = duel;
 
   if (!gpuA || !gpuB) {
-    return <div className="p-20 text-center text-white font-black uppercase text-2xl tracking-tighter">DATA ERROR: Karta chybí v databázi.</div>;
+    return <div className="p-20 text-center text-white font-black uppercase text-2xl tracking-tighter">DATA ERROR: Karta nebyla nalezena v DB.</div>;
   }
 
   const title = isEn ? (duel.title_en || duel.title_cs) : duel.title_cs;
