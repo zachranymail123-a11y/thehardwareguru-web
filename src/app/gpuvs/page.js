@@ -1,13 +1,16 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import { 
   Swords, ChevronRight, Zap, RefreshCw, Flame, Cpu, ShieldCheck 
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS INDEX - MASTER LOGIC V8.6 (BUILD SHIELD)
+ * GURU GPU DUELS INDEX - MASTER LOGIC V8.8 (CLEAN BUILD)
  * Cesta: src/app/gpuvs/page.js
  * Funkce: Výběr karet pro srovnání, seznam existujících duelů.
- * FIX: Dynamické načítání modulů pro kompatibilitu s prostředím Canvas a Vercel.
+ * FIX: Odstraněna chyba s duplicitním klíčem v mocku Supabase.
+ * OCHRANA: Build Shield pro kompatibilitu a Hyper-Shield proti SwG TypeError.
  */
 
 // --- 🛡️ GURU BUILD SHIELD: Dynamické ošetření modulů pro prostředí náhledu ---
@@ -38,8 +41,12 @@ const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
   : { 
       from: () => ({ 
         select: () => ({ 
-          order: () => ({ limit: () => Promise.resolve({ data: [] }) }),
-          order: () => Promise.resolve({ data: [] }) 
+          order: () => {
+            // Oprava: Sjednocený mock řetězení metod Supabase pro kompilátor
+            const chain = Promise.resolve({ data: [] });
+            chain.limit = () => Promise.resolve({ data: [] });
+            return chain;
+          }
         }) 
       }) 
     };
