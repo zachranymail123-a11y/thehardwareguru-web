@@ -6,11 +6,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V9.1 (CLEAN BUILD)
+ * GURU GPU DUELS INDEX - MASTER LOGIC V10.1 (STABLE BUILD)
  * Cesta: src/app/gpuvs/page.js
- * Funkce: Výběr karet pro srovnání, seznam existujících duelů.
- * FIX: Odstraněn duplicitní default export, opraven Build Shield pro náhled.
- * Design: Brutální růžové nadpisy, skleněný panel a neonové prvky (GURU STYLE).
+ * Funkce: Výběr karet pro srovnání v GURU designu.
+ * FIX: Robustní načítání modulů (Build Shield) pro prevenci chyb v náhledu.
  */
 
 // --- 🛡️ GURU BUILD SHIELD: Dynamické ošetření modulů pro prostředí náhledu ---
@@ -26,11 +25,13 @@ const supabaseLib = safeRequire('@supabase/supabase-js');
 const nextNav = safeRequire('next/navigation');
 const nextLinkModule = safeRequire('next/link');
 
-// Fallbacky pro bezpečný běh v náhledu (Canvas)
+// Fallbacky a inicializace pro prostředí, kde moduly nejsou dostupné
 const createClient = supabaseLib ? supabaseLib.createClient : null;
 const useRouter = nextNav ? nextNav.useRouter : () => ({ push: () => {} });
 const usePathname = nextNav ? nextNav.usePathname : () => '/gpuvs';
-const Link = nextLinkModule ? (nextLinkModule.default || nextLinkModule) : ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>;
+const Link = nextLinkModule ? (nextLinkModule.default || nextLinkModule) : ({ children, href, className, ...props }) => (
+  <a href={href} className={className} {...props}>{children}</a>
+);
 
 // Inicializace Supabase s ochranou proti chybějícím ENV proměnným
 const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
@@ -73,7 +74,6 @@ export default function App() {
       setLoading(true);
       setError(null);
       try {
-        // Načítáme karty pro dropdowny a už existující duely
         const [gData, dData] = await Promise.all([
           supabase.from('gpus').select('id, name').order('name', { ascending: true }),
           supabase.from('gpu_duels').select('id, title_cs, title_en, slug').order('created_at', { ascending: false }).limit(20)
@@ -101,21 +101,22 @@ export default function App() {
     const cardB = gpus.find(g => g.id === gpuB);
     if (!cardA || !cardB) return;
 
-    // Slug pattern: karta-a-vs-karta-b
     const rawSlug = `${cardA.name}-vs-${cardB.name}`
       .toLowerCase()
       .replace(/[^a-z0-9-]/g, '-')
       .replace(/-+/g, '-');
     
-    // Přesměrování na detail
-    const target = isEn ? `/en/gpuvs/en-${rawSlug}` : `/gpuvs/${rawSlug}`;
-    router.push(target);
+    if (isEn) {
+      router.push(`/en/gpuvs/en-${rawSlug}`);
+    } else {
+      router.push(`/gpuvs/${rawSlug}`);
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#0a0b0d] text-white font-sans selection:bg-[#ff0055]" style={{ backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '140px', paddingBottom: '100px' }}>
       
-      {/* 🛡️ GURU HYPER-SHIELD: Prevence TypeError u SwG scriptů */}
+      {/* 🛡️ GURU HYPER-SHIELD: Okamžitá prevence černé obrazovky (TypeError u SwG) */}
       <script dangerouslySetInnerHTML={{__html: `
         (function() {
           window.swgSubscriptions = window.swgSubscriptions || {};
@@ -140,7 +141,6 @@ export default function App() {
         .duel-list-item:hover { background: rgba(255,255,255,0.05); border-color: #ff0055; transform: translateX(10px); }
         
         .gpu-label { display: block; color: #ff0055; font-size: 11px; font-weight: 950; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 2px; }
-        
         .guru-main-title { font-size: 90px; font-weight: 950; font-style: italic; color: #ff0055; text-transform: uppercase; line-height: 0.9; margin-bottom: 30px; }
         
         @media (max-width: 768px) { 
