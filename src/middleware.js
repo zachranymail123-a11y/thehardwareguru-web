@@ -10,7 +10,7 @@ export function middleware(request) {
   
   // 🛡️ GURU SHIELD: Absolutní priorita pro API a systémové soubory
   // Pokud dotaz směřuje na API, statické soubory nebo Next.js interní cesty, 
-  // middleware okamžitě končí a propouští požadavek dál.
+  // middleware okamžitě končí a propouští požadavek dál bez zásahu.
   if (
     pathname.startsWith('/api') || 
     pathname.startsWith('/_next') || 
@@ -64,8 +64,8 @@ export const config = {
   /**
    * 🚀 GURU CONFIG: Matcher upravený na "vylučovací" režim.
    * Tento regulární výraz říká Next.js: "Spouštěj tento middleware na všechno,
-   * KROMĚ cest začínajících na 'api', '_next' nebo obsahujících favicon."
-   * Toto je nejstabilnější způsob, jak zabránit 404 u API rout.
+   * KROMĚ cest začínajících na 'api', '_next/static', '_next/image' nebo obsahujících favicon."
+   * Toto je nejstabilnější způsob, jak zabránit 404 u API rout na Vercelu.
    */
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
