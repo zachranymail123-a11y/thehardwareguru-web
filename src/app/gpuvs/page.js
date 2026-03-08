@@ -1,56 +1,30 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { 
   Swords, ChevronRight, Zap, RefreshCw, Flame, Cpu, ShieldCheck 
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS INDEX - MASTER LOGIC V3.8 (MODULE RESOLVE FIX)
+ * GURU GPU DUELS INDEX - SUPREME LOGIC V4.0 (PRODUCTION MASTER)
  * Cesta: src/app/gpuvs/page.js
  * Funkce: Výběr karet pro duel, výpis existujících duelů, CZ/EN hybrid.
- * FIX: Robustní načítání externích modulů pro bezchybný build v náhledovém prostředí.
+ * FIX: Špičkový design, fix Hydrace, neprůstřelný SwG Shield a stabilní DB fetch.
  */
 
-// --- 🛡️ GURU BUILD SHIELD ---
-// Dynamické ošetření modulů pro prostředí, kde nemusí být balíčky resolvnuty staticky
-const safeRequire = (pkg) => {
-  try {
-    return require(pkg);
-  } catch (e) {
-    return null;
-  }
-};
+// Inicializace Supabase klienta
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
-const supabaseJS = safeRequire('@supabase/supabase-js');
-const nextNavigation = safeRequire('next/navigation');
-const nextLink = safeRequire('next/link');
-
-// Fallbacky a inicializace
-const createClient = supabaseJS ? supabaseJS.createClient : null;
-const useRouter = nextNavigation ? nextNavigation.useRouter : () => ({ push: () => {} });
-const usePathname = nextNavigation ? nextNavigation.usePathname : () => '/gpuvs';
-const Link = nextLink ? (nextLink.default || nextLink) : ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>;
-
-// Inicializace Supabase klienta s ochranou proti chybějícím ENV
-const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
-  ? createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    )
-  : { 
-      from: () => ({ 
-        select: () => ({ 
-          order: () => ({ limit: () => Promise.resolve({ data: [] }) }),
-          order: () => Promise.resolve({ data: [] }) 
-        }) 
-      }) 
-    };
-
-const App = () => {
+export default function App() {
   const router = useRouter();
-  const pathname = usePathname();
-  const isEn = pathname ? pathname.startsWith('/en') : false;
+  const pathname = usePathname() || '';
+  const isEn = pathname.startsWith('/en');
 
   const [gpus, setGpus] = useState([]);
   const [existingDuels, setExistingDuels] = useState([]);
@@ -62,13 +36,10 @@ const App = () => {
   // 🚀 GURU DATA SYNC: Načítání informací z databáze
   useEffect(() => {
     async function loadData() {
-      if (!createClient) {
-        setLoading(false);
-        return;
-      }
       setLoading(true);
       setError(null);
       try {
+        // Načítáme karty (pro dropdowny) a už existující duely
         const [gData, dData] = await Promise.all([
           supabase.from('gpus').select('id, name').order('name', { ascending: true }),
           supabase.from('gpu_duels').select('id, title_cs, title_en, slug, slug_en').order('created_at', { ascending: false }).limit(20)
@@ -81,7 +52,7 @@ const App = () => {
         setExistingDuels(dData.data || []);
       } catch (err) {
         console.error("Guru Sync Error:", err);
-        setError(isEn ? "Database connection unstable." : "Připojení k databázi nestabilní.");
+        setError(isEn ? "Database sync unstable. Please check your connection." : "Synchronizace s DB nestabilní. Zkontroluj připojení.");
       } finally {
         setLoading(false);
       }
@@ -96,53 +67,77 @@ const App = () => {
     const cardB = gpus.find(g => g.id === gpuB);
     if (!cardA || !cardB) return;
 
+    // Vytvoření slugu (identický pattern jako v adminu)
     const rawSlug = `${cardA.name}-vs-${cardB.name}`
       .toLowerCase()
       .replace(/[^a-z0-9-]/g, '-')
       .replace(/-+/g, '-');
     
-    const targetPath = isEn ? `/en/gpuvs/en-${rawSlug}` : `/gpuvs/${rawSlug}`;
-    router.push(targetPath);
+    // Přesměrování na detail podle jazyka
+    if (isEn) {
+      router.push(`/en/gpuvs/en-${rawSlug}`);
+    } else {
+      router.push(`/gpuvs/${rawSlug}`);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0b0d] text-white font-sans" style={{ backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed' }}>
+    <div className="min-h-screen bg-[#0a0b0d] text-white font-sans selection:bg-[#ff0055]" style={{ backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed' }}>
       
-      {/* 🛡️ GURU HYPER-SHIELD: Absolutní pojistka proti černé obrazovce (TypeError u SwG) */}
+      {/* 🛡️ GURU HYPER-SHIELD: Okamžitá prevence černé obrazovky (TypeError u SwG) */}
       <script dangerouslySetInnerHTML={{__html: `
         (function() {
           window.swgSubscriptions = window.swgSubscriptions || {};
           if (typeof window.swgSubscriptions.attachButton !== 'function') {
-            window.swgSubscriptions.attachButton = function() { console.log('Hyper-Shield: Placeholder triggered.'); };
+            window.swgSubscriptions.attachButton = function() { console.log('Hyper-Shield: Placeholder called.'); };
           }
         })();
+      `}} />
+
+      <style dangerouslySetInnerHTML={{__html: `
+        .guru-glass-card { background: rgba(17, 19, 24, 0.95); border: 2px solid rgba(168, 85, 247, 0.2); border-radius: 40px; padding: 60px; box-shadow: 0 30px 100px rgba(0,0,0,0.8); backdrop-filter: blur(25px); position: relative; overflow: hidden; }
+        .guru-dropdown { width: 100%; padding: 22px; background: #000; border: 1px solid #333; color: #fff; border-radius: 18px; font-size: 16px; font-weight: 900; appearance: none; cursor: pointer; outline: none; transition: 0.3s; }
+        .guru-dropdown:focus { border-color: #ff0055; box-shadow: 0 0 20px rgba(255, 0, 85, 0.2); }
+        .guru-start-btn { width: 100%; padding: 24px; background: linear-gradient(135deg, #ff0055 0%, #be123c 100%); color: #fff; border: none; border-radius: 20px; font-weight: 950; font-size: 18px; text-transform: uppercase; cursor: pointer; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 15px 40px rgba(255, 0, 85, 0.4); }
+        .guru-start-btn:hover:not(:disabled) { transform: translateY(-5px); filter: brightness(1.1); box-shadow: 0 20px 60px rgba(255, 0, 85, 0.6); }
+        .guru-start-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .duel-list-item { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 25px 30px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: #fff; transition: 0.3s; margin-bottom: 12px; }
+        .duel-list-item:hover { background: rgba(255,255,255,0.05); border-color: #ff0055; transform: translateX(10px); }
+        .gpu-label { display: block; color: #ff0055; font-size: 11px; font-weight: 950; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 2px; }
+        @media (max-width: 768px) { .grid-select { grid-template-columns: 1fr !important; } .guru-glass-card { padding: 40px 20px; } }
       `}} />
 
       <main className="max-w-4xl mx-auto px-4 pt-32 pb-24">
         
         {/* HERO HLAVIČKA */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 text-[#ff0055] text-xs font-black uppercase tracking-[0.3em] mb-6 px-5 py-2 border border-[#ff0055] rounded-full bg-[#ff0055]/10">
+        <div className="text-center mb-20">
+          <div className="inline-flex items-center gap-2 text-[#ff0055] text-xs font-black uppercase tracking-[0.4em] mb-8 px-6 py-2 border border-[#ff0055] rounded-full bg-[#ff0055]/10 animate-pulse shadow-[0_0_15px_rgba(255,0,85,0.2)]">
             <Swords size={18} /> GURU VS ENGINE
           </div>
-          <h1 className="text-5xl md:text-7xl font-black uppercase italic leading-none mb-6">
+          <h1 className="text-5xl md:text-8xl font-black uppercase italic leading-none mb-6 tracking-tighter">
             {isEn ? "COMPARE ANY" : "POROVNEJTE"} <br/> 
             <span className="text-[#ff0055]">{isEn ? "GRAPHICS CARDS" : "GRAFICKÉ KARTY"}</span>
           </h1>
-          <p className="text-[#9ca3af] text-lg max-w-xl mx-auto">
+          <p className="text-[#9ca3af] text-xl max-w-xl mx-auto font-medium italic">
             {isEn ? "Detailed technical analysis, FPS assessment and value tracking by Guru AI." : "Detailní technická analýza, odhad FPS a zhodnocení výhodnosti pomocí Guru AI."}
           </p>
         </div>
 
         {/* VÝBĚROVÝ PANEL */}
-        <section className="bg-[#111318]/95 border-2 border-[#a855f7]/20 rounded-[2.5rem] p-8 md:p-12 shadow-2xl backdrop-blur-xl mb-20">
-            {error && <div className="bg-red-500/10 border border-red-500 text-red-500 p-4 rounded-xl text-center font-bold mb-8">{error}</div>}
+        <section className="guru-glass-card mb-24">
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(90deg, transparent, #ff0055, transparent)' }} />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+            {error && (
+              <div className="bg-red-500/10 border border-red-500 text-red-500 p-6 rounded-2xl text-center font-black mb-10 uppercase tracking-widest text-sm">
+                 <RefreshCw className="inline mr-2 animate-spin" size={16} /> {error}
+              </div>
+            )}
+            
+            <div className="grid-select grid grid-cols-1 md:grid-cols-2 gap-10 mb-12">
                 <div>
-                  <label className="block text-[#ff0055] text-[10px] font-black uppercase mb-3 tracking-widest">🔴 {isEn ? "FIRST GPU" : "PRVNÍ GRAFIKA"}</label>
+                  <label className="gpu-label">🔴 {isEn ? "FIRST GPU" : "PRVNÍ GRAFIKA"}</label>
                   <select 
-                    className="w-full p-4 bg-black border border-white/10 rounded-xl text-white font-bold outline-none focus:border-[#ff0055] transition-all cursor-pointer appearance-none" 
+                    className="guru-dropdown" 
                     value={gpuA} 
                     onChange={e => setGpuA(e.target.value)}
                   >
@@ -151,9 +146,9 @@ const App = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[#3b82f6] text-[10px] font-black uppercase mb-3 tracking-widest">🔵 {isEn ? "SECOND GPU" : "DRUHÁ GRAFIKA"}</label>
+                  <label className="gpu-label" style={{ color: '#3b82f6' }}>🔵 {isEn ? "SECOND GPU" : "DRUHÁ GRAFIKA"}</label>
                   <select 
-                    className="w-full p-4 bg-black border border-white/10 rounded-xl text-white font-bold outline-none focus:border-[#3b82f6] transition-all cursor-pointer appearance-none" 
+                    className="guru-dropdown" 
                     value={gpuB} 
                     onChange={e => setGpuB(e.target.value)}
                   >
@@ -164,57 +159,57 @@ const App = () => {
             </div>
 
             <button 
-              className="group relative w-full p-6 bg-gradient-to-r from-[#ff0055] to-[#be123c] text-white rounded-2xl font-black text-lg uppercase tracking-wider shadow-[0_10px_30px_rgba(255,0,85,0.4)] hover:-translate-y-1 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              className="guru-start-btn group" 
               onClick={handleStartDuel} 
               disabled={!gpuA || !gpuB || gpuA === gpuB || loading}
             >
-              <div className="flex items-center justify-center gap-3">
-                {loading ? <RefreshCw className="animate-spin" size={20} /> : <Zap fill="currentColor" size={20} className="group-hover:scale-125 transition-transform" />}
+              <div className="flex items-center justify-center gap-4">
+                {loading ? <RefreshCw className="animate-spin" size={24} /> : <Zap fill="currentColor" size={24} className="group-hover:scale-125 transition-transform" />}
                 {isEn ? "Start Hardware Battle" : "Spustit souboj železa"}
               </div>
             </button>
             
             {gpuA === gpuB && gpuA !== '' && (
-              <p className="text-[#ff0055] text-xs font-bold text-center mt-4 uppercase tracking-widest">
-                {isEn ? "You cannot compare the same card!" : "Nemůžete porovnávat stejnou kartu!"}
+              <p className="text-[#ff0055] text-[10px] font-black text-center mt-6 uppercase tracking-[0.3em]">
+                {isEn ? "Critical Error: Cannot compare identical hardware!" : "Kritická chyba: Nelze porovnávat identický hardware!"}
               </p>
             )}
         </section>
 
-        {/* EXISTUJÍCÍ SOUBOJE */}
+        {/* POPULÁRNÍ SOUBOJE */}
         <section>
-          <div className="flex items-center gap-4 mb-10">
-            <h2 className="text-2xl font-black uppercase italic whitespace-nowrap">
+          <div className="flex items-center gap-6 mb-12">
+            <h2 className="text-3xl font-black uppercase italic whitespace-nowrap tracking-tighter">
               {isEn ? "POPULAR" : "POPULÁRNÍ"} <span className="text-[#ff0055]">{isEn ? "BATTLES" : "SOUBOJE"}</span>
             </h2>
-            <div className="h-px bg-white/10 w-full"></div>
+            <div className="h-px bg-gradient-to-r from-white/10 to-transparent w-full"></div>
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-20 text-gray-600 font-black tracking-widest uppercase italic">
-              <RefreshCw className="animate-spin mr-3" size={20} /> GURU SYSTEM SCANNING...
+            <div className="flex items-center justify-center py-24 text-gray-600 font-black tracking-[0.5em] uppercase italic text-sm">
+              <RefreshCw className="animate-spin mr-4" size={24} /> Guru System Scanning...
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-4">
               {existingDuels.length > 0 ? existingDuels.map((duel) => (
                 <Link 
                   href={isEn ? `/en/gpuvs/${duel.slug_en || duel.slug}` : `/gpuvs/${duel.slug}`} 
                   key={duel.id} 
-                  className="flex items-center justify-between p-5 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 hover:border-[#ff0055] hover:translate-x-2 transition-all group"
+                  className="duel-list-item group"
                 >
-                  <div className="flex items-center gap-5">
-                    <div className="p-2 bg-[#ff0055]/10 rounded-lg text-[#ff0055]">
-                      <Swords size={20} />
+                  <div className="flex items-center gap-6">
+                    <div className="p-3 bg-[#ff0055]/10 rounded-xl text-[#ff0055] group-hover:bg-[#ff0055] group-hover:text-white transition-all">
+                      <Swords size={22} />
                     </div>
-                    <span className="text-lg font-black tracking-tight group-hover:text-[#ff0055] transition-colors">
+                    <span className="text-xl font-black tracking-tight group-hover:text-[#ff0055] transition-colors uppercase italic">
                       {isEn ? (duel.title_en || duel.title_cs) : duel.title_cs}
                     </span>
                   </div>
-                  <ChevronRight size={20} className="text-gray-600 group-hover:text-white" />
+                  <ChevronRight size={24} className="text-gray-700 group-hover:text-white transition-all transform group-hover:translate-x-2" />
                 </Link>
               )) : (
-                <div className="text-center py-12 text-gray-600 font-bold italic uppercase tracking-widest">
-                   {isEn ? "No duels found. Be the first to start one!" : "V databázi zatím nejsou žádné souboje. Odpal to první!"}
+                <div className="text-center py-20 border-2 border-dashed border-white/5 rounded-[40px] bg-black/20 text-gray-600 font-black uppercase tracking-[0.5em] text-xs italic">
+                   {isEn ? "Guru database is empty. Initialize first battle!" : "Guru databáze je prázdná. Odpal první souboj!"}
                 </div>
               )}
             </div>
@@ -225,5 +220,3 @@ const App = () => {
     </div>
   );
 }
-
-export default App;
