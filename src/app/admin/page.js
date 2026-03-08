@@ -11,9 +11,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V8.19 - VIRAL EDITION & PERSISTENCE FIX
+ * GURU ULTIMATE COMMAND CENTER V8.20 - VIRAL EDITION & SIDEBAR PREVIEW
  * Funkce: Multi-Source Intel, AI Viral Scoring, Deduplikace, Compact Grid 5x2, 
- * Persistent Storage (localStorage for Feeds & Drafts), Integrated Publishing + Make.com Webhook.
+ * Persistent Storage, Integrated Publishing + Make.com Webhook.
+ * FIX: Pevný levý panel v náhledu (vždy viditelná tlačítka publikovat/zpět).
  */
 
 // --- 🚀 GURU ENV ENGINE ---
@@ -217,11 +218,11 @@ export default function AdminApp() {
   };
 
   const createDraftFromIntel = async (item) => {
-    // 🚀 GURU: Paměťový blok - pokud už koncept existuje, zbytečně nevoláme AI
+    // 🚀 GURU: Paměťový blok - pokud už koncept existuje, zbytečně nevoláme AI, jen ho zobrazíme
     if (savedDrafts[item.title]) {
       setDraft(savedDrafts[item.title]);
       setPreviewMode('card');
-      addLog('Koncept načten ze systémové paměti.', 'success');
+      addLog('Koncept načten ze systémové paměti. Můžeš publikovat.', 'success');
       return;
     }
 
@@ -266,7 +267,7 @@ export default function AdminApp() {
       setSavedDrafts(prev => ({ ...prev, [item.title]: newDraft }));
       setDraft(newDraft);
       setPreviewMode('card');
-      addLog('Virální koncept vytvořen a bezpečně uložen.', 'success');
+      addLog('Virální koncept vytvořen a bezpečně uložen do paměti.', 'success');
     } catch (err) { addLog(`AI fail: ${err.message}`, 'error'); }
     finally { setProcessingTitle(null); }
   };
@@ -305,7 +306,7 @@ export default function AdminApp() {
 
       addLog('ČLÁNEK JE ONLINE! 🔥', 'success');
       
-      // Úklid po publikaci
+      // Úklid po publikaci - odstranění z feedů a z paměti draftů
       setHwIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
       setGameIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
       
@@ -352,11 +353,16 @@ export default function AdminApp() {
         .compact-btn-main { background: #eab30833; border-color: #eab30866; color: #eab308; }
         .compact-btn-main:hover { background: #eab308; color: #000; }
 
-        /* 🚀 GURU PREVIEW NAV FIX (Správná syntaxe CSS) */
-        .preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 500; display: flex; flex-direction: column; padding: 0; overflow-y: auto; backdrop-filter: blur(25px); }
-        .preview-nav { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; z-index: 600; background: rgba(17, 19, 24, 0.95); padding: 20px 40px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); }
-        .preview-window { background: #0a0b0d; border-radius: 30px; border: 4px solid #333; margin: 40px auto; overflow: hidden; width: 100%; max-width: 1200px; min-height: 800px; box-shadow: 0 40px 120px rgba(0,0,0,0.8); }
+        /* 🚀 GURU PREVIEW SIDEBAR LAYOUT (NEPRŮSTŘELNÉ) */
+        .preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 500; display: flex; flex-direction: row; padding: 0; backdrop-filter: blur(25px); }
+        
+        .preview-sidebar { width: 320px; background: #0d0e12; border-right: 1px solid rgba(255,255,255,0.1); padding: 30px 20px; display: flex; flex-direction: column; gap: 15px; height: 100vh; overflow-y: auto; flex-shrink: 0; box-shadow: 10px 0 30px rgba(0,0,0,0.8); z-index: 510; }
+        
+        .preview-content-area { flex: 1; padding: 40px; height: 100vh; overflow-y: auto; display: flex; justify-content: center; align-items: flex-start; }
+        
+        .preview-window { background: #0a0b0d; border-radius: 30px; border: 4px solid #333; overflow: hidden; width: 100%; max-width: 1200px; min-height: 800px; box-shadow: 0 40px 120px rgba(0,0,0,0.8); }
         .preview-window.mobile { width: 375px; height: 667px; min-height: auto; }
+        
         .mock-card { background: #1f2833; border-radius: 12px; overflow: hidden; border: 1px solid rgba(102, 252, 241, 0.2); width: 320px; cursor: pointer; transition: 0.3s; }
         .mock-card:hover { border-color: #66fcf1; }
         .mock-prose { color: #d1d5db; line-height: 1.8; font-size: 1.1rem; }
@@ -374,34 +380,47 @@ export default function AdminApp() {
       {/* --- 🚀 GURU PREVIEW SYSTEM --- */}
       {previewMode !== 'none' && draft && (
         <div className="preview-overlay">
-          <div className="preview-nav">
-              <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ width: 'auto', background: '#222', border: '1px solid #444', color: '#fff' }}>
+          
+          {/* 🛡️ LEVÁ POSTRANNÍ LIŠTA NÁHLEDU (VŽDY VIDITELNÁ A FUNKČNÍ) */}
+          <div className="preview-sidebar">
+              <h2 style={{ color: '#eab308', fontSize: '18px', fontWeight: '950', marginBottom: '10px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                Guru Náhled
+              </h2>
+              
+              <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ width: '100%', background: '#222', border: '1px solid #444', color: '#fff', justifyContent: 'center' }}>
                   <ArrowLeft size={16}/> ZPĚT DO VELÍNA
               </button>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => setPreviewDevice('desktop')} style={{ padding: '12px', background: previewDevice === 'desktop' ? '#eab308' : '#222', borderRadius: '12px', border: 'none' }}><Monitor size={18}/></button>
-                  <button onClick={() => setPreviewDevice('mobile')} style={{ padding: '12px', background: previewDevice === 'mobile' ? '#eab308' : '#222', borderRadius: '12px', border: 'none' }}><Smartphone size={18}/></button>
+
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '10px 0' }}></div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                  <button onClick={() => setPreviewDevice('desktop')} style={{ flex: 1, padding: '12px', background: previewDevice === 'desktop' ? '#eab308' : '#222', borderRadius: '12px', border: 'none', display: 'flex', justifyContent: 'center', color: previewDevice === 'desktop' ? '#000' : '#fff', cursor: 'pointer' }}><Monitor size={18}/></button>
+                  <button onClick={() => setPreviewDevice('mobile')} style={{ flex: 1, padding: '12px', background: previewDevice === 'mobile' ? '#eab308' : '#222', borderRadius: '12px', border: 'none', display: 'flex', justifyContent: 'center', color: previewDevice === 'mobile' ? '#000' : '#fff', cursor: 'pointer' }}><Smartphone size={18}/></button>
               </div>
-              <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                  <button 
-                    onClick={() => setDraft({...draft, is_important: !draft.is_important})} 
-                    style={{ background: draft.is_important ? '#ff0055' : 'transparent', border: '1px solid #ff0055', color: draft.is_important ? '#fff' : '#ff0055', padding: '10px 15px', borderRadius: '12px', fontWeight: '900', fontSize: '11px', display: 'flex', gap: '5px', alignItems: 'center' }}
-                  >
-                    <Star size={14} fill={draft.is_important ? "currentColor" : "none"} /> DŮLEŽITÉ
-                  </button>
-                  <button onClick={() => setPreviewMode(previewMode === 'card' ? 'slug' : 'card')} className="sidebar-btn" style={{ width: 'auto', background: '#a855f7', color: '#fff' }}>
-                      {previewMode === 'card' ? 'ZOBRAZIT DETAIL' : 'ZOBRAZIT KARTU'}
-                  </button>
-                  <button onClick={publishAndSendToMake} className="sidebar-btn" style={{ width: 'auto', background: '#10b981', color: '#fff', border: '1px solid #10b981' }}>
-                      <Check size={16}/> PUBLIKOVAT ČLÁNEK
+
+              <button 
+                onClick={() => setDraft({...draft, is_important: !draft.is_important})} 
+                style={{ background: draft.is_important ? '#ff0055' : 'transparent', border: '1px solid #ff0055', color: draft.is_important ? '#fff' : '#ff0055', padding: '15px', borderRadius: '12px', fontWeight: '900', fontSize: '12px', display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: '0.2s' }}
+              >
+                <Star size={16} fill={draft.is_important ? "currentColor" : "none"} /> OZNAČIT JAKO DŮLEŽITÉ
+              </button>
+
+              <button onClick={() => setPreviewMode(previewMode === 'card' ? 'slug' : 'card')} className="sidebar-btn" style={{ width: '100%', background: '#a855f7', color: '#fff', justifyContent: 'center', marginTop: '10px' }}>
+                  {previewMode === 'card' ? 'PŘEPNOUT NA DETAIL' : 'PŘEPNOUT NA KARTU'}
+              </button>
+
+              <div style={{ marginTop: 'auto' }}>
+                  <button onClick={publishAndSendToMake} className="sidebar-btn" style={{ width: '100%', background: '#10b981', color: '#fff', border: '1px solid #10b981', justifyContent: 'center', padding: '20px 15px', fontSize: '15px', boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)' }}>
+                      <Check size={20}/> PUBLIKOVAT ČLÁNEK
                   </button>
               </div>
           </div>
 
-          <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
-            <div className={`preview-window ${previewDevice}`}>
+          {/* 🛡️ PRAVÁ ČÁST: OBSAH NÁHLEDU */}
+          <div className="preview-content-area">
+            <div className={`preview-window ${previewDevice}`} style={{ margin: '0 auto' }}>
                 {previewMode === 'card' ? (
-                   <div style={{ padding: '60px', display: 'flex', justifyContent: 'center', background: '#0a0b0d', minHeight: '100%' }}>
+                   <div style={{ padding: '60px', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#0a0b0d', minHeight: '100%' }}>
                       <div className="mock-card" onClick={() => setPreviewMode('slug')}>
                          <img src={draft.image_url} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
                          <div style={{ padding: '20px' }}>
@@ -418,7 +437,7 @@ export default function AdminApp() {
                       <img src={draft.image_url} style={{ width: '100%', borderRadius: '20px', marginBottom: '40px', border: '1px solid #ffffff10' }} />
                       <div className="mock-prose" dangerouslySetInnerHTML={{ __html: draft.content_cs }} />
                       
-                      {/* 🚀 GURU: Spodní tlačítka detailu, aby náhled přesně odpovídal frontendu */}
+                      {/* 🚀 GURU CTA NA KONCI DETAILU */}
                       <div style={{ marginTop: '70px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
                         <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
                           Líbil se ti článek? Podpoř nás buď nákupem her za ty nejlepší ceny, nebo přímo.
@@ -439,7 +458,7 @@ export default function AdminApp() {
         </div>
       )}
 
-      {/* --- SIDEBAR --- */}
+      {/* --- SIDEBAR VELÍNA --- */}
       <aside className="admin-sidebar">
         <div style={{ padding: '30px 25px', borderBottom: '1px solid #ffffff0d' }}>
           <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 900 }}>GURU <span style={{ color: '#a855f7' }}>ADMIN</span></h2>
