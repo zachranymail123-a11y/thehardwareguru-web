@@ -11,20 +11,30 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V13.0 - MASTER EXECUTION
- * - FIX: Kompletní vyčištění frontendu od zbytečných RSS fetchů.
- * - FIX: Odesílání na MAKE.COM přesně s 4 klíči (title, url, image_url, description).
- * - FIX: Absolutní integrace s API V13.0.
+ * GURU ULTIMATE COMMAND CENTER V13.3 - ENV KEY FIX
+ * - FIX: Nativní a přímé volání NEXT_PUBLIC_OPENAI_API_KEY na frontendu (zamezuje chybě "CHYBÍ AI KLÍČ").
+ * - ZACHOVÁNO: 10 karet na sekci (2 řádky po 5).
+ * - ZACHOVÁNO: Odesílání na Make.com se 4 klíči (title, url, image_url, description).
  */
 
 // --- 🚀 GURU ENV ENGINE ---
 const getEnv = (key, fallback = '') => {
-  if (typeof window !== 'undefined' && process.env) {
-      return process.env[key] || fallback;
-  }
-  return fallback;
+  if (typeof window === 'undefined') return fallback;
+  const bridge = document.getElementById('guru-env-bridge');
+  const bridgeMap = {
+    'NEXT_PUBLIC_SUPABASE_URL': bridge?.getAttribute('data-url'),
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY': bridge?.getAttribute('data-key'),
+    'NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL': bridge?.getAttribute('data-webhook-article'),
+    'NEXT_PUBLIC_MAKE_WEBHOOK2_URL': bridge?.getAttribute('data-webhook-social')
+  };
+  const envMap = {
+    'OPENAI_API_KEY': process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
+    'NEXT_PUBLIC_ADMIN_PASSWORD': process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Wifik500'
+  };
+  return bridgeMap[key] || envMap[key] || fallback;
 };
 
+// --- GURU ENGINE INIT ---
 const initSupabase = () => {
   let createClient;
   try {
@@ -33,10 +43,16 @@ const initSupabase = () => {
   } catch (e) {
     return { from: () => ({ select: () => ({ order: () => ({ limit: () => Promise.resolve({ data: [] }) }), eq: () => ({ single: () => Promise.resolve({ data: {} }) }) }), update: () => ({ eq: () => Promise.resolve({ error: null }) }), insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: {}, error: null }) }) }) }) };
   }
-  const url = getEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://placeholder.supabase.co');
-  const key = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'placeholder');
-  return createClient(url, key);
+  const url = getEnv('NEXT_PUBLIC_SUPABASE_URL');
+  const key = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  return createClient(url || 'https://placeholder.supabase.co', key || 'placeholder');
 };
+
+// 🛡️ GURU UI SHIELD
+if (typeof window !== 'undefined') {
+  window.swgSubscriptions = window.swgSubscriptions || {};
+  if (!window.swgSubscriptions.attachButton) window.swgSubscriptions.attachButton = () => {};
+}
 
 const SidebarItemUI = ({ id, activeTab, setActiveTab, icon, label, color, href }) => {
   const active = activeTab === id;
@@ -75,6 +91,12 @@ export default function AdminApp() {
   const isInitialized = useRef(false);
 
   const BASE_URL = 'https://www.thehardwareguru.cz';
+
+  const LEAK_PLACEHOLDER_URL = useMemo(() => {
+    const sUrl = getEnv('NEXT_PUBLIC_SUPABASE_URL');
+    if (!sUrl) return 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000';
+    return `${sUrl}/storage/v1/object/public/images/davinci_prompt__a_high_tech__cinematic_placeholder_for_a_g.png`;
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -151,14 +173,12 @@ export default function AdminApp() {
     addLog('Spouštím Guru Intel Engine...', 'warning');
     
     try {
-      // FRONTEND UŽ NIC NEFETCHUJE, SPOLÉHÁ POUZE NA NUKLEÁRNÍ BACKEND V13.0
       const res = await fetch('/api/leaks');
       const json = await res.json();
       
       if (json.success) {
         const items = json.data || [];
         
-        // 🚀 GURU FIX: Zobrazí přesně 10 nejvirálnějších položek pro dokonalý grid (2 řádky x 5 karet)
         setHwIntel(items.filter(i => i.intelType === "hw").slice(0, 10));
         setGameIntel(items.filter(i => i.intelType === "game").slice(0, 10));
         setLeaksIntel(items.filter(i => i.intelType === "leaks").slice(0, 10));
@@ -180,8 +200,13 @@ export default function AdminApp() {
       addLog('Koncept načten ze systému.', 'success');
       return;
     }
-    const openAiKey = getEnv('NEXT_PUBLIC_OPENAI_API_KEY') || getEnv('OPENAI_API_KEY');
-    if (!openAiKey) return addLog('CHYBÍ AI KLÍČ V ENV!', 'error');
+
+    // 🚀 GURU NUKLEÁRNÍ FIX KLÍČE: Přímé čtení, aby si toho Next.js bundler stoprocentně všiml
+    const openAiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY || getEnv('OPENAI_API_KEY');
+    
+    if (!openAiKey || openAiKey === '') {
+        return addLog('CHYBÍ AI KLÍČ V ENV!', 'error');
+    }
     
     setProcessingTitle(item.title);
     addLog(`AI tvoří rozbor: ${item.title.substring(0, 30)}...`, 'warning');
@@ -195,7 +220,7 @@ export default function AdminApp() {
           messages: [
             { 
               role: "system", 
-              content: "Jsi Hardware Guru. Piš úderně, technicky a virálně v CZ i EN. HTML h2, strong, ul. MUSÍŠ vygenerovat JSON: { title_cs, content_cs, description_cs, seo_description_cs, slug_cs, seo_keywords_cs, title_en, content_en, description_en, seo_description_en, slug_en, meta_title_en, seo_keywords_en, image_alt, og_title, trailer }" 
+              content: "Jsi Hardware Guru. Piš úderně, technicky a virálně v CZ i EN. HTML h2, strong, ul. MUSÍŠ vygenerovat JSON se všemi poli: { title_cs, content_cs, description_cs, seo_description_cs, slug_cs, seo_keywords_cs, title_en, content_en, description_en, seo_description_en, slug_en, meta_title_en, seo_keywords_en, image_alt, og_title, trailer }" 
             },
             { role: "user", content: `Vytvoř článek z: ${item.title}. Zdroj: ${item.description || item.title}.` }
           ],
@@ -205,7 +230,6 @@ export default function AdminApp() {
       
       const r = await response.json();
       
-      // 🛡️ GURU FAIL-SAFE PARSER
       const content = r?.choices?.[0]?.message?.content || r?.output?.[0]?.content?.[0]?.text;
       if (!content) throw new Error(r?.error?.message || "AI vrátilo prázdnou odpověď.");
 
@@ -214,7 +238,7 @@ export default function AdminApp() {
 
       const newDraft = {
         ...aiData,
-        image_url: item.image_url, // Obrázek už byl 100% garantován backendem
+        image_url: item.image_url, 
         created_at: new Date().toISOString(),
         type: postType,
         original_item: item,
@@ -232,15 +256,13 @@ export default function AdminApp() {
     }
   };
 
-  // 🚀 GURU: MAKE.COM ABSOLUTNÍ FIX PODLE TVÉHO SCREENSHOTU
   const publishAndSendToMake = async () => {
     if (!draft) return;
     
-    const articleWebhook = getEnv('NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL');
+    const articleWebhook = process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL || getEnv('NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL');
     addLog('ODPALUJI ČLÁNEK DO SYSTÉMU...', 'warning');
     
     try {
-      // 1. ZÁPIS DO DB
       const { data: dbData, error } = await supabase.from('posts').insert([{
         title: draft.title_cs, slug: draft.slug_cs, content: draft.content_cs, description: draft.description_cs, seo_description: draft.seo_description_cs, seo_keywords: draft.seo_keywords_cs,
         title_en: draft.title_en, slug_en: draft.slug_en, content_en: draft.content_en, description_en: draft.description_en, seo_description_en: draft.seo_description_en, meta_title_en: draft.meta_title_en, seo_keywords_en: draft.seo_keywords_en,
@@ -250,10 +272,8 @@ export default function AdminApp() {
       if (error) throw error;
       addLog('DATABÁZE SYNCHRONIZOVÁNA. 🔥', 'success');
 
-      // 2. ODESLÁNÍ NA MAKE.COM (STRIKTNÍ STRUKTURA)
       if (articleWebhook && articleWebhook !== "") {
         try {
-          // GURU FIX: Toto je přesně struktura z tvého obrázku pro buffer
           const payload = {
             title: dbData.title,
             url: `${BASE_URL}/clanky/${dbData.slug}`,
@@ -279,7 +299,6 @@ export default function AdminApp() {
         addLog('CHYBÍ WEBHOOK URL V ENV SOUBORU!', 'error');
       }
       
-      // Úklid
       setLeaksIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
       setHwIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
       setGameIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
