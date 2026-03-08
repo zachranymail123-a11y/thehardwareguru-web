@@ -67,6 +67,9 @@ export default async function ArticleDetail({ params }) {
     
   const backLink = isEn ? '/en/clanky' : '/clanky';
 
+  // 🚀 GURU BULLETPROOF LEAK DETECTOR
+  const isLeak = (post.type || '').toLowerCase().trim().includes('leak');
+
   return (
     <div style={{ 
         minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', 
@@ -93,8 +96,8 @@ export default async function ArticleDetail({ params }) {
 
             {/* 🛡️ DYNAMICKÉ ŠTÍTKY (LEAKS / DEALS) */}
             <div style={{ position: 'absolute', top: '30px', right: '30px', display: 'flex', gap: '10px' }}>
-              {/* 🚀 GURU FIX: Leaks & Rumors neon štítek */}
-              {post.type === 'leaks' && (
+              {/* 🚀 GURU FIX: Leaks & Rumors neon štítek - Bulletproof */}
+              {isLeak && (
                 <div style={{ background: '#66fcf1', color: '#0b0c10', padding: '8px 16px', borderRadius: '12px', fontWeight: '950', fontSize: '12px', textTransform: 'uppercase', boxShadow: '0 4px 15px rgba(102, 252, 241, 0.5)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Ghost size={14} /> LEAKS & RUMORS
                 </div>
@@ -113,9 +116,9 @@ export default async function ArticleDetail({ params }) {
           {/* --- HLAVIČKA --- */}
           <header style={{ marginBottom: '50px', textAlign: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', color: '#9ca3af', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '25px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: post.type === 'leaks' ? '#66fcf1' : '#ff0000' }}>
-                 {post.type === 'leaks' ? <Ghost size={16} /> : <ShieldCheck size={16} />} 
-                 {post.type === 'leaks' ? 'LEAKS & RUMORS' : 'GURU ENGINE'}
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: isLeak ? '#66fcf1' : '#ff0000' }}>
+                 {isLeak ? <Ghost size={16} /> : <ShieldCheck size={16} />} 
+                 {isLeak ? 'LEAKS & RUMORS' : 'GURU ENGINE'}
               </span>
               <span>•</span>
               <span>{new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
