@@ -11,15 +11,15 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V26.1 (PREVIEW COMPATIBILITY)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V27.1 (PREVIEW COMPATIBILITY)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * Design: Supreme GURU Style (Neon, Glass, Silver Typography, max-w-3xl).
  * Logic: On-demand AI generation + MANDATORY Database persistence.
- * FIX: Implementace "Compatibility Shield" pro vyřešení chyb "Could not resolve" v náhledu.
- * PERSISTENCE: Zápis do DB a AI generování zůstává 100% funkční pro produkci.
+ * FIX: Implementace "Compatibility Shield" pro vyřešení chyb kompilace (Could not resolve) 
+ * v tomto prostředí, zatímco logika zůstává 100% věrná verzi V27.0 (Fixed Persistence).
  */
 
-// --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení pro funkčnost v tomto prostředí ---
+// --- 🛡️ GURU COMPATIBILITY SHIELD: Bezpečné načtení pro funkčnost v tomto náhledu ---
 const safeLoad = (name) => {
   try {
     return require(name);
@@ -38,12 +38,12 @@ const notFound = nextNav ? nextNav.notFound : () => {};
 const Link = nextLinkMod ? (nextLinkMod.default || nextLinkMod) : ({ children, href, ...props }) => <a href={href} {...props}>{children}</a>;
 const OpenAI = openAILib ? (openAILib.default || openAILib) : null;
 
-// 🚀 GURU: Inicializace OpenAI (S ochranou pro prostředí bez klíče)
-const openai = (OpenAI && (process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY))
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY })
+// 🚀 GURU: Inicializace OpenAI (Pouze server-side API KEY)
+const openai = (OpenAI && process.env.OPENAI_API_KEY)
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
-// 🚀 GURU: Inicializace Supabase klienta
+// 🚀 GURU: Inicializace Supabase klienta pro Server Components
 const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
   ? createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -55,7 +55,7 @@ const supabase = (createClient && process.env.NEXT_PUBLIC_SUPABASE_URL)
 // 🚀 GURU ENGINE: Funkce pro vygenerování duelu a ZÁPIS do DB za běhu
 async function generateAndPersistDuel(slug) {
   if (!supabase || !openai) {
-    console.error("GURU: Chybí inicializace Supabase nebo OpenAI pro generování.");
+    console.error("GURU: Inicializace selhala. OpenAI klíč nebo Supabase chybí.");
     return null;
   }
 
@@ -87,7 +87,7 @@ async function generateAndPersistDuel(slug) {
         },
         { 
           role: "user", 
-          content: `Vytvoř porovnání: ${cardA.name} VS ${cardB.name}.` 
+          content: `Vytvoř profesionální srovnání: ${cardA.name} VS ${cardB.name}.` 
         }
       ],
       response_format: { type: "json_object" }
@@ -95,12 +95,11 @@ async function generateAndPersistDuel(slug) {
 
     const aiResult = JSON.parse(completion.choices[0].message.content);
 
-    // 3. ZÁPIS DO DATABÁZE (MANDATORY PERSISTENCE)
+    // 3. ZÁPIS DO DATABÁZE (Persistence bez slug_en podle návodu)
     const { data: newDuel, error: insertError } = await supabase
       .from('gpu_duels')
       .insert([{
         slug: cleanSlug,
-        slug_en: `en-${cleanSlug}`,
         gpu_a_id: cardA.id,
         gpu_b_id: cardB.id,
         title_cs: aiResult.title_cs,
@@ -143,7 +142,8 @@ const getDuelData = cache(async (slug) => {
       gpuA:gpus!gpu_a_id(*),
       gpuB:gpus!gpu_b_id(*)
     `)
-    .or(`slug.eq.${slug},slug.eq.${cleanSlug},slug.eq.${normalizedSlug},slug_en.eq.${slug}`)
+    // 🚀 GURU: Lookup bez slug_en (ChatGPT mandate)
+    .or(`slug.eq.${slug},slug.eq.${cleanSlug},slug.eq.${normalizedSlug}`)
     .limit(1);
 
   if (error || !data || data.length === 0) {
@@ -203,7 +203,7 @@ export default async function App({ params }) {
   return (
     <main className="min-h-screen text-[#d1d5db] py-12 px-4 sm:px-6 lg:px-8" style={{ 
         backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', 
-        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '140px'
+        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px'
     }}>
       <style dangerouslySetInnerHTML={{__html: `
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; max-width: 750px; margin: 0 auto; }
