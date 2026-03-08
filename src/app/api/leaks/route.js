@@ -7,33 +7,35 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * GURU INTEL ENGINE V11.6 - SDK STABILITY & DEDUPLICATION
- * - Použití oficiálního OpenAI SDK (stejně jako u tweaků).
- * - Striktní separace zdrojů (Leaks, HW, Game).
+ * GURU INTEL ENGINE V12.4 - NEW RSS SOURCES
+ * - Aktualizované RSS zdroje (odporúčanie AI).
+ * - Použitie oficiálneho OpenAI SDK.
+ * - Striktná separácia zdrojov (Leaks, HW, Game).
  * - Neúprosná kontrola duplicit proti DB a cross-category.
  */
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// 📂 1. LEAKS & RUMORS (Špecifické pre úniky)
 const LEAK_SOURCES = [
   { name: "Reddit GL&R", url: "https://www.reddit.com/r/GamingLeaksAndRumours/new/.rss", type: "leaks" },
-  { name: "Chiphell", url: "https://www.chiphell.com/forum.php?mod=rss&fid=224", type: "leaks" },
-  { name: "ResetEra", url: "https://www.resetera.com/forums/gaming-forum.7/index.rss", type: "leaks" },
   { name: "Insider Gaming", url: "https://insider-gaming.com/feed/", type: "leaks" },
-  { name: "VGC", url: "https://www.videogameschronicle.com/feed/", type: "leaks" },
-  { name: "N4G", url: "https://n4g.com/rss/news", type: "leaks" }
+  { name: "Reddit SteamDB", url: "https://www.reddit.com/r/SteamDB/new/.rss", type: "leaks" }
 ];
 
+// 📂 2. HARDWARE RADAR (Čistý HW)
 const HW_SOURCES = [
   { name: "VideoCardz", url: "https://videocardz.com/feed", type: "hw" },
-  { name: "Tom's Hardware", url: "https://www.tomshardware.com/feeds.xml", type: "hw" },
-  { name: "Wccftech HW", url: "https://wccftech.com/category/hardware/feed/", type: "hw" }
+  { name: "TechPowerUp", url: "https://www.techpowerup.com/rss/news", type: "hw" },
+  { name: "Chiphell", url: "https://www.chiphell.com/forum.php?mod=rss&fid=224", type: "hw" },
+  { name: "Guru3D", url: "https://www.guru3d.com/news/rss/", type: "hw" }
 ];
 
+// 📂 3. GAMING RADAR (Herné novinky)
 const GAME_SOURCES = [
-  { name: "IGN", url: "https://feeds.ign.com/ign/games-all", type: "game" },
-  { name: "GameSpot", url: "https://www.gamespot.com/feeds/news/", type: "game" },
-  { name: "Wccftech Game", url: "https://wccftech.com/category/games/feed/", type: "game" }
+  { name: "MP1st", url: "https://mp1st.com/feed", type: "game" },
+  { name: "DSOGaming", url: "https://www.dsogaming.com/feed/", type: "game" },
+  { name: "SteamDB Blog", url: "https://steamdb.info/blog/rss/", type: "game" }
 ];
 
 const BROWSER_HEADERS = {
@@ -44,10 +46,10 @@ const BROWSER_HEADERS = {
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY // Používáme admin klíč pro bypass RLS při kontrole duplicit
+  process.env.SUPABASE_SERVICE_ROLE_KEY // Admin kľúč pre bypass RLS
 );
 
-// 🛡️ SDK AI SCORER - Fix pro choices undefined
+// 🛡️ SDK AI SCORER - Fix pre choices undefined
 const getAIScores = async (titles) => {
   if (!process.env.OPENAI_API_KEY || titles.length === 0) return {};
   try {
@@ -79,7 +81,7 @@ export async function GET() {
   const debug = { ai_active: false, ai_status: "pending", db_filtered: 0, cross_duplicates: 0 };
 
   try {
-    // 🛡️ GURU DB SHIELD: Načtení všech titulů pro filtraci
+    // 🛡️ GURU DB SHIELD: Načítanie všetkých titulov pre filtráciu
     const { data: existingPosts } = await supabase.from('posts').select('title, title_en');
     const dbTitles = new Set((existingPosts || []).flatMap(p => [
       p.title?.toLowerCase().trim(),
@@ -139,7 +141,7 @@ export async function GET() {
 
     const finalItems = Array.from(uniqueMap.values());
 
-    // AI SCORING přes SDK
+    // AI SCORING cez SDK
     const titlesForAI = finalItems.slice(0, 40).map(i => i.title);
     const aiScores = await getAIScores(titlesForAI);
     
