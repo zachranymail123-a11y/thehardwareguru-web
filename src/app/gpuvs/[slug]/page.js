@@ -15,15 +15,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V35.1 (STRICT PRODUCTION)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V36.0 (SUPREME VISUALS)
  * Cesta: src/app/gpuvs/[slug]/page.js
- * Design: Supreme GURU Style (Neon, Glass, Silver Typography, max-w-3xl).
- * Logic: On-demand AI generation + MANDATORY Database persistence.
- * 🛡️ GURU MANDATE:
- * 1. ZÁKAZ require() a dynamických importů. Pouze statické ESM.
- * 2. ZÁKAZ maskování chyb (Shield hacky).
- * 3. IMPLEMENTOVÁNA findGpu normalizace podle doporučení.
- * 4. PLNÁ PERSISTENCE (Zápis do DB bez slug_en).
+ * * 🛡️ LOGIKA ZACHOVÁNA Z VERZE V35.1 (STRICT PRODUCTION)
+ * 🛡️ DESIGN: Supreme GURU Style (Neon, Glass, Silver Typography, max-w-3xl).
+ * 🛡️ MANDATE: No require(), static ESM imports, findGpu normalization, DB persistence.
  */
 
 // 🚀 GURU: Inicializace OpenAI (Striktně server-side přes ENV)
@@ -38,11 +34,10 @@ const supabase = createClient(
   { auth: { persistSession: false } }
 );
 
-// 🛡️ GURU ENGINE: Robustní vyhledávání karty v DB (Prefix-less matching)
+// 🛡️ GURU ENGINE: Robustní vyhledávání karty v DB (ZACHOVÁNO Z V35.1)
 const findGpu = async (slugPart) => {
   if (!supabase || !slugPart) return null;
   
-  // Agresivní čištění názvů pro matching s "NVIDIA GeForce..."
   const clean = slugPart
     .replace(/-/g, " ")
     .replace(/geforce|radeon|nvidia|amd/gi, "")
@@ -58,7 +53,7 @@ const findGpu = async (slugPart) => {
   return data;
 };
 
-// 🚀 GURU ENGINE: Funkce pro vygenerování duelu a ZÁPIS do DB za běhu
+// 🚀 GURU ENGINE: Funkce pro vygenerování duelu a ZÁPIS do DB (ZACHOVÁNO Z V35.1)
 async function generateAndPersistDuel(slug) {
   if (!supabase || !openai) {
     console.error("GURU: API klíče nejsou k dispozici pro generování.");
@@ -70,7 +65,6 @@ async function generateAndPersistDuel(slug) {
     const parts = cleanSlug.split('-vs-');
     if (parts.length !== 2) return null;
 
-    // 1. Vyhledání karet v DB pomocí findGpu engine
     const cardA = await findGpu(parts[0]);
     const cardB = await findGpu(parts[1]);
 
@@ -79,7 +73,6 @@ async function generateAndPersistDuel(slug) {
       return null;
     }
 
-    // 2. AI Generování obsahu (Hardware Guru Persona)
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -97,7 +90,6 @@ async function generateAndPersistDuel(slug) {
 
     const aiResult = JSON.parse(completion.choices[0].message.content);
 
-    // 3. ZÁPIS DO DATABÁZE (Persistence bez slug_en)
     const { data: newDuel, error: insertError } = await supabase
       .from('gpu_duels')
       .insert([{
@@ -130,7 +122,7 @@ async function generateAndPersistDuel(slug) {
   }
 }
 
-// 🚀 GURU: Cache dotazu pro rychlost
+// 🚀 GURU: Cache dotazu pro rychlost (ZACHOVÁNO Z V35.1)
 const getDuelData = cache(async (slug) => {
   if (!supabase || !slug) return null;
 
@@ -150,14 +142,13 @@ const getDuelData = cache(async (slug) => {
     .limit(1);
 
   if (error || !data || data.length === 0) {
-    // ⚡ TRIGGER: Pokud duel v DB není, vygenerujeme ho a zapíšeme
     return await generateAndPersistDuel(slug);
   }
   
   return data[0];
 });
 
-// Metadata
+// SEO Meta Tagy
 export async function generateMetadata({ params }) {
   const slug = params?.slug ?? null;
   const duel = await getDuelData(slug);
