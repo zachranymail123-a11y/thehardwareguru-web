@@ -10,7 +10,13 @@ import {
   Download, Eye, Check, RotateCcw, Smartphone, Monitor, ArrowLeft
 } from 'lucide-react';
 
-// --- GURU CONFIG & ENV ---
+/**
+ * GURU ULTIMATE COMMAND CENTER
+ * Cesta: /admin
+ * Funkce: OpenAI Intel Hub, Social Executor, Systémový dohled
+ */
+
+// --- BEZPEČNÉ ZÍSKÁVÁNÍ ENV PROMĚNNÝCH ---
 const getEnv = (key, fallback = '') => {
   try {
     if (typeof process !== 'undefined' && process.env) {
@@ -20,7 +26,7 @@ const getEnv = (key, fallback = '') => {
   return fallback;
 };
 
-// --- GURU ENGINE INIT (BEZPEČNÝ WRAPPER) ---
+// --- GURU ENGINE INIT (SUPABASE) ---
 const initSupabase = () => {
   let createClient;
   try {
@@ -35,7 +41,7 @@ const initSupabase = () => {
   return createClient(url, key);
 };
 
-// Pomocná komponenta pro Sidebar
+// Pomocná komponenta Sidebar
 const SidebarItemUI = ({ id, activeTab, setActiveTab, icon, label, color, href }) => {
   const active = activeTab === id;
   const content = (
@@ -44,20 +50,8 @@ const SidebarItemUI = ({ id, activeTab, setActiveTab, icon, label, color, href }
       <span style={{ flex: 1, textAlign: 'left' }}>{label}</span>
     </>
   );
-
-  if (href) {
-    return (
-      <a href={href} target="_blank" rel="noreferrer" className="sidebar-btn" style={{ textDecoration: 'none' }}>
-        {content} <ExternalLink size={12} color="#4b5563" />
-      </a>
-    );
-  }
-
-  return (
-    <button onClick={() => setActiveTab(id)} className={`sidebar-btn ${active ? 'active' : ''}`} style={{ borderLeftColor: active ? color : 'transparent' }}>
-      {content}
-    </button>
-  );
+  if (href) return <a href={href} target="_blank" rel="noreferrer" className="sidebar-btn" style={{ textDecoration: 'none' }}>{content} <ExternalLink size={12} color="#4b5563" /></a>;
+  return <button onClick={() => setActiveTab(id)} className={`sidebar-btn ${active ? 'active' : ''}`} style={{ borderLeftColor: active ? color : 'transparent' }}>{content}</button>;
 };
 
 export default function AdminApp() {
@@ -79,12 +73,12 @@ export default function AdminApp() {
   const [intelLoading, setIntelLoading] = useState(false);
   const [draft, setDraft] = useState(null);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [previewMode, setPreviewMode] = useState('none'); // 'none' | 'card' | 'slug'
+  const [previewMode, setPreviewMode] = useState('none');
   const [previewDevice, setPreviewDevice] = useState('desktop');
 
   const BASE_URL = 'https://www.thehardwareguru.cz';
 
-  // --- AUTH ---
+  // --- AUTH LOGIKA ---
   useEffect(() => {
     if (typeof window !== 'undefined' && sessionStorage.getItem('guru_admin_auth') === 'true') setIsAuthenticated(true);
   }, []);
@@ -126,7 +120,7 @@ export default function AdminApp() {
     finally { setLoading(false); }
   };
 
-  // --- AGREGÁTOR: FETCH TOM'S HARDWARE FEED ---
+  // --- 🚀 GURU SYNC: FETCH TOM'S HARDWARE FEED ---
   const fetchIntelFeed = async () => {
     setIntelLoading(true);
     addLog('Stahuji nejnovější intel z Tom\'s Hardware...', 'warning');
@@ -135,22 +129,22 @@ export default function AdminApp() {
       const resData = await res.json();
       if (resData.status === 'ok') {
         setIntelFeed(resData.items || []);
-        addLog(`Načteno ${resData.items.length} zpráv. Připraveno k analýze.`, 'success');
-      } else throw new Error('RSS nedostupné');
+        addLog(`Načteno ${resData.items.length} zpráv z Tom's Hardware.`, 'success');
+      } else throw new Error('RSS feed nelze načíst.');
     } catch (err) { addLog(`Chyba feedu: ${err.message}`, 'error'); }
     finally { setIntelLoading(false); }
   };
 
-  // --- 🚀 GURU: OPENAI TRANSLATOR (GPT-4o) ---
+  // --- 🚀 GURU AI: OPENAI TRANSLATOR (GPT-4o) ---
   const createDraftFromIntel = async (item) => {
     const openAiKey = getEnv('NEXT_PUBLIC_OPENAI_API_KEY');
     if (!openAiKey) {
-      addLog('CHYBÍ API KLÍČ! Nastav NEXT_PUBLIC_OPENAI_API_KEY v env.', 'error');
+      addLog('CHYBÍ API KLÍČ! Nastav NEXT_PUBLIC_OPENAI_API_KEY.', 'error');
       return;
     }
 
     setIsTranslating(true);
-    addLog(`GPT-4o-mini analyzuje a překládá: ${item.title.substring(0, 40)}...`, 'warning');
+    addLog(`GPT-4o připravuje český koncept...`, 'warning');
     
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -198,9 +192,9 @@ export default function AdminApp() {
       });
       
       setPreviewMode('card');
-      addLog('Koncept připraven v náhledovém okně. Proveď revizi.', 'success');
+      addLog('Koncept připraven k revizi v náhledu.', 'success');
     } catch (err) {
-      addLog(`OpenAI fail: ${err.message}`, 'error');
+      addLog(`AI fail: ${err.message}`, 'error');
     } finally {
       setIsTranslating(false);
     }
@@ -208,7 +202,7 @@ export default function AdminApp() {
 
   const publishDraft = async () => {
     if (!draft) return;
-    addLog('Zapisuji článek do databáze...', 'warning');
+    addLog('Publikuji článek na web...', 'warning');
     try {
       const { error } = await supabase.from('posts').insert([{
         title: draft.title_cs,
@@ -221,31 +215,31 @@ export default function AdminApp() {
         is_fired: false
       }]);
       if (error) throw error;
-      addLog('PUBLIKOVÁNO! Článek je online. 🔥', 'success');
+      addLog('ZVEŘEJNĚNO! 🔥', 'success');
       setDraft(null); setPreviewMode('none');
       fetchAndScanData();
-    } catch (err) { addLog(`Chyba publikace: ${err.message}`, 'error'); }
+    } catch (err) { addLog(`Chyba: ${err.message}`, 'error'); }
   };
 
   const runApiTask = (url, name) => {
     setActiveTab('terminal');
     addLog(`SPOUŠTÍM: ${name}`, 'info');
-    fetch(url).then(res => res.text()).then(txt => addLog(`ODPOVĚĎ: ${txt.substring(0,100)}`, 'success')).catch(e => addLog(`CHYBA: ${e.message}`, 'error'));
+    fetch(url).then(res => res.text()).then(txt => addLog(`OK: ${txt.substring(0,100)}`, 'success')).catch(e => addLog(`CHYBA: ${e.message}`, 'error'));
   };
 
   const markAsFired = async (id, table) => {
     await supabase.from(table).update({ is_fired: true }).eq('id', id);
-    addLog(`Položka ${id} vyřízena.`, 'success');
+    addLog(`Položka ${id} skryta.`, 'success');
     fetchAndScanData();
   };
 
   const clearQueueItems = async (list, tabName) => {
-    if (!confirm(`Opravdu vyčistit vše v: ${tabName}?`)) return;
+    if (!confirm(`Opravdu vyčistit: ${tabName}?`)) return;
     for (const item of list) {
         const table = (item.type === 'expected' || tabName === 'Plánovač' || tabName === 'Články') ? 'posts' : 'game_deals';
         await supabase.from(table).update({ is_fired: true }).eq('id', item.id);
     }
-    addLog('Úklid dokončen.', 'success');
+    addLog('Fronta vyčištěna.', 'success');
     fetchAndScanData();
   };
 
@@ -254,11 +248,22 @@ export default function AdminApp() {
     addLog(`ODPALUJI NA MAKE: ${item.title}`, 'warning');
     const webhook = getEnv('NEXT_PUBLIC_MAKE_WEBHOOK2_URL');
     fetch(webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...item, guru_type: type, fired_at: new Date().toISOString() }) })
-      .then(() => { supabase.from(type === 'deal' ? 'game_deals' : 'posts').update({ is_fired: true }).eq('id', item.id); addLog('ZÁSAH! Odesláno.', 'success'); fetchAndScanData(); })
+      .then(() => { supabase.from(type === 'deal' ? 'game_deals' : 'posts').update({ is_fired: true }).eq('id', item.id); addLog('ODESLÁNO!', 'success'); fetchAndScanData(); })
       .catch(e => addLog(`CHYBA: ${e.message}`, 'error'));
   };
 
   useEffect(() => { if (isAuthenticated) { fetchAndScanData(); fetchIntelFeed(); } }, [isAuthenticated]);
+
+  if (!isAuthenticated) return (
+    <div style={{ minHeight: '100vh', background: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+      <form onSubmit={handleLogin} style={{ background: '#111318', padding: '50px', borderRadius: '30px', border: '1px solid #eab30866', textAlign: 'center', maxWidth: '400px', width: '100%' }}>
+        <Lock size={50} color="#eab308" style={{ margin: '0 auto 20px' }} />
+        <h1 style={{ fontWeight: 900 }}>GURU VELÍN</h1>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Guru heslo..." style={{ width: '100%', padding: '15px', borderRadius: '12px', background: '#000', border: '1px solid #333', color: '#fff', marginBottom: '20px', textAlign: 'center' }} />
+        <button type="submit" style={{ width: '100%', padding: '15px', background: '#eab308', color: '#000', border: 'none', borderRadius: '12px', fontWeight: '900', cursor: 'pointer' }}>VSTOUPIT</button>
+      </form>
+    </div>
+  );
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0b0d', display: 'flex', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -271,7 +276,6 @@ export default function AdminApp() {
         .section-box { background: #111318; padding: 30px; border-radius: 24px; border: 1px solid #ffffff05; margin-bottom: 40px; }
         .item-row { background: #0d0e12; border: 1px solid #ffffff08; border-radius: 16px; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
         .terminal-box { background: #000; border: 1px solid #22c55e33; border-radius: 15px; padding: 20px; font-family: monospace; font-size: 13px; overflow-y: auto; height: 100%; }
-        iframe { width: 100%; height: 650px; border-radius: 20px; background: #fff; border: none; margin-top: 15px; }
         .action-btn-small { background: transparent; border: 1px solid #333; color: #9ca3af; padding: 8px 12px; border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
         .action-btn-small:hover { border-color: #10b981; color: #10b981; }
         .hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
@@ -284,10 +288,10 @@ export default function AdminApp() {
         .mock-card { background: #1f2833; border-radius: 12px; overflow: hidden; border: 1px solid rgba(102, 252, 241, 0.2); width: 320px; }
         .mock-prose { color: #d1d5db; line-height: 1.8; font-size: 1.1rem; }
         .mock-prose h2 { color: #66fcf1; font-weight: 950; margin: 1.5em 0 0.5em; text-transform: uppercase; }
-        .mock-prose p { margin-bottom: 1.5em; }
         .device-toggle { display: flex; gap: 10px; justify-content: center; margin-bottom: 25px; }
         .device-toggle button { padding: 10px 20px; background: #222; border: 1px solid #444; border-radius: 10px; color: #fff; cursor: pointer; transition: 0.2s; }
         .device-toggle button.active { background: #eab308; color: #000; border-color: #eab308; font-weight: 900; }
+        iframe { width: 100%; height: 650px; border-radius: 20px; background: #fff; border: none; margin-top: 15px; }
       `}} />
 
       {/* --- GURU PREVIEW SYSTEM --- */}
@@ -295,13 +299,13 @@ export default function AdminApp() {
         <div className="preview-overlay">
           <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ width: 'auto', background: '#333' }}><ArrowLeft size={16}/> ZRUŠIT A ZPĚT</button>
+                <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ width: 'auto', background: '#333' }}><ArrowLeft size={16}/> ZPĚT DO HUBU</button>
                 <div style={{ display: 'flex', gap: '15px' }}>
                     <button onClick={() => setPreviewMode(previewMode === 'card' ? 'slug' : 'card')} className="sidebar-btn" style={{ width: 'auto', background: '#a855f7', color: '#fff' }}>
                         {previewMode === 'card' ? <Eye size={16}/> : <LayoutDashboard size={16}/>}
-                        {previewMode === 'card' ? 'ZOBRAZIT DETAIL ČLÁNKU' : 'ZOBRAZIT KARTU NA HP'}
+                        {previewMode === 'card' ? 'ZOBRAZIT ČLÁNEK' : 'ZOBRAZIT KARTU'}
                     </button>
-                    <button onClick={publishDraft} className="sidebar-btn" style={{ width: 'auto', background: '#10b981', color: '#fff' }}><Check size={16}/> PUBLIKOVAT NA WEB</button>
+                    <button onClick={publishDraft} className="sidebar-btn" style={{ width: 'auto', background: '#10b981', color: '#fff' }}><Check size={16}/> PUBLIKOVAT</button>
                 </div>
             </div>
 
@@ -318,20 +322,13 @@ export default function AdminApp() {
                          <div style={{ padding: '20px' }}>
                             <span style={{ color: '#ff0000', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>HW NOVINKA</span>
                             <h3 style={{ color: '#fff', fontSize: '1.1rem', margin: '10px 0', fontWeight: '900', lineHeight: 1.3 }}>{draft.title_cs}</h3>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#66fcf1', fontWeight: 'bold', fontSize: '12px', marginTop: '15px' }}>
-                                <span>ČÍST VÍCE →</span>
-                            </div>
+                            <div style={{ color: '#66fcf1', fontWeight: 'bold', fontSize: '12px', marginTop: '15px' }}>ČÍST VÍCE →</div>
                          </div>
                       </div>
                    </div>
                 ) : (
                    <div style={{ padding: '60px 40px', maxWidth: '850px', margin: '0 auto', background: '#0a0b0d' }}>
                       <h1 style={{ color: '#fff', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', lineHeight: 1.1 }}>{draft.title_cs}</h1>
-                      <div style={{ display: 'flex', gap: '15px', color: '#444', fontWeight: '900', fontSize: '12px', marginBottom: '30px', textTransform: 'uppercase' }}>
-                         <span style={{ color: '#66fcf1' }}>GURU ENGINE</span>
-                         <span>•</span>
-                         <span>{new Date().toLocaleDateString('cs-CZ')}</span>
-                      </div>
                       <img src={draft.image_url} style={{ width: '100%', borderRadius: '20px', marginBottom: '40px', border: '1px solid #ffffff10' }} />
                       <div className="mock-prose" dangerouslySetInnerHTML={{ __html: draft.content_cs }} />
                    </div>
@@ -347,10 +344,10 @@ export default function AdminApp() {
           <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 900 }}>GURU <span style={{ color: '#a855f7' }}>ADMIN</span></h2>
         </div>
         <nav style={{ flex: 1, overflowY: 'auto' }}>
-          <SidebarItemUI id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LayoutDashboard />} label="Přehled" color="#a855f7" />
+          <SidebarItemUI id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LayoutDashboard />} label="Dashboard" color="#a855f7" />
           <SidebarItemUI id="terminal" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Terminal />} label="Živý Terminál" color="#22c55e" />
-          <div className="sidebar-header">CENTRÁLNÍ LOGIKA</div>
-          <SidebarItemUI id="pub-plan" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Send />} label="Publikace & Plánovač" color="#f97316" />
+          <div className="sidebar-header">LOGIKA</div>
+          <SidebarItemUI id="pub-plan" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Send />} label="Publikace & Sítě" color="#f97316" />
           <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="HW Intel Hub" color="#eab308" />
           <SidebarItemUI id="tweaks-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Cpu />} label="Tweaky" color="#10b981" />
           <SidebarItemUI id="seo-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Globe />} label="SEO & Překlady" color="#eab308" />
@@ -365,23 +362,20 @@ export default function AdminApp() {
       </aside>
 
       <main className="admin-main">
-        {/* --- DASHBOARD --- */}
         {activeTab === 'dashboard' && (
           <div className="fade-in">
-            <h2 style={{ fontSize: '32px', fontWeight: 950, marginBottom: '30px', textTransform: 'uppercase' }}>SYSTÉMOVÝ <span style={{ color: '#a855f7' }}>STATUS</span></h2>
+            <h2 style={{ fontSize: '32px', fontWeight: 950, marginBottom: '30px', textTransform: 'uppercase' }}>STATUS</h2>
             <div className="stats-grid">
               <div className="stat-card"><h3>{data.stats.visits}</h3><p>NÁVŠTĚVY</p></div>
-              <div className="stat-card"><h3>{data.posts.length}</h3><p>ČLÁNKŮ V DB</p></div>
-              <div className="stat-card"><h3>{data.deals.length}</h3><p>AKTIVNÍ SLEVY</p></div>
+              <div className="stat-card"><h3>{data.posts.length}</h3><p>ČLÁNKY</p></div>
+              <div className="stat-card"><h3>{data.deals.length}</h3><p>SLEVY</p></div>
             </div>
-            <div style={{ height: '350px' }}><div className="terminal-box">{consoleLogs.slice(-10).map((log, i) => (<div key={i} style={{marginBottom: '5px'}}><span>[{log.time}]</span> {log.msg}</div>))}</div></div>
+            <div style={{ height: '350px' }}><div className="terminal-box">{consoleLogs.slice(-10).map((log, i) => (<div key={i}>[{log.time}] {log.msg}</div>))}</div></div>
           </div>
         )}
 
-        {/* --- TERMINÁL --- */}
-        {activeTab === 'terminal' && <div style={{ height: '85vh' }}><div className="terminal-box">{consoleLogs.map((log, i) => (<div key={i} style={{marginBottom: '5px'}} className={log.type}><span>[{log.time}]</span> {log.msg}</div>))}<div ref={logEndRef} /></div></div>}
+        {activeTab === 'terminal' && <div style={{ height: '80vh' }}><div className="terminal-box">{consoleLogs.map((log, i) => (<div key={i} className={log.type}>[{log.time}] {log.msg}</div>))}<div ref={logEndRef} /></div></div>}
 
-        {/* --- HW INTEL HUB --- */}
         {activeTab === 'intel-hub' && (
           <div className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
@@ -402,22 +396,20 @@ export default function AdminApp() {
                   </div>
                 </div>
               ))}
-              {intelFeed.length === 0 && !intelLoading && <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '100px', color: '#444', fontWeight: 'bold', border: '2px dashed #1a1a1a', borderRadius: '25px' }}>FEED JE PRÁZDNÝ. SPUSTI SYNCHRONIZACI.</div>}
+              {intelFeed.length === 0 && !intelLoading && <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '100px', color: '#444', fontWeight: 'bold' }}>ŽÁDNÁ DATA. SPUSTI SYNCHRONIZACI.</div>}
             </div>
           </div>
         )}
 
-        {/* --- PUBLIKACE --- */}
         {activeTab === 'pub-plan' && (
           <div className="fade-in">
-            <h2 style={{ fontSize: '32px', fontWeight: 950, marginBottom: '30px' }}>Publikace & <span style={{ color: '#f97316' }}>Plánování</span></h2>
+            <h2 style={{ fontSize: '32px', fontWeight: 950, marginBottom: '30px' }}>PUBLIKACE</h2>
             <div style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
-              <button onClick={() => runApiTask(`${BASE_URL}/api/cron/executor`, 'Social Executor')} className="sidebar-btn" style={{ background: '#10b981', color: '#000', width: 'auto' }}>CRON EXECUTOR</button>
+              <button onClick={() => runApiTask(`${BASE_URL}/api/cron/executor`, 'Executor')} className="sidebar-btn" style={{ background: '#10b981', color: '#000', width: 'auto' }}>CRON EXECUTOR</button>
               <button onClick={() => runApiTask(`${BASE_URL}/api/cron/planer`, 'Planner')} className="sidebar-btn" style={{ background: '#3b82f6', color: '#fff', width: 'auto' }}>CRON PLANNER</button>
-              <button onClick={() => clearQueueItems([...unfiredPosts, ...unfiredDeals], 'Články')} className="sidebar-btn" style={{ background: '#ef4444', color: '#fff', width: 'auto' }}>VYMAZAT STAROU FRONTU</button>
             </div>
             <div className="section-box">
-              <h3 style={{ color: '#10b981', marginBottom: '20px' }}>Fronta k odeslání (Sítě)</h3>
+              <h3 style={{ color: '#10b981', marginBottom: '20px' }}>Fronta k odeslání</h3>
               {[...unfiredPosts, ...unfiredDeals].map(item => (
                 <div key={item.id} className="item-row">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><img src={item.image_url} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} /><span>{item.title}</span></div>
@@ -428,19 +420,12 @@ export default function AdminApp() {
           </div>
         )}
 
-        {/* --- OSTATNÍ HUBY --- */}
-        {activeTab === 'tweaks-hub' && (
-            <div style={{ height: '85vh', display: 'flex', flexDirection: 'column' }}>
-                <button onClick={() => runApiTask(`${BASE_URL}/api/cron/tweak-executor`, 'Tweak Exec')} className="sidebar-btn active" style={{ width: 'fit-content', padding: '12px 25px', marginBottom: '15px' }}>SPUSTIT TWEAK CRON</button>
-                <iframe src={`${BASE_URL}/admin/tweaky-generator`} />
-            </div>
-        )}
+        {activeTab === 'tweaks-hub' && <iframe src={`${BASE_URL}/admin/tweaky-generator`} />}
         {activeTab === 'seo-hub' && <iframe src={`${BASE_URL}/admin/en-fixer`} />}
         {activeTab === 'automation' && (
           <div className="stats-grid">
-            <div className="stat-card"><h3>TIP GEN</h3><button onClick={() => runApiTask(`${BASE_URL}/api/generate-tip`, 'Tip Gen')} style={{ marginTop: '15px', padding: '12px', background: '#eab308', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>SPUSTIT AI</button></div>
-            <div className="stat-card"><h3>MAIN CRON</h3><button onClick={() => runApiTask(`${BASE_URL}/api/cron`, 'Main Cron')} style={{ marginTop: '15px', padding: '12px', background: '#ef4444', border: 'none', borderRadius: '8px', fontWeight: 'bold', color: '#fff' }}>SPUSTIT ÚDRŽBU</button></div>
-            <div className="stat-card"><h3>CHECK LIVE</h3><button onClick={() => runApiTask(`${BASE_URL}/api/check-live`, 'Check Live')} style={{ marginTop: '15px', padding: '12px', background: '#8b5cf6', border: 'none', borderRadius: '8px', fontWeight: 'bold', color: '#fff' }}>KONTROLA STREAMŮ</button></div>
+            <div className="stat-card"><h3>TIP GEN</h3><button onClick={() => runApiTask(`${BASE_URL}/api/generate-tip`, 'Tip Gen')} style={{ marginTop: '15px', padding: '12px', background: '#eab308', border: 'none', borderRadius: '8px' }}>SPUSTIT AI</button></div>
+            <div className="stat-card"><h3>MAIN CRON</h3><button onClick={() => runApiTask(`${BASE_URL}/api/cron`, 'Main Cron')} style={{ marginTop: '15px', padding: '12px', background: '#ef4444', border: 'none', borderRadius: '8px' }}>SPUSTIT</button></div>
           </div>
         )}
       </main>
