@@ -7,14 +7,16 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * GURU INTEL ENGINE V13.0 - NUCLEAR DIRECT XML & SYNC
+ * GURU INTEL ENGINE V13.1 - NUCLEAR DIRECT XML & SYNC
  * - Fix: Přímé nativní čtení XML přes fast-xml-parser (konec blokování z rss2json).
  * - Fix: Křížová kontrola duplicity (Cross-category Leaks > HW > Game).
  * - Fix: Absolutní antiduplicita napřímo vůči DB tabulkám 'posts' a 'content_plan'.
  * - Fix: 100% Davinci Image Fallback pro všechny články bez obrázku.
+ * - Fix: Vercel API Key fallback (NEXT_PUBLIC_OPENAI_API_KEY).
  */
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// 🚀 GURU FIX: Oprava inicializace OpenAI pro Vercel
+const openai = new OpenAI({ apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY });
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -78,7 +80,8 @@ const extractImage = (item) => {
 
 // 🛡️ SDK AI SCORER
 const getAIScores = async (titles) => {
-  if (!process.env.OPENAI_API_KEY || titles.length === 0) return {};
+  // 🚀 GURU FIX: Kontrola obou verzí klíče
+  if (!(process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY) || titles.length === 0) return {};
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
