@@ -15,8 +15,7 @@ export const revalidate = 0;
  * - Fix: Vercel API Key fallback (NEXT_PUBLIC_OPENAI_API_KEY).
  */
 
-// 🚀 GURU FIX: Oprava inicializace OpenAI pro Vercel
-const openai = new OpenAI({ apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY });
+// 🚀 GURU FIX: Odstraněna globální inicializace OpenAI (zabraňuje pádu celé API routy na Error 500)
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -80,9 +79,11 @@ const extractImage = (item) => {
 
 // 🛡️ SDK AI SCORER
 const getAIScores = async (titles) => {
-  // 🚀 GURU FIX: Kontrola obou verzí klíče
-  if (!(process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY) || titles.length === 0) return {};
+  // 🚀 GURU FIX: Kontrola obou verzí klíče a bezpečná inicializace uvnitř funkce
+  const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+  if (!apiKey || titles.length === 0) return {};
   try {
+    const openai = new OpenAI({ apiKey });
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
