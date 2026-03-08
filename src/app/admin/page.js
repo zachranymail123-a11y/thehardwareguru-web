@@ -11,10 +11,9 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V8.16
+ * GURU ULTIMATE COMMAND CENTER V8.17 - VIRAL EDITION
  * Funkce: Multi-Source Intel (HW + Gaming), AI Viral Scoring, Deduplikace, Compact Grid 5x2, 
- * Persistent Storage, Integrated Publishing + Make.com Webhook.
- * FIX: Individuální loading na boxech, opravená pozice tlačítek v náhledu.
+ * Persistent Storage, Integrated Publishing + Make.com Webhook (Elite Payload).
  */
 
 // --- 🚀 GURU ENV ENGINE ---
@@ -68,19 +67,19 @@ export default function AdminApp() {
 
   const [data, setData] = useState({ posts: [], deals: [], stats: { visits: 0 } });
 
-  // 🛡️ PERSISTENTNÍ INTEL SEZNAMY (Refresh-proof)
+  // 🛡️ PERSISTENTNÍ INTEL SEZNAMY
   const [hwIntel, setHwIntel] = useState([]);
   const [gameIntel, setGameIntel] = useState([]);
   const [intelLoading, setIntelLoading] = useState(false);
   
   const [draft, setDraft] = useState(null);
-  const [processingTitle, setProcessingTitle] = useState(null); // 🚀 GURU: Sledování konkrétního boxu
+  const [processingTitle, setProcessingTitle] = useState(null); 
   const [previewMode, setPreviewMode] = useState('none');
   const [previewDevice, setPreviewDevice] = useState('desktop');
 
   const BASE_URL = 'https://www.thehardwareguru.cz';
 
-  // Načtení session a persistentního intelu
+  // Session & LocalStorage Sync
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if (sessionStorage.getItem('guru_admin_auth') === 'true') setIsAuthenticated(true);
@@ -91,7 +90,6 @@ export default function AdminApp() {
     }
   }, []);
 
-  // Sync do localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('guru_hw_intel', JSON.stringify(hwIntel));
@@ -128,16 +126,17 @@ export default function AdminApp() {
         deals: dealsRes.data || [],
         stats: { visits: statsRes.data?.value || 0 }
       });
-      addLog('Databáze Guru synchronizována.', 'success');
+      addLog('Guru systémy synchronizovány.', 'success');
     } catch (err) { addLog(`Chyba skenu: ${err.message}`, 'error'); }
     finally { setLoading(false); }
   };
 
+  // --- 🚀 GURU INTELLIGENCE ENGINE ---
   const fetchIntelFeed = async () => {
     const openAiKey = getEnv('OPENAI_API_KEY');
     if (!openAiKey) return addLog('CHYBÍ KLÍČ OPENAI!', 'error');
     setIntelLoading(true);
-    addLog('Skenuji globální HW & Gaming radar...', 'warning');
+    addLog('Spouštím globální skener HW & Gaming trendů...', 'warning');
     
     const HW_FEEDS = [
       { name: "Tom's Hardware", url: "https://www.tomshardware.com/feeds.xml" },
@@ -179,7 +178,7 @@ export default function AdminApp() {
             model: "gpt-4o-mini",
             messages: [
               { role: "system", content: systemPrompt },
-              { role: "user", content: `Zanalyzuj: ${JSON.stringify(batch.map(i => i.title))}` }
+              { role: "user", content: `Vyhodnoť virální potenciál těchto novinek (0-100) pro českou technologickou komunitu: ${JSON.stringify(batch.map(i => i.title))}` }
             ],
             response_format: { type: "json_object" }
           })
@@ -193,14 +192,14 @@ export default function AdminApp() {
       };
 
       const [scoredHw, scoredGame] = await Promise.all([
-        scoreItems(uniqueHw, "Jsi HW analytik. Hledej trendy v GPU (NVIDIA, AMD), AI hardware a tech faily. Vyhodnoť (0-100). Vrať JSON { scores: [{ title, score }] }."),
-        scoreItems(uniqueGame, "Jsi herní analytik. Hledej AAA hity, leazy a herní dramata. Vyhodnoť (0-100). Vrať JSON { scores: [{ title, score }] }.")
+        scoreItems(uniqueHw, "Jsi HW expert. Hledej trendy v GPU (Blackwell, RDNA), AI tech, faily výrobců a leazy o budoucím HW. Vyhodnoť virální sílu (0-100). Vrať JSON { scores: [{ title, score }] }."),
+        scoreItems(uniqueGame, "Jsi herní insider. Hledej AAA tituly, kontroverze, leazy a exkluzivní info. Vyhodnoť virální sílu (0-100). Vrať JSON { scores: [{ title, score }] }.")
       ]);
 
       setHwIntel(scoredHw);
       setGameIntel(scoredGame);
-      addLog('Radar aktualizován.', 'success');
-    } catch (err) { addLog(`Chyba Enginu: ${err.message}`, 'error'); }
+      addLog('Intel Hub aktualizován a připraven k akci.', 'success');
+    } catch (err) { addLog(`Chyba Intel Enginu: ${err.message}`, 'error'); }
     finally { setIntelLoading(false); }
   };
 
@@ -208,8 +207,8 @@ export default function AdminApp() {
     const openAiKey = getEnv('OPENAI_API_KEY');
     if (!openAiKey) return;
     
-    setProcessingTitle(item.title); // 🚀 GURU: Zapnutí přesýpacích hodin pro tento box
-    addLog(`AI připravuje Guru rozbor: ${item.title.substring(0, 30)}...`, 'warning');
+    setProcessingTitle(item.title);
+    addLog(`AI tvoří virální rozbor: ${item.title.substring(0, 30)}...`, 'warning');
     
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -218,8 +217,14 @@ export default function AdminApp() {
         body: JSON.stringify({
           model: "gpt-4o-mini",
           messages: [
-            { role: "system", content: "Jsi Hardware Guru. Expert na tech a gaming. Piš úderně, v ČEŠTINĚ, používej HTML (h2, p, strong, ul). Vždy vrať kompletní JSON v CZ i EN verzi." },
-            { role: "user", content: `Vytvoř článek: ${item.title}. Zdroj: ${item.description}. POŽADAVEK: Vrať JSON s poli: title_cs, content_cs, seo_description_cs, slug_cs, title_en, content_en, seo_description_en, slug_en. Důležité: Všechny texty s příponou _cs MUSÍ být v perfektní češtině. Obsah min 400 slov.` }
+            { 
+              role: "system", 
+              content: "Jsi Hardware Guru. Tvůj styl je elitní, technický, ale extrémně úderný a virální. Piš v ČEŠTINĚ pro elitní komunitu. Používej HTML (h2, strong, ul). Vždy vrať kompletní JSON v CZ i EN verzi." 
+            },
+            { 
+              role: "user", 
+              content: `Vytvoř článek s virálním nábojem z: ${item.title}. Zdroj: ${item.description}. POŽADAVEK: Vrať JSON: { title_cs, content_cs, seo_description_cs, slug_cs, title_en, content_en, seo_description_en, slug_en }. Texty _cs MUSÍ být v perfektní, dravé češtině. Obsah min 450 slov.` 
+            }
           ],
           response_format: { type: "json_object" }
         })
@@ -236,15 +241,15 @@ export default function AdminApp() {
       });
       
       setPreviewMode('card');
-      addLog('Koncept připraven.', 'success');
+      addLog('Virální koncept připraven k publikaci.', 'success');
     } catch (err) { addLog(`AI fail: ${err.message}`, 'error'); }
-    finally { setProcessingTitle(null); } // 🚀 GURU: Vypnutí kolečka
+    finally { setProcessingTitle(null); }
   };
 
   const publishAndSendToMake = async () => {
     if (!draft) return;
     const makeWebhook = getEnv('NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL');
-    addLog('Zahajuji publikaci a Make.com transfer...', 'warning');
+    addLog('Zahajuji bleskovou publikaci a Make.com transfer...', 'warning');
 
     try {
       const { data: dbData, error } = await supabase.from('posts').insert([{
@@ -268,12 +273,11 @@ export default function AdminApp() {
           status: 'published_from_intel',
           id: dbData.id
         };
-
         await fetch(makeWebhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        addLog('Odesláno na Make.com.', 'success');
+        addLog('Odesláno na sociální sítě přes Make.com.', 'success');
       }
 
-      addLog('HOTOVO! 🔥', 'success');
+      addLog('ČLÁNEK JE ONLINE! 🔥', 'success');
       setHwIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
       setGameIntel(prev => prev.filter(i => i.title !== draft.original_item.title));
       setDraft(null); setPreviewMode('none'); fetchAndScanData();
@@ -285,7 +289,7 @@ export default function AdminApp() {
       <form onSubmit={handleLogin} style={{ background: '#111318', padding: '50px', borderRadius: '30px', border: '1px solid #eab30866', textAlign: 'center', maxWidth: '400px', width: '100%' }}>
         <Lock size={50} color="#eab308" style={{ margin: '0 auto 20px' }} />
         <h1>GURU VELÍN</h1>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Heslo..." style={{ width: '100%', padding: '15px', borderRadius: '12px', background: '#000', border: '1px solid #333', color: '#fff', marginBottom: '20px', textAlign: 'center' }} />
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Guru heslo..." style={{ width: '100%', padding: '15px', borderRadius: '12px', background: '#000', border: '1px solid #333', color: '#fff', marginBottom: '20px', textAlign: 'center' }} />
         <button type="submit" style={{ width: '100%', padding: '15px', background: '#eab308', color: '#000', border: 'none', borderRadius: '12px', fontWeight: '900', cursor: 'pointer' }}>VSTOUPIT</button>
       </form>
     </div>
@@ -299,6 +303,7 @@ export default function AdminApp() {
         .sidebar-header { margin: 20px 25px 10px 25px; font-size: 10px; color: #4b5563; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; }
         .sidebar-btn { width: 100%; display: flex; align-items: center; gap: 15px; padding: 15px 25px; background: transparent; border: none; border-left: 4px solid transparent; color: #9ca3af; cursor: pointer; transition: 0.2s; font-weight: 900; font-size: 13px; text-transform: uppercase; }
         .sidebar-btn:hover, .sidebar-btn.active { background: #ffffff0d; color: #fff; }
+        
         .hub-compact-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 40px; }
         .compact-card { background: #0d0e12; border: 1px solid #ffffff08; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; transition: 0.3s; position: relative; min-height: 160px; overflow: hidden; }
         .compact-card:hover { border-color: #eab308; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
@@ -311,7 +316,6 @@ export default function AdminApp() {
         .compact-btn-main { background: #eab30833; border-color: #eab30866; color: #eab308; }
         .compact-btn-main:hover { background: #eab308; color: #000; }
 
-        /* 🛡️ GURU PREVIEW LAYOUT OVERHAUL */
         .preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 500; display: flex; flex-direction: column; padding: 0; overflow-y: auto; backdrop-filter: blur(25px); }
         .preview-nav { position: sticky; top: 0; display: flex; justify-content: space-between; alignItems: center; zIndex: 600; background: rgba(17, 19, 24, 0.95); padding: 20px 40px; borderBottom: 1px solid rgba(255, 255, 255, 0.05); backdropFilter: blur(10px); }
         .preview-window { background: #0a0b0d; border-radius: 30px; border: 4px solid #333; margin: 40px auto; overflow: hidden; width: 100%; max-width: 1200px; min-height: 800px; box-shadow: 0 40px 120px rgba(0,0,0,0.8); }
@@ -321,12 +325,12 @@ export default function AdminApp() {
         .mock-prose { color: #d1d5db; line-height: 1.8; font-size: 1.1rem; }
         .mock-prose h2 { color: #66fcf1; font-weight: 950; margin: 1.5em 0 0.5em; text-transform: uppercase; }
         .mock-prose p { margin-bottom: 1.5em; }
+        .terminal-box { background: #000; border: 1px solid #22c55e33; border-radius: 15px; padding: 20px; font-family: monospace; font-size: 12px; overflow-y: auto; }
       `}} />
 
-      {/* --- 🚀 GURU PREVIEW SYSTEM --- */}
+      {/* --- GURU PREVIEW SYSTEM --- */}
       {previewMode !== 'none' && draft && (
         <div className="preview-overlay">
-          {/* 🛡️ NAVIGACE NÁHLEDU (STICKY TOP) */}
           <div className="preview-nav">
               <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ width: 'auto', background: '#222', border: '1px solid #444', color: '#fff' }}>
                   <ArrowLeft size={16}/> ZPĚT DO VELÍNA
@@ -371,7 +375,7 @@ export default function AdminApp() {
         </div>
       )}
 
-      {/* SIDEBAR */}
+      {/* --- SIDEBAR --- */}
       <aside className="admin-sidebar">
         <div style={{ padding: '30px 25px', borderBottom: '1px solid #ffffff0d' }}>
           <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 900 }}>GURU <span style={{ color: '#a855f7' }}>ADMIN</span></h2>
@@ -394,6 +398,7 @@ export default function AdminApp() {
                 <h3 style={{ fontSize: '32px', fontWeight: 950 }}>{data.posts.length}</h3><p style={{fontSize: '11px', color: '#4b5563', fontWeight: '900'}}>ČLÁNKY</p>
               </div>
             </div>
+            <div style={{marginTop: '40px'}}><div className="terminal-box" style={{height: '300px'}}>{consoleLogs.slice(-10).map((log, i) => (<div key={i}>[{log.time}] {log.msg}</div>))}</div></div>
           </div>
         )}
 
@@ -416,7 +421,6 @@ export default function AdminApp() {
             <div className="hub-compact-grid">
               {hwIntel.map((item, i) => (
                 <div key={i} className="compact-card">
-                  {/* 🚀 GURU: Individuální indikátor pro box */}
                   {processingTitle === item.title && (
                     <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <RefreshCw className="animate-spin text-orange-500" size={24}/>
@@ -440,7 +444,6 @@ export default function AdminApp() {
             <div className="hub-compact-grid">
               {gameIntel.map((item, i) => (
                 <div key={i} className="compact-card">
-                  {/* 🚀 GURU: Individuální indikátor pro box */}
                   {processingTitle === item.title && (
                     <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <RefreshCw className="animate-spin text-purple-500" size={24}/>
