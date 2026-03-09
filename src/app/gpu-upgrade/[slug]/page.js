@@ -20,10 +20,9 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V112.6 (3-TIER BULLETPROOF LOOKUP)
+ * GURU GPU UPGRADE ENGINE - DETAIL V112.8 (FPS MATH FIX)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: Vyřešen problém chybějícího výrobce v URL (např. url má geforce-rtx..., ale DB má nvidia-geforce-rtx...).
- * 🛡️ FIX 2: Implementován 3-fázový lookup (Exact Slug -> Contains Slug -> Name Wildcard) pro 100% spolehlivost.
+ * 🛡️ FIX 1: Oprava matematického vzorce pro výpočet rozdílu FPS (změněno z a/b na b/a).
  * 🛡️ ARCH: Node.js runtime a ISR revalidate (86400) pro optimální SEO.
  */
 
@@ -76,7 +75,6 @@ const findGpu = async (slugPart) => {
 
   // 🛡️ TIER 2: Substring match na slug + vzestupné řazení 
   // Řeší chybějící prefixy (např. URL "rtx-5060" najde "nvidia-geforce-rtx-5060").
-  // order=slug.asc zajistí, že základní model dostane přednost před "Ti" variantou.
   try {
       const url2 = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=ilike.*${slugPart}*&order=slug.asc`;
       const res2 = await fetch(url2, { headers, cache: 'no-store' });
@@ -86,17 +84,21 @@ const findGpu = async (slugPart) => {
       }
   } catch(e) {}
 
-  // 🛡️ TIER 3: Ultimátní fallback na původní procentuální hledání v Názvu
-  // Pro zachycení zkrácenin a atypických tvarů, které by selhaly i v TIER 2.
+  // 🛡️ TIER 3: Ultimátní fallback na Tokenized AND match (Nejbezpečnější)
+  // Rozdělí hledání na slova a vyžaduje, aby VŠECHNA byla v názvu. Imunní vůči URL kódu a mezerám.
   try {
-      const model = slugPart.replace(/-/g, ' ').replace(/gb/gi, '').trim();
-      const search = model.replace(/\s+/g, '%');
-      const url3 = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.*${search}*&order=name.asc`;
+      const cleanString = slugPart.replace(/-/g, ' ').replace(/gb/gi, '').trim();
+      const tokens = cleanString.split(/\s+/).filter(t => t.length > 0);
       
-      const res3 = await fetch(url3, { headers, cache: 'no-store' });
-      if (res3.ok) {
-          const data3 = await res3.json();
-          return data3?.[0] || null;
+      if (tokens.length > 0) {
+          const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
+          const url3 = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&and=(${conditions})&order=name.asc`;
+          
+          const res3 = await fetch(url3, { headers, cache: 'no-store' });
+          if (res3.ok) {
+              const data3 = await res3.json();
+              return data3?.[0] || null;
+          }
       }
   } catch(e) {}
 
@@ -274,7 +276,8 @@ export default async function App({ params }) {
   const fpsA = gpuA?.game_fps && Array.isArray(gpuA.game_fps) && gpuA.game_fps.length ? gpuA.game_fps[0] : (gpuA?.game_fps || {});
   const fpsB = gpuB?.game_fps && Array.isArray(gpuB.game_fps) && gpuB.game_fps.length ? gpuB.game_fps[0] : (gpuB?.game_fps || {});
 
-  const calcSafeDiff = (a, b) => (!a || !b || a === 0 || b === 0) ? 0 : Math.round(((a / b) - 1) * 100);
+  // 🚀 GURU FIX: Oprava matematiky - rozdíl je (nové / staré) - 1, tedy (b / a) - 1
+  const calcSafeDiff = (a, b) => (!a || !b || a === 0 || b === 0) ? 0 : Math.round(((b / a) - 1) * 100);
   const cyberpunkDiff = calcSafeDiff(fpsA?.cyberpunk_1440p, fpsB?.cyberpunk_1440p);
   const warzoneDiff = calcSafeDiff(fpsA?.warzone_1440p, fpsB?.warzone_1440p);
   const starfieldDiff = calcSafeDiff(fpsA?.starfield_1440p, fpsB?.starfield_1440p);
