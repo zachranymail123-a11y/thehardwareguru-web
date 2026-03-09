@@ -12,11 +12,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - DETAIL V67.0 (PROGRAMMATIC SEO + GAME FPS INTEGRATION)
+ * GURU GPU DUELS ENGINE - DETAIL V67.1 (FPS & SEO FIX)
  * Cesta: src/app/gpuvs/[slug]/page.js
- * 🛡️ FIX 1: Použití nativního fetch API pro 100% stabilitu bez SDK.
- * 🛡️ FIX 2: Programmatic SEO generátor skládá unikátní texty z tvrdých dat v DB.
- * 🚀 NEW: Integrace herních FPS dat (Cyberpunk, Warzone, Starfield) do textu i tabulky.
+ * 🛡️ FIX 1: Opraveny CSS vlastnosti v globálním style tagu (kebab-case).
+ * 🛡️ FIX 2: Vylepšená extrakce FPS dat (ošetření pole vs objektu).
+ * 🛡️ FIX 3: Explicitní PostgREST join hint !gpu_id pro garantované načtení FPS dat.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -31,7 +31,8 @@ const findGpu = async (slugPart) => {
   const searchPattern = `%${chunks.join('%')}%`;
 
   try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps(*)&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`, {
+      // 🚀 GURU FIX: Explicitní join game_fps!gpu_id
+      const res = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`, {
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
           cache: 'no-store'
       });
@@ -67,8 +68,8 @@ async function generateAndPersistDuel(slug) {
     }
 
     // 2. Extrakce FPS dat pro textový rozbor
-    const fpsA = cardA.game_fps?.[0] || null;
-    const fpsB = cardB.game_fps?.[0] || null;
+    const fpsA = Array.isArray(cardA.game_fps) ? cardA.game_fps[0] : (cardA.game_fps || null);
+    const fpsB = Array.isArray(cardB.game_fps) ? cardB.game_fps[0] : (cardB.game_fps || null);
 
     let fpsTextEn = "";
     let fpsTextCs = "";
@@ -140,7 +141,7 @@ async function generateAndPersistDuel(slug) {
         created_at: new Date().toISOString()
     };
 
-    const selectQuery = "*,gpuA:gpus!gpu_a_id(*,game_fps(*)),gpuB:gpus!gpu_b_id(*,game_fps(*))";
+    const selectQuery = "*,gpuA:gpus!gpu_a_id(*,game_fps!gpu_id(*)),gpuB:gpus!gpu_b_id(*,game_fps!gpu_id(*))";
     const dbRes = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=${encodeURIComponent(selectQuery)}`, {
         method: 'POST',
         headers: {
@@ -174,7 +175,7 @@ const getDuelData = async (slug) => {
   const normalizedSlug = cleanSlug.replace(/geforce-/g, '').replace(/radeon-/g, '');
 
   const orQuery = `slug.eq.${slug},slug.eq.${cleanSlug},slug.eq.${normalizedSlug}`;
-  const selectQuery = `*,gpuA:gpus!gpu_a_id(*,game_fps(*)),gpuB:gpus!gpu_b_id(*,game_fps(*))`;
+  const selectQuery = `*,gpuA:gpus!gpu_a_id(*,game_fps!gpu_id(*)),gpuB:gpus!gpu_b_id(*,game_fps!gpu_id(*))`;
   const url = `${supabaseUrl}/rest/v1/gpu_duels?select=${encodeURIComponent(selectQuery)}&or=(${encodeURIComponent(orQuery)})&limit=1`;
 
   try {
@@ -258,9 +259,14 @@ export default async function GpuDuelDetail({ params }) {
     }
   }
 
-  // 🚀 FPS DATA PRO VIZUALIZACI
-  const fpsA = gpuA.game_fps?.[0] || null;
-  const fpsB = gpuB.game_fps?.[0] || null;
+  // 🚀 FPS DATA PRO VIZUALIZACI (Ošetření pole vs objektu)
+  const extractFps = (gpu) => {
+    if (!gpu || !gpu.game_fps) return null;
+    return Array.isArray(gpu.game_fps) ? gpu.game_fps[0] : gpu.game_fps;
+  };
+
+  const fpsA = extractFps(gpuA);
+  const fpsB = extractFps(gpuB);
 
   const content = isEn ? duel.content_en : duel.content_cs;
 
@@ -323,7 +329,7 @@ export default async function GpuDuelDetail({ params }) {
           ) : <div style={{ padding: '30px', background: 'rgba(255,255,255,0.02)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.1)', color: '#9ca3af', fontStyle: 'italic' }}>{isEn ? "Detailed benchmark data unavailable." : "Detailní data benchmarků nedostupná."}</div>}
         </section>
 
-        {/* 🚀 GURU: HERNÍ FPS SROVNÁNÍ (Nová sekce) */}
+        {/* 🚀 GURU: HERNÍ FPS SROVNÁNÍ */}
         {fpsA && fpsB && (
           <section style={{ marginBottom: '60px' }}>
             <h2 style={{ fontSize: '2.5rem', fontWeight: '950', color: '#fff', textTransform: 'uppercase', fontStyle: 'italic', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -401,7 +407,8 @@ export default async function GpuDuelDetail({ params }) {
         .guru-prose h2 { color: #fff; font-size: 2rem; font-weight: 950; margin-top: 1.5em; margin-bottom: 0.8em; text-transform: uppercase; border-left: 4px solid #ff0055; padding-left: 15px; }
         .guru-prose p { margin-bottom: 1.5em; }
         .guru-prose strong { color: #fff; font-weight: 900; }
-        .fps-label { padding: 0 30px; fontSize: 11px; fontWeight: 950; color: #6b7280; textTransform: uppercase; letterSpacing: 2px; textAlign: center; }
+        /* 🚀 GURU FIX: Standardní kebab-case vlastnosti pro RAW CSS */
+        .fps-label { padding: 0 30px; font-size: 11px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; text-align: center; }
         @media (max-width: 768px) { .guru-deals-btn, .guru-support-btn { width: 100%; } .guru-grid-ring { grid-template-columns: 1fr !important; } .guru-grid-ring > div:nth-child(2) { margin: -10px 0 !important; } }
       `}} />
     </div>
