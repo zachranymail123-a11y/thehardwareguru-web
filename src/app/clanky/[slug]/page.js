@@ -9,9 +9,11 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
+// 🚀 GURU SEO: Dynamické Meta Tagy pro vyhledávače a sociální sítě
 export async function generateMetadata({ params }) {
   const { slug } = params;
   
+  // Hledáme podle slug nebo slug_en pro jistotu podpory obou jazyků
   const { data: post } = await supabase
     .from('posts')
     .select('title, title_en, seo_description, seo_description_en, image_url, slug, slug_en')
@@ -20,6 +22,7 @@ export async function generateMetadata({ params }) {
 
   if (!post) return { title: '404 | The Hardware Guru' };
 
+  // Detekce angličtiny podle toho, zda URL odpovídá anglickému slugu
   const isEn = post.slug_en === slug && slug !== post.slug;
   const title = isEn && post.title_en ? post.title_en : post.title;
   const desc = isEn && post.seo_description_en ? post.seo_description_en : post.seo_description;
@@ -36,9 +39,9 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ArticleDetail({ params }) {
-
   const { slug } = params;
 
+  // 1. GURU FETCH: Získání dat z databáze
   const { data: post, error } = await supabase
     .from('posts')
     .select('*')
@@ -49,19 +52,17 @@ export default async function ArticleDetail({ params }) {
     notFound();
   }
 
+  // 2. GURU JAZYKOVÁ LOGIKA
   const isEn = post.slug_en === slug && slug !== post.slug;
   const title = isEn && post.title_en ? post.title_en : post.title;
 
   const rawContent = isEn && post.content_en ? post.content_en : post.content;
-
-  // funkční doplnění (bez změny designu)
   const content = await autoLinkGpu(rawContent);
 
   const priceDisplay = isEn ? (post.price_en || '') : (post.price_cs || '');
   const buyBtnText = isEn 
     ? `BUY FOR BEST PRICE ${priceDisplay ? `(${priceDisplay})` : ''}` 
     : `KOUPIT ZA NEJLEPŠÍ CENU ${priceDisplay ? `(${priceDisplay})` : ''}`;
-
   const backLink = isEn ? '/en/clanky' : '/clanky';
 
   return (
@@ -76,6 +77,7 @@ export default async function ArticleDetail({ params }) {
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)', overflow: 'hidden', backdropFilter: 'blur(15px)' 
       }}>
         
+        {/* --- 🚀 HRDINSKÝ OBRÁZEK ČLÁNKU --- */}
         {post.image_url && (
           <div style={{ width: '100%', height: '450px', position: 'relative', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             <img src={post.image_url} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -99,13 +101,9 @@ export default async function ArticleDetail({ params }) {
           
           <header style={{ marginBottom: '50px', textAlign: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', color: '#9ca3af', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '25px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#66fcf1' }}>
-                <ShieldCheck size={16} /> GURU ENGINE
-              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#66fcf1' }}><ShieldCheck size={16} /> GURU ENGINE</span>
               <span>•</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Calendar size={16} /> {new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}
-              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={16} /> {new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
             </div>
             
             <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', lineHeight: '1.1', margin: '0', textShadow: '0 0 20px rgba(102, 252, 241, 0.2)' }}>
@@ -113,6 +111,7 @@ export default async function ArticleDetail({ params }) {
             </h1>
           </header>
 
+          {/* --- OBSAH ČLÁNKU --- */}
           <div className="guru-prose" dangerouslySetInnerHTML={{ __html: content }} />
 
         </div>
