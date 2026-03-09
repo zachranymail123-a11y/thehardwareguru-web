@@ -12,12 +12,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V64.0 (NATIVE API, NO-AI, DATA DRIVEN)
+ * GURU CPU DUELS ENGINE - DETAIL V67.0 (100% NATIVE API & NO-AI)
  * Cesta: src/app/cpuvs/[slug]/page.js
- * 🛡️ FIX 1: Odstraněny knihovny @supabase/supabase-js, next/navigation a next/link pro 100% stabilitu v náhledu i na Vercelu.
- * 🛡️ FIX 2: AI kompletně odstraněno. Nulové halucinace, bleskové generování přes nativní fetch API.
- * 🛡️ FIX 3: Extrémně striktní CSS Grid (1fr auto 1fr) pro garantované centrování VS odznaku.
- * 🛡️ FIX 4: Reálný "VÝKON" box z databáze umístěn jako hlavní prvek.
+ * 🛡️ FIX 1: Absolutní eliminace next/link, next/navigation a Supabase SDK (Zabraňuje pádům v náhledu).
+ * 🛡️ FIX 2: Vylepšený vyhledávací vzor pro CPU (čistý % split místo složitého Regexu).
+ * 🛡️ FIX 3: Striktní použití uvozovek v OR query pro spolehlivost PostgRESTu při sluzích s pomlčkami.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -26,9 +25,10 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 // 🛡️ GURU ENGINE: Vyhledávání CPU z DB (Nativní Fetch)
 const findCpu = async (slugPart) => {
   if (!supabaseUrl) return null;
-  const clean = slugPart.replace(/-/g, " ").replace(/ryzen|core|intel|amd|ultra/gi, "").trim();
-  const chunks = clean.match(/\d+|[a-zA-Z]+/g);
-  if (!chunks) return null;
+  
+  // 🚀 GURU FIX: Jednodušší a spolehlivější vyhledávací vzor (zachová názvy modelů pohromadě)
+  const clean = slugPart.replace(/-/g, " ").trim();
+  const chunks = clean.split(/\s+/);
   const searchPattern = `%${chunks.join('%')}%`;
 
   try {
@@ -86,6 +86,7 @@ async function generateAndPersistDuel(slug) {
     };
 
     const selectQuery = "*,cpuA:cpus!cpu_a_id(*),cpuB:cpus!cpu_b_id(*)";
+    
     const dbRes = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}`, {
         method: 'POST',
         headers: {
@@ -99,7 +100,7 @@ async function generateAndPersistDuel(slug) {
 
     if (!dbRes.ok) {
         // Kontrola, zda už náhodou duel nevznikl ve stejný moment
-        const checkExisting = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${encodeURIComponent(cleanSlug)}`, {
+        const checkExisting = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq."${encodeURIComponent(cleanSlug)}"`, {
             headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
         });
         const existingData = await checkExisting.json();
@@ -119,7 +120,8 @@ const getDuelData = async (slug) => {
   const cleanSlug = slug.replace(/^en-/, '');
   const normalizedSlug = cleanSlug.replace(/intel-/g, '').replace(/amd-/g, '');
 
-  const orQuery = `slug.eq.${slug},slug.eq.${cleanSlug},slug.eq.${normalizedSlug}`;
+  // 🚀 GURU FIX: Bezpečné URL-encoded uvozovky řeší problém s parsováním pomlček v PostgREST OR filtru
+  const orQuery = `slug.eq."${slug}",slug.eq."${cleanSlug}",slug.eq."${normalizedSlug}"`;
   const selectQuery = `*,cpuA:cpus!cpu_a_id(*),cpuB:cpus!cpu_b_id(*)`;
   const url = `${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&or=(${encodeURIComponent(orQuery)})&limit=1`;
 
@@ -176,12 +178,11 @@ export default async function CpuDuelDetail({ params }) {
   }).format(new Date(duel.created_at || Date.now()));
   const backLink = isEn ? '/en/cpuvs' : '/cpuvs';
   
-  // Design funkce
-  const getWinnerStyle = (valA, valB, lowerIsBetter = false) => {
-    if (valA === valB) return { color: '#9ca3af', fontWeight: 'bold' };
-    const aWins = lowerIsBetter ? valA < valB : valA > valB;
-    if (aWins) return { color: '#66fcf1', fontWeight: '950', textShadow: '0 0 15px rgba(102,252,241,0.4)' };
-    return { color: '#4b5563', opacity: 0.6 }; 
+  // Design funkce (Stejná logika jako u gpuvs)
+  const getWinnerClass = (valA, valB, lowerIsBetter = false) => {
+    if (valA === valB) return 'text-neutral-400';
+    if (lowerIsBetter) return valA < valB ? 'text-green-400 font-black' : 'text-red-400';
+    return valA > valB ? 'text-green-400 font-black' : 'text-red-400';
   };
 
   const getVendorColor = (vendor) => {
@@ -189,7 +190,7 @@ export default async function CpuDuelDetail({ params }) {
     return v === 'INTEL' ? '#0071c5' : (v === 'AMD' ? '#ed1c24' : '#66fcf1');
   };
 
-  // 🚀 GURU: VÝPOČET REÁLNÉHO VÝKONU Z DB INDEXU
+  // 🚀 GURU: VÝPOČET REÁLNÉHO VÝKONU
   const hasPerfData = cpuA.performance_index > 0 && cpuB.performance_index > 0;
   let perfDiff = 0;
   let perfWinner = null;
@@ -214,10 +215,10 @@ export default async function CpuDuelDetail({ params }) {
         color: '#fff', fontFamily: 'sans-serif'
     }}>
       
-      {/* 🚀 Ochranný Main Wrapper - Omezuje šířku a drží obsah uprostřed obrazovky */}
+      {/* 🚀 Ochranný Main Wrapper */}
       <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
-        {/* Tlačítko Zpět - Používá klasický 'a' tag kvůli odstranění závislosti na next/link */}
+        {/* Tlačítko Zpět - Klasický A tag kvůli stabilitě */}
         <div style={{ marginBottom: '30px' }}>
           <a href={backLink} className="guru-back-btn">
             <ChevronLeft size={16} /> {isEn ? 'BACK TO SELECTION' : 'ZPĚT NA VÝBĚR'}
@@ -227,7 +228,7 @@ export default async function CpuDuelDetail({ params }) {
         {/* HLAVIČKA DUELU */}
         <header style={{ marginBottom: '50px', textAlign: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', color: '#9ca3af', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#66fcf1' }}><Cpu size={16} /> ELITNÍ SOUBOJ</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#ff0055' }}><Swords size={16} /> ELITNÍ SOUBOJ</span>
             <span className="opacity-30">|</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={16} /> {formattedDate}</span>
           </div>
@@ -246,7 +247,7 @@ export default async function CpuDuelDetail({ params }) {
                 <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: 0, lineHeight: '1.1' }}>{cpuA.name}</h2>
             </div>
             
-            {/* VS ZNAK (Samostatný sloupec uprostřed gridu, proto NIKDY neuhne) */}
+            {/* VS ZNAK */}
             <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <div style={{ width: '70px', height: '70px', background: '#ff0055', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950', fontSize: '24px', border: '5px solid #0f1115', boxShadow: '0 0 30px rgba(255,0,85,0.6)', color: '#fff', transform: 'rotate(-5deg)' }}>VS</div>
             </div>
@@ -335,35 +336,41 @@ export default async function CpuDuelDetail({ params }) {
           )}
         </section>
 
-        {/* TABULKA SPECIFIKACÍ */}
+        {/* TABULKA SPECIFIKACÍ (Stejné formátování jako u gpuvs) */}
         <section style={{ marginBottom: '60px' }}>
           <h2 style={{ fontSize: '2.5rem', fontWeight: '950', color: '#fff', textTransform: 'uppercase', fontStyle: 'italic', marginBottom: '20px' }}>
             {isEn ? 'TECHNICAL SPECS' : 'GURU SPECIFIKACE'}
           </h2>
           <div style={{ background: 'rgba(15, 17, 21, 0.95)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
              
-             <div className="spec-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', padding: '25px 30px', borderBottom: '1px solid rgba(255,255,255,0.02)', alignItems: 'center' }}>
-               <div style={{ ...getWinnerStyle(cpuA.cores, cpuB.cores), fontSize: '24px', textAlign: 'right' }}>{cpuA.cores} / {cpuA.threads}</div>
-               <div style={{ padding: '0 30px', fontSize: '11px', fontWeight: '950', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center' }}>{isEn ? 'CORES / THREADS' : 'JÁDRA / VLÁKNA'}</div>
-               <div style={{ ...getWinnerStyle(cpuB.cores, cpuA.cores), fontSize: '24px', textAlign: 'left' }}>{cpuB.cores} / {cpuB.threads}</div>
+             <div className="spec-row">
+               <div className={`spec-val ${getWinnerClass(cpuA.cores, cpuB.cores)}`}>{cpuA.cores} / {cpuA.threads}</div>
+               <div className="spec-label">{isEn ? 'CORES / THREADS' : 'JÁDRA / VLÁKNA'}</div>
+               <div className={`spec-val ${getWinnerClass(cpuB.cores, cpuA.cores)}`}>{cpuB.cores} / {cpuB.threads}</div>
              </div>
 
-             <div className="spec-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', padding: '25px 30px', borderBottom: '1px solid rgba(255,255,255,0.02)', alignItems: 'center' }}>
-               <div style={{ ...getWinnerStyle(cpuA.base_clock_ghz, cpuB.base_clock_ghz), fontSize: '24px', textAlign: 'right' }}>{cpuA.base_clock_ghz} GHz</div>
-               <div style={{ padding: '0 30px', fontSize: '11px', fontWeight: '950', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center' }}>{isEn ? 'BASE CLOCK' : 'ZÁKLADNÍ TAKT'}</div>
-               <div style={{ ...getWinnerStyle(cpuB.base_clock_ghz, cpuA.base_clock_ghz), fontSize: '24px', textAlign: 'left' }}>{cpuB.base_clock_ghz} GHz</div>
+             <div className="spec-row">
+               <div className={`spec-val ${getWinnerClass(cpuA.base_clock_ghz, cpuB.base_clock_ghz)}`}>{cpuA.base_clock_ghz} GHz</div>
+               <div className="spec-label">{isEn ? 'BASE CLOCK' : 'ZÁKLADNÍ TAKT'}</div>
+               <div className={`spec-val ${getWinnerClass(cpuB.base_clock_ghz, cpuA.base_clock_ghz)}`}>{cpuB.base_clock_ghz} GHz</div>
              </div>
 
-             <div className="spec-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', padding: '25px 30px', borderBottom: '1px solid rgba(255,255,255,0.02)', alignItems: 'center' }}>
-               <div style={{ ...getWinnerStyle(cpuA.boost_clock_ghz, cpuB.boost_clock_ghz), fontSize: '24px', textAlign: 'right' }}>{cpuA.boost_clock_ghz} GHz</div>
-               <div style={{ padding: '0 30px', fontSize: '11px', fontWeight: '950', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center' }}>BOOST CLOCK</div>
-               <div style={{ ...getWinnerStyle(cpuB.boost_clock_ghz, cpuA.boost_clock_ghz), fontSize: '24px', textAlign: 'left' }}>{cpuB.boost_clock_ghz} GHz</div>
+             <div className="spec-row">
+               <div className={`spec-val ${getWinnerClass(cpuA.boost_clock_ghz, cpuB.boost_clock_ghz)}`}>{cpuA.boost_clock_ghz} GHz</div>
+               <div className="spec-label">BOOST CLOCK</div>
+               <div className={`spec-val ${getWinnerClass(cpuB.boost_clock_ghz, cpuA.boost_clock_ghz)}`}>{cpuB.boost_clock_ghz} GHz</div>
              </div>
 
-             <div className="spec-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', padding: '25px 30px', alignItems: 'center' }}>
-               <div style={{ color: '#e5e7eb', fontSize: '22px', fontWeight: 'bold', textAlign: 'right' }}>{cpuA.architecture}</div>
-               <div style={{ padding: '0 30px', fontSize: '11px', fontWeight: '950', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center' }}>{isEn ? 'ARCHITECTURE' : 'ARCHITEKTURA'}</div>
-               <div style={{ color: '#e5e7eb', fontSize: '22px', fontWeight: 'bold', textAlign: 'left' }}>{cpuB.architecture}</div>
+             <div className="spec-row">
+               <div className={`spec-val ${getWinnerClass(cpuA.tdp_w, cpuB.tdp_w, true)}`}>{cpuA.tdp_w} W</div>
+               <div className="spec-label">TDP (SPOTŘEBA)</div>
+               <div className={`spec-val ${getWinnerClass(cpuB.tdp_w, cpuA.tdp_w, true)}`}>{cpuB.tdp_w} W</div>
+             </div>
+
+             <div className="spec-row">
+               <div className="spec-val" style={{ color: '#e5e7eb' }}>{cpuA.architecture}</div>
+               <div className="spec-label">{isEn ? 'ARCHITECTURE' : 'ARCHITEKTURA'}</div>
+               <div className="spec-val" style={{ color: '#e5e7eb' }}>{cpuB.architecture}</div>
              </div>
           </div>
         </section>
@@ -385,7 +392,7 @@ export default async function CpuDuelDetail({ params }) {
 
       </main>
 
-      {/* GLOBÁLNÍ STYLY */}
+      {/* GLOBÁLNÍ STYLY - ABSOLUTNÍ KOPIE GPUVS PRO MAXIMÁLNÍ STABILITU */}
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; backdrop-filter: blur(5px); border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.2); }
@@ -396,7 +403,17 @@ export default async function CpuDuelDetail({ params }) {
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
         .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
 
-        .spec-row:hover { background: rgba(255,255,255,0.02); }
+        /* Utility classes pre tabulku */
+        .spec-row { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center; }
+        .spec-row:nth-child(even) { background: rgba(255,255,255,0.02); }
+        .spec-row:hover { background: rgba(255,255,255,0.05); }
+        .spec-val { flex: 1; text-align: center; font-size: 16px; font-weight: 900; }
+        .spec-label { flex: 1; text-align: center; font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        
+        .text-green-400 { color: #4ade80; }
+        .text-red-400 { color: #f87171; }
+        .text-neutral-400 { color: #a3a3a3; }
+        .font-black { font-weight: 900; }
 
         @media (max-width: 768px) {
           .guru-deals-btn, .guru-support-btn { width: 100%; font-size: 15px; padding: 18px 30px; }
