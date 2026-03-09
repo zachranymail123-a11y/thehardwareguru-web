@@ -20,10 +20,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V109.0 (PROFESSIONAL LOOKUP FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V110.0 (FINAL NORMALIZATION & POST FIX)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX: findGpu nyní extrahuje celý název modelu a nahrazuje pomlčky mezerami (ChatGPT Fix).
- * 🛡️ FIX: Použití PostgREST wildcardů "*" s limitem 5 pro jednoznačné určení karty (ChatGPT Fix).
+ * 🛡️ FIX 1: Rozšířená normalizace názvu ve findGpu (odstranění gb a mezer) pro 100% match s (16GB) verzemi (ChatGPT Fix).
+ * 🛡️ FIX 2: Odstranění ?select parametru z POST requestu při vytváření upgradu (ChatGPT Fix).
  * 🛡️ ARCH: Node.js runtime a ISR revalidate (86400) pro optimální SEO.
  */
 
@@ -53,20 +53,20 @@ function calculatePerf(a, b) {
     return { winner: b, loser: a, diff };
 }
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB (PROFESIONÁLNÍ LOOKUP DLE CHATGPT)
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (KOMPLETNÍ NORMALIZACE DLE CHATGPT)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
 
-  // 🚀 GURU FIX: Extrakce celého modelu ze slugu pro maximální přesnost (ChatGPT Fix)
-  // Např. geforce-rtx-5060-ti-16gb -> rtx 5060 ti 16gb
+  // 🚀 GURU FIX: Rozšířené očištění slugu o 'gb' a vícenásobné mezery (ChatGPT Fix)
   const model = slugPart
     .replace(/geforce|radeon/gi, '')
     .replace(/-/g, ' ')
+    .replace(/gb/gi, '')
+    .replace(/\s+/g, ' ')
     .trim();
   
   if (!model) return null;
   
-  // 🚀 GURU CRITICAL FIX: PostgREST vyžaduje hvězdičky a kódování celého filtru
   const filter = `ilike.*${model}*`;
   const url = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=${encodeURIComponent(filter)}&limit=5`;
 
@@ -88,7 +88,6 @@ const findGpu = async (slugPart) => {
       
       if (!data?.length) return null;
 
-      // Vrátíme první shodu, která je díky přesnějšímu modelu v drtivé většině ta správná
       return data[0];
   } catch (e) {
       return null;
@@ -145,28 +144,27 @@ async function generateAndPersistUpgrade(slug) {
         created_at: new Date().toISOString()
     };
 
-    const selectQuery = "*,oldGpu:gpus!old_gpu_id(*,game_fps!gpu_id(*)),newGpu:gpus!new_gpu_id(*,game_fps!gpu_id(*))";
-    
-    const dbRes = await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades?select=${encodeURIComponent(selectQuery)}`, {
+    // 🚀 GURU CRITICAL FIX: Samotný POST request OŘÍZNUT o ?select parametr (ChatGPT Fix)
+    await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades`, {
         method: 'POST',
         headers: { 
             'apikey': supabaseKey, 
             'Authorization': `Bearer ${supabaseKey}`, 
             'Content-Type': 'application/json', 
-            'Prefer': 'return=representation,resolution=merge-duplicates' 
+            'Prefer': 'return=representation' 
         },
         body: JSON.stringify(payload)
     });
 
-    if (!dbRes.ok) {
-        const checkExisting = await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades?select=${encodeURIComponent(selectQuery)}&slug=eq.${encodeURIComponent(cleanSlug)}`, {
-            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
-        });
-        const data = await checkExisting.json();
-        return data[0];
-    }
-    const inserted = await dbRes.json();
-    return inserted[0];
+    // 🚀 GURU FIX: Po uložení (nebo pokud záznam už existuje) natáhneme nově vytvořený/stávající záznam 
+    // čistým GET dotazem s plným relačním ?select filtrem
+    const selectQuery = "*,oldGpu:gpus!old_gpu_id(*,game_fps!gpu_id(*)),newGpu:gpus!new_gpu_id(*,game_fps!gpu_id(*))";
+    const checkExisting = await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades?select=${encodeURIComponent(selectQuery)}&slug=eq.${encodeURIComponent(cleanSlug)}`, {
+        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
+    });
+    
+    const data = await checkExisting.json();
+    return data[0] || null;
   } catch (err) { return null; }
 }
 
