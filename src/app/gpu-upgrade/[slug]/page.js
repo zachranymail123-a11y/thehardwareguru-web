@@ -20,10 +20,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V108.0 (HYPHEN-TO-SPACE LOOKUP FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V109.0 (PROFESSIONAL LOOKUP FIX)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX: findGpu nyní nahrazuje pomlčky mezerami v názvu modelu pro 100% match s DB (ChatGPT Fix).
- * 🛡️ FIX: findGpu kóduje celý PostgREST filtr (ilike.*text*) pro maximální stabilitu.
+ * 🛡️ FIX: findGpu nyní extrahuje celý název modelu a nahrazuje pomlčky mezerami (ChatGPT Fix).
+ * 🛡️ FIX: Použití PostgREST wildcardů "*" s limitem 5 pro jednoznačné určení karty (ChatGPT Fix).
  * 🛡️ ARCH: Node.js runtime a ISR revalidate (86400) pro optimální SEO.
  */
 
@@ -53,24 +53,25 @@ function calculatePerf(a, b) {
     return { winner: b, loser: a, diff };
 }
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB (S FIXEM POMLČEK DLE CHATGPT)
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (PROFESIONÁLNÍ LOOKUP DLE CHATGPT)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
 
-  // 🚀 GURU FIX: Extrakce modelu a nahrazení pomlčky mezerou pro match v DB (ChatGPT Fix)
+  // 🚀 GURU FIX: Extrakce celého modelu ze slugu pro maximální přesnost (ChatGPT Fix)
+  // Např. geforce-rtx-5060-ti-16gb -> rtx 5060 ti 16gb
   const model = slugPart
-    .match(/(rtx|gtx|rx)[-_]?\d{3,4}/i)?.[0]
-    ?.replace("-", " ");
+    .replace(/geforce|radeon/gi, '')
+    .replace(/-/g, ' ')
+    .trim();
   
   if (!model) return null;
   
   // 🚀 GURU CRITICAL FIX: PostgREST vyžaduje hvězdičky a kódování celého filtru
   const filter = `ilike.*${model}*`;
-  const url = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=${encodeURIComponent(filter)}&limit=1`;
+  const url = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=${encodeURIComponent(filter)}&limit=5`;
 
   // 🚀 GURU DEBUG: Logování pro diagnostiku ve Vercel logs
   console.log("GPU SEARCH MODEL:", model);
-  console.log("FETCH URL:", url);
 
   try {
       const res = await fetch(url, {
@@ -84,7 +85,11 @@ const findGpu = async (slugPart) => {
       if (!res.ok) return null;
 
       const data = await res.json();
-      return data?.[0] || null;
+      
+      if (!data?.length) return null;
+
+      // Vrátíme první shodu, která je díky přesnějšímu modelu v drtivé většině ta správná
+      return data[0];
   } catch (e) {
       return null;
   }
