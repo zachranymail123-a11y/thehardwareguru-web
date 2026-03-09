@@ -7,33 +7,31 @@ import {
   Swords, 
   Calendar,
   Trophy,
-  Zap,
-  Cpu
+  Zap
 } from 'lucide-react';
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V67.1 (100% NATIVE API & NO-AI)
- * Cesta: src/app/cpuvs/[slug]/page.js
- * 🛡️ FIX 1: Absolutní eliminace next/link, next/navigation a Supabase SDK.
- * 🛡️ FIX 2: Vyhledávací vzor pro CPU nyní používá stejný Regex jako GPU (odděluje čísla a písmena pro neprůstřelný match).
- * 🛡️ FIX 3: Odstraněny literal uvozovky z orQuery, které rozbíjely Supabase fetch.
+ * GURU GPU DUELS ENGINE - DETAIL V64.0 (NATIVE API, NO-AI, DATA DRIVEN)
+ * Cesta: src/app/gpuvs/[slug]/page.js
+ * 🛡️ FIX 1: Odstraněny knihovny @supabase/supabase-js, next/navigation a next/link pro 100% stabilitu v náhledu i na Vercelu.
+ * 🛡️ FIX 2: AI kompletně odstraněno. Nulové halucinace, bleskové generování přes nativní fetch API.
+ * 🛡️ FIX 3: Extrémně striktní CSS Grid (1fr auto 1fr) pro garantované centrování VS odznaku.
+ * 🛡️ FIX 4: Reálný "VÝKON" box z databáze umístěn jako hlavní prvek.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// 🛡️ GURU ENGINE: Vyhledávání CPU z DB (Nativní Fetch)
-const findCpu = async (slugPart) => {
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (Nativní Fetch)
+const findGpu = async (slugPart) => {
   if (!supabaseUrl) return null;
-  
-  // 🚀 GURU FIX: Stejná super-stabilní Regex logika jako u GPU
-  const clean = slugPart.replace(/-/g, " ").replace(/ryzen|core|intel|amd|ultra/gi, "").trim();
+  const clean = slugPart.replace(/-/g, " ").replace(/geforce|radeon|nvidia|amd/gi, "").trim();
   const chunks = clean.match(/\d+|[a-zA-Z]+/g);
   if (!chunks) return null;
   const searchPattern = `%${chunks.join('%')}%`;
 
   try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`, {
+      const res = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`, {
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
           cache: 'no-store'
       });
@@ -52,31 +50,31 @@ async function generateAndPersistDuel(slug) {
     const parts = cleanSlug.split('-vs-');
     if (parts.length !== 2) return null;
 
-    const cpuA = await findCpu(parts[0]);
-    const cpuB = await findCpu(parts[1]);
+    const cardA = await findGpu(parts[0]);
+    const cardB = await findGpu(parts[1]);
 
-    if (!cpuA || !cpuB) return null;
+    if (!cardA || !cardB) return null;
 
     // Rychlé vygenerování metadat (Žádné halucinující AI texty)
-    const title_cs = `Srovnání procesorů: ${cpuA.name} vs ${cpuB.name}`;
-    const title_en = `Processors comparison: ${cpuA.name} vs ${cpuB.name}`;
+    const title_cs = `Srovnání grafických karet: ${cardA.name} vs ${cardB.name}`;
+    const title_en = `Graphics cards comparison: ${cardA.name} vs ${cardB.name}`;
     
-    let seo_desc_cs = `Který procesor je lepší? Detailní srovnání specifikací a výkonu mezi ${cpuA.name} a ${cpuB.name}.`;
-    let seo_desc_en = `Which processor is better? Detailed specs and performance comparison between ${cpuA.name} and ${cpuB.name}.`;
+    let seo_desc_cs = `Která grafická karta je lepší? Detailní srovnání specifikací a výkonu mezi ${cardA.name} a ${cardB.name}.`;
+    let seo_desc_en = `Which graphics card is better? Detailed specs and performance comparison between ${cardA.name} and ${cardB.name}.`;
 
     // Pokud máme skóre, rovnou ho přidáme do SEO popisku
-    if (cpuA.performance_index && cpuB.performance_index) {
-        const diff = Math.round((Math.max(cpuA.performance_index, cpuB.performance_index) / Math.min(cpuA.performance_index, cpuB.performance_index) - 1) * 100);
-        const winner = cpuA.performance_index > cpuB.performance_index ? cpuA.name : cpuB.name;
-        seo_desc_cs += ` Vítězem v hrubém herním výkonu je ${winner} s náskokem ${diff}%.`;
-        seo_desc_en += ` The raw gaming performance winner is ${winner} with a ${diff}% lead.`;
+    if (cardA.performance_index && cardB.performance_index) {
+        const diff = Math.round((Math.max(cardA.performance_index, cardB.performance_index) / Math.min(cardA.performance_index, cardB.performance_index) - 1) * 100);
+        const winner = cardA.performance_index > cardB.performance_index ? cardA.name : cardB.name;
+        seo_desc_cs += ` Vítězem v hrubém výkonu je ${winner} s náskokem ${diff}%.`;
+        seo_desc_en += ` The raw performance winner is ${winner} with a ${diff}% lead.`;
     }
 
     const payload = {
         slug: cleanSlug,
         slug_en: `en-${cleanSlug}`,
-        cpu_a_id: cpuA.id,
-        cpu_b_id: cpuB.id,
+        gpu_a_id: cardA.id,
+        gpu_b_id: cardB.id,
         title_cs,
         title_en,
         content_cs: '', // Nulový obsah, nechceme halucinace
@@ -86,9 +84,8 @@ async function generateAndPersistDuel(slug) {
         created_at: new Date().toISOString()
     };
 
-    const selectQuery = "*,cpuA:cpus!cpu_a_id(*),cpuB:cpus!cpu_b_id(*)";
-    
-    const dbRes = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}`, {
+    const selectQuery = "*,gpuA:gpus!gpu_a_id(*),gpuB:gpus!gpu_b_id(*)";
+    const dbRes = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=${encodeURIComponent(selectQuery)}`, {
         method: 'POST',
         headers: {
             'apikey': supabaseKey,
@@ -100,8 +97,8 @@ async function generateAndPersistDuel(slug) {
     });
 
     if (!dbRes.ok) {
-        // 🚀 GURU FIX: Odstraněny uvozovky z eq. filtru
-        const checkExisting = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${encodeURIComponent(cleanSlug)}`, {
+        // Kontrola, zda už náhodou duel nevznikl ve stejný moment
+        const checkExisting = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${encodeURIComponent(cleanSlug)}`, {
             headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
         });
         const existingData = await checkExisting.json();
@@ -119,12 +116,11 @@ async function generateAndPersistDuel(slug) {
 const getDuelData = async (slug) => {
   if (!supabaseUrl) return null;
   const cleanSlug = slug.replace(/^en-/, '');
-  const normalizedSlug = cleanSlug.replace(/intel-/g, '').replace(/amd-/g, '');
+  const normalizedSlug = cleanSlug.replace(/geforce-/g, '').replace(/radeon-/g, '');
 
-  // 🚀 GURU FIX: Odstraněny literal uvozovky pro správný Supabase parser
   const orQuery = `slug.eq.${slug},slug.eq.${cleanSlug},slug.eq.${normalizedSlug}`;
-  const selectQuery = `*,cpuA:cpus!cpu_a_id(*),cpuB:cpus!cpu_b_id(*)`;
-  const url = `${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&or=(${encodeURIComponent(orQuery)})&limit=1`;
+  const selectQuery = `*,gpuA:gpus!gpu_a_id(*),gpuB:gpus!gpu_b_id(*)`;
+  const url = `${supabaseUrl}/rest/v1/gpu_duels?select=${encodeURIComponent(selectQuery)}&or=(${encodeURIComponent(orQuery)})&limit=1`;
 
   try {
       const res = await fetch(url, {
@@ -158,7 +154,7 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default async function CpuDuelDetail({ params }) {
+export default async function GpuDuelDetail({ params }) {
   const slug = params?.slug ?? null;
   const duel = await getDuelData(slug);
   
@@ -172,40 +168,42 @@ export default async function CpuDuelDetail({ params }) {
 
   // Základní nastavení
   const isEn = slug?.startsWith('en-');
-  const { cpuA, cpuB } = duel;
+  const { gpuA, gpuB } = duel;
   const title = isEn && duel.title_en ? duel.title_en : duel.title_cs;
+  const content = isEn && duel.content_en ? duel.content_en : duel.content_cs;
   const formattedDate = new Intl.DateTimeFormat(isEn ? 'en-US' : 'cs-CZ', { 
     year: 'numeric', month: 'long', day: 'numeric' 
   }).format(new Date(duel.created_at || Date.now()));
-  const backLink = isEn ? '/en/cpuvs' : '/cpuvs';
+  const backLink = isEn ? '/en/gpuvs' : '/gpuvs';
   
   // Design funkce
-  const getWinnerClass = (valA, valB, lowerIsBetter = false) => {
-    if (valA === valB) return 'text-neutral-400';
-    if (lowerIsBetter) return valA < valB ? 'text-green-400 font-black' : 'text-red-400';
-    return valA > valB ? 'text-green-400 font-black' : 'text-red-400';
+  const getWinnerStyle = (valA, valB, lowerIsBetter = false) => {
+    if (valA === valB) return { color: '#9ca3af', fontWeight: 'bold' };
+    const aWins = lowerIsBetter ? valA < valB : valA > valB;
+    if (aWins) return { color: '#66fcf1', fontWeight: '950', textShadow: '0 0 15px rgba(102,252,241,0.4)' };
+    return { color: '#4b5563', opacity: 0.6 }; 
   };
 
   const getVendorColor = (vendor) => {
     const v = (vendor || '').toUpperCase();
-    return v === 'INTEL' ? '#0071c5' : (v === 'AMD' ? '#ed1c24' : '#66fcf1');
+    return v === 'NVIDIA' ? '#76b900' : (v === 'AMD' ? '#ed1c24' : '#66fcf1');
   };
 
-  // 🚀 GURU: VÝPOČET REÁLNÉHO VÝKONU
-  const hasPerfData = cpuA.performance_index > 0 && cpuB.performance_index > 0;
+  // 🚀 GURU: VÝPOČET REÁLNÉHO VÝKONU (Z TechPowerUp indexu z DB)
+  const hasPerfData = gpuA.performance_index > 0 && gpuB.performance_index > 0;
   let perfDiff = 0;
   let perfWinner = null;
   let perfColor = '#4b5563';
 
   if (hasPerfData) {
-    if (cpuA.performance_index > cpuB.performance_index) {
-      perfWinner = cpuA;
-      perfDiff = Math.round(((cpuA.performance_index / cpuB.performance_index) - 1) * 100);
-      perfColor = getVendorColor(cpuA.vendor);
-    } else if (cpuB.performance_index > cpuA.performance_index) {
-      perfWinner = cpuB;
-      perfDiff = Math.round(((cpuB.performance_index / cpuA.performance_index) - 1) * 100);
-      perfColor = getVendorColor(cpuB.vendor);
+    if (gpuA.performance_index > gpuB.performance_index) {
+      perfWinner = gpuA;
+      perfDiff = Math.round(((gpuA.performance_index / gpuB.performance_index) - 1) * 100);
+      perfColor = getVendorColor(gpuA.vendor);
+    } else if (gpuB.performance_index > gpuA.performance_index) {
+      perfWinner = gpuB;
+      perfDiff = Math.round(((gpuB.performance_index / gpuA.performance_index) - 1) * 100);
+      perfColor = getVendorColor(gpuB.vendor);
     }
   }
 
@@ -216,10 +214,10 @@ export default async function CpuDuelDetail({ params }) {
         color: '#fff', fontFamily: 'sans-serif'
     }}>
       
-      {/* 🚀 Ochranný Main Wrapper */}
+      {/* 🚀 Ochranný Main Wrapper - Omezuje šířku a drží obsah uprostřed obrazovky */}
       <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
-        {/* Tlačítko Zpět - Klasický A tag kvůli stabilitě */}
+        {/* Tlačítko Zpět - Používá klasický 'a' tag kvůli odstranění závislosti na next/link v náhledu */}
         <div style={{ marginBottom: '30px' }}>
           <a href={backLink} className="guru-back-btn">
             <ChevronLeft size={16} /> {isEn ? 'BACK TO SELECTION' : 'ZPĚT NA VÝBĚR'}
@@ -227,8 +225,8 @@ export default async function CpuDuelDetail({ params }) {
         </div>
 
         {/* HLAVIČKA DUELU */}
-        <header style={{ marginBottom: '50px', textAlign: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', color: '#9ca3af', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>
+        <header style={{ marginBottom: '50px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', color: '#9ca3af', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#ff0055' }}><Swords size={16} /> ELITNÍ SOUBOJ</span>
             <span className="opacity-30">|</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={16} /> {formattedDate}</span>
@@ -239,31 +237,31 @@ export default async function CpuDuelDetail({ params }) {
           </h1>
         </header>
 
-        {/* 🚀 GURU FIX: ABSOLUTNĚ NEPŮSTŘELNÝ GRID PRO RING */}
+        {/* 🚀 GURU FIX: ABSOLUTNĚ NEPŮSTŘELNÝ GRID PRO RING (Karty se už NIKDY neroztáhnou do stran) */}
         <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '60px' }}>
             
             {/* KARTA A */}
-            <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid ${getVendorColor(cpuA.vendor)}`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)' }}>
-                <div style={{ fontSize: '11px', fontWeight: '950', color: getVendorColor(cpuA.vendor), textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>{cpuA.vendor} • {cpuA.architecture}</div>
-                <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: 0, lineHeight: '1.1' }}>{cpuA.name}</h2>
+            <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid ${getVendorColor(gpuA.vendor)}`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '950', color: getVendorColor(gpuA.vendor), textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>{gpuA.vendor} • {gpuA.architecture}</div>
+                <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: 0, lineHeight: '1.1' }}>{gpuA.name.replace('GeForce ', '').replace('Radeon ', '')}</h2>
             </div>
             
-            {/* VS ZNAK */}
+            {/* VS ZNAK (Je to samostatný sloupec uprostřed gridu, proto NIKDY neuhne) */}
             <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <div style={{ width: '70px', height: '70px', background: '#ff0055', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950', fontSize: '24px', border: '5px solid #0f1115', boxShadow: '0 0 30px rgba(255,0,85,0.6)', color: '#fff', transform: 'rotate(-5deg)' }}>VS</div>
             </div>
 
             {/* KARTA B */}
-            <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid ${getVendorColor(cpuB.vendor)}`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)' }}>
-                <div style={{ fontSize: '11px', fontWeight: '950', color: getVendorColor(cpuB.vendor), textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>{cpuB.vendor} • {cpuB.architecture}</div>
-                <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: 0, lineHeight: '1.1' }}>{cpuB.name}</h2>
+            <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid ${getVendorColor(gpuB.vendor)}`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '950', color: getVendorColor(gpuB.vendor), textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>{gpuB.vendor} • {gpuB.architecture}</div>
+                <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: 0, lineHeight: '1.1' }}>{gpuB.name.replace('GeForce ', '').replace('Radeon ', '')}</h2>
             </div>
         </div>
 
         {/* 🚀 GURU: VÝKONOVÝ ROZDÍL */}
         <section style={{ marginBottom: '60px' }}>
           <h2 style={{ fontSize: '2.5rem', fontWeight: '950', color: '#66fcf1', textTransform: 'uppercase', fontStyle: 'italic', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <Zap size={36} className="text-[#66fcf1]" /> {isEn ? 'GAMING PERFORMANCE' : 'HERNÍ VÝKON'}
+            <Zap size={36} className="text-[#66fcf1]" /> {isEn ? 'RAW PERFORMANCE' : 'HRUBÝ VÝKON'}
           </h2>
           
           {hasPerfData && perfWinner ? (
@@ -280,20 +278,20 @@ export default async function CpuDuelDetail({ params }) {
                   <div className="perf-box-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
                     <div>
                         <div style={{ color: perfColor, fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Trophy size={18} /> {isEn ? 'GAMING PERFORMANCE WINNER' : 'VÍTĚZ HERNÍHO VÝKONU'}
+                            <Trophy size={18} /> {isEn ? 'RAW PERFORMANCE WINNER' : 'VÍTĚZ HRUBÉHO VÝKONU'}
                         </div>
                         <div style={{ color: '#fff', fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: '950', textTransform: 'uppercase', fontStyle: 'italic', letterSpacing: '1px', margin: 0, lineHeight: 1.1 }}>
-                            {perfWinner.name}
+                            {perfWinner.name.replace('GeForce ', '').replace('Radeon ', '')}
                         </div>
                         <p style={{ color: '#9ca3af', marginTop: '15px', fontSize: '15px', maxWidth: '600px' }}>
                           {isEn 
-                            ? `Based on aggregate gaming benchmarks, the ${perfWinner.name} provides a clear performance advantage over its competitor in gaming scenarios.` 
-                            : `Na základě agregovaných herních benchmarků poskytuje procesor ${perfWinner.name} jasnou výkonnostní výhodu nad svým konkurentem ve hrách.`}
+                            ? `Based on aggregate technical benchmarks, the ${perfWinner.name} provides a clear performance advantage over its competitor.` 
+                            : `Na základě agregovaných technických benchmarků poskytuje karta ${perfWinner.name} jasnou výkonnostní výhodu nad svým konkurentem.`}
                         </p>
                     </div>
                     <div style={{
                         background: perfColor,
-                        color: perfWinner.vendor.toUpperCase() === 'INTEL' ? '#fff' : '#000',
+                        color: perfWinner.vendor.toUpperCase() === 'NVIDIA' ? '#000' : '#fff',
                         padding: '20px 30px',
                         borderRadius: '20px',
                         fontWeight: '950',
@@ -322,7 +320,7 @@ export default async function CpuDuelDetail({ params }) {
                             <Swords size={18} /> {isEn ? 'PERFORMANCE TIE' : 'VYROVNANÝ VÝKON'}
                         </div>
                         <div style={{ color: '#fff', fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: '950', textTransform: 'uppercase', fontStyle: 'italic', letterSpacing: '1px', margin: 0, lineHeight: 1.1 }}>
-                            {isEn ? 'IDENTICAL PERFORMANCE' : 'TOTOŽNÝ HERNÍ VÝKON'}
+                            {isEn ? 'IDENTICAL PERFORMANCE' : 'TOTOŽNÝ HRUBÝ VÝKON'}
                         </div>
                     </div>
                     <div style={{ background: '#374151', color: '#fff', padding: '20px 30px', borderRadius: '20px', fontWeight: '950', fontSize: '36px' }}>
@@ -337,41 +335,35 @@ export default async function CpuDuelDetail({ params }) {
           )}
         </section>
 
-        {/* TABULKA SPECIFIKACÍ (Stejné formátování jako u gpuvs) */}
+        {/* TABULKA SPECIFIKACÍ */}
         <section style={{ marginBottom: '60px' }}>
           <h2 style={{ fontSize: '2.5rem', fontWeight: '950', color: '#fff', textTransform: 'uppercase', fontStyle: 'italic', marginBottom: '20px' }}>
             {isEn ? 'TECHNICAL SPECS' : 'GURU SPECIFIKACE'}
           </h2>
           <div style={{ background: 'rgba(15, 17, 21, 0.95)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
              
-             <div className="spec-row">
-               <div className={`spec-val ${getWinnerClass(cpuA.cores, cpuB.cores)}`}>{cpuA.cores} / {cpuA.threads}</div>
-               <div className="spec-label">{isEn ? 'CORES / THREADS' : 'JÁDRA / VLÁKNA'}</div>
-               <div className={`spec-val ${getWinnerClass(cpuB.cores, cpuA.cores)}`}>{cpuB.cores} / {cpuB.threads}</div>
+             <div className="spec-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', padding: '25px 30px', borderBottom: '1px solid rgba(255,255,255,0.02)', alignItems: 'center' }}>
+               <div style={{ ...getWinnerStyle(gpuA.vram_gb, gpuB.vram_gb), fontSize: '24px', textAlign: 'right' }}>{gpuA.vram_gb} GB</div>
+               <div style={{ padding: '0 30px', fontSize: '11px', fontWeight: '950', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center' }}>VRAM</div>
+               <div style={{ ...getWinnerStyle(gpuB.vram_gb, gpuA.vram_gb), fontSize: '24px', textAlign: 'left' }}>{gpuB.vram_gb} GB</div>
              </div>
 
-             <div className="spec-row">
-               <div className={`spec-val ${getWinnerClass(cpuA.base_clock_ghz, cpuB.base_clock_ghz)}`}>{cpuA.base_clock_ghz} GHz</div>
-               <div className="spec-label">{isEn ? 'BASE CLOCK' : 'ZÁKLADNÍ TAKT'}</div>
-               <div className={`spec-val ${getWinnerClass(cpuB.base_clock_ghz, cpuA.base_clock_ghz)}`}>{cpuB.base_clock_ghz} GHz</div>
+             <div className="spec-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', padding: '25px 30px', borderBottom: '1px solid rgba(255,255,255,0.02)', alignItems: 'center' }}>
+               <div style={{ color: '#e5e7eb', fontSize: '22px', fontWeight: 'bold', textAlign: 'right' }}>{gpuA.memory_bus}</div>
+               <div style={{ padding: '0 30px', fontSize: '11px', fontWeight: '950', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center' }}>{isEn ? 'BUS' : 'SBĚRNICE'}</div>
+               <div style={{ color: '#e5e7eb', fontSize: '22px', fontWeight: 'bold', textAlign: 'left' }}>{gpuB.memory_bus}</div>
              </div>
 
-             <div className="spec-row">
-               <div className={`spec-val ${getWinnerClass(cpuA.boost_clock_ghz, cpuB.boost_clock_ghz)}`}>{cpuA.boost_clock_ghz} GHz</div>
-               <div className="spec-label">BOOST CLOCK</div>
-               <div className={`spec-val ${getWinnerClass(cpuB.boost_clock_ghz, cpuA.boost_clock_ghz)}`}>{cpuB.boost_clock_ghz} GHz</div>
+             <div className="spec-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', padding: '25px 30px', borderBottom: '1px solid rgba(255,255,255,0.02)', alignItems: 'center' }}>
+               <div style={{ ...getWinnerStyle(gpuA.boost_clock_mhz, gpuB.boost_clock_mhz), fontSize: '24px', textAlign: 'right' }}>{gpuA.boost_clock_mhz} MHz</div>
+               <div style={{ padding: '0 30px', fontSize: '11px', fontWeight: '950', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center' }}>BOOST CLOCK</div>
+               <div style={{ ...getWinnerStyle(gpuB.boost_clock_mhz, gpuA.boost_clock_mhz), fontSize: '24px', textAlign: 'left' }}>{gpuB.boost_clock_mhz} MHz</div>
              </div>
 
-             <div className="spec-row">
-               <div className={`spec-val ${getWinnerClass(cpuA.tdp_w, cpuB.tdp_w, true)}`}>{cpuA.tdp_w} W</div>
-               <div className="spec-label">TDP (SPOTŘEBA)</div>
-               <div className={`spec-val ${getWinnerClass(cpuB.tdp_w, cpuA.tdp_w, true)}`}>{cpuB.tdp_w} W</div>
-             </div>
-
-             <div className="spec-row">
-               <div className="spec-val" style={{ color: '#e5e7eb' }}>{cpuA.architecture}</div>
-               <div className="spec-label">{isEn ? 'ARCHITECTURE' : 'ARCHITEKTURA'}</div>
-               <div className="spec-val" style={{ color: '#e5e7eb' }}>{cpuB.architecture}</div>
+             <div className="spec-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', padding: '25px 30px', alignItems: 'center' }}>
+               <div style={{ ...getWinnerStyle(gpuA.tdp_w, gpuB.tdp_w, true), fontSize: '24px', textAlign: 'right' }}>{gpuA.tdp_w} W</div>
+               <div style={{ padding: '0 30px', fontSize: '11px', fontWeight: '950', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center' }}>TDP</div>
+               <div style={{ ...getWinnerStyle(gpuB.tdp_w, gpuA.tdp_w, true), fontSize: '24px', textAlign: 'left' }}>{gpuB.tdp_w} W</div>
              </div>
           </div>
         </section>
@@ -393,7 +385,7 @@ export default async function CpuDuelDetail({ params }) {
 
       </main>
 
-      {/* GLOBÁLNÍ STYLY - ABSOLUTNÍ KOPIE GPUVS PRO MAXIMÁLNÍ STABILITU */}
+      {/* GLOBÁLNÍ STYLY */}
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; backdrop-filter: blur(5px); border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.2); }
@@ -404,17 +396,7 @@ export default async function CpuDuelDetail({ params }) {
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
         .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
 
-        /* Utility classes pre tabulku */
-        .spec-row { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center; }
-        .spec-row:nth-child(even) { background: rgba(255,255,255,0.02); }
-        .spec-row:hover { background: rgba(255,255,255,0.05); }
-        .spec-val { flex: 1; text-align: center; font-size: 16px; font-weight: 900; }
-        .spec-label { flex: 1; text-align: center; font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
-        
-        .text-green-400 { color: #4ade80; }
-        .text-red-400 { color: #f87171; }
-        .text-neutral-400 { color: #a3a3a3; }
-        .font-black { font-weight: 900; }
+        .spec-row:hover { background: rgba(255,255,255,0.02); }
 
         @media (max-width: 768px) {
           .guru-deals-btn, .guru-support-btn { width: 100%; font-size: 15px; padding: 18px 30px; }
