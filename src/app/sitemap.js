@@ -154,6 +154,22 @@ export default async function sitemap() {
 
         if (!gpu.slug) return;
 
+        /* GPU HUB */
+
+        dynamicRoutes.push({
+          url: `${baseUrl}/gpu/${gpu.slug}`,
+          lastModified: currentDate,
+          priority: 0.8
+        });
+
+        dynamicRoutes.push({
+          url: `${baseUrl}/en/gpu/${gpu.slug}`,
+          lastModified: currentDate,
+          priority: 0.7
+        });
+
+        /* GPU PERFORMANCE CLUSTER */
+
         gamesList.forEach((game) => {
 
           resolutions.forEach((res) => {
@@ -174,6 +190,8 @@ export default async function sitemap() {
 
         });
 
+        /* GPU PERFORMANCE HUB */
+
         dynamicRoutes.push({
           url: `${baseUrl}/gpu-performance/${gpu.slug}`,
           lastModified: currentDate,
@@ -189,6 +207,8 @@ export default async function sitemap() {
       });
 
     }
+
+    /* GPU UPGRADES */
 
     if (upgradesRes.data) {
 
