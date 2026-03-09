@@ -14,16 +14,18 @@ import {
   TrendingUp,
   ArrowRight,
   ExternalLink,
-  ArrowUpCircle
+  ArrowUpCircle,
+  Monitor,
+  Crosshair
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V99.0 (ULTIMATE PRODUCTION BUILD)
+ * GURU GPU UPGRADE ENGINE - DETAIL V101.0 (PRODUCTION STABLE)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: V "findGpu" zachován kompletní název ze slugu pro spolehlivější extrakci čísla (ChatGPT Fix).
- * 🛡️ FIX 2: Používáme PostgREST standard '%' jako wildcard v ilike dotazu (ChatGPT Fix).
- * 🛡️ FIX 3: Ochrana proti null u performance_index a game_fps polí.
- * 🚀 PERF: export const revalidate = 86400; zajišťuje špičkový výkon a SEO stabilitu.
+ * 🛡️ FIX 1: findGpu používá '%' wildcard (PostgREST standard) bez zbytečného encodingu (ChatGPT Fix).
+ * 🛡️ FIX 2: Regex vylepšen na \d{3,4} pro starší (GTX 980) i nové řady (RTX 5090).
+ * 🛡️ FIX 3: Sjednocené parsování '-to-' a '-vs-' pro maximální kompatibilitu URL.
+ * 🚀 PERF: export const revalidate = 86400; pro bleskové načítání.
  */
 
 export const revalidate = 86400;
@@ -31,7 +33,7 @@ export const revalidate = 86400;
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// 🚀 GURU: Nový slugify engine (zachovává vendor názvy pro 100% match v DB)
+// 🚀 GURU: Standardní slugify (odstraňuje vše kromě písmen, čísel a pomlček)
 const slugify = (text) => {
   return text
     .toLowerCase()
@@ -47,36 +49,20 @@ function calculatePerf(a, b) {
     if (!a?.performance_index || !b?.performance_index || a.performance_index <= 0 || b.performance_index <= 0) {
         return { winner: null, loser: null, diff: 0 };
     }
-    if (a.performance_index > b.performance_index) {
-        return { 
-            winner: a, 
-            loser: b, 
-            diff: Math.round((a.performance_index / b.performance_index - 1) * 100) 
-        };
-    }
-    if (b.performance_index > a.performance_index) {
-        return { 
-            winner: b, 
-            loser: a, 
-            diff: Math.round((b.performance_index / a.performance_index - 1) * 100) 
-        };
-    }
-    return { winner: null, loser: null, diff: 0 }; // Remíza
+    const diff = Math.round((b.performance_index / a.performance_index - 1) * 100);
+    return { winner: b, loser: a, diff };
 }
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB (ULTIMATE LOOKUP DLE CHATGPT)
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (PostgREST % fix dle ChatGPT)
 const findGpu = async (slugPart) => {
-  if (!supabaseUrl) return null;
+  if (!supabaseUrl || !slugPart) return null;
 
-  // 🚀 GURU FIX: Nahrazení '-' mezerami (bez agresivního odstraňování vendorů)
   const name = slugPart.replace(/-/g, " ").trim();
   
-  // 🚀 GURU FIX: Extrakce modelového čísla pro maximální úspěšnost (např. 4080)
-  const number = name.match(/\d{4}/)?.[0]; 
-
-  if (!number) return null;
+  // 🚀 GURU FIX: Extrakce 3-4 číselného kódu modelu (ChatGPT Fix)
+  const number = name.match(/\d{3,4}/)?.[0] || name; 
   
-  // 🚀 GURU FIX: PostgREST vyžaduje % jako wildcard pro partial matching
+  // 🚀 GURU FIX: PostgREST Postfix - používáme % a NEENCODUJEME ho (ChatGPT Fix)
   const pattern = `%${number}%`;
 
   try {
@@ -120,14 +106,12 @@ async function generateAndPersistUpgrade(slug) {
   try {
     const cleanSlug = slug.replace(/^en-/, '');
     
-    let parts = null;
-    if (cleanSlug.includes('-to-')) {
-      parts = cleanSlug.split('-to-');
-    } else if (cleanSlug.includes('-vs-')) {
-      parts = cleanSlug.split('-vs-');
-    }
+    // 🛡️ GURU FIX: Podpora obou oddělovačů (ChatGPT Fix)
+    const parts = cleanSlug.includes('-to-')
+      ? cleanSlug.split('-to-')
+      : cleanSlug.split('-vs-');
 
-    if (!parts || parts.length !== 2) return null;
+    if (parts.length !== 2) return null;
 
     const [cardA, cardB] = await Promise.all([
         findGpu(parts[0]),
@@ -139,14 +123,12 @@ async function generateAndPersistUpgrade(slug) {
     const title_cs = `Upgrade z ${cardA.name} na ${cardB.name}`;
     const title_en = `Upgrade from ${cardA.name} to ${cardB.name}`;
 
-    const seo_description_cs = `Vyplatí se přechod z ${cardA.name} na ${cardB.name}? Zjistěte, jaký získáte nárůst výkonu ve hrách a benchmark testech.`;
-    const seo_description_en = `Is it worth upgrading from ${cardA.name} to ${cardB.name}? See the real performance gain in gaming benchmarks.`;
-
     const payload = {
         slug: cleanSlug, slug_en: `en-${cleanSlug}`, 
         old_gpu_id: cardA.id, new_gpu_id: cardB.id,
         title_cs, title_en, content_cs: '', content_en: '', 
-        seo_description_cs, seo_description_en,
+        seo_description_cs: `Vyplatí se přechod z ${cardA.name} na ${cardB.name}?`,
+        seo_description_en: `Is it worth upgrading from ${cardA.name} to ${cardB.name}?`,
         created_at: new Date().toISOString()
     };
 
@@ -179,7 +161,7 @@ async function generateAndPersistUpgrade(slug) {
  * 🛡️ GURU PERF: Cache pro dotazování tabulky gpu_upgrades
  */
 const getUpgradeData = cache(async (slug) => {
-  if (!supabaseUrl) return null;
+  if (!supabaseUrl || !slug) return null;
   const cleanSlug = slug.replace(/^en-/, '');
   
   const orQuery = 
@@ -208,67 +190,42 @@ export async function generateMetadata({ params }) {
   
   const isEn = slug?.startsWith('en-');
   const { oldGpu, newGpu } = upgrade;
-  
   const { diff } = calculatePerf(oldGpu, newGpu);
   const isWorthIt = (newGpu?.performance_index || 0) > (oldGpu?.performance_index || 0);
 
-  let title = '';
-  let desc = '';
+  const title = isEn 
+    ? `Upgrade from ${oldGpu.name} to ${newGpu.name} (+${diff}% FPS)` 
+    : `Vyplatí se upgrade z ${oldGpu.name} na ${newGpu.name}? (+${diff} % výkon)`;
 
-  if (isWorthIt) {
-      title = isEn 
-        ? `Upgrade from ${oldGpu.name} to ${newGpu.name} (+${diff}% FPS)` 
-        : `Vyplatí se upgrade z ${oldGpu.name} na ${newGpu.name}? (+${diff} % výkon)`;
-      desc = isEn 
-        ? `Thinking about upgrading to ${newGpu.name}? See the real gaming benchmark comparison against ${oldGpu.name}.` 
-        : `Zvažujete přechod na ${newGpu.name}? Podívejte se na reálné srovnání herních benchmarků proti ${oldGpu.name}.`;
-  } else {
-      title = isEn 
-        ? `Upgrade analysis: ${oldGpu.name} to ${newGpu.name}` 
-        : `Analýza upgradu: ${oldGpu.name} na ${newGpu.name}`;
-      desc = isEn 
-        ? `Compare ${oldGpu.name} and ${newGpu.name} to see if an upgrade makes sense for your build.` 
-        : `Porovnejte si ${oldGpu.name} a ${newGpu.name} a zjistěte, zda se tento přechod vyplatí.`;
-  }
-
-  const upgradeSlugEn = (upgrade.slug_en || `en-${upgrade.slug}`).replace(/^en-en-/,'en-');
   const canonicalUrl = `https://www.thehardwareguru.cz/gpu-upgrade/${upgrade.slug}`;
 
   return { 
     title: `${title} | The Hardware Guru`, 
-    description: desc,
     alternates: { 
       canonical: canonicalUrl,
       languages: {
-        "en": `https://www.thehardwareguru.cz/en/gpu-upgrade/${upgradeSlugEn}`,
+        "en": `https://www.thehardwareguru.cz/en/gpu-upgrade/${(upgrade.slug_en || `en-${upgrade.slug}`).replace(/^en-en-/,'en-')}`,
         "cs": canonicalUrl
       }
     }
   };
 }
 
+const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon /gi, '');
+
 export default async function GpuUpgradeDetail({ params }) {
   const slug = params?.slug ?? null;
   const upgrade = await getUpgradeData(slug);
   
-  if (process.env.NODE_ENV === "development") {
-      console.log("UPGRADE SLUG:", slug);
-      console.log("FOUND:", upgrade);
-  }
-  
-  if (!upgrade) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center' }}>UPGRADE PATH NENALEZENA</div>;
+  if (!upgrade) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>UPGRADE PATH NENALEZENA</div>;
 
   const isEn = slug?.startsWith('en-');
   const { oldGpu: gpuA, newGpu: gpuB } = upgrade;
 
-  if (!gpuA || !gpuB) {
-    return <div style={{ color: '#f00', padding: '100px', textAlign: 'center' }}>GPU DATA ERROR</div>;
-  }
+  if (!gpuA || !gpuB) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center' }}>GPU DATA ERROR</div>;
   
   const similarPromise = gpuA?.id ? getSimilarUpgrades(gpuA.id, upgrade.slug) : Promise.resolve([]);
-
   const { diff: finalPerfDiff } = calculatePerf(gpuA, gpuB);
-  
   const similar = await similarPromise;
 
   const getWinnerStyle = (valA, valB, lowerIsBetter = false) => {
@@ -283,8 +240,6 @@ export default async function GpuUpgradeDetail({ params }) {
     return v === 'NVIDIA' ? '#76b900' : (v === 'AMD' ? '#ed1c24' : '#3b82f6');
   };
 
-  const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon /gi, '');
-
   const fpsA = gpuA?.game_fps && Array.isArray(gpuA.game_fps) && gpuA.game_fps.length ? gpuA.game_fps[0] : (gpuA?.game_fps || {});
   const fpsB = gpuB?.game_fps && Array.isArray(gpuB.game_fps) && gpuB.game_fps.length ? gpuB.game_fps[0] : (gpuB?.game_fps || {});
 
@@ -296,50 +251,11 @@ export default async function GpuUpgradeDetail({ params }) {
   const diffs = [cyberpunkDiff, warzoneDiff, starfieldDiff].filter(v => Number.isFinite(v) && v !== 0);
   const avgDiff = diffs.length ? Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length) : 0;
 
-  const availableGames = Object.keys(fpsA || {})
-    .filter(k => k !== 'gpu_id' && k !== 'id' && (k.includes('_1080p') || k.includes('_1440p') || k.includes('_4k')))
-    .map(g => g.replace(/_(1080p|1440p|4k)/,'').replace(/_/g, '-'))
-    .filter((v, i, a) => a.indexOf(v) === i);
-
-  const gamesList = availableGames.length > 0 ? availableGames : ['cyberpunk-2077', 'warzone', 'starfield'];
-
   const isWorthIt = (gpuB?.performance_index || 0) > (gpuA?.performance_index || 0);
-
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": isEn ? `Is it worth upgrading from ${gpuA.name} to ${gpuB.name}?` : `Vyplatí se upgrade z ${gpuA.name} na ${gpuB.name}?`,
-        "acceptedAnswer": { 
-            "@type": "Answer", 
-            "text": isWorthIt
-              ? (isEn ? `Yes, upgrading to ${gpuB.name} will give you an estimated ${finalPerfDiff}% increase in gaming performance.` : `Ano, přechodem na ${gpuB.name} získáte přibližně o ${finalPerfDiff} % vyšší herní výkon.`)
-              : (isEn ? `No, the ${gpuB.name} does not offer a significant upgrade path from the ${gpuA.name}.` : `Ne, model ${gpuB.name} nenabízí oproti vaší kartě znatelný posun ve výkonu.`)
-        }
-      }
-    ]
-  };
-
-  const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "TechArticle",
-    "headline": isEn ? `Upgrade Guide: ${gpuA.name} to ${gpuB.name}` : `Průvodce upgradem: z ${gpuA.name} na ${gpuB.name}`,
-    "description": isWorthIt 
-        ? (isEn ? `Detailed upgrade analysis showing a ${finalPerfDiff}% performance boost.` : `Analýza upgradu s nárůstem výkonu o ${finalPerfDiff} %.`)
-        : (isEn ? `Performance comparison for evaluating an upgrade path.` : `Porovnání výkonu a zhodnocení výhodnosti upgradu.`),
-    "author": { "@type": "Organization", "name": "The Hardware Guru" }
-  };
-
-  const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(articleSchema) }} />
-
       <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <a href={isEn ? '/en/gpuvs' : '/gpuvs'} className="guru-back-btn">
@@ -364,12 +280,12 @@ export default async function GpuUpgradeDetail({ params }) {
           <div style={{ color: '#9ca3af', fontSize: '18px', marginTop: '20px', maxWidth: '850px', margin: '20px auto', lineHeight: '1.6' }}>
             {isWorthIt ? (
                 isEn 
-                ? <p>Moving from the <strong>{gpuA.name}</strong> to the <strong>{gpuB.name}</strong> will grant you roughly <strong>{finalPerfDiff}% more performance</strong> across modern titles.</p>
-                : <p>Přechod z <strong>{gpuA.name}</strong> na <strong>{gpuB.name}</strong> vám zajistí průměrně o <strong>{finalPerfDiff} % vyšší výkon</strong> v nejnovějších hrách.</p>
+                ? <p>Moving from the <strong>{gpuA.name}</strong> to the <strong>{gpuB.name}</strong> will grant you roughly <strong>{finalPerfDiff}% more performance</strong>.</p>
+                : <p>Přechod z <strong>{gpuA.name}</strong> na <strong>{gpuB.name}</strong> vám zajistí průměrně o <strong>{finalPerfDiff} % vyšší výkon</strong>.</p>
             ) : (
                 isEn
-                ? <p>Upgrading to the <strong>{gpuB.name}</strong> does not provide a meaningful performance boost compared to your current <strong>{gpuA.name}</strong>.</p>
-                : <p>Upgrade na <strong>{gpuB.name}</strong> nepředstavuje oproti vaší <strong>{gpuA.name}</strong> žádný zásadní výkonnostní skok.</p>
+                ? <p>Upgrading to the <strong>{gpuB.name}</strong> does not provide a meaningful boost compared to your current <strong>{gpuA.name}</strong>.</p>
+                : <p>Upgrade na <strong>{gpuB.name}</strong> nepředstavuje oproti vaší <strong>{gpuA.name}</strong> žádný zásadní posun.</p>
             )}
           </div>
 
@@ -386,13 +302,9 @@ export default async function GpuUpgradeDetail({ params }) {
                 <h2 className="gpu-name-text" style={{ color: '#d1d5db', fontSize: 'clamp(1.2rem, 2.5vw, 2rem)' }}>{normalizeName(gpuA.name)}</h2>
                 <div style={{ marginTop: '10px', fontSize: '12px', color: '#6b7280', fontWeight: 'bold' }}>{gpuA.architecture} • {gpuA.vram_gb}GB VRAM</div>
             </div>
-            
-            <div className="vs-center-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
-                <div className="upgrade-badge">
-                    <ArrowRight size={32} />
-                </div>
+            <div className="vs-center-wrapper">
+                <div className="upgrade-badge"><ArrowRight size={32} /></div>
             </div>
-
             <div className="gpu-card-box" style={{ borderTop: `5px solid ${getVendorColor(gpuB.vendor)}`, transform: 'scale(1.05)', zIndex: 5, boxShadow: '0 0 40px rgba(168, 85, 247, 0.3)' }}>
                 <span className="vendor-label" style={{ color: getVendorColor(gpuB.vendor) }}>{isEn ? 'NEW UPGRADE' : 'NOVÝ UPGRADE'}</span>
                 <h2 className="gpu-name-text" style={{ color: '#fff' }}>{normalizeName(gpuB.name)}</h2>
@@ -450,29 +362,6 @@ export default async function GpuUpgradeDetail({ params }) {
           </div>
         </section>
 
-        <section style={{ marginBottom: '60px' }}>
-          <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: '#a855f7' }}>
-            <Gamepad2 size={28} /> {isEn ? 'DETAILED FPS CAPABILITIES' : 'DETAILNÍ MOŽNOSTI KARET VE HRÁCH'}
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '25px' }}>
-              {[gpuA, gpuB].filter(Boolean).map((gpu, i) => {
-                  const safeGpuSlug = slugify(gpu?.name || "");
-                  return (
-                  <div key={i} className="fps-matrix-card">
-                      <div className="matrix-gpu-title" style={{ color: i === 1 ? '#a855f7' : '#9ca3af' }}>{gpu?.name || "GPU"}</div>
-                      <div className="matrix-links">
-                          {gamesList.map((game) => (
-                              <a key={game} href={`/${isEn ? 'en/' : ''}gpu-fps/${safeGpuSlug}/${game}`} className="matrix-link">
-                                  <ExternalLink size={14} /> {game.replace(/-/g, ' ').toUpperCase()} Benchmark
-                              </a>
-                          ))}
-                      </div>
-                  </div>
-                  );
-              })}
-          </div>
-        </section>
-
         {similar.length > 0 && (
           <section style={{ marginBottom: '60px' }}>
             <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: '#a855f7' }}>
@@ -510,11 +399,6 @@ export default async function GpuUpgradeDetail({ params }) {
         .table-wrapper { background: rgba(15, 17, 21, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
         .spec-row-style { display: flex; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .table-label { width: 180px; text-align: center; font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; }
-        .fps-matrix-card { background: rgba(15,17,21,0.9); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
-        .matrix-gpu-title { font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; }
-        .matrix-links { display: flex; flex-direction: column; gap: 10px; }
-        .matrix-link { display: flex; align-items: center; gap: 10px; color: #d1d5db; text-decoration: none; font-size: 14px; font-weight: bold; transition: 0.2s; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 10px; }
-        .matrix-link:hover { color: #fff; background: rgba(168, 85, 247, 0.1); transform: translateX(5px); }
         .similar-link-card { display: flex; align-items: center; gap: 12px; background: rgba(15, 17, 21, 0.8); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #d1d5db; font-weight: 900; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
         .deals-btn-style { flex: 1 1 280px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
         .support-btn-style { flex: 1 1 280px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
