@@ -118,7 +118,6 @@ export default async function sitemap() {
     if (tweakyRes.data) tweakyRes.data.forEach(item => addToRoutes(item, '/tweaky', 0.8));
     if (radyRes.data) radyRes.data.forEach(item => addToRoutes(item, '/rady', 0.8));
     if (slovnikRes.data) slovnikRes.data.forEach(item => addToRoutes(item, '/slovnik', 0.7));
-    if (duelsRes.data) duelsRes.data.forEach(item => addToRoutes(item, '/gpuvs', 0.8));
     if (cpuDuelsRes.data) cpuDuelsRes.data.forEach(item => addToRoutes(item, '/cpuvs', 0.8));
 
     const gamesList = [
@@ -146,13 +145,41 @@ export default async function sitemap() {
 
     const resolutions = ['1080p','1440p','4k'];
 
+    /* GPU DUELS + GAME (NOVÉ) */
+
+    if (duelsRes.data) {
+
+      duelsRes.data.forEach((item) => {
+
+        addToRoutes(item, '/gpuvs', 0.8);
+
+        gamesList.forEach((game) => {
+
+          dynamicRoutes.push({
+            url: `${baseUrl}/gpuvs/${item.slug}/${game}`,
+            lastModified: item.created_at || currentDate,
+            priority: 0.7
+          });
+
+          const enSlug = item.slug_en || `en-${item.slug}`;
+
+          dynamicRoutes.push({
+            url: `${baseUrl}/en/gpuvs/${enSlug}/${game}`,
+            lastModified: item.created_at || currentDate,
+            priority: 0.6
+          });
+
+        });
+
+      });
+
+    }
+
     if (gpusRes.data) {
 
       gpusRes.data.forEach((gpu) => {
 
         if (!gpu.slug) return;
-
-        /* GPU HUB */
 
         dynamicRoutes.push({
           url: `${baseUrl}/gpu/${gpu.slug}`,
@@ -165,8 +192,6 @@ export default async function sitemap() {
           lastModified: currentDate,
           priority: 0.7
         });
-
-        /* GPU GAME HUB (NOVÉ) */
 
         gamesList.forEach((game) => {
 
@@ -183,8 +208,6 @@ export default async function sitemap() {
           });
 
         });
-
-        /* GPU PERFORMANCE CLUSTER */
 
         gamesList.forEach((game) => {
 
@@ -205,8 +228,6 @@ export default async function sitemap() {
           });
 
         });
-
-        /* GPU PERFORMANCE HUB */
 
         dynamicRoutes.push({
           url: `${baseUrl}/gpu-performance/${gpu.slug}`,
