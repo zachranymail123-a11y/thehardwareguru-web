@@ -1,116 +1,183 @@
+import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export const revalidate = 0; // GURU FIX: Sitemapa sa vygeneruje vždy čerstvá pri každej požiadavke
+// GURU FIX: Vynútená dynamika, aby sa RSS nikdy necachovalo a Make.com videl novinky hneď
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY // Používame service_role pre neobmedzený prístup v API
+);
 
 /**
- * GURU SEO ENGINE - SITEMAP GENERATOR V4.0
- * Cesta: src/app/sitemap.js
- * Dynamicky generuje mapu webu pre Google.
- * Zahrnuje: Články, Očakávané hry, Mikrorecenzie, Tipy, Tweaky, Rady, Slovník, Slevy a 🚀 GPU DUELY.
+ * GURU RSS FEED ENGINE V5.0
+ * Cesta: src/app/api/rss/route.js
+ * Agreguje: Články, Očakávané hry, Tipy, Tweaky, Rady, Slovník a 🚀 GPU DUELY.
  */
-export default async function sitemap() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  const supabase = createClient(supabaseUrl, supabaseKey);
-  const baseUrl = 'https://www.thehardwareguru.cz';
-
-  // 1. STATICKÉ STRÁNKY (Základné kamene webu CZ + EN)
-  const staticPaths = [
-    { url: '', priority: 1.0 },
-    { url: '/clanky', priority: 0.9 },
-    { url: '/ocekavane-hry', priority: 0.9 }, 
-    { url: '/mikrorecenze', priority: 0.9 },  
-    { url: '/tipy', priority: 0.9 },
-    { url: '/tweaky', priority: 0.9 },
-    { url: '/rady', priority: 0.9 },
-    { url: '/deals', priority: 0.9 },        
-    { url: '/kalendar', priority: 0.8 },      
-    { url: '/sestavy', priority: 0.9 },
-    { url: '/moje-pc', priority: 0.8 },
-    { url: '/slovnik', priority: 0.8 },
-    { url: '/gpuvs', priority: 0.9 },        // 🚀 GURU: Hlavná sekcia duelov
-    { url: '/support', priority: 0.5 },
-    { url: '/sin-slavy', priority: 0.6 },
-    { url: '/partneri', priority: 0.6 },
-    { url: '/ochrana-soukromi', priority: 0.3 },
-    { url: '/podminky-uziti', priority: 0.3 },
-  ];
-
-  const staticRoutes = [];
-  staticPaths.forEach((route) => {
-    // Česká verzia
-    staticRoutes.push({
-      url: `${baseUrl}/cs${route.url}`,
-      lastModified: new Date().toISOString(),
-      priority: route.priority,
-    });
-    // Anglická verzia
-    staticRoutes.push({
-      url: `${baseUrl}/en${route.url}`,
-      lastModified: new Date().toISOString(),
-      priority: Math.max(0.1, route.priority - 0.1),
-    });
-  });
-
-  // 2. DYNAMICKÉ TABUĽKY (GURU ENGINE)
-  const dynamicRoutes = [];
-
+export async function GET() {
   try {
-    // 🚀 GURU DATA FETCH: Agregácia všetkých dynamických dát
-    const [postsRes, tipyRes, tweakyRes, radyRes, slovnikRes, mikroRes, duelsRes] = await Promise.all([
-      supabase.from('posts').select('slug, slug_en, title_en, created_at, type'),
-      supabase.from('tipy').select('slug, slug_en, title_en, created_at'),
-      supabase.from('tweaky').select('slug, slug_en, title_en, created_at'),
-      supabase.from('rady').select('slug, slug_en, title_en, created_at'),
-      supabase.from('slovnik').select('slug, slug_en, title_en, created_at'),
-      supabase.from('mikrorecenze').select('slug, slug_en, title_en, created_at'),
-      supabase.from('gpu_duels').select('slug, slug_en, created_at') // ⚔️ NOVINKA: GPU DUELY
+    const siteUrl = 'https://www.thehardwareguru.cz';
+
+    // 1. GURU FETCH: Paralelné načítanie všetkých tabuliek
+    const [postsRes, tipyRes, tweakyRes, radyRes, slovnikRes, mikroRes, dealsRes, duelsRes] = await Promise.all([
+      supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(10),
+      supabase.from('tipy').select('*').order('created_at', { ascending: false }).limit(5),
+      supabase.from('tweaky').select('*').order('created_at', { ascending: false }).limit(5),
+      supabase.from('rady').select('*').order('created_at', { ascending: false }).limit(5),
+      supabase.from('slovnik').select('*').order('created_at', { ascending: false }).limit(5),
+      supabase.from('mikrorecenze').select('*').order('created_at', { ascending: false }).limit(5),
+      supabase.from('game_deals').select('*').order('created_at', { ascending: false }).limit(10),
+      supabase.from('gpu_duels').select('*').order('created_at', { ascending: false }).limit(10)
     ]);
 
-    // Univerzálna funkcia na pridávanie do poľa (CZ + EN varianty)
-    const addToRoutes = (item, basePath, priority) => {
-      if (item.slug) {
-        dynamicRoutes.push({
-          url: `${baseUrl}/cs${basePath}/${item.slug}`,
-          lastModified: item.created_at || new Date().toISOString(),
-          priority: priority,
+    const allItems = [];
+
+    // --- 🛡️ GURU MAPPING LOGIC ---
+
+    // A) ČLÁNKY & OČAKÁVANÉ HRY
+    (postsRes.data || []).forEach(item => {
+      const isExpected = item.type === 'expected';
+      const path = isExpected ? 'ocekavane-hry' : 'clanky';
+      
+      if (item.title) {
+        allItems.push({
+          title: `${isExpected ? '[Očekávané]' : '[Článek]'} ${item.title}`,
+          description: item.description || item.seo_description || '',
+          url: `${siteUrl}/cs/${path}/${item.slug}`,
+          date: item.created_at,
+          image: item.image_url,
+          lang: 'cs'
         });
       }
-
-      // Detekcia EN verzie podľa Master Proxy logiky
-      if (item.title_en || item.slug_en || (basePath === '/gpuvs' && item.slug)) {
-        const enSlug = item.slug_en || (basePath === '/gpuvs' ? `en-${item.slug}` : item.slug);
-        dynamicRoutes.push({
-          url: `${baseUrl}/en${basePath}/${enSlug}`,
-          lastModified: item.created_at || new Date().toISOString(),
-          priority: Math.max(0.1, priority - 0.1),
+      if (item.title_en) {
+        allItems.push({
+          title: `${isExpected ? '[Expected]' : '[Article]'} ${item.title_en}`,
+          description: item.description_en || item.seo_description_en || '',
+          url: `${siteUrl}/en/${path}/${item.slug_en || item.slug}`,
+          date: item.created_at,
+          image: item.image_url,
+          lang: 'en'
         });
       }
-    };
+    });
 
-    // A) Spracovanie POSTS (Rozlíšenie Články vs Očakávané hry)
-    if (postsRes.data) {
-      postsRes.data.forEach(item => {
-        const isExpected = item.type === 'expected';
-        const basePath = isExpected ? '/ocekavane-hry' : '/clanky';
-        addToRoutes(item, basePath, isExpected ? 0.9 : 0.8);
+    // B) SLEVY (GAME DEALS)
+    (dealsRes.data || []).forEach(item => {
+      if (item.title) {
+        allItems.push({
+          title: `[Sleva] ${item.title} (${item.price_cs})`,
+          description: item.description_cs || '',
+          url: item.affiliate_link || `${siteUrl}/cs/deals`,
+          date: item.created_at,
+          image: item.image_url,
+          lang: 'cs'
+        });
+        allItems.push({
+          title: `[Deal] ${item.title} (${item.price_en})`,
+          description: item.description_en || item.description_cs || '',
+          url: item.affiliate_link || `${siteUrl}/en/deals`,
+          date: item.created_at,
+          image: item.image_url,
+          lang: 'en'
+        });
+      }
+    });
+
+    // C) GPU DUELY (VERSUS ENGINE)
+    (duelsRes.data || []).forEach(item => {
+      if (item.title_cs) {
+        allItems.push({
+          title: `[Duel] ${item.title_cs}`,
+          description: item.seo_description_cs || '',
+          url: `${siteUrl}/cs/gpuvs/${item.slug}`,
+          date: item.created_at,
+          lang: 'cs'
+        });
+      }
+      if (item.title_en) {
+        allItems.push({
+          title: `[VS Battle] ${item.title_en}`,
+          description: item.seo_description_en || '',
+          url: `${siteUrl}/en/gpuvs/${item.slug_en || 'en-' + item.slug}`,
+          date: item.created_at,
+          lang: 'en'
+        });
+      }
+    });
+
+    // D) OSTATNÉ (Tipy, Tweaky, Rady, Slovník)
+    const sections = [
+      { data: tipyRes.data, czPrefix: '[Tip]', path: 'tipy' },
+      { data: tweakyRes.data, czPrefix: '[Tweak]', path: 'tweaky' },
+      { data: radyRes.data, czPrefix: '[Rada]', path: 'rady' },
+      { data: slovnikRes.data, czPrefix: '[Slovník]', path: 'slovnik' }
+    ];
+
+    sections.forEach(({ data, czPrefix, path }) => {
+      (data || []).forEach(item => {
+        if (item.title) {
+          allItems.push({
+            title: `${czPrefix} ${item.title}`,
+            description: item.description || '',
+            url: `${siteUrl}/cs/${path}/${item.slug}`,
+            date: item.created_at,
+            image: item.image_url,
+            lang: 'cs'
+          });
+        }
+        if (item.title_en) {
+          allItems.push({
+            title: `[EN] ${item.title_en}`,
+            description: item.description_en || '',
+            url: `${siteUrl}/en/${path}/${item.slug_en || item.slug}`,
+            date: item.created_at,
+            image: item.image_url,
+            lang: 'en'
+          });
+        }
       });
-    }
+    });
 
-    // B) Spracovanie ostatných tabuliek
-    if (tipyRes.data) tipyRes.data.forEach(item => addToRoutes(item, '/tipy', 0.8));
-    if (tweakyRes.data) tweakyRes.data.forEach(item => addToRoutes(item, '/tweaky', 0.8));
-    if (radyRes.data) radyRes.data.forEach(item => addToRoutes(item, '/rady', 0.8));
-    if (slovnikRes.data) slovnikRes.data.forEach(item => addToRoutes(item, '/slovnik', 0.7));
-    if (mikroRes.data) mikroRes.data.forEach(item => addToRoutes(item, '/mikrorecenze', 0.8));
-    
-    // C) ⚔️ GPU DUELY: Dynamická indexácia pre každé srovnanie
-    if (duelsRes.data) duelsRes.data.forEach(item => addToRoutes(item, '/gpuvs', 0.8));
+    // Zoraďovanie od najnovšieho po najstaršie
+    const sortedItems = allItems.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 50);
 
-  } catch (err) {
-    console.error("GURU SITEMAP ENGINE ERROR:", err);
+    // Generovanie XML
+    let rss = `<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>The Hardware Guru - Global Feed</title>
+    <link>${siteUrl}</link>
+    <description>Najnovšie HW tipy, herné slevy a GPU duely z Hardware Guru základne.</description>
+    <language>cs</language>
+    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+    <atom:link href="${siteUrl}/api/rss" rel="self" type="application/rss+xml" />`;
+
+    sortedItems.forEach((item) => {
+      rss += `
+    <item>
+      <title><![CDATA[${item.title}]]></title>
+      <link>${item.url}</link>
+      <guid>${item.url}</guid>
+      <pubDate>${new Date(item.date).toUTCString()}</pubDate>
+      <description><![CDATA[${item.description}]]></description>
+      ${item.image ? `<media:content url="${item.image}" medium="image" />` : ''}
+    </item>`;
+    });
+
+    rss += `
+  </channel>
+</rss>`;
+
+    return new NextResponse(rss, {
+      headers: { 
+        'Content-Type': 'application/xml; charset=utf-8',
+        'Cache-Control': 'no-store, no-cache, must-revalidate'
+      },
+    });
+
+  } catch (error) {
+    console.error("GURU RSS CRITICAL ERROR:", error);
+    return new NextResponse("GURU RSS ENGINE ERROR", { status: 500 });
   }
-
-  return [...staticRoutes, ...dynamicRoutes];
 }
