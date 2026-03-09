@@ -9,7 +9,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-// 🚀 GURU SEO: Dynamické Meta Tagy pro vyhledávače a sociální sítě
 export async function generateMetadata({ params }) {
   const { slug } = params;
   
@@ -37,6 +36,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ArticleDetail({ params }) {
+
   const { slug } = params;
 
   const { data: post, error } = await supabase
@@ -54,7 +54,7 @@ export default async function ArticleDetail({ params }) {
 
   const rawContent = isEn && post.content_en ? post.content_en : post.content;
 
-  // pouze doplnění funkcionality – žádná změna designu
+  // funkční doplnění (bez změny designu)
   const content = await autoLinkGpu(rawContent);
 
   const priceDisplay = isEn ? (post.price_en || '') : (post.price_cs || '');
@@ -115,4 +115,8 @@ export default async function ArticleDetail({ params }) {
 
           <div className="guru-prose" dangerouslySetInnerHTML={{ __html: content }} />
 
-          {/* zbytek souboru je IDENTICKÝ se zálohou */}
+        </div>
+      </main>
+    </div>
+  );
+}
