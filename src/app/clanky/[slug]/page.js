@@ -1,15 +1,15 @@
 import React from 'react';
-import { ChevronLeft, ShieldCheck, Flame, Ghost, Heart, ShoppingCart, Calendar } from 'lucide-react';
+import { ChevronLeft, ShieldCheck, Flame, Ghost, Heart, ShoppingCart, Calendar, Swords, Zap, Trophy } from 'lucide-react';
 
 /**
- * GURU ENGINE - ARTICLE DETAIL V11.0 (NO-AI & SUPREME DESIGN)
+ * GURU ENGINE - ARTICLE DETAIL V12.0 (SUPREME DESIGN & NO-AI)
  * Cesta: src/app/clanky/[slug]/page.js
- * 🛡️ ARCHITEKTURA: Server Component.
- * 🛡️ FIX: Nativní fetch API (bez závislosti na Supabase SDK) pro eliminaci chyb kompilace.
- * 🛡️ DESIGN: Guru Style Affiliate Box (V3) s neonovými efekty a 3D tlačítkem.
+ * 🛡️ FIX: Opravena detekce obrázku (image_url / cover_image fallback).
+ * 🛡️ FIX: Odstraněny AI halucinace, nahrazeno čistými datovými bloky.
+ * 🛡️ DESIGN: Totální GURU transformace affiliate boxu a sekce podpory.
  */
 
-// --- 🚀 VNITŘNÍ KOMPONENTA: GURU AFFILIATE BOX (Supreme Design) ---
+// --- 🚀 VNITŘNÍ KOMPONENTA: GURU AFFILIATE BOX (Supreme Version) ---
 const GuruAffiliateBox = ({ affiliateLink, isEn, priceDisplay }) => {
   if (!affiliateLink) return null;
 
@@ -19,21 +19,20 @@ const GuruAffiliateBox = ({ affiliateLink, isEn, priceDisplay }) => {
 
   return (
     <div style={{
-        background: 'linear-gradient(145deg, rgba(15,17,21,0.98) 0%, rgba(20,10,5,0.98) 100%)',
-        border: '1px solid rgba(249, 115, 22, 0.3)',
+        background: 'linear-gradient(145deg, rgba(15,17,21,0.98) 0%, rgba(25,12,5,0.98) 100%)',
+        border: '1px solid rgba(249, 115, 22, 0.4)',
         borderLeft: '6px solid #f97316',
         borderRadius: '24px',
         padding: '50px 40px',
         textAlign: 'center',
         position: 'relative',
         overflow: 'hidden',
-        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 0 30px rgba(249,115,22,0.05)',
+        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 0 30px rgba(249,115,22,0.1)',
         margin: '60px 0'
     }}>
-      {/* Horní neonová linka */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, transparent, #f97316, transparent)' }}></div>
       
-      <h3 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', marginBottom: '15px', textShadow: '0 0 20px rgba(249, 115, 22, 0.4)', letterSpacing: '1px' }}>
+      <h3 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', marginBottom: '15px', textShadow: '0 0 20px rgba(249, 115, 22, 0.5)', letterSpacing: '1px', fontStyle: 'italic' }}>
         {isEn ? "Don't miss this hit!" : "NENECH SI TUHLE PECKU UJÍT!"}
       </h3>
       
@@ -49,21 +48,21 @@ const GuruAffiliateBox = ({ affiliateLink, isEn, priceDisplay }) => {
         rel="nofollow sponsored"
         className="guru-affiliate-button"
         style={{
-          display: 'inline-flex', alignItems: 'center', gap: '15px', padding: '22px 45px',
+          display: 'inline-flex', alignItems: 'center', gap: '15px', padding: '22px 50px',
           background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', color: '#fff',
-          fontWeight: '950', fontSize: '1.2rem', textTransform: 'uppercase', borderRadius: '18px',
+          fontWeight: '950', fontSize: '1.3rem', textTransform: 'uppercase', borderRadius: '18px',
           textDecoration: 'none', border: '1px solid rgba(255,255,255,0.2)',
-          boxShadow: '0 10px 35px rgba(234, 88, 12, 0.4)', transition: '0.3s'
+          boxShadow: '0 15px 40px rgba(234, 88, 12, 0.4)', transition: '0.3s'
         }}
       >
-        <ShoppingCart size={28} />
+        <ShoppingCart size={30} />
         {buyBtnText}
       </a>
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-affiliate-button:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 20px 50px rgba(234, 88, 12, 0.6);
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 25px 60px rgba(234, 88, 12, 0.6);
             filter: brightness(1.1);
         }
       `}} />
@@ -71,7 +70,7 @@ const GuruAffiliateBox = ({ affiliateLink, isEn, priceDisplay }) => {
   );
 };
 
-// --- 🛡️ GURU ENGINE: NATIVNÍ DATA FETCHING (No-SDK) ---
+// --- 🛡️ GURU ENGINE: DATA FETCHING ---
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
@@ -103,12 +102,15 @@ export default async function ArticleDetail({ params }) {
   if (!post) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <h1 style={{ color: '#ff0055', fontSize: '30px', fontWeight: '900', textTransform: 'uppercase' }}>404 - ČLÁNEK NENALEZEN</h1>
+        <h1 style={{ color: '#ff0055', fontSize: '30px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px' }}>404 - GURU NENALEZEL DATA</h1>
       </div>
     );
   }
 
-  // Jazyková logika založená na slugu
+  // 🚀 GURU IMAGE RECOVERY: Podpora pro různé názvy polí v DB
+  const mainImage = post.image_url || post.cover_image || null;
+
+  // Jazyková logika
   const isEn = post.slug_en === slug;
   const title = isEn && post.title_en ? post.title_en : post.title;
   const content = isEn && post.content_en ? post.content_en : post.content;
@@ -124,52 +126,52 @@ export default async function ArticleDetail({ params }) {
     }}>
       
       <main style={{ 
-          maxWidth: '950px', margin: '0 auto', background: 'rgba(15, 17, 21, 0.95)', 
-          borderRadius: '30px', border: '1px solid rgba(102, 252, 241, 0.2)', 
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)', overflow: 'hidden', backdropFilter: 'blur(15px)' 
+          maxWidth: '950px', margin: '0 auto', background: 'rgba(15, 17, 21, 0.96)', 
+          borderRadius: '35px', border: '1px solid rgba(102, 252, 241, 0.15)', 
+          boxShadow: '0 35px 80px -20px rgba(0, 0, 0, 0.9)', overflow: 'hidden', backdropFilter: 'blur(20px)' 
       }}>
         
-        {/* --- 🚀 HLAVNÍ OBRÁZEK S BADGES --- */}
-        {post.image_url && (
-          <div style={{ width: '100%', height: '450px', position: 'relative', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-            <img src={post.image_url} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15, 17, 21, 1) 0%, transparent 100%)' }}></div>
+        {/* --- 🚀 HLAVNÍ OBRÁZEK --- */}
+        {mainImage && (
+          <div style={{ width: '100%', height: '480px', position: 'relative', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <img src={mainImage} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15, 17, 21, 1) 0%, transparent 50%, rgba(0,0,0,0.4) 100%)' }}></div>
             
-            <div style={{ position: 'absolute', top: '30px', left: '30px' }}>
+            <div style={{ position: 'absolute', top: '35px', left: '35px' }}>
               <a href={backLink} className="guru-back-btn">
-                <ChevronLeft size={16} /> {isEn ? 'BACK TO ARTICLES' : 'ZPĚT NA ČLÁNKY'}
+                <ChevronLeft size={16} /> {isEn ? 'BACK TO FEED' : 'ZPĚT DO FEEDU'}
               </a>
             </div>
 
-            <div style={{ position: 'absolute', top: '30px', right: '30px', display: 'flex', gap: '10px' }}>
+            <div style={{ position: 'absolute', bottom: '35px', right: '35px', display: 'flex', gap: '12px' }}>
               {isLeak && (
-                <div style={{ background: '#66fcf1', color: '#0b0c10', padding: '8px 16px', borderRadius: '12px', fontWeight: '950', fontSize: '12px', textTransform: 'uppercase', boxShadow: '0 4px 15px rgba(102, 252, 241, 0.5)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Ghost size={14} /> LEAKS & RUMORS
+                <div style={{ background: '#66fcf1', color: '#0b0c10', padding: '10px 20px', borderRadius: '14px', fontWeight: '950', fontSize: '13px', textTransform: 'uppercase', boxShadow: '0 0 20px rgba(102, 252, 241, 0.6)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Ghost size={16} /> LEAKS & RUMORS
                 </div>
               )}
               {post.affiliate_link && (
-                <div style={{ background: '#f97316', color: '#fff', padding: '8px 16px', borderRadius: '12px', fontWeight: '950', fontSize: '12px', textTransform: 'uppercase', boxShadow: '0 4px 15px rgba(249, 115, 22, 0.5)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Flame size={14} fill="currentColor" /> {isEn ? 'HOT DEAL' : 'SLEVA'}
+                <div style={{ background: '#f97316', color: '#fff', padding: '10px 20px', borderRadius: '14px', fontWeight: '950', fontSize: '13px', textTransform: 'uppercase', boxShadow: '0 0 20px rgba(249, 115, 22, 0.6)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Flame size={16} fill="currentColor" /> {isEn ? 'HOT DEAL' : 'GURU CENA'}
                 </div>
               )}
             </div>
           </div>
         )}
 
-        <div style={{ padding: '40px 50px 60px 50px' }}>
+        <div style={{ padding: '50px 60px 70px 60px' }} className="content-responsive">
           
           {/* --- HLAVIČKA --- */}
-          <header style={{ marginBottom: '50px', textAlign: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', color: '#9ca3af', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '25px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: isLeak ? '#66fcf1' : '#ff0000' }}>
-                 {isLeak ? <Ghost size={16} /> : <ShieldCheck size={16} />} 
-                 {isLeak ? 'LEAKS & RUMORS' : 'GURU ENGINE'}
+          <header style={{ marginBottom: '60px', textAlign: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '18px', color: '#6b7280', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '30px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px', color: isLeak ? '#66fcf1' : '#ff0055' }}>
+                 {isLeak ? <Ghost size={18} /> : <ShieldCheck size={18} />} 
+                 {isLeak ? 'UNCONFIRMED INTEL' : 'GURU VERIFIED'}
               </span>
-              <span>•</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={16} /> {new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
+              <span style={{ opacity: 0.3 }}>|</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Calendar size={16} /> {new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
             </div>
             
-            <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', lineHeight: '1.1', margin: '0', textShadow: '0 0 20px rgba(102, 252, 241, 0.2)' }}>
+            <h1 style={{ fontSize: 'clamp(2.4rem, 6vw, 3.8rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', lineHeight: '1.05', margin: '0', textShadow: '0 10px 30px rgba(0,0,0,0.5)', fontStyle: 'italic' }}>
               {title}
             </h1>
           </header>
@@ -177,20 +179,24 @@ export default async function ArticleDetail({ params }) {
           {/* --- OBSAH ČLÁNKU --- */}
           <div className="guru-prose" dangerouslySetInnerHTML={{ __html: content }} />
 
-          {/* --- 🚀 GURU AFFILIATE BOX (SUPREME DESIGN V3) --- */}
+          {/* --- 🚀 GURU AFFILIATE BOX (SUPREME DESIGN) --- */}
           <GuruAffiliateBox affiliateLink={post.affiliate_link} isEn={isEn} priceDisplay={priceDisplay} />
 
-          {/* --- 🚀 GLOBÁLNÍ CTA --- */}
-          <div style={{ marginTop: '70px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
-            <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
-              {isEn ? "Enjoyed the article? Support us!" : "Líbil se ti článek? Podpoř nás!"}
+          {/* --- 🚀 GURU SUPREME SUPPORT SECTION (REDESIGNED) --- */}
+          <div style={{ marginTop: '80px', paddingTop: '60px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <h4 style={{ color: '#fff', fontSize: '18px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', margin: '0 0 35px 0', textAlign: 'center', fontStyle: 'italic', textShadow: '0 0 15px rgba(255,255,255,0.1)' }}>
+              {isEn ? "ENJOYED THE INTEL? SUPPORT THE GURU!" : "LÍBIL SE TI ČLÁNEK? PODPOŘ NÁS!"}
             </h4>
-            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
-              <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn" style={{ flex: '1 1 280px' }}>
-                <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
+            
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '25px', width: '100%' }}>
+              {/* Button 1: Deals */}
+              <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-cta-btn deals">
+                <Flame size={22} fill="currentColor" /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
               </a>
-              <a href={isEn ? "/en/support" : "/support"} className="guru-support-btn" style={{ flex: '1 1 280px' }}>
-                <Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
+              
+              {/* Button 2: Support */}
+              <a href={isEn ? "/en/support" : "/support"} className="guru-cta-btn support">
+                <Heart size={22} fill="currentColor" /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
               </a>
             </div>
           </div>
@@ -198,20 +204,40 @@ export default async function ArticleDetail({ params }) {
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
-        .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
-        .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.2); }
-        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
-        .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
-        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
-        .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
-        .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; }
-        .guru-prose h2 { color: #66fcf1; font-size: 2.2rem; font-weight: 950; margin-top: 2.5em; margin-bottom: 1em; text-transform: uppercase; letter-spacing: 1px; }
-        .guru-prose h3 { color: #fff; font-size: 1.6rem; font-weight: 900; margin-top: 2em; margin-bottom: 1em; }
-        .guru-prose p { margin-bottom: 1.5em; }
+        .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.7); color: #66fcf1; padding: 14px 22px; border-radius: 14px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; backdrop-filter: blur(10px); }
+        .guru-back-btn:hover { background: rgba(102, 252, 241, 0.15); transform: translateX(-5px); box-shadow: 0 0 25px rgba(102, 252, 241, 0.3); }
+
+        /* 🔥 GURU SUPREME BUTTONS 🔥 */
+        .guru-cta-btn {
+            flex: 1 1 280px; display: flex; align-items: center; justify-content: center; gap: 14px; 
+            padding: 20px 30px; border-radius: 20px; font-weight: 950; font-size: 16px; 
+            text-transform: uppercase; text-decoration: none !important; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .guru-cta-btn.deals { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; box-shadow: 0 10px 30px rgba(249, 115, 22, 0.3); }
+        .guru-cta-btn.support { background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); color: #000 !important; box-shadow: 0 10px 30px rgba(234, 179, 8, 0.3); }
+        
+        .guru-cta-btn:hover { transform: translateY(-6px) scale(1.02); filter: brightness(1.1); border-color: rgba(255,255,255,0.3); }
+        .guru-cta-btn.deals:hover { box-shadow: 0 20px 50px rgba(249, 115, 22, 0.5); }
+        .guru-cta-btn.support:hover { box-shadow: 0 20px 50px rgba(234, 179, 8, 0.5); }
+
+        /* Typography */
+        .guru-prose { color: #d1d5db; font-size: 1.2rem; line-height: 1.9; }
+        .guru-prose h2 { color: #66fcf1; font-size: 2.3rem; font-weight: 950; margin-top: 2.5em; margin-bottom: 1em; text-transform: uppercase; letter-spacing: 1px; font-style: italic; }
+        .guru-prose h3 { color: #fff; font-size: 1.7rem; font-weight: 900; margin-top: 2em; margin-bottom: 1em; }
+        .guru-prose p { margin-bottom: 1.6em; }
         .guru-prose strong { color: #fff; font-weight: 900; }
-        .guru-prose a { color: #f97316; font-weight: bold; text-decoration: underline; }
-        .guru-prose ul { list-style-type: square; padding-left: 1.5em; margin-bottom: 2em; }
-        .guru-prose li { margin-bottom: 0.8em; }
+        .guru-prose a { color: #f97316; font-weight: bold; text-decoration: none; border-bottom: 2px dashed rgba(249, 115, 22, 0.4); transition: 0.3s; }
+        .guru-prose a:hover { border-bottom-style: solid; color: #ea580c; }
+        .guru-prose ul { list-style-type: none; padding-left: 0; margin-bottom: 2em; }
+        .guru-prose li { position: relative; padding-left: 30px; margin-bottom: 12px; }
+        .guru-prose li::before { content: '⚡'; position: absolute; left: 0; color: #66fcf1; font-weight: bold; }
+
+        @media (max-width: 768px) {
+          .content-responsive { padding: 35px 25px 50px 25px !important; }
+          .guru-prose { font-size: 1.1rem; }
+          .guru-cta-btn { width: 100%; font-size: 14px; }
+        }
       `}} />
     </div>
   );
