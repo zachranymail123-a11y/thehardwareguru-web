@@ -9,14 +9,17 @@ import {
   Swords,
   CheckCircle2,
   TrendingUp,
-  Monitor
+  Monitor,
+  ArrowRight
 } from 'lucide-react';
 
 /**
- * GURU FPS ENGINE - GAME BENCHMARK PAGE V1.0
+ * GURU FPS ENGINE - GAME BENCHMARK PAGE V1.1
  * Cesta: src/app/gpu-fps/[gpu]/[game]/page.js
  * 🚀 SEO: Cílí na dotazy typu "RTX 4070 Cyberpunk FPS".
  * 🛡️ DESIGN: Guru Supreme (Neon, agresivní vizualizace FPS).
+ * 🛡️ FIX 1: Chybějící import ArrowRight doplněn.
+ * 🛡️ FIX 2: Stabilnější GPU lookup bez kolize s URL encodingem (dle doporučení ChatGPT).
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -29,22 +32,25 @@ const slugify = (text) => {
 
 const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon /gi, '');
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (DOPORUČENÝ FIX OD CHATGPT)
 const findGpuBySlug = async (gpuSlug) => {
   if (!supabaseUrl) return null;
-  const clean = gpuSlug.replace(/-/g, " ").trim();
-  const chunks = clean.match(/\d+|[a-zA-Z]+/g);
-  if (!chunks) return null;
-  const searchPattern = `%${chunks.join('%')}%`;
+  const search = gpuSlug.replace(/-/g, '%');
 
   try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`, {
-          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-          next: { revalidate: 86400 }
-      });
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.*${search}*&limit=1`,
+        {
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`
+          },
+          cache: "no-store"
+        }
+      );
       if (!res.ok) return null;
       const data = await res.json();
-      return data[0] || null;
+      return data?.[0] || null;
   } catch (e) { return null; }
 };
 
