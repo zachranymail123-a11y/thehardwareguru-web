@@ -20,10 +20,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V112.1 (SIMPLIFIED LOOKUP FIX & FULL RECOVERY)
+ * GURU GPU UPGRADE ENGINE - DETAIL V112.2 (PRECISE LOOKUP FIX)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: Zjednodušený dotaz na Supabase pomocí slug=eq.cleanSlug pro maximální stabilitu (ChatGPT Fix).
- * 🛡️ FIX 2: Obnova souboru po chybě kompilace (Unexpected end of file).
+ * 🛡️ FIX 1: Úprava parsování modelu (odstranění geforce/radeon/rx/rtx a zachování celého názvu).
+ * 🛡️ FIX 2: Aplikace encodeURIComponent do URL patternu pro bezpečný PostgREST dotaz.
  * 🛡️ ARCH: Node.js runtime a ISR revalidate (86400) pro optimální SEO.
  */
 
@@ -53,16 +53,19 @@ function calculatePerf(a, b) {
     return { winner: b, loser: a, diff };
 }
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB (NEJSTABILNĚJŠÍ VERZE DLE CHATGPT)
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (PŘESNĚJŠÍ VERZE DLE CHATGPT)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
 
-  const match = slugPart.match(/\d{4}/);
-  if (!match) return null;
+  const model = slugPart
+    .replace(/geforce|radeon|rx|rtx/gi, '')
+    .replace(/-/g, ' ')
+    .replace(/gb/gi, '')
+    .trim();
 
-  const model = match[0]; // např. 5080
+  if (!model) return null;
 
-  const url = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.*${model}*&limit=1`;
+  const url = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.*${encodeURIComponent(model)}*&limit=1`;
 
   // 🚀 GURU DEBUG: Logování pro diagnostiku ve Vercel logs
   console.log("GPU SEARCH:", model);
