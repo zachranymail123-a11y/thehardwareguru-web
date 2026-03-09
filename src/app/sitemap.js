@@ -28,8 +28,6 @@ export default async function sitemap() {
     { url: '/cpuvs', priority: 0.9 },
     { url: '/support', priority: 0.5 },
     { url: '/sin-slavy', priority: 0.6 },
-
-    /* CRAWL SIGNAL (NOVÉ) */
     { url: '/crawl-signal', priority: 1.0 },
   ];
 
@@ -148,6 +146,24 @@ export default async function sitemap() {
 
     const resolutions = ['1080p','1440p','4k'];
     const modes = ['dlss','ray-tracing','ultra','high'];
+
+    /* GAME BENCHMARK HUB (NOVÉ) */
+
+    gamesList.forEach((game) => {
+
+      dynamicRoutes.push({
+        url: `${baseUrl}/game-benchmarks/${game}`,
+        lastModified: currentDate,
+        priority: 0.8
+      });
+
+      dynamicRoutes.push({
+        url: `${baseUrl}/en/game-benchmarks/${game}`,
+        lastModified: currentDate,
+        priority: 0.7
+      });
+
+    });
 
     if (gpusRes.data) {
 
