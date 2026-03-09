@@ -17,13 +17,13 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - DETAIL V88.0 (FINAL PRODUCTION BUILD)
+ * GURU GPU DUELS ENGINE - DETAIL V89.0 (CRASH FIXES & LOGIC)
  * Cesta: src/app/gpuvs/[slug]/page.js
- * 🛡️ FIX 1: Ochrana game_fps před crashem aplikace (gpuA?.game_fps).
- * 🛡️ FIX 2: Slug parser zachovává "xt/ti" pro přesný match (např. 7900 XT).
- * 🛡️ FIX 3: Ochrana pole karet přes .filter(Boolean) proti prázdným URL.
- * 🛡️ FIX 4: Supabase upsert (resolution=merge-duplicates) a oprava canonical (en-en-).
- * 🛡️ SEO: Benchmark Title pattern, Product schema, safe JSON stringify, ItemList schema.
+ * 🛡️ FIX 1: Podpora '-to-' v URL parseru pro upgrade duely.
+ * 🛡️ FIX 2: Ochrana proti Object.keys(undefined) u prázdných FPS polí.
+ * 🛡️ FIX 3: Oprava slugify prefixů pro GPU FPS odkazy.
+ * 🛡️ FIX 4: Matematická oprava průměrného rozdílu FPS (avgDiff místo Magnitude).
+ * 🛡️ FIX 5: Nulové kontroly pro samotná GPU data v detailu.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -106,8 +106,16 @@ async function generateAndPersistDuel(slug) {
 
   try {
     const cleanSlug = slug.replace(/^en-/, '');
-    const parts = cleanSlug.split('-vs-');
-    if (parts.length !== 2) return null;
+    
+    // 🛡️ GURU FIX: Podpora -to- i -vs- z ChatGPT
+    let parts;
+    if (cleanSlug.includes('-vs-')) {
+      parts = cleanSlug.split('-vs-');
+    } else if (cleanSlug.includes('-to-')) {
+      parts = cleanSlug.split('-to-');
+    }
+
+    if (!parts || parts.length !== 2) return null;
 
     const [cardA, cardB] = await Promise.all([
         findGpu(parts[0]),
@@ -228,6 +236,11 @@ export default async function GpuDuelDetail({ params }) {
 
   const isEn = slug?.startsWith('en-');
   const { gpuA, gpuB } = duel;
+
+  // 🛡️ GURU FIX 5: Doporučený safety fix z ChatGPT
+  if (!gpuA || !gpuB) {
+    return <div style={{ color: '#f00', padding: '100px', textAlign: 'center' }}>GPU DATA ERROR</div>;
+  }
   
   // 🚀 GURU PERF: Optimalizace latence
   const similarPromise = gpuA?.id ? getSimilarDuels(gpuA.id, duel.slug) : Promise.resolve([]);
@@ -251,9 +264,16 @@ export default async function GpuDuelDetail({ params }) {
 
   const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon /gi, '');
 
-  // 🚀 GURU CRASH FIX: Ochrana proti pádu serveru při chybějících datech
-  const fpsA = gpuA?.game_fps ? (Array.isArray(gpuA.game_fps) ? gpuA.game_fps[0] : gpuA.game_fps) : {};
-  const fpsB = gpuB?.game_fps ? (Array.isArray(gpuB.game_fps) ? gpuB.game_fps[0] : gpuB.game_fps) : {};
+  // 🚀 GURU CRASH FIX: Ochrana proti pádu serveru při chybějících/prázdných fps datech
+  const fpsA =
+    gpuA?.game_fps && Array.isArray(gpuA.game_fps) && gpuA.game_fps.length
+      ? gpuA.game_fps[0]
+      : gpuA?.game_fps || {};
+
+  const fpsB =
+    gpuB?.game_fps && Array.isArray(gpuB.game_fps) && gpuB.game_fps.length
+      ? gpuB.game_fps[0]
+      : gpuB?.game_fps || {};
 
   const calcSafeDiff = (a, b) => (!a || !b || a === 0 || b === 0) ? 0 : Math.round(((a / b) - 1) * 100);
   const cyberpunkDiff = calcSafeDiff(fpsA?.cyberpunk_1440p, fpsB?.cyberpunk_1440p);
@@ -261,8 +281,10 @@ export default async function GpuDuelDetail({ params }) {
   const starfieldDiff = calcSafeDiff(fpsA?.starfield_1440p, fpsB?.starfield_1440p);
   
   const diffs = [cyberpunkDiff, warzoneDiff, starfieldDiff].filter(v => Number.isFinite(v) && v !== 0);
-  const avgDiffMagnitude = diffs.length 
-    ? Math.round(diffs.map(v => Math.abs(v)).reduce((a, b) => a + b, 0) / diffs.length) 
+  
+  // 🛡️ GURU FIX 4: Matematická oprava průměrného rozdílu
+  const avgDiff = diffs.length
+    ? Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length)
     : 0;
 
   // 🚀 GURU: Dynamické hry
@@ -439,7 +461,7 @@ export default async function GpuDuelDetail({ params }) {
                     ))}
                     <div className="summary-item" style={{ background: 'rgba(102, 252, 241, 0.1)', border: '1px solid rgba(102, 252, 241, 0.3)' }}>
                         <span className="summary-label" style={{ color: '#66fcf1' }}>{isEn ? 'AVERAGE LEAD' : 'PRŮMĚRNÝ NÁSKOK'}</span>
-                        <div className="summary-val" style={{ color: '#fff' }}>{avgDiffMagnitude > 0 ? '+' : ''}{avgDiffMagnitude} %</div>
+                        <div className="summary-val" style={{ color: '#fff' }}>{avgDiff > 0 ? '+' : ''}{avgDiff} %</div>
                     </div>
                 </div>
             </div>
@@ -452,19 +474,22 @@ export default async function GpuDuelDetail({ params }) {
             <Gamepad2 size={28} /> {isEn ? 'DETAILED GAME FPS ANALYSIS' : 'DETAILNÍ FPS ANALÝZY HER'}
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '25px' }}>
-              {/* 🚀 GURU FIX: Ochrana proti null u mapování */}
-              {[gpuA, gpuB].filter(Boolean).map((gpu, i) => (
+              {/* 🚀 GURU FIX: Ochrana proti null u mapování a úprava slugify pro FPS dotazy */}
+              {[gpuA, gpuB].filter(Boolean).map((gpu, i) => {
+                  const safeGpuSlug = slugify(gpu?.name || "").replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
+                  return (
                   <div key={i} className="fps-matrix-card">
                       <div className="matrix-gpu-title" style={{ color: getVendorColor(gpu?.vendor) }}>{gpu?.name || "GPU"}</div>
                       <div className="matrix-links">
                           {gamesList.map((game) => (
-                              <a key={game} href={`/${isEn ? 'en/' : ''}gpu-fps/${slugify(gpu?.name || "")}/${game}`} className="matrix-link">
+                              <a key={game} href={`/${isEn ? 'en/' : ''}gpu-fps/${safeGpuSlug}/${game}`} className="matrix-link">
                                   <ExternalLink size={14} /> {game.replace(/-/g, ' ').toUpperCase()} Benchmark
                               </a>
                           ))}
                       </div>
                   </div>
-              ))}
+                  );
+              })}
           </div>
         </section>
 
