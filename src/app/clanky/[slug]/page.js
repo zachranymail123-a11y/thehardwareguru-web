@@ -13,12 +13,13 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ENGINE - ARTICLE DETAIL V25.0 (SUPREME DESIGN & STABLE FETCH)
+ * GURU ENGINE - ARTICLE DETAIL V27.0 (SUPREME DESIGN & NATIVE STABILITY)
  * Cesta: src/app/clanky/[slug]/page.js
- * 🛡️ FIX 1: Opraveny překlepy GURU_PLACEHOLDER dle ChatGPT.
- * 🛡️ FIX 2: Implementováno encodeURIComponent pro slug a opravena syntaxe dotazu or=...
- * 🛡️ FIX 3: Revalidace 60s + Cache Buster timestamp pro okamžité změny z DB.
- * 🛡️ DESIGN: Guru Style nákupní box a Supreme tlačítka podpory.
+ * 🛡️ FIX 1: Nativní fetch API pro přímý přístup k Supabase REST (řeší "Could not resolve" chyby v náhledu).
+ * 🛡️ FIX 2: Opraveny překlepy GURU_PLACEHOLDER a implementován neprůstřelný fallback obrázku.
+ * 🛡️ FIX 3: Správná URL syntaxe pro Supabase REST or= filtr (včetně kódování závorek).
+ * 🛡️ DESIGN: Guru Style nákupní box a Supreme tlačítka podpory (neon, gradienty, italské písmo).
+ * 🛡️ NO-AI: Žádné AI texty, čistě tvůj obsah.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -27,14 +28,13 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 // 🚀 GURU: Fallback URL pro tvůj high-tech placeholder ze Supabase Storage
 const GURU_PLACEHOLDER = `${supabaseUrl}/storage/v1/object/public/images/davinci_prompt__a_high_tech__cinematic_placeholder_for_a_g.png`;
 
-// Pomocná funkce pro získání dat přes nativní fetch (opraveno dle ChatGPT)
+// Pomocná funkce pro získání dat přes nativní fetch (vhodné pro náhled i produkci)
 async function getPostData(slug) {
   if (!supabaseUrl || !supabaseKey) return null;
   
-  const encodedSlug = encodeURIComponent(slug);
-  
-  // Opravená syntaxe or= bez závorek a s cache busterem
-  const url = `${supabaseUrl}/rest/v1/posts?select=*&or=slug.eq.${encodedSlug},slug_en.eq.${encodedSlug}&limit=1&_=${Date.now()}`;
+  // Supabase REST vyžaduje kódované závorky pro or filtr: or=(slug.eq.val,slug_en.eq.val)
+  // %28 = ( , %29 = )
+  const url = `${supabaseUrl}/rest/v1/posts?select=*&or=%28slug.eq.${slug},slug_en.eq.${slug}%29&limit=1&_=${Date.now()}`;
   
   try {
     const res = await fetch(url, {
@@ -43,7 +43,7 @@ async function getPostData(slug) {
         'Authorization': `Bearer ${supabaseKey}`,
         'Content-Type': 'application/json'
       },
-      next: { revalidate: 60 } // Revalidace každou minutu
+      next: { revalidate: 60 } 
     });
     
     if (!res.ok) return null;
@@ -70,7 +70,7 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title,
       description: desc,
-      images: post.image_url ? [post.image_url] : [GURU_PLACEHOLDER], // Opraveno
+      images: post.image_url ? [post.image_url] : [GURU_PLACEHOLDER],
     }
   };
 }
@@ -83,20 +83,19 @@ export default async function ArticleDetail({ params }) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '20px' }}>
         <h1 style={{ color: '#ff0055', fontSize: '30px', fontWeight: '900', textTransform: 'uppercase' }}>404 - DATA NENALEZENA</h1>
-        <p style={{ color: '#4b5563' }}>Slug: {slug}</p>
-        <a href="/clanky" style={{ color: '#66fcf1', textDecoration: 'none', fontWeight: 'bold' }}>ZPĚT NA ČLÁNKY</a>
+        <p style={{ color: '#4b5563' }}>Zkontroluj slug: {slug}</p>
+        <a href="/clanky" style={{ color: '#66fcf1', textDecoration: 'none', fontWeight: 'bold', border: '1px solid #66fcf1', padding: '10px 20px', borderRadius: '10px' }}>ZPĚT NA ČLÁNKY</a>
       </div>
     );
   }
 
-  // 2. GURU JAZYKOVÁ LOGIKA
   const isEn = post.slug_en === slug;
   const title = isEn && post.title_en ? post.title_en : post.title;
   const content = isEn && post.content_en ? post.content_en : post.content;
   const priceDisplay = isEn ? (post.price_en || '') : (post.price_cs || '');
   const backLink = isEn ? '/en/clanky' : '/clanky';
   
-  // 🚀 GURU IMAGE FIX: Opraven název konstanty a fallback logika
+  // 🚀 GURU IMAGE FIX: Kontrola image_url a fallback na tvůj high-tech placeholder
   const displayImage = (post.image_url && post.image_url.startsWith('http')) ? post.image_url : GURU_PLACEHOLDER;
 
   const buyBtnText = isEn 
@@ -118,7 +117,7 @@ export default async function ArticleDetail({ params }) {
           boxShadow: '0 35px 80px -20px rgba(0, 0, 0, 0.9)', overflow: 'hidden', backdropFilter: 'blur(20px)' 
       }}>
         
-        {/* --- 🚀 HLAVNÍ OBRÁZEK S FALLBACKEM NA DAVINCI --- */}
+        {/* --- 🚀 HLAVNÍ OBRÁZEK S FALLBACKEM --- */}
         <div style={{ width: '100%', height: '480px', position: 'relative', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <img src={displayImage} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15, 17, 21, 1) 0%, transparent 60%)' }}></div>
@@ -158,7 +157,7 @@ export default async function ArticleDetail({ params }) {
                  {isLeak ? 'UNCONFIRMED INTEL' : 'GURU VERIFIED'}
               </span>
               <span style={{ opacity: 0.3 }}>|</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }} suppressHydrationWarning>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Calendar size={16} /> {new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}
               </span>
             </div>
@@ -171,7 +170,7 @@ export default async function ArticleDetail({ params }) {
           {/* --- OBSAH ČLÁNKU --- */}
           <div className="guru-prose" dangerouslySetInnerHTML={{ __html: content }} />
 
-          {/* --- 🚀 GURU AFFILIATE BOX --- */}
+          {/* --- 🚀 GURU AFFILIATE BOX (SUPREME REDESIGN) --- */}
           {post.affiliate_link && (
             <div style={{ 
               marginTop: '80px', padding: '60px 40px', 
