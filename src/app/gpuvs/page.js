@@ -1,28 +1,40 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { useRouter, usePathname } from 'next/navigation';
-import Link from 'next/link';
 import { 
-  Swords, Zap, RefreshCw, ChevronRight, ArrowLeftRight
+  Swords, Zap, RefreshCw, ChevronRight, ArrowLeftRight, ShieldCheck, Flame
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V16.7 (PRODUCTION FINAL)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V53.0 (GURU STYLE & GRID LAYOUT)
  * Cesta: src/app/gpuvs/page.js
- * Design: Brutální GURU styl (obří růžové nadpisy, skleněný panel, neonové prvky).
- * FIX: Odstraněny require() anti-patterny, statické importy, přímá Supabase init.
- * SYNC: Plné propojení s tabulkou 'gpus' (UUID) a 'gpu_duels'.
+ * DESIGN FIX: 
+ * - Dvousloupcový layout (Generátor vlevo, Historie vpravo) = bez kolize s AI.
+ * - Odstraněny "bílé texty", nasazena stříbrná (#d1d5db) a neonové GURU akcenty.
+ * - Kompaktní historie duelů.
+ * PREVIEW FIX: Implementován bezpečný fallback pro Next.js a Supabase.
  */
 
-// 🚀 GURU: Inicializace Supabase klienta (Striktní verze bez fallbacků)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+// --- 🛡️ GURU COMPATIBILITY BRIDGE ---
+const safeLoad = (name) => {
+  try { return require(name); } catch (e) { return null; }
+};
 
-export default function App() {
+const supabaseLib = safeLoad('@supabase/supabase-js');
+const nextNav = safeLoad('next/navigation');
+const nextLinkMod = safeLoad('next/link');
+
+const createClient = supabaseLib ? supabaseLib.createClient : null;
+const useRouter = nextNav ? nextNav.useRouter : () => ({ push: (url) => console.log('Routing to:', url) });
+const usePathname = nextNav ? nextNav.usePathname : () => '';
+const Link = nextLinkMod ? (nextLinkMod.default || nextLinkMod) : ({ children, href, className, style, ...props }) => <a href={href} className={className} style={style} {...props}>{children}</a>;
+
+// 🚀 GURU: Inicializace Supabase klienta
+const supabaseUrl = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_URL : '';
+const supabaseKey = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY : '';
+const supabase = (createClient && supabaseUrl) ? createClient(supabaseUrl, supabaseKey) : null;
+
+export default function GpuVsHub() {
   const router = useRouter();
   const pathname = usePathname() || '';
   const isEn = pathname.startsWith('/en');
@@ -34,9 +46,14 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 🚀 GURU DATA SYNC: Načítání z DB (RTX 5090, 4080, RX 9070...)
+  // 🚀 GURU DATA SYNC
   useEffect(() => {
     async function loadData() {
+      if (!supabase) {
+        setLoading(false);
+        setError(isEn ? "Database not connected in preview mode." : "Databáze není připojena v režimu náhledu.");
+        return;
+      }
       try {
         setLoading(true);
         setError(null);
@@ -48,9 +65,9 @@ export default function App() {
             .order('name', { ascending: true }),
           supabase
             .from('gpu_duels')
-            .select('id, title_cs, title_en, slug')
-            .order('id', { ascending: false })
-            .limit(10)
+            .select('id, title_cs, title_en, slug, slug_en')
+            .order('created_at', { ascending: false })
+            .limit(12) // Načteme víc, ať pravý sloupec hezky vypadá
         ]);
 
         if (gData.error) throw gData.error;
@@ -68,7 +85,7 @@ export default function App() {
     loadData();
   }, [isEn]);
 
-  // 🚀 GURU: Robustní slugify engine (zvládá diakritiku i speciální znaky)
+  // 🚀 GURU: Robustní slugify engine
   const slugify = (text) => {
     return text
       .toLowerCase()
@@ -80,18 +97,15 @@ export default function App() {
       .trim();
   };
 
-  // 🚀 GURU: UX Swap Engine
   const swapGPUs = () => {
     const temp = gpuA;
     setGpuA(gpuB);
     setGpuB(temp);
   };
 
-  // 🚀 GURU ENGINE: Odpálení duelu a přesměrování
   const handleStartDuel = () => {
     if (!gpuA || !gpuB || gpuA === gpuB) return;
     
-    // Typová kontrola String(id) pro UUID safety
     const cardA = gpus.find(g => String(g.id) === gpuA);
     const cardB = gpus.find(g => String(g.id) === gpuB);
     
@@ -103,201 +117,209 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen text-white font-sans selection:bg-[#ff0055]" style={{ 
+    <div style={{ 
+      minHeight: '100vh', 
       backgroundColor: '#0a0b0d',
       backgroundImage: 'url("/bg-guru.png")', 
       backgroundSize: 'cover', 
       backgroundAttachment: 'fixed',
       backgroundPosition: 'center',
       paddingTop: '140px', 
-      paddingBottom: '100px' 
+      paddingBottom: '100px',
+      color: '#fff',
+      fontFamily: 'sans-serif'
     }}>
       
-      {/* 🛡️ GURU HYPER-SHIELD */}
-      <script dangerouslySetInnerHTML={{__html: `
-        (function() {
-          window.swgSubscriptions = window.swgSubscriptions || {};
-          if (typeof window.swgSubscriptions.attachButton !== 'function') {
-            window.swgSubscriptions.attachButton = function() {};
-          }
-        })();
-      `}} />
-
+      {/* 🛡️ GURU STYLES (Plně sjednoceno s TipDetail a zbytkem webu) */}
       <style dangerouslySetInnerHTML={{__html: `
-        .guru-main-title { font-size: 72px; font-weight: 950; font-style: italic; color: #fff; text-transform: uppercase; line-height: 0.9; margin: 0; text-align: center; }
-        .guru-highlight-title { font-size: 64px; font-weight: 950; font-style: italic; color: #ff0055; text-transform: uppercase; line-height: 0.9; margin-top: -5px; margin-bottom: 40px; text-align: center; display: block; }
+        .guru-hub-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         
-        .guru-glass-panel { 
-          position: relative;
-          background: rgba(0,0,0,0.55); 
-          backdrop-filter: blur(14px); 
-          border-radius: 14px; 
+        .guru-main-title { font-size: clamp(3rem, 6vw, 4.5rem); font-weight: 950; font-style: italic; color: #fff; text-transform: uppercase; line-height: 1; margin: 0; text-shadow: 0 0 20px rgba(102, 252, 241, 0.2); }
+        .guru-highlight-title { color: #66fcf1; display: block; }
+        
+        .guru-desc-text { color: #d1d5db; font-size: 1.15rem; line-height: 1.6; max-width: 600px; margin-top: 15px; }
+
+        /* Hlavní Grid rozložení */
+        .hub-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 40px; align-items: start; margin-top: 50px; }
+        
+        /* Generátor (Levý sloupec) */
+        .generator-panel { 
+          background: rgba(15, 17, 21, 0.95); 
+          backdrop-filter: blur(15px); 
+          border-radius: 30px; 
           padding: 40px; 
-          width: 100%;
-          max-width: 600px; 
-          margin: 0 auto 60px; 
-          box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-          border: 1px solid rgba(255,255,255,0.05);
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+          border: 1px solid rgba(102, 252, 241, 0.2);
+          position: relative;
         }
-        .guru-neon-top { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #ff0055; border-radius: 14px 14px 0 0; }
+        .generator-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #66fcf1, #a855f7); border-radius: 30px 30px 0 0; }
         
-        .guru-dropdown { flex: 1; padding: 16px; background: #000; border: 1px solid #333; color: #fff; border-radius: 8px; font-size: 16px; appearance: none; cursor: pointer; outline: none; transition: 0.3s; width: 100%; }
-        .guru-dropdown:focus { border-color: #ff0055; }
+        .guru-dropdown-group { margin-bottom: 25px; }
+        .gpu-label { display: flex; align-items: center; gap: 8px; color: #9ca3af; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
         
-        .guru-battle-btn { width: 100%; padding: 20px; background: linear-gradient(90deg, #ff0055, #7a001e); color: #fff; border: none; border-radius: 10px; font-weight: 800; font-size: 20px; text-transform: uppercase; cursor: pointer; transition: 0.3s; box-shadow: 0 5px 20px rgba(255, 0, 85, 0.3); }
-        .guru-battle-btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 10px 30px rgba(255, 0, 85, 0.4); }
-        .guru-battle-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .guru-dropdown { 
+          width: 100%; padding: 18px 20px; background: rgba(0,0,0,0.6); 
+          border: 1px solid rgba(255,255,255,0.1); color: #fff; 
+          border-radius: 16px; font-size: 16px; font-weight: bold;
+          outline: none; transition: 0.3s; cursor: pointer;
+        }
+        .guru-dropdown:focus { border-color: #66fcf1; box-shadow: 0 0 15px rgba(102, 252, 241, 0.2); background: rgba(0,0,0,0.8); }
+        
+        .guru-swap-wrapper { display: flex; justify-content: center; margin: -10px 0 15px; position: relative; z-index: 10; }
+        .guru-swap-btn { 
+          background: #111318; border: 1px solid rgba(255,255,255,0.1); color: #9ca3af; 
+          padding: 12px; border-radius: 50%; cursor: pointer; transition: 0.4s; 
+          display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .guru-swap-btn:hover { border-color: #66fcf1; color: #66fcf1; transform: rotate(180deg) scale(1.1); }
+        
+        .guru-battle-btn { 
+          width: 100%; padding: 20px; margin-top: 15px;
+          background: linear-gradient(135deg, #ff0055 0%, #990033 100%); 
+          color: #fff; border: 1px solid rgba(255,0,85,0.5); border-radius: 16px; 
+          font-weight: 950; font-size: 18px; text-transform: uppercase; letter-spacing: 1px;
+          cursor: pointer; transition: 0.3s; box-shadow: 0 10px 30px rgba(255, 0, 85, 0.3); 
+          display: flex; justify-content: center; align-items: center; gap: 12px;
+        }
+        .guru-battle-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(255, 0, 85, 0.5); filter: brightness(1.1); }
+        .guru-battle-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
 
-        .guru-swap-btn { background: #111; border: 1px solid #333; color: #9ca3af; padding: 10px; border-radius: 50%; cursor: pointer; transition: 0.4s; display: flex; align-items: center; justify-content: center; }
-        .guru-swap-btn:hover { border-color: #ff0055; color: #ff0055; transform: rotate(180deg) scale(1.1); }
+        /* Historie duelů (Pravý sloupec) - Kompaktní verze */
+        .history-panel { display: flex; flex-direction: column; gap: 12px; }
+        .history-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
+        .history-title { font-size: 18px; font-weight: 950; color: #fff; text-transform: uppercase; margin: 0; letter-spacing: 1px; }
         
-        .duel-list-item { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05); padding: 18px 24px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: #fff; transition: 0.3s; margin-bottom: 12px; }
-        .duel-list-item:hover { background: rgba(0,0,0,0.7); border-color: #ff0055; transform: translateX(10px); }
-        
-        .gpu-label { display: block; color: #ff0055; font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 2px; display: flex; align-items: center; gap: 8px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .compact-duel-item { 
+          background: rgba(15, 17, 21, 0.7); border: 1px solid rgba(255,255,255,0.05); 
+          padding: 14px 18px; border-radius: 14px; display: flex; justify-content: space-between; 
+          align-items: center; text-decoration: none; transition: 0.3s; backdrop-filter: blur(10px);
+        }
+        .compact-duel-item:hover { background: rgba(102, 252, 241, 0.05); border-color: rgba(102, 252, 241, 0.3); transform: translateX(5px); }
+        .duel-name { font-size: 13px; font-weight: 900; color: #d1d5db; text-transform: uppercase; transition: 0.3s; }
+        .compact-duel-item:hover .duel-name { color: #fff; }
 
-        @media (max-width: 768px) { 
-          .guru-main-title { font-size: 48px; }
-          .guru-highlight-title { font-size: 42px; }
-          .guru-glass-panel { padding: 30px 20px; }
-          .select-stack { flex-direction: column; gap: 20px; align-items: center; }
-          .flex-1 { width: 100%; }
+        @media (max-width: 1024px) { 
+          .hub-grid { grid-template-columns: 1fr; } 
+          .history-panel { margin-top: 20px; }
         }
       `}} />
 
-      <main className="max-w-4xl mx-auto px-4">
+      <div className="guru-hub-container">
         
-        {/* HERO HLAVIČKA */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 text-[#ff0055] text-xs font-black uppercase tracking-[0.4em] mb-8 px-6 py-2 border border-[#ff0055] rounded-full bg-[#ff0055]/10 animate-pulse shadow-[0_0_20px_rgba(255,0,85,0.2)]">
-            <Swords size={18} /> GURU VS ENGINE
+        {/* HERO SEKCE */}
+        <header style={{ marginBottom: '20px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', padding: '6px 16px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)' }}>
+            <ShieldCheck size={14} /> GURU VS ENGINE
           </div>
-          <h1 className="guru-main-title">{isEn ? "COMPARE" : "POROVNEJTE"}</h1>
-          <span className="guru-highlight-title">{isEn ? "GRAPHICS CARDS" : "GRAFICKÉ KARTY"}</span>
-          <p className="text-[#cccccc] text-xl max-w-2xl mx-auto italic font-medium opacity-90 leading-relaxed">
-            {isEn ? "Detailed technical analysis, FPS estimation and AI verdict by Guru." : "Detailní technická analýza, odhad FPS a zhodnocení výhodnosti pomocí Guru AI."}
+          <h1 className="guru-main-title">
+            {isEn ? "COMPARE" : "POROVNEJTE"} <br/>
+            <span className="guru-highlight-title">{isEn ? "GRAPHICS CARDS" : "GRAFICKÉ KARTY"}</span>
+          </h1>
+          <p className="guru-desc-text">
+            {isEn 
+              ? "Detailed technical analysis, raw performance index and AI verdict by Guru." 
+              : "Detailní technická analýza, odhad hrubého výkonu a zhodnocení výhodnosti pomocí AI."}
           </p>
-        </div>
+        </header>
 
-        {/* VÝBĚROVÝ PANEL */}
-        <section className="guru-glass-panel">
-            <div className="guru-neon-top"></div>
+        {/* DVOUSLOUPCOVÝ GRID */}
+        <div className="hub-grid">
             
-            {error && (
-              <div className="bg-red-500/10 border border-red-500 text-red-500 p-5 rounded-xl text-center font-black mb-8 uppercase tracking-widest text-xs shadow-lg">
-                 <RefreshCw className="inline mr-2 animate-spin" size={16} /> {error}
-              </div>
-            )}
-            
-            <div className="select-stack flex gap-6 mb-10 items-end">
-                <div className="flex-1">
-                  <label className="gpu-label">
-                    <span className="dot bg-[#ff0055] shadow-[0_0_10px_#ff0055]"></span>
-                    {isEn ? "FIRST GPU" : "PRVNÍ GRAFIKA"}
-                  </label>
-                  <select 
-                    className="guru-dropdown" 
-                    value={gpuA} 
-                    onChange={e => setGpuA(e.target.value)}
-                  >
-                    <option value="" className="bg-[#0a0b0d] text-neutral-500">{loading ? "..." : (isEn ? "-- Select GPU --" : "-- Vyber grafiku --")}</option>
-                    {gpus.map(g => (
-                      <option key={g.id} value={String(g.id)} className="bg-[#0a0b0d] text-white">
-                        {g.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div style={{ marginBottom: '10px' }}>
-                  <button onClick={swapGPUs} className="guru-swap-btn" title={isEn ? "Swap" : "Prohodit"}>
-                    <ArrowLeftRight size={20} />
-                  </button>
-                </div>
-
-                <div className="flex-1">
-                  <label className="gpu-label" style={{ color: '#3b82f6' }}>
-                    <span className="dot bg-[#3b82f6] shadow-[0_0_10px_#3b82f6]"></span>
-                    {isEn ? "SECOND GPU" : "DRUHÁ GRAFIKA"}
-                  </label>
-                  <select 
-                    className="guru-dropdown" 
-                    value={gpuB} 
-                    onChange={e => setGpuB(e.target.value)}
-                  >
-                    <option value="" className="bg-[#0a0b0d] text-neutral-500">{loading ? "..." : (isEn ? "-- Select GPU --" : "-- Vyber grafiku --")}</option>
-                    {gpus.map(g => (
-                      <option 
-                        key={g.id} 
-                        value={String(g.id)} 
-                        className="bg-[#0a0b0d] text-white"
-                        disabled={String(g.id) === gpuA}
-                      >
-                        {g.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-            </div>
-
-            <button 
-              className="guru-battle-btn group" 
-              onClick={handleStartDuel} 
-              disabled={!gpuA || !gpuB || gpuA === gpuB || loading}
-            >
-              <div className="flex items-center justify-center gap-4">
-                {loading ? <RefreshCw className="animate-spin" size={24} /> : <Zap fill="currentColor" size={24} />}
-                {isEn ? "START HARDWARE BATTLE" : "SPUSTIT SOUBOJ ŽELEZA"}
-              </div>
-            </button>
-            
-            {gpuA === gpuB && gpuA !== '' && (
-              <p className="text-[#ff0055] text-[11px] font-black text-center mt-6 uppercase tracking-widest italic animate-bounce">
-                {isEn ? "CRITICAL ERROR: SELECT DIFFERENT CARDS!" : "CHYBA: VYBERTE DVĚ RŮZNÉ KARTY!"}
-              </p>
-            )}
-        </section>
-
-        {/* POSLEDNÍ SOUBOJE */}
-        <section className="max-w-[650px] mx-auto">
-          <div className="flex items-center gap-6 mb-12">
-            <h2 className="text-3xl font-black uppercase italic whitespace-nowrap tracking-tighter">
-              {isEn ? "RECENT" : "POSLEDNÍ"} <span className="text-[#ff0055]">{isEn ? "BATTLES" : "SOUBOJE"}</span>
-            </h2>
-            <div className="h-px bg-white/10 w-full shadow-inner"></div>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-24 text-gray-600 font-black tracking-widest uppercase italic text-sm">
-              <RefreshCw className="animate-spin mr-4" size={22} /> GURU SCANNING...
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-3">
-              {existingDuels.length > 0 ? existingDuels.map((duel) => (
-                <Link 
-                  href={isEn ? `/en/gpuvs/${duel.slug}` : `/gpuvs/${duel.slug}`} 
-                  key={duel.id} 
-                  className="duel-list-item group"
-                >
-                  <div className="flex items-center gap-5">
-                    <Swords size={20} className="text-gray-500 group-hover:text-[#ff0055] transition-all transform group-hover:rotate-12 group-hover:scale-125" />
-                    <span className="text-lg font-black tracking-tight group-hover:text-white transition-colors uppercase italic">
-                      {isEn ? (duel.title_en || duel.title_cs) : duel.title_cs}
-                    </span>
-                  </div>
-                  <ChevronRight size={22} className="text-gray-700 group-hover:text-white transition-all transform group-hover:translate-x-2" />
-                </Link>
-              )) : (
-                <div className="text-center py-20 border-2 border-dashed border-white/5 rounded-3xl bg-black/20 text-gray-600 font-black uppercase tracking-[0.4em] text-xs italic">
-                   {isEn ? "DATABASES ARE EMPTY. START THE FIRST BATTLE!" : "DATABÁZE JE PRÁZDNÁ. ODPAL PRVNÍ SOUBOJ!"}
+            {/* LEVÝ SLOUPEC: GENERÁTOR */}
+            <section className="generator-panel">
+              {error && (
+                <div style={{ padding: '15px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', borderRadius: '12px', fontWeight: '900', fontSize: '12px', textAlign: 'center', marginBottom: '25px', textTransform: 'uppercase' }}>
+                   <AlertTriangle className="inline mr-2" size={16} /> {error}
                 </div>
               )}
-            </div>
-          )}
-        </section>
+              
+              <div className="guru-dropdown-group">
+                <label className="gpu-label">
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ff0055', boxShadow: '0 0 10px #ff0055' }}></div>
+                  {isEn ? "FIRST GPU (RED CORNER)" : "PRVNÍ GRAFIKA (ČERVENÝ ROH)"}
+                </label>
+                <select className="guru-dropdown" value={gpuA} onChange={e => setGpuA(e.target.value)}>
+                  <option value="" style={{ color: '#6b7280' }}>{loading ? "..." : (isEn ? "-- Select GPU --" : "-- Vyber grafiku --")}</option>
+                  {gpus.map(g => <option key={g.id} value={String(g.id)} style={{ color: '#fff' }}>{g.name}</option>)}
+                </select>
+              </div>
 
-      </main>
+              <div className="guru-swap-wrapper">
+                <button onClick={swapGPUs} className="guru-swap-btn" title={isEn ? "Swap" : "Prohodit"}>
+                  <ArrowLeftRight size={20} />
+                </button>
+              </div>
+
+              <div className="guru-dropdown-group">
+                <label className="gpu-label">
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#66fcf1', boxShadow: '0 0 10px #66fcf1' }}></div>
+                  {isEn ? "SECOND GPU (BLUE CORNER)" : "DRUHÁ GRAFIKA (MODRÝ ROH)"}
+                </label>
+                <select className="guru-dropdown" value={gpuB} onChange={e => setGpuB(e.target.value)}>
+                  <option value="" style={{ color: '#6b7280' }}>{loading ? "..." : (isEn ? "-- Select GPU --" : "-- Vyber grafiku --")}</option>
+                  {gpus.map(g => (
+                    <option key={g.id} value={String(g.id)} style={{ color: '#fff' }} disabled={String(g.id) === gpuA}>
+                      {g.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button 
+                className="guru-battle-btn" 
+                onClick={handleStartDuel} 
+                disabled={!gpuA || !gpuB || gpuA === gpuB || loading}
+              >
+                {loading ? <RefreshCw className="animate-spin" size={24} /> : <Zap size={24} />}
+                {isEn ? "START HARDWARE BATTLE" : "SPUSTIT SOUBOJ ŽELEZA"}
+              </button>
+              
+              {gpuA === gpuB && gpuA !== '' && (
+                <p style={{ color: '#ff0055', fontSize: '11px', fontWeight: '950', textAlign: 'center', marginTop: '15px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  {isEn ? "ERROR: SELECT DIFFERENT CARDS!" : "CHYBA: VYBERTE DVĚ RŮZNÉ KARTY!"}
+                </p>
+              )}
+            </section>
+
+            {/* PRAVÝ SLOUPEC: KOMPAKTNÍ HISTORIE */}
+            <section className="history-panel">
+              <div className="history-header">
+                <Flame color="#f97316" size={24} />
+                <h2 className="history-title">{isEn ? "RECENT BATTLES" : "POSLEDNÍ SOUBOJE"}</h2>
+              </div>
+
+              {loading ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px', color: '#6b7280', fontSize: '12px', fontWeight: '950', letterSpacing: '2px', textTransform: 'uppercase' }}>
+                  <RefreshCw className="animate-spin mr-3" size={18} /> SCANNING...
+                </div>
+              ) : existingDuels.length > 0 ? (
+                existingDuels.map((duel) => {
+                  const targetSlug = isEn ? (duel.slug_en || `en-${duel.slug}`) : duel.slug;
+                  const targetTitle = isEn ? (duel.title_en || duel.title_cs) : duel.title_cs;
+                  
+                  return (
+                    <Link 
+                      href={`/${isEn ? 'en/' : ''}gpuvs/${targetSlug}`} 
+                      key={duel.id} 
+                      className="compact-duel-item"
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <Swords size={16} color="#6b7280" />
+                        <span className="duel-name">{targetTitle}</span>
+                      </div>
+                      <ChevronRight size={18} color="#66fcf1" />
+                    </Link>
+                  );
+                })
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px', background: 'rgba(0,0,0,0.3)', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)', color: '#6b7280', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                   {isEn ? "DATABASES ARE EMPTY." : "DATABÁZE JE PRÁZDNÁ."}
+                </div>
+              )}
+            </section>
+
+        </div>
+      </div>
     </div>
   );
 }
