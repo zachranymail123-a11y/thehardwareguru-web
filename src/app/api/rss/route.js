@@ -11,9 +11,9 @@ const supabase = createClient(
 );
 
 /**
- * GURU RSS FEED ENGINE V5.0
+ * GURU RSS FEED ENGINE V5.1 (XML VALIDATION FIX)
  * Cesta: src/app/api/rss/route.js
- * Agreguje: Články, Očakávané hry, Tipy, Tweaky, Rady, Slovník a 🚀 GPU DUELY.
+ * 🛡️ FIX: Escapování ampersandů v URL adresách pro validní XML.
  */
 export async function GET() {
   try {
@@ -32,6 +32,9 @@ export async function GET() {
     ]);
 
     const allItems = [];
+
+    // Helper pro escapování ampersandů v URL, které XML nesnese
+    const escapeXmlUrl = (url) => url ? url.replace(/&/g, '&amp;') : '';
 
     // --- 🛡️ GURU MAPPING LOGIC ---
 
@@ -154,14 +157,18 @@ export async function GET() {
     <atom:link href="${siteUrl}/api/rss" rel="self" type="application/rss+xml" />`;
 
     sortedItems.forEach((item) => {
+      // 🚀 GURU FIX: Escapujeme URL a Image URL, aby '&' nezhodilo XML validáciu
+      const safeUrl = escapeXmlUrl(item.url);
+      const safeImg = escapeXmlUrl(item.image);
+
       rss += `
     <item>
       <title><![CDATA[${item.title}]]></title>
-      <link>${item.url}</link>
-      <guid>${item.url}</guid>
+      <link>${safeUrl}</link>
+      <guid>${safeUrl}</guid>
       <pubDate>${new Date(item.date).toUTCString()}</pubDate>
       <description><![CDATA[${item.description}]]></description>
-      ${item.image ? `<media:content url="${item.image}" medium="image" />` : ''}
+      ${safeImg ? `<media:content url="${safeImg}" medium="image" />` : ''}
     </item>`;
     });
 
