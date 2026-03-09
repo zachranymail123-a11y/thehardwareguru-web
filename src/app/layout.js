@@ -12,17 +12,36 @@ export const metadata = {
     default: 'The Hardware Guru | Tech, Gaming & AI',
     template: '%s | The Hardware Guru'
   },
+
   description: 'Exkluzivní novinky ze světa hardwaru, recenze her a streamy s unikátní AI. Tvůj průvodce moderní technologií.',
-  metadataBase: new URL('https://www.thehardwareguru.cz'),
+
+  // ✅ sjednocená canonical doména
+  metadataBase: new URL('https://thehardwareguru.cz'),
+
   alternates: {
+    canonical: '/',
     languages: {
-      'cs': 'https://www.thehardwareguru.cz',
-      'en': 'https://www.thehardwareguru.cz/en',
+      cs: '/',
+      en: '/en'
+    }
+  },
+
+  // ✅ lepší crawl pro Google
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
     },
   },
 }
 
 export default function RootLayout({ children, params }) {
+
   const locale = params?.locale || params?.lang || 'cs';
 
   const envVars = {
@@ -35,16 +54,20 @@ export default function RootLayout({ children, params }) {
     <html lang={locale}>
       <head>
 
-        {/* 📰 RSS FEED – pro crawlers (Google, Seznam, Feedly) */}
+        {/* RSS FEED */}
         <link
           rel="alternate"
           type="application/rss+xml"
           title="The Hardware Guru RSS Feed"
-          href="https://www.thehardwareguru.cz/rss.xml"
+          href="https://thehardwareguru.cz/rss.xml"
         />
 
         {/* GOOGLE ANALYTICS */}
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-9W5FBC9P68" strategy="afterInteractive" />
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-9W5FBC9P68"
+          strategy="afterInteractive"
+        />
+
         <Script id="google-analytics" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
@@ -53,32 +76,33 @@ export default function RootLayout({ children, params }) {
             gtag('config', 'G-9W5FBC9P68');
           `}
         </Script>
+
       </head>
 
-      <body style={{ 
-        margin: 0, 
-        padding: 0, 
-        backgroundColor: '#0a0b0d', 
+      <body style={{
+        margin: 0,
+        padding: 0,
+        backgroundColor: '#0a0b0d',
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column'
       }}>
-        
-        <div 
-          id="guru-env-bridge" 
+
+        <div
+          id="guru-env-bridge"
           style={{ display: 'none' }}
           data-url={envVars.NEXT_PUBLIC_SUPABASE_URL}
           data-key={envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY}
           data-webhook={envVars.NEXT_PUBLIC_MAKE_WEBHOOK2_URL}
         />
-        
+
         <Navbar />
-        
-        <SocialTracker /> 
+
+        <SocialTracker />
         <Tracker />
-        
-        <main style={{ 
-          paddingTop: '90px', 
+
+        <main style={{
+          paddingTop: '90px',
           flex: 1,
           position: 'relative',
           width: '100%',
@@ -91,23 +115,26 @@ export default function RootLayout({ children, params }) {
         <SupportWidget />
         <Analytics />
 
-        <Script 
-          src="https://news.google.com/swg/js/v1/swg-basic.js" 
-          strategy="afterInteractive" 
+        <Script
+          src="https://news.google.com/swg/js/v1/swg-basic.js"
+          strategy="afterInteractive"
           type="application/javascript"
           async
         />
+
         <Script id="google-news-swg-init" strategy="afterInteractive">
           {`
-            (self.SWG_BASIC = self.SWG_BASIC || []).push( basicSubscriptions => {
+            (self.SWG_BASIC = self.SWG_BASIC || []).push(basicSubscriptions => {
+
               window.swgSubscriptions = basicSubscriptions;
-              
+
               basicSubscriptions.init({
                 type: "NewsArticle",
                 isPartOfType: ["Product"],
                 isPartOfProductId: "CAow2M_FDA:openaccess",
                 clientOptions: { theme: "light", lang: "${locale}" },
               });
+
             });
           `}
         </Script>
@@ -119,15 +146,21 @@ export default function RootLayout({ children, params }) {
           strategy="afterInteractive"
         />
 
-        <Script 
-          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" 
-          strategy="afterInteractive" 
+        <Script
+          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+          strategy="afterInteractive"
         />
+
         <Script id="onesignal-init" strategy="lazyOnload">
           {`
             window.OneSignalDeferred = window.OneSignalDeferred || [];
+
             OneSignalDeferred.push(async function(OneSignal) {
-              await OneSignal.init({ appId: "1ea5ad89-5f3e-4922-b2c8-e8cd05304047" });
+
+              await OneSignal.init({
+                appId: "1ea5ad89-5f3e-4922-b2c8-e8cd05304047"
+              });
+
             });
           `}
         </Script>
