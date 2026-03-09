@@ -18,10 +18,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V98.1 (ULTIMATE LOOKUP FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V98.3 (FINAL POSTGREST FIX)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: Extrakce číselné řady (\d{3,4}) ze slugu pro spolehlivý match v DB (ChatGPT Fix).
- * 🛡️ FIX 2: Použití patternu s číslem a encodeURIComponent (ChatGPT Fix).
+ * 🛡️ FIX 1: Úplné odstranění encodeURIComponent z patternu pro správný ilike wildcard (ChatGPT Fix).
+ * 🛡️ FIX 2: Upraven regex na \d{4} a přidána ochrana if (!number) return null (ChatGPT Fix).
  */
 
 export const revalidate = 86400;
@@ -62,18 +62,20 @@ function calculatePerf(a, b) {
     return { winner: null, loser: null, diff: 0 }; // Remíza
 }
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB (ULTIMATE FIX DLE CHATGPT)
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (FINÁLNÍ BEZPEČNÁ VERZE DLE CHATGPT)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl) return null;
 
   // 🚀 GURU FIX: Nahrazení '-' mezerami
   const name = slugPart.replace(/-/g, " ").trim();
   
-  // 🚀 GURU FIX: Získání číselného označení modelu (např. "5090" z "geforce rtx 5090")
-  const number = name.match(/\d{3,4}/)?.[0] || name; 
+  // 🚀 GURU FIX: Bezpečnější regex pro 4 číslice dle ChatGPT
+  const number = name.match(/\d{4}/)?.[0]; 
+
+  if (!number) return null;
   
-  // 🚀 GURU FIX: PostgREST hledá čistě podle čísla modelu pro 100% jistotu nálezu
-  const pattern = `*${number}*`;
+  // 🚀 GURU FIX: PostgREST hledá čistě podle čísla modelu
+  const pattern = `%${number}%`;
 
   // Debug log pro kontrolu na serveru
   if (process.env.NODE_ENV === "development") {
@@ -83,8 +85,9 @@ const findGpu = async (slugPart) => {
   }
 
   try {
+      // 🚀 GURU CRITICAL FIX: Zásadní oprava - nesmí se použít encodeURIComponent na % wildcard
       const res = await fetch(
-        `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.${encodeURIComponent(pattern)}&limit=1`,
+        `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.${pattern}&limit=1`,
         {
           headers: {
             'apikey': supabaseKey,
@@ -265,6 +268,12 @@ export default async function GpuUpgradeDetail({ params }) {
   const slug = params?.slug ?? null;
   const upgrade = await getUpgradeData(slug);
   
+  // 🚀 GURU FIX: Logy pouze pro vývoj
+  if (process.env.NODE_ENV === "development") {
+      console.log("UPGRADE SLUG:", slug);
+      console.log("FOUND:", upgrade);
+  }
+  
   if (!upgrade) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center' }}>UPGRADE PATH NENALEZENA</div>;
 
   const isEn = slug?.startsWith('en-');
@@ -420,6 +429,7 @@ export default async function GpuUpgradeDetail({ params }) {
         </div>
 
         {/* BENCHMARK SUMMARY */}
+        {/* 🚀 GURU FIX: Bezpečný zápis pro kontrolu null objektu */}
         {Object.keys(fpsA || {}).length > 0 && Object.keys(fpsB || {}).length > 0 && (
             <section style={{ marginBottom: '60px' }}>
             <div className="content-box-style" style={{ borderLeft: '6px solid #a855f7' }}>
