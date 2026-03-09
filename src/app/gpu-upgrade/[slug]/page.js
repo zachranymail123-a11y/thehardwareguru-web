@@ -6,7 +6,7 @@ import {
   Heart, 
   Swords, 
   Calendar,
-  Trophy,
+  Trophy, 
   Zap,
   Gamepad2,
   LayoutList,
@@ -20,12 +20,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V102.0 (NAME-BASED LOOKUP FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V103.1 (URL ENCODING FIX)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: findGpu nyní hledá podle celého názvu (slugPart -> name) namísto pouhého čísla (ChatGPT Fix).
- * 🛡️ FIX 2: Použití '%' wildcard (PostgREST standard) pro maximální toleranci názvů v DB (ChatGPT Fix).
- * 🛡️ FIX 3: Zachování Guru Supreme designu a všech bezpečnostních null checků.
- * 🚀 PERF: export const revalidate = 86400; pro bleskové načítání a SEO.
+ * 🛡️ FIX: pattern s '%' wildcards nyní prochází encodeURIComponent (ChatGPT Fix).
+ * 🛡️ Tím se zajistí, že PostgREST v URL uvidí '%25' a správně ho dekóduje na wildcard.
+ * 🚀 PERF: export const revalidate = 86400; zůstává pro SEO stabilitu.
  */
 
 export const revalidate = 86400;
@@ -53,15 +52,17 @@ function calculatePerf(a, b) {
     return { winner: b, loser: a, diff };
 }
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB (SPOLEHLIVÝ FULL-NAME LOOKUP DLE CHATGPT)
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (ENCODED LOOKUP DLE CHATGPT)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
 
-  // 🚀 GURU FIX: Převod slugu zpět na text pro vyhledávání (rtx-4070 -> rtx 4070)
-  const name = slugPart.replace(/-/g, " ").trim();
+  // 🚀 GURU FIX: Extrakce číselné řady ze slugu
+  const number = slugPart.match(/\d{3,4}/)?.[0];
+
+  if (!number) return null;
   
-  // 🚀 GURU FIX: Wildcard '%' pro PostgREST postavený na celém názvu karty
-  const pattern = `%${name}%`;
+  // 🚀 GURU CRITICAL FIX: Používáme encodeURIComponent, aby '%' v URL PostgRESTu neházelo chybu (ChatGPT Fix)
+  const pattern = encodeURIComponent(`%${number}%`);
 
   try {
       const res = await fetch(
@@ -306,9 +307,11 @@ export default async function GpuUpgradeDetail({ params }) {
                 <h2 className="gpu-name-text" style={{ color: '#d1d5db', fontSize: 'clamp(1.2rem, 2.5vw, 2rem)' }}>{normalizeName(gpuA.name)}</h2>
                 <div style={{ marginTop: '10px', fontSize: '12px', color: '#6b7280', fontWeight: 'bold' }}>{gpuA.architecture} • {gpuA.vram_gb}GB VRAM</div>
             </div>
+            
             <div className="vs-center-wrapper">
                 <div className="upgrade-badge"><ArrowRight size={32} /></div>
             </div>
+
             <div className="gpu-card-box" style={{ borderTop: `5px solid ${getVendorColor(gpuB.vendor)}`, transform: 'scale(1.05)', zIndex: 5, boxShadow: '0 0 40px rgba(168, 85, 247, 0.3)' }}>
                 <span className="vendor-label" style={{ color: getVendorColor(gpuB.vendor) }}>{isEn ? 'NEW UPGRADE' : 'NOVÝ UPGRADE'}</span>
                 <h2 className="gpu-name-text" style={{ color: '#fff' }}>{normalizeName(gpuB.name)}</h2>
