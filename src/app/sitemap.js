@@ -147,7 +147,36 @@ export default async function sitemap() {
     const resolutions = ['1080p','1440p','4k'];
     const modes = ['dlss','ray-tracing','ultra','high'];
 
-    /* GAME BENCHMARK HUB (NOVÉ) */
+    /* FPS TARGET SEO (NOVÉ) */
+
+    const fpsTargets = [
+      '30-fps',
+      '60-fps',
+      '120-fps',
+      '144-fps'
+    ];
+
+    fpsTargets.forEach((fps) => {
+
+      gamesList.forEach((game) => {
+
+        dynamicRoutes.push({
+          url: `${baseUrl}/fps-target/${fps}/${game}`,
+          lastModified: currentDate,
+          priority: 0.7
+        });
+
+        dynamicRoutes.push({
+          url: `${baseUrl}/en/fps-target/${fps}/${game}`,
+          lastModified: currentDate,
+          priority: 0.6
+        });
+
+      });
+
+    });
+
+    /* GAME BENCHMARK HUB */
 
     gamesList.forEach((game) => {
 
