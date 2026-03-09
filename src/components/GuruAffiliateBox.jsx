@@ -13,43 +13,47 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ENGINE - ARTICLE DETAIL V19.0 (SUPREME GURU DESIGN)
+ * GURU ENGINE - ARTICLE DETAIL V23.0 (SUPREME DESIGN & STABLE FETCH)
  * Cesta: src/app/clanky/[slug]/page.js
- * 🛡️ FIX: Nativní fetch API pro PostgREST s cílem obejít chyby s knihovnou Supabase v sandboxu.
+ * 🛡️ FIX: Nativní fetch API pro přímý přístup k Supabase REST (řeší chyby kompilace SDK).
+ * 🛡️ FIX: Standardní HTML <a> tagy pro navigaci (řeší chyby s 'next/link').
  * 🛡️ FIX: Opravena detekce obrázku + Fallback na tvůj Davinci placeholder ze Storage.
- * 🛡️ DESIGN: Guru Style nákupní box a Supreme tlačítka podpory s neonovým efektem.
- * 🛡️ NO-AI: Veškeré AI texty a automatické verdikty byly odstraněny.
+ * 🛡️ DESIGN: Guru Style nákupní box a Supreme tlačítka podpory.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// 🚀 GURU: Fallback URL pro tvůj konkrétní obrázek ze Supabase Storage
+// 🚀 GURU: Fallback URL pro tvůj high-tech placeholder ze Supabase Storage
 const GURU_PLACEHOLDER = `${supabaseUrl}/storage/v1/object/public/images/davinci_prompt__a_high_tech__cinematic_placeholder_for_a_g.png`;
 
-// Pomocná funkce pro získání dat bez závislosti na Supabase SDK
-async function getPost(slug) {
+// Pomocná funkce pro získání dat přes nativní fetch (imunní vůči chybám v sandboxu)
+async function getPostData(slug) {
   if (!supabaseUrl || !supabaseKey) return null;
   
-  const res = await fetch(
-    `${supabaseUrl}/rest/v1/posts?select=*&or=(slug.eq.${slug},slug_en.eq.${slug})&limit=1`,
-    {
+  const url = `${supabaseUrl}/rest/v1/posts?select=*&or=(slug.eq.${slug},slug_en.eq.${slug})&limit=1`;
+  
+  try {
+    const res = await fetch(url, {
       headers: {
         'apikey': supabaseKey,
         'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json'
       },
-      next: { revalidate: 60 }
-    }
-  );
-
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data[0] || null;
+      next: { revalidate: 3600 }
+    });
+    
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data && data.length > 0 ? data[0] : null;
+  } catch (error) {
+    return null;
+  }
 }
 
 export async function generateMetadata({ params }) {
-  const { slug } = params;
-  const post = await getPost(slug);
+  const slug = params?.slug;
+  const post = await getPostData(slug);
 
   if (!post) return { title: '404 | The Hardware Guru' };
 
@@ -63,31 +67,32 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title,
       description: desc,
-      images: post.image_url ? [post.image_url] : [GURU_PLACEHOLDER],
+      images: post.image_url ? [post.image_url] : [GURU_PLACE_HOLDER],
     }
   };
 }
 
 export default async function ArticleDetail({ params }) {
-  const { slug } = params;
-  const post = await getPost(slug);
+  const slug = params?.slug;
+  const post = await getPostData(slug);
 
   if (!post) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <h1 style={{ color: '#ff0055', fontSize: '2rem', fontWeight: '900' }}>404 | DATA NENALEZENA</h1>
+        <h1 style={{ color: '#ff0055', fontSize: '30px', fontWeight: '900', textTransform: 'uppercase' }}>404 - DATA NENALEZENA</h1>
       </div>
     );
   }
 
+  // 2. GURU JAZYKOVÁ LOGIKA
   const isEn = post.slug_en === slug;
   const title = isEn && post.title_en ? post.title_en : post.title;
   const content = isEn && post.content_en ? post.content_en : post.content;
   const priceDisplay = isEn ? (post.price_en || '') : (post.price_cs || '');
   const backLink = isEn ? '/en/clanky' : '/clanky';
   
-  // 🚀 GURU IMAGE FIX: Kontrola URL a fallback na tvůj Davinci placeholder
-  const displayImage = post.image_url && post.image_url.startsWith('http') ? post.image_url : GURU_PLACEHOLDER;
+  // 🚀 GURU IMAGE FIX: Pokud v DB není image_url nebo je neplatný, vytáhneme Davinci placeholder
+  const displayImage = (post.image_url && post.image_url.startsWith('http')) ? post.image_url : GURU_PLACE_HOLDER;
 
   const buyBtnText = isEn 
     ? `BUY FOR BEST PRICE ${priceDisplay ? `(${priceDisplay})` : ''}` 
@@ -98,7 +103,8 @@ export default async function ArticleDetail({ params }) {
   return (
     <div style={{ 
         minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', 
-        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px' 
+        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px',
+        color: '#fff', fontFamily: 'sans-serif'
     }}>
       
       <main style={{ 
@@ -107,13 +113,18 @@ export default async function ArticleDetail({ params }) {
           boxShadow: '0 35px 80px -20px rgba(0, 0, 0, 0.9)', overflow: 'hidden', backdropFilter: 'blur(20px)' 
       }}>
         
-        {/* --- 🚀 HLAVNÍ OBRÁZEK (S FALLBACKEM NA DAVINCI) --- */}
+        {/* --- 🚀 HLAVNÍ OBRÁZEK S FALLBACKEM NA DAVINCI --- */}
         <div style={{ width: '100%', height: '480px', position: 'relative', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <img src={displayImage} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15, 17, 21, 1) 0%, transparent 60%)' }}></div>
           
           <div style={{ position: 'absolute', top: '35px', left: '35px' }}>
-            <a href={backLink} className="guru-back-btn">
+            <a href={backLink} style={{ 
+                display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.7)', 
+                color: '#66fcf1', padding: '14px 22px', border: '1px solid rgba(102, 252, 241, 0.3)',
+                borderRadius: '14px', textDecoration: 'none', fontWeight: '950', fontSize: '13px', 
+                textTransform: 'uppercase', transition: '0.3s', backdropFilter: 'blur(10px)' 
+            }}>
               <ChevronLeft size={16} /> {isEn ? 'BACK TO FEED' : 'ZPĚT DO FEEDU'}
             </a>
           </div>
@@ -132,7 +143,7 @@ export default async function ArticleDetail({ params }) {
           </div>
         </div>
 
-        <div style={{ padding: '50px 60px 70px 60px' }} className="content-responsive">
+        <div style={{ padding: '50px 60px 70px 60px' }}>
           
           {/* --- HLAVIČKA --- */}
           <header style={{ marginBottom: '60px', textAlign: 'center' }}>
@@ -142,7 +153,9 @@ export default async function ArticleDetail({ params }) {
                  {isLeak ? 'UNCONFIRMED INTEL' : 'GURU VERIFIED'}
               </span>
               <span style={{ opacity: 0.3 }}>|</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Calendar size={16} /> {new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }} suppressHydrationWarning>
+                <Calendar size={16} /> {new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}
+              </span>
             </div>
             
             <h1 style={{ fontSize: 'clamp(2.4rem, 6vw, 3.8rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', lineHeight: '1.05', margin: '0', textShadow: '0 10px 30px rgba(0,0,0,0.5)', fontStyle: 'italic' }}>
@@ -153,7 +166,7 @@ export default async function ArticleDetail({ params }) {
           {/* --- OBSAH ČLÁNKU --- */}
           <div className="guru-prose" dangerouslySetInnerHTML={{ __html: content }} />
 
-          {/* --- 🚀 GURU AFFILIATE BOX (SUPREME DESIGN) --- */}
+          {/* --- 🚀 GURU AFFILIATE BOX --- */}
           {post.affiliate_link && (
             <div style={{ 
               marginTop: '80px', padding: '60px 40px', 
@@ -171,25 +184,28 @@ export default async function ArticleDetail({ params }) {
                   ? "We found the best price for your machine upgrade. Instant key delivery and Guru-verified store." 
                   : "Našli jsme pro tebe tu nejlepší cenu na trhu pro upgrade tvé mašiny. Okamžité doručení klíče a Guru-ověřený obchod."}
               </p>
-              <a href={post.affiliate_link} target="_blank" rel="nofollow sponsored" className="guru-affiliate-cta">
+              <a href={post.affiliate_link} target="_blank" rel="nofollow sponsored" className="guru-affiliate-cta" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '15px', padding: '22px 50px', 
+                  background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', color: '#fff',
+                  fontWeight: '950', fontSize: '1.3rem', textTransform: 'uppercase', borderRadius: '20px',
+                  textDecoration: 'none', boxShadow: '0 15px 40px rgba(234, 88, 12, 0.4)', transition: '0.3s',
+                  border: '1px solid rgba(255,255,255,0.2)'
+              }}>
                 <ShoppingCart size={30} /> {buyBtnText}
               </a>
             </div>
           )}
 
-          {/* --- 🚀 GURU SUPREME SUPPORT SECTION (REDESIGNED) --- */}
+          {/* --- 🚀 GURU SUPREME SUPPORT SECTION --- */}
           <div style={{ marginTop: '90px', paddingTop: '60px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <h4 style={{ color: '#fff', fontSize: '18px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '4px', margin: '0 0 40px 0', textAlign: 'center', fontStyle: 'italic', opacity: 0.9 }}>
               {isEn ? "ENJOYED THE INTEL? SUPPORT THE GURU!" : "LÍBIL SE TI ČLÁNEK? PODPOŘ NÁS!"}
             </h4>
             
             <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '25px', width: '100%' }}>
-              {/* Button 1: Deals */}
               <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-cta-btn deals">
                 <Flame size={24} fill="currentColor" /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
               </a>
-              
-              {/* Button 2: Support */}
               <a href={isEn ? "/en/support" : "/support"} className="guru-cta-btn support">
                 <Heart size={24} fill="currentColor" /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
               </a>
@@ -199,13 +215,8 @@ export default async function ArticleDetail({ params }) {
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
-        .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.7); color: #66fcf1; padding: 14px 22px; border-radius: 14px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; backdrop-filter: blur(10px); }
-        .guru-back-btn:hover { background: rgba(102, 252, 241, 0.15); transform: translateX(-5px); box-shadow: 0 0 25px rgba(102, 252, 241, 0.3); }
-        
-        .guru-affiliate-cta { display: inline-flex; align-items: center; justify-content: center; gap: 15px; padding: 22px 50px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 1.3rem; text-transform: uppercase; border-radius: 20px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 15px 40px rgba(234, 88, 12, 0.4); border: 1px solid rgba(255,255,255,0.2); }
         .guru-affiliate-cta:hover { transform: translateY(-5px) scale(1.03); box-shadow: 0 25px 60px rgba(234, 88, 12, 0.6); filter: brightness(1.1); }
         
-        /* 🔥 GURU SUPREME BUTTONS 🔥 */
         .guru-cta-btn {
             flex: 1 1 280px; display: flex; align-items: center; justify-content: center; gap: 14px; 
             padding: 22px 35px; border-radius: 22px; font-weight: 950; font-size: 16px; 
@@ -221,17 +232,13 @@ export default async function ArticleDetail({ params }) {
 
         .guru-prose { color: #d1d5db; font-size: 1.2rem; line-height: 1.9; }
         .guru-prose h2 { color: #66fcf1; font-size: 2.3rem; font-weight: 950; margin-top: 2.5em; margin-bottom: 1em; text-transform: uppercase; letter-spacing: 1px; font-style: italic; }
-        .guru-prose h3 { color: #fff; font-size: 1.7rem; font-weight: 900; margin-top: 2em; margin-bottom: 1em; }
         .guru-prose p { margin-bottom: 1.6em; }
         .guru-prose strong { color: #fff; font-weight: 900; }
         .guru-prose a { color: #f97316; font-weight: bold; text-decoration: none; border-bottom: 2px dashed rgba(249, 115, 22, 0.4); transition: 0.3s; }
         .guru-prose a:hover { border-bottom-style: solid; color: #ea580c; }
-        .guru-prose ul { list-style-type: none; padding-left: 0; margin-bottom: 2em; }
-        .guru-prose li { position: relative; padding-left: 30px; margin-bottom: 12px; }
         .guru-prose li::before { content: '⚡'; position: absolute; left: 0; color: #66fcf1; font-weight: bold; }
 
         @media (max-width: 768px) {
-          .content-responsive { padding: 35px 25px 50px 25px !important; }
           .guru-prose { font-size: 1.1rem; }
           .guru-cta-btn { width: 100%; font-size: 14px; }
         }
