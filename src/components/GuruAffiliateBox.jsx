@@ -13,12 +13,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ENGINE - ARTICLE DETAIL V23.0 (SUPREME DESIGN & STABLE FETCH)
+ * GURU ENGINE - ARTICLE DETAIL V24.0 (SUPREME DESIGN & STABLE FETCH)
  * Cesta: src/app/clanky/[slug]/page.js
- * 🛡️ FIX: Nativní fetch API pro přímý přístup k Supabase REST (řeší chyby kompilace SDK).
- * 🛡️ FIX: Standardní HTML <a> tagy pro navigaci (řeší chyby s 'next/link').
- * 🛡️ FIX: Opravena detekce obrázku + Fallback na tvůj Davinci placeholder ze Storage.
- * 🛡️ DESIGN: Guru Style nákupní box a Supreme tlačítka podpory.
+ * 🛡️ FIX 1: Opraveny překlepy GURU_PLACE_HOLDER -> GURU_PLACEHOLDER dle ChatGPT.
+ * 🛡️ FIX 2: Revalidace snížena na 60s + přidán Cache Buster pro Supabase REST.
+ * 🛡️ FIX 3: Nativní fetch API a standardní HTML <a> tagy pro navigaci.
+ * 🛡️ FIX 4: Opravena detekce obrázku + Fallback na Davinci placeholder.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -31,7 +31,8 @@ const GURU_PLACEHOLDER = `${supabaseUrl}/storage/v1/object/public/images/davinci
 async function getPostData(slug) {
   if (!supabaseUrl || !supabaseKey) return null;
   
-  const url = `${supabaseUrl}/rest/v1/posts?select=*&or=(slug.eq.${slug},slug_en.eq.${slug})&limit=1`;
+  // Přidáváme timestamp pro bypass Supabase REST cache dle doporučení ChatGPT
+  const url = `${supabaseUrl}/rest/v1/posts?select=*&or=(slug.eq.${slug},slug_en.eq.${slug})&limit=1&_=${Date.now()}`;
   
   try {
     const res = await fetch(url, {
@@ -40,7 +41,7 @@ async function getPostData(slug) {
         'Authorization': `Bearer ${supabaseKey}`,
         'Content-Type': 'application/json'
       },
-      next: { revalidate: 3600 }
+      next: { revalidate: 60 } // Změněno z 3600 na 60 dle doporučení ChatGPT
     });
     
     if (!res.ok) return null;
@@ -67,7 +68,7 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title,
       description: desc,
-      images: post.image_url ? [post.image_url] : [GURU_PLACE_HOLDER],
+      images: post.image_url ? [post.image_url] : [GURU_PLACEHOLDER], // Opraven překlep v názvu konstanty
     }
   };
 }
@@ -91,8 +92,8 @@ export default async function ArticleDetail({ params }) {
   const priceDisplay = isEn ? (post.price_en || '') : (post.price_cs || '');
   const backLink = isEn ? '/en/clanky' : '/clanky';
   
-  // 🚀 GURU IMAGE FIX: Pokud v DB není image_url nebo je neplatný, vytáhneme Davinci placeholder
-  const displayImage = (post.image_url && post.image_url.startsWith('http')) ? post.image_url : GURU_PLACE_HOLDER;
+  // 🚀 GURU IMAGE FIX: Opraven název konstanty a validace URL
+  const displayImage = (post.image_url && post.image_url.startsWith('http')) ? post.image_url : GURU_PLACEHOLDER;
 
   const buyBtnText = isEn 
     ? `BUY FOR BEST PRICE ${priceDisplay ? `(${priceDisplay})` : ''}` 
