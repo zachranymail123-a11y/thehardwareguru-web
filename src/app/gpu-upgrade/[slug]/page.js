@@ -20,12 +20,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V101.0 (PRODUCTION STABLE)
+ * GURU GPU UPGRADE ENGINE - DETAIL V102.0 (NAME-BASED LOOKUP FIX)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: findGpu používá '%' wildcard (PostgREST standard) bez zbytečného encodingu (ChatGPT Fix).
- * 🛡️ FIX 2: Regex vylepšen na \d{3,4} pro starší (GTX 980) i nové řady (RTX 5090).
- * 🛡️ FIX 3: Sjednocené parsování '-to-' a '-vs-' pro maximální kompatibilitu URL.
- * 🚀 PERF: export const revalidate = 86400; pro bleskové načítání.
+ * 🛡️ FIX 1: findGpu nyní hledá podle celého názvu (slugPart -> name) namísto pouhého čísla (ChatGPT Fix).
+ * 🛡️ FIX 2: Použití '%' wildcard (PostgREST standard) pro maximální toleranci názvů v DB (ChatGPT Fix).
+ * 🛡️ FIX 3: Zachování Guru Supreme designu a všech bezpečnostních null checků.
+ * 🚀 PERF: export const revalidate = 86400; pro bleskové načítání a SEO.
  */
 
 export const revalidate = 86400;
@@ -33,7 +33,7 @@ export const revalidate = 86400;
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// 🚀 GURU: Standardní slugify (odstraňuje vše kromě písmen, čísel a pomlček)
+// 🚀 GURU: Standardní slugify pro generování URL (pro konzistenci s DB)
 const slugify = (text) => {
   return text
     .toLowerCase()
@@ -53,17 +53,15 @@ function calculatePerf(a, b) {
     return { winner: b, loser: a, diff };
 }
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB (PostgREST % fix dle ChatGPT)
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (SPOLEHLIVÝ FULL-NAME LOOKUP DLE CHATGPT)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
 
+  // 🚀 GURU FIX: Převod slugu zpět na text pro vyhledávání (rtx-4070 -> rtx 4070)
   const name = slugPart.replace(/-/g, " ").trim();
   
-  // 🚀 GURU FIX: Extrakce 3-4 číselného kódu modelu (ChatGPT Fix)
-  const number = name.match(/\d{3,4}/)?.[0] || name; 
-  
-  // 🚀 GURU FIX: PostgREST Postfix - používáme % a NEENCODUJEME ho (ChatGPT Fix)
-  const pattern = `%${number}%`;
+  // 🚀 GURU FIX: Wildcard '%' pro PostgREST postavený na celém názvu karty
+  const pattern = `%${name}%`;
 
   try {
       const res = await fetch(
@@ -106,7 +104,7 @@ async function generateAndPersistUpgrade(slug) {
   try {
     const cleanSlug = slug.replace(/^en-/, '');
     
-    // 🛡️ GURU FIX: Podpora obou oddělovačů (ChatGPT Fix)
+    // Podpora obou typů oddělovačů v URL
     const parts = cleanSlug.includes('-to-')
       ? cleanSlug.split('-to-')
       : cleanSlug.split('-vs-');
@@ -251,6 +249,12 @@ export default async function GpuUpgradeDetail({ params }) {
   const diffs = [cyberpunkDiff, warzoneDiff, starfieldDiff].filter(v => Number.isFinite(v) && v !== 0);
   const avgDiff = diffs.length ? Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length) : 0;
 
+  const availableGames = Object.keys(fpsA || {})
+    .filter(k => k !== 'gpu_id' && k !== 'id' && (k.includes('_1080p') || k.includes('_1440p') || k.includes('_4k')))
+    .map(g => g.replace(/_(1080p|1440p|4k)/,'').replace(/_/g, '-'))
+    .filter((v, i, a) => a.indexOf(v) === i);
+
+  const gamesList = availableGames.length > 0 ? availableGames : ['cyberpunk-2077', 'warzone', 'starfield'];
   const isWorthIt = (gpuB?.performance_index || 0) > (gpuA?.performance_index || 0);
 
   return (
@@ -362,6 +366,29 @@ export default async function GpuUpgradeDetail({ params }) {
           </div>
         </section>
 
+        <section style={{ marginBottom: '60px' }}>
+          <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: '#a855f7' }}>
+            <Gamepad2 size={28} /> {isEn ? 'DETAILED FPS CAPABILITIES' : 'DETAILNÍ MOŽNOSTI VE HRÁCH'}
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '25px' }}>
+              {[gpuA, gpuB].filter(Boolean).map((gpu, i) => {
+                  const safeGpuSlug = slugify(gpu?.name || "");
+                  return (
+                  <div key={i} className="fps-matrix-card">
+                      <div className="matrix-gpu-title" style={{ color: i === 1 ? '#a855f7' : '#9ca3af' }}>{gpu?.name || "GPU"}</div>
+                      <div className="matrix-links">
+                          {gamesList.map((game) => (
+                              <a key={game} href={`/${isEn ? 'en/' : ''}gpu-fps/${safeGpuSlug}/${game}`} className="matrix-link">
+                                  <ExternalLink size={14} /> {game.replace(/-/g, ' ').toUpperCase()} Benchmark
+                              </a>
+                          ))}
+                      </div>
+                  </div>
+                  );
+              })}
+          </div>
+        </section>
+
         {similar.length > 0 && (
           <section style={{ marginBottom: '60px' }}>
             <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: '#a855f7' }}>
@@ -399,6 +426,10 @@ export default async function GpuUpgradeDetail({ params }) {
         .table-wrapper { background: rgba(15, 17, 21, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
         .spec-row-style { display: flex; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .table-label { width: 180px; text-align: center; font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; }
+        .fps-matrix-card { background: rgba(15,17,21,0.9); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
+        .matrix-gpu-title { font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; }
+        .matrix-link { display: flex; align-items: center; gap: 10px; color: #d1d5db; text-decoration: none; font-size: 14px; font-weight: bold; transition: 0.2s; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 10px; }
+        .matrix-link:hover { color: #fff; background: rgba(168, 85, 247, 0.1); transform: translateX(5px); }
         .similar-link-card { display: flex; align-items: center; gap: 12px; background: rgba(15, 17, 21, 0.8); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #d1d5db; font-weight: 900; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
         .deals-btn-style { flex: 1 1 280px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
         .support-btn-style { flex: 1 1 280px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
