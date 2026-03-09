@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart } from 'lucide-react';
-import { autoLinkGpu } from '@/lib/guruAutoLinks';
+import { autoLinkGpu } from '../../../lib/guruAutoLinks';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -117,7 +117,6 @@ export default async function ArticleDetail({ params }) {
             </h1>
           </header>
 
-          {/* 🚀 ČLÁNEK S AUTO GPU LINKY */}
           <div className="guru-prose" dangerouslySetInnerHTML={{ __html: content }} />
 
           {post.affiliate_link && (
