@@ -3,12 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 export const revalidate = 0; // GURU FIX: Sitemapa sa vygeneruje vždy čerstvá pri každej požiadavke
 
 /**
- * GURU SEO ENGINE - SITEMAP GENERATOR
+ * GURU SEO ENGINE - SITEMAP GENERATOR V3.0
+ * Cesta: src/app/sitemap.js
  * Dynamicky generuje mapu webu pre Google.
- * Zahrnuje statické sekcie a všetky dynamické príspevky z DB vrátane slev na hry.
+ * Zahrnuje: Články, Očakávané hry, Mikrorecenzie, Tipy, Tweaky, Rady, Slovník, Slevy a 🚀 GPU DUELY.
  */
 export default async function sitemap() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   const supabase = createClient(supabaseUrl, supabaseKey);
@@ -23,11 +24,12 @@ export default async function sitemap() {
     { url: '/tipy', priority: 0.9 },
     { url: '/tweaky', priority: 0.9 },
     { url: '/rady', priority: 0.9 },
-    { url: '/deals', priority: 0.9 },        // 🚀 GURU FIX: Hlavná sekcia slev
+    { url: '/deals', priority: 0.9 },        
     { url: '/kalendar', priority: 0.8 },      
     { url: '/sestavy', priority: 0.9 },
     { url: '/moje-pc', priority: 0.8 },
     { url: '/slovnik', priority: 0.8 },
+    { url: '/gpuvs', priority: 0.9 },        // 🚀 GURU: Hlavný rozcestník srovnání
     { url: '/support', priority: 0.5 },
     { url: '/sin-slavy', priority: 0.6 },
     { url: '/partneri', priority: 0.6 },
@@ -37,7 +39,7 @@ export default async function sitemap() {
 
   const staticRoutes = [];
   staticPaths.forEach((route) => {
-    // Česká verzia
+    // Slovenská/Česká verzia
     staticRoutes.push({
       url: `${baseUrl}/cs${route.url}`,
       lastModified: new Date().toISOString(),
@@ -51,19 +53,19 @@ export default async function sitemap() {
     });
   });
 
-  // 2. DYNAMICKÉ TABUĽKY (GURU ENGINE)
+  // 2. DYNAMICKÉ ROUTY (GURU DATA ENGINE)
   const dynamicRoutes = [];
 
   try {
-    // 🚀 GURU DATA FETCH: Rozšírené o game_deals
-    const [postsRes, tipyRes, tweakyRes, radyRes, slovnikRes, mikroRes, dealsRes] = await Promise.all([
+    // 🚀 GURU FETCH: Agregácia všetkých tabuliek vrátane GPU duelov
+    const [postsRes, tipyRes, tweakyRes, radyRes, slovnikRes, mikroRes, duelsRes] = await Promise.all([
       supabase.from('posts').select('slug, slug_en, title_en, created_at, type'),
       supabase.from('tipy').select('slug, slug_en, title_en, created_at'),
       supabase.from('tweaky').select('slug, slug_en, title_en, created_at'),
       supabase.from('rady').select('slug, slug_en, title_en, created_at'),
       supabase.from('slovnik').select('slug, slug_en, title_en, created_at'),
       supabase.from('mikrorecenze').select('slug, slug_en, title_en, created_at'),
-      supabase.from('game_deals').select('id, created_at') // Slevy smerujú zatiaľ na hlavnú stránku /deals
+      supabase.from('gpu_duels').select('slug, slug_en, created_at') // ⚔️ DATA PRE GPU SROVNANIA
     ]);
 
     // Univerzálna funkcia na pridávanie do poľa (CZ + EN)
@@ -76,8 +78,9 @@ export default async function sitemap() {
         });
       }
 
-      if (item.title_en || item.slug_en) {
-        const enSlug = item.slug_en || item.slug;
+      // Detekcia EN verzie podľa titulu alebo slugu (Master Proxy logka)
+      if (item.title_en || item.slug_en || (basePath === '/gpuvs' && item.slug)) {
+        const enSlug = item.slug_en || (basePath === '/gpuvs' ? `en-${item.slug}` : item.slug);
         dynamicRoutes.push({
           url: `${baseUrl}/en${basePath}/${enSlug}`,
           lastModified: item.created_at || new Date().toISOString(),
@@ -86,13 +89,12 @@ export default async function sitemap() {
       }
     };
 
-    // A) Spracovanie POSTS (Rozlíšenie Články vs Očakávané hry)
+    // A) Spracovanie POSTS (Články vs Očakávané hry)
     if (postsRes.data) {
       postsRes.data.forEach(item => {
         const isExpected = item.type === 'expected';
         const basePath = isExpected ? '/ocekavane-hry' : '/clanky';
-        const priority = isExpected ? 0.9 : 0.8;
-        addToRoutes(item, basePath, priority);
+        addToRoutes(item, basePath, isExpected ? 0.9 : 0.8);
       });
     }
 
@@ -102,8 +104,9 @@ export default async function sitemap() {
     if (radyRes.data) radyRes.data.forEach(item => addToRoutes(item, '/rady', 0.8));
     if (slovnikRes.data) slovnikRes.data.forEach(item => addToRoutes(item, '/slovnik', 0.7));
     if (mikroRes.data) mikroRes.data.forEach(item => addToRoutes(item, '/mikrorecenze', 0.8));
-
-    // C) 🚀 GURU DEALS: Keďže slevy vedú na externé linky, do sitemapy dávame len hlavnú sekciu (už je v staticPaths)
+    
+    // C) ⚔️ GPU DUELY: Indexácia pre každý jednotlivý súboj grafík
+    if (duelsRes.data) duelsRes.data.forEach(item => addToRoutes(item, '/gpuvs', 0.8));
 
   } catch (err) {
     console.error("GURU SITEMAP ENGINE ERROR:", err);
