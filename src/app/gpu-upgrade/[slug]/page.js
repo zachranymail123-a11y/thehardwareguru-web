@@ -18,10 +18,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V98.3 (FINAL POSTGREST FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V99.0 (ULTIMATE PRODUCTION BUILD)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: Úplné odstranění encodeURIComponent z patternu pro správný ilike wildcard (ChatGPT Fix).
- * 🛡️ FIX 2: Upraven regex na \d{4} a přidána ochrana if (!number) return null (ChatGPT Fix).
+ * 🛡️ FIX 1: V "findGpu" zachován kompletní název ze slugu pro spolehlivější extrakci čísla (ChatGPT Fix).
+ * 🛡️ FIX 2: Používáme PostgREST standard '%' jako wildcard v ilike dotazu (ChatGPT Fix).
+ * 🛡️ FIX 3: Ochrana proti null u performance_index a game_fps polí.
+ * 🚀 PERF: export const revalidate = 86400; zajišťuje špičkový výkon a SEO stabilitu.
  */
 
 export const revalidate = 86400;
@@ -62,30 +64,22 @@ function calculatePerf(a, b) {
     return { winner: null, loser: null, diff: 0 }; // Remíza
 }
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB (FINÁLNÍ BEZPEČNÁ VERZE DLE CHATGPT)
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (ULTIMATE LOOKUP DLE CHATGPT)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl) return null;
 
-  // 🚀 GURU FIX: Nahrazení '-' mezerami
+  // 🚀 GURU FIX: Nahrazení '-' mezerami (bez agresivního odstraňování vendorů)
   const name = slugPart.replace(/-/g, " ").trim();
   
-  // 🚀 GURU FIX: Bezpečnější regex pro 4 číslice dle ChatGPT
+  // 🚀 GURU FIX: Extrakce modelového čísla pro maximální úspěšnost (např. 4080)
   const number = name.match(/\d{4}/)?.[0]; 
 
   if (!number) return null;
   
-  // 🚀 GURU FIX: PostgREST hledá čistě podle čísla modelu
+  // 🚀 GURU FIX: PostgREST vyžaduje % jako wildcard pro partial matching
   const pattern = `%${number}%`;
 
-  // Debug log pro kontrolu na serveru
-  if (process.env.NODE_ENV === "development") {
-    console.log("SEARCH GPU:", name);
-    console.log("EXTRACTED NUMBER:", number);
-    console.log("PATTERN:", pattern);
-  }
-
   try {
-      // 🚀 GURU CRITICAL FIX: Zásadní oprava - nesmí se použít encodeURIComponent na % wildcard
       const res = await fetch(
         `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.${pattern}&limit=1`,
         {
@@ -126,7 +120,6 @@ async function generateAndPersistUpgrade(slug) {
   try {
     const cleanSlug = slug.replace(/^en-/, '');
     
-    // 🛡️ GURU FIX: Striktní podpora -to- (případně -vs- jako fallback)
     let parts = null;
     if (cleanSlug.includes('-to-')) {
       parts = cleanSlug.split('-to-');
@@ -141,13 +134,6 @@ async function generateAndPersistUpgrade(slug) {
         findGpu(parts[1])
     ]);
 
-    // 🚀 GURU FIX: Debugging logy pouze pro vývojové prostředí
-    if (process.env.NODE_ENV === "development") {
-        console.log("GPU SEARCH:", parts[0], parts[1]);
-        console.log("FOUND A:", cardA?.name);
-        console.log("FOUND B:", cardB?.name);
-    }
-
     if (!cardA || !cardB) return null;
 
     const title_cs = `Upgrade z ${cardA.name} na ${cardB.name}`;
@@ -158,7 +144,7 @@ async function generateAndPersistUpgrade(slug) {
 
     const payload = {
         slug: cleanSlug, slug_en: `en-${cleanSlug}`, 
-        old_gpu_id: cardA.id, new_gpu_id: cardB.id, // 🚀 Správné sloupce pro tabulku gpu_upgrades
+        old_gpu_id: cardA.id, new_gpu_id: cardB.id,
         title_cs, title_en, content_cs: '', content_en: '', 
         seo_description_cs, seo_description_en,
         created_at: new Date().toISOString()
@@ -196,7 +182,6 @@ const getUpgradeData = cache(async (slug) => {
   if (!supabaseUrl) return null;
   const cleanSlug = slug.replace(/^en-/, '');
   
-  // 🚀 GURU FIX: Bezpečnější encoding pro orQuery komponenty
   const orQuery = 
     `slug.eq.${encodeURIComponent(slug)},` +
     `slug.eq.${encodeURIComponent(cleanSlug)},` +
@@ -225,8 +210,6 @@ export async function generateMetadata({ params }) {
   const { oldGpu, newGpu } = upgrade;
   
   const { diff } = calculatePerf(oldGpu, newGpu);
-
-  // 🚀 GURU FIX: Bezpečnější verze zabraňující pádu, pokud je performance_index null
   const isWorthIt = (newGpu?.performance_index || 0) > (oldGpu?.performance_index || 0);
 
   let title = '';
@@ -268,7 +251,6 @@ export default async function GpuUpgradeDetail({ params }) {
   const slug = params?.slug ?? null;
   const upgrade = await getUpgradeData(slug);
   
-  // 🚀 GURU FIX: Logy pouze pro vývoj
   if (process.env.NODE_ENV === "development") {
       console.log("UPGRADE SLUG:", slug);
       console.log("FOUND:", upgrade);
@@ -277,10 +259,8 @@ export default async function GpuUpgradeDetail({ params }) {
   if (!upgrade) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center' }}>UPGRADE PATH NENALEZENA</div>;
 
   const isEn = slug?.startsWith('en-');
-  // 🚀 Mapování ze sloupců tabulky gpu_upgrades
   const { oldGpu: gpuA, newGpu: gpuB } = upgrade;
 
-  // 🛡️ GURU FIX 5: Nulové kontroly
   if (!gpuA || !gpuB) {
     return <div style={{ color: '#f00', padding: '100px', textAlign: 'center' }}>GPU DATA ERROR</div>;
   }
@@ -295,7 +275,7 @@ export default async function GpuUpgradeDetail({ params }) {
     if (valA == null || valB == null) return {};
     if (valA === valB) return { color: '#9ca3af', fontWeight: 'bold' };
     const aWins = lowerIsBetter ? valA < valB : valA > valB;
-    return aWins ? { color: '#a855f7', fontWeight: '950' } : { color: '#4b5563', opacity: 0.6 }; // Pro upgrady fialová (a855f7)
+    return aWins ? { color: '#a855f7', fontWeight: '950' } : { color: '#4b5563', opacity: 0.6 }; 
   };
 
   const getVendorColor = (vendor) => {
@@ -314,10 +294,8 @@ export default async function GpuUpgradeDetail({ params }) {
   const starfieldDiff = calcSafeDiff(fpsA?.starfield_1440p, fpsB?.starfield_1440p);
   
   const diffs = [cyberpunkDiff, warzoneDiff, starfieldDiff].filter(v => Number.isFinite(v) && v !== 0);
-  
   const avgDiff = diffs.length ? Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length) : 0;
 
-  // 🚀 GURU NULL CRASH FIX: Bezpečné čtení Object.keys s prázdným fallbackem
   const availableGames = Object.keys(fpsA || {})
     .filter(k => k !== 'gpu_id' && k !== 'id' && (k.includes('_1080p') || k.includes('_1440p') || k.includes('_4k')))
     .map(g => g.replace(/_(1080p|1440p|4k)/,'').replace(/_/g, '-'))
@@ -327,7 +305,6 @@ export default async function GpuUpgradeDetail({ params }) {
 
   const isWorthIt = (gpuB?.performance_index || 0) > (gpuA?.performance_index || 0);
 
-  // 🚀 SEO SCHEMATA PRO UPGRADE
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -403,24 +380,19 @@ export default async function GpuUpgradeDetail({ params }) {
           )}
         </header>
 
-        {/* 🚀 UPGRADE RING FLOW (Změna z VS na Šipku) */}
         <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '60px', position: 'relative' }}>
-            
-            {/* STARÁ KARTA */}
             <div className="gpu-card-box" style={{ borderTop: `5px solid #4b5563`, filter: 'grayscale(0.5)' }}>
                 <span className="vendor-label" style={{ color: '#9ca3af' }}>{isEn ? 'CURRENT GPU' : 'VAŠE SOUČASNÁ KARTA'}</span>
                 <h2 className="gpu-name-text" style={{ color: '#d1d5db', fontSize: 'clamp(1.2rem, 2.5vw, 2rem)' }}>{normalizeName(gpuA.name)}</h2>
                 <div style={{ marginTop: '10px', fontSize: '12px', color: '#6b7280', fontWeight: 'bold' }}>{gpuA.architecture} • {gpuA.vram_gb}GB VRAM</div>
             </div>
             
-            {/* UPGRADE ŠIPKA */}
             <div className="vs-center-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
                 <div className="upgrade-badge">
                     <ArrowRight size={32} />
                 </div>
             </div>
 
-            {/* NOVÁ KARTA */}
             <div className="gpu-card-box" style={{ borderTop: `5px solid ${getVendorColor(gpuB.vendor)}`, transform: 'scale(1.05)', zIndex: 5, boxShadow: '0 0 40px rgba(168, 85, 247, 0.3)' }}>
                 <span className="vendor-label" style={{ color: getVendorColor(gpuB.vendor) }}>{isEn ? 'NEW UPGRADE' : 'NOVÝ UPGRADE'}</span>
                 <h2 className="gpu-name-text" style={{ color: '#fff' }}>{normalizeName(gpuB.name)}</h2>
@@ -428,8 +400,6 @@ export default async function GpuUpgradeDetail({ params }) {
             </div>
         </div>
 
-        {/* BENCHMARK SUMMARY */}
-        {/* 🚀 GURU FIX: Bezpečný zápis pro kontrolu null objektu */}
         {Object.keys(fpsA || {}).length > 0 && Object.keys(fpsB || {}).length > 0 && (
             <section style={{ marginBottom: '60px' }}>
             <div className="content-box-style" style={{ borderLeft: '6px solid #a855f7' }}>
@@ -454,7 +424,6 @@ export default async function GpuUpgradeDetail({ params }) {
             </section>
         )}
 
-        {/* SPECS TABLE FOR UPGRADE */}
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: '#a855f7' }}>
             <LayoutList size={28} /> {isEn ? 'UPGRADE SPECIFICATIONS' : 'POROVNÁNÍ PARAMETRŮ'}
@@ -481,13 +450,11 @@ export default async function GpuUpgradeDetail({ params }) {
           </div>
         </section>
 
-        {/* FPS ANALYSIS MATRIX (Proklik do FPS enginu) */}
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: '#a855f7' }}>
             <Gamepad2 size={28} /> {isEn ? 'DETAILED FPS CAPABILITIES' : 'DETAILNÍ MOŽNOSTI KARET VE HRÁCH'}
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '25px' }}>
-              {/* 🚀 GURU FIX: Zjednodušený slugify čistě přes název */}
               {[gpuA, gpuB].filter(Boolean).map((gpu, i) => {
                   const safeGpuSlug = slugify(gpu?.name || "");
                   return (
@@ -506,7 +473,6 @@ export default async function GpuUpgradeDetail({ params }) {
           </div>
         </section>
 
-        {/* SIMILAR UPGRADES */}
         {similar.length > 0 && (
           <section style={{ marginBottom: '60px' }}>
             <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: '#a855f7' }}>
@@ -522,7 +488,6 @@ export default async function GpuUpgradeDetail({ params }) {
           </section>
         )}
 
-        {/* CTA */}
         <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
             <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="deals-btn-style"><Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}</a>
             <a href={isEn ? "/en/support" : "/support"} className="support-btn-style"><Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}</a>
@@ -533,32 +498,24 @@ export default async function GpuUpgradeDetail({ params }) {
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         .guru-ranking-link { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
         .guru-verdict { margin-top: 25px; color: #66fcf1; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 10px 25px; background: rgba(102, 252, 241, 0.05); border: 1px solid rgba(102, 252, 241, 0.2); border-radius: 50px; display: inline-block; }
-        
         .gpu-card-box { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 40px 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.6); backdrop-filter: blur(10px); flex: 1; transition: 0.3s; }
         .vendor-label { font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 15px; display: block; }
         .gpu-name-text { font-size: clamp(1.6rem, 3.5vw, 2.5rem); font-weight: 950; color: #fff; text-transform: uppercase; margin: 0; line-height: 1.1; }
-        
-        /* 🚀 NOVÝ UPGRADE BADGE MÍSTO VS */
         .upgrade-badge { background: linear-gradient(135deg, #a855f7 0%, #66fcf1 100%); width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; border: 5px solid #0f1115; box-shadow: 0 0 30px rgba(168,85,247,0.5); z-index: 10; }
-        
         .content-box-style { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .summary-item { background: rgba(255,255,255,0.02); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
         .summary-label { display: block; font-size: 10px; font-weight: 900; color: #4b5563; margin-bottom: 8px; letter-spacing: 1px; }
         .summary-val { font-size: 24px; font-weight: 950; }
-        
         .section-h2 { color: #fff; font-size: 2rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #a855f7; padding-left: 15px; }
         .table-wrapper { background: rgba(15, 17, 21, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
         .spec-row-style { display: flex; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .table-label { width: 180px; text-align: center; font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; }
-        
         .fps-matrix-card { background: rgba(15,17,21,0.9); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
         .matrix-gpu-title { font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; }
         .matrix-links { display: flex; flex-direction: column; gap: 10px; }
         .matrix-link { display: flex; align-items: center; gap: 10px; color: #d1d5db; text-decoration: none; font-size: 14px; font-weight: bold; transition: 0.2s; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 10px; }
         .matrix-link:hover { color: #fff; background: rgba(168, 85, 247, 0.1); transform: translateX(5px); }
-        
         .similar-link-card { display: flex; align-items: center; gap: 12px; background: rgba(15, 17, 21, 0.8); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #d1d5db; font-weight: 900; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
-        
         .deals-btn-style { flex: 1 1 280px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
         .support-btn-style { flex: 1 1 280px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
         @media (max-width: 768px) { .guru-grid-ring { grid-template-columns: 1fr !important; } .upgrade-badge { margin: 10px auto; rotate: 90deg; } .deals-btn-style, .support-btn-style { width: 100%; } .table-label { width: 100px; } }
