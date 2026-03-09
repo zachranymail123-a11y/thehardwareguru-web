@@ -121,8 +121,6 @@ export default async function sitemap() {
     if (duelsRes.data) duelsRes.data.forEach(item => addToRoutes(item, '/gpuvs', 0.8));
     if (cpuDuelsRes.data) cpuDuelsRes.data.forEach(item => addToRoutes(item, '/cpuvs', 0.8));
 
-    /* 🚀 PROGRAMMATIC GPU PERFORMANCE */
-
     const gamesList = [
       'cyberpunk-2077',
       'warzone',
@@ -168,6 +166,24 @@ export default async function sitemap() {
           priority: 0.7
         });
 
+        /* GPU GAME HUB (NOVÉ) */
+
+        gamesList.forEach((game) => {
+
+          dynamicRoutes.push({
+            url: `${baseUrl}/gpu/${gpu.slug}/${game}`,
+            lastModified: currentDate,
+            priority: 0.7
+          });
+
+          dynamicRoutes.push({
+            url: `${baseUrl}/en/gpu/${gpu.slug}/${game}`,
+            lastModified: currentDate,
+            priority: 0.6
+          });
+
+        });
+
         /* GPU PERFORMANCE CLUSTER */
 
         gamesList.forEach((game) => {
@@ -207,8 +223,6 @@ export default async function sitemap() {
       });
 
     }
-
-    /* GPU UPGRADES */
 
     if (upgradesRes.data) {
 
