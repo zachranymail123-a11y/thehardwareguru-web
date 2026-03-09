@@ -13,13 +13,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ENGINE - ARTICLE DETAIL V27.0 (SUPREME DESIGN & NATIVE STABILITY)
+ * GURU ENGINE - ARTICLE DETAIL V29.0 (STABLE NATIVE FETCH & CHATGPT REST FIX)
  * Cesta: src/app/clanky/[slug]/page.js
- * 🛡️ FIX 1: Nativní fetch API pro přímý přístup k Supabase REST (řeší "Could not resolve" chyby v náhledu).
- * 🛡️ FIX 2: Opraveny překlepy GURU_PLACEHOLDER a implementován neprůstřelný fallback obrázku.
- * 🛡️ FIX 3: Správná URL syntaxe pro Supabase REST or= filtr (včetně kódování závorek).
- * 🛡️ DESIGN: Guru Style nákupní box a Supreme tlačítka podpory (neon, gradienty, italské písmo).
- * 🛡️ NO-AI: Žádné AI texty, čistě tvůj obsah.
+ * 🛡️ FIX 1: Implementovány encoded uvozovky (%22) v REST filtru dle ChatGPT (řeší 404 u slugů s pomlčkami).
+ * 🛡️ FIX 2: Implementováno encodeURIComponent pro bezpečné předání slugu do URL.
+ * 🛡️ FIX 3: Nastaveno cache: "no-store" pro okamžitou aktualizaci dat bez čekání na revalidaci.
+ * 🛡️ FIX 4: Přidán Debug Log FETCH URL pro kontrolu v konzoli.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -28,14 +27,23 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 // 🚀 GURU: Fallback URL pro tvůj high-tech placeholder ze Supabase Storage
 const GURU_PLACEHOLDER = `${supabaseUrl}/storage/v1/object/public/images/davinci_prompt__a_high_tech__cinematic_placeholder_for_a_g.png`;
 
-// Pomocná funkce pro získání dat přes nativní fetch (vhodné pro náhled i produkci)
+// Pomocná funkce pro získání dat přes nativní fetch (opraveno podle přesného návodu ChatGPT)
 async function getPostData(slug) {
   if (!supabaseUrl || !supabaseKey) return null;
   
-  // Supabase REST vyžaduje kódované závorky pro or filtr: or=(slug.eq.val,slug_en.eq.val)
-  // %28 = ( , %29 = )
-  const url = `${supabaseUrl}/rest/v1/posts?select=*&or=%28slug.eq.${slug},slug_en.eq.${slug}%29&limit=1&_=${Date.now()}`;
+  const encodedSlug = encodeURIComponent(slug);
+
+  /**
+   * 🧠 GURU FIX DLE CHATGPT:
+   * 1. Supabase REST vyžaduje kódované závorky pro or filtr: %28 = ( , %29 = )
+   * 2. Hodnoty s pomlčkami MUSÍ být v uvozovkách, které musí být URL-encoded: %22 = "
+   * Výsledná syntaxe: or=(slug.eq."hodnota",slug_en.eq."hodnota")
+   */
+  const url = `${supabaseUrl}/rest/v1/posts?select=*&or=%28slug.eq.%22${encodedSlug}%22,slug_en.eq.%22${encodedSlug}%22%29&limit=1`;
   
+  // 🧪 DEBUG LOG
+  console.log("GURU FETCH URL:", url);
+
   try {
     const res = await fetch(url, {
       headers: {
@@ -43,13 +51,14 @@ async function getPostData(slug) {
         'Authorization': `Bearer ${supabaseKey}`,
         'Content-Type': 'application/json'
       },
-      next: { revalidate: 60 } 
+      cache: "no-store" // ChatGPT doporučuje no-store pro okamžité promítnutí změn z DB
     });
     
     if (!res.ok) return null;
     const data = await res.json();
     return data && data.length > 0 ? data[0] : null;
   } catch (error) {
+    console.error("GURU FETCH ERROR:", error);
     return null;
   }
 }
@@ -83,7 +92,7 @@ export default async function ArticleDetail({ params }) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '20px' }}>
         <h1 style={{ color: '#ff0055', fontSize: '30px', fontWeight: '900', textTransform: 'uppercase' }}>404 - DATA NENALEZENA</h1>
-        <p style={{ color: '#4b5563' }}>Zkontroluj slug: {slug}</p>
+        <p style={{ color: '#4b5563', fontFamily: 'monospace' }}>Slug: {slug}</p>
         <a href="/clanky" style={{ color: '#66fcf1', textDecoration: 'none', fontWeight: 'bold', border: '1px solid #66fcf1', padding: '10px 20px', borderRadius: '10px' }}>ZPĚT NA ČLÁNKY</a>
       </div>
     );
@@ -95,7 +104,7 @@ export default async function ArticleDetail({ params }) {
   const priceDisplay = isEn ? (post.price_en || '') : (post.price_cs || '');
   const backLink = isEn ? '/en/clanky' : '/clanky';
   
-  // 🚀 GURU IMAGE FIX: Kontrola image_url a fallback na tvůj high-tech placeholder
+  // 🚀 GURU IMAGE FIX: Kontrola URL a fallback na tvůj high-tech placeholder
   const displayImage = (post.image_url && post.image_url.startsWith('http')) ? post.image_url : GURU_PLACEHOLDER;
 
   const buyBtnText = isEn 
