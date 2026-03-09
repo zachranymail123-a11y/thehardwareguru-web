@@ -28,6 +28,9 @@ export default async function sitemap() {
     { url: '/cpuvs', priority: 0.9 },
     { url: '/support', priority: 0.5 },
     { url: '/sin-slavy', priority: 0.6 },
+
+    /* CRAWL SIGNAL (NOVÉ) */
+    { url: '/crawl-signal', priority: 1.0 },
   ];
 
   const staticRoutes = [];
@@ -152,8 +155,6 @@ export default async function sitemap() {
 
         if (!gpu.slug) return;
 
-        /* GPU HUB */
-
         dynamicRoutes.push({
           url: `${baseUrl}/gpu/${gpu.slug}`,
           lastModified: currentDate,
@@ -165,8 +166,6 @@ export default async function sitemap() {
           lastModified: currentDate,
           priority: 0.7
         });
-
-        /* GPU UPGRADE HUB (NOVÉ) */
 
         dynamicRoutes.push({
           url: `${baseUrl}/gpu-upgrade-from/${gpu.slug}`,
