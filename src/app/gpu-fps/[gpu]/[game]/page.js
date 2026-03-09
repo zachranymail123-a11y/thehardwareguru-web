@@ -14,12 +14,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU FPS ENGINE - GAME BENCHMARK PAGE V1.1
+ * GURU FPS ENGINE - GAME BENCHMARK PAGE V1.2 (3-TIER SLUG LOOKUP)
  * Cesta: src/app/gpu-fps/[gpu]/[game]/page.js
  * 🚀 SEO: Cílí na dotazy typu "RTX 4070 Cyberpunk FPS".
  * 🛡️ DESIGN: Guru Supreme (Neon, agresivní vizualizace FPS).
  * 🛡️ FIX 1: Chybějící import ArrowRight doplněn.
- * 🛡️ FIX 2: Stabilnější GPU lookup bez kolize s URL encodingem (dle doporučení ChatGPT).
+ * 🛡️ FIX 2: Nasazen 3-fázový Bulletproof lookup přes nový DB sloupec "slug" (stejně jako u GPU Upgrades).
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -32,26 +32,57 @@ const slugify = (text) => {
 
 const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon /gi, '');
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB (DOPORUČENÝ FIX OD CHATGPT)
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (3-TIER SYSTEM z GPU Upgrades)
 const findGpuBySlug = async (gpuSlug) => {
-  if (!supabaseUrl) return null;
-  const search = gpuSlug.replace(/-/g, '%');
+  if (!supabaseUrl || !gpuSlug) return null;
 
+  const headers = {
+    'apikey': supabaseKey,
+    'Authorization': `Bearer ${supabaseKey}`
+  };
+
+  console.log("FPS GPU LOOKUP INITIATED FOR:", gpuSlug);
+
+  // 🛡️ TIER 1: Pokus o absolutní exact match na nový DB sloupec slug
   try {
-      const res = await fetch(
-        `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.*${search}*&limit=1`,
-        {
-          headers: {
-            apikey: supabaseKey,
-            Authorization: `Bearer ${supabaseKey}`
-          },
-          cache: "no-store"
-        }
-      );
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data?.[0] || null;
-  } catch (e) { return null; }
+      const url1 = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${gpuSlug}&limit=1`;
+      const res1 = await fetch(url1, { headers, cache: 'no-store' });
+      if (res1.ok) {
+          const data1 = await res1.json();
+          if (data1?.length) return data1[0];
+      }
+  } catch(e) {}
+
+  // 🛡️ TIER 2: Substring match na slug + vzestupné řazení 
+  // Řeší chybějící prefixy (např. URL "rtx-5060" najde "nvidia-geforce-rtx-5060").
+  try {
+      const url2 = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=ilike.*${gpuSlug}*&order=slug.asc`;
+      const res2 = await fetch(url2, { headers, cache: 'no-store' });
+      if (res2.ok) {
+          const data2 = await res2.json();
+          if (data2?.length) return data2[0];
+      }
+  } catch(e) {}
+
+  // 🛡️ TIER 3: Ultimátní fallback na Tokenized AND match (Nejbezpečnější)
+  // Rozdělí hledání na slova a vyžaduje, aby VŠECHNA byla v názvu. Imunní vůči URL kódu a mezerám.
+  try {
+      const cleanString = gpuSlug.replace(/-/g, ' ').replace(/gb/gi, '').trim();
+      const tokens = cleanString.split(/\s+/).filter(t => t.length > 0);
+      
+      if (tokens.length > 0) {
+          const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
+          const url3 = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&and=(${conditions})&order=name.asc`;
+          
+          const res3 = await fetch(url3, { headers, cache: 'no-store' });
+          if (res3.ok) {
+              const data3 = await res3.json();
+              return data3?.[0] || null;
+          }
+      }
+  } catch(e) {}
+
+  return null;
 };
 
 export async function generateMetadata({ params }) {
@@ -74,7 +105,7 @@ export default async function GpuFpsPage({ params }) {
   const isEn = true; // Pro tuto route budeme primárně cílit EN, ale kód je připraven
   
   const gpu = await findGpuBySlug(gpuSlug);
-  if (!gpu) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center' }}>GPU NENALEZENO</div>;
+  if (!gpu) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>GPU NENALEZENO</div>;
 
   const gameKey = gameSlug.replace('-2077', ''); // Mapování slug -> DB sloupec
   const fpsData = Array.isArray(gpu.game_fps) ? gpu.game_fps[0] : gpu.game_fps;
