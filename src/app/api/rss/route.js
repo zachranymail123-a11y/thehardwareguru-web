@@ -11,16 +11,17 @@ const supabase = createClient(
 );
 
 /**
- * GURU RSS FEED ENGINE V5.1 (XML VALIDATION FIX)
+ * GURU RSS FEED ENGINE V5.2 (XML VALIDATION FIX & CPU DUELS)
  * Cesta: src/app/api/rss/route.js
  * 🛡️ FIX: Escapování ampersandů v URL adresách pro validní XML.
+ * 🚀 NEW: Přidány CPU Duely.
  */
 export async function GET() {
   try {
     const siteUrl = 'https://www.thehardwareguru.cz';
 
     // 1. GURU FETCH: Paralelné načítanie všetkých tabuliek
-    const [postsRes, tipyRes, tweakyRes, radyRes, slovnikRes, mikroRes, dealsRes, duelsRes] = await Promise.all([
+    const [postsRes, tipyRes, tweakyRes, radyRes, slovnikRes, mikroRes, dealsRes, duelsRes, cpuDuelsRes] = await Promise.all([
       supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(10),
       supabase.from('tipy').select('*').order('created_at', { ascending: false }).limit(5),
       supabase.from('tweaky').select('*').order('created_at', { ascending: false }).limit(5),
@@ -28,7 +29,8 @@ export async function GET() {
       supabase.from('slovnik').select('*').order('created_at', { ascending: false }).limit(5),
       supabase.from('mikrorecenze').select('*').order('created_at', { ascending: false }).limit(5),
       supabase.from('game_deals').select('*').order('created_at', { ascending: false }).limit(10),
-      supabase.from('gpu_duels').select('*').order('created_at', { ascending: false }).limit(10)
+      supabase.from('gpu_duels').select('*').order('created_at', { ascending: false }).limit(10),
+      supabase.from('cpu_duels').select('*').order('created_at', { ascending: false }).limit(10) // 🚀 Přidány CPU Duely
     ]);
 
     const allItems = [];
@@ -109,6 +111,28 @@ export async function GET() {
       }
     });
 
+    // C.2) CPU DUELY (VERSUS ENGINE)
+    (cpuDuelsRes.data || []).forEach(item => {
+      if (item.title_cs) {
+        allItems.push({
+          title: `[CPU Duel] ${item.title_cs}`,
+          description: item.seo_description_cs || '',
+          url: `${siteUrl}/cs/cpuvs/${item.slug}`,
+          date: item.created_at,
+          lang: 'cs'
+        });
+      }
+      if (item.title_en) {
+        allItems.push({
+          title: `[CPU Battle] ${item.title_en}`,
+          description: item.seo_description_en || '',
+          url: `${siteUrl}/en/cpuvs/${item.slug_en || 'en-' + item.slug}`,
+          date: item.created_at,
+          lang: 'en'
+        });
+      }
+    });
+
     // D) OSTATNÉ (Tipy, Tweaky, Rady, Slovník)
     const sections = [
       { data: tipyRes.data, czPrefix: '[Tip]', path: 'tipy' },
@@ -151,7 +175,7 @@ export async function GET() {
   <channel>
     <title>The Hardware Guru - Global Feed</title>
     <link>${siteUrl}</link>
-    <description>Najnovšie HW tipy, herné slevy a GPU duely z Hardware Guru základne.</description>
+    <description>Najnovšie HW tipy, herné slevy a GPU/CPU duely z Hardware Guru základne.</description>
     <language>cs</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
     <atom:link href="${siteUrl}/api/rss" rel="self" type="application/rss+xml" />`;
