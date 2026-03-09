@@ -13,12 +13,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ENGINE - ARTICLE DETAIL V24.0 (SUPREME DESIGN & STABLE FETCH)
+ * GURU ENGINE - ARTICLE DETAIL V25.0 (SUPREME DESIGN & STABLE FETCH)
  * Cesta: src/app/clanky/[slug]/page.js
- * 🛡️ FIX 1: Opraveny překlepy GURU_PLACE_HOLDER -> GURU_PLACEHOLDER dle ChatGPT.
- * 🛡️ FIX 2: Revalidace snížena na 60s + přidán Cache Buster pro Supabase REST.
- * 🛡️ FIX 3: Nativní fetch API a standardní HTML <a> tagy pro navigaci.
- * 🛡️ FIX 4: Opravena detekce obrázku + Fallback na Davinci placeholder.
+ * 🛡️ FIX 1: Opraveny překlepy GURU_PLACEHOLDER dle ChatGPT.
+ * 🛡️ FIX 2: Implementováno encodeURIComponent pro slug a opravena syntaxe dotazu or=...
+ * 🛡️ FIX 3: Revalidace 60s + Cache Buster timestamp pro okamžité změny z DB.
+ * 🛡️ DESIGN: Guru Style nákupní box a Supreme tlačítka podpory.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -27,12 +27,14 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 // 🚀 GURU: Fallback URL pro tvůj high-tech placeholder ze Supabase Storage
 const GURU_PLACEHOLDER = `${supabaseUrl}/storage/v1/object/public/images/davinci_prompt__a_high_tech__cinematic_placeholder_for_a_g.png`;
 
-// Pomocná funkce pro získání dat přes nativní fetch (imunní vůči chybám v sandboxu)
+// Pomocná funkce pro získání dat přes nativní fetch (opraveno dle ChatGPT)
 async function getPostData(slug) {
   if (!supabaseUrl || !supabaseKey) return null;
   
-  // Přidáváme timestamp pro bypass Supabase REST cache dle doporučení ChatGPT
-  const url = `${supabaseUrl}/rest/v1/posts?select=*&or=(slug.eq.${slug},slug_en.eq.${slug})&limit=1&_=${Date.now()}`;
+  const encodedSlug = encodeURIComponent(slug);
+  
+  // Opravená syntaxe or= bez závorek a s cache busterem
+  const url = `${supabaseUrl}/rest/v1/posts?select=*&or=slug.eq.${encodedSlug},slug_en.eq.${encodedSlug}&limit=1&_=${Date.now()}`;
   
   try {
     const res = await fetch(url, {
@@ -41,7 +43,7 @@ async function getPostData(slug) {
         'Authorization': `Bearer ${supabaseKey}`,
         'Content-Type': 'application/json'
       },
-      next: { revalidate: 60 } // Změněno z 3600 na 60 dle doporučení ChatGPT
+      next: { revalidate: 60 } // Revalidace každou minutu
     });
     
     if (!res.ok) return null;
@@ -68,7 +70,7 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title,
       description: desc,
-      images: post.image_url ? [post.image_url] : [GURU_PLACEHOLDER], // Opraven překlep v názvu konstanty
+      images: post.image_url ? [post.image_url] : [GURU_PLACEHOLDER], // Opraveno
     }
   };
 }
@@ -79,8 +81,10 @@ export default async function ArticleDetail({ params }) {
 
   if (!post) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '20px' }}>
         <h1 style={{ color: '#ff0055', fontSize: '30px', fontWeight: '900', textTransform: 'uppercase' }}>404 - DATA NENALEZENA</h1>
+        <p style={{ color: '#4b5563' }}>Slug: {slug}</p>
+        <a href="/clanky" style={{ color: '#66fcf1', textDecoration: 'none', fontWeight: 'bold' }}>ZPĚT NA ČLÁNKY</a>
       </div>
     );
   }
@@ -92,7 +96,7 @@ export default async function ArticleDetail({ params }) {
   const priceDisplay = isEn ? (post.price_en || '') : (post.price_cs || '');
   const backLink = isEn ? '/en/clanky' : '/clanky';
   
-  // 🚀 GURU IMAGE FIX: Opraven název konstanty a validace URL
+  // 🚀 GURU IMAGE FIX: Opraven název konstanty a fallback logika
   const displayImage = (post.image_url && post.image_url.startsWith('http')) ? post.image_url : GURU_PLACEHOLDER;
 
   const buyBtnText = isEn 
@@ -237,6 +241,7 @@ export default async function ArticleDetail({ params }) {
         .guru-prose strong { color: #fff; font-weight: 900; }
         .guru-prose a { color: #f97316; font-weight: bold; text-decoration: none; border-bottom: 2px dashed rgba(249, 115, 22, 0.4); transition: 0.3s; }
         .guru-prose a:hover { border-bottom-style: solid; color: #ea580c; }
+        .guru-prose li { position: relative; padding-left: 30px; margin-bottom: 12px; }
         .guru-prose li::before { content: '⚡'; position: absolute; left: 0; color: #66fcf1; font-weight: bold; }
 
         @media (max-width: 768px) {
