@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.thehardwareguru.cz/sitemap.xml
+Sitemap: https://thehardwareguru.cz/sitemap.xml
