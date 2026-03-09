@@ -20,10 +20,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V110.0 (FINAL NORMALIZATION & POST FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V111.0 (PARENTHESES & FIND MATCH FIX)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: Rozšířená normalizace názvu ve findGpu (odstranění gb a mezer) pro 100% match s (16GB) verzemi (ChatGPT Fix).
- * 🛡️ FIX 2: Odstranění ?select parametru z POST requestu při vytváření upgradu (ChatGPT Fix).
+ * 🛡️ FIX 1: Odstranění závorek () v rámci normalizace pro přesný PostgREST match (ChatGPT Fix).
+ * 🛡️ FIX 2: Vylepšená detekce přes array.find() pro prevenci záměny podobných karet (ChatGPT Fix).
  * 🛡️ ARCH: Node.js runtime a ISR revalidate (86400) pro optimální SEO.
  */
 
@@ -57,11 +57,12 @@ function calculatePerf(a, b) {
 const findGpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
 
-  // 🚀 GURU FIX: Rozšířené očištění slugu o 'gb' a vícenásobné mezery (ChatGPT Fix)
+  // 🚀 GURU FIX: Rozšířené očištění slugu o 'gb', závorky a vícenásobné mezery (ChatGPT Fix)
   const model = slugPart
     .replace(/geforce|radeon/gi, '')
     .replace(/-/g, ' ')
     .replace(/gb/gi, '')
+    .replace(/[()]/g, '') // ← KRITICKÉ: odstranění závorek
     .replace(/\s+/g, ' ')
     .trim();
   
@@ -88,7 +89,12 @@ const findGpu = async (slugPart) => {
       
       if (!data?.length) return null;
 
-      return data[0];
+      // 🚀 GURU FIX: Přesnější výběr správné karty z pole vrácených výsledků (ChatGPT Fix)
+      // Normalizujeme i názvy vrácené z databáze (odstraníme gb a závorky), aby includes() fungovalo na 100%
+      return data.find(g => 
+        g.name.toLowerCase().replace(/gb/gi, '').replace(/[()]/g, '').includes(model)
+      ) || data[0];
+
   } catch (e) {
       return null;
   }
