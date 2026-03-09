@@ -20,13 +20,14 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V103.2 (DEBUGGING SESSION)
+ * GURU GPU UPGRADE ENGINE - DETAIL V103.3 (NODEJS RUNTIME FIX)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ DEBUG: Přidány console.logy do findGpu a generateAndPersistUpgrade (ChatGPT Fix).
- * 🛡️ FIX: Ověření datového toku pro eliminaci chyby "UPGRADE PATH NENALEZENA".
- * 🚀 PERF: export const revalidate = 86400; zůstává pro SEO stabilitu.
+ * 🛡️ FIX 1: Vynucen Node.js runtime pro stabilitu fetchu a funkční ISR (ChatGPT Fix).
+ * 🛡️ FIX 2: Zachování PostgREST standardu '%' a extrakce čísla modelu (\d{3,4}).
+ * 🚀 PERF: revalidate = 86400 nyní na Node.js runtime bude Googlem správně indexováno.
  */
 
+export const runtime = "nodejs";
 export const revalidate = 86400;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -63,7 +64,7 @@ const findGpu = async (slugPart) => {
   // 🚀 GURU DEBUG: Logování hledaného čísla
   console.log("Searching GPU:", number);
   
-  const pattern = encodeURIComponent(`%${number}%`);
+  const pattern = `%${number}%`;
 
   try {
       const res = await fetch(
