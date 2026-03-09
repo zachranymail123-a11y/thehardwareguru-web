@@ -9,7 +9,7 @@ import {
   Heart, 
   Swords, 
   Zap, 
-  Trophy a
+  Trophy
 } from 'lucide-react';
 
 /**
@@ -170,7 +170,7 @@ export default async function ArticleDetail({ params }) {
 
             <div style={{ position: 'absolute', top: '35px', right: '35px', display: 'flex', gap: '12px' }}>
               {isLeak && (
-                <div style={{ background: '#66fcf1', color: '#0b0c10', padding: '10px 20px', borderRadius: '14px', fontWeight: '950', fontSize: '13px', textTransform: 'uppercase', boxShadow: '0 0 20px rgba(102, 252, 241, 0.6)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ background: '#66fcf1', color: '#0b0c10', padding: '8px 16px', borderRadius: '12px', fontWeight: '950', fontSize: '12px', textTransform: 'uppercase', boxShadow: '0 0 20px rgba(102, 252, 241, 0.6)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Ghost size={16} /> LEAKS & RUMORS
                 </div>
               )}
