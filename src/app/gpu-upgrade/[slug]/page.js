@@ -20,11 +20,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V112.3 (ADVANCED LOOKUP FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V112.5 (EXACT SLUG LOOKUP)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: Zachování prefixů geforce/radeon/rx/rtx pro přesnější PostgREST ilike.
- * 🛡️ FIX 2: Aplikace nahrazení mezer za '%' pro bezpečný a správný PostgREST wildcard dotaz.
- * 🛡️ FIX 3: Přidání cache: 'no-store' pro zamezení vracení starých záznamů.
+ * 🛡️ FIX 1: Přechod na absolutně přesný 1:1 lookup přes db sloupec `slug`.
+ * 🛡️ FIX 2: Odstranění nepřesných ilike a wildcardů (vyřešen problém překrývání názvů).
+ * 🛡️ FIX 3: Ponechání cache: 'no-store' pro zamezení vracení starých záznamů.
  * 🛡️ ARCH: Node.js runtime a ISR revalidate (86400) pro optimální SEO.
  */
 
@@ -54,31 +54,24 @@ function calculatePerf(a, b) {
     return { winner: b, loser: a, diff };
 }
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB (PŘESNĚJŠÍ VERZE DLE CHATGPT)
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (100% PŘESNÝ EXACT MATCH PŘES SLUG)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
 
-  const model = slugPart
-    .replace(/-/g, ' ')
-    .replace(/gb/gi, '')
-    .trim();
+  const headers = {
+    'apikey': supabaseKey,
+    'Authorization': `Bearer ${supabaseKey}`
+  };
 
-  if (!model) return null;
-
-  const search = model.replace(/\s+/g, '%');
-
-  const url = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.*${search}*&limit=1`;
+  // 🚀 GURU FIX: Nyní používáme bleskurychlý a přesný eq. match na nový unikátní sloupec
+  const url = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${slugPart}&limit=1`;
 
   // 🚀 GURU DEBUG: Logování pro diagnostiku ve Vercel logs
-  console.log("GPU SEARCH MODEL:", model);
-  console.log("GPU SEARCH PATTERN:", search);
+  console.log("GPU EXACT SLUG SEARCH:", slugPart);
 
   try {
       const res = await fetch(url, {
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`
-          },
+          headers,
           cache: 'no-store',
           next: { revalidate: 86400 }
       });
@@ -86,7 +79,7 @@ const findGpu = async (slugPart) => {
       if (!res.ok) return null;
 
       const data = await res.json();
-      return data[0] || null;
+      return data?.[0] || null;
 
   } catch (e) {
       return null;
