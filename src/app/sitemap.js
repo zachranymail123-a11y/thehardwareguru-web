@@ -144,44 +144,15 @@ export default async function sitemap() {
     ];
 
     const resolutions = ['1080p','1440p','4k'];
-
     const modes = ['dlss','ray-tracing','ultra','high'];
-
-    /* GPU DUELS + GAME */
-
-    if (duelsRes.data) {
-
-      duelsRes.data.forEach((item) => {
-
-        addToRoutes(item, '/gpuvs', 0.8);
-
-        gamesList.forEach((game) => {
-
-          dynamicRoutes.push({
-            url: `${baseUrl}/gpuvs/${item.slug}/${game}`,
-            lastModified: item.created_at || currentDate,
-            priority: 0.7
-          });
-
-          const enSlug = item.slug_en || `en-${item.slug}`;
-
-          dynamicRoutes.push({
-            url: `${baseUrl}/en/gpuvs/${enSlug}/${game}`,
-            lastModified: item.created_at || currentDate,
-            priority: 0.6
-          });
-
-        });
-
-      });
-
-    }
 
     if (gpusRes.data) {
 
       gpusRes.data.forEach((gpu) => {
 
         if (!gpu.slug) return;
+
+        /* GPU HUB */
 
         dynamicRoutes.push({
           url: `${baseUrl}/gpu/${gpu.slug}`,
@@ -193,6 +164,32 @@ export default async function sitemap() {
           url: `${baseUrl}/en/gpu/${gpu.slug}`,
           lastModified: currentDate,
           priority: 0.7
+        });
+
+        /* GPU UPGRADE HUB (NOVÉ) */
+
+        dynamicRoutes.push({
+          url: `${baseUrl}/gpu-upgrade-from/${gpu.slug}`,
+          lastModified: currentDate,
+          priority: 0.7
+        });
+
+        dynamicRoutes.push({
+          url: `${baseUrl}/en/gpu-upgrade-from/${gpu.slug}`,
+          lastModified: currentDate,
+          priority: 0.6
+        });
+
+        dynamicRoutes.push({
+          url: `${baseUrl}/gpu-upgrade-to/${gpu.slug}`,
+          lastModified: currentDate,
+          priority: 0.7
+        });
+
+        dynamicRoutes.push({
+          url: `${baseUrl}/en/gpu-upgrade-to/${gpu.slug}`,
+          lastModified: currentDate,
+          priority: 0.6
         });
 
         gamesList.forEach((game) => {
@@ -228,8 +225,6 @@ export default async function sitemap() {
             });
 
           });
-
-          /* PERFORMANCE MODES (NOVÉ) */
 
           modes.forEach((mode) => {
 
