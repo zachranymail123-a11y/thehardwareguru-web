@@ -17,17 +17,19 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - DETAIL V86.0 (BENCHMARK CTR & SCHEMA BOOST)
+ * GURU GPU DUELS ENGINE - DETAIL V88.0 (FINAL PRODUCTION BUILD)
  * Cesta: src/app/gpuvs/[slug]/page.js
- * 🛡️ FIX 1: Ochrana pole karet přes .filter(Boolean) proti prázdným URL (ChatGPT Fix).
- * 🛡️ SEO 1: Nové Benchmark/FPS Title patterny pro maximální CTR.
- * 🛡️ SEO 2: Implementace Product schema pro obě karty (Rich Snippets).
+ * 🛡️ FIX 1: Ochrana game_fps před crashem aplikace (gpuA?.game_fps).
+ * 🛡️ FIX 2: Slug parser zachovává "xt/ti" pro přesný match (např. 7900 XT).
+ * 🛡️ FIX 3: Ochrana pole karet přes .filter(Boolean) proti prázdným URL.
+ * 🛡️ FIX 4: Supabase upsert (resolution=merge-duplicates) a oprava canonical (en-en-).
+ * 🛡️ SEO: Benchmark Title pattern, Product schema, safe JSON stringify, ItemList schema.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// 🚀 GURU: Agresivní slugify engine (zachovává vendor názvy pro čisté SEO dle ChatGPT)
+// 🚀 GURU: Agresivní slugify engine (zachovává vendor názvy pro čisté SEO)
 const slugify = (text) => {
     return text
       .toLowerCase()
@@ -68,7 +70,7 @@ const findGpu = async (slugPart) => {
   if (!supabaseUrl) return null;
   const clean = slugPart.replace(/-/g, " ").replace(/geforce|radeon|nvidia|amd/gi, "").trim();
   
-  // 🚀 GURU FIX: Vrácení původního parseru, aby se nesmazaly důležité přípony (xt, ti, super)
+  // 🚀 GURU FIX: Zachování přípon (xt, ti, super) pro 100% shodu v DB
   const chunks = clean.match(/\d+|[a-zA-Z]+/g);
   if (!chunks || chunks.length === 0) return null;
   
@@ -126,8 +128,7 @@ async function generateAndPersistDuel(slug) {
     const selectQuery = "*,gpuA:gpus!gpu_a_id(*,game_fps!gpu_id(*)),gpuB:gpus!gpu_b_id(*,game_fps!gpu_id(*))";
     
     /**
-     * 🛡️ GURU CONCURRENCY FIX: Přidána hlavička resolution=merge-duplicates.
-     * To provede automatický UPSERT místo pádu na Duplicate Key Error při souběžném přístupu.
+     * 🛡️ GURU CONCURRENCY FIX: Ochrana proti duplicate key error
      */
     const dbRes = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=${encodeURIComponent(selectQuery)}`, {
         method: 'POST',
@@ -153,7 +154,7 @@ async function generateAndPersistDuel(slug) {
 }
 
 /**
- * 🛡️ GURU PERF: React Cache zajistí, že se data z DB fetchují pouze jednou pro metadata i render.
+ * 🛡️ GURU PERF: React Cache zajistí, že se data z DB fetchují pouze jednou.
  */
 const getDuelData = cache(async (slug) => {
   if (!supabaseUrl) return null;
@@ -196,14 +197,14 @@ export async function generateMetadata({ params }) {
         : `${winner.name} je přibližně o ${diff} % výkonnější než ${loser.name} podle výsledků benchmarků. Porovnejte parametry a FPS.`;
   } else {
       title = isEn 
-        ? `${gpuA.name} vs ${gpuB.name} – Equal Performance in Games` 
-        : `${gpuA.name} vs ${gpuB.name} – Vyrovnaný výkon ve hrách`;
+        ? `${gpuA?.name || "GPU A"} vs ${gpuB?.name || "GPU B"} – Equal Performance in Games` 
+        : `${gpuA?.name || "GPU A"} vs ${gpuB?.name || "GPU B"} – Vyrovnaný výkon ve hrách`;
       desc = isEn 
-        ? `${gpuA.name} and ${gpuB.name} offer nearly identical gaming performance.` 
-        : `${gpuA.name} a ${gpuB.name} nabízejí téměř identický herní výkon.`;
+        ? `${gpuA?.name || "GPU A"} and ${gpuB?.name || "GPU B"} offer nearly identical gaming performance.` 
+        : `${gpuA?.name || "GPU A"} a ${gpuB?.name || "GPU B"} nabízejí téměř identický herní výkon.`;
   }
 
-  // 🛡️ GURU SEO FIX: Oprava canonical URL (ChatGPT Fix absolutní kanonizace s languages)
+  // 🛡️ GURU SEO FIX: Oprava canonical URL s absolutními cestami a i18n
   const duelSlugEn = (duel.slug_en || `en-${duel.slug}`).replace(/^en-en-/,'en-');
   const canonicalUrl = `https://www.thehardwareguru.cz/gpuvs/${duel.slug}`;
 
@@ -228,14 +229,14 @@ export default async function GpuDuelDetail({ params }) {
   const isEn = slug?.startsWith('en-');
   const { gpuA, gpuB } = duel;
   
-  // 🚀 GURU PERF: Optimalizace latence pomocí Promise.resolve()
+  // 🚀 GURU PERF: Optimalizace latence
   const similarPromise = gpuA?.id ? getSimilarDuels(gpuA.id, duel.slug) : Promise.resolve([]);
 
   const { winner, loser, diff: finalPerfDiff } = calculatePerf(gpuA, gpuB);
   
-  // Awaitujeme na similar až po kalkulacích
   const similar = await similarPromise;
 
+  // 🛡️ GURU FIX: Zohlednění 0 FPS v tabulce
   const getWinnerStyle = (valA, valB, lowerIsBetter = false) => {
     if (valA == null || valB == null) return {};
     if (valA === valB) return { color: '#9ca3af', fontWeight: 'bold' };
@@ -250,7 +251,7 @@ export default async function GpuDuelDetail({ params }) {
 
   const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon /gi, '');
 
-  // 🚀 GURU CRASH FIX: Ochrana proti pádu serveru při chybějících fps datech
+  // 🚀 GURU CRASH FIX: Ochrana proti pádu serveru při chybějících datech
   const fpsA = gpuA?.game_fps ? (Array.isArray(gpuA.game_fps) ? gpuA.game_fps[0] : gpuA.game_fps) : {};
   const fpsB = gpuB?.game_fps ? (Array.isArray(gpuB.game_fps) ? gpuB.game_fps[0] : gpuB.game_fps) : {};
 
@@ -264,6 +265,7 @@ export default async function GpuDuelDetail({ params }) {
     ? Math.round(diffs.map(v => Math.abs(v)).reduce((a, b) => a + b, 0) / diffs.length) 
     : 0;
 
+  // 🚀 GURU: Dynamické hry
   const availableGames = Object.keys(fpsA)
     .filter(k => k !== 'gpu_id' && k !== 'id' && (k.includes('_1080p') || k.includes('_1440p') || k.includes('_4k')))
     .map(g => g.replace(/_(1080p|1440p|4k)/,'').replace(/_/g, '-'))
@@ -324,7 +326,7 @@ export default async function GpuDuelDetail({ params }) {
     }))
   };
 
-  // 🚀 SEO: PRODUCT SCHEMAS DLE CHATGPT (Pro Rich Snippets)
+  // 🚀 SEO: PRODUCT SCHEMAS PRO RICH SNIPPETS
   const productSchemaA = gpuA ? {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -341,6 +343,7 @@ export default async function GpuDuelDetail({ params }) {
     "category": "Graphics Card"
   } : null;
 
+  // 🛡️ GURU JSON SAFE STRINGIFY: Ochrana proti XSS
   const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
   return (
@@ -379,6 +382,7 @@ export default async function GpuDuelDetail({ params }) {
             )}
           </div>
 
+          {/* 🚀 GURU: QUICK VERDICT BADGE */}
           {winner && (
             <div className="guru-verdict">
                 {winner.name} {isEn ? 'is about' : 'je přibližně'} <strong>{finalPerfDiff}%</strong> {isEn ? 'faster in games' : 'výkonnější ve hrách'}
@@ -448,7 +452,7 @@ export default async function GpuDuelDetail({ params }) {
             <Gamepad2 size={28} /> {isEn ? 'DETAILED GAME FPS ANALYSIS' : 'DETAILNÍ FPS ANALÝZY HER'}
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '25px' }}>
-              {/* 🚀 GURU FIX: Ochrana mapování přes .filter(Boolean) */}
+              {/* 🚀 GURU FIX: Ochrana proti null u mapování */}
               {[gpuA, gpuB].filter(Boolean).map((gpu, i) => (
                   <div key={i} className="fps-matrix-card">
                       <div className="matrix-gpu-title" style={{ color: getVendorColor(gpu?.vendor) }}>{gpu?.name || "GPU"}</div>
