@@ -9,23 +9,22 @@ import {
   Flame, 
   Heart, 
   Swords, 
-  Calendar,
-  ShoppingCart
+  Calendar
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V47.1 (TIP-DETAIL DESIGN)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V50.0 (CLEAN PRODUCTION)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * 🛡️ GURU MANDÁT: 
- * 1. ZÁKAZ HACKŮ - Pouze čisté statické ESM importy pro Vercel produkci.
- * 2. LOGIKA V44.0 - Alphanumeric matcher (řeší závorky) a 60s timeout.
- * 3. DESIGN - Aplikován přesný kód z uživatelovy "TipDetail" šablony (900px glass).
+ * 1. ZÁKAZ HACKŮ - Čisté statické ESM importy. Žádné safeLoad funkce.
+ * 2. LOGIKA V44.0 - Alphanumeric matcher (řeší závorky u 8GB verzí).
+ * 3. DESIGN FIX - Odstraněna "Cena" z tabulky, zachován Grid Ring, odstraněn affiliate box.
  */
 
 // 🚀 GURU FIX: Prodloužení serverless timeoutu na Vercelu pro pomalejší AI generování (až 60 sekund)
 export const maxDuration = 60;
 
-// 🚀 GURU: Inicializace Supabase
+// 🚀 GURU: Inicializace Supabase (Striktní produkční init)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
@@ -33,8 +32,8 @@ const supabase = createClient(
 );
 
 // 🚀 GURU: Inicializace OpenAI
-const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
-const openai = apiKey ? new OpenAI({ apiKey: apiKey }) : null;
+const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY || '';
+const openai = apiKey ? new OpenAI({ apiKey }) : null;
 
 // 🛡️ GURU ENGINE: Robustní vyhledávání karty v DB (Bulletproof Alphanumeric Matcher)
 const findGpu = async (slugPart) => {
@@ -43,7 +42,7 @@ const findGpu = async (slugPart) => {
   // 1. Odstranění vendorů z URL
   const clean = slugPart.replace(/-/g, " ").replace(/geforce|radeon|nvidia|amd/gi, "").trim();
 
-  // 2. 🚀 ULTIMÁTNÍ FIX: Rozdělí string striktně na bloky čísel a písmen (najde i "8 GB" vs "8GB")
+  // 2. Rozdělí string striktně na bloky čísel a písmen (najde i "8 GB" vs "8GB")
   const chunks = clean.match(/\d+|[a-zA-Z]+/g);
   if (!chunks) return null;
 
@@ -80,7 +79,7 @@ async function generateAndPersistDuel(slug) {
           role: "system", 
           content: "Jsi Hardware Guru. Tvoříš brutální SEO duely grafických karet. Piš v HTML (h2, strong, ul). JSON struktura: { \"title_cs\", \"title_en\", \"content_cs\", \"content_en\", \"seo_description_cs\", \"seo_description_en\" }" 
         },
-        { role: "user", content: `Vytvoř profesionální srovnání: ${cardA.name} VS ${cardB.name}.` }
+        { role: "user", content: `Vytvoř profesionální srovnání: ${cardA.name} VS ${cardB.name}. Zaměř se na výkon a technologie.` }
       ],
       response_format: { type: "json_object" }
     });
@@ -169,7 +168,6 @@ export default async function GpuDuelDetail({ params }) {
     year: 'numeric', month: 'long', day: 'numeric' 
   }).format(new Date(duel.created_at || Date.now()));
   const backLink = isEn ? '/en/gpuvs' : '/gpuvs';
-  const buyBtnText = isEn ? 'VIEW BEST PRICE' : 'ZOBRAZIT NEJLEPŠÍ CENU';
   
   // Pomocné funkce pro design tabulky a barev
   const getWinnerStyle = (valA, valB, lowerIsBetter = false) => {
@@ -190,7 +188,7 @@ export default async function GpuDuelDetail({ params }) {
         backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px' 
     }}>
       
-      {/* 🚀 GURU: Hlavní skleněný kontejner přesně podle TipDetail šablony */}
+      {/* 🚀 GURU: Hlavní skleněný kontejner (TipDetail šablona) */}
       <main style={{ 
           maxWidth: '900px', margin: '0 auto', background: 'rgba(15, 17, 21, 0.95)', 
           borderRadius: '30px', border: '1px solid rgba(102, 252, 241, 0.2)', 
@@ -207,20 +205,21 @@ export default async function GpuDuelDetail({ params }) {
               </Link>
             </div>
 
-            <div className="duel-ring-container" style={{ display: 'flex', alignItems: 'stretch', justifyContent: 'center', gap: '20px', position: 'relative', zIndex: 10 }}>
+            {/* 🚀 GURU FIX: Absolutně vycentrovaný ring pomocí CSS Gridu (garantuje 50/50 rozložení) */}
+            <div className="duel-ring-container" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', position: 'relative', zIndex: 10 }}>
                 {/* KARTA A */}
-                <div className="ring-card" style={{ flex: 1, padding: '35px 20px', background: 'rgba(0,0,0,0.6)', borderRadius: '20px', textAlign: 'center', borderTop: `4px solid ${getVendorColor(gpuA.vendor)}`, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
+                <div className="ring-card" style={{ padding: '35px 20px', background: 'rgba(0,0,0,0.6)', borderRadius: '20px', textAlign: 'center', borderTop: `4px solid ${getVendorColor(gpuA.vendor)}`, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
                     <div style={{ fontSize: '11px', fontWeight: '950', color: getVendorColor(gpuA.vendor), textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>{gpuA.vendor} • {gpuA.architecture}</div>
                     <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: 0, lineHeight: '1.1' }}>{gpuA.name.replace('GeForce ', '').replace('Radeon ', '')}</h2>
                 </div>
                 
-                {/* VS ZNAK */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20, margin: '0 -35px' }}>
+                {/* VS ZNAK (Absolutně centrovaný) */}
+                <div className="vs-badge-wrapper">
                     <div className="vs-badge" style={{ width: '70px', height: '70px', minWidth: '70px', background: '#ff0055', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '950', fontSize: '24px', border: '5px solid #0f1115', boxShadow: '0 0 40px rgba(255,0,85,0.6)', color: '#fff', transform: 'rotate(-8deg)' }}>VS</div>
                 </div>
 
                 {/* KARTA B */}
-                <div className="ring-card" style={{ flex: 1, padding: '35px 20px', background: 'rgba(0,0,0,0.6)', borderRadius: '20px', textAlign: 'center', borderTop: `4px solid ${getVendorColor(gpuB.vendor)}`, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
+                <div className="ring-card" style={{ padding: '35px 20px', background: 'rgba(0,0,0,0.6)', borderRadius: '20px', textAlign: 'center', borderTop: `4px solid ${getVendorColor(gpuB.vendor)}`, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
                     <div style={{ fontSize: '11px', fontWeight: '950', color: getVendorColor(gpuB.vendor), textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>{gpuB.vendor} • {gpuB.architecture}</div>
                     <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: 0, lineHeight: '1.1' }}>{gpuB.name.replace('GeForce ', '').replace('Radeon ', '')}</h2>
                 </div>
@@ -242,7 +241,7 @@ export default async function GpuDuelDetail({ params }) {
             </h1>
           </header>
 
-          {/* --- TABULKA SPECIFIKACÍ --- */}
+          {/* --- TABULKA SPECIFIKACÍ (BEZ CENY) --- */}
           <div className="specs-container" style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '50px', overflow: 'hidden' }}>
              <div style={{ background: 'rgba(0,0,0,0.5)', padding: '15px', textAlign: 'center', color: '#9ca3af', fontSize: '11px', fontWeight: '950', letterSpacing: '2px', textTransform: 'uppercase', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 {isEn ? 'GURU TECHNICAL METRICS' : 'GURU TECHNICKÉ METRIKY'}
@@ -266,51 +265,16 @@ export default async function GpuDuelDetail({ params }) {
                <div style={{ ...getWinnerStyle(gpuB.boost_clock_mhz, gpuA.boost_clock_mhz), fontSize: '24px', textAlign: 'left' }}>{gpuB.boost_clock_mhz} MHz</div>
              </div>
 
-             <div className="spec-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', padding: '20px 30px', borderBottom: '1px solid rgba(255,255,255,0.02)', alignItems: 'center' }}>
+             {/* TDP je nyní poslední řádek = bez borderBottom */}
+             <div className="spec-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', padding: '20px 30px', alignItems: 'center' }}>
                <div style={{ ...getWinnerStyle(gpuA.tdp_w, gpuB.tdp_w, true), fontSize: '24px', textAlign: 'right' }}>{gpuA.tdp_w} W</div>
                <div style={{ padding: '0 30px', fontSize: '10px', fontWeight: '950', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '2px', fontStyle: 'italic', textAlign: 'center' }}>TDP</div>
                <div style={{ ...getWinnerStyle(gpuB.tdp_w, gpuA.tdp_w, true), fontSize: '24px', textAlign: 'left' }}>{gpuB.tdp_w} W</div>
-             </div>
-
-             <div className="spec-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', padding: '20px 30px', alignItems: 'center' }}>
-               <div style={{ ...getWinnerStyle(gpuA.release_price_usd, gpuB.release_price_usd, true), fontSize: '24px', textAlign: 'right' }}>${gpuA.release_price_usd}</div>
-               <div style={{ padding: '0 30px', fontSize: '10px', fontWeight: '950', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '2px', fontStyle: 'italic', textAlign: 'center' }}>{isEn ? 'PRICE' : 'CENA'}</div>
-               <div style={{ ...getWinnerStyle(gpuB.release_price_usd, gpuA.release_price_usd, true), fontSize: '24px', textAlign: 'left' }}>${gpuB.release_price_usd}</div>
              </div>
           </div>
 
           {/* --- OBSAH DUELU --- */}
           <div className="guru-prose" dangerouslySetInnerHTML={{ __html: content }} />
-
-          {/* --- 🚀 GURU AFFILIATE NÁKUPNÍ BOX (Přímo z Tipů) --- */}
-          <div style={{ 
-            marginTop: '70px', padding: '50px 40px', background: 'linear-gradient(145deg, rgba(31, 40, 51, 0.9) 0%, rgba(15, 17, 21, 0.95) 100%)', 
-            border: '2px solid rgba(249, 115, 22, 0.5)', borderRadius: '24px', 
-            textAlign: 'center', boxShadow: '0 20px 50px rgba(249, 115, 22, 0.15)',
-            position: 'relative', overflow: 'hidden'
-          }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '5px', background: 'linear-gradient(90deg, transparent, #f97316, transparent)' }}></div>
-            
-            <h3 style={{ fontSize: '32px', fontWeight: '950', color: '#fff', textTransform: 'uppercase', marginBottom: '15px', letterSpacing: '1px' }}>
-              {isEn ? "Don't miss this hit!" : "Nenech si tuhle pecku ujít!"}
-            </h3>
-            
-            <p style={{ color: '#9ca3af', marginBottom: '35px', fontSize: '17px', maxWidth: '600px', margin: '0 auto 35px auto', lineHeight: '1.6' }}>
-              {isEn 
-                ? "We found the best deals for upgrading your rig. Instant key delivery and Guru-verified store." 
-                : "Našli jsme pro tebe tu nejlepší cenu pro upgrade tvé mašiny. Okamžité doručení klíče a Guru-ověřený obchod."}
-            </p>
-
-            <a 
-              href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" 
-              target="_blank" 
-              rel="nofollow sponsored" 
-              className="guru-affiliate-cta"
-            >
-              <ShoppingCart size={26} />
-              {buyBtnText}
-            </a>
-          </div>
 
           {/* --- 🚀 GURU GLOBÁLNÍ CTA (Podpora webu a Slevy - Stejné jako v Tipech) --- */}
           <div style={{ 
@@ -338,21 +302,11 @@ export default async function GpuDuelDetail({ params }) {
         </div>
       </main>
 
-      {/* --- GURU TYPOGRAPHY & BUTTON CSS (Copy from TipDetail) --- */}
+      {/* --- GURU TYPOGRAPHY & BUTTON CSS --- */}
       <style dangerouslySetInnerHTML={{__html: `
         /* Tlačítko zpět */
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; backdrop-filter: blur(5px); border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.2); }
-
-        /* Tlačítko nákupu (Specifický Affiliate) */
-        .guru-affiliate-cta {
-          display: inline-flex; align-items: center; justify-content: center; gap: 12px;
-          padding: 22px 45px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-          color: #fff !important; font-weight: 950; font-size: 18px; text-transform: uppercase;
-          border-radius: 18px; text-decoration: none !important; transition: 0.3s;
-          box-shadow: 0 10px 35px rgba(234, 88, 12, 0.4); border: 1px solid rgba(255,255,255,0.1);
-        }
-        .guru-affiliate-cta:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 20px 50px rgba(234, 88, 12, 0.6); filter: brightness(1.1); }
 
         /* Globální podpora & slevy tlačítka */
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
@@ -361,7 +315,7 @@ export default async function GpuDuelDetail({ params }) {
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
         .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
 
-        /* Formátování obsahu */
+        /* Formátování obsahu z CKEditoru */
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; }
         .guru-prose h2 { color: #66fcf1; font-size: 2.2rem; font-weight: 950; margin-top: 2.5em; margin-bottom: 1em; text-transform: uppercase; letter-spacing: 1px; }
         .guru-prose h3 { color: #fff; font-size: 1.6rem; font-weight: 900; margin-top: 2em; margin-bottom: 1em; }
@@ -374,13 +328,27 @@ export default async function GpuDuelDetail({ params }) {
         
         .spec-row:hover { background: rgba(255,255,255,0.02); }
 
+        /* 🚀 GURU FIX: Absolutní centrování pro Desktop, relativní pro Mobil */
+        .vs-badge-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+        }
+
         /* Responzivita */
         @media (max-width: 768px) {
           .guru-prose { font-size: 1.05rem; }
           .guru-prose h2 { font-size: 1.8rem; }
-          .guru-affiliate-cta, .guru-deals-btn, .guru-support-btn { width: 100%; font-size: 15px; padding: 18px 30px; }
-          .duel-ring-container { flex-direction: column !important; }
-          .vs-badge { margin: -30px auto !important; z-index: 10; position: relative; }
+          .guru-deals-btn, .guru-support-btn { width: 100%; font-size: 15px; padding: 18px 30px; }
+          
+          /* Změna layoutu Ringu na mobilu */
+          .duel-ring-container { display: flex !important; flex-direction: column !important; gap: 0 !important; }
+          .ring-card { width: 100% !important; }
+          .vs-badge-wrapper { position: relative !important; top: auto !important; left: auto !important; transform: none !important; margin: -25px auto !important; display: flex; justify-content: center; }
+          .vs-badge { margin: 0 auto !important; }
+
           .content-padding-wrapper { padding: 30px 20px 40px 20px !important; }
           .spec-row { padding: 15px !important; }
         }
