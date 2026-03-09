@@ -20,11 +20,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V103.3 (NODEJS RUNTIME FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V106.0 (FINAL PRODUCTION STABLE)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: Vynucen Node.js runtime pro stabilitu fetchu a funkční ISR (ChatGPT Fix).
- * 🛡️ FIX 2: Zachování PostgREST standardu '%' a extrakce čísla modelu (\d{3,4}).
- * 🚀 PERF: revalidate = 86400 nyní na Node.js runtime bude Googlem správně indexováno.
+ * 🛡️ FIX: findGpu nyní kóduje celý PostgREST filtr (ilike.%) pro 100% stabilitu (ChatGPT Fix).
+ * 🛡️ FIX: Vylepšený regex /(rtx|gtx|rx)[-_]?\d{3,4}/i pro přesnou identifikaci modelů (ChatGPT Fix).
+ * 🛡️ ARCH: Node.js runtime a ISR revalidate (86400) pro maximální SEO a výkon.
  */
 
 export const runtime = "nodejs";
@@ -33,7 +33,7 @@ export const revalidate = 86400;
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// 🚀 GURU: Standardní slugify pro generování URL (pro konzistenci s DB)
+// 🚀 GURU: Standardní slugify pro konzistentní URL a lookupy
 const slugify = (text) => {
   return text
     .toLowerCase()
@@ -53,30 +53,33 @@ function calculatePerf(a, b) {
     return { winner: b, loser: a, diff };
 }
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB (S LOGOVÁNÍM PRO DEBUG)
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (S FIXEM KÓDOVÁNÍ CELÉHO FILTRU)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
 
-  const number = slugPart.match(/\d{3,4}/)?.[0];
+  // 🚀 GURU FIX: Přesnější identifikace modelu (rtx/gtx/rx + číslo)
+  const model = slugPart.match(/(rtx|gtx|rx)[-_]?\d{3,4}/i)?.[0];
+  
+  if (!model) return null;
+  
+  // 🚀 GURU CRITICAL FIX: Zakódování celého filtru pro PostgREST stabilitu (ChatGPT Fix)
+  const filter = encodeURIComponent(`ilike.%${model}%`);
+  const url = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=${filter}&limit=1`;
 
-  if (!number) return null;
-  
-  // 🚀 GURU DEBUG: Logování hledaného čísla
-  console.log("Searching GPU:", number);
-  
-  const pattern = `%${number}%`;
+  // 🚀 GURU DEBUG: Logování pro diagnostiku
+  if (process.env.NODE_ENV === "development") {
+    console.log("Searching GPU:", model);
+    console.log("GPU lookup URL:", url);
+  }
 
   try {
-      const res = await fetch(
-        `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.${pattern}&limit=1`,
-        {
+      const res = await fetch(url, {
           headers: {
             'apikey': supabaseKey,
             'Authorization': `Bearer ${supabaseKey}`
           },
           next: { revalidate: 86400 }
-        }
-      );
+      });
 
       if (!res.ok) return null;
 
@@ -100,14 +103,13 @@ const getSimilarUpgrades = async (gpuId, currentSlug) => {
     } catch (e) { return []; }
 };
 
-// 🚀 GURU ENGINE: Generování Upgrade Stránky do DB (S LOGOVÁNÍM PRO DEBUG)
+// 🚀 GURU ENGINE: Generování Upgrade Stránky do DB
 async function generateAndPersistUpgrade(slug) {
   if (!supabaseUrl) return null;
 
   try {
     const cleanSlug = slug.replace(/^en-/, '');
     
-    // Podpora obou typů oddělovačů v URL
     const parts = cleanSlug.includes('-to-')
       ? cleanSlug.split('-to-')
       : cleanSlug.split('-vs-');
@@ -118,12 +120,6 @@ async function generateAndPersistUpgrade(slug) {
         findGpu(parts[0]),
         findGpu(parts[1])
     ]);
-
-    // 🚀 GURU DEBUG: Komplexní logování stavu generování článku
-    console.log("Slug:", slug);
-    console.log("Parts:", parts);
-    console.log("GPU A:", cardA?.name || "NULL");
-    console.log("GPU B:", cardB?.name || "NULL");
 
     if (!cardA || !cardB) return null;
 
@@ -220,11 +216,18 @@ export async function generateMetadata({ params }) {
 
 const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon /gi, '');
 
-export default async function GpuUpgradeDetail({ params }) {
+/**
+ * 🚀 FINÁLNÍ APP KOMPONENTA
+ */
+export default async function App({ params }) {
   const slug = params?.slug ?? null;
   const upgrade = await getUpgradeData(slug);
   
-  if (!upgrade) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>UPGRADE PATH NENALEZENA</div>;
+  if (!upgrade) return (
+    <div style={{ color: '#f00', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>
+      UPGRADE PATH NENALEZENA
+    </div>
+  );
 
   const isEn = slug?.startsWith('en-');
   const { oldGpu: gpuA, newGpu: gpuB } = upgrade;
@@ -309,6 +312,7 @@ export default async function GpuUpgradeDetail({ params }) {
           )}
         </header>
 
+        {/* UPGRADE DISPLAY */}
         <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '60px', position: 'relative' }}>
             <div className="gpu-card-box" style={{ borderTop: `5px solid #4b5563`, filter: 'grayscale(0.5)' }}>
                 <span className="vendor-label" style={{ color: '#9ca3af' }}>{isEn ? 'CURRENT GPU' : 'VAŠE SOUČASNÁ KARTA'}</span>
@@ -316,7 +320,7 @@ export default async function GpuUpgradeDetail({ params }) {
                 <div style={{ marginTop: '10px', fontSize: '12px', color: '#6b7280', fontWeight: 'bold' }}>{gpuA.architecture} • {gpuA.vram_gb}GB VRAM</div>
             </div>
             
-            <div className="vs-center-wrapper">
+            <div className="vs-center-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div className="upgrade-badge"><ArrowRight size={32} /></div>
             </div>
 
@@ -327,6 +331,7 @@ export default async function GpuUpgradeDetail({ params }) {
             </div>
         </div>
 
+        {/* BENCHMARKS */}
         {Object.keys(fpsA || {}).length > 0 && Object.keys(fpsB || {}).length > 0 && (
             <section style={{ marginBottom: '60px' }}>
             <div className="content-box-style" style={{ borderLeft: '6px solid #a855f7' }}>
@@ -351,6 +356,7 @@ export default async function GpuUpgradeDetail({ params }) {
             </section>
         )}
 
+        {/* SPECS */}
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: '#a855f7' }}>
             <LayoutList size={28} /> {isEn ? 'UPGRADE SPECIFICATIONS' : 'POROVNÁNÍ PARAMETRŮ'}
@@ -377,6 +383,7 @@ export default async function GpuUpgradeDetail({ params }) {
           </div>
         </section>
 
+        {/* FPS LINKS */}
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: '#a855f7' }}>
             <Gamepad2 size={28} /> {isEn ? 'DETAILED FPS CAPABILITIES' : 'DETAILNÍ MOŽNOSTI VE HRÁCH'}
@@ -400,6 +407,7 @@ export default async function GpuUpgradeDetail({ params }) {
           </div>
         </section>
 
+        {/* SIMILAR */}
         {similar.length > 0 && (
           <section style={{ marginBottom: '60px' }}>
             <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: '#a855f7' }}>
@@ -415,6 +423,7 @@ export default async function GpuUpgradeDetail({ params }) {
           </section>
         )}
 
+        {/* CTA */}
         <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
             <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="deals-btn-style"><Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}</a>
             <a href={isEn ? "/en/support" : "/support"} className="support-btn-style"><Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}</a>
