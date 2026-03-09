@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords } from 'lucide-react';
+import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu } from 'lucide-react';
 
 /**
  * GURU HOMEPAGE V14.0 - PURE NATIVE API & GURU STYLE
@@ -20,6 +20,7 @@ export default function HomePage() {
     expectedGames: [], 
     featuredDeals: [],
     latestDuels: [],
+    latestCpuDuels: [],
     darci: [],
     partneri: [],
     stats: { value: 0 } 
@@ -65,7 +66,7 @@ export default function HomePage() {
     return { text: isEn ? 'HW NEWS' : 'HW NOVINKA', color: '#ff0000', textColor: '#fff', isLeak: false };
   };
 
-  // 🚀 GURU: Nativní FETCH databáze (Odolné proti pádům kompilace)
+  // 🚀 GURU: Nativní FETCH databáze
   useEffect(() => {
     async function fetchData() {
       try {
@@ -84,7 +85,7 @@ export default function HomePage() {
         // Získání dat z tabulek
         const getHeaders = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
 
-        const [p, s, t, tw, d, pa, exp, feat, duelsRes] = await Promise.all([
+        const [p, s, t, tw, d, pa, exp, feat, duelsRes, cpuDuelsRes] = await Promise.all([
           fetch(`${supabaseUrl}/rest/v1/posts?select=*&type=neq.expected&order=created_at.desc&limit=6`, { headers: getHeaders }).then(res => res.json()),
           fetch(`${supabaseUrl}/rest/v1/stats?select=value&name=eq.total_visits&limit=1`, { headers: getHeaders }).then(res => res.json()),
           fetch(`${supabaseUrl}/rest/v1/tipy?select=*&order=created_at.desc&limit=3`, { headers: getHeaders }).then(res => res.json()),
@@ -93,7 +94,8 @@ export default function HomePage() {
           fetch(`${supabaseUrl}/rest/v1/partneri?select=*&order=created_at.desc&limit=4`, { headers: getHeaders }).then(res => res.json()),
           fetch(`${supabaseUrl}/rest/v1/posts?select=*&type=eq.expected&order=created_at.desc&limit=3`, { headers: getHeaders }).then(res => res.json()),
           fetch(`${supabaseUrl}/rest/v1/game_deals?select=*&order=created_at.desc&limit=3`, { headers: getHeaders }).then(res => res.json()),
-          fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=id,title_cs,title_en,slug,slug_en,created_at&order=created_at.desc&limit=3`, { headers: getHeaders }).then(res => res.json())
+          fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=id,title_cs,title_en,slug,slug_en,created_at&order=created_at.desc&limit=3`, { headers: getHeaders }).then(res => res.json()),
+          fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=id,title_cs,title_en,slug,slug_en,created_at&order=created_at.desc&limit=3`, { headers: getHeaders }).then(res => res.json())
         ]);
         
         setData({ 
@@ -105,7 +107,8 @@ export default function HomePage() {
           partneri: Array.isArray(pa) ? pa : [],
           expectedGames: Array.isArray(exp) ? exp : [],
           featuredDeals: Array.isArray(feat) ? feat : [],
-          latestDuels: Array.isArray(duelsRes) ? duelsRes : []
+          latestDuels: Array.isArray(duelsRes) ? duelsRes : [],
+          latestCpuDuels: Array.isArray(cpuDuelsRes) ? cpuDuelsRes : []
         });
       } catch (err) {
         console.error("Data load fail:", err);
@@ -181,6 +184,15 @@ export default function HomePage() {
         }
         .duel-hp-card:hover { transform: translateY(-5px); border-color: #ff0055; box-shadow: 0 15px 35px rgba(255, 0, 85, 0.25); }
 
+        /* 🚀 GURU: CSS pro CPU Duely */
+        .cpu-duel-hp-card { 
+          display: flex; align-items: center; gap: 20px; 
+          background: linear-gradient(145deg, rgba(15, 17, 21, 0.95) 0%, rgba(102, 252, 241, 0.05) 100%); 
+          padding: 20px; border-radius: 24px; border: 1px solid rgba(102, 252, 241, 0.2); 
+          transition: 0.4s; text-decoration: none; overflow: hidden; position: relative;
+        }
+        .cpu-duel-hp-card:hover { transform: translateY(-5px); border-color: #66fcf1; box-shadow: 0 15px 35px rgba(102, 252, 241, 0.25); }
+
         .tip-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
         .tip-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 0 30px rgba(168, 85, 247, 0.4); border-color: #a855f7; }
         .tweak-card { transition: all 0.3s ease; border: 1px solid rgba(234, 179, 8, 0.3); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
@@ -188,18 +200,24 @@ export default function HomePage() {
         
         .section-title-wrapper { background: rgba(0,0,0,0.7); padding: 18px 35px; border-radius: 18px; backdrop-filter: blur(8px); border: 1px solid rgba(234, 179, 8, 0.2); display: inline-block; }
         
+        /* 🚀 GURU MONETIZATION REDESIGN 🚀 */
         .monetize-hero-card {
-            background: linear-gradient(145deg, rgba(17, 19, 24, 0.95) 0%, rgba(0, 0, 0, 0.98) 100%);
-            border: 2px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 35px 30px;
+            background: linear-gradient(145deg, rgba(15, 17, 21, 0.95) 0%, rgba(10, 11, 13, 0.98) 100%);
+            border: 1px solid rgba(255,255,255,0.05); 
+            border-radius: 30px; padding: 40px 30px;
             text-decoration: none; color: #fff; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5); position: relative; overflow: hidden; backdrop-filter: blur(15px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6); position: relative; overflow: hidden; backdrop-filter: blur(20px);
         }
-        .monetize-hero-card.hof:hover { border-color: #a855f7; box-shadow: 0 20px 50px rgba(168, 85, 247, 0.25); transform: translateY(-8px); }
-        .monetize-hero-card.partners:hover { border-color: #eab308; box-shadow: 0 20px 50px rgba(234, 179, 8, 0.25); transform: translateY(-8px); }
-        .monetize-hero-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
-        .monetize-hero-card.hof::before { background: #a855f7; }
-        .monetize-hero-card.partners::before { background: #eab308; }
+        .monetize-hero-card.hof { border-top: 4px solid #a855f7; }
+        .monetize-hero-card.hof:hover { border-color: #a855f7; box-shadow: 0 25px 60px rgba(168, 85, 247, 0.3); transform: translateY(-8px); background: linear-gradient(145deg, rgba(20, 15, 30, 0.95) 0%, rgba(10, 11, 13, 0.98) 100%); }
+        
+        .monetize-hero-card.partners { border-top: 4px solid #eab308; }
+        .monetize-hero-card.partners:hover { border-color: #eab308; box-shadow: 0 25px 60px rgba(234, 179, 8, 0.3); transform: translateY(-8px); background: linear-gradient(145deg, rgba(30, 25, 10, 0.95) 0%, rgba(10, 11, 13, 0.98) 100%); }
+
+        .monetize-title { font-size: 26px; font-weight: 950; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 2px; font-style: italic; }
+        .hof .monetize-title { color: #a855f7; text-shadow: 0 0 15px rgba(168, 85, 247, 0.4); }
+        .partners .monetize-title { color: #eab308; text-shadow: 0 0 15px rgba(234, 179, 8, 0.4); }
 
         @media (max-width: 768px) {
           .guru-hero-section { padding: 40px 20px; text-align: center; justify-content: center; }
@@ -241,25 +259,33 @@ export default function HomePage() {
         <div className="guru-hero-avatar">HG</div>
       </header>
 
-      {/* --- MONETIZACE --- */}
+      {/* --- 🚀 MONETIZACE: GURU STYLE REDESIGN --- */}
       <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px', display: 'flex', gap: '30px', flexWrap: 'wrap', marginTop: '-30px', marginBottom: '60px' }}>
           <a href={isEn ? "/en/sin-slavy" : "/sin-slavy"} className="monetize-hero-card hof" style={{ flex: 1, minWidth: '300px' }}>
-            <Trophy size={48} color="#a855f7" style={{ marginBottom: '15px', filter: 'drop-shadow(0 0 15px rgba(168, 85, 247, 0.6))' }} />
-            <h2 style={{ fontWeight: '950', fontSize: '24px', color: '#fff', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '1px' }}>
+            <div style={{ background: 'rgba(168, 85, 247, 0.1)', padding: '20px', borderRadius: '50%', marginBottom: '20px', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
+              <Trophy size={40} color="#a855f7" style={{ filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.6))' }} />
+            </div>
+            <h2 className="monetize-title">
               {isEn ? 'HALL OF FAME' : 'SÍŇ SLÁVY'}
             </h2>
-            <p style={{ fontSize: '15px', color: '#9ca3af', maxWidth: '85%', margin: '0 auto', lineHeight: '1.5' }}>
+            <p style={{ fontSize: '15px', color: '#9ca3af', maxWidth: '85%', margin: '0 auto', lineHeight: '1.5', fontWeight: 'bold' }}>
                 {data.darci.slice(0, 5).map(d => d.name).join(', ')}...
             </p>
           </a>
           <a href={isEn ? "/en/partneri" : "/partneri"} className="monetize-hero-card partners" style={{ flex: 1, minWidth: '300px' }}>
-            <Rocket size={48} color="#eab308" style={{ marginBottom: '15px', filter: 'drop-shadow(0 0 15px rgba(234, 179, 8, 0.6))' }} />
-            <h2 style={{ fontWeight: '950', fontSize: '24px', color: '#fff', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '1px' }}>
+            <div style={{ background: 'rgba(234, 179, 8, 0.1)', padding: '20px', borderRadius: '50%', marginBottom: '20px', border: '1px solid rgba(234, 179, 8, 0.2)' }}>
+              <Rocket size={40} color="#eab308" style={{ filter: 'drop-shadow(0 0 10px rgba(234, 179, 8, 0.6))' }} />
+            </div>
+            <h2 className="monetize-title">
               {isEn ? 'GURU PARTNERS' : 'NAŠI PARTNEŘI'}
             </h2>
-            <p style={{ fontSize: '15px', color: '#9ca3af', maxWidth: '85%', margin: '0 auto', lineHeight: '1.5' }}>
+            <p style={{ fontSize: '15px', color: '#9ca3af', maxWidth: '85%', margin: '0 auto', lineHeight: '1.5', fontWeight: 'bold' }}>
                 {data.partneri.slice(0, 3).map(p => p.name).join(' • ')}
             </p>
+            {/* Tlačítko Zobrazit výhody */}
+            <div style={{ marginTop: '25px', display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(234, 179, 8, 0.15)', color: '#eab308', padding: '10px 20px', borderRadius: '12px', fontWeight: '950', fontSize: '12px', textTransform: 'uppercase', border: '1px solid rgba(234, 179, 8, 0.3)', transition: '0.3s' }}>
+              {isEn ? 'VIEW BENEFITS' : 'ZOBRAZIT VÝHODY'} <ChevronRight size={16} />
+            </div>
           </a>
       </section>
 
@@ -295,7 +321,7 @@ export default function HomePage() {
             </section>
           )}
 
-          {/* --- 🚀 GURU DUELY --- */}
+          {/* --- 🚀 GURU GPU DUELY --- */}
           {data.latestDuels.length > 0 && (
             <section style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px', marginBottom: '60px' }}>
                 <div className="section-title-wrapper" style={{ marginBottom: '30px', borderColor: 'rgba(255, 0, 85, 0.3)', borderLeft: '4px solid #ff0055' }}>
@@ -320,6 +346,38 @@ export default function HomePage() {
                                     <div style={{ fontWeight: '900', fontSize: '16px', color: '#fff', textTransform: 'uppercase', fontStyle: 'italic', lineHeight: '1.2' }}>{isEn ? (duel.title_en || duel.title_cs) : duel.title_cs}</div>
                                 </div>
                                 <ChevronRight color="#ff0055" className="transition-transform group-hover:translate-x-2" />
+                            </div>
+                        </a>
+                    ))}
+                </div>
+            </section>
+          )}
+
+          {/* --- 🚀 GURU CPU DUELY --- */}
+          {data.latestCpuDuels && data.latestCpuDuels.length > 0 && (
+            <section style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px', marginBottom: '60px' }}>
+                <div className="section-title-wrapper" style={{ marginBottom: '30px', borderColor: 'rgba(102, 252, 241, 0.3)', borderLeft: '4px solid #66fcf1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '40px' }}>
+                      <h2 style={{ fontSize: '28px', fontWeight: '950', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <Cpu color="#66fcf1" /> {isEn ? 'LATEST CPU BATTLES' : 'NEJNOVĚJŠÍ CPU DUELY'}
+                      </h2>
+                      <a href={isEn ? "/en/cpuvs" : "/cpuvs"} style={{ color: '#66fcf1', fontWeight: 'bold', textDecoration: 'none', textTransform: 'uppercase', fontSize: '14px' }}>
+                        {isEn ? 'CPU ENGINE →' : 'CPU ENGINE →'}
+                      </a>
+                    </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                    {data.latestCpuDuels.map(duel => (
+                        <a key={duel.id} href={`/${isEn ? 'en/' : ''}cpuvs/${isEn ? (duel.slug_en || `en-${duel.slug}`) : duel.slug}`} style={{ textDecoration: 'none' }}>
+                            <div className="cpu-duel-hp-card group">
+                                <div style={{ background: '#66fcf1', width: '50px', height: '50px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 0 15px rgba(102,252,241,0.4)' }}>
+                                    <Cpu size={24} color="#000" />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ color: '#66fcf1', fontSize: '10px', fontWeight: '950', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '2px' }}>{isEn ? 'PROCESSOR BATTLE' : 'SOUBOJ PROCESORŮ'}</div>
+                                    <div style={{ fontWeight: '900', fontSize: '16px', color: '#fff', textTransform: 'uppercase', fontStyle: 'italic', lineHeight: '1.2' }}>{isEn ? (duel.title_en || duel.title_cs) : duel.title_cs}</div>
+                                </div>
+                                <ChevronRight color="#66fcf1" className="transition-transform group-hover:translate-x-2" />
                             </div>
                         </a>
                     ))}
