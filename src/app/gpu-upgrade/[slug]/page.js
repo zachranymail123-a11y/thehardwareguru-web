@@ -18,13 +18,15 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V92.0 (SUPABASE REST & LOOKUP FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V97.1 (FINAL POLISH & VENDOR FIX)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: Odstraněno URL kódování pro "orQuery", které rozbíjelo Supabase dotazy (ChatGPT Fix).
- * 🛡️ FIX 2: V "findGpu" zachován vendor název pro přesnější match v databázi (ChatGPT Fix).
- * 🛡️ FIX 3: Přidán Debug Log před 404 pro snadnější trasování chyb na serveru (ChatGPT Fix).
- * 🛡️ FIX 4: Logická úprava destructuringu calculatePerf - ponechán pouze "diff" a odebráno redundantní tlačítko duelu.
+ * 🛡️ FIX 1: Bezpečný encodeURIComponent u wildcard patternu pro Supabase (ChatGPT Fix).
+ * 🛡️ FIX 2: Ochrana proti null u performance_index v generateMetadata (ChatGPT Fix).
+ * 🛡️ FIX 3: Zachování vendora ve slugPart (findGpu) pro 100% match v DB (ChatGPT Fix).
+ * 🚀 PERF: Přidán export const revalidate = 86400; pro Next.js cache.
  */
+
+export const revalidate = 86400;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -62,27 +64,36 @@ function calculatePerf(a, b) {
     return { winner: null, loser: null, diff: 0 }; // Remíza
 }
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (Opravený bezpečnější lookup s %)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl) return null;
-  // 🚀 GURU FIX 2: Neodstraňujeme vendor (NVIDIA/AMD), aby ILIKE query neselhala na příliš obecném matchi
-  const clean = slugPart.replace(/-/g, " ").trim();
+
+  // 🚀 GURU FIX: Nahrazení '-' mezerami (bez odstraňování vendorů pro 100% shodu)
+  const name = slugPart.replace(/-/g, " ").trim();
   
-  // Zachování přípon pro 100% match
-  const chunks = clean.match(/\d+|[a-zA-Z]+/g);
-  if (!chunks || chunks.length === 0) return null;
-  
-  const searchPattern = `%${chunks.join('%')}%`;
+  // 🚀 GURU FIX: Encode jen název, ne %, aby pattern fungoval správně v URL
+  const pattern = `%${encodeURIComponent(name).replace(/%20/g,'%')}%`;
 
   try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`, {
-          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
+      // 🚀 GURU CRITICAL FIX: Odstraněno encodeURIComponent pro pattern, aby fungovaly procentuální wildcardy
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.${pattern}&limit=1`,
+        {
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`
+          },
           next: { revalidate: 86400 }
-      });
+        }
+      );
+
       if (!res.ok) return null;
+
       const data = await res.json();
       return data[0] || null;
-  } catch (e) { return null; }
+  } catch (e) {
+      return null;
+  }
 };
 
 // 🛡️ GURU ENGINE: Načtení podobných upgradů
@@ -119,6 +130,13 @@ async function generateAndPersistUpgrade(slug) {
         findGpu(parts[0]),
         findGpu(parts[1])
     ]);
+
+    // 🚀 GURU FIX: Debugging logy pouze pro vývojové prostředí
+    if (process.env.NODE_ENV === "development") {
+        console.log("GPU SEARCH:", parts[0], parts[1]);
+        console.log("FOUND A:", cardA);
+        console.log("FOUND B:", cardB);
+    }
 
     if (!cardA || !cardB) return null;
 
@@ -167,12 +185,16 @@ async function generateAndPersistUpgrade(slug) {
 const getUpgradeData = cache(async (slug) => {
   if (!supabaseUrl) return null;
   const cleanSlug = slug.replace(/^en-/, '');
-  const normalizedSlug = cleanSlug.replace(/geforce-/g, '').replace(/radeon-/g, '');
-  const orQuery = `slug.eq.${slug},slug.eq.${cleanSlug},slug.eq.${normalizedSlug},slug_en.eq.${slug}`;
+  
+  // 🚀 GURU FIX: Bezpečnější encoding pro orQuery komponenty
+  const orQuery = 
+    `slug.eq.${encodeURIComponent(slug)},` +
+    `slug.eq.${encodeURIComponent(cleanSlug)},` +
+    `slug_en.eq.${encodeURIComponent(slug)}`;
+    
   const selectQuery = `*,oldGpu:gpus!old_gpu_id(*,game_fps!gpu_id(*)),newGpu:gpus!new_gpu_id(*,game_fps!gpu_id(*))`;
   
   try {
-      // 🚀 GURU FIX 1: orQuery nesmí být encodeURIComponent, jinak Supabase REST filtru nerozumí!
       const res = await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades?select=${encodeURIComponent(selectQuery)}&or=(${orQuery})&limit=1`, {
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
           next: { revalidate: 86400 }
@@ -192,10 +214,10 @@ export async function generateMetadata({ params }) {
   const isEn = slug?.startsWith('en-');
   const { oldGpu, newGpu } = upgrade;
   
-  // 🚀 GURU FIX 4: Zajímají nás jen data (diff), "winner" je pro Upgrade logiku zbytečný
   const { diff } = calculatePerf(oldGpu, newGpu);
 
-  const isWorthIt = newGpu.performance_index > oldGpu.performance_index;
+  // 🚀 GURU FIX: Bezpečnější verze zabraňující pádu, pokud je performance_index null
+  const isWorthIt = (newGpu?.performance_index || 0) > (oldGpu?.performance_index || 0);
 
   let title = '';
   let desc = '';
@@ -236,9 +258,11 @@ export default async function GpuUpgradeDetail({ params }) {
   const slug = params?.slug ?? null;
   const upgrade = await getUpgradeData(slug);
   
-  // 🚀 GURU FIX 3: Safety logy (dle ChatGPT) před vyhozením 404
-  console.log("UPGRADE SLUG:", slug);
-  console.log("FOUND:", upgrade);
+  // 🚀 GURU FIX: Logy pouze pro vývoj
+  if (process.env.NODE_ENV === "development") {
+      console.log("UPGRADE SLUG:", slug);
+      console.log("FOUND:", upgrade);
+  }
   
   if (!upgrade) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center' }}>UPGRADE PATH NENALEZENA</div>;
 
@@ -253,7 +277,6 @@ export default async function GpuUpgradeDetail({ params }) {
   
   const similarPromise = gpuA?.id ? getSimilarUpgrades(gpuA.id, upgrade.slug) : Promise.resolve([]);
 
-  // 🚀 GURU FIX 4: Zde také použijeme pouze diff
   const { diff: finalPerfDiff } = calculatePerf(gpuA, gpuB);
   
   const similar = await similarPromise;
@@ -272,7 +295,6 @@ export default async function GpuUpgradeDetail({ params }) {
 
   const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon /gi, '');
 
-  // 🚀 GURU CRASH FIX 3: Ochrana proti pádu serveru při chybějících/prázdných fps datech
   const fpsA = gpuA?.game_fps && Array.isArray(gpuA.game_fps) && gpuA.game_fps.length ? gpuA.game_fps[0] : (gpuA?.game_fps || {});
   const fpsB = gpuB?.game_fps && Array.isArray(gpuB.game_fps) && gpuB.game_fps.length ? gpuB.game_fps[0] : (gpuB?.game_fps || {});
 
@@ -283,18 +305,17 @@ export default async function GpuUpgradeDetail({ params }) {
   
   const diffs = [cyberpunkDiff, warzoneDiff, starfieldDiff].filter(v => Number.isFinite(v) && v !== 0);
   
-  // 🛡️ GURU FIX 4: Matematická oprava průměrného rozdílu
   const avgDiff = diffs.length ? Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length) : 0;
 
-  // 🚀 GURU: Dynamické hry
-  const availableGames = Object.keys(fpsA)
+  // 🚀 GURU NULL CRASH FIX: Bezpečné čtení Object.keys s prázdným fallbackem (ChatGPT Fix)
+  const availableGames = Object.keys(fpsA || {})
     .filter(k => k !== 'gpu_id' && k !== 'id' && (k.includes('_1080p') || k.includes('_1440p') || k.includes('_4k')))
     .map(g => g.replace(/_(1080p|1440p|4k)/,'').replace(/_/g, '-'))
     .filter((v, i, a) => a.indexOf(v) === i);
 
   const gamesList = availableGames.length > 0 ? availableGames : ['cyberpunk-2077', 'warzone', 'starfield'];
 
-  const isWorthIt = gpuB.performance_index > gpuA.performance_index;
+  const isWorthIt = (gpuB?.performance_index || 0) > (gpuA?.performance_index || 0);
 
   // 🚀 SEO SCHEMATA PRO UPGRADE
   const faqSchema = {
@@ -398,7 +419,8 @@ export default async function GpuUpgradeDetail({ params }) {
         </div>
 
         {/* BENCHMARK SUMMARY */}
-        {Object.keys(fpsA).length > 0 && Object.keys(fpsB).length > 0 && (
+        {/* 🚀 GURU FIX: Bezpečný zápis pro kontrolu null objektu */}
+        {Object.keys(fpsA || {}).length > 0 && Object.keys(fpsB || {}).length > 0 && (
             <section style={{ marginBottom: '60px' }}>
             <div className="content-box-style" style={{ borderLeft: '6px solid #a855f7' }}>
                 <h2 className="section-h2" style={{ color: '#a855f7', border: 'none', padding: 0 }}>
@@ -455,9 +477,9 @@ export default async function GpuUpgradeDetail({ params }) {
             <Gamepad2 size={28} /> {isEn ? 'DETAILED FPS CAPABILITIES' : 'DETAILNÍ MOŽNOSTI KARET VE HRÁCH'}
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '25px' }}>
-              {/* 🚀 GURU FIX: Ochrana proti null u mapování a úprava slugify pro FPS dotazy */}
+              {/* 🚀 GURU FIX: Zjednodušený slugify čistě přes název */}
               {[gpuA, gpuB].filter(Boolean).map((gpu, i) => {
-                  const safeGpuSlug = slugify(gpu?.name || "").replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
+                  const safeGpuSlug = slugify(gpu?.name || "");
                   return (
                   <div key={i} className="fps-matrix-card">
                       <div className="matrix-gpu-title" style={{ color: i === 1 ? '#a855f7' : '#9ca3af' }}>{gpu?.name || "GPU"}</div>
