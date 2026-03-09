@@ -6,11 +6,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU DUELS ENGINE - MASTER HUB V1.0 (BASED ON GPU VS V67.0)
+ * GURU CPU DUELS ENGINE - MASTER HUB V1.1 (BASED ON GPU VS V67.0)
  * Cesta: src/app/cpuvs/page.js
  * DESIGN: Dvousloupcový grid layout.
  * STYL: Guru Supreme (Neon, Gradienty, Glassmorphismus).
- * FIX: Nativní 'fetch' a '<a>' tagy pro absolutní stabilitu prostředí.
+ * FIX: Jazyková podpora /en a automatické slugování s prefixy pro Master Proxy.
  */
 
 export default function CpuVsHub() {
@@ -22,14 +22,14 @@ export default function CpuVsHub() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Detekce jazyka z URL na klientovi
+  // 🌍 GURU JAZYK: Detekce jazyka z URL na klientovi
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setIsEn(window.location.pathname.startsWith('/en'));
     }
   }, []);
 
-  // 🚀 GURU DATA SYNC (Nativní Fetch)
+  // 🚀 GURU DATA SYNC (Nativní Fetch pro stabilitu)
   useEffect(() => {
     async function loadData() {
       try {
@@ -71,7 +71,7 @@ export default function CpuVsHub() {
     loadData();
   }, [isEn]);
 
-  // 🚀 GURU: Robustní slugify engine
+  // 🚀 GURU: Robustní slugify engine pro generování URL
   const slugify = (text) => {
     return text
       .toLowerCase()
@@ -98,9 +98,12 @@ export default function CpuVsHub() {
     if (!processorA || !processorB) return;
 
     const rawSlug = `${slugify(processorA.name)}-vs-${slugify(processorB.name)}`;
+    
+    // 🛡️ GURU MULTILANG ROUTING:
+    // Pokud jsme v /en, přidáme /en/ prefix a 'en-' prefix ke slugu pro Master Proxy
     const target = isEn ? `/en/cpuvs/en-${rawSlug}` : `/cpuvs/${rawSlug}`;
     
-    // Nativní přesměrování pro obcházení cache Next.js
+    // Nativní přesměrování pro obcházení cache a čistý reload
     window.location.href = target;
   };
 
@@ -128,7 +131,6 @@ export default function CpuVsHub() {
         })();
       `}} />
 
-      {/* 🚀 GURU STYLES: Grid layout a neonový design */}
       <style dangerouslySetInnerHTML={{__html: `
         .guru-hub-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         
@@ -283,6 +285,7 @@ export default function CpuVsHub() {
                 </div>
               ) : existingDuels.length > 0 ? (
                 existingDuels.map((duel) => {
+                  // 🛡️ GURU JAZYKOVÁ KOREKCE V HISTORII:
                   const targetSlug = isEn ? (duel.slug_en || `en-${duel.slug}`) : duel.slug;
                   const targetTitle = isEn ? (duel.title_en || duel.title_cs) : duel.title_cs;
                   
