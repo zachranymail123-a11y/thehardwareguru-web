@@ -20,10 +20,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V103.1 (URL ENCODING FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V103.2 (DEBUGGING SESSION)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX: pattern s '%' wildcards nyní prochází encodeURIComponent (ChatGPT Fix).
- * 🛡️ Tím se zajistí, že PostgREST v URL uvidí '%25' a správně ho dekóduje na wildcard.
+ * 🛡️ DEBUG: Přidány console.logy do findGpu a generateAndPersistUpgrade (ChatGPT Fix).
+ * 🛡️ FIX: Ověření datového toku pro eliminaci chyby "UPGRADE PATH NENALEZENA".
  * 🚀 PERF: export const revalidate = 86400; zůstává pro SEO stabilitu.
  */
 
@@ -52,16 +52,17 @@ function calculatePerf(a, b) {
     return { winner: b, loser: a, diff };
 }
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB (ENCODED LOOKUP DLE CHATGPT)
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (S LOGOVÁNÍM PRO DEBUG)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
 
-  // 🚀 GURU FIX: Extrakce číselné řady ze slugu
   const number = slugPart.match(/\d{3,4}/)?.[0];
 
   if (!number) return null;
   
-  // 🚀 GURU CRITICAL FIX: Používáme encodeURIComponent, aby '%' v URL PostgRESTu neházelo chybu (ChatGPT Fix)
+  // 🚀 GURU DEBUG: Logování hledaného čísla
+  console.log("Searching GPU:", number);
+  
   const pattern = encodeURIComponent(`%${number}%`);
 
   try {
@@ -98,7 +99,7 @@ const getSimilarUpgrades = async (gpuId, currentSlug) => {
     } catch (e) { return []; }
 };
 
-// 🚀 GURU ENGINE: Generování Upgrade Stránky do DB
+// 🚀 GURU ENGINE: Generování Upgrade Stránky do DB (S LOGOVÁNÍM PRO DEBUG)
 async function generateAndPersistUpgrade(slug) {
   if (!supabaseUrl) return null;
 
@@ -116,6 +117,12 @@ async function generateAndPersistUpgrade(slug) {
         findGpu(parts[0]),
         findGpu(parts[1])
     ]);
+
+    // 🚀 GURU DEBUG: Komplexní logování stavu generování článku
+    console.log("Slug:", slug);
+    console.log("Parts:", parts);
+    console.log("GPU A:", cardA?.name || "NULL");
+    console.log("GPU B:", cardB?.name || "NULL");
 
     if (!cardA || !cardB) return null;
 
