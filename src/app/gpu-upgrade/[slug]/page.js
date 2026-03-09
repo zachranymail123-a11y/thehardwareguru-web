@@ -20,11 +20,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V106.0 (FINAL PRODUCTION STABLE)
+ * GURU GPU UPGRADE ENGINE - DETAIL V108.0 (HYPHEN-TO-SPACE LOOKUP FIX)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX: findGpu nyní kóduje celý PostgREST filtr (ilike.%) pro 100% stabilitu (ChatGPT Fix).
- * 🛡️ FIX: Vylepšený regex /(rtx|gtx|rx)[-_]?\d{3,4}/i pro přesnou identifikaci modelů (ChatGPT Fix).
- * 🛡️ ARCH: Node.js runtime a ISR revalidate (86400) pro maximální SEO a výkon.
+ * 🛡️ FIX: findGpu nyní nahrazuje pomlčky mezerami v názvu modelu pro 100% match s DB (ChatGPT Fix).
+ * 🛡️ FIX: findGpu kóduje celý PostgREST filtr (ilike.*text*) pro maximální stabilitu.
+ * 🛡️ ARCH: Node.js runtime a ISR revalidate (86400) pro optimální SEO.
  */
 
 export const runtime = "nodejs";
@@ -33,7 +33,7 @@ export const revalidate = 86400;
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// 🚀 GURU: Standardní slugify pro konzistentní URL a lookupy
+// 🚀 GURU: Standardní slugify pro generování URL a lookupy
 const slugify = (text) => {
   return text
     .toLowerCase()
@@ -53,24 +53,24 @@ function calculatePerf(a, b) {
     return { winner: b, loser: a, diff };
 }
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB (S FIXEM KÓDOVÁNÍ CELÉHO FILTRU)
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (S FIXEM POMLČEK DLE CHATGPT)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
 
-  // 🚀 GURU FIX: Přesnější identifikace modelu (rtx/gtx/rx + číslo)
-  const model = slugPart.match(/(rtx|gtx|rx)[-_]?\d{3,4}/i)?.[0];
+  // 🚀 GURU FIX: Extrakce modelu a nahrazení pomlčky mezerou pro match v DB (ChatGPT Fix)
+  const model = slugPart
+    .match(/(rtx|gtx|rx)[-_]?\d{3,4}/i)?.[0]
+    ?.replace("-", " ");
   
   if (!model) return null;
   
-  // 🚀 GURU CRITICAL FIX: Zakódování celého filtru pro PostgREST stabilitu (ChatGPT Fix)
-  const filter = encodeURIComponent(`ilike.%${model}%`);
-  const url = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=${filter}&limit=1`;
+  // 🚀 GURU CRITICAL FIX: PostgREST vyžaduje hvězdičky a kódování celého filtru
+  const filter = `ilike.*${model}*`;
+  const url = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=${encodeURIComponent(filter)}&limit=1`;
 
-  // 🚀 GURU DEBUG: Logování pro diagnostiku
-  if (process.env.NODE_ENV === "development") {
-    console.log("Searching GPU:", model);
-    console.log("GPU lookup URL:", url);
-  }
+  // 🚀 GURU DEBUG: Logování pro diagnostiku ve Vercel logs
+  console.log("GPU SEARCH MODEL:", model);
+  console.log("FETCH URL:", url);
 
   try {
       const res = await fetch(url, {
@@ -120,6 +120,11 @@ async function generateAndPersistUpgrade(slug) {
         findGpu(parts[0]),
         findGpu(parts[1])
     ]);
+
+    // 🚀 GURU DEBUG
+    console.log("Slug Processing:", slug);
+    console.log("GPU A Found:", cardA?.name || "NULL");
+    console.log("GPU B Found:", cardB?.name || "NULL");
 
     if (!cardA || !cardB) return null;
 
@@ -217,7 +222,7 @@ export async function generateMetadata({ params }) {
 const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon /gi, '');
 
 /**
- * 🚀 FINÁLNÍ APP KOMPONENTA
+ * 🚀 HLAVNÍ APP KOMPONENTA
  */
 export default async function App({ params }) {
   const slug = params?.slug ?? null;
