@@ -199,13 +199,15 @@ export default function Navbar() {
       {/* 3. MENU */}
       <div style={{ display: 'flex', gap: '25px', alignItems: 'center', flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-          <a href={langPrefix + "/clanky"} style={navLinkStyle}>{isEn ? 'ARTICLES' : 'ČLÁNKY'}</a>
-          <a href={langPrefix + "/tipy"} style={navLinkStyle}>{isEn ? 'TIPS' : 'TIPY'}</a>
-          <a href={langPrefix + "/tweaky"} style={{...navLinkStyle, color: '#eab308'}}>{isEn ? 'GURU TWEAKS' : 'GURU TWEAKY'}</a>
-          <a href={langPrefix + "/slovnik"} style={navLinkStyle}>{isEn ? 'GLOSSARY' : 'SLOVNÍK'}</a>
-          <a href={langPrefix + "/rady"} style={navLinkStyle}>{isEn ? 'GUIDES' : 'RADY'}</a>
-          <a href={langPrefix + "/gpuvs"} style={{...navLinkStyle, color: '#ff0055'}}>{isEn ? 'GPU DUELS' : 'GPU DUELY'}</a>
-          <a href={langPrefix + "/cpuvs"} style={{...navLinkStyle, color: '#66fcf1'}}>{isEn ? 'CPU DUELS' : 'CPU DUELY'}</a>
+          {/* 🚀 GURU FIX: Tvrdě zakódované absolutní cesty pro maximální stabilitu */}
+          <a href={isEn ? "/en/clanky" : "/clanky"} style={navLinkStyle}>{isEn ? 'ARTICLES' : 'ČLÁNKY'}</a>
+          <a href={isEn ? "/en/tipy" : "/tipy"} style={navLinkStyle}>{isEn ? 'TIPS' : 'TIPY'}</a>
+          <a href={isEn ? "/en/tweaky" : "/tweaky"} style={{...navLinkStyle, color: '#eab308'}}>{isEn ? 'GURU TWEAKS' : 'GURU TWEAKY'}</a>
+          <a href={isEn ? "/en/slovnik" : "/slovnik"} style={navLinkStyle}>{isEn ? 'GLOSSARY' : 'SLOVNÍK'}</a>
+          <a href={isEn ? "/en/rady" : "/rady"} style={navLinkStyle}>{isEn ? 'GUIDES' : 'RADY'}</a>
+          
+          <a href={isEn ? "/en/gpuvs" : "/gpuvs"} style={{...navLinkStyle, color: '#ff0055'}}>{isEn ? 'GPU DUELS' : 'GPU DUELY'}</a>
+          <a href={isEn ? "/en/cpuvs" : "/cpuvs"} style={{...navLinkStyle, color: '#66fcf1'}}>{isEn ? 'CPU DUELS' : 'CPU DUELY'}</a>
           
           {/* 🔥 NOVÝ ODKAZ NA SLEVY (PLNĚ CZ/EN + MIDDLEWARE FIX) 🔥 */}
           <a href={isEn ? "/en/deals" : "/cs/deals"} style={{...navLinkStyle, color: '#f97316'}}>{isEn ? '🔥 GAME DEALS' : '🔥 SLEVY NA HRY'}</a>
@@ -221,7 +223,7 @@ export default function Navbar() {
             <Share2 size={12} /> {isCopied ? (isEn ? 'COPIED!' : 'ZKOPIROVÁNO!') : (isEn ? 'SHARE' : 'SDÍLET')}
           </button>
 
-          <a href={langPrefix + "/support"} style={{...socialBtn, border: '2px solid #eab308', color: '#eab308', background: 'transparent', display: 'flex', gap: '5px'}}>
+          <a href={isEn ? "/en/support" : "/support"} style={{...socialBtn, border: '2px solid #eab308', color: '#eab308', background: 'transparent', display: 'flex', gap: '5px'}}>
             <Heart size={12} fill="#eab308" /> {isEn ? 'SUPPORT' : 'PODPORA'}
           </a>
         </div>
