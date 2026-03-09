@@ -12,11 +12,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V67.0 (100% NATIVE API & NO-AI)
+ * GURU CPU DUELS ENGINE - DETAIL V67.2 (100% NATIVE API & NO-AI)
  * Cesta: src/app/cpuvs/[slug]/page.js
- * 🛡️ FIX 1: Absolutní eliminace next/link, next/navigation a Supabase SDK (Zabraňuje pádům v náhledu).
- * 🛡️ FIX 2: Vylepšený vyhledávací vzor pro CPU (čistý % split místo složitého Regexu).
- * 🛡️ FIX 3: Striktní použití uvozovek v OR query pro spolehlivost PostgRESTu při sluzích s pomlčkami.
+ * 🛡️ FIX 1: Odstraněny neexistující sloupce content_cs a content_en z insert payloadu.
+ * 🛡️ FIX 2: Přidáno chybové logování DB pro snadnější troubleshooting.
+ * 🛡️ FIX 3: Plně zachována funkční vyhledávací a renderovací logika.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -26,9 +26,10 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const findCpu = async (slugPart) => {
   if (!supabaseUrl) return null;
   
-  // 🚀 GURU FIX: Jednodušší a spolehlivější vyhledávací vzor (zachová názvy modelů pohromadě)
-  const clean = slugPart.replace(/-/g, " ").trim();
-  const chunks = clean.split(/\s+/);
+  // 🚀 GURU FIX: Stejná super-stabilní Regex logika jako u GPU
+  const clean = slugPart.replace(/-/g, " ").replace(/ryzen|core|intel|amd|ultra/gi, "").trim();
+  const chunks = clean.match(/\d+|[a-zA-Z]+/g);
+  if (!chunks) return null;
   const searchPattern = `%${chunks.join('%')}%`;
 
   try {
@@ -71,6 +72,7 @@ async function generateAndPersistDuel(slug) {
         seo_desc_en += ` The raw gaming performance winner is ${winner} with a ${diff}% lead.`;
     }
 
+    // 🚀 GURU FIX: Odstraněny sloupce 'content_cs' a 'content_en' - tabulka je nepodporuje!
     const payload = {
         slug: cleanSlug,
         slug_en: `en-${cleanSlug}`,
@@ -78,8 +80,6 @@ async function generateAndPersistDuel(slug) {
         cpu_b_id: cpuB.id,
         title_cs,
         title_en,
-        content_cs: '', // Nulový obsah, nechceme halucinace
-        content_en: '',
         seo_description_cs: seo_desc_cs,
         seo_description_en: seo_desc_en,
         created_at: new Date().toISOString()
@@ -99,8 +99,10 @@ async function generateAndPersistDuel(slug) {
     });
 
     if (!dbRes.ok) {
-        // Kontrola, zda už náhodou duel nevznikl ve stejný moment
-        const checkExisting = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq."${encodeURIComponent(cleanSlug)}"`, {
+        // Pro případ, že by tě blokovalo Supabase RLS, vypíše to chybu do Vercel logů
+        console.error("GURU DB INSERT ERROR:", await dbRes.text());
+        
+        const checkExisting = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${encodeURIComponent(cleanSlug)}`, {
             headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
         });
         const existingData = await checkExisting.json();
@@ -120,8 +122,7 @@ const getDuelData = async (slug) => {
   const cleanSlug = slug.replace(/^en-/, '');
   const normalizedSlug = cleanSlug.replace(/intel-/g, '').replace(/amd-/g, '');
 
-  // 🚀 GURU FIX: Bezpečné URL-encoded uvozovky řeší problém s parsováním pomlček v PostgREST OR filtru
-  const orQuery = `slug.eq."${slug}",slug.eq."${cleanSlug}",slug.eq."${normalizedSlug}"`;
+  const orQuery = `slug.eq.${slug},slug.eq.${cleanSlug},slug.eq.${normalizedSlug}`;
   const selectQuery = `*,cpuA:cpus!cpu_a_id(*),cpuB:cpus!cpu_b_id(*)`;
   const url = `${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&or=(${encodeURIComponent(orQuery)})&limit=1`;
 
@@ -178,7 +179,7 @@ export default async function CpuDuelDetail({ params }) {
   }).format(new Date(duel.created_at || Date.now()));
   const backLink = isEn ? '/en/cpuvs' : '/cpuvs';
   
-  // Design funkce (Stejná logika jako u gpuvs)
+  // Design funkce
   const getWinnerClass = (valA, valB, lowerIsBetter = false) => {
     if (valA === valB) return 'text-neutral-400';
     if (lowerIsBetter) return valA < valB ? 'text-green-400 font-black' : 'text-red-400';
