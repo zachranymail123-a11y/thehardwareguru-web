@@ -1,40 +1,27 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { 
-  Swords, Zap, RefreshCw, ChevronRight, ArrowLeftRight, ShieldCheck, Flame
+  Swords, Zap, RefreshCw, ChevronRight, ArrowLeftRight, ShieldCheck, Flame, AlertTriangle
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V53.0 (GURU STYLE & GRID LAYOUT)
+ * GURU GPU DUELS ENGINE - MASTER LOGIC V55.0 (PRODUCTION GRID)
  * Cesta: src/app/gpuvs/page.js
- * DESIGN FIX: 
- * - Dvousloupcový layout (Generátor vlevo, Historie vpravo) = bez kolize s AI.
- * - Odstraněny "bílé texty", nasazena stříbrná (#d1d5db) a neonové GURU akcenty.
- * - Kompaktní historie duelů.
- * PREVIEW FIX: Implementován bezpečný fallback pro Next.js a Supabase.
+ * DESIGN: Dvousloupcový layout (Generátor vlevo, Historie vpravo).
+ * BASE: Použita přesná záloha "page (8).js" pro 100% kompatibilitu s Vercel.
  */
 
-// --- 🛡️ GURU COMPATIBILITY BRIDGE ---
-const safeLoad = (name) => {
-  try { return require(name); } catch (e) { return null; }
-};
+// 🚀 GURU: Inicializace Supabase klienta (Striktní verze bez fallbacků)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
-const supabaseLib = safeLoad('@supabase/supabase-js');
-const nextNav = safeLoad('next/navigation');
-const nextLinkMod = safeLoad('next/link');
-
-const createClient = supabaseLib ? supabaseLib.createClient : null;
-const useRouter = nextNav ? nextNav.useRouter : () => ({ push: (url) => console.log('Routing to:', url) });
-const usePathname = nextNav ? nextNav.usePathname : () => '';
-const Link = nextLinkMod ? (nextLinkMod.default || nextLinkMod) : ({ children, href, className, style, ...props }) => <a href={href} className={className} style={style} {...props}>{children}</a>;
-
-// 🚀 GURU: Inicializace Supabase klienta
-const supabaseUrl = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_URL : '';
-const supabaseKey = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY : '';
-const supabase = (createClient && supabaseUrl) ? createClient(supabaseUrl, supabaseKey) : null;
-
-export default function GpuVsHub() {
+export default function App() {
   const router = useRouter();
   const pathname = usePathname() || '';
   const isEn = pathname.startsWith('/en');
@@ -46,14 +33,9 @@ export default function GpuVsHub() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 🚀 GURU DATA SYNC
+  // 🚀 GURU DATA SYNC: Načítání z DB
   useEffect(() => {
     async function loadData() {
-      if (!supabase) {
-        setLoading(false);
-        setError(isEn ? "Database not connected in preview mode." : "Databáze není připojena v režimu náhledu.");
-        return;
-      }
       try {
         setLoading(true);
         setError(null);
@@ -67,7 +49,7 @@ export default function GpuVsHub() {
             .from('gpu_duels')
             .select('id, title_cs, title_en, slug, slug_en')
             .order('created_at', { ascending: false })
-            .limit(12) // Načteme víc, ať pravý sloupec hezky vypadá
+            .limit(12)
         ]);
 
         if (gData.error) throw gData.error;
@@ -97,15 +79,18 @@ export default function GpuVsHub() {
       .trim();
   };
 
+  // 🚀 GURU: UX Swap Engine
   const swapGPUs = () => {
     const temp = gpuA;
     setGpuA(gpuB);
     setGpuB(temp);
   };
 
+  // 🚀 GURU ENGINE: Odpálení duelu a přesměrování
   const handleStartDuel = () => {
     if (!gpuA || !gpuB || gpuA === gpuB) return;
     
+    // Typová kontrola String(id) pro UUID safety
     const cardA = gpus.find(g => String(g.id) === gpuA);
     const cardB = gpus.find(g => String(g.id) === gpuB);
     
@@ -117,27 +102,33 @@ export default function GpuVsHub() {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
+    <div className="min-h-screen text-white font-sans selection:bg-[#ff0055]" style={{ 
       backgroundColor: '#0a0b0d',
       backgroundImage: 'url("/bg-guru.png")', 
       backgroundSize: 'cover', 
       backgroundAttachment: 'fixed',
       backgroundPosition: 'center',
       paddingTop: '140px', 
-      paddingBottom: '100px',
-      color: '#fff',
-      fontFamily: 'sans-serif'
+      paddingBottom: '100px' 
     }}>
       
-      {/* 🛡️ GURU STYLES (Plně sjednoceno s TipDetail a zbytkem webu) */}
+      {/* 🛡️ GURU HYPER-SHIELD */}
+      <script dangerouslySetInnerHTML={{__html: `
+        (function() {
+          window.swgSubscriptions = window.swgSubscriptions || {};
+          if (typeof window.swgSubscriptions.attachButton !== 'function') {
+            window.swgSubscriptions.attachButton = function() {};
+          }
+        })();
+      `}} />
+
       <style dangerouslySetInnerHTML={{__html: `
         .guru-hub-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         
-        .guru-main-title { font-size: clamp(3rem, 6vw, 4.5rem); font-weight: 950; font-style: italic; color: #fff; text-transform: uppercase; line-height: 1; margin: 0; text-shadow: 0 0 20px rgba(102, 252, 241, 0.2); }
+        .guru-main-title { font-size: clamp(3rem, 6vw, 4.5rem); font-weight: 950; font-style: italic; color: #fff; text-transform: uppercase; line-height: 1; margin: 0; text-shadow: 0 0 20px rgba(102, 252, 241, 0.2); text-align: center; }
         .guru-highlight-title { color: #66fcf1; display: block; }
         
-        .guru-desc-text { color: #d1d5db; font-size: 1.15rem; line-height: 1.6; max-width: 600px; margin-top: 15px; }
+        .guru-desc-text { color: #d1d5db; font-size: 1.15rem; line-height: 1.6; max-width: 600px; margin: 15px auto 0; text-align: center; }
 
         /* Hlavní Grid rozložení */
         .hub-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 40px; align-items: start; margin-top: 50px; }
@@ -184,7 +175,7 @@ export default function GpuVsHub() {
         .guru-battle-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(255, 0, 85, 0.5); filter: brightness(1.1); }
         .guru-battle-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
 
-        /* Historie duelů (Pravý sloupec) - Kompaktní verze */
+        /* Historie duelů (Pravý sloupec) */
         .history-panel { display: flex; flex-direction: column; gap: 12px; }
         .history-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
         .history-title { font-size: 18px; font-weight: 950; color: #fff; text-transform: uppercase; margin: 0; letter-spacing: 1px; }
@@ -208,18 +199,20 @@ export default function GpuVsHub() {
         
         {/* HERO SEKCE */}
         <header style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', padding: '6px 16px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)' }}>
-            <ShieldCheck size={14} /> GURU VS ENGINE
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', padding: '6px 16px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)' }}>
+              <ShieldCheck size={14} /> GURU VS ENGINE
+            </div>
+            <h1 className="guru-main-title">
+              {isEn ? "COMPARE" : "POROVNEJTE"} <br/>
+              <span className="guru-highlight-title">{isEn ? "GRAPHICS CARDS" : "GRAFICKÉ KARTY"}</span>
+            </h1>
+            <p className="guru-desc-text">
+              {isEn 
+                ? "Detailed technical analysis, raw performance index and AI verdict by Guru." 
+                : "Detailní technická analýza, odhad hrubého výkonu a zhodnocení výhodnosti pomocí AI."}
+            </p>
           </div>
-          <h1 className="guru-main-title">
-            {isEn ? "COMPARE" : "POROVNEJTE"} <br/>
-            <span className="guru-highlight-title">{isEn ? "GRAPHICS CARDS" : "GRAFICKÉ KARTY"}</span>
-          </h1>
-          <p className="guru-desc-text">
-            {isEn 
-              ? "Detailed technical analysis, raw performance index and AI verdict by Guru." 
-              : "Detailní technická analýza, odhad hrubého výkonu a zhodnocení výhodnosti pomocí AI."}
-          </p>
         </header>
 
         {/* DVOUSLOUPCOVÝ GRID */}
