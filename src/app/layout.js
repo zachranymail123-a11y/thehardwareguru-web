@@ -23,13 +23,8 @@ export const metadata = {
 }
 
 export default function RootLayout({ children, params }) {
-  // GURU JAZYKOVÁ LOGIKA: Zajištění správného locale pro HTML tag a skripty
   const locale = params?.locale || params?.lang || 'cs';
 
-  // 🚀 GURU DATA BRIDGE (CSP-SAFE INJECTION): 
-  // Načtení proměnných na straně serveru. Protože CSP blokuje inline skripty, 
-  // propašujeme data přes atributy skrytého DOM elementu.
-  // Tyto hodnoty jsou v Next.js na serveru (SSR) vždy dostupné.
   const envVars = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
@@ -39,9 +34,16 @@ export default function RootLayout({ children, params }) {
   return (
     <html lang={locale}>
       <head>
-        {/* Odstraněna window.__ENV__ injekce, kterou blokovalo CSP jako hrozbu (ReferenceError/Hydration error) */}
-        
-        {/* 🚀 GURU: GOOGLE ANALYTICS 4 Z TVÉHO SCREENSHOTU */}
+
+        {/* 📰 RSS FEED – pro crawlers (Google, Seznam, Feedly) */}
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="The Hardware Guru RSS Feed"
+          href="https://www.thehardwareguru.cz/rss.xml"
+        />
+
+        {/* GOOGLE ANALYTICS */}
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-9W5FBC9P68" strategy="afterInteractive" />
         <Script id="google-analytics" strategy="afterInteractive">
           {`
@@ -52,6 +54,7 @@ export default function RootLayout({ children, params }) {
           `}
         </Script>
       </head>
+
       <body style={{ 
         margin: 0, 
         padding: 0, 
@@ -61,9 +64,6 @@ export default function RootLayout({ children, params }) {
         flexDirection: 'column'
       }}>
         
-        {/* 🛡️ GURU SUPREME DATA BRIDGE: 
-            Element, který CSP neřeší, ale klientský kód z něj bezpečně přečte konfiguraci. 
-            Využíváme standardní 'data-' atributy pro maximální stabilitu. */}
         <div 
           id="guru-env-bridge" 
           style={{ display: 'none' }}
@@ -72,14 +72,11 @@ export default function RootLayout({ children, params }) {
           data-webhook={envVars.NEXT_PUBLIC_MAKE_WEBHOOK2_URL}
         />
         
-        {/* PEVNÝ NAVBAR (Výška 90px) */}
         <Navbar />
         
-        {/* GURU TRACKERY */}
         <SocialTracker /> 
         <Tracker />
         
-        {/* --- 🛡️ GURU SHIELD: Odsazení 90px vyřeší překrývání oken! --- */}
         <main style={{ 
           paddingTop: '90px', 
           flex: 1,
@@ -90,12 +87,10 @@ export default function RootLayout({ children, params }) {
           {children}
         </main>
 
-        {/* WIDGETY A ANALYTIKA */}
         <SestavyBubble />
         <SupportWidget />
         <Analytics />
 
-        {/* 📰 GURU GOOGLE NEWS / SUBSCRIBE WITH GOOGLE ENGINE */}
         <Script 
           src="https://news.google.com/swg/js/v1/swg-basic.js" 
           strategy="afterInteractive" 
@@ -105,7 +100,6 @@ export default function RootLayout({ children, params }) {
         <Script id="google-news-swg-init" strategy="afterInteractive">
           {`
             (self.SWG_BASIC = self.SWG_BASIC || []).push( basicSubscriptions => {
-              // 🚀 GURU FIX: ZACHOVÁNO pro funkční SPA tlačítka na podstránkách!
               window.swgSubscriptions = basicSubscriptions;
               
               basicSubscriptions.init({
@@ -118,7 +112,6 @@ export default function RootLayout({ children, params }) {
           `}
         </Script>
 
-        {/* 💰 GURU GOOGLE ADSENSE ENGINE */}
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993"
@@ -126,7 +119,6 @@ export default function RootLayout({ children, params }) {
           strategy="afterInteractive"
         />
 
-        {/* ONESIGNAL NOTIFIKACE */}
         <Script 
           src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" 
           strategy="afterInteractive" 
@@ -139,6 +131,7 @@ export default function RootLayout({ children, params }) {
             });
           `}
         </Script>
+
       </body>
     </html>
   )
