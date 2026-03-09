@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { Search, Heart, Loader2, X } from 'lucide-react';
+import { Search, Heart, Loader2, X, ShieldCheck, Share2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 // GURU ENGINE: Inicializace Supabase
@@ -12,6 +12,7 @@ export default function Navbar() {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCopied, setIsCopied] = useState(false); // 🚀 GURU: Stav pro tlačítko sdílení
   
   // 🚀 GURU ZÁCHRANNÁ BRZDA: Ochrana proti pádu aplikace na Vercelu
   const pathname = usePathname() || ''; 
@@ -97,6 +98,29 @@ export default function Navbar() {
     }
   };
 
+  // 🚀 GURU: Nativní funkce pro sdílení webu
+  const handleShare = async (e) => {
+    e.preventDefault();
+    const shareUrl = window.location.origin + langPrefix;
+    const shareData = {
+      title: 'The Hardware Guru',
+      text: isEn ? 'Hardware Guru - The Ultimate Tech Base' : 'Hardware Guru - Tvá technologická základna',
+      url: shareUrl
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      }
+    } catch (err) {
+      console.error("Guru Share Error:", err);
+    }
+  };
+
   return (
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
@@ -106,8 +130,20 @@ export default function Navbar() {
     }}>
       
       {/* 1. LOGO */}
-      <a href={isEn ? "/en" : "/"} style={{ textDecoration: 'none', flexShrink: 0 }}>
-        <span style={{ color: '#a855f7', fontFamily: 'serif', fontSize: '28px', fontWeight: '900', letterSpacing: '1px', textTransform: 'uppercase' }}>
+      <a href={isEn ? "/en" : "/"} style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <ShieldCheck size={28} color="#a855f7" />
+        <span style={{ 
+          background: 'linear-gradient(90deg, #66fcf1 0%, #a855f7 100%)', 
+          WebkitBackgroundClip: 'text', 
+          WebkitTextFillColor: 'transparent', 
+          fontFamily: 'sans-serif', 
+          fontSize: '26px', 
+          fontWeight: '950', 
+          letterSpacing: '1px', 
+          textTransform: 'uppercase',
+          fontStyle: 'italic',
+          filter: 'drop-shadow(0 0 10px rgba(168,85,247,0.3))'
+        }}>
           HARDWARE GURU
         </span>
       </a>
@@ -168,6 +204,8 @@ export default function Navbar() {
           <a href={langPrefix + "/tweaky"} style={{...navLinkStyle, color: '#eab308'}}>{isEn ? 'GURU TWEAKS' : 'GURU TWEAKY'}</a>
           <a href={langPrefix + "/slovnik"} style={navLinkStyle}>{isEn ? 'GLOSSARY' : 'SLOVNÍK'}</a>
           <a href={langPrefix + "/rady"} style={navLinkStyle}>{isEn ? 'GUIDES' : 'RADY'}</a>
+          <a href={langPrefix + "/gpuvs"} style={{...navLinkStyle, color: '#ff0055'}}>{isEn ? 'GPU DUELS' : 'GPU DUELY'}</a>
+          <a href={langPrefix + "/cpuvs"} style={{...navLinkStyle, color: '#66fcf1'}}>{isEn ? 'CPU DUELS' : 'CPU DUELY'}</a>
           
           {/* 🔥 NOVÝ ODKAZ NA SLEVY (PLNĚ CZ/EN + MIDDLEWARE FIX) 🔥 */}
           <a href={isEn ? "/en/deals" : "/cs/deals"} style={{...navLinkStyle, color: '#f97316'}}>{isEn ? '🔥 GAME DEALS' : '🔥 SLEVY NA HRY'}</a>
@@ -177,6 +215,12 @@ export default function Navbar() {
           <a href="https://kick.com/TheHardwareGuru" target="_blank" rel="noreferrer" style={{...socialBtn, background: '#53fc18', color: '#000'}}>KICK</a>
           <a href="https://youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noreferrer" style={{...socialBtn, background: '#f00', color: '#fff'}}>YOUTUBE</a>
           <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" style={{...socialBtn, background: '#5865F2', color: '#fff'}}>DISCORD</a>
+          
+          {/* 🚀 GURU TLAČÍTKO SDÍLET */}
+          <button onClick={handleShare} style={{...socialBtn, border: '1px solid rgba(102, 252, 241, 0.4)', color: '#66fcf1', background: 'rgba(102, 252, 241, 0.05)', display: 'flex', gap: '5px', cursor: 'pointer'}}>
+            <Share2 size={12} /> {isCopied ? (isEn ? 'COPIED!' : 'ZKOPIROVÁNO!') : (isEn ? 'SHARE' : 'SDÍLET')}
+          </button>
+
           <a href={langPrefix + "/support"} style={{...socialBtn, border: '2px solid #eab308', color: '#eab308', background: 'transparent', display: 'flex', gap: '5px'}}>
             <Heart size={12} fill="#eab308" /> {isEn ? 'SUPPORT' : 'PODPORA'}
           </a>
