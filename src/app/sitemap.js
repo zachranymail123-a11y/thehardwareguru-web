@@ -145,7 +145,9 @@ export default async function sitemap() {
 
     const resolutions = ['1080p','1440p','4k'];
 
-    /* GPU DUELS + GAME (NOVÉ) */
+    const modes = ['dlss','ray-tracing','ultra','high'];
+
+    /* GPU DUELS + GAME */
 
     if (duelsRes.data) {
 
@@ -221,6 +223,24 @@ export default async function sitemap() {
 
             dynamicRoutes.push({
               url: `${baseUrl}/en/gpu-performance/${gpu.slug}/${game}/${res}`,
+              lastModified: currentDate,
+              priority: 0.6
+            });
+
+          });
+
+          /* PERFORMANCE MODES (NOVÉ) */
+
+          modes.forEach((mode) => {
+
+            dynamicRoutes.push({
+              url: `${baseUrl}/gpu-performance/${gpu.slug}/${game}/${mode}`,
+              lastModified: currentDate,
+              priority: 0.7
+            });
+
+            dynamicRoutes.push({
+              url: `${baseUrl}/en/gpu-performance/${gpu.slug}/${game}/${mode}`,
               lastModified: currentDate,
               priority: 0.6
             });
