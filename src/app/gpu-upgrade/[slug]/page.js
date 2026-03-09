@@ -20,10 +20,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V111.0 (PARENTHESES & FIND MATCH FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V112.0 (ULTIMATE 4-DIGIT WILDCARD FIX)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: Odstranění závorek () v rámci normalizace pro přesný PostgREST match (ChatGPT Fix).
- * 🛡️ FIX 2: Vylepšená detekce přes array.find() pro prevenci záměny podobných karet (ChatGPT Fix).
+ * 🛡️ FIX 1: Zjednodušený a 100% stabilní lookup hledající pouze 4místné číslo GPU (ChatGPT Fix).
+ * 🛡️ FIX 2: Použití čistého wildcard patternu "ilike.*číslo*" bez dodatečného enkódování (ChatGPT Fix).
  * 🛡️ ARCH: Node.js runtime a ISR revalidate (86400) pro optimální SEO.
  */
 
@@ -53,26 +53,19 @@ function calculatePerf(a, b) {
     return { winner: b, loser: a, diff };
 }
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB (KOMPLETNÍ NORMALIZACE DLE CHATGPT)
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (NEJSTABILNĚJŠÍ VERZE DLE CHATGPT)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
 
-  // 🚀 GURU FIX: Rozšířené očištění slugu o 'gb', závorky a vícenásobné mezery (ChatGPT Fix)
-  const model = slugPart
-    .replace(/geforce|radeon/gi, '')
-    .replace(/-/g, ' ')
-    .replace(/gb/gi, '')
-    .replace(/[()]/g, '') // ← KRITICKÉ: odstranění závorek
-    .replace(/\s+/g, ' ')
-    .trim();
-  
-  if (!model) return null;
-  
-  const filter = `ilike.*${model}*`;
-  const url = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=${encodeURIComponent(filter)}&limit=5`;
+  const match = slugPart.match(/\d{4}/);
+  if (!match) return null;
+
+  const model = match[0]; // např. 5080
+
+  const url = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.*${model}*&limit=1`;
 
   // 🚀 GURU DEBUG: Logování pro diagnostiku ve Vercel logs
-  console.log("GPU SEARCH MODEL:", model);
+  console.log("GPU SEARCH:", model);
 
   try {
       const res = await fetch(url, {
@@ -86,14 +79,7 @@ const findGpu = async (slugPart) => {
       if (!res.ok) return null;
 
       const data = await res.json();
-      
-      if (!data?.length) return null;
-
-      // 🚀 GURU FIX: Přesnější výběr správné karty z pole vrácených výsledků (ChatGPT Fix)
-      // Normalizujeme i názvy vrácené z databáze (odstraníme gb a závorky), aby includes() fungovalo na 100%
-      return data.find(g => 
-        g.name.toLowerCase().replace(/gb/gi, '').replace(/[()]/g, '').includes(model)
-      ) || data[0];
+      return data[0] || null;
 
   } catch (e) {
       return null;
