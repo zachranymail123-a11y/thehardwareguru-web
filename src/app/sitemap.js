@@ -5,11 +5,12 @@ export const revalidate = 3600;
 export default async function sitemap() {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // ✅ canonical doména (bez www)
   const baseUrl = 'https://thehardwareguru.cz';
 
   const currentDate = new Date().toISOString();
@@ -70,7 +71,7 @@ export default async function sitemap() {
       supabase.from('gpu_duels').select('slug, slug_en, created_at'),
       supabase.from('cpu_duels').select('slug, slug_en, created_at'),
       supabase.from('gpus').select('slug'),
-      supabase.from('gpu_upgrades').select('slug, slug_en, created_at').range(0, 20000)
+      supabase.from('gpu_upgrades').select('slug, slug_en, created_at').range(0,20000)
     ]);
 
     const addToRoutes = (item, basePath, priority) => {
@@ -120,7 +121,32 @@ export default async function sitemap() {
     if (duelsRes.data) duelsRes.data.forEach(item => addToRoutes(item, '/gpuvs', 0.8));
     if (cpuDuelsRes.data) cpuDuelsRes.data.forEach(item => addToRoutes(item, '/cpuvs', 0.8));
 
-    const gamesList = ['cyberpunk-2077', 'warzone', 'starfield'];
+    /* 🚀 PROGRAMMATIC GPU PERFORMANCE */
+
+    const gamesList = [
+      'cyberpunk-2077',
+      'warzone',
+      'starfield',
+      'fortnite',
+      'cs2',
+      'gta-5',
+      'witcher-3',
+      'red-dead-redemption-2',
+      'baldurs-gate-3',
+      'hogwarts-legacy',
+      'forza-horizon-5',
+      'call-of-duty-mw3',
+      'elden-ring',
+      'apex-legends',
+      'valorant',
+      'minecraft',
+      'helldivers-2',
+      'escape-from-tarkov',
+      'overwatch-2',
+      'diablo-4'
+    ];
+
+    const resolutions = ['1080p','1440p','4k'];
 
     if (gpusRes.data) {
 
@@ -130,16 +156,20 @@ export default async function sitemap() {
 
         gamesList.forEach((game) => {
 
-          dynamicRoutes.push({
-            url: `${baseUrl}/gpu-fps/${gpu.slug}/${game}`,
-            lastModified: currentDate,
-            priority: 0.7
-          });
+          resolutions.forEach((res) => {
 
-          dynamicRoutes.push({
-            url: `${baseUrl}/en/gpu-fps/${gpu.slug}/${game}`,
-            lastModified: currentDate,
-            priority: 0.6
+            dynamicRoutes.push({
+              url: `${baseUrl}/gpu-performance/${gpu.slug}/${game}/${res}`,
+              lastModified: currentDate,
+              priority: 0.7
+            });
+
+            dynamicRoutes.push({
+              url: `${baseUrl}/en/gpu-performance/${gpu.slug}/${game}/${res}`,
+              lastModified: currentDate,
+              priority: 0.6
+            });
+
           });
 
         });
@@ -151,21 +181,9 @@ export default async function sitemap() {
         });
 
         dynamicRoutes.push({
-          url: `${baseUrl}/en/gpu-performance/${gpu.slug}`,
-          lastModified: currentDate,
-          priority: 0.6
-        });
-
-        dynamicRoutes.push({
           url: `${baseUrl}/gpu-recommend/${gpu.slug}`,
           lastModified: currentDate,
           priority: 0.7
-        });
-
-        dynamicRoutes.push({
-          url: `${baseUrl}/en/gpu-recommend/${gpu.slug}`,
-          lastModified: currentDate,
-          priority: 0.6
         });
 
       });
