@@ -20,11 +20,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V112.5 (EXACT SLUG LOOKUP)
+ * GURU GPU UPGRADE ENGINE - DETAIL V112.6 (3-TIER BULLETPROOF LOOKUP)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: Přechod na absolutně přesný 1:1 lookup přes db sloupec `slug`.
- * 🛡️ FIX 2: Odstranění nepřesných ilike a wildcardů (vyřešen problém překrývání názvů).
- * 🛡️ FIX 3: Ponechání cache: 'no-store' pro zamezení vracení starých záznamů.
+ * 🛡️ FIX 1: Vyřešen problém chybějícího výrobce v URL (např. url má geforce-rtx..., ale DB má nvidia-geforce-rtx...).
+ * 🛡️ FIX 2: Implementován 3-fázový lookup (Exact Slug -> Contains Slug -> Name Wildcard) pro 100% spolehlivost.
  * 🛡️ ARCH: Node.js runtime a ISR revalidate (86400) pro optimální SEO.
  */
 
@@ -54,7 +53,7 @@ function calculatePerf(a, b) {
     return { winner: b, loser: a, diff };
 }
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB (100% PŘESNÝ EXACT MATCH PŘES SLUG)
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (3-TIER SYSTEM)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
 
@@ -63,27 +62,45 @@ const findGpu = async (slugPart) => {
     'Authorization': `Bearer ${supabaseKey}`
   };
 
-  // 🚀 GURU FIX: Nyní používáme bleskurychlý a přesný eq. match na nový unikátní sloupec
-  const url = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${slugPart}&limit=1`;
+  console.log("GPU LOOKUP INITIATED FOR:", slugPart);
 
-  // 🚀 GURU DEBUG: Logování pro diagnostiku ve Vercel logs
-  console.log("GPU EXACT SLUG SEARCH:", slugPart);
-
+  // 🛡️ TIER 1: Pokus o absolutní exact match (pokud URL 100% odpovídá slugu v DB)
   try {
-      const res = await fetch(url, {
-          headers,
-          cache: 'no-store',
-          next: { revalidate: 86400 }
-      });
+      const url1 = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${slugPart}&limit=1`;
+      const res1 = await fetch(url1, { headers, cache: 'no-store' });
+      if (res1.ok) {
+          const data1 = await res1.json();
+          if (data1?.length) return data1[0];
+      }
+  } catch(e) {}
 
-      if (!res.ok) return null;
+  // 🛡️ TIER 2: Substring match na slug + vzestupné řazení 
+  // Řeší chybějící prefixy (např. URL "rtx-5060" najde "nvidia-geforce-rtx-5060").
+  // order=slug.asc zajistí, že základní model dostane přednost před "Ti" variantou.
+  try {
+      const url2 = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=ilike.*${slugPart}*&order=slug.asc`;
+      const res2 = await fetch(url2, { headers, cache: 'no-store' });
+      if (res2.ok) {
+          const data2 = await res2.json();
+          if (data2?.length) return data2[0];
+      }
+  } catch(e) {}
 
-      const data = await res.json();
-      return data?.[0] || null;
+  // 🛡️ TIER 3: Ultimátní fallback na původní procentuální hledání v Názvu
+  // Pro zachycení zkrácenin a atypických tvarů, které by selhaly i v TIER 2.
+  try {
+      const model = slugPart.replace(/-/g, ' ').replace(/gb/gi, '').trim();
+      const search = model.replace(/\s+/g, '%');
+      const url3 = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.*${search}*&order=name.asc`;
+      
+      const res3 = await fetch(url3, { headers, cache: 'no-store' });
+      if (res3.ok) {
+          const data3 = await res3.json();
+          return data3?.[0] || null;
+      }
+  } catch(e) {}
 
-  } catch (e) {
-      return null;
-  }
+  return null;
 };
 
 // 🛡️ GURU ENGINE: Načtení podobných upgradů
@@ -287,172 +304,4 @@ export default async function App({ params }) {
         </div>
 
         <header style={{ marginBottom: '50px', textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#a855f7', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', padding: '6px 16px', border: '1px solid rgba(168,85,247,0.3)', borderRadius: '50px', background: 'rgba(168,85,247,0.1)' }}>
-            <ArrowUpCircle size={14} /> GURU UPGRADE ANALYSIS
-          </div>
-          
-          <h1 style={{ fontSize: 'clamp(1.8rem, 4vw, 3rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0', textShadow: '0 0 30px rgba(0,0,0,0.8)' }}>
-            {isEn ? "SHOULD YOU UPGRADE FROM" : "VYPLATÍ SE UPGRADE Z"} <br/>
-            <span style={{ color: '#9ca3af' }}>{gpuA.name}</span> <br/>
-            <span style={{ color: '#a855f7' }}>TO {gpuB.name}?</span>
-          </h1>
-          
-          <div style={{ color: '#9ca3af', fontSize: '18px', marginTop: '20px', maxWidth: '850px', margin: '20px auto', lineHeight: '1.6' }}>
-            {isWorthIt ? (
-                isEn 
-                ? <p>Moving from the <strong>{gpuA.name}</strong> to the <strong>{gpuB.name}</strong> will grant you roughly <strong>{finalPerfDiff}% more performance</strong>.</p>
-                : <p>Přechod z <strong>{gpuA.name}</strong> na <strong>{gpuB.name}</strong> vám zajistí průměrně o <strong>{finalPerfDiff} % vyšší výkon</strong>.</p>
-            ) : (
-                isEn
-                ? <p>Upgrading to the <strong>{gpuB.name}</strong> does not provide a meaningful boost compared to your current <strong>{gpuA.name}</strong>.</p>
-                : <p>Upgrade na <strong>{gpuB.name}</strong> nepředstavuje oproti vaší <strong>{gpuA.name}</strong> žádný zásadní posun.</p>
-            )}
-          </div>
-
-          {isWorthIt && (
-            <div className="guru-verdict" style={{ borderColor: '#a855f7', color: '#a855f7', background: 'rgba(168, 85, 247, 0.05)' }}>
-                {isEn ? 'VERDICT:' : 'VERDIKT:'} <strong>{gpuB.name}</strong> {isEn ? 'is a solid upgrade' : 'je výborný upgrade'} (+{finalPerfDiff}%)
-            </div>
-          )}
-        </header>
-
-        <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '60px', position: 'relative' }}>
-            <div className="gpu-card-box" style={{ borderTop: `5px solid #4b5563`, filter: 'grayscale(0.5)' }}>
-                <span className="vendor-label" style={{ color: '#9ca3af' }}>{isEn ? 'CURRENT GPU' : 'VAŠE SOUČASNÁ KARTA'}</span>
-                <h2 className="gpu-name-text" style={{ color: '#d1d5db', fontSize: 'clamp(1.2rem, 2.5vw, 2rem)' }}>{normalizeName(gpuA.name)}</h2>
-                <div style={{ marginTop: '10px', fontSize: '12px', color: '#6b7280', fontWeight: 'bold' }}>{gpuA.architecture} • {gpuA.vram_gb}GB VRAM</div>
-            </div>
-            
-            <div className="vs-center-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div className="upgrade-badge"><ArrowRight size={32} /></div>
-            </div>
-
-            <div className="gpu-card-box" style={{ borderTop: `5px solid ${getVendorColor(gpuB.vendor)}`, transform: 'scale(1.05)', zIndex: 5, boxShadow: '0 0 40px rgba(168, 85, 247, 0.3)' }}>
-                <span className="vendor-label" style={{ color: getVendorColor(gpuB.vendor) }}>{isEn ? 'NEW UPGRADE' : 'NOVÝ UPGRADE'}</span>
-                <h2 className="gpu-name-text" style={{ color: '#fff' }}>{normalizeName(gpuB.name)}</h2>
-                <div style={{ marginTop: '10px', fontSize: '12px', color: '#a855f7', fontWeight: '950' }}>+{finalPerfDiff}% {isEn ? 'RAW POWER' : 'VÝKONU NAVÍC'}</div>
-            </div>
-        </div>
-
-        {Object.keys(fpsA || {}).length > 0 && Object.keys(fpsB || {}).length > 0 && (
-            <section style={{ marginBottom: '60px' }}>
-            <div className="content-box-style" style={{ borderLeft: '6px solid #a855f7' }}>
-                <h2 className="section-h2" style={{ color: '#a855f7', border: 'none', padding: 0 }}>
-                <BarChart3 size={28} style={{ display: 'inline', marginRight: '10px', verticalAlign: 'middle' }} />
-                {isEn ? 'ESTIMATED FPS GAIN (1440p)' : 'ODHADOVANÝ NÁRŮST FPS (1440p)'}
-                </h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '30px' }}>
-                    {[
-                        { label: 'CYBERPUNK 2077', diff: cyberpunkDiff, oldFps: fpsA.cyberpunk_1440p, newFps: fpsB.cyberpunk_1440p },
-                        { label: 'WARZONE', diff: warzoneDiff, oldFps: fpsA.warzone_1440p, newFps: fpsB.warzone_1440p },
-                        { label: 'STARFIELD', diff: starfieldDiff, oldFps: fpsA.starfield_1440p, newFps: fpsB.starfield_1440p }
-                    ].map((item, i) => (
-                        <div key={i} className="summary-item">
-                            <span className="summary-label">{item.label}</span>
-                            <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '5px' }}>{item.oldFps} ➔ <span style={{ color: '#fff', fontWeight: 'bold' }}>{item.newFps}</span></div>
-                            <div className="summary-val" style={{ color: item.diff >= 0 ? '#a855f7' : '#ef4444' }}>{item.diff > 0 ? '+' : ''}{item.diff} %</div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-            </section>
-        )}
-
-        <section style={{ marginBottom: '60px' }}>
-          <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: '#a855f7' }}>
-            <LayoutList size={28} /> {isEn ? 'UPGRADE SPECIFICATIONS' : 'POROVNÁNÍ PARAMETRŮ'}
-          </h2>
-          <div className="table-wrapper">
-             <div className="spec-row-style" style={{ background: 'rgba(0,0,0,0.5)', color: '#9ca3af', fontSize: '10px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                 <div style={{ flex: 1, textAlign: 'right' }}>{isEn ? 'CURRENT' : 'SOUČASNÁ'}</div>
-                 <div className="table-label"></div>
-                 <div style={{ flex: 1, textAlign: 'left', color: '#a855f7' }}>{isEn ? 'UPGRADE' : 'NOVÁ'}</div>
-             </div>
-             {[
-               { label: 'VRAM', valA: `${gpuA?.vram_gb ?? '-'} GB`, valB: `${gpuB?.vram_gb ?? '-'} GB`, winA: gpuA?.vram_gb, winB: gpuB?.vram_gb },
-               { label: isEn ? 'MEMORY BUS' : 'PAMĚŤOVÁ SBĚRNICE', valA: gpuA?.memory_bus ?? '-', valB: gpuB?.memory_bus ?? '-', winA: 0, winB: 0 },
-               { label: 'BOOST CLOCK', valA: `${gpuA?.boost_clock_mhz ?? '-'} MHz`, valB: `${gpuB?.boost_clock_mhz ?? '-'} MHz`, winA: gpuA?.boost_clock_mhz, winB: gpuB?.boost_clock_mhz },
-               { label: 'TDP', valA: `${gpuA?.tdp_w ?? '-'} W`, valB: `${gpuB?.tdp_w ?? '-'} W`, winA: gpuA?.tdp_w ?? 999, winB: gpuB?.tdp_w ?? 999, lower: true },
-               { label: isEn ? 'GPU ARCHITECTURE' : 'ARCHITEKTURA', valA: gpuA?.architecture ?? '-', valB: gpuB?.architecture ?? '-', winA: 0, winB: 0 }
-             ].map((row, i) => (
-               <div key={i} className="spec-row-style">
-                 <div style={{ ...getWinnerStyle(row.winA, row.winB, row.lower), flex: 1, textAlign: 'right', fontSize: '16px' }}>{row.valA}</div>
-                 <div className="table-label">{row.label}</div>
-                 <div style={{ ...getWinnerStyle(row.winB, row.winA, row.lower), flex: 1, textAlign: 'left', fontSize: '18px' }}>{row.valB}</div>
-               </div>
-             ))}
-          </div>
-        </section>
-
-        <section style={{ marginBottom: '60px' }}>
-          <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: '#a855f7' }}>
-            <Gamepad2 size={28} /> {isEn ? 'DETAILED FPS CAPABILITIES' : 'DETAILNÍ MOŽNOSTI VE HRÁCH'}
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '25px' }}>
-              {[gpuA, gpuB].filter(Boolean).map((gpu, i) => {
-                  const safeGpuSlug = slugify(gpu?.name || "");
-                  return (
-                  <div key={i} className="fps-matrix-card">
-                      <div className="matrix-gpu-title" style={{ color: i === 1 ? '#a855f7' : '#9ca3af' }}>{gpu?.name || "GPU"}</div>
-                      <div className="matrix-links">
-                          {gamesList.map((game) => (
-                              <a key={game} href={`/${isEn ? 'en/' : ''}gpu-fps/${safeGpuSlug}/${game}`} className="matrix-link">
-                                  <ExternalLink size={14} /> {game.replace(/-/g, ' ').toUpperCase()} Benchmark
-                              </a>
-                          ))}
-                      </div>
-                  </div>
-                  );
-              })}
-          </div>
-        </section>
-
-        {similar.length > 0 && (
-          <section style={{ marginBottom: '60px' }}>
-            <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: '#a855f7' }}>
-              <LayoutList size={28} /> {isEn ? `MORE UPGRADE PATHS` : `DALŠÍ VARIANTY UPGRADU`}
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '15px' }}>
-              {similar.map((s, i) => (
-                <a key={i} href={isEn ? `/en/gpu-upgrade/${s.slug_en ?? `en-${s.slug}`}` : `/gpu-upgrade/${s.slug}`} className="similar-link-card">
-                  <ArrowUpCircle size={16} color="#a855f7" /> {isEn ? (s.title_en ?? s.title_cs) : s.title_cs}
-                </a>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
-            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="deals-btn-style"><Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}</a>
-            <a href={isEn ? "/en/support" : "/support"} className="support-btn-style"><Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}</a>
-        </div>
-      </main>
-
-      <style dangerouslySetInnerHTML={{__html: `
-        .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
-        .guru-ranking-link { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
-        .guru-verdict { margin-top: 25px; color: #66fcf1; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 10px 25px; background: rgba(102, 252, 241, 0.05); border: 1px solid rgba(102, 252, 241, 0.2); border-radius: 50px; display: inline-block; }
-        .gpu-card-box { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 40px 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.6); backdrop-filter: blur(10px); flex: 1; transition: 0.3s; }
-        .vendor-label { font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 15px; display: block; }
-        .gpu-name-text { font-size: clamp(1.6rem, 3.5vw, 2.5rem); font-weight: 950; color: #fff; text-transform: uppercase; margin: 0; line-height: 1.1; }
-        .upgrade-badge { background: linear-gradient(135deg, #a855f7 0%, #66fcf1 100%); width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; border: 5px solid #0f1115; box-shadow: 0 0 30px rgba(168,85,247,0.5); z-index: 10; }
-        .content-box-style { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .summary-item { background: rgba(255,255,255,0.02); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
-        .summary-label { display: block; font-size: 10px; font-weight: 900; color: #4b5563; margin-bottom: 8px; letter-spacing: 1px; }
-        .summary-val { font-size: 24px; font-weight: 950; }
-        .section-h2 { color: #fff; font-size: 2rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #a855f7; padding-left: 15px; }
-        .table-wrapper { background: rgba(15, 17, 21, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
-        .spec-row-style { display: flex; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
-        .table-label { width: 180px; text-align: center; font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; }
-        .fps-matrix-card { background: rgba(15,17,21,0.9); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
-        .matrix-gpu-title { font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; }
-        .matrix-link { display: flex; align-items: center; gap: 10px; color: #d1d5db; text-decoration: none; font-size: 14px; font-weight: bold; transition: 0.2s; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 10px; }
-        .matrix-link:hover { color: #fff; background: rgba(168, 85, 247, 0.1); transform: translateX(5px); }
-        .similar-link-card { display: flex; align-items: center; gap: 12px; background: rgba(15, 17, 21, 0.8); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #d1d5db; font-weight: 900; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
-        .deals-btn-style { flex: 1 1 280px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
-        .support-btn-style { flex: 1 1 280px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
-        @media (max-width: 768px) { .guru-grid-ring { grid-template-columns: 1fr !important; } .upgrade-badge { margin: 10px auto; rotate: 90deg; } .deals-btn-style, .support-btn-style { width: 100%; } .table-label { width: 100px; } }
-      `}} />
-    </div>
-  );
-}
+          <div style={{ display: 'inline-flex', alignItems: 'center',
