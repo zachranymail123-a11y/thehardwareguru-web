@@ -20,10 +20,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V112.0 (ULTIMATE 4-DIGIT WILDCARD FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V112.1 (SIMPLIFIED LOOKUP FIX & FULL RECOVERY)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: Zjednodušený a 100% stabilní lookup hledající pouze 4místné číslo GPU (ChatGPT Fix).
- * 🛡️ FIX 2: Použití čistého wildcard patternu "ilike.*číslo*" bez dodatečného enkódování (ChatGPT Fix).
+ * 🛡️ FIX 1: Zjednodušený dotaz na Supabase pomocí slug=eq.cleanSlug pro maximální stabilitu (ChatGPT Fix).
+ * 🛡️ FIX 2: Obnova souboru po chybě kompilace (Unexpected end of file).
  * 🛡️ ARCH: Node.js runtime a ISR revalidate (86400) pro optimální SEO.
  */
 
@@ -136,7 +136,7 @@ async function generateAndPersistUpgrade(slug) {
         created_at: new Date().toISOString()
     };
 
-    // 🚀 GURU CRITICAL FIX: Samotný POST request OŘÍZNUT o ?select parametr (ChatGPT Fix)
+    // 🚀 GURU CRITICAL FIX: Samotný POST request OŘÍZNUT o ?select parametr
     await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades`, {
         method: 'POST',
         headers: { 
@@ -148,8 +148,7 @@ async function generateAndPersistUpgrade(slug) {
         body: JSON.stringify(payload)
     });
 
-    // 🚀 GURU FIX: Po uložení (nebo pokud záznam už existuje) natáhneme nově vytvořený/stávající záznam 
-    // čistým GET dotazem s plným relačním ?select filtrem
+    // 🚀 GURU FIX: Po uložení natáhneme nově vytvořený/stávající záznam čistým GET dotazem
     const selectQuery = "*,oldGpu:gpus!old_gpu_id(*,game_fps!gpu_id(*)),newGpu:gpus!new_gpu_id(*,game_fps!gpu_id(*))";
     const checkExisting = await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades?select=${encodeURIComponent(selectQuery)}&slug=eq.${encodeURIComponent(cleanSlug)}`, {
         headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
@@ -167,18 +166,20 @@ const getUpgradeData = cache(async (slug) => {
   if (!supabaseUrl || !slug) return null;
   const cleanSlug = slug.replace(/^en-/, '');
   
-  const orQuery = 
-    `slug.eq.${encodeURIComponent(slug)},` +
-    `slug.eq.${encodeURIComponent(cleanSlug)},` +
-    `slug_en.eq.${encodeURIComponent(slug)}`;
-    
   const selectQuery = `*,oldGpu:gpus!old_gpu_id(*,game_fps!gpu_id(*)),newGpu:gpus!new_gpu_id(*,game_fps!gpu_id(*))`;
   
   try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades?select=${encodeURIComponent(selectQuery)}&or=(${orQuery})&limit=1`, {
-          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
+      // 🚀 GURU FIX: Zjednodušený dotaz využívající čistý slug (ChatGPT Fix)
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/gpu_upgrades?select=${encodeURIComponent(selectQuery)}&slug=eq.${cleanSlug}&limit=1`,
+        {
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`
+          },
           next: { revalidate: 86400 }
-      });
+        }
+      );
       if (!res.ok) return null;
       const data = await res.json();
       if (!data || data.length === 0) return await generateAndPersistUpgrade(slug);
@@ -204,6 +205,9 @@ export async function generateMetadata({ params }) {
 
   return { 
     title: `${title} | The Hardware Guru`, 
+    description: isEn 
+      ? `Thinking about upgrading to ${newGpu.name}? See the real gaming benchmark comparison against ${oldGpu.name}.`
+      : `Zvažujete přechod na ${newGpu.name}? Podívejte se na reálné srovnání herních benchmarků proti ${oldGpu.name}.`,
     alternates: { 
       canonical: canonicalUrl,
       languages: {
@@ -312,7 +316,6 @@ export default async function App({ params }) {
           )}
         </header>
 
-        {/* UPGRADE DISPLAY */}
         <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '60px', position: 'relative' }}>
             <div className="gpu-card-box" style={{ borderTop: `5px solid #4b5563`, filter: 'grayscale(0.5)' }}>
                 <span className="vendor-label" style={{ color: '#9ca3af' }}>{isEn ? 'CURRENT GPU' : 'VAŠE SOUČASNÁ KARTA'}</span>
@@ -331,7 +334,6 @@ export default async function App({ params }) {
             </div>
         </div>
 
-        {/* BENCHMARKS */}
         {Object.keys(fpsA || {}).length > 0 && Object.keys(fpsB || {}).length > 0 && (
             <section style={{ marginBottom: '60px' }}>
             <div className="content-box-style" style={{ borderLeft: '6px solid #a855f7' }}>
@@ -356,7 +358,6 @@ export default async function App({ params }) {
             </section>
         )}
 
-        {/* SPECS */}
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: '#a855f7' }}>
             <LayoutList size={28} /> {isEn ? 'UPGRADE SPECIFICATIONS' : 'POROVNÁNÍ PARAMETRŮ'}
@@ -383,7 +384,6 @@ export default async function App({ params }) {
           </div>
         </section>
 
-        {/* FPS LINKS */}
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: '#a855f7' }}>
             <Gamepad2 size={28} /> {isEn ? 'DETAILED FPS CAPABILITIES' : 'DETAILNÍ MOŽNOSTI VE HRÁCH'}
@@ -407,7 +407,6 @@ export default async function App({ params }) {
           </div>
         </section>
 
-        {/* SIMILAR */}
         {similar.length > 0 && (
           <section style={{ marginBottom: '60px' }}>
             <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: '#a855f7' }}>
@@ -423,7 +422,6 @@ export default async function App({ params }) {
           </section>
         )}
 
-        {/* CTA */}
         <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
             <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="deals-btn-style"><Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}</a>
             <a href={isEn ? "/en/support" : "/support"} className="support-btn-style"><Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}</a>
