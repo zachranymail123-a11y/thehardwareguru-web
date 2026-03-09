@@ -6,11 +6,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER LOGIC V61.0 (NATIVE API)
+ * GURU GPU DUELS ENGINE - MASTER HUB V67.0 (NATIVE API & GURU GRID)
  * Cesta: src/app/gpuvs/page.js
  * DESIGN: Dvousloupcový layout (Generátor vlevo, kompaktní Historie vpravo).
- * FIX: Použití čistého 'fetch' místo 'supabase-js' a HTML '<a>' místo 'next/link'.
- * Tím je zajištěna absolutní stabilita v jakémkoliv prostředí včetně náhledu!
+ * STYL: Stříbrné texty, neonové akcenty, zamezení kolize s AI navigací vlevo dole.
+ * FIX: Použití čistého 'fetch' místo '@supabase/supabase-js' a '<a>' místo 'next/link'.
+ * Tím je zajištěna absolutní stabilita v náhledu (žádné chybějící moduly) i na produkci!
  */
 
 export default function GpuVsHub() {
@@ -22,14 +23,14 @@ export default function GpuVsHub() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Detekce jazyka
+  // Detekce jazyka z URL na klientovi
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setIsEn(window.location.pathname.startsWith('/en'));
     }
   }, []);
 
-  // 🚀 GURU DATA SYNC: Načítání z DB přes nativní FETCH (Zero dependencies)
+  // 🚀 GURU DATA SYNC (Nativní Fetch bez těžkých knihoven)
   useEffect(() => {
     async function loadData() {
       try {
@@ -128,7 +129,7 @@ export default function GpuVsHub() {
         })();
       `}} />
 
-      {/* 🚀 GURU STYLES: Dvousloupcový grid a skleněný design */}
+      {/* 🚀 GURU STYLES: Dvousloupcový grid a skleněný design z V66.0 */}
       <style dangerouslySetInnerHTML={{__html: `
         .guru-hub-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         
@@ -215,8 +216,8 @@ export default function GpuVsHub() {
           </h1>
           <p className="guru-desc-text">
             {isEn 
-              ? "Detailed technical analysis, raw performance index and AI verdict by Guru." 
-              : "Detailní technická analýza, odhad hrubého výkonu a zhodnocení výhodnosti pomocí AI."}
+              ? "Detailed technical analysis and raw performance index driven by pure data." 
+              : "Detailní technická specifikace a porovnání hrubého výkonu bez zbytečných omáček."}
           </p>
         </header>
 
