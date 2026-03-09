@@ -20,10 +20,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V112.2 (PRECISE LOOKUP FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V112.3 (ADVANCED LOOKUP FIX)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: Úprava parsování modelu (odstranění geforce/radeon/rx/rtx a zachování celého názvu).
- * 🛡️ FIX 2: Aplikace encodeURIComponent do URL patternu pro bezpečný PostgREST dotaz.
+ * 🛡️ FIX 1: Zachování prefixů geforce/radeon/rx/rtx pro přesnější PostgREST ilike.
+ * 🛡️ FIX 2: Aplikace nahrazení mezer za '%' pro bezpečný a správný PostgREST wildcard dotaz.
+ * 🛡️ FIX 3: Přidání cache: 'no-store' pro zamezení vracení starých záznamů.
  * 🛡️ ARCH: Node.js runtime a ISR revalidate (86400) pro optimální SEO.
  */
 
@@ -58,17 +59,19 @@ const findGpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
 
   const model = slugPart
-    .replace(/geforce|radeon|rx|rtx/gi, '')
     .replace(/-/g, ' ')
     .replace(/gb/gi, '')
     .trim();
 
   if (!model) return null;
 
-  const url = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.*${encodeURIComponent(model)}*&limit=1`;
+  const search = model.replace(/\s+/g, '%');
+
+  const url = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.*${search}*&limit=1`;
 
   // 🚀 GURU DEBUG: Logování pro diagnostiku ve Vercel logs
-  console.log("GPU SEARCH:", model);
+  console.log("GPU SEARCH MODEL:", model);
+  console.log("GPU SEARCH PATTERN:", search);
 
   try {
       const res = await fetch(url, {
@@ -76,6 +79,7 @@ const findGpu = async (slugPart) => {
             'apikey': supabaseKey,
             'Authorization': `Bearer ${supabaseKey}`
           },
+          cache: 'no-store',
           next: { revalidate: 86400 }
       });
 
