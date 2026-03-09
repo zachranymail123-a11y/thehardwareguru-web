@@ -18,12 +18,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V97.2 (DEBUG LOGS & LOOKUP FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V98.1 (ULTIMATE LOOKUP FIX)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: Bezpečný encodeURIComponent u wildcard patternu pro Supabase.
- * 🛡️ FIX 2: Zachování vendora ve slugPart (findGpu) pro 100% match v DB (ChatGPT Fix).
- * 🛡️ FIX 3: Přidány kritické debug logy do findGpu pro sledování patternů (ChatGPT Fix).
- * 🚀 PERF: Přidán export const revalidate = 86400; pro Next.js cache.
+ * 🛡️ FIX 1: Extrakce číselné řady (\d{3,4}) ze slugu pro spolehlivý match v DB (ChatGPT Fix).
+ * 🛡️ FIX 2: Použití patternu s číslem a encodeURIComponent (ChatGPT Fix).
  */
 
 export const revalidate = 86400;
@@ -64,26 +62,29 @@ function calculatePerf(a, b) {
     return { winner: null, loser: null, diff: 0 }; // Remíza
 }
 
-// 🛡️ GURU ENGINE: Vyhledávání karty z DB (Opravený bezpečnější lookup s %)
+// 🛡️ GURU ENGINE: Vyhledávání karty z DB (ULTIMATE FIX DLE CHATGPT)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl) return null;
 
-  // 🚀 GURU FIX: Nahrazení '-' mezerami (bez odstraňování vendorů pro 100% shodu)
+  // 🚀 GURU FIX: Nahrazení '-' mezerami
   const name = slugPart.replace(/-/g, " ").trim();
   
-  // 🚀 GURU FIX: Encode jen název, ne %, aby pattern fungoval správně v URL
-  const pattern = `%${encodeURIComponent(name).replace(/%20/g,'%')}%`;
+  // 🚀 GURU FIX: Získání číselného označení modelu (např. "5090" z "geforce rtx 5090")
+  const number = name.match(/\d{3,4}/)?.[0] || name; 
+  
+  // 🚀 GURU FIX: PostgREST hledá čistě podle čísla modelu pro 100% jistotu nálezu
+  const pattern = `*${number}*`;
 
-  // 🚀 GURU FIX: Doporučený debug log pro rychlou diagnostiku (ChatGPT)
+  // Debug log pro kontrolu na serveru
   if (process.env.NODE_ENV === "development") {
     console.log("SEARCH GPU:", name);
+    console.log("EXTRACTED NUMBER:", number);
     console.log("PATTERN:", pattern);
   }
 
   try {
-      // 🚀 GURU CRITICAL FIX: Odstraněno encodeURIComponent pro pattern, aby fungovaly procentuální wildcardy
       const res = await fetch(
-        `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.${pattern}&limit=1`,
+        `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.${encodeURIComponent(pattern)}&limit=1`,
         {
           headers: {
             'apikey': supabaseKey,
@@ -96,7 +97,7 @@ const findGpu = async (slugPart) => {
       if (!res.ok) return null;
 
       const data = await res.json();
-      return data[0] || null;
+      return data?.[0] || null;
   } catch (e) {
       return null;
   }
@@ -140,8 +141,8 @@ async function generateAndPersistUpgrade(slug) {
     // 🚀 GURU FIX: Debugging logy pouze pro vývojové prostředí
     if (process.env.NODE_ENV === "development") {
         console.log("GPU SEARCH:", parts[0], parts[1]);
-        console.log("FOUND A:", cardA);
-        console.log("FOUND B:", cardB);
+        console.log("FOUND A:", cardA?.name);
+        console.log("FOUND B:", cardB?.name);
     }
 
     if (!cardA || !cardB) return null;
@@ -263,12 +264,6 @@ export async function generateMetadata({ params }) {
 export default async function GpuUpgradeDetail({ params }) {
   const slug = params?.slug ?? null;
   const upgrade = await getUpgradeData(slug);
-  
-  // 🚀 GURU FIX: Logy pouze pro vývoj
-  if (process.env.NODE_ENV === "development") {
-      console.log("UPGRADE SLUG:", slug);
-      console.log("FOUND:", upgrade);
-  }
   
   if (!upgrade) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center' }}>UPGRADE PATH NENALEZENA</div>;
 
@@ -482,6 +477,7 @@ export default async function GpuUpgradeDetail({ params }) {
             <Gamepad2 size={28} /> {isEn ? 'DETAILED FPS CAPABILITIES' : 'DETAILNÍ MOŽNOSTI KARET VE HRÁCH'}
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '25px' }}>
+              {/* 🚀 GURU FIX: Zjednodušený slugify čistě přes název */}
               {[gpuA, gpuB].filter(Boolean).map((gpu, i) => {
                   const safeGpuSlug = slugify(gpu?.name || "");
                   return (
