@@ -13,11 +13,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU ENGINE - DETAIL PROCESORU V1.1 (MAIN HUB)
+ * GURU CPU ENGINE - DETAIL PROCESORU V1.2 (SAFE SLUG FIX)
  * Cesta: src/app/cpu/[slug]/page.js
- * 🛡️ FIX 1: Hlavní rozcestník procesoru (na který odkazují Deep Dive linky).
- * 🛡️ FIX 2: Vložena nová dynamická tabulka specifikací s čistými fallbacky.
- * 🛡️ FIX 3: Revalidate 0 pro okamžité propisování změn z DB.
+ * 🛡️ FIX 1: Přidána 'slugify' funkce a 'safeSlug' logika pro tlačítka.
+ * Zamezuje chybě '/undefined' v odkazech, pokud procesorům v DB chybí sloupec slug (CSV import).
  */
 
 export const runtime = "nodejs";
@@ -25,6 +24,20 @@ export const revalidate = 0; // Okamžitý refresh bez cache!
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+// 🚀 GURU: Agresivní slugify engine (Ochrana proti NULL slugům v DB)
+const slugify = (text) => {
+  return text
+    .toLowerCase()
+    .replace(/processor|cpu/gi, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9\-]/g, "")
+    .replace(/\-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .trim();
+};
 
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 
@@ -66,6 +79,9 @@ export async function generateMetadata({ params }) {
   const cpu = await findCpuBySlug(cpuSlug);
   if (!cpu) return { title: '404 | Hardware Guru' };
 
+  // 🚀 GURU FIX: Zajištění, že se do Canonical URL nedostane "undefined"
+  const safeSlug = cpu.slug || slugify(cpu.name);
+
   return {
     title: isEn 
       ? `${cpu.name} Specs, Benchmarks & Gaming Performance | The Hardware Guru`
@@ -74,10 +90,10 @@ export async function generateMetadata({ params }) {
       ? `Everything you need to know about ${cpu.name}. Detailed specifications, gaming benchmarks, and performance analysis.`
       : `Vše co potřebujete vědět o procesoru ${cpu.name}. Detailní specifikace, herní benchmarky a analýza výkonu.`,
     alternates: {
-      canonical: `https://www.thehardwareguru.cz/cpu/${cpu.slug}`,
+      canonical: `https://www.thehardwareguru.cz/cpu/${safeSlug}`,
       languages: {
-        'en': `https://www.thehardwareguru.cz/en/cpu/${cpu.slug}`,
-        'cs': `https://www.thehardwareguru.cz/cpu/${cpu.slug}`
+        'en': `https://www.thehardwareguru.cz/en/cpu/${safeSlug}`,
+        'cs': `https://www.thehardwareguru.cz/cpu/${safeSlug}`
       }
     }
   };
@@ -94,7 +110,10 @@ export default async function CpuDetailPage({ params }) {
   const fpsData = Array.isArray(cpu.cpu_game_fps) ? cpu.cpu_game_fps[0] : (cpu.cpu_game_fps || {});
   const cinebenchScore = fpsData?.cinebench_r23_multi || 'N/A';
   
-  // 🚀 GURU: Dynamické načítání her z DB pro FPS odkazy
+  // 🚀 GURU FIX: Vygenerujeme bezpečný slug rovnou z názvu, pokud v DB chybí
+  const safeSlug = cpu.slug || slugify(cpu.name);
+  
+  // Dynamické načítání her z DB pro FPS odkazy
   const availableGames = Object.keys(fpsData || {})
     .filter(k => k !== 'cpu_id' && k !== 'id' && !k.includes('cinebench') && (k.includes('_1080p') || k.includes('_1440p') || k.includes('_4k')))
     .map(g => g.replace(/_(1080p|1440p|4k)/,'').replace(/_/g, '-'))
@@ -161,13 +180,13 @@ export default async function CpuDetailPage({ params }) {
             </div>
         </section>
 
-        {/* 🚀 DEEP DIVE ROZCESTNÍK */}
+        {/* 🚀 DEEP DIVE ROZCESTNÍK - FIX: safeSlug */}
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: vendorColor }}>
             <Database size={28} /> {isEn ? 'DEEP DIVE ANALYSIS' : 'DETAILNÍ ANALÝZA'}
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-              <a href={isEn ? `/en/cpu-performance/${cpu.slug}` : `/cpu-performance/${cpu.slug}`} className="deep-link-card">
+              <a href={isEn ? `/en/cpu-performance/${safeSlug}` : `/cpu-performance/${safeSlug}`} className="deep-link-card">
                   <Activity size={32} color="#f59e0b" />
                   <div>
                       <h3>{isEn ? 'Performance & Specs' : 'Výkon a Parametry'}</h3>
@@ -175,7 +194,7 @@ export default async function CpuDetailPage({ params }) {
                   </div>
                   <ArrowRight size={20} className="link-arrow" />
               </a>
-              <a href={isEn ? `/en/cpu-recommend/${cpu.slug}` : `/cpu-recommend/${cpu.slug}`} className="deep-link-card">
+              <a href={isEn ? `/en/cpu-recommend/${safeSlug}` : `/cpu-recommend/${safeSlug}`} className="deep-link-card">
                   <CheckCircle2 size={32} color="#10b981" />
                   <div>
                       <h3>{isEn ? 'Guru Verdict: Buy?' : 'Verdikt: Koupit?'}</h3>
@@ -218,14 +237,14 @@ export default async function CpuDetailPage({ params }) {
           </div>
         </section>
 
-        {/* 🚀 HERNÍ BENCHMARK TESTY */}
+        {/* 🚀 HERNÍ BENCHMARK TESTY - FIX: safeSlug */}
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: vendorColor }}>
             <Gamepad2 size={28} /> {isEn ? 'GAMING BENCHMARKS' : 'HERNÍ BENCHMARK TESTY'}
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
               {gamesList.map((game) => (
-                  <a key={game} href={isEn ? `/en/cpu-fps/${cpu.slug}/${game}` : `/cpu-fps/${cpu.slug}/${game}`} className="game-link-card">
+                  <a key={game} href={isEn ? `/en/cpu-fps/${safeSlug}/${game}` : `/cpu-fps/${safeSlug}/${game}`} className="game-link-card">
                       <ExternalLink size={16} color={vendorColor} /> 
                       <span style={{ fontWeight: '900', textTransform: 'uppercase' }}>{game.replace(/-/g, ' ')}</span> FPS
                   </a>
