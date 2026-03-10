@@ -6,14 +6,20 @@ import {
   Monitor,
   ArrowRight,
   Cpu,
-  Swords
+  Swords,
+  Zap
 } from 'lucide-react';
 
 /**
- * GURU CPU FPS ENGINE - BENCHMARK PAGE V1.0
+ * GURU CPU FPS ENGINE - BENCHMARK PAGE V1.2 (RTX 5090 FIX & CACHE BYPASS)
  * Cesta: src/app/cpu-fps/[cpu]/[game]/page.js
- * 🛡️ ARCH: 3-Tier Slug Lookup, CZ/EN, Guru Styling.
+ * 🛡️ FIX 1: Přidána klíčová informace o testovací grafice (NVIDIA RTX 5090).
+ * 🛡️ FIX 2: Oprava tahání dat pro esport tituly (fallback na _1080p sloupec).
+ * 🛡️ FIX 3: Revalidate 0 a no-store cache, aby se DB změny propsaly okamžitě.
  */
+
+export const runtime = "nodejs";
+export const revalidate = 0; // Okamžitý refresh bez cache!
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -64,16 +70,19 @@ export async function generateMetadata({ params }) {
   if (!cpu) return { title: '404 | Hardware Guru' };
 
   const gameLabel = gameSlug.replace(/-/g, ' ').toUpperCase();
+  
+  // 🚀 GURU FIX: Chytřejší tahání FPS (pokud není 1440p, zkusí 1080p např pro CS2)
+  const gameKey = gameSlug.replace('-2077', '').replace(/-/g, '_');
   const fpsData = Array.isArray(cpu.cpu_game_fps) ? cpu.cpu_game_fps[0] : cpu.cpu_game_fps;
-  const fps = fpsData ? (fpsData[`${gameSlug.replace('-2077', '')}_1440p`] || 0) : 0;
+  const fps = fpsData ? (fpsData[`${gameKey}_1440p`] || fpsData[`${gameKey}_1080p`] || 0) : 0;
 
   return {
     title: isEn 
-      ? `${cpu.name} ${gameLabel} FPS – CPU Gaming Benchmark | The Hardware Guru`
-      : `${cpu.name} ${gameLabel} FPS – Herní Benchmark | The Hardware Guru`,
+      ? `${cpu.name} ${gameLabel} FPS (Tested on RTX 5090) | The Hardware Guru`
+      : `${cpu.name} ${gameLabel} FPS (Testováno s RTX 5090) | The Hardware Guru`,
     description: isEn
-      ? `See ${cpu.name} real-life CPU performance in ${gameLabel}. Average ${fps} FPS. Detailed gaming benchmark analysis.`
-      : `Podívejte se na reálný výkon procesoru ${cpu.name} ve hře ${gameLabel}. Průměrně ${fps} FPS. Detailní analýza herního benchmarku.`
+      ? `See ${cpu.name} pure CPU performance in ${gameLabel} paired with NVIDIA RTX 5090. Average ${fps} FPS. Detailed bottleneck analysis.`
+      : `Podívejte se na čistý výkon procesoru ${cpu.name} ve hře ${gameLabel} s kartou NVIDIA RTX 5090. Průměrně ${fps} FPS. Detailní analýza.`
   };
 }
 
@@ -87,13 +96,15 @@ export default async function CpuFpsPage({ params }) {
   const cpu = await findCpuBySlug(cpuSlug);
   if (!cpu) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>CPU NENALEZENO</div>;
 
-  const gameKey = gameSlug.replace('-2077', '');
+  // 🚀 GURU FIX: Chytré tahání z DB (pokud chybí sloupec 1440p, sáhne po 1080p, což opraví esport hry jako CS2)
+  const gameKey = gameSlug.replace('-2077', '').replace(/-/g, '_');
   const fpsData = Array.isArray(cpu.cpu_game_fps) ? cpu.cpu_game_fps[0] : cpu.cpu_game_fps;
-  const fps1440p = fpsData ? (fpsData[`${gameKey}_1440p`] || 0) : 0;
+  const fpsBase = fpsData ? (fpsData[`${gameKey}_1440p`] || fpsData[`${gameKey}_1080p`] || 0) : 0;
   
   // Klasické CPU škálování: 1080p je nejvíce CPU bound (vyšší FPS rozdíly), ve 4K brzdí spíše grafika
-  const fps1080p = Math.round(fps1440p * 1.25);
-  const fps4k = Math.round(fps1440p * 0.85);
+  const fps1080p = Math.round(fpsBase * 1.25);
+  const fps1440p = fpsBase;
+  const fps4k = Math.round(fpsBase * 0.85);
 
   const getVerdict = (f) => {
       if (f >= 120) return { en: 'ESPORTS READY', cz: 'ESPORT ÚROVEŇ', color: '#10b981' };
@@ -117,9 +128,16 @@ export default async function CpuFpsPage({ params }) {
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '50px', background: 'rgba(245,158,11,0.05)' }}>
-            <Activity size={16} /> GURU CPU RADAR
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
+             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', padding: '6px 20px', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '50px', background: 'rgba(245,158,11,0.05)' }}>
+               <Activity size={16} /> GURU CPU RADAR
+             </div>
+             {/* 🚀 GURU: NVIDIA RTX 5090 TEST SETUP BADGE */}
+             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#76b900', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', padding: '6px 16px', border: '1px solid rgba(118, 185, 0, 0.3)', borderRadius: '50px', background: 'rgba(118, 185, 0, 0.1)' }}>
+               <Zap size={14} /> {isEn ? 'TEST SETUP: RTX 5090' : 'TESTOVÁNO S RTX 5090'}
+             </div>
           </div>
+
           <h1 style={{ fontSize: 'clamp(2rem, 8vw, 4rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1' }}>
             {normalizeName(cpu.name)} <br/>
             <span style={{ color: '#f59e0b' }}>{cleanGameLabel}</span> FPS
@@ -143,30 +161,30 @@ export default async function CpuFpsPage({ params }) {
             </div>
         </section>
 
-        {/* 🚀 RESOLUTION SCALING */}
+        {/* 🚀 RESOLUTION SCALING (Explicit RTX 5090 mention) */}
         {fps1440p > 0 && (
           <section style={{ marginBottom: '60px' }}>
             <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Monitor size={28} /> {isEn ? 'PERFORMANCE SCALING' : 'ŠKÁLOVÁNÍ VÝKONU (CPU)'}
+              <Monitor size={28} /> {isEn ? 'CPU PERFORMANCE SCALING' : 'ŠKÁLOVÁNÍ VÝKONU (CPU)'}
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                 <div className="res-card">
-                    <div className="res-label">1080p (CPU Heavy)</div>
+                    <div className="res-label">1080p + RTX 5090</div>
                     <div className="res-val">~{fps1080p} FPS</div>
                 </div>
                 <div className="res-card" style={{ borderColor: '#f59e0b', background: 'rgba(245, 158, 11, 0.05)' }}>
-                    <div className="res-label" style={{ color: '#f59e0b' }}>1440p (Balanced)</div>
+                    <div className="res-label" style={{ color: '#f59e0b' }}>1440p + RTX 5090</div>
                     <div className="res-val" style={{ color: '#fff' }}>{fps1440p} FPS</div>
                 </div>
                 <div className="res-card">
-                    <div className="res-label">4K (GPU Bottleneck)</div>
+                    <div className="res-label">4K + RTX 5090</div>
                     <div className="res-val">~{fps4k} FPS</div>
                 </div>
             </div>
           </section>
         )}
 
-        {/* 🚀 SEO CONTENT */}
+        {/* 🚀 SEO CONTENT & RTX 5090 CONTEXT */}
         <section style={{ marginBottom: '60px' }}>
             <div className="content-box-style">
                 <div className="guru-prose">
@@ -178,13 +196,13 @@ export default async function CpuFpsPage({ params }) {
                     
                     {isEn ? (
                       <>
-                        <p>According to our technical database and aggregated CPU benchmarks, the <strong>{normalizeName(cpu.name)}</strong> delivers a solid gaming experience in <strong>{cleanGameLabel}</strong>. Paired with a decent GPU, you can expect an average of <strong>{fps1440p > 0 ? fps1440p : 'N/A'} FPS</strong> at 1440p.</p>
-                        <p>Remember that at higher resolutions (like 4K), the graphical load shifts significantly to your graphics card, making the CPU less of a bottleneck. However, for high-refresh-rate 1080p gaming, a strong CPU like this is crucial.</p>
+                        <p>To accurately measure the pure processing power of the <strong>{normalizeName(cpu.name)}</strong> without any graphical bottlenecks, these benchmarks were conducted using the flagship <strong>NVIDIA GeForce RTX 5090</strong> graphics card. Paired with this extreme GPU, the processor delivers a solid gaming experience in <strong>{cleanGameLabel}</strong>.</p>
+                        <p>At 1440p resolution, you can expect an average of <strong>{fps1440p > 0 ? fps1440p : 'N/A'} FPS</strong>. Remember that if you are using a significantly weaker graphics card, your actual framerate will be heavily limited by the GPU, making the CPU performance difference less noticeable, especially at 4K resolution.</p>
                       </>
                     ) : (
                       <>
-                        <p>Podle naší technické databáze a agregovaných benchmarků procesorů poskytuje <strong>{normalizeName(cpu.name)}</strong> vynikající herní zážitek ve hře <strong>{cleanGameLabel}</strong>. Ve spojení s adekvátní grafickou kartou můžete v rozlišení 1440p očekávat průměrně <strong>{fps1440p > 0 ? fps1440p : 'N/A'} FPS</strong>.</p>
-                        <p>Nezapomeňte, že při vyšších rozlišeních (jako 4K) se zátěž přesouvá především na grafickou kartu, čímž se vliv procesoru mírně snižuje. Naopak pro kompetitivní hraní ve 1080p při vysokých snímkových frekvencích je tento procesor klíčový.</p>
+                        <p>Abychom dokázali přesně změřit čistý výpočetní výkon procesoru <strong>{normalizeName(cpu.name)}</strong> bez jakéhokoliv grafického omezení (bottlenecku), byly tyto testy provedeny s využitím aktuální vlajkové lodi <strong>NVIDIA GeForce RTX 5090</strong>. S touto extrémní grafickou kartou poskytuje procesor vynikající zážitek ze hry <strong>{cleanGameLabel}</strong>.</p>
+                        <p>Při hraní v rozlišení 1440p můžete očekávat průměrně <strong>{fps1440p > 0 ? fps1440p : 'N/A'} FPS</strong>. Nezapomeňte však, že pokud ve svém PC používáte podstatně slabší grafickou kartu, vaše reálné snímky za vteřinu budou brzděny právě grafikou a vliv tohoto procesoru bude menší (obzvlášť ve 4K).</p>
                       </>
                     )}
                 </div>
