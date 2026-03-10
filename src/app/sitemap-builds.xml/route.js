@@ -17,7 +17,7 @@ const { data, error } = await supabase
 .select("slug");
 
 if(error){
-console.error("SITEMAP BUILDS ERROR:", error);
+console.error("BUILDS SITEMAP ERROR:", error);
 }
 
 let urls = "";
@@ -39,6 +39,9 @@ ${urls}
 </urlset>`;
 
 return new Response(xml,{
-headers:{'Content-Type':'application/xml'}
+headers:{
+"Content-Type":"application/xml"
+}
 });
+
 }
