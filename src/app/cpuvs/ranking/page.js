@@ -11,13 +11,15 @@ import {
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU CPU ENGINE - TIER LIST & RANKING V1.0
+ * GURU CPU ENGINE - TIER LIST & RANKING V1.1 (CACHE & NULLS FIX)
  * Cesta: src/app/cpuvs/ranking/page.js
- * 🛡️ ARCH: Absolutní žebříček procesorů seřazený podle hrubého výkonu (performance_index).
- * 🛡️ FIX: Zajišťuje funkčnost odkazu /cpuvs/ranking a funguje jako hlavní SEO hub.
+ * 🛡️ FIX 1: Ošetřeno řazení - Postgres dává NULL hodnoty u DESC na první místo.
+ * Přidán filtr .gt('performance_index', 0), který skryje procesory bez skóre.
+ * 🛡️ FIX 2: Přidáno force-dynamic a revalidate = 0 pro okamžité změny bez tvrdé cache.
  */
 
-export const revalidate = 3600; // Cache na 1 hodinu
+export const dynamic = 'force-dynamic'; // 🚀 GURU FIX: Žádná mrtvá cache
+export const revalidate = 0; 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -58,10 +60,11 @@ export async function generateMetadata({ isEn = false }) {
 export default async function CpuRankingPage({ isEn = false }) {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. Fetch všech CPU seřazených podle hrubého výkonu (od nejlepšího)
+  // 1. Fetch všech CPU seřazených podle hrubého výkonu
   const { data: cpus, error } = await supabase
     .from('cpus')
     .select('name, slug, vendor, architecture, cores, threads, boost_clock_mhz, performance_index')
+    .gt('performance_index', 0) // 🚀 GURU FIX: Zabrání tomu, aby byly prázdné (NULL) procesory na prvním místě!
     .order('performance_index', { ascending: false });
 
   if (error || !cpus) {
