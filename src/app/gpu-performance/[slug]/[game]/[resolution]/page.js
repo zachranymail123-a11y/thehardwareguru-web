@@ -14,9 +14,8 @@ import {
 /**
  * GURU GPU PERFORMANCE ENGINE V1.1 (FINAL SLUG FIX)
  * Cesta: src/app/gpu-performance/[slug]/[game]/[resolution]/page.js
- * 🛡️ FIX 1: Parametr sjednocen na [slug] (opravuje Vercel build konflikt 'gpu' !== 'slug').
- * 🛡️ FIX 2: Odstraněn window.location hack z metadat, použita stabilní SSR 'en-' prefix detekce.
- * 🛡️ FIX 3: Revalidate 0 + no-store = 100% bypass cache.
+ * 🛡️ FIX 1: Přejmenován parametr params.gpu na params.slug (odstraněn konflikt v buildu).
+ * 🛡️ FIX 2: 100% bypass cache pro Vercel přes revalidate = 0.
  */
 
 export const runtime = "nodejs";
@@ -25,21 +24,7 @@ export const revalidate = 0;
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// --- POMOCNÉ FUNKCE ---
 const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon /gi, '');
-
-const slugify = (text) => {
-    return text
-      .toLowerCase()
-      .replace(/graphics|gpu/gi, "")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9\-]/g, "")
-      .replace(/\-+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .trim();
-};
 
 // 🛡️ DATA ENGINE: Hledání GPU podle robustního 3-Tier parseru
 const findGpuBySlug = async (gpuSlug) => {
@@ -75,27 +60,25 @@ const getPerformanceData = async (gpuSlug, gameSlug, resolution) => {
     if (!gpu) return null;
 
     const gameKey = gameSlug.replace('-2077', '').replace(/-/g, '_');
-    const fpsData = gpu?.game_fps ? (Array.isArray(gpu.game_fps) ? gpu.game_fps[0] : gpu.game_fps) : {};
+    const fpsDataArray = Array.isArray(gpu.game_fps) ? gpu.game_fps : [];
+    const fpsData = fpsDataArray.length > 0 ? fpsDataArray[0] : {};
 
-    // Base FPS je u nás 1440p
     const baseFps = fpsData[`${gameKey}_1440p`] || 0;
     let finalFps = baseFps;
 
-    // Pokud nemáme v DB přesné sloupce pro 1080p a 4K, použijeme standardní škálování
     if (resolution === '1080p') {
         finalFps = fpsData[`${gameKey}_1080p`] || Math.round(baseFps * 1.4);
     } else if (resolution === '4k') {
         finalFps = fpsData[`${gameKey}_4k`] || Math.round(baseFps * 0.6);
     } else if (resolution === 'dlss') {
-        finalFps = Math.round(baseFps * 1.35); // Odhad DLSS Quality
+        finalFps = Math.round(baseFps * 1.35);
     } else if (resolution === 'ray-tracing') {
-        finalFps = Math.round(baseFps * 0.55); // Odhad RT On (Native)
+        finalFps = Math.round(baseFps * 0.55);
     }
 
     return { gpu, finalFps, baseFps, gameKey };
 };
 
-// --- METADATA ---
 export async function generateMetadata({ params }) {
     const { slug, game: gameSlug, resolution } = params;
     const isEn = slug.startsWith('en-');
@@ -131,7 +114,6 @@ export async function generateMetadata({ params }) {
     };
 }
 
-// --- HLAVNÍ KOMPONENTA ---
 export default async function GpuPerformancePage({ params }) {
     const { slug, game: gameSlug, resolution } = params;
     const isEn = slug.startsWith('en-');
@@ -152,8 +134,7 @@ export default async function GpuPerformancePage({ params }) {
     const resLabel = resolution.toUpperCase();
     const cleanGpuName = normalizeName(gpu.name);
 
-    // Vyhodnocení plynulosti
-    let verdictColor = '#ef4444'; // Red
+    let verdictColor = '#ef4444';
     let verdictTextEn = 'NOT RECOMMENDED';
     let verdictTextCs = 'NEDOPORUČUJEME';
 
@@ -161,7 +142,6 @@ export default async function GpuPerformancePage({ params }) {
     else if (finalFps >= 60) { verdictColor = '#66fcf1'; verdictTextEn = 'SMOOTH GAMING'; verdictTextCs = 'PLYNULÉ HRANÍ'; }
     else if (finalFps >= 30) { verdictColor = '#eab308'; verdictTextEn = 'PLAYABLE (CONSOLE LEVEL)'; verdictTextCs = 'HRATELNÉ (KONZOLOVÝ ZÁŽITEK)'; }
 
-    // 🚀 SEO SCHEMATA
     const faqSchema = {
         "@context": "https://schema.org",
         "@type": "FAQPage",
@@ -175,16 +155,6 @@ export default async function GpuPerformancePage({ params }) {
                         ? `The ${cleanGpuName} achieves an average of ${finalFps} FPS in ${gameLabel} when running at ${resLabel} resolution with high/ultra settings.`
                         : `Karta ${cleanGpuName} dosahuje průměrně ${finalFps} FPS ve hře ${gameLabel} při rozlišení ${resLabel} a vysokých/ultra detailech.`
                 }
-            },
-            {
-                "@type": "Question",
-                "name": isEn ? `Is ${cleanGpuName} good for ${resLabel} gaming?` : `Je ${cleanGpuName} dobrá pro ${resLabel} hraní?`,
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": isEn
-                        ? `Based on our benchmarks, the performance is classified as ${verdictTextEn.toLowerCase()} for this specific scenario.`
-                        : `Na základě našich benchmarků je výkon hodnocen jako ${verdictTextCs.toLowerCase()} pro tento konkrétní scénář.`
-                }
             }
         ]
     };
@@ -197,7 +167,6 @@ export default async function GpuPerformancePage({ params }) {
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
 
             <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
-                
                 <div style={{ marginBottom: '30px' }}>
                     <a href={isEn ? `/en/gpu-performance/${cleanSlug}` : `/gpu-performance/${cleanSlug}`} className="guru-back-btn">
                         <ChevronLeft size={16} /> {isEn ? 'BACK TO GPU PROFILE' : 'ZPĚT NA VÝKON GRAFIKY'}
@@ -228,35 +197,12 @@ export default async function GpuPerformancePage({ params }) {
                     </div>
                 </section>
 
-                <section style={{ marginBottom: '60px' }}>
-                    <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <Monitor size={28} /> {isEn ? 'HARDWARE SETTINGS' : 'PARAMETRY SYSTÉMU'}
-                    </h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-                        <div className="res-card">
-                            <div className="res-label">{isEn ? 'RESOLUTION' : 'ROZLIŠENÍ'}</div>
-                            <div className="res-val" style={{ color: '#66fcf1' }}>{resLabel}</div>
-                        </div>
-                        <div className="res-card">
-                            <div className="res-label">{isEn ? 'GPU VRAM' : 'PAMĚŤ VRAM'}</div>
-                            <div className="res-val">{gpu.vram_gb} GB</div>
-                        </div>
-                        <div className="res-card">
-                            <div className="res-label">{isEn ? 'ARCHITECTURE' : 'ARCHITEKTURA'}</div>
-                            <div className="res-val">{gpu.architecture}</div>
-                        </div>
-                    </div>
-                </section>
-
                 <section style={{ marginBottom: '60px', textAlign: 'center' }}>
                     <div style={{ padding: '40px', background: 'rgba(15,17,21,0.8)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
                         <h3 style={{ fontSize: '20px', fontWeight: '950', color: '#fff', textTransform: 'uppercase', marginBottom: '15px' }}>
                             {isEn ? `Want to see how ${cleanGpuName} stacks up?` : `Zajímá tě srovnání s konkurencí?`}
                         </h3>
-                        <p style={{ color: '#9ca3af', marginBottom: '30px' }}>
-                            {isEn ? "Compare this graphics card directly with other models in our Versus Engine." : "Porovnej tuto grafiku s ostatními modely napřímo v našem Versus Enginu."}
-                        </p>
-                        <a href={`/${isEn ? 'en/' : ''}gpuvs`} style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', padding: '16px 35px', background: 'linear-gradient(135deg, #ff0055 0%, #990033 100%)', color: '#fff', borderRadius: '16px', fontWeight: '950', fontSize: '14px', textDecoration: 'none', textTransform: 'uppercase', boxShadow: '0 10px 30px rgba(255, 0, 85, 0.3)', transition: '0.3s' }}>
+                        <a href={`/${isEn ? 'en/' : ''}gpuvs`} style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', padding: '16px 35px', background: 'linear-gradient(135deg, #ff0055 0%, #990033 100%)', color: '#fff', borderRadius: '16px', fontWeight: '950', fontSize: '14px', textDecoration: 'none', textTransform: 'uppercase', transition: '0.3s' }}>
                             <Swords size={20} /> {isEn ? 'LAUNCH VS ENGINE' : 'SPUSTIT SOUBOJ KARET'}
                         </a>
                     </div>
@@ -266,12 +212,6 @@ export default async function GpuPerformancePage({ params }) {
 
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
-                .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); }
-                .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; }
-                .res-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; text-align: center; transition: 0.3s; }
-                .res-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.05); }
-                .res-label { font-size: 11px; font-weight: 950; text-transform: uppercase; color: #4b5563; letter-spacing: 2px; margin-bottom: 10px; }
-                .res-val { font-size: 20px; font-weight: 950; color: #d1d5db; }
             `}} />
         </div>
     );
