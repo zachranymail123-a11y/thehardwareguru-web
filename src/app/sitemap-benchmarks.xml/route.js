@@ -1,17 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
-export const revalidate=3600;
+export const revalidate = 3600;
 
 export async function GET(){
 
-const supabase=createClient(
+const supabase = createClient(
 process.env.NEXT_PUBLIC_SUPABASE_URL,
-process.env.SUPABASE_SERVICE_ROLE_KEY
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-const base="https://thehardwareguru.cz";
+const base = "https://thehardwareguru.cz";
 
-const games=[
+const games = [
 "cyberpunk-2077",
 "warzone",
 "starfield",
@@ -34,22 +34,23 @@ const games=[
 "diablo-4"
 ];
 
-const resolutions=["1080p","1440p","4k"];
+const resolutions = ["1080p","1440p","4k"];
 
-const {data}=await supabase
-.from('gpus')
-.select('slug');
+const { data } = await supabase
+.from("gpus")
+.select("slug");
 
-let urls="";
+let urls = "";
 
-data?.forEach(g=>{
+data?.forEach(g => {
 
-games.forEach(game=>{
+if(!g.slug) return;
 
-resolutions.forEach(res=>{
+games.forEach(game => {
 
-urls+=`
-<url>
+resolutions.forEach(res => {
+
+urls += `<url>
 <loc>${base}/gpu-performance/${g.slug}/${game}/${res}</loc>
 </url>`;
 
@@ -59,10 +60,15 @@ urls+=`
 
 });
 
-const xml=`<?xml version="1.0" encoding="UTF-8"?>
+const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
 </urlset>`;
 
-return new Response(xml,{headers:{'Content-Type':'application/xml'}});
+return new Response(xml,{
+headers:{
+"Content-Type":"application/xml; charset=utf-8"
+}
+});
+
 }
