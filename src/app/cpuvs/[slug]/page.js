@@ -19,12 +19,13 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V67.6 (FULL GPU PARITY + SEO TEXT BLOCK)
+ * GURU CPU DUELS ENGINE - DETAIL V67.7 (FULL GPU PARITY + SEO TEXT BLOCK FIX)
  * Cesta: src/app/cpuvs/[slug]/page.js
- * 🛡️ FIX 1: Doplněna chybějící textová SEO sekce "Herní výkon" (podle GPU vzoru).
- * 🛡️ FIX 2: Kompletní synchronizace prvků z GPU (Upgrade odkaz, SEO Schemata, Podobné duely).
- * 🛡️ FIX 3: Podpora '-to-' v URL parseru pro upgrade duely.
- * 🛡️ FIX 4: Ochrana resolution=merge-duplicates proti souběžnému zápisu.
+ * 🛡️ FIX 1: SEO text vložen do content-box-style pro perfektní čitelnost (sloučeno s prázdným content boxem).
+ * 🛡️ FIX 2: Oprava české gramatiky v SEO bloku ("dosahují oba procesory").
+ * 🛡️ FIX 3: Kompletní synchronizace prvků z GPU (Upgrade odkaz, SEO Schemata, Podobné duely).
+ * 🛡️ FIX 4: Podpora '-to-' v URL parseru pro upgrade duely.
+ * 🛡️ FIX 5: Ochrana resolution=merge-duplicates proti souběžnému zápisu.
  * 🚀 NEW: Integrace Deep Dive Analysis (propojení s CPU Landing Pages).
  */
 
@@ -548,23 +549,24 @@ export default async function CpuDuelDetail({ params }) {
           )}
         </section>
 
-        {/* 🚀 GURU: H2 GAMING PERFORMANCE (SEO TEXT BLOCK Z GPU) */}
+        {/* 🚀 GURU: H2 GAMING PERFORMANCE & CONTENT BLOCK (SLOUČENÁ SEO SEKCE A FIX DESIGNU) */}
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeft: '4px solid #66fcf1' }}>
             {isEn ? `${cpuA?.name || "CPU A"} vs ${cpuB?.name || "CPU B"} – Gaming Performance` : `${cpuA?.name || "CPU A"} vs ${cpuB?.name || "CPU B"} – Herní výkon`}
           </h2>
-          <p style={{ color: '#d1d5db', fontSize: '1.1rem', lineHeight: '1.7' }}>
-            {isEn 
-              ? `In modern titles like Cyberpunk 2077, Call of Duty: Warzone, and Starfield, the ${perfWinner ? perfWinner.name : 'both processors'} deliver ${perfWinner ? `a lead of ${perfDiff}%` : 'comparable results'}. Our benchmark analysis shows that ${cpuA?.name || "CPU A"} and ${cpuB?.name || "CPU B"} are solid options for modern gaming.`
-              : `V moderních hrách jako Cyberpunk 2077, Call of Duty: Warzone a Starfield dosahuje ${perfWinner ? perfWinner.name : 'oba procesory'} ${perfWinner ? `náskoku o ${perfDiff} %` : 'srovnatelných výsledků'}. Naše analýza benchmarků ukazuje, že ${cpuA?.name || "CPU A"} a ${cpuB?.name || "CPU B"} jsou skvělými volbami pro moderní hraní.`
-            }
-          </p>
-        </section>
-
-        {/* 🚀 GURU: CONTENT BLOCK (Z GPU) */}
-        <section style={{ marginBottom: '60px' }}>
+          
           <div className="content-box-style">
-             <div className="guru-prose-style" dangerouslySetInnerHTML={{ __html: isEn ? (duel.content_en || '') : (duel.content_cs || '') }} />
+            <p style={{ color: '#d1d5db', fontSize: '1.15rem', lineHeight: '1.8', margin: 0 }}>
+              {isEn 
+                ? `In modern titles like Cyberpunk 2077, Call of Duty: Warzone, and Starfield, ${perfWinner ? `the ${perfWinner.name} delivers a lead of ${perfDiff}%` : 'both processors deliver comparable results'}. Our benchmark analysis shows that ${cpuA?.name || "CPU A"} and ${cpuB?.name || "CPU B"} are solid options for modern gaming.`
+                : `V moderních hrách jako Cyberpunk 2077, Call of Duty: Warzone a Starfield ${perfWinner ? `dosahuje procesor ${perfWinner.name} náskoku o ${perfDiff} %` : 'dosahují oba procesory srovnatelných výsledků'}. Naše analýza benchmarků ukazuje, že ${cpuA?.name || "CPU A"} a ${cpuB?.name || "CPU B"} jsou skvělými volbami pro moderní hraní.`
+              }
+            </p>
+            
+            {/* Zobrazí dynamický obsah z DB pouze pokud existuje */}
+            {((isEn ? duel.content_en : duel.content_cs) || '').trim() !== '' && (
+              <div className="guru-prose-style" style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)' }} dangerouslySetInnerHTML={{ __html: isEn ? duel.content_en : duel.content_cs }} />
+            )}
           </div>
         </section>
 
@@ -707,7 +709,7 @@ export default async function CpuDuelDetail({ params }) {
 
         .similar-link-card { display: flex; align-items: center; gap: 12px; background: rgba(15, 17, 21, 0.8); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #d1d5db; font-weight: 900; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
         .section-h2 { color: #fff; font-size: 2rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; }
-        .content-box-style { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .content-box-style { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 20px 50px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
         .guru-prose-style { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; }
 
         @media (max-width: 768px) {
