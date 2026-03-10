@@ -122,59 +122,15 @@ export default async function sitemap() {
     if (cpuDuelsRes.data) cpuDuelsRes.data.forEach(item => addToRoutes(item, '/cpuvs', 0.8));
 
     const gamesList = [
-      'cyberpunk-2077',
-      'warzone',
-      'starfield',
-      'fortnite',
-      'cs2',
-      'gta-5',
-      'witcher-3',
-      'red-dead-redemption-2',
-      'baldurs-gate-3',
-      'hogwarts-legacy',
-      'forza-horizon-5',
-      'call-of-duty-mw3',
-      'elden-ring',
-      'apex-legends',
-      'valorant',
-      'minecraft',
-      'helldivers-2',
-      'escape-from-tarkov',
-      'overwatch-2',
-      'diablo-4'
+      'cyberpunk-2077','warzone','starfield','fortnite','cs2','gta-5',
+      'witcher-3','red-dead-redemption-2','baldurs-gate-3','hogwarts-legacy',
+      'forza-horizon-5','call-of-duty-mw3','elden-ring','apex-legends',
+      'valorant','minecraft','helldivers-2','escape-from-tarkov',
+      'overwatch-2','diablo-4'
     ];
 
     const resolutions = ['1080p','1440p','4k'];
     const modes = ['dlss','ray-tracing','ultra','high'];
-
-    /* FPS TARGET SEO (NOVÉ) */
-
-    const fpsTargets = [
-      '30-fps',
-      '60-fps',
-      '120-fps',
-      '144-fps'
-    ];
-
-    fpsTargets.forEach((fps) => {
-
-      gamesList.forEach((game) => {
-
-        dynamicRoutes.push({
-          url: `${baseUrl}/fps-target/${fps}/${game}`,
-          lastModified: currentDate,
-          priority: 0.7
-        });
-
-        dynamicRoutes.push({
-          url: `${baseUrl}/en/fps-target/${fps}/${game}`,
-          lastModified: currentDate,
-          priority: 0.6
-        });
-
-      });
-
-    });
 
     /* GAME BENCHMARK HUB */
 
@@ -191,6 +147,24 @@ export default async function sitemap() {
         lastModified: currentDate,
         priority: 0.7
       });
+
+      /* GAME + RESOLUTION */
+
+      resolutions.forEach((res)=>{
+
+        dynamicRoutes.push({
+          url: `${baseUrl}/game-benchmarks/${game}/${res}`,
+          lastModified: currentDate,
+          priority: 0.7
+        });
+
+        dynamicRoutes.push({
+          url: `${baseUrl}/en/game-benchmarks/${game}/${res}`,
+          lastModified: currentDate,
+          priority: 0.6
+        });
+
+      })
 
     });
 
@@ -212,29 +186,23 @@ export default async function sitemap() {
           priority: 0.7
         });
 
-        dynamicRoutes.push({
-          url: `${baseUrl}/gpu-upgrade-from/${gpu.slug}`,
-          lastModified: currentDate,
-          priority: 0.7
-        });
+        /* GPU RESOLUTION BENCHMARK */
 
-        dynamicRoutes.push({
-          url: `${baseUrl}/en/gpu-upgrade-from/${gpu.slug}`,
-          lastModified: currentDate,
-          priority: 0.6
-        });
+        resolutions.forEach((res)=>{
 
-        dynamicRoutes.push({
-          url: `${baseUrl}/gpu-upgrade-to/${gpu.slug}`,
-          lastModified: currentDate,
-          priority: 0.7
-        });
+          dynamicRoutes.push({
+            url: `${baseUrl}/gpu-benchmarks/${gpu.slug}/${res}`,
+            lastModified: currentDate,
+            priority: 0.7
+          });
 
-        dynamicRoutes.push({
-          url: `${baseUrl}/en/gpu-upgrade-to/${gpu.slug}`,
-          lastModified: currentDate,
-          priority: 0.6
-        });
+          dynamicRoutes.push({
+            url: `${baseUrl}/en/gpu-benchmarks/${gpu.slug}/${res}`,
+            lastModified: currentDate,
+            priority: 0.6
+          });
+
+        })
 
         gamesList.forEach((game) => {
 
