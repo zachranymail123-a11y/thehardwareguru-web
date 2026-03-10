@@ -13,20 +13,22 @@ const base = "https://thehardwareguru.cz";
 
 const { data, error } = await supabase
 .from("game_calendar")
-.select("slug");
+.select("*");
 
 if(error){
-console.error("SITEMAP CALENDAR ERROR:", error);
+console.error("Calendar sitemap error:", error);
 }
 
 let urls = "";
 
 data?.forEach(g => {
 
-if(!g.slug) return;
+const slug = g.slug || g.game_slug || g.url_slug;
+
+if(!slug) return;
 
 urls += `<url>
-<loc>${base}/kalendar/${g.slug}</loc>
+<loc>${base}/kalendar/${slug}</loc>
 </url>`;
 
 });
