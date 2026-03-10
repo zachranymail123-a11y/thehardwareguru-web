@@ -26,7 +26,11 @@ return(
 <div style={grid}>
 
 {games.map(game=>(
-<Link key={game} href={`/game-benchmarks/${game}`} style={{textDecoration:"none"}}>
+<Link
+key={game}
+href={isEn ? `/en/game-benchmarks/${game}` : `/game-benchmarks/${game}`}
+style={{textDecoration:"none"}}
+>
 <div className="game-card" style={card}>
 <h3 style={cardTitle}>{game.replaceAll("-"," ").toUpperCase()}</h3>
 </div>
