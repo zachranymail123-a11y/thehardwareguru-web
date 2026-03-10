@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 export const revalidate = 3600;
+export const runtime = "nodejs";
 
 export async function GET(){
 
@@ -21,14 +22,15 @@ console.error("SITEMAP CALENDAR ERROR:", error);
 
 let urls = "";
 
-data?.forEach(g => {
+if(Array.isArray(data)){
+data.forEach(row => {
 
 const slug =
-g.slug ||
-g.game_slug ||
-g.url_slug ||
-g.slug_cz ||
-g.slug_en;
+row.slug ||
+row.slug_cz ||
+row.slug_en ||
+row.game_slug ||
+row.url_slug;
 
 if(!slug) return;
 
@@ -37,6 +39,7 @@ urls += `<url>
 </url>`;
 
 });
+}
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
