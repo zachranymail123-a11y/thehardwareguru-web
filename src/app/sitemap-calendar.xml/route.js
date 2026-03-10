@@ -11,9 +11,13 @@ process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 const base = "https://thehardwareguru.cz";
 
-const { data } = await supabase
+const { data, error } = await supabase
 .from("game_calendar")
 .select("slug");
+
+if(error){
+console.error("SITEMAP CALENDAR ERROR:", error);
+}
 
 let urls = "";
 
