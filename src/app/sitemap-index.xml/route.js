@@ -1,11 +1,13 @@
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export async function GET(){
 
 const base="https://thehardwareguru.cz";
 
 const maps=[
+
 "sitemap-pages.xml",
 "sitemap-posts.xml",
 "sitemap-tipy.xml",
@@ -22,11 +24,15 @@ const maps=[
 "sitemap-duel-benchmarks-1.xml",
 "sitemap-duel-benchmarks-2.xml",
 "sitemap-duel-benchmarks-3.xml",
+"sitemap-duel-benchmarks-4.xml",
+"sitemap-duel-benchmarks-5.xml",
+"sitemap-duel-benchmarks-6.xml",
 
 "sitemap-gpu-fps.xml",
 "sitemap-best-gpu.xml",
 "sitemap-calendar.xml",
 "sitemap-builds.xml"
+
 ];
 
 const today=new Date().toISOString();
@@ -46,7 +52,7 @@ ${urls}
 return new Response(xml,{
 headers:{
 "Content-Type":"text/xml; charset=utf-8",
-"Cache-Control":"public, s-maxage=3600, stale-while-revalidate"
+"Cache-Control":"public, s-maxage=86400, stale-while-revalidate"
 }
 });
 
