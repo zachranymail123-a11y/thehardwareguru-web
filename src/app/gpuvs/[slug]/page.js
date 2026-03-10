@@ -17,13 +17,15 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - DETAIL V89.0 (CRASH FIXES & LOGIC)
+ * GURU GPU DUELS ENGINE - DETAIL V89.1 (CRASH FIXES & LOGIC & UI FIX)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * 🛡️ FIX 1: Podpora '-to-' v URL parseru pro upgrade duely.
  * 🛡️ FIX 2: Ochrana proti Object.keys(undefined) u prázdných FPS polí.
  * 🛡️ FIX 3: Oprava slugify prefixů pro GPU FPS odkazy.
  * 🛡️ FIX 4: Matematická oprava průměrného rozdílu FPS (avgDiff místo Magnitude).
  * 🛡️ FIX 5: Nulové kontroly pro samotná GPU data v detailu.
+ * 🛡️ FIX 6: SEO text vložen do content-box-style pro perfektní čitelnost (sloučeno s prázdným content boxem).
+ * 🛡️ FIX 7: Oprava české gramatiky v SEO bloku ("dosahují obě karty").
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -493,22 +495,24 @@ export default async function GpuDuelDetail({ params }) {
           </div>
         </section>
 
-        {/* H2 GAMING PERFORMANCE */}
+        {/* 🚀 GURU: H2 GAMING PERFORMANCE & CONTENT BLOCK (SLOUČENÁ SEO SEKCE A FIX DESIGNU) */}
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeft: '4px solid #66fcf1' }}>
             {isEn ? `${gpuA?.name || "GPU A"} vs ${gpuB?.name || "GPU B"} – Gaming Performance` : `${gpuA?.name || "GPU A"} vs ${gpuB?.name || "GPU B"} – Herní výkon`}
           </h2>
-          <p style={{ color: '#d1d5db', fontSize: '1.1rem', lineHeight: '1.7' }}>
-            {isEn 
-              ? `In modern titles like Cyberpunk 2077, Call of Duty: Warzone, and Starfield, the ${winner ? winner.name : 'both cards'} deliver ${winner ? `a lead of ${finalPerfDiff}%` : 'comparable results'}. Our benchmark analysis shows that ${gpuA?.name || "GPU A"} and ${gpuB?.name || "GPU B"} are competitive options for ${gpuA?.vram_gb >= 12 ? '1440p and 4K' : '1080p and 1440p'} gaming.`
-              : `V moderních hrách jako Cyberpunk 2077, Call of Duty: Warzone a Starfield dosahuje ${winner ? winner.name : 'obě karty'} ${winner ? `náskoku o ${finalPerfDiff} %` : 'srovnatelných výsledků'}. Naše analýza benchmarků ukazuje, že ${gpuA?.name || "GPU A"} a ${gpuB?.name || "GPU B"} jsou skvělými volbami pro hraní v ${gpuA?.vram_gb >= 12 ? '1440p a 4K' : '1080p a 1440p'} rozlišení.`
-            }
-          </p>
-        </section>
-
-        <section style={{ marginBottom: '60px' }}>
+          
           <div className="content-box-style">
-             <div className="guru-prose-style" dangerouslySetInnerHTML={{ __html: isEn ? duel.content_en : duel.content_cs }} />
+            <p style={{ color: '#d1d5db', fontSize: '1.15rem', lineHeight: '1.8', margin: 0 }}>
+              {isEn 
+                ? `In modern titles like Cyberpunk 2077, Call of Duty: Warzone, and Starfield, ${winner ? `the ${winner.name} delivers a lead of ${finalPerfDiff}%` : 'both cards deliver comparable results'}. Our benchmark analysis shows that ${gpuA?.name || "GPU A"} and ${gpuB?.name || "GPU B"} are competitive options for ${gpuA?.vram_gb >= 12 ? '1440p and 4K' : '1080p and 1440p'} gaming.`
+                : `V moderních hrách jako Cyberpunk 2077, Call of Duty: Warzone a Starfield ${winner ? `dosahuje grafika ${winner.name} náskoku o ${finalPerfDiff} %` : 'dosahují obě karty srovnatelných výsledků'}. Naše analýza benchmarků ukazuje, že ${gpuA?.name || "GPU A"} a ${gpuB?.name || "GPU B"} jsou skvělými volbami pro hraní v ${gpuA?.vram_gb >= 12 ? '1440p a 4K' : '1080p a 1440p'} rozlišení.`
+              }
+            </p>
+            
+            {/* Zobrazí dynamický obsah z DB pouze pokud existuje */}
+            {((isEn ? duel.content_en : duel.content_cs) || '').trim() !== '' && (
+              <div className="guru-prose-style" style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)' }} dangerouslySetInnerHTML={{ __html: isEn ? duel.content_en : duel.content_cs }} />
+            )}
           </div>
         </section>
 
@@ -569,7 +573,8 @@ export default async function GpuDuelDetail({ params }) {
         .gpu-name-text { font-size: clamp(1.6rem, 3.5vw, 2.5rem); font-weight: 950; color: #fff; text-transform: uppercase; margin: 0; line-height: 1.1; }
         .vs-badge { background: #ff0055; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 950; font-size: 24px; border: 5px solid #0f1115; box-shadow: 0 0 30px rgba(255,0,85,0.6); color: #fff; transform: rotate(-5deg); z-index: 10; }
         .tie-badge { background: rgba(255,255,255,0.1); color: #fff; padding: 5px 12px; border-radius: 50px; font-size: 9px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; border: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; gap: 6px; backdrop-filter: blur(5px); }
-        .content-box-style { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .content-box-style { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 20px 50px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
+        .guru-prose-style { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; }
         .summary-item { background: rgba(255,255,255,0.02); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
         .summary-label { display: block; font-size: 10px; font-weight: 900; color: #4b5563; margin-bottom: 8px; letter-spacing: 1px; }
         .summary-val { font-size: 24px; font-weight: 950; }
