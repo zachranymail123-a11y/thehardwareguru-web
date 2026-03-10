@@ -14,32 +14,30 @@ const base = "https://thehardwareguru.cz";
 
 const { data, error } = await supabase
 .from("herni_kalendar")
-.select("*");
+.select("name");
 
 if(error){
-console.error("SITEMAP CALENDAR ERROR:", error);
+console.error("CALENDAR SITEMAP ERROR:", error);
 }
 
 let urls = "";
 
-if(Array.isArray(data)){
-data.forEach(row => {
+data?.forEach(game => {
 
-const slug =
-row.slug ||
-row.slug_cz ||
-row.slug_en ||
-row.game_slug ||
-row.url_slug;
+if(!game.name) return;
 
-if(!slug) return;
+const slug = game.name
+.toLowerCase()
+.normalize("NFD")
+.replace(/[\u0300-\u036f]/g,"")
+.replace(/[^a-z0-9]+/g,"-")
+.replace(/^-|-$/g,"");
 
 urls += `<url>
 <loc>${base}/kalendar/${slug}</loc>
 </url>`;
 
 });
-}
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
