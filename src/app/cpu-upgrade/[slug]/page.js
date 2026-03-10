@@ -21,15 +21,15 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU UPGRADE ENGINE - DETAIL V112.9 (FULL GPU PARITY)
+ * GURU CPU UPGRADE ENGINE - DETAIL V113.0 (GPU EXACT PARITY + CACHE FIX)
  * Cesta: src/app/cpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: Oprava matematického vzorce pro výpočet rozdílu (změněno z a/b na b/a).
- * 🛡️ FIX 2: Absolutní shoda kódu s gpu-upgrade (bezpečný POST bez select, čisté tabulky).
- * 🛡️ ARCH: Node.js runtime a ISR revalidate (86400) pro optimální SEO.
+ * 🛡️ FIX 1: Oprava cachování (revalidate = 0), aby se data FPS natáhla z DB okamžitě.
+ * 🛡️ FIX 2: Absolutní shoda s gpu-upgrade: hry Cyberpunk, Warzone, Starfield.
+ * 🛡️ FIX 3: Oprava matematického vzorce pro výpočet rozdílu (změněno z a/b na b/a).
  */
 
 export const runtime = "nodejs";
-export const revalidate = 86400;
+export const revalidate = 0; // 🚀 GURU FIX: Žádná cache, aby SQL updaty naskočily okamžitě!
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -111,7 +111,7 @@ const getSimilarUpgrades = async (cpuId, currentSlug) => {
     try {
         const res = await fetch(`${supabaseUrl}/rest/v1/cpu_upgrades?select=title_cs,title_en,slug,slug_en&or=(old_cpu_id.eq.${cpuId},new_cpu_id.eq.${cpuId})&slug=neq.${currentSlug}&limit=4`, {
             headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-            next: { revalidate: 86400 }
+            cache: 'no-store'
         });
         if (!res.ok) return [];
         return await res.json();
@@ -170,7 +170,8 @@ async function generateAndPersistUpgrade(slug) {
     // 🚀 GURU FIX: Po uložení natáhneme nově vytvořený/stávající záznam čistým GET dotazem
     const selectQuery = "*,oldCpu:cpus!old_cpu_id(*,cpu_game_fps!cpu_id(*)),newCpu:cpus!new_cpu_id(*,cpu_game_fps!cpu_id(*))";
     const checkExisting = await fetch(`${supabaseUrl}/rest/v1/cpu_upgrades?select=${encodeURIComponent(selectQuery)}&slug=eq.${encodeURIComponent(cleanSlug)}`, {
-        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
+        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
+        cache: 'no-store'
     });
     
     const data = await checkExisting.json();
@@ -196,7 +197,7 @@ const getUpgradeData = cache(async (slug) => {
             apikey: supabaseKey,
             Authorization: `Bearer ${supabaseKey}`
           },
-          next: { revalidate: 86400 }
+          cache: 'no-store' // Fix pro zobrazení SQL změn ihned
         }
       );
       if (!res.ok) return null;
@@ -279,9 +280,10 @@ export default async function App({ params }) {
   const calcSafeDiff = (a, b) => (!a || !b || a === 0 || b === 0) ? 0 : Math.round(((b / a) - 1) * 100);
   const cyberpunkDiff = calcSafeDiff(fpsA?.cyberpunk_1440p, fpsB?.cyberpunk_1440p);
   const warzoneDiff = calcSafeDiff(fpsA?.warzone_1440p, fpsB?.warzone_1440p);
-  const cs2Diff = calcSafeDiff(fpsA?.cs2_1080p, fpsB?.cs2_1080p);
+  // Použití starfield_1440p místo cs2_1080p pro GPU paritu
+  const starfieldDiff = calcSafeDiff(fpsA?.starfield_1440p, fpsB?.starfield_1440p);
   
-  const diffs = [cyberpunkDiff, warzoneDiff, cs2Diff].filter(v => Number.isFinite(v) && v !== 0);
+  const diffs = [cyberpunkDiff, warzoneDiff, starfieldDiff].filter(v => Number.isFinite(v) && v !== 0);
   const avgDiff = diffs.length ? Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length) : 0;
 
   const availableGames = Object.keys(fpsA || {})
@@ -289,7 +291,7 @@ export default async function App({ params }) {
     .map(g => g.replace(/_(1080p|1440p|4k)/,'').replace(/_/g, '-'))
     .filter((v, i, a) => a.indexOf(v) === i);
 
-  const gamesList = availableGames.length > 0 ? availableGames : ['cyberpunk-2077', 'warzone', 'cs2'];
+  const gamesList = availableGames.length > 0 ? availableGames : ['cyberpunk-2077', 'warzone', 'starfield'];
   const isWorthIt = (cpuB?.performance_index || 0) > (cpuA?.performance_index || 0);
 
   return (
@@ -358,13 +360,13 @@ export default async function App({ params }) {
             <div className="content-box-style" style={{ borderLeft: '6px solid #f59e0b' }}>
                 <h2 className="section-h2" style={{ color: '#f59e0b', border: 'none', padding: 0 }}>
                 <BarChart3 size={28} style={{ display: 'inline', marginRight: '10px', verticalAlign: 'middle' }} />
-                {isEn ? 'ESTIMATED FPS GAIN' : 'ODHADOVANÝ NÁRŮST FPS'}
+                {isEn ? 'ESTIMATED FPS GAIN (1440p)' : 'ODHADOVANÝ NÁRŮST FPS (1440p)'}
                 </h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '30px' }}>
                     {[
-                        { label: 'CYBERPUNK 2077 (1440p)', diff: cyberpunkDiff, oldFps: fpsA.cyberpunk_1440p, newFps: fpsB.cyberpunk_1440p },
-                        { label: 'WARZONE (1440p)', diff: warzoneDiff, oldFps: fpsA.warzone_1440p, newFps: fpsB.warzone_1440p },
-                        { label: 'CS2 (1080p)', diff: cs2Diff, oldFps: fpsA.cs2_1080p, newFps: fpsB.cs2_1080p }
+                        { label: 'CYBERPUNK 2077', diff: cyberpunkDiff, oldFps: fpsA.cyberpunk_1440p, newFps: fpsB.cyberpunk_1440p },
+                        { label: 'WARZONE', diff: warzoneDiff, oldFps: fpsA.warzone_1440p, newFps: fpsB.warzone_1440p },
+                        { label: 'STARFIELD', diff: starfieldDiff, oldFps: fpsA.starfield_1440p, newFps: fpsB.starfield_1440p }
                     ].map((item, i) => (
                         <div key={i} className="summary-item">
                             <span className="summary-label">{item.label}</span>
