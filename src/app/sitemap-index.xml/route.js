@@ -17,7 +17,11 @@ const maps = [
 "sitemap-gpu-duels.xml",
 "sitemap-cpu-duels.xml",
 "sitemap-benchmarks.xml",
-"sitemap-duel-benchmarks.xml",
+
+// ROZDĚLENÉ DUEL BENCHMARKY
+"sitemap-duel-benchmarks-1.xml",
+"sitemap-duel-benchmarks-2.xml",
+
 "sitemap-gpu-fps.xml",
 "sitemap-best-gpu.xml",
 "sitemap-calendar.xml",
