@@ -3,9 +3,9 @@ export const revalidate = 3600;
 
 export async function GET(){
 
-const base = "https://thehardwareguru.cz";
+const base="https://thehardwareguru.cz";
 
-const maps = [
+const maps=[
 "sitemap-pages.xml",
 "sitemap-posts.xml",
 "sitemap-tipy.xml",
@@ -29,16 +29,16 @@ const maps = [
 "sitemap-builds.xml"
 ];
 
-const today = new Date().toISOString();
+const today=new Date().toISOString();
 
-const urls = maps.map(m=>`
+const urls=maps.map(m=>`
 <sitemap>
 <loc>${base}/${m}</loc>
 <lastmod>${today}</lastmod>
 </sitemap>
 `).join("");
 
-const xml = `<?xml version="1.0" encoding="UTF-8"?>
+const xml=`<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
 </sitemapindex>`;
