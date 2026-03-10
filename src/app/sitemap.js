@@ -103,16 +103,11 @@ export default async function sitemap() {
     };
 
     if (postsRes.data) {
-
       postsRes.data.forEach(item => {
-
         const isExpected = item.type === 'expected';
         const path = isExpected ? '/ocekavane-hry' : '/clanky';
-
         addToRoutes(item, path, isExpected ? 0.9 : 0.8);
-
       });
-
     }
 
     if (tipyRes.data) tipyRes.data.forEach(item => addToRoutes(item, '/tipy', 0.8));
@@ -132,41 +127,51 @@ export default async function sitemap() {
     const resolutions = ['1080p','1440p','4k'];
     const modes = ['dlss','ray-tracing','ultra','high'];
 
-    /* GAME BENCHMARK HUB */
+    /* GPU VS GAME + RESOLUTION */
 
-    gamesList.forEach((game) => {
+    if (duelsRes.data) {
 
-      dynamicRoutes.push({
-        url: `${baseUrl}/game-benchmarks/${game}`,
-        lastModified: currentDate,
-        priority: 0.8
-      });
+      duelsRes.data.forEach((item) => {
 
-      dynamicRoutes.push({
-        url: `${baseUrl}/en/game-benchmarks/${game}`,
-        lastModified: currentDate,
-        priority: 0.7
-      });
+        addToRoutes(item, '/gpuvs', 0.8);
 
-      /* GAME + RESOLUTION */
+        gamesList.forEach((game) => {
 
-      resolutions.forEach((res)=>{
+          dynamicRoutes.push({
+            url: `${baseUrl}/gpuvs/${item.slug}/${game}`,
+            lastModified: item.created_at || currentDate,
+            priority: 0.7
+          });
 
-        dynamicRoutes.push({
-          url: `${baseUrl}/game-benchmarks/${game}/${res}`,
-          lastModified: currentDate,
-          priority: 0.7
+          const enSlug = item.slug_en || `en-${item.slug}`;
+
+          dynamicRoutes.push({
+            url: `${baseUrl}/en/gpuvs/${enSlug}/${game}`,
+            lastModified: item.created_at || currentDate,
+            priority: 0.6
+          });
+
+          resolutions.forEach((res)=>{
+
+            dynamicRoutes.push({
+              url: `${baseUrl}/gpuvs/${item.slug}/${game}/${res}`,
+              lastModified: item.created_at || currentDate,
+              priority: 0.7
+            });
+
+            dynamicRoutes.push({
+              url: `${baseUrl}/en/gpuvs/${enSlug}/${game}/${res}`,
+              lastModified: item.created_at || currentDate,
+              priority: 0.6
+            });
+
+          })
+
         });
 
-        dynamicRoutes.push({
-          url: `${baseUrl}/en/game-benchmarks/${game}/${res}`,
-          lastModified: currentDate,
-          priority: 0.6
-        });
+      });
 
-      })
-
-    });
+    }
 
     if (gpusRes.data) {
 
@@ -182,88 +187,6 @@ export default async function sitemap() {
 
         dynamicRoutes.push({
           url: `${baseUrl}/en/gpu/${gpu.slug}`,
-          lastModified: currentDate,
-          priority: 0.7
-        });
-
-        /* GPU RESOLUTION BENCHMARK */
-
-        resolutions.forEach((res)=>{
-
-          dynamicRoutes.push({
-            url: `${baseUrl}/gpu-benchmarks/${gpu.slug}/${res}`,
-            lastModified: currentDate,
-            priority: 0.7
-          });
-
-          dynamicRoutes.push({
-            url: `${baseUrl}/en/gpu-benchmarks/${gpu.slug}/${res}`,
-            lastModified: currentDate,
-            priority: 0.6
-          });
-
-        })
-
-        gamesList.forEach((game) => {
-
-          dynamicRoutes.push({
-            url: `${baseUrl}/gpu/${gpu.slug}/${game}`,
-            lastModified: currentDate,
-            priority: 0.7
-          });
-
-          dynamicRoutes.push({
-            url: `${baseUrl}/en/gpu/${gpu.slug}/${game}`,
-            lastModified: currentDate,
-            priority: 0.6
-          });
-
-        });
-
-        gamesList.forEach((game) => {
-
-          resolutions.forEach((res) => {
-
-            dynamicRoutes.push({
-              url: `${baseUrl}/gpu-performance/${gpu.slug}/${game}/${res}`,
-              lastModified: currentDate,
-              priority: 0.7
-            });
-
-            dynamicRoutes.push({
-              url: `${baseUrl}/en/gpu-performance/${gpu.slug}/${game}/${res}`,
-              lastModified: currentDate,
-              priority: 0.6
-            });
-
-          });
-
-          modes.forEach((mode) => {
-
-            dynamicRoutes.push({
-              url: `${baseUrl}/gpu-performance/${gpu.slug}/${game}/${mode}`,
-              lastModified: currentDate,
-              priority: 0.7
-            });
-
-            dynamicRoutes.push({
-              url: `${baseUrl}/en/gpu-performance/${gpu.slug}/${game}/${mode}`,
-              lastModified: currentDate,
-              priority: 0.6
-            });
-
-          });
-
-        });
-
-        dynamicRoutes.push({
-          url: `${baseUrl}/gpu-performance/${gpu.slug}`,
-          lastModified: currentDate,
-          priority: 0.7
-        });
-
-        dynamicRoutes.push({
-          url: `${baseUrl}/gpu-recommend/${gpu.slug}`,
           lastModified: currentDate,
           priority: 0.7
         });
