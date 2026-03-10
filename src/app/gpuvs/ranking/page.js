@@ -10,11 +10,9 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU ENGINE - TIER LIST & RANKING V1.2 (ULTIMATE FIX)
+ * GURU GPU ENGINE - TIER LIST & RANKING V1.3 (PROFILE LINK FIX)
  * Cesta: src/app/gpuvs/ranking/page.js
- * 🛡️ FIX 1: Nativní fetch s 'no-store' = 100% bypass mrtvé Next.js cache (Supabase klient odstraněn).
- * 🛡️ FIX 2: Ošetřeno řazení nullslast - grafiky bez skóre už nemizí, jen spadnou na konec tabulky!
- * 🛡️ FIX 3: Vizuální motiv přizpůsoben GPU sekci (neonově modrá #66fcf1).
+ * 🛡️ FIX: Tlačítko 'Profil' už nevede na /gpu-performance, ale na hlavní rozcestník /gpu/[slug].
  */
 
 export const dynamic = 'force-dynamic';
@@ -165,9 +163,9 @@ export default async function GpuRankingPage(props) {
                     </div>
                  </div>
 
-                 {/* Actions */}
+                 {/* Actions (FIX ODKAZŮ) */}
                  <div className="action-buttons">
-                    <a href={`/${isEn ? 'en/' : ''}gpu-performance/${safeSlug}`} className="btn-profile">
+                    <a href={`/${isEn ? 'en/' : ''}gpu/${safeSlug}`} className="btn-profile">
                       <Activity size={14} /> <span className="hide-mobile">{isEn ? 'Profile' : 'Profil'}</span>
                     </a>
                     <a href={`/${isEn ? 'en/' : ''}gpuvs`} className="btn-vs">
