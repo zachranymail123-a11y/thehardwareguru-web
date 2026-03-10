@@ -19,14 +19,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V67.7 (FULL GPU PARITY + SEO TEXT BLOCK FIX)
+ * GURU CPU DUELS ENGINE - DETAIL V67.9 (FULL PARITY & CLEAN FALLBACKS)
  * Cesta: src/app/cpuvs/[slug]/page.js
- * 🛡️ FIX 1: SEO text vložen do content-box-style pro perfektní čitelnost (sloučeno s prázdným content boxem).
- * 🛡️ FIX 2: Oprava české gramatiky v SEO bloku ("dosahují oba procesory").
- * 🛡️ FIX 3: Kompletní synchronizace prvků z GPU (Upgrade odkaz, SEO Schemata, Podobné duely).
- * 🛡️ FIX 4: Podpora '-to-' v URL parseru pro upgrade duely.
- * 🛡️ FIX 5: Ochrana resolution=merge-duplicates proti souběžnému zápisu.
- * 🚀 NEW: Integrace Deep Dive Analysis (propojení s CPU Landing Pages).
+ * 🛡️ FIX 1: Doplněn Rok vydání (Release Year) a Zaváděcí cena (MSRP) po vzoru GPU.
+ * 🛡️ FIX 2: Vylepšeny fallbacks - prázdné hodnoty nyní skryjí i jednotku a ukážou jen čistou pomlčku '-'.
+ * 🛡️ FIX 3: Plná podpora L3 Cache, Cores/Threads, Base a Boost Clocks.
  */
 
 export const runtime = "nodejs";
@@ -130,7 +127,7 @@ async function generateAndPersistDuel(slug) {
         title_en,
         seo_description_cs: seo_desc_cs,
         seo_description_en: seo_desc_en,
-        content_cs: '', // Pro jistotu přidáno jako u GPU (některé DB tabulky to stále mohou vyžadovat)
+        content_cs: '', 
         content_en: '',
         created_at: new Date().toISOString()
     };
@@ -276,11 +273,12 @@ export default async function CpuDuelDetail({ params }) {
   }).format(new Date(duel.created_at || Date.now()));
   const backLink = isEn ? '/en/cpuvs' : '/cpuvs';
   
-  // Design funkce
-  const getWinnerClass = (valA, valB, lowerIsBetter = false) => {
-    if (valA === valB) return 'text-neutral-400';
-    if (lowerIsBetter) return valA < valB ? 'text-green-400 font-black' : 'text-red-400';
-    return valA > valB ? 'text-green-400 font-black' : 'text-red-400';
+  // 🚀 GURU FIX: Nová funkce pro vizualizaci z GPU
+  const getWinnerStyle = (valA, valB, lowerIsBetter = false) => {
+    if (valA == null || valB == null) return {};
+    if (valA === valB) return { color: '#9ca3af', fontWeight: 'bold' };
+    const aWins = lowerIsBetter ? valA < valB : valA > valB;
+    return aWins ? { color: '#66fcf1', fontWeight: '950' } : { color: '#4b5563', opacity: 0.6 }; 
   };
 
   const getVendorColor = (vendor) => {
@@ -570,42 +568,28 @@ export default async function CpuDuelDetail({ params }) {
           </div>
         </section>
 
-        {/* TABULKA SPECIFIKACÍ */}
+        {/* 🚀 GURU FIX: TABULKA SPECIFIKACÍ - ČISTÉ FALLBACKY (SKRYTÍ JEDNOTEK PŘI PRÁZDNÉ HODNOTĚ) */}
         <section style={{ marginBottom: '60px' }}>
           <h2 style={{ fontSize: '2.5rem', fontWeight: '950', color: '#fff', textTransform: 'uppercase', fontStyle: 'italic', marginBottom: '20px' }}>
             {isEn ? 'TECHNICAL SPECS' : 'GURU SPECIFIKACE'}
           </h2>
-          <div style={{ background: 'rgba(15, 17, 21, 0.95)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
-             
-             <div className="spec-row">
-               <div className={`spec-val ${getWinnerClass(cpuA.cores, cpuB.cores)}`}>{cpuA.cores} / {cpuA.threads}</div>
-               <div className="spec-label">{isEn ? 'CORES / THREADS' : 'JÁDRA / VLÁKNA'}</div>
-               <div className={`spec-val ${getWinnerClass(cpuB.cores, cpuA.cores)}`}>{cpuB.cores} / {cpuB.threads}</div>
-             </div>
-
-             <div className="spec-row">
-               <div className={`spec-val ${getWinnerClass(cpuA.base_clock_mhz, cpuB.base_clock_mhz)}`}>{cpuA.base_clock_mhz} MHz</div>
-               <div className="spec-label">{isEn ? 'BASE CLOCK' : 'ZÁKLADNÍ TAKT'}</div>
-               <div className={`spec-val ${getWinnerClass(cpuB.base_clock_mhz, cpuA.base_clock_mhz)}`}>{cpuB.base_clock_mhz} MHz</div>
-             </div>
-
-             <div className="spec-row">
-               <div className={`spec-val ${getWinnerClass(cpuA.boost_clock_mhz, cpuB.boost_clock_mhz)}`}>{cpuA.boost_clock_mhz} MHz</div>
-               <div className="spec-label">BOOST CLOCK</div>
-               <div className={`spec-val ${getWinnerClass(cpuB.boost_clock_mhz, cpuA.boost_clock_mhz)}`}>{cpuB.boost_clock_mhz} MHz</div>
-             </div>
-
-             <div className="spec-row">
-               <div className={`spec-val ${getWinnerClass(cpuA.tdp_w, cpuB.tdp_w, true)}`}>{cpuA.tdp_w} W</div>
-               <div className="spec-label">TDP (SPOTŘEBA)</div>
-               <div className={`spec-val ${getWinnerClass(cpuB.tdp_w, cpuA.tdp_w, true)}`}>{cpuB.tdp_w} W</div>
-             </div>
-
-             <div className="spec-row">
-               <div className="spec-val" style={{ color: '#e5e7eb' }}>{cpuA.architecture}</div>
-               <div className="spec-label">{isEn ? 'ARCHITECTURE' : 'ARCHITEKTURA'}</div>
-               <div className="spec-val" style={{ color: '#e5e7eb' }}>{cpuB.architecture}</div>
-             </div>
+          <div className="table-wrapper">
+             {[
+               { label: isEn ? 'CORES / THREADS' : 'JÁDRA / VLÁKNA', valA: (cpuA?.cores && cpuA?.threads) ? `${cpuA.cores} / ${cpuA.threads}` : '-', valB: (cpuB?.cores && cpuB?.threads) ? `${cpuB.cores} / ${cpuB.threads}` : '-', winA: cpuA?.cores, winB: cpuB?.cores },
+               { label: isEn ? 'BASE CLOCK' : 'ZÁKLADNÍ TAKT', valA: cpuA?.base_clock_mhz ? `${cpuA.base_clock_mhz} MHz` : '-', valB: cpuB?.base_clock_mhz ? `${cpuB.base_clock_mhz} MHz` : '-', winA: cpuA?.base_clock_mhz, winB: cpuB?.base_clock_mhz },
+               { label: 'BOOST CLOCK', valA: cpuA?.boost_clock_mhz ? `${cpuA.boost_clock_mhz} MHz` : '-', valB: cpuB?.boost_clock_mhz ? `${cpuB.boost_clock_mhz} MHz` : '-', winA: cpuA?.boost_clock_mhz, winB: cpuB?.boost_clock_mhz },
+               { label: 'L3 CACHE', valA: cpuA?.l3_cache_mb ? `${cpuA.l3_cache_mb} MB` : '-', valB: cpuB?.l3_cache_mb ? `${cpuB.l3_cache_mb} MB` : '-', winA: cpuA?.l3_cache_mb, winB: cpuB?.l3_cache_mb },
+               { label: 'TDP', valA: cpuA?.tdp_w ? `${cpuA.tdp_w} W` : '-', valB: cpuB?.tdp_w ? `${cpuB.tdp_w} W` : '-', winA: cpuA?.tdp_w ?? 999, winB: cpuB?.tdp_w ?? 999, lower: true },
+               { label: isEn ? 'ARCHITECTURE' : 'ARCHITEKTURA', valA: cpuA?.architecture ?? '-', valB: cpuB?.architecture ?? '-', winA: 0, winB: 0 },
+               { label: isEn ? 'RELEASE YEAR' : 'ROK VYDÁNÍ', valA: cpuA?.release_date ? new Date(cpuA.release_date).getFullYear() : '-', valB: cpuB?.release_date ? new Date(cpuB.release_date).getFullYear() : '-', winA: 0, winB: 0 },
+               { label: isEn ? 'MSRP PRICE' : 'ZAVÁDĚCÍ CENA', valA: cpuA?.release_price_usd ? `$${cpuA.release_price_usd}` : '-', valB: cpuB?.release_price_usd ? `$${cpuB.release_price_usd}` : '-', winA: cpuA?.release_price_usd, winB: cpuB?.release_price_usd, lower: true }
+             ].map((row, i) => (
+               <div key={i} className="spec-row-style">
+                 <div style={{ ...getWinnerStyle(row.winA, row.winB, row.lower), flex: 1, textAlign: 'right', fontSize: '18px' }}>{row.valA}</div>
+                 <div className="table-label">{row.label}</div>
+                 <div style={{ ...getWinnerStyle(row.winB, row.winA, row.lower), flex: 1, textAlign: 'left', fontSize: '18px' }}>{row.valB}</div>
+               </div>
+             ))}
           </div>
         </section>
 
@@ -688,12 +672,10 @@ export default async function CpuDuelDetail({ params }) {
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
         .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
 
-        /* Utility classes pre tabulku */
-        .spec-row { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center; }
-        .spec-row:nth-child(even) { background: rgba(255,255,255,0.02); }
-        .spec-row:hover { background: rgba(255,255,255,0.05); }
-        .spec-val { flex: 1; text-align: center; font-size: 16px; font-weight: 900; }
-        .spec-label { flex: 1; text-align: center; font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        /* 🚀 GURU: STYLY PRO NOVOU DYNAMICKOU TABULKU */
+        .table-wrapper { background: rgba(15, 17, 21, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
+        .spec-row-style { display: flex; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        .table-label { width: 180px; text-align: center; font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; }
         
         .text-green-400 { color: #4ade80; }
         .text-red-400 { color: #f87171; }
@@ -720,7 +702,7 @@ export default async function CpuDuelDetail({ params }) {
           .guru-grid-ring > div:nth-child(2) { margin: -10px 0 !important; } /* Odznak VS */
 
           .perf-box-content { flex-direction: column !important; align-items: flex-start !important; gap: 20px; }
-          .spec-row { padding: 15px 10px !important; }
+          .spec-row-style { flex-direction: column !important; gap: 10px; padding: 15px 10px !important; }
         }
       `}} />
     </div>
