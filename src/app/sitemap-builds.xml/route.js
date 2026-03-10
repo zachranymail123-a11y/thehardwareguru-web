@@ -7,40 +7,28 @@ export async function GET(){
 
 const supabase = createClient(
 process.env.NEXT_PUBLIC_SUPABASE_URL,
-process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 const base = "https://thehardwareguru.cz";
 
 const { data, error } = await supabase
-.from("builds")
-.select("slug,name");
+.from("pc_builds")
+.select("slug");
 
 if(error){
-console.error("BUILDS SITEMAP ERROR:", error);
+console.error("SITEMAP BUILDS ERROR:", error);
 }
 
 let urls = "";
 
 data?.forEach(build => {
 
-let slug = build.slug;
+if(!build.slug) return;
 
-if(!slug && build.name){
-
-slug = build.name
-.toLowerCase()
-.normalize("NFD")
-.replace(/[\u0300-\u036f]/g,"")
-.replace(/[^a-z0-9]+/g,"-")
-.replace(/^-|-$/g,"");
-
-}
-
-if(!slug) return;
-
-urls += `<url>
-<loc>${base}/sestavy/${slug}</loc>
+urls += `
+<url>
+<loc>${base}/sestavy/${build.slug}</loc>
 </url>`;
 
 });
@@ -51,9 +39,7 @@ ${urls}
 </urlset>`;
 
 return new Response(xml,{
-headers:{
-"Content-Type":"application/xml; charset=utf-8"
-}
+headers:{'Content-Type':'application/xml'}
 });
 
 }
