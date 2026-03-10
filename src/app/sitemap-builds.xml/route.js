@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 export const revalidate = 3600;
+export const runtime = "nodejs";
 
 export async function GET(){
 
@@ -11,18 +12,35 @@ process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 const base = "https://thehardwareguru.cz";
 
-const { data } = await supabase
+const { data, error } = await supabase
 .from("builds")
-.select("slug");
+.select("slug,name");
+
+if(error){
+console.error("BUILDS SITEMAP ERROR:", error);
+}
 
 let urls = "";
 
-data?.forEach(b => {
+data?.forEach(build => {
 
-if(!b.slug) return;
+let slug = build.slug;
+
+if(!slug && build.name){
+
+slug = build.name
+.toLowerCase()
+.normalize("NFD")
+.replace(/[\u0300-\u036f]/g,"")
+.replace(/[^a-z0-9]+/g,"-")
+.replace(/^-|-$/g,"");
+
+}
+
+if(!slug) return;
 
 urls += `<url>
-<loc>${base}/sestavy/${b.slug}</loc>
+<loc>${base}/sestavy/${slug}</loc>
 </url>`;
 
 });
