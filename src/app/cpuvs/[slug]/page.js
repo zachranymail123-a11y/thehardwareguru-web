@@ -19,11 +19,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V67.5 (FULL GPU PARITY)
+ * GURU CPU DUELS ENGINE - DETAIL V67.6 (FULL GPU PARITY + SEO TEXT BLOCK)
  * Cesta: src/app/cpuvs/[slug]/page.js
- * 🛡️ FIX 1: Kompletní synchronizace prvků z GPU (Upgrade odkaz, SEO Schemata, Podobné duely).
- * 🛡️ FIX 2: Podpora '-to-' v URL parseru pro upgrade duely.
- * 🛡️ FIX 3: Ochrana resolution=merge-duplicates proti souběžnému zápisu.
+ * 🛡️ FIX 1: Doplněna chybějící textová SEO sekce "Herní výkon" (podle GPU vzoru).
+ * 🛡️ FIX 2: Kompletní synchronizace prvků z GPU (Upgrade odkaz, SEO Schemata, Podobné duely).
+ * 🛡️ FIX 3: Podpora '-to-' v URL parseru pro upgrade duely.
+ * 🛡️ FIX 4: Ochrana resolution=merge-duplicates proti souběžnému zápisu.
  * 🚀 NEW: Integrace Deep Dive Analysis (propojení s CPU Landing Pages).
  */
 
@@ -545,6 +546,19 @@ export default async function CpuDuelDetail({ params }) {
                 {isEn ? "Detailed benchmark data for this exact pairing is currently not available in our index." : "Detailní data z benchmarků pro tuto konkrétní dvojici zatím nejsou v našem indexu k dispozici."}
              </div>
           )}
+        </section>
+
+        {/* 🚀 GURU: H2 GAMING PERFORMANCE (SEO TEXT BLOCK Z GPU) */}
+        <section style={{ marginBottom: '60px' }}>
+          <h2 className="section-h2" style={{ borderLeft: '4px solid #66fcf1' }}>
+            {isEn ? `${cpuA?.name || "CPU A"} vs ${cpuB?.name || "CPU B"} – Gaming Performance` : `${cpuA?.name || "CPU A"} vs ${cpuB?.name || "CPU B"} – Herní výkon`}
+          </h2>
+          <p style={{ color: '#d1d5db', fontSize: '1.1rem', lineHeight: '1.7' }}>
+            {isEn 
+              ? `In modern titles like Cyberpunk 2077, Call of Duty: Warzone, and Starfield, the ${perfWinner ? perfWinner.name : 'both processors'} deliver ${perfWinner ? `a lead of ${perfDiff}%` : 'comparable results'}. Our benchmark analysis shows that ${cpuA?.name || "CPU A"} and ${cpuB?.name || "CPU B"} are solid options for modern gaming.`
+              : `V moderních hrách jako Cyberpunk 2077, Call of Duty: Warzone a Starfield dosahuje ${perfWinner ? perfWinner.name : 'oba procesory'} ${perfWinner ? `náskoku o ${perfDiff} %` : 'srovnatelných výsledků'}. Naše analýza benchmarků ukazuje, že ${cpuA?.name || "CPU A"} a ${cpuB?.name || "CPU B"} jsou skvělými volbami pro moderní hraní.`
+            }
+          </p>
         </section>
 
         {/* 🚀 GURU: CONTENT BLOCK (Z GPU) */}
