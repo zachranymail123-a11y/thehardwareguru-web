@@ -1,53 +1,46 @@
-export async function GET() {
+export const revalidate = 3600;
 
-  const baseUrl = "https://thehardwareguru.cz";
-  const now = new Date().toISOString();
+export async function GET(){
 
-  const pages = [
-    "/",
-    "/clanky",
-    "/tipy",
-    "/tweaky",
-    "/rady",
-    "/slovnik",
-    "/deals",
-    "/gpuvs",
-    "/gpuvs/ranking",
-    "/cpuvs",
-    "/support",
-    "/sin-slavy"
-  ];
+const base="https://thehardwareguru.cz";
 
-  const urls = [];
+const pages=[
+"/",
+"/clanky",
+"/tipy",
+"/tweaky",
+"/rady",
+"/slovnik",
+"/gpuvs",
+"/cpuvs",
+"/support",
+"/sin-slavy",
+"/crawl-signal",
+"/gpu-index",
+"/game-index",
+"/hledat",
+"/guru-stats",
+"/reports",
+"/partneri",
+"/podminky-uziti",
+"/ochrana-soukromi",
+"/kalendar",
+"/sestavy",
+"/ocekavane-hry"
+];
 
-  pages.forEach((page) => {
+let urls="";
 
-    urls.push(`
-<url>
-<loc>${baseUrl}${page}</loc>
-<lastmod>${now}</lastmod>
-<priority>0.9</priority>
-</url>`);
+pages.forEach(p=>{
+urls+=`
+<url><loc>${base}${p}</loc></url>
+<url><loc>${base}/en${p}</loc></url>`;
+});
 
-    urls.push(`
-<url>
-<loc>${baseUrl}/en${page}</loc>
-<lastmod>${now}</lastmod>
-<priority>0.8</priority>
-</url>`);
-
-  });
-
-  const xml =
-`<?xml version="1.0" encoding="UTF-8"?>
+const xml=`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.join("")}
+${urls}
 </urlset>`;
 
-  return new Response(xml,{
-    headers:{
-      "Content-Type":"application/xml"
-    }
-  });
-
+return new Response(xml,{headers:{'Content-Type':'application/xml'}});
 }
