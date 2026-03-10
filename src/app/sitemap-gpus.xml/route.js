@@ -1,55 +1,34 @@
 import { createClient } from '@supabase/supabase-js';
 
-export async function GET() {
+export const revalidate=3600;
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
+export async function GET(){
 
-  const baseUrl = "https://thehardwareguru.cz";
-  const now = new Date().toISOString();
+const supabase=createClient(
+process.env.NEXT_PUBLIC_SUPABASE_URL,
+process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-  const { data: gpus } = await supabase
-    .from("gpus")
-    .select("slug");
+const base="https://thehardwareguru.cz";
 
-  const urls = [];
+const {data}=await supabase
+.from('gpus')
+.select('slug');
 
-  if (gpus) {
+let urls="";
 
-    gpus.forEach((gpu) => {
+data?.forEach(g=>{
 
-      if (!gpu.slug) return;
+urls+=`
+<url><loc>${base}/gpu/${g.slug}</loc></url>
+<url><loc>${base}/en/gpu/${g.slug}</loc></url>`;
 
-      urls.push(`
-<url>
-<loc>${baseUrl}/gpu/${gpu.slug}</loc>
-<lastmod>${now}</lastmod>
-<priority>0.8</priority>
-</url>`);
+});
 
-      urls.push(`
-<url>
-<loc>${baseUrl}/en/gpu/${gpu.slug}</loc>
-<lastmod>${now}</lastmod>
-<priority>0.7</priority>
-</url>`);
-
-    });
-
-  }
-
-  const xml =
-`<?xml version="1.0" encoding="UTF-8"?>
+const xml=`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.join("")}
+${urls}
 </urlset>`;
 
-  return new Response(xml,{
-    headers:{
-      "Content-Type":"application/xml"
-    }
-  });
-
+return new Response(xml,{headers:{'Content-Type':'application/xml'}});
 }
