@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { cache } from 'react';
 import { 
   ChevronLeft, 
   ShieldCheck, 
@@ -15,36 +15,49 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V67.3 (100% NATIVE API & NO-AI)
+ * GURU CPU DUELS ENGINE - DETAIL V67.4 (GPU LOGIC SYNC)
  * Cesta: src/app/cpuvs/[slug]/page.js
- * 🛡️ FIX 1: Odstraněny neexistující sloupce content_cs a content_en z insert payloadu.
- * 🛡️ FIX 2: Přidáno chybové logování DB pro snadnější troubleshooting.
- * 🛡️ FIX 3: Plně zachována funkční vyhledávací a renderovací logika.
- * 🚀 NEW: Integrace Deep Dive Analysis (propojení s CPU Landing Pages).
+ * 🛡️ FIX 1: Podpora '-to-' v URL parseru pro upgrade duely (z GPU).
+ * 🛡️ FIX 2: Agresivní slugify engine zachovávající SEO názvy (z GPU).
+ * 🛡️ FIX 3: Ochrana resolution=merge-duplicates proti souběžnému zápisu (z GPU).
+ * 🛡️ FIX 4: Nahrazeno cache: 'no-store' za ISR revalidate (86400) + React cache.
  */
+
+export const runtime = "nodejs";
+export const revalidate = 86400;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// 🚀 GURU: Standardní slugify pro bezpečné URL
+// 🚀 GURU: Agresivní slugify engine (zachovává vendor názvy pro čisté SEO)
 const slugify = (text) => {
-  return text.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim();
+  return text
+    .toLowerCase()
+    .replace(/processor|cpu/gi, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9\-]/g, "")
+    .replace(/\-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .trim();
 };
 
-// 🛡️ GURU ENGINE: Vyhledávání CPU z DB (Nativní Fetch)
+// 🛡️ GURU ENGINE: Vyhledávání CPU z DB (ROBUSTNÍ PARSER)
 const findCpu = async (slugPart) => {
   if (!supabaseUrl) return null;
   
   // 🚀 GURU FIX: Stejná super-stabilní Regex logika jako u GPU
   const clean = slugPart.replace(/-/g, " ").replace(/ryzen|core|intel|amd|ultra/gi, "").trim();
   const chunks = clean.match(/\d+|[a-zA-Z]+/g);
-  if (!chunks) return null;
+  if (!chunks || chunks.length === 0) return null;
+  
   const searchPattern = `%${chunks.join('%')}%`;
 
   try {
       const res = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`, {
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-          cache: 'no-store'
+          next: { revalidate: 86400 }
       });
       if (!res.ok) return null;
       const data = await res.json();
@@ -58,8 +71,16 @@ async function generateAndPersistDuel(slug) {
 
   try {
     const cleanSlug = slug.replace(/^en-/, '');
-    const parts = cleanSlug.split('-vs-');
-    if (parts.length !== 2) return null;
+    
+    // 🛡️ GURU FIX: Podpora -to- i -vs- (Kopie z GPU)
+    let parts;
+    if (cleanSlug.includes('-vs-')) {
+      parts = cleanSlug.split('-vs-');
+    } else if (cleanSlug.includes('-to-')) {
+      parts = cleanSlug.split('-to-');
+    }
+
+    if (!parts || parts.length !== 2) return null;
 
     const cpuA = await findCpu(parts[0]);
     const cpuB = await findCpu(parts[1]);
@@ -81,7 +102,6 @@ async function generateAndPersistDuel(slug) {
         seo_desc_en += ` The raw gaming performance winner is ${winner} with a ${diff}% lead.`;
     }
 
-    // 🚀 GURU FIX: Odstraněny sloupce 'content_cs' a 'content_en' - tabulka je nepodporuje!
     const payload = {
         slug: cleanSlug,
         slug_en: `en-${cleanSlug}`,
@@ -96,21 +116,20 @@ async function generateAndPersistDuel(slug) {
 
     const selectQuery = "*,cpuA:cpus!cpu_a_id(*),cpuB:cpus!cpu_b_id(*)";
     
+    // 🛡️ GURU CONCURRENCY FIX: resolution=merge-duplicates jako u GPU
     const dbRes = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}`, {
         method: 'POST',
         headers: {
             'apikey': supabaseKey,
             'Authorization': `Bearer ${supabaseKey}`,
             'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
+            'Prefer': 'return=representation,resolution=merge-duplicates'
         },
         body: JSON.stringify(payload)
     });
 
     if (!dbRes.ok) {
-        // Pro případ, že by tě blokovalo Supabase RLS, vypíše to chybu do Vercel logů
         console.error("GURU DB INSERT ERROR:", await dbRes.text());
-        
         const checkExisting = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${encodeURIComponent(cleanSlug)}`, {
             headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
         });
@@ -125,20 +144,21 @@ async function generateAndPersistDuel(slug) {
   }
 }
 
-// Načtení dat z DB (Nativní Fetch s Cache)
-const getDuelData = async (slug) => {
+// Načtení dat z DB (Nativní Fetch s React Cache)
+const getDuelData = cache(async (slug) => {
   if (!supabaseUrl) return null;
   const cleanSlug = slug.replace(/^en-/, '');
   const normalizedSlug = cleanSlug.replace(/intel-/g, '').replace(/amd-/g, '');
 
-  const orQuery = `slug.eq.${slug},slug.eq.${cleanSlug},slug.eq.${normalizedSlug}`;
+  // 🛡️ GURU FIX: Přidáno slug_en.eq.${slug} jako u GPU
+  const orQuery = `slug.eq.${slug},slug.eq.${cleanSlug},slug.eq.${normalizedSlug},slug_en.eq.${slug}`;
   const selectQuery = `*,cpuA:cpus!cpu_a_id(*),cpuB:cpus!cpu_b_id(*)`;
   const url = `${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&or=(${encodeURIComponent(orQuery)})&limit=1`;
 
   try {
       const res = await fetch(url, {
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-          cache: 'no-store'
+          next: { revalidate: 86400 }
       });
       if (!res.ok) return null;
       const data = await res.json();
@@ -148,7 +168,7 @@ const getDuelData = async (slug) => {
       }
       return data[0];
   } catch (e) { return null; }
-};
+});
 
 // SEO Metadata
 export async function generateMetadata({ params }) {
@@ -433,7 +453,7 @@ export default async function CpuDuelDetail({ params }) {
 
       </main>
 
-      {/* GLOBÁLNÍ STYLY */}
+      {/* GLOBÁLNÍ STYLY - ABSOLUTNÍ KOPIE GPUVS PRO MAXIMÁLNÍ STABILITU */}
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; backdrop-filter: blur(5px); border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.2); }
