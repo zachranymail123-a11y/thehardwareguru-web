@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-export const revalidate = 3600;
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 86400;
 
 export async function GET(){
 
@@ -14,17 +15,17 @@ const base = "https://thehardwareguru.cz";
 
 const { data, error } = await supabase
 .from("herni_kalendar")
-.select("name");
+.select("name")
+.not("name","is",null);
 
 if(error){
 console.error("CALENDAR SITEMAP ERROR:", error);
+return new Response("Supabase error",{ status:500 });
 }
 
 let urls = "";
 
-data?.forEach(game => {
-
-if(!game.name) return;
+data.forEach(game => {
 
 const slug = game.name
 .toLowerCase()
@@ -33,11 +34,9 @@ const slug = game.name
 .replace(/[^a-z0-9]+/g,"-")
 .replace(/^-|-$/g,"");
 
-urls += `
-<url>
+urls += `<url>
 <loc>${base}/kalendar/${slug}</loc>
 </url>`;
-
 });
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -47,7 +46,7 @@ ${urls}
 
 return new Response(xml,{
 headers:{
-"Content-Type":"application/xml"
+"Content-Type":"text/xml; charset=utf-8"
 }
 });
 
