@@ -8,17 +8,17 @@ import {
   Cpu,
   Medal
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU CPU ENGINE - TIER LIST & RANKING V1.1 (CACHE & NULLS FIX)
+ * GURU CPU ENGINE - TIER LIST & RANKING V1.2 (ULTIMATE FIX)
  * Cesta: src/app/cpuvs/ranking/page.js
- * 🛡️ FIX 1: Ošetřeno řazení - Postgres dává NULL hodnoty u DESC na první místo.
- * Přidán filtr .gt('performance_index', 0), který skryje procesory bez skóre.
- * 🛡️ FIX 2: Přidáno force-dynamic a revalidate = 0 pro okamžité změny bez tvrdé cache.
+ * 🛡️ FIX 1: Nativní fetch s 'no-store' = 100% bypass mrtvé Next.js cache (Supabase klient odstraněn).
+ * 🛡️ FIX 2: Ošetřeno řazení nullslast - procesory bez skóre už nemizí, jen spadnou na konec tabulky!
+ * 🛡️ FIX 3: Bezpečné čtení boost_clock_ghz vs mhz pro starší databázové záznamy.
  */
 
-export const dynamic = 'force-dynamic'; // 🚀 GURU FIX: Žádná mrtvá cache
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 export const revalidate = 0; 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -39,7 +39,8 @@ const slugify = (text) => {
 
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 
-export async function generateMetadata({ isEn = false }) {
+export async function generateMetadata(props) {
+  const isEn = props?.isEn === true;
   return {
     title: isEn 
       ? 'CPU Tier List & Performance Ranking 2025 | The Hardware Guru' 
@@ -57,18 +58,36 @@ export async function generateMetadata({ isEn = false }) {
   };
 }
 
-export default async function CpuRankingPage({ isEn = false }) {
-  const supabase = createClient(supabaseUrl, supabaseKey);
+// 🚀 GURU: Nativní fetch obejde veškerou otravnou cache v Next.js a vytáhne 100% fresh data
+const fetchRankingData = async () => {
+    if (!supabaseUrl) return [];
+    
+    try {
+        // nullslast = klíčová věc. Procesory bez výkonu neskryjeme, ale dáme je na konec!
+        const url = `${supabaseUrl}/rest/v1/cpus?select=*&order=performance_index.desc.nullslast,name.asc`;
+        
+        const res = await fetch(url, {
+            headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Content-Type': 'application/json'
+            },
+            cache: 'no-store'
+        });
 
-  // 1. Fetch všech CPU seřazených podle hrubého výkonu
-  const { data: cpus, error } = await supabase
-    .from('cpus')
-    .select('name, slug, vendor, architecture, cores, threads, boost_clock_mhz, performance_index')
-    .gt('performance_index', 0) // 🚀 GURU FIX: Zabrání tomu, aby byly prázdné (NULL) procesory na prvním místě!
-    .order('performance_index', { ascending: false });
+        if (!res.ok) return [];
+        return await res.json();
+    } catch (e) {
+        return [];
+    }
+};
 
-  if (error || !cpus) {
-    return <div style={{ color: '#f00', padding: '100px', textAlign: 'center' }}>CHYBA NAČÍTÁNÍ DATABÁZE PROCESORŮ</div>;
+export default async function CpuRankingPage(props) {
+  const isEn = props?.isEn === true;
+  const cpus = await fetchRankingData();
+
+  if (!cpus || cpus.length === 0) {
+    return <div style={{ color: '#f00', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>CHYBA NAČÍTÁNÍ DATABÁZE PROCESORŮ</div>;
   }
 
   const getVendorColor = (vendor) => {
@@ -115,7 +134,10 @@ export default async function CpuRankingPage({ isEn = false }) {
           {cpus.map((cpu, index) => {
             const vendorColor = getVendorColor(cpu.vendor);
             const safeSlug = cpu.slug || slugify(cpu.name);
-            const isTop3 = index < 3;
+            const isTop3 = index < 3 && cpu.performance_index > 0; // Top 3 jen pro ty, co mají reálné skóre
+
+            // Bezpečná čtení taktu pro starší CSV záznamy
+            const boostMhz = cpu.boost_clock_mhz || (cpu.boost_clock_ghz ? cpu.boost_clock_ghz * 1000 : null);
 
             return (
               <div key={safeSlug} className={`ranking-row ${isTop3 ? `top-${index + 1}` : ''}`}>
@@ -131,7 +153,9 @@ export default async function CpuRankingPage({ isEn = false }) {
                  <div className="cpu-info">
                     <h2 className="cpu-name">{normalizeName(cpu.name)}</h2>
                     <div className="cpu-specs">
-                       <span>{cpu.vendor}</span> • <span>{cpu.cores}C/{cpu.threads}T</span> • <span>{cpu.boost_clock_mhz ? `${cpu.boost_clock_mhz} MHz` : 'N/A'}</span>
+                       <span>{cpu.vendor || 'N/A'}</span> • 
+                       <span>{cpu.cores || '-'}C/{cpu.threads || '-'}T</span> • 
+                       <span>{boostMhz ? `${boostMhz} MHz` : 'N/A'}</span>
                     </div>
                  </div>
 
@@ -140,7 +164,7 @@ export default async function CpuRankingPage({ isEn = false }) {
                     <div className="score-label">{isEn ? 'SCORE' : 'SKÓRE'}</div>
                     <div className="score-value" style={{ color: isTop3 ? '#f59e0b' : '#fff' }}>
                        <Zap size={16} fill={isTop3 ? '#f59e0b' : 'transparent'} />
-                       {cpu.performance_index}
+                       {cpu.performance_index || 'N/A'}
                     </div>
                  </div>
 
