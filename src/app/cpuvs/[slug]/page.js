@@ -19,15 +19,15 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V67.9 (FULL PARITY & CLEAN FALLBACKS)
+ * GURU CPU DUELS ENGINE - DETAIL V68.0 (CACHE BUSTER FIX)
  * Cesta: src/app/cpuvs/[slug]/page.js
- * 🛡️ FIX 1: Doplněn Rok vydání (Release Year) a Zaváděcí cena (MSRP) po vzoru GPU.
- * 🛡️ FIX 2: Vylepšeny fallbacks - prázdné hodnoty nyní skryjí i jednotku a ukážou jen čistou pomlčku '-'.
- * 🛡️ FIX 3: Plná podpora L3 Cache, Cores/Threads, Base a Boost Clocks.
+ * 🛡️ FIX 1: Odstraněna 24hodinová cache (revalidate 86400 -> 0 a no-store).
+ * Next.js držel v paměti stará data (prázdné sloupce) předtím, než se provedl SQL update.
+ * Nyní systém vždy natáhne 100% aktuální stav databáze (včetně MHz, W, Cache a Ceny).
  */
 
 export const runtime = "nodejs";
-export const revalidate = 86400;
+export const revalidate = 0; // 🚀 GURU FIX: Okamžitý refresh, žádná cache!
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -60,7 +60,7 @@ const findCpu = async (slugPart) => {
   try {
       const res = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`, {
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-          next: { revalidate: 86400 }
+          cache: 'no-store' // 🚀 GURU FIX: Bypassing cache
       });
       if (!res.ok) return null;
       const data = await res.json();
@@ -68,13 +68,13 @@ const findCpu = async (slugPart) => {
   } catch (e) { return null; }
 };
 
-// 🛡️ GURU ENGINE: Načtení podobných duelů (Kopie z GPU)
+// 🛡️ GURU ENGINE: Načtení podobných duelů
 const getSimilarDuels = async (cpuId, currentSlug) => {
     if (!supabaseUrl || !cpuId) return [];
     try {
         const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=title_cs,title_en,slug,slug_en&or=(cpu_a_id.eq.${cpuId},cpu_b_id.eq.${cpuId})&slug=neq.${currentSlug}&limit=4`, {
             headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-            next: { revalidate: 86400 }
+            cache: 'no-store' // 🚀 GURU FIX: Bypassing cache
         });
         if (!res.ok) return [];
         return await res.json();
@@ -149,7 +149,8 @@ async function generateAndPersistDuel(slug) {
     if (!dbRes.ok) {
         console.error("GURU DB INSERT ERROR:", await dbRes.text());
         const checkExisting = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${encodeURIComponent(cleanSlug)}`, {
-            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
+            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
+            cache: 'no-store'
         });
         const existingData = await checkExisting.json();
         return existingData[0] || null;
@@ -162,7 +163,7 @@ async function generateAndPersistDuel(slug) {
   }
 }
 
-// Načtení dat z DB (Nativní Fetch s React Cache)
+// Načtení dat z DB (Nativní Fetch)
 const getDuelData = cache(async (slug) => {
   if (!supabaseUrl) return null;
   const cleanSlug = slug.replace(/^en-/, '');
@@ -175,7 +176,7 @@ const getDuelData = cache(async (slug) => {
   try {
       const res = await fetch(url, {
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-          next: { revalidate: 86400 }
+          cache: 'no-store' // 🚀 GURU FIX: Zajišťuje 100% aktuální data z DB pro tabulku
       });
       if (!res.ok) return null;
       const data = await res.json();
