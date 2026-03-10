@@ -12,21 +12,28 @@ process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const base = "https://thehardwareguru.cz";
 
 const { data, error } = await supabase
-.from("herni_kalendar")   // ← OPRAVENO
-.select("slug");
+.from("herni_kalendar")
+.select("*");
 
 if(error){
-console.error("CALENDAR SITEMAP ERROR:", error);
+console.error("SITEMAP CALENDAR ERROR:", error);
 }
 
 let urls = "";
 
 data?.forEach(g => {
 
-if(!g.slug) return;
+const slug =
+g.slug ||
+g.game_slug ||
+g.url_slug ||
+g.slug_cz ||
+g.slug_en;
+
+if(!slug) return;
 
 urls += `<url>
-<loc>${base}/kalendar/${g.slug}</loc>
+<loc>${base}/kalendar/${slug}</loc>
 </url>`;
 
 });
