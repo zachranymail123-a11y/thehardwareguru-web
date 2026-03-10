@@ -33,7 +33,8 @@ const slug = game.name
 .replace(/[^a-z0-9]+/g,"-")
 .replace(/^-|-$/g,"");
 
-urls += `<url>
+urls += `
+<url>
 <loc>${base}/kalendar/${slug}</loc>
 </url>`;
 
@@ -46,7 +47,7 @@ ${urls}
 
 return new Response(xml,{
 headers:{
-"Content-Type":"application/xml; charset=utf-8"
+"Content-Type":"application/xml"
 }
 });
 
