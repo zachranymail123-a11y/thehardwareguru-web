@@ -1,6 +1,7 @@
+export const dynamic = "force-dynamic";
 export const revalidate = 3600;
 
-export async function GET() {
+export async function GET(){
 
 const base = "https://thehardwareguru.cz";
 
@@ -18,9 +19,9 @@ const maps = [
 "sitemap-cpu-duels.xml",
 "sitemap-benchmarks.xml",
 
-// ROZDĚLENÉ DUEL BENCHMARKY
 "sitemap-duel-benchmarks-1.xml",
 "sitemap-duel-benchmarks-2.xml",
+"sitemap-duel-benchmarks-3.xml",
 
 "sitemap-gpu-fps.xml",
 "sitemap-best-gpu.xml",
@@ -28,19 +29,24 @@ const maps = [
 "sitemap-builds.xml"
 ];
 
-const urls = maps
-.map(m => `<sitemap><loc>${base}/${m}</loc></sitemap>`)
-.join("");
+const today = new Date().toISOString();
+
+const urls = maps.map(m=>`
+<sitemap>
+<loc>${base}/${m}</loc>
+<lastmod>${today}</lastmod>
+</sitemap>
+`).join("");
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
 </sitemapindex>`;
 
-return new Response(xml, {
-headers: {
-"Content-Type": "application/xml; charset=utf-8",
-"Cache-Control": "public, s-maxage=3600, stale-while-revalidate"
+return new Response(xml,{
+headers:{
+"Content-Type":"text/xml; charset=utf-8",
+"Cache-Control":"public, s-maxage=3600, stale-while-revalidate"
 }
 });
 
