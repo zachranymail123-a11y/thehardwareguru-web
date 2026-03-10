@@ -20,11 +20,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - DETAIL V92.0 (FINAL MATH & SLUG FIX)
+ * GURU GPU DUELS ENGINE - DETAIL V93.0 (ULTIMATE 3-TIER SLUG FIX)
  * Cesta: src/app/gpuvs/[slug]/page.js
- * 🛡️ FIX 1: Matematika v souhrnu už NIKDY neukáže záporná procenta (-58 %). Vždy ukazuje náskok vítěze.
- * 🛡️ FIX 2: Sjednoceno na parametr [slug].
- * 🛡️ FIX 3: Plný bypass cache (revalidate = 0, no-store).
+ * 🛡️ FIX 1: Starý regex vyhledávač kompletně nahrazen za náš 3-Tier Slug systém!
+ * 🛡️ FIX 2: Ošetřen generátor duelů - už nespadne na chybějících slovech (nvidia, geforce).
+ * 🛡️ FIX 3: Pozitivní matematika pro souhrn FPS (vždy ukazuje % náskok vítěze).
  */
 
 export const runtime = "nodejs";
@@ -49,22 +49,34 @@ function calculatePerf(a, b) {
     return { winner: b, loser: a, diff: Math.round((b.performance_index / a.performance_index - 1) * 100) };
 }
 
-const findGpu = async (slugPart) => {
-  if (!supabaseUrl) return null;
-  const clean = slugPart.replace(/-/g, " ").replace(/geforce|radeon|nvidia|amd/gi, "").trim();
-  const chunks = clean.match(/\d+|[a-zA-Z]+/g);
-  if (!chunks || chunks.length === 0) return null;
-  const searchPattern = `%${chunks.join('%')}%`;
+// 🚀 GURU ENGINE: THE 3-TIER BULLETPROOF LOOKUP
+const findGpuBySlug = async (gpuSlug) => {
+  if (!supabaseUrl || !gpuSlug) return null;
+  const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
 
+  // TIER 1: Exact match
   try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`, {
-          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-          cache: 'no-store'
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data[0] || null;
-  } catch (e) { return null; }
+      const res1 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${gpuSlug}&limit=1`, { headers, cache: 'no-store' });
+      if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
+  } catch(e) {}
+
+  // TIER 2: Substring match
+  try {
+      const res2 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=ilike.*${gpuSlug}*&order=slug.asc`, { headers, cache: 'no-store' });
+      if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
+  } catch(e) {}
+
+  // TIER 3: Tokenized AND match (Nejbezpečnější fallback)
+  try {
+      const cleanString = gpuSlug.replace(/-/g, ' ').replace(/gb/gi, '').trim();
+      const tokens = cleanString.split(/\s+/).filter(t => t.length > 0);
+      if (tokens.length > 0) {
+          const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
+          const res3 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&and=(${conditions})&order=name.asc`, { headers, cache: 'no-store' });
+          if (res3.ok) { const data3 = await res3.json(); return data3?.[0] || null; }
+      }
+  } catch(e) {}
+  return null;
 };
 
 const getSimilarDuels = async (gpuId, currentSlug) => {
@@ -86,7 +98,8 @@ async function generateAndPersistDuel(slug) {
     let parts = cleanSlug.includes('-vs-') ? cleanSlug.split('-vs-') : cleanSlug.split('-to-');
     if (!parts || parts.length !== 2) return null;
 
-    const [cardA, cardB] = await Promise.all([findGpu(parts[0]), findGpu(parts[1])]);
+    // 🚀 Tady systém používá nový 3-Tier lookup pro nalezení obou karet
+    const [cardA, cardB] = await Promise.all([findGpuBySlug(parts[0]), findGpuBySlug(parts[1])]);
     if (!cardA || !cardB) return null;
 
     const payload = {
@@ -122,11 +135,9 @@ async function generateAndPersistDuel(slug) {
 const getDuelData = cache(async (slug) => {
   if (!supabaseUrl || !slug) return null;
   const cleanSlug = slug.replace(/^en-/, '');
-  const normalizedSlug = cleanSlug.replace(/geforce-/g, '').replace(/radeon-/g, '');
-  const orQuery = `slug.eq.${slug},slug.eq.${cleanSlug},slug.eq.${normalizedSlug},slug_en.eq.${slug}`;
   const selectQuery = `*,gpuA:gpus!gpu_a_id(*,game_fps!gpu_id(*)),gpuB:gpus!gpu_b_id(*,game_fps!gpu_id(*))`;
   try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=${encodeURIComponent(selectQuery)}&or=(${encodeURIComponent(orQuery)})&limit=1`, {
+      const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${cleanSlug}&limit=1`, {
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, cache: 'no-store'
       });
       if (!res.ok) return null;
@@ -183,11 +194,10 @@ export default async function GpuDuelDetail({ params }) {
 
   const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon /gi, '');
 
-  // Ochrana proti pádu a bezpečné načtení FPS
   const fpsA = Array.isArray(gpuA?.game_fps) ? gpuA.game_fps[0] : (gpuA?.game_fps || {});
   const fpsB = Array.isArray(gpuB?.game_fps) ? gpuB.game_fps[0] : (gpuB?.game_fps || {});
 
-  // 🚀 GURU MATH FIX: Vždy bereme (vítěz / poražený) - 1, takže výsledek NIKDY není negativní.
+  // 🚀 GURU MATH FIX: Zamezení záporným procentům. Vždy bereme (vítěz / poražený) - 1.
   const fpsWinner = winner?.id === gpuA.id ? fpsA : fpsB;
   const fpsLoser = loser?.id === gpuA.id ? fpsA : fpsB;
 
@@ -219,12 +229,14 @@ export default async function GpuDuelDetail({ params }) {
             {gpuA.name} <span style={{ color: '#ff0055' }}>vs</span> {gpuB.name}
           </h1>
           {winner && (
-            <div className="guru-verdict">
+            <div className="guru-verdict" style={{ background: '#66fcf120', color: '#66fcf1', padding: '12px 35px', borderRadius: '50px', display: 'inline-flex', alignItems: 'center', gap: '10px', marginTop: '25px', fontWeight: '950', border: '1px solid #66fcf140', textTransform: 'uppercase', letterSpacing: '1px' }}>
                <Zap size={18} fill="currentColor" /> {winner.name} {isEn ? 'IS' : 'JE O'} {finalPerfDiff}% {isEn ? 'FASTER' : 'VÝKONNĚJŠÍ'}
             </div>
           )}
           {upgradeUrl && (
-            <a href={upgradeUrl} className="guru-upgrade-pill"><Zap size={14} fill="currentColor" /> {isEn ? 'Detailed Upgrade Analysis' : 'Analýza upgradu'} <ArrowRight size={14} /></a>
+            <div style={{ marginTop: '20px' }}>
+               <a href={upgradeUrl} className="guru-upgrade-pill"><Zap size={14} fill="currentColor" /> {isEn ? 'Detailed Upgrade Analysis' : 'Analýza upgradu'} <ArrowRight size={14} /></a>
+            </div>
           )}
         </header>
 
@@ -241,7 +253,7 @@ export default async function GpuDuelDetail({ params }) {
             </div>
         </div>
 
-        {/* 🚀 FIX: SHRNUTÍ HERNÍHO VÝKONU (Čisté, pozitivní procentuální nárůsty) */}
+        {/* 🚀 SHRNUTÍ HERNÍHO VÝKONU */}
         {winner && (
             <section style={{ marginBottom: '60px' }}>
                 <div className="content-box-style" style={{ borderLeft: '6px solid #66fcf1' }}>
@@ -327,8 +339,7 @@ export default async function GpuDuelDetail({ params }) {
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         .guru-ranking-link { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
-        .guru-verdict { margin-top: 25px; color: #66fcf1; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 10px 25px; background: rgba(102, 252, 241, 0.05); border: 1px solid rgba(102, 252, 241, 0.2); border-radius: 50px; display: inline-flex; align-items: center; gap: 10px; }
-        .guru-upgrade-pill { display: inline-flex; align-items: center; gap: 10px; padding: 10px 25px; background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; margin-top: 25px; transition: 0.3s; }
+        .guru-upgrade-pill { display: inline-flex; align-items: center; gap: 10px; padding: 10px 25px; background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
         .gpu-card-box { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 40px 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.6); backdrop-filter: blur(10px); flex: 1; }
         .vendor-label { font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 15px; display: block; }
         .gpu-name-text { font-size: clamp(1.6rem, 3.5vw, 2.5rem); font-weight: 950; color: #fff; text-transform: uppercase; margin: 0; line-height: 1.1; }
