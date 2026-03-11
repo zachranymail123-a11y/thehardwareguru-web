@@ -8,8 +8,9 @@ import {
  * GURU BOTTLENECK ENGINE V7.7 (BULLETPROOF LOOKUP & CENTERED)
  * 🚀 STATUS: LIVE - AdSense ID ca-pub-5468223287024993
  * 🛡️ FIX 1: Oprava relací v PostgREST (cpu_game_fps vs game_fps).
- * 🛡️ FIX 2: Absolutní horizontální centrování dle screenshotu.
+ * 🛡️ FIX 2: Absolutní horizontální centrování dle screenshotu (vše v jedné ose).
  * 🛡️ FIX 3: Robustní 3-Tier vyhledávání s fallbackem bez joinu (Zamezuje 404).
+ * 🛡️ NEW: Podpora herních variant URL (...-with-...-in-[game]) s výpočtem FPS.
  */
 
 export const runtime = "nodejs";
@@ -35,7 +36,7 @@ const findHw = async (table, slugPart) => {
       const res1 = await fetch(url1, { headers, cache: 'no-store' });
       if (res1.ok) { const data = await res1.json(); if (data?.length) return data[0]; }
       
-      // Fallback: Pokud join selže, zkusíme aspoň čistou entitu
+      // Fallback: Pokud join selže (např. kvůli chybějícím datům v relaci), zkusíme aspoň čistou entitu
       const resF = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*&slug=eq.${slugPart}&limit=1`, { headers, cache: 'no-store' });
       if (resF.ok) { const dataF = await resF.json(); if (dataF?.length) return dataF[0]; }
 
@@ -57,6 +58,7 @@ const findHw = async (table, slugPart) => {
 
 const getAnalysisData = cache(async (slug) => {
   const cleanSlug = slug.replace(/^en-/, '');
+  // Detekce hry v URL: "...-with-...-in-cyberpunk-2077"
   const gamePart = cleanSlug.split('-in-');
   const hwPart = gamePart[0].split('-with-');
   if (hwPart.length !== 2) return null;
@@ -104,8 +106,8 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
       <div>
         <AlertTriangle size={64} color="#ef4444" style={{ margin: '0 auto 20px' }} />
         <h2 style={{ fontWeight: '950' }}>KOMPONENTA NENALEZENA</h2>
-        <p style={{ color: '#9ca3af' }}>Zkontrolujte URL adresu nebo hledejte v databázi.</p>
-        <a href="/" style={{ marginTop: '20px', display: 'inline-block', padding: '10px 20px', background: '#f59e0b', color: '#000', borderRadius: '10px', fontWeight: 'bold' }}>ZPĚT DOMŮ</a>
+        <p style={{ color: '#9ca3af' }}>Omlouváme se, ale jednu z komponent v této kombinaci se nepodařilo najít. Guru tým neustále doplňuje nová data.</p>
+        <a href="/" style={{ marginTop: '20px', display: 'inline-block', padding: '15px 30px', background: '#f59e0b', color: '#000', borderRadius: '12px', fontWeight: 'bold', textDecoration: 'none' }}>ZPĚT DOMŮ</a>
       </div>
     </div>
   );
@@ -114,6 +116,7 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
   const cpuPower = cpu.performance_index || 1;
   const gpuPower = gpu.performance_index || 1;
   
+  // Výpočet bottlenecku
   let bottleneckScore = cpuPower < gpuPower * 0.75 
     ? Math.min(Math.round(((gpuPower / cpuPower) - 1) * 20), 100)
     : (gpuPower < cpuPower * 0.6 ? Math.min(Math.round(((cpuPower / gpuPower) - 1) * 12), 100) : 0);
@@ -121,6 +124,7 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
   const statusColor = bottleneckScore < 15 ? '#10b981' : (bottleneckScore < 30 ? '#f59e0b' : '#ef4444');
   const recommendedPsu = Math.ceil(((Number(cpu.tdp_w) || 65) + (Number(gpu.tdp_w) || 200)) * 1.6 / 50) * 50;
 
+  // FPS Lookup
   const fpsData = gpu?.game_fps?.[0] || {};
   const gameKey = gameSlug ? gameSlug.replace('-2077', '').replace(/-/g, '_') : null;
   const specificFps = gameKey ? (fpsData[`${gameKey}_1440p`] || fpsData[`${gameKey}_1080p`] || 0) : null;
@@ -144,6 +148,7 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
 
         <AdSpace slot="1234567890" /> 
 
+        {/* 🚀 CENTERED GAUGE */}
         <section className="glass-card main-hero" style={{ width: '100%', maxWidth: '900px', margin: '0 auto 60px' }}>
             <div className="hero-label">{isEn ? 'Calculated System Bottleneck' : 'Vypočítaný bottleneck systému'}</div>
             <div className="score-text" style={{ color: statusColor, textShadow: `0 0 60px ${statusColor}50` }}>{bottleneckScore}%</div>
@@ -159,6 +164,7 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
             </div>
         </section>
 
+        {/* 🚀 CENTERED SPECS GRID */}
         <section style={{ width: '100%', marginBottom: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '40px', width: '100%', justifyContent: 'center' }}>
               <div style={{ height: '4px', width: '40px', background: '#66fcf1', borderRadius: '10px' }}></div>
@@ -171,17 +177,17 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
           <div className="specs-grid">
               <div className="glass-card spec-item">
                   <PlugZap size={32} color="#f59e0b" />
-                  <div className="spec-label">{isEn ? 'PSU' : 'ZDROJ'}</div>
+                  <div className="spec-label">{isEn ? 'Recommended PSU' : 'Doporučený zdroj'}</div>
                   <div className="spec-val">{recommendedPsu}W</div>
               </div>
               <div className="glass-card spec-item">
                   <Layers size={32} color="#66fcf1" />
-                  <div className="spec-label">{isEn ? 'OPTIMAL CHIPSET' : 'ČIPSET'}</div>
+                  <div className="spec-label">{isEn ? 'Optimal Chipset' : 'Optimální čipset'}</div>
                   <div className="spec-val">{(cpu.vendor === 'AMD' && cpu.name.includes('5000')) ? 'B550' : 'B650 / B760'}</div>
               </div>
               <div className="glass-card spec-item">
                   <Database size={32} color="#a855f7" />
-                  <div className="spec-label">IDEAL RAM</div>
+                  <div className="spec-label">Standard RAM</div>
                   <div className="spec-val">{(cpu.vendor === 'AMD' && cpu.name.includes('5000')) ? 'DDR4 3600' : 'DDR5 6000'}</div>
               </div>
           </div>
