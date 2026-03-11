@@ -4,12 +4,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK ENGINE V17.0 (FINAL CZECH & STABILITY FIX)
+ * GURU BOTTLENECK ENGINE V18.0 (ERROR RECOVERY & LINKS FIX)
  * Cesta: src/app/bottleneck/[slug]/page.js
- * 🛡️ FIX 1: Odstraněna slovenština (NENÁJDENÝ -> NENALEZEN, PRE ZOSTAVU -> PRO SESTAVU).
- * 🛡️ FIX 2: Přidána sekce "CHCETE VYŠŠÍ VÝKON?" pro recirkulaci uživatelů (+zisk z reklam).
- * 🛡️ FIX 3: Přidána sekce "GURU RÁDCE" pro propojení s Evergreen články v DB.
- * 🛡️ FIX 4: Integrace AdSense ID ca-pub-5468223287024993.
+ * 🛡️ FIX 1: Ošetření řetězce "undefined" ve vyhledávání (řeší URL chyby).
+ * 🛡️ FIX 2: Sekce GURU RÁDCE a CTA tlačítka se nyní zobrazují i na chybové stránce.
+ * 🛡️ FIX 3: Oprava odkazů v GURU RÁDCI (přidán /en prefix pro anglickou verzi).
+ * 🛡️ FIX 4: Odstraněny poslední zbytky slovenštiny (SPÄŤ -> ZPĚT).
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -19,7 +19,9 @@ const normalizeName = (name = '') => name.replace(/AMD |Intel |NVIDIA |GeForce |
 
 // 🛡️ GURU ENGINE: 3-TIER BULLETPROOF LOOKUP
 const findHw = async (table, slugPart) => {
-  if (!supabaseUrl || !slugPart) return null;
+  // 🚀 GURU FIX: Pokud je slugPart prázdný nebo doslova "undefined", okamžitě končíme
+  if (!slugPart || slugPart === 'undefined') return null;
+  
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
   const joinQuery = table === 'gpus' ? 'game_fps!gpu_id(*)' : 'cpu_game_fps!cpu_id(*)';
 
@@ -34,7 +36,7 @@ const findHw = async (table, slugPart) => {
       const res2 = await fetch(url2, { headers, cache: 'no-store' });
       if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
 
-      // TIER 3: Tokenizované hledání v názvu (Nejsilnější fallback)
+      // TIER 3: Tokenizované hledání (Nejsilnější fallback)
       const clean = slugPart.replace(/-/g, ' ').replace(/ryzen|core|intel|amd|geforce|rtx|radeon|rx/gi, '').trim();
       const tokens = clean.split(/\s+/).filter(t => t.length > 0);
       if (tokens.length > 0) {
@@ -59,6 +61,34 @@ const getAnalysisData = async (slug) => {
   const [cpu, gpu] = await Promise.all([findHw('cpus', hwParts[0]), findHw('gpus', hwParts[1])]);
   return { cpu, gpu, gameSlug, resolution };
 };
+
+// 📚 KOMPONENTA GURU RÁDCE (Reusability)
+const GuruMasterclass = ({ isEn }) => (
+  <section style={{ marginBottom: '60px' }}>
+     <h2 className="section-h2" style={{ borderLeft: '4px solid #a855f7' }}>
+        {isEn ? 'GURU MASTERCLASS' : 'GURU RÁDCE'}
+     </h2>
+     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '15px' }}>
+          <a href={isEn ? "/en/clanky/jak-vyresit-bottleneck-navod" : "/clanky/jak-vyresit-bottleneck-navod"} className="article-link-card">
+              <Info size={18} /> {isEn ? 'How to fix bottleneck' : 'Jak vyřešit bottleneck'}
+          </a>
+          <a href={isEn ? "/en/clanky/nejlepsi-cpu-pro-rtx-5090-5080" : "/clanky/nejlepsi-cpu-pro-rtx-5090-5080"} className="article-link-card">
+              <BarChart3 size={18} /> {isEn ? 'Best CPU for RTX 50' : 'Nejlepší CPU pro RTX 50'}
+          </a>
+          <a href={isEn ? "/en/clanky/jak-usetrit-na-hardwaru-navod" : "/clanky/jak-usetrit-na-hardwaru-navod"} className="article-link-card">
+              <Flame size={18} /> {isEn ? 'Save on Hardware' : 'Jak ušetřit na HW'}
+          </a>
+     </div>
+  </section>
+);
+
+// 🚀 KOMPONENTA CTA TLAČÍTEK
+const GlobalActions = ({ isEn }) => (
+  <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginTop: '60px' }}>
+      <a href="https://kick.com/thehardwareguru" target="_blank" className="live-btn"><Flame size={20} /> {isEn ? 'WATCH LIVE' : 'SLEDOVAT LIVE'}</a>
+      <a href={isEn ? "/en/support" : "/support"} className="support-btn"><Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}</a>
+  </div>
+);
 
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
@@ -89,14 +119,30 @@ export default async function BottleneckPage({ params }) {
   const isEn = rawSlug.startsWith('en-');
   const data = await getAnalysisData(rawSlug);
 
+  // 🚀 GURU RECOVERY UI: Hardware nenalezen
   if (!data?.cpu || !data?.gpu) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a0b0d', color: '#fff' }}>
-        <div style={{ textAlign: 'center' }}>
-            <AlertTriangle size={64} color="#ef4444" style={{ margin: '0 auto 20px' }} />
-            <h2 style={{ fontWeight: '950' }}>{isEn ? 'COMPONENT NOT FOUND' : 'KOMPONENT NENALEZEN'}</h2>
-            <p style={{ color: '#6b7280', marginTop: '10px' }}>{isEn ? 'System could not identify the hardware. Check URL.' : 'Systém nedokázal identifikovat zadaný hardware. Zkontrolujte prosím URL.'}</p>
-            <a href="/" style={{ marginTop: '20px', display: 'inline-block', padding: '12px 25px', background: '#f59e0b', color: '#000', borderRadius: '12px', fontWeight: '950', textDecoration: 'none' }}>{isEn ? 'BACK HOME' : 'ZPĚT NA ÚVOD'}</a>
-        </div>
+    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '100px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+        <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
+            <div style={{ textAlign: 'center', padding: '60px 0' }}>
+                <AlertTriangle size={64} color="#ef4444" style={{ margin: '0 auto 20px' }} />
+                <h2 style={{ fontWeight: '950', fontSize: '2rem' }}>{isEn ? 'COMPONENT NOT FOUND' : 'KOMPONENT NENALEZEN'}</h2>
+                <p style={{ color: '#6b7280', marginTop: '10px', fontSize: '1.1rem' }}>{isEn ? 'System could not identify the hardware. Check URL.' : 'Systém nedokázal identifikovat zadaný hardware. Zkontrolujte prosím URL.'}</p>
+                <a href="/" style={{ marginTop: '30px', display: 'inline-block', padding: '15px 40px', background: '#f59e0b', color: '#000', borderRadius: '16px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase' }}>{isEn ? 'BACK HOME' : 'ZPĚT NA ÚVOD'}</a>
+            </div>
+            
+            {/* Zobrazení rad i na chybové stránce */}
+            <GuruMasterclass isEn={isEn} />
+            <GlobalActions isEn={isEn} />
+        </main>
+        <style dangerouslySetInnerHTML={{__html: `
+          .section-h2 { color: #fff; font-size: 1.5rem; font-weight: 950; text-transform: uppercase; margin-bottom: 30px; padding-left: 15px; }
+          .article-link-card { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.02); padding: 18px 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #d1d5db; font-weight: 900; font-size: 13px; text-transform: uppercase; transition: 0.2s; }
+          .article-link-card:hover { background: rgba(168, 85, 247, 0.1); color: #fff; border-color: rgba(168, 85, 247, 0.3); transform: translateX(5px); }
+          .support-btn, .live-btn { display: flex; align-items: center; gap: 12px; padding: 18px 40px; border-radius: 16px; font-weight: 950; text-decoration: none; text-transform: uppercase; transition: 0.3s; }
+          .support-btn { background: #eab308; color: #000; }
+          .live-btn { background: #000; color: #00ec64; border: 1px solid #00ec64; }
+          .support-btn:hover, .live-btn:hover { transform: scale(1.05); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        `}} />
     </div>
   );
 
@@ -140,7 +186,7 @@ export default async function BottleneckPage({ params }) {
             </div>
         </section>
 
-        {/* 🚀 DOPORUČENÍ PRO SESTAVU (Opravená čeština) */}
+        {/* 🚀 DOPORUČENÍ PRO SESTAVU */}
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeft: '4px solid #66fcf1' }}>
             {isEn ? 'SYSTEM RECOMMENDATIONS' : 'DOPORUČENÍ PRO SESTAVU'}
@@ -193,34 +239,16 @@ export default async function BottleneckPage({ params }) {
           </div>
         </section>
 
-        {/* 📚 EVERGREEN: GURU RÁDCE */}
-        <section style={{ marginBottom: '60px' }}>
-           <h2 className="section-h2" style={{ borderLeft: '4px solid #a855f7' }}>
-              {isEn ? 'GURU MASTERCLASS' : 'GURU RÁDCE'}
-           </h2>
-           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '15px' }}>
-                <a href="/clanky/jak-vyresit-bottleneck-navod" className="article-link-card">
-                    <Info size={18} /> {isEn ? 'How to fix bottleneck' : 'Jak vyřešit bottleneck'}
-                </a>
-                <a href="/clanky/nejlepsi-cpu-pro-rtx-5090-5080" className="article-link-card">
-                    <BarChart3 size={18} /> {isEn ? 'Best CPU for RTX 50' : 'Nejlepší CPU pro RTX 50'}
-                </a>
-                <a href="/clanky/jak-usetrit-na-hardwaru-navod" className="article-link-card">
-                    <Flame size={18} /> {isEn ? 'Save on Hardware' : 'Jak ušetřit na HW'}
-                </a>
-           </div>
-        </section>
+        {/* 📚 GURU RÁDCE (Evergreen sekce) */}
+        <GuruMasterclass isEn={isEn} />
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginTop: '60px' }}>
-            <a href="https://kick.com/thehardwareguru" target="_blank" className="live-btn"><Flame size={20} /> SLEDOVAT LIVE</a>
-            <a href="/support" className="support-btn"><Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}</a>
-        </div>
+        <GlobalActions isEn={isEn} />
 
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
         .radar-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.05); }
-        .status-pill { padding: 12px 35px; borderRadius: 50px; display: inline-block; fontWeight: 950; fontSize: 14px; text-transform: uppercase; border-radius: 50px; }
+        .status-pill { padding: 12px 35px; border-radius: 50px; display: inline-block; font-weight: 950; fontSize: 14px; text-transform: uppercase; }
         .section-h2 { color: #fff; font-size: 1.5rem; font-weight: 950; text-transform: uppercase; margin-bottom: 30px; padding-left: 15px; }
         
         .spec-card-box { background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
