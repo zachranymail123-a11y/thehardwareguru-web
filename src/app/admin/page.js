@@ -49,13 +49,11 @@ const initSupabase = () => {
   return createClient(url || 'https://placeholder.supabase.co', key || 'placeholder');
 };
 
-// 🛡️ GURU UI SHIELD
 if (typeof window !== 'undefined') {
   window.swgSubscriptions = window.swgSubscriptions || {};
   if (!window.swgSubscriptions.attachButton) window.swgSubscriptions.attachButton = () => {};
 }
 
-// 🛡️ GURU SEMANTIC ENGINE
 const STOP_WORDS = new Set(['this', 'that', 'with', 'from', 'will', 'over', 'game', 'play', 'about', 'more', 'than', 'have', 'been', 'which', 'what', 'when', 'just', 'only', 'after', 'first', 'adds', 'the', 'and', 'for', 'you', 'can', 'now', 'out']);
 const tokenize = (str) => {
   if (!str) return new Set();
@@ -91,7 +89,6 @@ export default function AdminApp() {
   const logEndRef = useRef(null);
   const supabase = useMemo(() => initSupabase(), []);
 
-  // Původní stavy pro Intel Hub a Dashboard
   const [data, setData] = useState({ posts: [], deals: [], stats: { visits: 0, missingEn: 0, missingSeo: 0 } });
   const [hwIntel, setHwIntel] = useState([]);
   const [gameIntel, setGameIntel] = useState([]);
@@ -115,7 +112,6 @@ export default function AdminApp() {
     return `${sUrl}/storage/v1/object/public/images/davinci_prompt__a_high_tech__cinematic_placeholder_for_a_g.png`;
   }, []);
 
-  // --- 🚀 NOVÉ STAVY PRO DB MANAGER ---
   const [dbTab, setDbTab] = useState('games');
   const [dbLoading, setDbLoading] = useState(false);
   const [dbMessage, setDbMessage] = useState({ type: '', text: '' });
@@ -125,7 +121,6 @@ export default function AdminApp() {
     boost_clock_mhz: '', buy_link_cz: '', buy_link_en: ''
   });
 
-  // Auto-slug generátor pro DB Manager
   useEffect(() => {
     if (dbFormData.name) {
       const generatedSlug = dbFormData.name
@@ -151,7 +146,6 @@ export default function AdminApp() {
     });
   };
 
-  // Odeslání do Supabase (DB Manager)
   const handleDbSubmit = async (e) => {
     e.preventDefault();
     setDbLoading(true);
@@ -195,7 +189,6 @@ export default function AdminApp() {
     }
     setDbLoading(false);
   };
-  // ------------------------------------
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -278,7 +271,6 @@ export default function AdminApp() {
       if (json.success) {
         let rawItems = json.data || [];
         
-        // 🚀 GURU: SÉMANTICKÝ FRONTEND ŠTÍT!
         const dbTokensList = data.posts.flatMap(p => [tokenize(p.title), tokenize(p.title_en)]).filter(s => s.size > 0);
         const seenTokens = [];
         let cleanItems = [];
@@ -405,7 +397,6 @@ export default function AdminApp() {
 
       if (articleWebhook && articleWebhook !== "") {
         try {
-          // 🚀 GURU MAKE.COM FIX: Přesně tvůj buffer scénář a 4 pole
           const payload = {
             title: dbData.title,
             url: `${BASE_URL}/clanky/${dbData.slug}`,
@@ -486,4 +477,303 @@ export default function AdminApp() {
         .preview-content-area { flex: 1; padding: 40px; height: 100vh; overflow-y: auto; display: flex; justify-content: center; align-items: flex-start; }
         .preview-window { background: #0a0b0d; border-radius: 30px; border: 4px solid #333; overflow: hidden; width: 100%; max-width: 1200px; min-height: 800px; box-shadow: 0 40px 120px rgba(0,0,0,0.8); }
         .preview-window.mobile { width: 375px; height: 667px; min-height: auto; }
-        .mock-card { background: #1f2833; border-radius: 12px; overflow: hidden; border: 1px
+        .mock-card { background: #1f2833; border-radius: 12px; overflow: hidden; border: 1px solid rgba(102, 252, 241, 0.2); width: 320px; cursor: pointer; transition: 0.3s; }
+        .mock-card:hover { border-color: #66fcf1; }
+        .mock-prose { color: #d1d5db; line-height: 1.8; font-size: 1.1rem; }
+        .mock-prose h2 { color: #66fcf1; font-weight: 950; margin: 1.5em 0 0.5em; text-transform: uppercase; }
+
+        /* 🚀 STYLY PRO DB MANAGER */
+        .db-tab-btn { flex: 1; padding: 15px; border-radius: 12px; border: none; background: transparent; color: #6b7280; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s; }
+        .db-tab-btn.active { background: #66fcf1; color: #000; }
+        .db-tab-btn:hover:not(.active) { color: #fff; background: rgba(255,255,255,0.05); }
+        .input-group { display: flex; flex-direction: column; gap: 10px; }
+        .input-group.full { grid-column: span 2; }
+        .input-group label { font-size: 11px; font-weight: 950; color: #6b7280; letter-spacing: 2px; }
+        .input-group input { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 15px; border-radius: 12px; color: #fff; outline: none; transition: 0.3s; }
+        .input-group input:focus { border-color: #66fcf1; background: rgba(102, 252, 241, 0.05); }
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}} />
+
+      {/* --- 🚀 GURU PREVIEW SYSTEM --- */}
+      {previewMode !== 'none' && draft && (
+        <div className="preview-overlay">
+          <div className="preview-sidebar">
+              <h2 style={{ color: '#eab308', fontSize: '18px', fontWeight: '950', marginBottom: '15px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>Guru Náhled</h2>
+              <button onClick={publishAndSendToMake} className="sidebar-btn" style={{ width: '100%', background: '#10b981', color: '#fff', border: '1px solid #10b981', justifyContent: 'center', padding: '15px', fontSize: '15px', boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)', marginBottom: '10px' }}>
+                  <Check size={20}/> PUBLIKOVAT ČLÁNEK
+              </button>
+              <button onClick={() => setPreviewMode('none')} className="sidebar-btn" style={{ width: '100%', background: '#222', border: '1px solid #444', color: '#fff', justifyContent: 'center' }}>
+                  <ArrowLeft size={16}/> ZPĚT DO VELÍNA
+              </button>
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '15px 0' }}></div>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '15px' }}>
+                  <button onClick={() => setPreviewDevice('desktop')} style={{ flex: 1, padding: '12px', background: previewDevice === 'desktop' ? '#eab308' : '#222', borderRadius: '12px', border: 'none', display: 'flex', justifyContent: 'center', color: previewDevice === 'desktop' ? '#000' : '#fff', cursor: 'pointer' }}><Monitor size={18}/></button>
+                  <button onClick={() => setPreviewDevice('mobile')} style={{ flex: 1, padding: '12px', background: previewDevice === 'mobile' ? '#eab308' : '#222', borderRadius: '12px', border: 'none', display: 'flex', justifyContent: 'center', color: previewDevice === 'mobile' ? '#000' : '#fff', cursor: 'pointer' }}><Smartphone size={18}/></button>
+              </div>
+              <button onClick={() => setDraft({...draft, is_important: !draft.is_important})} style={{ background: draft.is_important ? '#ff0055' : 'transparent', border: '1px solid #ff0055', color: draft.is_important ? '#fff' : '#ff0055', padding: '15px', borderRadius: '12px', fontWeight: '900', fontSize: '12px', display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: '0.2s', marginBottom: '15px' }}>
+                <Star size={16} fill={draft.is_important ? "currentColor" : "none"} /> OZNAČIT JAKO DŮLEŽITÉ
+              </button>
+              <button onClick={() => setPreviewMode(previewMode === 'card' ? 'slug' : 'card')} className="sidebar-btn" style={{ width: '100%', background: '#a855f7', color: '#fff', justifyContent: 'center' }}>
+                  {previewMode === 'card' ? 'PŘEPNOUT NA DETAIL' : 'PŘEPNOUT NA KARTU'}
+              </button>
+          </div>
+
+          <div className="preview-content-area">
+            <div className={`preview-window ${previewDevice}`} style={{ margin: '0 auto' }}>
+                {previewMode === 'card' ? (
+                   <div style={{ padding: '60px', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#0a0b0d', minHeight: '100%' }}>
+                      <div className="mock-card" onClick={() => setPreviewMode('slug')}>
+                         <img src={draft.image_url} style={{ width: '100%', height: '180px', objectFit: 'cover' }} alt="" />
+                         <div style={{ padding: '20px' }}>
+                            <span style={{ color: draft.type === 'leaks' ? '#66fcf1' : '#ff0000', fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                              {draft.type === 'leaks' ? 'LEAKS & RUMORS' : (draft.type === 'hardware' ? 'TECH ROZBOR' : 'GAME NEWS')}
+                            </span>
+                            <h3 style={{ color: '#fff', fontSize: '1.1rem', margin: '10px 0', fontWeight: '900' }}>{draft.title_cs}</h3>
+                            <p style={{ color: '#9ca3af', fontSize: '14px', lineHeight: '1.4', marginBottom: '15px' }}>{draft.description_cs}</p>
+                            <div style={{ color: '#66fcf1', fontWeight: 'bold', fontSize: '12px' }}>ČÍST VÍCE →</div>
+                         </div>
+                      </div>
+                   </div>
+                ) : (
+                   <div style={{ padding: '60px 40px', maxWidth: '850px', margin: '0 auto', background: '#0a0b0d' }}>
+                      <h1 style={{ color: '#fff', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', textTransform: 'uppercase', marginBottom: '20px', lineHeight: 1.1 }}>{draft.title_cs}</h1>
+                      <div style={{ color: '#444', fontWeight: '900', fontSize: '12px', marginBottom: '40px' }}>GURU ENGINE • {new Date().toLocaleDateString('cs-CZ')}</div>
+                      {draft.trailer && <div style={{ marginBottom: '40px', padding: '15px', background: 'rgba(255,0,85,0.1)', borderLeft: '4px solid #ff0055', color: '#ff0055', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' }}><Play size={16} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }}/> Trailer detekován</div>}
+                      <img src={draft.image_url} style={{ width: '100%', borderRadius: '20px', marginBottom: '40px', border: '1px solid #ffffff10' }} alt="" />
+                      <div className="mock-prose" dangerouslySetInnerHTML={{ __html: draft.content_cs }} />
+                      <div style={{ marginTop: '70px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
+                        <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>Líbil se ti článek? Podpoř nás...</h4>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
+                          <div className="guru-deals-btn" style={{ flex: '1 1 280px', cursor: 'default' }}><Flame size={20} /> SLEVY</div>
+                          <div className="guru-support-btn" style={{ flex: '1 1 280px', cursor: 'default' }}><Heart size={20} /> PODPORA</div>
+                        </div>
+                      </div>
+                   </div>
+                )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <aside className="admin-sidebar">
+        <div style={{ padding: '30px 25px', borderBottom: '1px solid #ffffff0d' }}>
+          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 900 }}>GURU <span style={{ color: '#a855f7' }}>ADMIN</span></h2>
+        </div>
+        <nav style={{ flex: 1, overflowY: 'auto' }}>
+          <SidebarItemUI id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LayoutDashboard />} label="PŘEHLED" color="#a855f7" />
+          <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="INTEL HUB" color="#eab308" />
+          <SidebarItemUI id="database" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Database />} label="DATABÁZE" color="#66fcf1" />
+        </nav>
+      </aside>
+
+      <main className="admin-main">
+        {activeTab === 'dashboard' && (
+          <div className="fade-in">
+            <h2 style={{ fontSize: '32px', fontWeight: 950, marginBottom: '30px', textTransform: 'uppercase' }}>SYSTÉMOVÝ <span style={{ color: '#a855f7' }}>STATUS</span></h2>
+            <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+              <div style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #333', textAlign: 'center' }}>
+                <h3 style={{ fontSize: '32px', fontWeight: 950 }}>{data.stats.visits}</h3><p style={{fontSize: '11px', color: '#4b5563', fontWeight: '900'}}>NÁVŠTĚVY</p>
+              </div>
+              <div style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #333', textAlign: 'center' }}>
+                <h3 style={{ fontSize: '32px', fontWeight: 950 }}>{data.posts.length}</h3><p style={{fontSize: '11px', color: '#4b5563', fontWeight: '900'}}>ČLÁNKY</p>
+              </div>
+              <div style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #333', textAlign: 'center' }}>
+                <h3 style={{ fontSize: '32px', fontWeight: 950 }}>{data.stats.missingEn}</h3><p style={{fontSize: '11px', color: '#4b5563', fontWeight: '900'}}>CHYBĚJÍCÍ EN</p>
+              </div>
+              <div style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #333', textAlign: 'center' }}>
+                <h3 style={{ fontSize: '32px', fontWeight: 950 }}>{data.deals.length}</h3><p style={{fontSize: '11px', color: '#4b5563', fontWeight: '900'}}>SLEVY</p>
+              </div>
+            </div>
+            <div style={{marginTop: '40px'}}><div className="terminal-box" style={{height: '300px'}}>{consoleLogs.slice(-10).map((log, i) => (<div key={i}>[{log.time}] {log.msg}</div>))}</div></div>
+          </div>
+        )}
+
+        {activeTab === 'intel-hub' && (
+          <div className="fade-in">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <CpuIcon color="#eab308" size={32} />
+                <h2 style={{ margin: 0, fontSize: '32px', fontWeight: 950 }}>Intel <span style={{ color: '#eab308' }}>Hub</span></h2>
+              </div>
+              <button onClick={fetchIntelFeed} disabled={intelLoading} className="sidebar-btn active" style={{ width: 'auto', padding: '10px 25px', background: '#eab308', color: '#000' }}>
+                <RefreshCw size={14} className={intelLoading ? 'animate-spin' : ''} /> SKENOVAT TRENDY
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', borderLeft: '4px solid #eab308', paddingLeft: '15px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 950, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Hardware <span style={{ color: '#eab308' }}>Radar</span></h3>
+            </div>
+            <div className="hub-compact-grid">
+              {hwIntel.map((item, i) => (
+                <div key={i} className="compact-card">
+                  {processingTitle === item.title && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw className="animate-spin text-orange-500" size={24}/></div>}
+                  <div className="compact-badge" style={{ background: item.viral_score > 85 ? '#ff0055' : '#10b981' }}>{item.viral_score}%</div>
+                  <span className="compact-source">{item.source}</span>
+                  <h4 className="compact-title">{item.title}</h4>
+                  <div className="compact-actions">
+                    <a href={item.link} target="_blank" rel="noreferrer" className="compact-btn">Zdroj</a>
+                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className={`compact-btn ${savedDrafts[item.title] ? '' : 'compact-btn-main'}`} style={savedDrafts[item.title] ? { background: '#10b98133', borderColor: '#10b98166', color: '#10b981' } : {}}>{savedDrafts[item.title] ? 'MÁM KONCEPT' : 'KONCEPT'}</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', borderLeft: '4px solid #a855f7', paddingLeft: '15px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 950, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Gaming <span style={{ color: '#a855f7' }}>Radar</span></h3>
+            </div>
+            <div className="hub-compact-grid">
+              {gameIntel.map((item, i) => (
+                <div key={i} className="compact-card">
+                  {processingTitle === item.title && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw className="animate-spin text-purple-500" size={24}/></div>}
+                  <div className="compact-badge" style={{ background: item.viral_score > 85 ? '#ff0055' : '#10b981' }}>{item.viral_score}%</div>
+                  <span className="compact-source">{item.source}</span>
+                  <h4 className="compact-title">{item.title}</h4>
+                  <div className="compact-actions">
+                    <a href={item.link} target="_blank" rel="noreferrer" className="compact-btn">Zdroj</a>
+                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className={`compact-btn ${savedDrafts[item.title] ? '' : 'compact-btn-main'}`} style={savedDrafts[item.title] ? { borderColor: '#a855f766', color: '#a855f7', background: '#a855f733' } : { borderColor: '#a855f766', color: '#a855f7', background: 'transparent' }}>{savedDrafts[item.title] ? 'MÁM KONCEPT' : 'KONCEPT'}</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', borderLeft: '4px solid #66fcf1', paddingLeft: '15px' }}>
+                <Ghost color="#66fcf1" size={18} />
+                <h3 style={{ fontSize: '16px', fontWeight: 950, textTransform: 'uppercase', color: '#fff', margin: 0 }}>Leaks & <span style={{ color: '#66fcf1' }}>Rumors</span></h3>
+            </div>
+            <div className="hub-compact-grid">
+              {leaksIntel.map((item, i) => (
+                <div key={i} className="compact-card" style={{ borderColor: 'rgba(102, 252, 241, 0.1)' }}>
+                  {processingTitle === item.title && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw className="animate-spin text-cyan-400" size={24}/></div>}
+                  <div className="compact-badge" style={{ background: item.viral_score > 80 ? '#66fcf1' : '#10b981', color: item.viral_score > 80 ? '#000' : '#fff' }}>{item.viral_score}%</div>
+                  <span className="compact-source">{item.source}</span>
+                  <h4 className="compact-title">{item.title}</h4>
+                  <div className="compact-actions">
+                    <a href={item.link} target="_blank" rel="noreferrer" className="compact-btn">Zdroj</a>
+                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className={`compact-btn ${savedDrafts[item.title] ? '' : 'compact-btn-main'}`} style={savedDrafts[item.title] ? { borderColor: '#66fcf166', color: '#66fcf1', background: '#66fcf122' } : { borderColor: '#66fcf166', color: '#66fcf1', background: 'transparent' }}>{savedDrafts[item.title] ? 'MÁM KONCEPT' : 'KONCEPT'}</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {!intelLoading && hwIntel.length === 0 && gameIntel.length === 0 && leaksIntel.length === 0 && <div style={{ textAlign: 'center', padding: '100px', color: '#444', fontWeight: 'bold' }}>ŽÁDNÁ DATA. SPUSTI SYNCHRONIZACI.</div>}
+          </div>
+        )}
+
+        {/* 🚀 GURU FIX: NOVÁ ZÁLOŽKA PRO PŘIDÁVÁNÍ HW A HER DO DB */}
+        {activeTab === 'database' && (
+          <div className="fade-in">
+            <header style={{ marginBottom: '40px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', color: '#66fcf1', fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>
+                <Database size={18} /> GURU DB MANAGER
+              </div>
+              <h2 style={{ fontSize: '32px', fontWeight: 950, margin: 0, textTransform: 'uppercase' }}>SPRÁVA <span style={{ color: '#66fcf1' }}>DATABÁZE</span></h2>
+            </header>
+
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '30px', background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <button onClick={() => setDbTab('games')} className={`db-tab-btn ${dbTab === 'games' ? 'active' : ''}`}>
+                <Gamepad2 size={18} /> NOVÁ HRA
+              </button>
+              <button onClick={() => setDbTab('gpu')} className={`db-tab-btn ${dbTab === 'gpu' ? 'active' : ''}`}>
+                <Monitor size={18} /> NOVÁ GRAFIKA
+              </button>
+              <button onClick={() => setDbTab('cpu')} className={`db-tab-btn ${dbTab === 'cpu' ? 'active' : ''}`}>
+                <CpuIcon size={18} /> NOVÝ PROCESOR
+              </button>
+            </div>
+
+            {dbMessage.text && (
+              <div style={{ padding: '20px', borderRadius: '15px', marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '12px', background: dbMessage.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', border: `1px solid ${dbMessage.type === 'success' ? '#10b981' : '#ef4444'}`, color: dbMessage.type === 'success' ? '#10b981' : '#ef4444' }}>
+                {dbMessage.type === 'success' ? <CheckCircle2 size={20} /> : <AlertTriangle size={20} />}
+                <span style={{ fontWeight: 'bold' }}>{dbMessage.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleDbSubmit} style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '30px', padding: '40px', boxShadow: '0 30px 60px rgba(0,0,0,0.5)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '25px' }}>
+                
+                <div className="input-group full">
+                  <label>NÁZEV (NAME)</label>
+                  <input type="text" name="name" value={dbFormData.name} onChange={handleDbInputChange} placeholder="Např. NVIDIA GeForce RTX 5090" required />
+                </div>
+
+                <div className="input-group full">
+                  <label>SLUG (AUTOMATICKY) - <span style={{color: '#ff0055'}}>TOTO JE KLÍČ PRO SEO!</span></label>
+                  <input type="text" name="slug" value={dbFormData.slug} onChange={handleDbInputChange} placeholder="geforce-rtx-5090" required />
+                </div>
+
+                {dbTab !== 'games' && (
+                  <>
+                    <div className="input-group">
+                      <label>VÝROBCE (NVIDIA / AMD / INTEL)</label>
+                      <input type="text" name="vendor" value={dbFormData.vendor} onChange={handleDbInputChange} placeholder="NVIDIA" required />
+                    </div>
+                    <div className="input-group">
+                      <label>PERFORMANCE INDEX (0-1000)</label>
+                      <input type="number" name="performance_index" value={dbFormData.performance_index} onChange={handleDbInputChange} placeholder="950" required />
+                    </div>
+                  </>
+                )}
+
+                {dbTab === 'gpu' && (
+                  <>
+                    <div className="input-group">
+                      <label>VRAM (GB)</label>
+                      <input type="number" name="vram_gb" value={dbFormData.vram_gb} onChange={handleDbInputChange} placeholder="24" required />
+                    </div>
+                    <div className="input-group">
+                      <label>TDP (W)</label>
+                      <input type="number" name="tdp_w" value={dbFormData.tdp_w} onChange={handleDbInputChange} placeholder="450" required />
+                    </div>
+                  </>
+                )}
+
+                {dbTab === 'cpu' && (
+                  <>
+                    <div className="input-group">
+                      <label>JÁDRA (CORES)</label>
+                      <input type="number" name="cores" value={dbFormData.cores} onChange={handleDbInputChange} placeholder="16" required />
+                    </div>
+                    <div className="input-group">
+                      <label>VLÁKNA (THREADS)</label>
+                      <input type="number" name="threads" value={dbFormData.threads} onChange={handleDbInputChange} placeholder="32" required />
+                    </div>
+                    <div className="input-group">
+                      <label>BOOST CLOCK (MHz)</label>
+                      <input type="number" name="boost_clock_mhz" value={dbFormData.boost_clock_mhz} onChange={handleDbInputChange} placeholder="5700" required />
+                    </div>
+                  </>
+                )}
+
+                {dbTab !== 'games' && (
+                  <>
+                    <div className="input-group full">
+                      <label><Link2 size={14} style={{display:'inline', verticalAlign:'middle'}}/> AFFILIATE LINK CZ (ALZA)</label>
+                      <input type="text" name="buy_link_cz" value={dbFormData.buy_link_cz} onChange={handleDbInputChange} placeholder="https://alza.cz/..." />
+                    </div>
+                    <div className="input-group full">
+                      <label><Globe size={14} style={{display:'inline', verticalAlign:'middle'}}/> AFFILIATE LINK EN (AMAZON)</label>
+                      <input type="text" name="buy_link_en" value={dbFormData.buy_link_en} onChange={handleDbInputChange} placeholder="https://amazon.com/..." />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {dbTab === 'games' && (
+                <div style={{ padding: '20px', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', borderRadius: '15px', marginTop: '20px', border: '1px dashed rgba(245, 158, 11, 0.3)', fontSize: '12px', fontWeight: 'bold' }}>
+                  <AlertTriangle size={16} style={{display:'inline', verticalAlign:'middle', marginRight:'5px'}} />
+                  Poznámka: Přidání hry do tabulky `games` je první krok. Pro zobrazení FPS benchmarků u karet nezapomeň v Supabase v tabulkách `game_fps` a `cpu_game_fps` vytvořit odpovídající sloupce (např. `{slug}_1440p`).
+                </div>
+              )}
+
+              <button type="submit" disabled={dbLoading} style={{ width: '100%', marginTop: '40px', padding: '20px', borderRadius: '16px', border: 'none', background: '#66fcf1', color: '#000', fontSize: '16px', fontWeight: '950', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: dbLoading ? 'not-allowed' : 'pointer', transition: '0.3s', boxShadow: '0 0 30px rgba(102, 252, 241, 0.3)' }}>
+                {dbLoading ? <Loader2 className="spin" size={20} /> : <PlusCircle size={20} />}
+                {dbLoading ? 'Odesílám do cloudu...' : `VLOŽIT ${dbTab.toUpperCase()} A AKTIVOVAT STRÁNKY`}
+              </button>
+            </form>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
