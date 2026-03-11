@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - ULTIMATE SITEMAP GENERATOR V9.0 (MAX INDEXING)
+ * GURU SEO ENGINE - ULTIMATE SITEMAP GENERATOR V10.0 (MONSTER CLUSTER EDITION)
  * Cesta: src/app/sitemap.js
- * 🚀 CIEĽ: Agresívne pokrytie pre GSC. Generuje desiatky (až stovky) tisíc URL.
- * 🛡️ FIX: Zahŕňa kompletnú HW databázu, SEO resolution clustery a znalostné sekcie.
- * 🛡️ MULTILANG: Automatické generovanie EN variant (/en/) pre každý záznam.
+ * 🚀 CIEĽ: Maximálna indexácia v GSC. Generuje desiatky tisíc URL.
+ * 🛡️ NEW BRUTAL FEATURE: CPU + GPU Bottleneck & Pairing Cluster (každý s každým).
+ * 🛡️ FIX: Zahrnuté všetky sekcie (GPU, CPU, Rady, Slovník, Upgrady, FPS Matrix).
  */
 
 export const revalidate = 3600; // Aktualizácia každú hodinu
@@ -43,13 +43,13 @@ export default async function sitemap() {
   });
 
   try {
-    // 2. MASÍVNY DATA FETCH ZO VŠETKÝCH TABULIEK (Optimalizované query)
+    // 2. MASÍVNY DATA FETCH (Ošetrené Performance Indexom pre Monster Cluster)
     const [
         gpus, cpus, posts, gpuUpgrades, cpuUpgrades, 
         rady, tipy, tweaky, slovnik
     ] = await Promise.all([
-      supabase.from('gpus').select('slug'),
-      supabase.from('cpus').select('slug'),
+      supabase.from('gpus').select('slug, performance_index').order('performance_index', { ascending: false }),
+      supabase.from('cpus').select('slug, performance_index').order('performance_index', { ascending: false }),
       supabase.from('posts').select('slug'),
       supabase.from('gpu_upgrades').select('slug, slug_en'),
       supabase.from('cpu_upgrades').select('slug, slug_en'),
@@ -62,24 +62,18 @@ export default async function sitemap() {
     const games = ['cyberpunk-2077', 'warzone', 'starfield', 'cs2', 'fortnite', 'rdr2'];
     const resolutions = ['1080p', '1440p', '4k'];
 
-    // 3. GPU EXTRÉMNY SEO CLUSTER (Týmto nafúkneme počet stránok)
+    // 3. GPU EXTRÉMNY SEO CLUSTER
     gpus.data?.forEach(g => {
       if (!g.slug) return;
       const slug = g.slug;
-      
-      // Základné profily
       ['/gpu/', '/gpu-performance/', '/gpu-recommend/'].forEach(prefix => {
         routes.push({ url: `${baseUrl}${prefix}${slug}`, lastModified: currentDate, priority: 0.8 });
         routes.push({ url: `${baseUrl}/en${prefix}${slug}`, lastModified: currentDate, priority: 0.7 });
       });
 
-      // FPS & Resolution Matrix
       games.forEach(game => {
-        // gpu-fps/[slug]/[game]
         routes.push({ url: `${baseUrl}/gpu-fps/${slug}/${game}`, lastModified: currentDate, priority: 0.7 });
         routes.push({ url: `${baseUrl}/en/gpu-fps/${slug}/${game}`, lastModified: currentDate, priority: 0.6 });
-
-        // gpu-performance/[slug]/[game]/[resolution] (SEO KĽÚČOVÉ)
         resolutions.forEach(res => {
             routes.push({ url: `${baseUrl}/gpu-performance/${slug}/${game}/${res}`, lastModified: currentDate, priority: 0.6 });
             routes.push({ url: `${baseUrl}/en/gpu-performance/${slug}/${game}/${res}`, lastModified: currentDate, priority: 0.5 });
@@ -95,15 +89,28 @@ export default async function sitemap() {
         routes.push({ url: `${baseUrl}${prefix}${slug}`, lastModified: currentDate, priority: 0.8 });
         routes.push({ url: `${baseUrl}/en${prefix}${slug}`, lastModified: currentDate, priority: 0.7 });
       });
-
-      // CPU FPS testy
       games.forEach(game => {
         routes.push({ url: `${baseUrl}/cpu-fps/${slug}/${game}`, lastModified: currentDate, priority: 0.7 });
         routes.push({ url: `${baseUrl}/en/cpu-fps/${slug}/${game}`, lastModified: currentDate, priority: 0.6 });
       });
     });
 
-    // 5. OBSAHOVÉ SEKCE (Rady, Tipy, Tweaky, Slovník, Články)
+    // 🚀 5. BRUTAL MONSTER CLUSTER: CPU + GPU PAIRING (Bottleneck Analysis)
+    // Berieme TOP 120 CPU a TOP 120 GPU pre maximálnu relevanciu a stabilitu sitemapy (cca 14 400 kombinácií)
+    const topCpus = cpus.data?.slice(0, 120) || [];
+    const topGpus = gpus.data?.slice(0, 120) || [];
+
+    topCpus.forEach(c => {
+      if (!c.slug) return;
+      topGpus.forEach(g => {
+        if (!g.slug) return;
+        const pairPath = `/bottleneck/${c.slug}-with-${g.slug}`;
+        routes.push({ url: `${baseUrl}${pairPath}`, lastModified: currentDate, priority: 0.6 });
+        routes.push({ url: `${baseUrl}/en${pairPath}`, lastModified: currentDate, priority: 0.5 });
+      });
+    });
+
+    // 6. OBSAHOVÉ SEKCE (Rady, Tipy, Tweaky, Slovník, Články)
     const contentSections = [
         { data: posts.data, path: '/clanky/' },
         { data: rady.data, path: '/rady/' },
@@ -120,7 +127,7 @@ export default async function sitemap() {
         });
     });
 
-    // 6. UPGRADE ENGINE (Perzistentné cesty z DB)
+    // 7. UPGRADE ENGINE (Perzistentné cesty z DB)
     gpuUpgrades.data?.forEach(u => {
       if (!u.slug) return;
       routes.push({ url: `${baseUrl}/gpu-upgrade/${u.slug}`, lastModified: currentDate, priority: 0.6 });
@@ -137,8 +144,8 @@ export default async function sitemap() {
     console.error("GURU SITEMAP ENGINE CRASH:", error);
   }
 
-  // Finálna kontrola unikátnosti (ochrana pred duplicitami)
-  const uniqueRoutes = Array.from(new Map(routes.map(r => [r.url, r])).values());
+  // Finálna kontrola unikátnosti a limitu (50k je Next.js/Google limit)
+  const uniqueRoutes = Array.from(new Map(routes.map(r => [r.url, r])).values()).slice(0, 50000);
 
   return uniqueRoutes;
 }
