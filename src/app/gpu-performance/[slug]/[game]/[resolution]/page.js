@@ -14,11 +14,13 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU PERFORMANCE ENGINE V2.0 (SEO CLUSTER)
+ * GURU GPU PERFORMANCE ENGINE V2.1 (SEO CLUSTER)
  * Cesta: src/app/gpu-performance/[slug]/[game]/[resolution]/page.js
- * 🚀 TARGET: Extrémně specifické dotazy (např. "RTX 4070 Cyberpunk 4k fps").
- * 🛡️ DESIGN: 1:1 identický vizuál s CPU sekcí (Hero bloky, Grid, GURU CTA).
- * 🛡️ FIX: Ošetřeno tahání parametrů a zachována kritická cache pro DB.
+ * 🚀 TARGET: Extrémně specifické dotazy (např. "RTX 5090 Cyberpunk 4k fps").
+ * 🛡️ DESIGN: 1:1 identický vizuál s CPU sekcí a hlavními profily.
+ * 🛡️ FIX 1: Imunní vůči názvu složky na disku (slug vs gpu) - vyřešen Vercel build error.
+ * 🛡️ FIX 2: Opraveny Deep Dive odkazy (používají safeSlug z DB), zamezeno 404 chybám.
+ * 🛡️ PERF: React cache() a 24h revalidace pro ochranu Supabase.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -40,28 +42,33 @@ const slugify = (text) => {
       .trim();
 };
 
-// 🛡️ DATA ENGINE: Hledání GPU podle robustního parseru (Cache ZACHOVÁNA)
+// 🛡️ DATA ENGINE: 3-Tier vyhledávání s ochranou databáze
 const findGpuBySlug = cache(async (gpuSlug) => {
     if (!supabaseUrl || !gpuSlug) return null;
+    const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
     const clean = gpuSlug.replace(/-/g, " ").replace(/geforce|radeon|nvidia|amd/gi, "").trim();
     
-    const chunks = clean.match(/\d+|[a-zA-Z]+/g);
-    if (!chunks || chunks.length === 0) return null;
-    
-    const searchPattern = `%${chunks.join('%')}%`;
-  
     try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`, {
-            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-            next: { revalidate: 86400 } // Cache na 24h pro ochranu DB u SEO clusteru
+        // TIER 1: Exact match na slug
+        const res1 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${gpuSlug}&limit=1`, {
+            headers, next: { revalidate: 86400 }
         });
-        if (!res.ok) return null;
-        const data = await res.json();
-        return data[0] || null;
+        if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
+
+        // TIER 2: Tokenized fallback
+        const chunks = clean.match(/\d+|[a-zA-Z]+/g);
+        if (chunks && chunks.length > 0) {
+            const searchPattern = `%${chunks.join('%')}%`;
+            const res2 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`, {
+                headers, next: { revalidate: 86400 }
+            });
+            if (res2.ok) { const data2 = await res2.json(); return data2[0] || null; }
+        }
     } catch (e) { return null; }
+    return null;
 });
 
-// 🧠 LOGIC ENGINE: Výpočet výkonu pro dané rozlišení
+// 🧠 LOGIC ENGINE: Výpočet výkonu pro rozlišení
 const getPerformanceData = cache(async (gpuSlug, gameSlug, resolution) => {
     const gpu = await findGpuBySlug(gpuSlug);
     if (!gpu) return null;
@@ -77,9 +84,9 @@ const getPerformanceData = cache(async (gpuSlug, gameSlug, resolution) => {
     } else if (resolution === '4k') {
         finalFps = fpsData[`${gameKey}_4k`] || Math.round(baseFps * 0.6);
     } else if (resolution === 'dlss') {
-        finalFps = Math.round(baseFps * 1.35); // Odhad DLSS Quality
+        finalFps = Math.round(baseFps * 1.35);
     } else if (resolution === 'ray-tracing') {
-        finalFps = Math.round(baseFps * 0.55); // Odhad RT On (Native)
+        finalFps = Math.round(baseFps * 0.55);
     }
 
     return { gpu, finalFps, baseFps, gameKey };
@@ -91,8 +98,7 @@ export async function generateMetadata({ params }) {
     const gameSlug = params?.game || '';
     const resolution = params?.resolution || '';
     
-    let isEn = false;
-    try { isEn = rawSlug.startsWith('en-'); } catch(e) {}
+    const isEn = rawSlug.startsWith('en-');
     const gpuSlug = rawSlug.replace(/^en-/, '');
 
     const data = await getPerformanceData(gpuSlug, gameSlug, resolution);
@@ -107,7 +113,7 @@ export async function generateMetadata({ params }) {
         : `${gpu.name} ${gameLabel} FPS (${resLabel} Benchmark) | The Hardware Guru`;
         
     const desc = isEn
-        ? `See ${gpu.name} ${gameLabel} FPS at ${resLabel} settings. Real gaming performance analysis, average framerates, and benchmark data.`
+        ? `See ${gpu.name} real gaming performance in ${gameLabel} at ${resLabel} settings. Aggregated benchmark data and average framerates.`
         : `Zjistěte reálné FPS pro ${gpu.name} ve hře ${gameLabel} při rozlišení ${resLabel}. Detailní analýza výkonu a benchmarková data.`;
 
     const safeSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
@@ -118,10 +124,7 @@ export async function generateMetadata({ params }) {
         description: desc,
         alternates: {
             canonical: canonicalUrl,
-            languages: {
-                "en": `https://www.thehardwareguru.cz/en/gpu-performance/${safeSlug}/${gameSlug}/${resolution}`,
-                "cs": canonicalUrl
-            }
+            languages: { "en": `https://www.thehardwareguru.cz/en/gpu-performance/${safeSlug}/${gameSlug}/${resolution}`, "cs": canonicalUrl }
         }
     };
 }
@@ -132,8 +135,7 @@ export default async function GpuPerformancePage({ params }) {
     const gameSlug = params?.game || '';
     const resolution = params?.resolution || '';
     
-    let isEn = false;
-    try { isEn = rawSlug.startsWith('en-'); } catch(e) {}
+    const isEn = rawSlug.startsWith('en-');
     const gpuSlug = rawSlug.replace(/^en-/, '');
 
     const data = await getPerformanceData(gpuSlug, gameSlug, resolution);
@@ -151,11 +153,10 @@ export default async function GpuPerformancePage({ params }) {
     const resLabel = resolution.toUpperCase();
     const cleanGpuName = normalizeName(gpu.name);
     const safeSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
-
     const vendorColor = (gpu.vendor || '').toUpperCase() === 'NVIDIA' ? '#76b900' : ((gpu.vendor || '').toUpperCase() === 'AMD' ? '#ed1c24' : '#66fcf1');
 
     // Vyhodnocení plynulosti
-    let verdictColor = '#ef4444'; // Red
+    let verdictColor = '#ef4444';
     let verdictTextEn = 'NOT RECOMMENDED';
     let verdictTextCs = 'NEDOPORUČUJEME';
 
@@ -164,16 +165,14 @@ export default async function GpuPerformancePage({ params }) {
     else if (finalFps >= 30) { verdictColor = '#eab308'; verdictTextEn = 'PLAYABLE (CONSOLE LEVEL)'; verdictTextCs = 'HRATELNÉ (KONZOLOVÝ ZÁŽITEK)'; }
     else if (finalFps === 0) { verdictColor = '#4b5563'; verdictTextEn = 'NO DATA'; verdictTextCs = 'NEDOSTATEK DAT'; }
 
-    const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
-
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
             
             <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
                 
                 <div style={{ marginBottom: '30px' }}>
-                    <a href={isEn ? `/en/gpu-performance/${safeSlug}` : `/gpu-performance/${safeSlug}`} className="guru-back-btn">
-                        <ChevronLeft size={16} /> {isEn ? 'BACK TO GPU PROFILE' : 'ZPĚT NA VÝKON GRAFIKY'}
+                    <a href={isEn ? `/en/gpu/${safeSlug}` : `/gpu/${safeSlug}`} className="guru-back-btn">
+                        <ChevronLeft size={16} /> {isEn ? 'BACK TO PROFILE' : 'ZPĚT NA PROFIL'}
                     </a>
                 </div>
 
@@ -187,7 +186,7 @@ export default async function GpuPerformancePage({ params }) {
                     </h1>
                 </header>
 
-                {/* 🚀 VELKÝ HERO BLOK */}
+                {/* 🚀 VELKÝ HERO BLOK (Guru Parity) */}
                 <section style={{ marginBottom: '60px' }}>
                     <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderLeft: `8px solid ${verdictColor}`, borderRadius: '24px', padding: '50px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
                         <div style={{ color: verdictColor, fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>
@@ -223,7 +222,7 @@ export default async function GpuPerformancePage({ params }) {
                     </div>
                 </section>
 
-                {/* 🚀 DEEP DIVE ODKAZY */}
+                {/* 🚀 DEEP DIVE ROZCESTNÍK */}
                 <section style={{ marginBottom: '60px' }}>
                   <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: vendorColor }}>
                     <Activity size={28} /> {isEn ? 'DEEP DIVE ANALYSIS' : 'DETAILNÍ ANALÝZA'}
@@ -232,15 +231,15 @@ export default async function GpuPerformancePage({ params }) {
                       <a href={isEn ? `/en/gpu-performance/${safeSlug}` : `/gpu-performance/${safeSlug}`} className="deep-link-card">
                           <BarChart3 size={32} color={vendorColor} />
                           <div>
-                              <h3>{isEn ? 'Full GPU Profile' : 'Kompletní Profil'}</h3>
-                              <p>{isEn ? 'All specifications and hardware index.' : 'Všechny specifikace a HW index.'}</p>
+                              <h3>{isEn ? 'Performance Specs' : 'Výkon a Parametry'}</h3>
+                              <p>{isEn ? 'Full technical specifications and benchmarks.' : 'Všechny specifikace a HW index.'}</p>
                           </div>
                           <ArrowRight size={20} className="link-arrow" />
                       </a>
                       <a href={isEn ? `/en/gpu-recommend/${safeSlug}` : `/gpu-recommend/${safeSlug}`} className="deep-link-card">
                           <ShieldCheck size={32} color="#10b981" />
                           <div>
-                              <h3>{isEn ? 'Guru Verdict: Buy?' : 'Verdikt: Koupit?'}</h3>
+                              <h3>{isEn ? 'Guru Verdict' : 'Guru Verdikt'}</h3>
                               <p>{isEn ? 'Is it worth your money? Value analysis.' : 'Vyplatí se do ní investovat? Analýza.'}</p>
                           </div>
                           <ArrowRight size={20} className="link-arrow" />
