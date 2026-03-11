@@ -1,25 +1,26 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - ULTIMATE SITEMAP GENERATOR V11.0 (MULTI-SITEMAP EDITION)
+ * GURU SEO ENGINE - ULTIMATE SITEMAP GENERATOR V12.0 (MONSTER SCALE)
  * Cesta: src/app/sitemap.js
- * 🚀 CIEĽ: Škálovateľnosť nad 50 000 URL pomocou generateSitemaps.
- * 🛡️ ARCH: Rozdelenie na 5 logických sitemáp (Core, GPU, CPU, Monster P1, Monster P2).
- * 🛡️ LIMIT: Každý súbor zvládne 50k, celkovo sme pripravení na 250 000 URL.
+ * 🚀 CIEĽ: Agresívne znásobenie URL (státisíce ciest).
+ * 🛡️ ARCH: Rozdelenie na 15 sitemáp (0-14). Celková kapacita 750 000 URL.
+ * 🛡️ FEATURE: Maximálny Monster Cluster (TOP 300x300 pairing) + Full FPS Matrix.
  */
 
 export const revalidate = 3600;
 
-// 1. DEFINÍCIA SITEMAP ČASTÍ
+// 1. DEFINÍCIA SEGMENTOV (Pripravené na masívny scale)
 export async function generateSitemaps() {
-  // Definujeme 5 sitemáp (ID 0 až 4)
-  return [
-    { id: 0 }, // Core Site (Statické, Články, Upgrady, Profily)
-    { id: 1 }, // GPU Matrix (FPS, Performance, Recommend)
-    { id: 2 }, // CPU Matrix (FPS, Performance, Recommend)
-    { id: 3 }, // Monster Cluster P1 (Bottleneck analýzy - prvá polovica)
-    { id: 4 }, // Monster Cluster P2 (Bottleneck analýzy - druhá polovica)
-  ];
+  const sitemaps = [];
+  // ID 0: Core + Profiles
+  // ID 1-2: GPU SEO Matrix
+  // ID 3-4: CPU SEO Matrix
+  // ID 5-14: Monster Cluster (Bottleneck) - rozdelené na 10 častí
+  for (let i = 0; i <= 14; i++) {
+    sitemaps.push({ id: i });
+  }
+  return sitemaps;
 }
 
 export default async function sitemap({ id }) {
@@ -29,15 +30,15 @@ export default async function sitemap({ id }) {
   const baseUrl = 'https://thehardwareguru.cz';
   const currentDate = new Date().toISOString();
 
-  // Pomocné konštanty
-  const games = ['cyberpunk-2077', 'warzone', 'starfield', 'cs2', 'fortnite', 'rdr2'];
+  // Definícia herného a rozlíškového vesmíru
+  const games = ['cyberpunk-2077', 'warzone', 'starfield', 'cs2', 'fortnite', 'rdr2', 'alan-wake-2', 'hogwarts-legacy'];
   const resolutions = ['1080p', '1440p', '4k'];
 
   try {
-    // FETCH DÁT (Všetky sitemapy potrebujú prístup k HW pre cross-links)
+    // FETCH DÁT (Zvýšené limity na 2000 pre maximálne pokrytie)
     const [gpus, cpus, posts, gpuUpgrades, cpuUpgrades, rady, tipy, tweaky, slovnik] = await Promise.all([
-      supabase.from('gpus').select('slug, performance_index').order('performance_index', { ascending: false }),
-      supabase.from('cpus').select('slug, performance_index').order('performance_index', { ascending: false }),
+      supabase.from('gpus').select('slug, performance_index').order('performance_index', { ascending: false }).limit(2000),
+      supabase.from('cpus').select('slug, performance_index').order('performance_index', { ascending: false }).limit(2000),
       supabase.from('posts').select('slug'),
       supabase.from('gpu_upgrades').select('slug, slug_en'),
       supabase.from('cpu_upgrades').select('slug, slug_en'),
@@ -64,9 +65,9 @@ export default async function sitemap({ id }) {
         routes.push({ url: `${baseUrl}/en${p.url}`, lastModified: currentDate, priority: p.priority - 0.1 });
       });
 
-      // Hlavné Hardware profily
+      // Hlavné Hardware profily (Všetkých 4000+ entít)
       [...(gpus.data || []), ...(cpus.data || [])].forEach(h => {
-        const type = h.vram_gb !== undefined ? 'gpu' : 'cpu';
+        const type = h.performance_index !== undefined && gpus.data?.find(g => g.slug === h.slug) ? 'gpu' : 'cpu';
         routes.push({ url: `${baseUrl}/${type}/${h.slug}`, lastModified: currentDate, priority: 0.8 });
         routes.push({ url: `${baseUrl}/en/${type}/${h.slug}`, lastModified: currentDate, priority: 0.7 });
       });
@@ -78,7 +79,7 @@ export default async function sitemap({ id }) {
         routes.push({ url: `${baseUrl}/en/${type}/${u.slug_en || `en-${u.slug}`}`, lastModified: currentDate, priority: 0.5 });
       });
 
-      // Vedomostné sekcie
+      // Content (Články, Rady, Slovník...)
       const sections = [
         { data: posts.data, path: '/clanky/' }, { data: rady.data, path: '/rady/' },
         { data: tipy.data, path: '/tipy/' }, { data: tweaky.data, path: '/tweaky/' }, { data: slovnik.data, path: '/slovnik/' }
@@ -89,9 +90,12 @@ export default async function sitemap({ id }) {
       }));
     }
 
-    // --- ID 1: GPU SEO MATRIX (FPS, PERFORMANCE, RECOMMEND) ---
-    if (id === 1) {
-      gpus.data?.forEach(g => {
+    // --- ID 1-2: GPU SEO MATRIX (ROZDELENÉ PRE RÝCHLOSŤ) ---
+    if (id === 1 || id === 2) {
+      const midG = Math.floor(gpus.data.length / 2);
+      const targetGpus = (id === 1) ? gpus.data.slice(0, midG) : gpus.data.slice(midG);
+
+      targetGpus.forEach(g => {
         ['/gpu-performance/', '/gpu-recommend/'].forEach(p => {
           routes.push({ url: `${baseUrl}${p}${g.slug}`, lastModified: currentDate, priority: 0.8 });
           routes.push({ url: `${baseUrl}/en${p}${g.slug}`, lastModified: currentDate, priority: 0.7 });
@@ -107,9 +111,12 @@ export default async function sitemap({ id }) {
       });
     }
 
-    // --- ID 2: CPU SEO MATRIX ---
-    if (id === 2) {
-      cpus.data?.forEach(c => {
+    // --- ID 3-4: CPU SEO MATRIX ---
+    if (id === 3 || id === 4) {
+      const midC = Math.floor(cpus.data.length / 2);
+      const targetCpus = (id === 3) ? cpus.data.slice(0, midC) : cpus.data.slice(midC);
+
+      targetCpus.forEach(c => {
         ['/cpu-performance/', '/cpu-recommend/'].forEach(p => {
           routes.push({ url: `${baseUrl}${p}${c.slug}`, lastModified: currentDate, priority: 0.8 });
           routes.push({ url: `${baseUrl}/en${p}${c.slug}`, lastModified: currentDate, priority: 0.7 });
@@ -121,13 +128,16 @@ export default async function sitemap({ id }) {
       });
     }
 
-    // --- ID 3 & 4: MONSTER CLUSTER (BOTTLENECK PAIRING) ---
-    if (id === 3 || id === 4) {
-      const topCpus = cpus.data?.slice(0, 120) || [];
-      const topGpus = gpus.data?.slice(0, 120) || [];
-      const midPoint = Math.floor(topCpus.length / 2);
-      
-      const targetCpus = (id === 3) ? topCpus.slice(0, midPoint) : topCpus.slice(midPoint);
+    // --- ID 5 až 14: MONSTER CLUSTER (BOTTLENECK PAIRING) ---
+    // Berieme TOP 300 CPU a TOP 300 GPU = 90 000 párov (180 000 URL).
+    // Rozdelené na 10 segmentov po cca 18 000 URL každý.
+    if (id >= 5 && id <= 14) {
+      const topCpus = cpus.data?.slice(0, 300) || [];
+      const topGpus = gpus.data?.slice(0, 300) || [];
+      const chunkSize = Math.ceil(topCpus.length / 10);
+      const start = (id - 5) * chunkSize;
+      const end = start + chunkSize;
+      const targetCpus = topCpus.slice(start, end);
 
       targetCpus.forEach(c => {
         topGpus.forEach(g => {
