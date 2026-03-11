@@ -1,22 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - ULTIMATE SITEMAP GENERATOR V12.0 (MONSTER SCALE)
+ * GURU SEO ENGINE - ULTIMATE SITEMAP GENERATOR V14.0 (MONSTER GAME SCALE)
  * Cesta: src/app/sitemap.js
- * 🚀 CIEĽ: Agresívne znásobenie URL (státisíce ciest).
- * 🛡️ ARCH: Rozdelenie na 15 sitemáp (0-14). Celková kapacita 750 000 URL.
- * 🛡️ FEATURE: Maximálny Monster Cluster (TOP 300x300 pairing) + Full FPS Matrix.
+ * 🚀 CÍL: Agresivní znásobení URL (stovky tisíc cest s parametry her).
+ * 🛡️ ARCH: Rozdělení na 15 sitemáp (0-14). Celková kapacita 750 000 URL.
+ * 🛡️ FEATURE: Bottleneck Game Multiplier (-in-[game]) pro TOP 200x200 páry.
  */
 
 export const revalidate = 3600;
 
-// 1. DEFINÍCIA SEGMENTOV (Pripravené na masívny scale)
+// 1. DEFINICE SEGMENTŮ
 export async function generateSitemaps() {
   const sitemaps = [];
-  // ID 0: Core + Profiles
-  // ID 1-2: GPU SEO Matrix
-  // ID 3-4: CPU SEO Matrix
-  // ID 5-14: Monster Cluster (Bottleneck) - rozdelené na 10 častí
+  // ID 0: Core + Profily + Články
+  // ID 1-2: GPU SEO Matrix (Specs + FPS + Res)
+  // ID 3-4: CPU SEO Matrix (Specs + FPS)
+  // ID 5-14: Monster Bottleneck Cluster (CPU x GPU x Games)
   for (let i = 0; i <= 14; i++) {
     sitemaps.push({ id: i });
   }
@@ -30,12 +30,13 @@ export default async function sitemap({ id }) {
   const baseUrl = 'https://thehardwareguru.cz';
   const currentDate = new Date().toISOString();
 
-  // Definícia herného a rozlíškového vesmíru
+  // Definice herního vesmíru
   const games = ['cyberpunk-2077', 'warzone', 'starfield', 'cs2', 'fortnite', 'rdr2', 'alan-wake-2', 'hogwarts-legacy'];
+  const bottleneckGames = ['cyberpunk-2077', 'warzone', 'fortnite']; // TOP 3 pro masivní párování
   const resolutions = ['1080p', '1440p', '4k'];
 
   try {
-    // FETCH DÁT (Zvýšené limity na 2000 pre maximálne pokrytie)
+    // FETCH DATA (Zvýšené limity na 2000 pro maximální pokrytí profilů)
     const [gpus, cpus, posts, gpuUpgrades, cpuUpgrades, rady, tipy, tweaky, slovnik] = await Promise.all([
       supabase.from('gpus').select('slug, performance_index').order('performance_index', { ascending: false }).limit(2000),
       supabase.from('cpus').select('slug, performance_index').order('performance_index', { ascending: false }).limit(2000),
@@ -50,7 +51,7 @@ export default async function sitemap({ id }) {
 
     const routes = [];
 
-    // --- ID 0: CORE SITE (STATICKÉ + CONTENT + UPGRADES + PROFILES) ---
+    // --- ID 0: CORE SITE (STATIKY + CONTENT + UPGRADES + PROFILY) ---
     if (id === 0) {
       const staticPaths = [
         { url: '/', priority: 1.0 }, { url: '/clanky', priority: 0.9 }, { url: '/tweaky', priority: 0.9 },
@@ -65,7 +66,7 @@ export default async function sitemap({ id }) {
         routes.push({ url: `${baseUrl}/en${p.url}`, lastModified: currentDate, priority: p.priority - 0.1 });
       });
 
-      // Hlavné Hardware profily (Všetkých 4000+ entít)
+      // Hlavní HW profily (4000+ entit)
       [...(gpus.data || []), ...(cpus.data || [])].forEach(h => {
         const type = h.performance_index !== undefined && gpus.data?.find(g => g.slug === h.slug) ? 'gpu' : 'cpu';
         routes.push({ url: `${baseUrl}/${type}/${h.slug}`, lastModified: currentDate, priority: 0.8 });
@@ -79,7 +80,7 @@ export default async function sitemap({ id }) {
         routes.push({ url: `${baseUrl}/en/${type}/${u.slug_en || `en-${u.slug}`}`, lastModified: currentDate, priority: 0.5 });
       });
 
-      // Content (Články, Rady, Slovník...)
+      // Content (Články, Rady...)
       const sections = [
         { data: posts.data, path: '/clanky/' }, { data: rady.data, path: '/rady/' },
         { data: tipy.data, path: '/tipy/' }, { data: tweaky.data, path: '/tweaky/' }, { data: slovnik.data, path: '/slovnik/' }
@@ -90,7 +91,7 @@ export default async function sitemap({ id }) {
       }));
     }
 
-    // --- ID 1-2: GPU SEO MATRIX (ROZDELENÉ PRE RÝCHLOSŤ) ---
+    // --- ID 1-2: GPU SEO MATRIX ---
     if (id === 1 || id === 2) {
       const midG = Math.floor(gpus.data.length / 2);
       const targetGpus = (id === 1) ? gpus.data.slice(0, midG) : gpus.data.slice(midG);
@@ -128,12 +129,12 @@ export default async function sitemap({ id }) {
       });
     }
 
-    // --- ID 5 až 14: MONSTER CLUSTER (BOTTLENECK PAIRING) ---
-    // Berieme TOP 300 CPU a TOP 300 GPU = 90 000 párov (180 000 URL).
-    // Rozdelené na 10 segmentov po cca 18 000 URL každý.
+    // --- ID 5 až 14: MONSTER CLUSTER (BOTTLENECK + GAMES) ---
+    // Bereme TOP 200 CPU a TOP 200 GPU = 40 000 základních párů.
+    // Ke každému páru přidáváme 3 top hry = celkem cca 320 000 URL (včetně EN verzí).
     if (id >= 5 && id <= 14) {
-      const topCpus = cpus.data?.slice(0, 300) || [];
-      const topGpus = gpus.data?.slice(0, 300) || [];
+      const topCpus = cpus.data?.slice(0, 200) || [];
+      const topGpus = gpus.data?.slice(0, 200) || [];
       const chunkSize = Math.ceil(topCpus.length / 10);
       const start = (id - 5) * chunkSize;
       const end = start + chunkSize;
@@ -142,8 +143,15 @@ export default async function sitemap({ id }) {
       targetCpus.forEach(c => {
         topGpus.forEach(g => {
           const pairPath = `/bottleneck/${c.slug}-with-${g.slug}`;
+          // Základní pár
           routes.push({ url: `${baseUrl}${pairPath}`, lastModified: currentDate, priority: 0.6 });
           routes.push({ url: `${baseUrl}/en${pairPath}`, lastModified: currentDate, priority: 0.5 });
+          
+          // Game-specific bottleneck (TOP 3 hry)
+          bottleneckGames.forEach(game => {
+             routes.push({ url: `${baseUrl}${pairPath}-in-${game}`, lastModified: currentDate, priority: 0.5 });
+             routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}`, lastModified: currentDate, priority: 0.4 });
+          });
         });
       });
     }
