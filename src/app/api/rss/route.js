@@ -11,18 +11,16 @@ const supabase = createClient(
 );
 
 /**
- * GURU RSS FEED ENGINE V5.4 (VALIDATION & GPU PAGES FIX)
+ * GURU RSS FEED ENGINE V5.6 (DYNAMIC GAMES FIX)
  * Cesta: src/app/api/rss/route.js
- * 🛡️ FIX 1: GUID změněn na permalink pro lepší validaci (ChatGPT fix).
- * 🛡️ FIX 2: Jazyk nastaven na cs-CZ (ChatGPT fix).
- * 🚀 NEW: Přidány GPU Benchmark landing pages (FPS, Performance, Recommend) do feedu.
+ * 🚀 NEW: Automatické načítání her z tabulky 'games' pro dynamické FPS stránky.
  */
 export async function GET() {
   try {
     const siteUrl = 'https://www.thehardwareguru.cz';
 
-    // 1. GURU FETCH: Paralelné načítanie všetkých tabuliek
-    const [postsRes, tipyRes, tweakyRes, radyRes, slovnikRes, dealsRes, duelsRes, cpuDuelsRes, upgradesRes, gpusRes] = await Promise.all([
+    // 1. GURU FETCH: Agregace všech tabulek pro maximální SEO pokrytí
+    const [postsRes, tipyRes, tweakyRes, radyRes, slovnikRes, dealsRes, duelsRes, cpuDuelsRes, upgradesRes, gpusRes, gamesRes] = await Promise.all([
       supabase.from('posts').select('*').order('created_at', { ascending: false }).limit(10),
       supabase.from('tipy').select('*').order('created_at', { ascending: false }).limit(5),
       supabase.from('tweaky').select('*').order('created_at', { ascending: false }).limit(5),
@@ -31,8 +29,9 @@ export async function GET() {
       supabase.from('game_deals').select('*').order('created_at', { ascending: false }).limit(10),
       supabase.from('gpu_duels').select('*').order('created_at', { ascending: false }).limit(10),
       supabase.from('cpu_duels').select('*').order('created_at', { ascending: false }).limit(10),
-      supabase.from('gpu_upgrades').select('*').order('created_at', { ascending: false }).limit(10),
-      supabase.from('gpus').select('*').order('created_at', { ascending: false }).limit(5) // 🚀 Fetch nejnovějších GPU pro landing pages
+      supabase.from('gpu_upgrades').select('*').order('created_at', { ascending: false }).limit(15),
+      supabase.from('gpus').select('*').order('created_at', { ascending: false }).limit(10),
+      supabase.from('games').select('slug') // 🚀 GURU DYNAMIC GAMES: Fetchujeme hry z DB
     ]);
 
     const allItems = [];
@@ -40,7 +39,7 @@ export async function GET() {
     // Helper pro escapování ampersandů v URL
     const escapeXmlUrl = (url) => url ? url.replace(/&/g, '&amp;') : '';
 
-    // --- 🛡️ GURU MAPPING LOGIC ---
+    // --- 🛡️ GURU MAPPING LOGIC (Bez /cs/ prefixu) ---
 
     // A) ČLÁNKY & OČEKÁVANÉ HRY
     (postsRes.data || []).forEach(item => {
@@ -54,16 +53,6 @@ export async function GET() {
           date: item.created_at,
           image: item.image_url,
           lang: 'cs'
-        });
-      }
-      if (item.title_en) {
-        allItems.push({
-          title: `${isExpected ? '[Expected]' : '[Article]'} ${item.title_en}`,
-          description: item.description_en || item.seo_description_en || '',
-          url: `${siteUrl}/en/${path}/${item.slug_en || item.slug}`,
-          date: item.created_at,
-          image: item.image_url,
-          lang: 'en'
         });
       }
     });
@@ -110,40 +99,45 @@ export async function GET() {
       }
     });
 
-    // E) GPU BENCHMARK PAGES (FPS, Performance, Recommend) 🚀
-    const gamesList = ['cyberpunk-2077', 'warzone', 'starfield'];
+    // E) GPU LANDING PAGES (FPS, Performance, Recommend) 🚀
+    // Zde vytáhneme slugy her přímo z databáze a nahradíme tím hardcodovaný seznam
+    const dbGames = gamesRes.data?.map(g => g.slug).filter(Boolean) || [];
+    const gamesList = dbGames.length > 0 ? dbGames : ['cyberpunk-2077', 'warzone', 'starfield'];
+
     (gpusRes.data || []).forEach(gpu => {
       if (!gpu.slug) return;
       
-      // FPS Landing pages (CZ)
+      // FPS Benchmarky
       gamesList.forEach(game => {
         allItems.push({
-          title: `[FPS] ${gpu.name} - Benchmark ve hře ${game.replace(/-/g, ' ')}`,
-          description: `Podívejte se na reálné testy FPS pro grafickou kartu ${gpu.name} v rozlišení 1440p.`,
+          title: `[FPS] ${gpu.name} - ${game.replace(/-/g, ' ').toUpperCase()}`,
+          description: `Testy FPS a herní výkon pro ${gpu.name} v titulu ${game}.`,
           url: `${siteUrl}/gpu-fps/${gpu.slug}/${game}`,
-          date: gpu.created_at,
+          date: gpu.created_at || new Date().toISOString(),
           lang: 'cs'
         });
       });
 
-      // Performance & Recommend (CZ)
+      // Performance
       allItems.push({
-        title: `[Výkon] ${gpu.name} - Technická analýza a srovnání`,
-        description: `Kompletní přehled specifikací a výkonnostní tier list pro ${gpu.name}.`,
+        title: `[Výkon] ${gpu.name} - Benchmarky a specifikace`,
+        description: `Kompletní technický rozbor a herní testy grafické karty ${gpu.name}.`,
         url: `${siteUrl}/gpu-performance/${gpu.slug}`,
-        date: gpu.created_at,
+        date: gpu.created_at || new Date().toISOString(),
         lang: 'cs'
       });
+
+      // Recommend
       allItems.push({
-        title: `[Doporučení] Koupit ${gpu.name}? Verdikt Hardware Guru`,
-        description: `Vyplatí se v roce 2025 koupě ${gpu.name}? Analýza cena/výkon.`,
+        title: `[Rada] Vyplatí se koupit ${gpu.name}?`,
+        description: `Analýza cena/výkon a doporučení Guru týmu pro kartu ${gpu.name}.`,
         url: `${siteUrl}/gpu-recommend/${gpu.slug}`,
-        date: gpu.created_at,
+        date: gpu.created_at || new Date().toISOString(),
         lang: 'cs'
       });
     });
 
-    // F) OSTATNÉ (Tipy, Tweaky, Rady, Slovník)
+    // F) OSTATNÍ SEKCE
     const sections = [
       { data: tipyRes.data, prefix: '[Tip]', path: 'tipy' },
       { data: tweakyRes.data, prefix: '[Tweak]', path: 'tweaky' },
@@ -165,16 +159,16 @@ export async function GET() {
       });
     });
 
-    // Zoraďovanie od najnovšieho po najstaršie
+    // Seřazení a limit (max 100 položek pro Google News stabilitu)
     const sortedItems = allItems.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 100);
 
-    // Generovanie XML
+    // Generování XML
     let rss = `<?xml version="1.0" encoding="UTF-8" ?>
 <rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>The Hardware Guru - Global Feed</title>
     <link>${siteUrl}</link>
-    <description>Najnovšie HW tipy, herné slevy a GPU/CPU duely z Hardware Guru základne.</description>
+    <description>Nejnovější HW tipy, herní slevy a GPU/CPU duely z Hardware Guru základny.</description>
     <language>cs-CZ</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
     <atom:link href="${siteUrl}/api/rss" rel="self" type="application/rss+xml" />`;
