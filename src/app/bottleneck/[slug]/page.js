@@ -5,13 +5,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK ENGINE V12.0 (FINAL SEO & ROBUST LOOKUP)
+ * GURU BOTTLENECK ENGINE V14.0 (ULTIMATE SEO & RESOLUTION MATRIX)
  * Cesta: src/app/bottleneck/[slug]/page.js
  * 🚀 STATUS: LIVE - AdSense ID ca-pub-5468223287024993
- * 🛡️ FIX 1: Navrácen 3-Tier robustní vyhledávač (Exact -> ilike -> Tokenized).
- * 🛡️ FIX 2: Oprava parsování složených URL pro "at-resolution" a "in-game".
- * 🛡️ FIX 3: Automatický fallback na Cyberpunk FPS, pokud v URL chybí hra.
- * 🛡️ NEXT.JS 15: Plně asynchronní zpracování params.
+ * 🛡️ ARCH: Podpora unikátnych stránok pre kombinácie CPU + GPU + HRA + ROZLIŠENÍ.
+ * 🛡️ SEO: Agresívna indexácia long-tail dopytov (napr. ...-in-cyberpunk-2077-at-4k).
+ * 🛡️ FIX: AMD Chipsety & RAM presne podľa pokynov užívateľa.
  */
 
 export const runtime = "nodejs";
@@ -22,50 +21,43 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 const normalizeName = (name = '') => name.replace(/AMD |Intel |NVIDIA |GeForce |Ryzen |Core |Radeon /gi, '');
 
-// 🛡️ GURU ENGINE: Neprůstřelné vyhledávání (3-TIER s benchmarky)
+// 🛡️ GURU ENGINE: 3-TIER LOOKUP (Exact -> ilike -> Fallback)
 const findHw = async (table, slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
   const joinQuery = table === 'gpus' ? 'game_fps!gpu_id(*)' : 'cpu_game_fps!cpu_id(*)';
 
   try {
-      // TIER 1: Přesný slug match
+      // TIER 1: Presný slug match
       const url1 = `${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&slug=eq.${slugPart}&limit=1`;
       const res1 = await fetch(url1, { headers, cache: 'no-store' });
       if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
       
-      // TIER 2: Substring match (řeší chybějící nvidia-/amd- prefixy v URL)
-      const url2 = `${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&slug=ilike.*${slugPart}*&order=slug.asc&limit=1`;
+      // Fallback: ilike search pre neúplné slugy
+      const url2 = `${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&slug=ilike.*${slugPart}*&limit=1`;
       const res2 = await fetch(url2, { headers, cache: 'no-store' });
       if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
 
-      // TIER 3: Tokenized search (rozbije slug na slova a hledá shodu)
-      const clean = slugPart.replace(/-/g, ' ').replace(/ryzen|core|intel|amd|geforce|rtx|radeon|rx/gi, '').trim();
-      const tokens = clean.split(/\s+/).filter(t => t.length > 0);
-      if (tokens.length > 0) {
-          const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
-          const res3 = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&and=(${conditions})&limit=1`, { headers, cache: 'no-store' });
-          if (res3.ok) { const data3 = await res3.json(); if (data3?.length) return data3[0]; }
-      }
-
-      // ABSOLUTNÍ FALLBACK: Čistá data bez joinu
       const resF = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&slug=eq.${slugPart}&limit=1`, { headers, cache: 'no-store' });
       if (resF.ok) { const dataF = await resF.json(); if (dataF?.length) return dataF[0]; }
-  } catch(e) { console.error("Lookup Engine Error:", e); }
+  } catch(e) { console.error("Database Lookup Error", e); }
   return null;
 };
 
+// 🛡️ GURU PARSER: Rozklad URL na CPU, GPU, Hru a Rozlíšenie
 const getAnalysisData = cache(async (slug) => {
   if (!slug) return null;
   const cleanSlug = slug.replace(/^en-/, '');
   
-  // Parsování URL: CPU-with-GPU-in-GAME-at-RES
+  // 1. Rozlíšenie (-at-)
   const resParts = cleanSlug.split('-at-');
-  const resolution = resParts[1] || null;
+  const resolution = resParts[1] || null; // 1080p, 1440p, 4k
   
+  // 2. Hra (-in-)
   const gameParts = resParts[0].split('-in-');
-  const gameSlug = gameParts[1] || null;
+  const gameSlug = gameParts[1] || null; // cyberpunk-2077, warzone...
   
+  // 3. Hardvér (-with-)
   const hwParts = gameParts[0].split('-with-');
   if (hwParts.length !== 2) return null;
   
@@ -88,14 +80,26 @@ export async function generateMetadata({ params }) {
   const data = await getAnalysisData(rawSlug);
   if (!data?.cpu || !data?.gpu) return { title: 'Analysis | Hardware Guru' };
 
-  const gameLabel = data.gameSlug ? data.gameSlug.replace(/-/g, ' ').toUpperCase() : '';
+  const gameLabel = data.gameSlug ? data.gameSlug.replace(/-/g, ' ').toUpperCase() : 'GAMING';
   const resLabel = data.resolution ? `at ${data.resolution.toUpperCase()}` : '';
   
   const title = isEn 
-    ? `${data.cpu.name} + ${data.gpu.name} ${gameLabel} ${resLabel} Bottleneck Test`
-    : `${data.cpu.name} + ${data.gpu.name} – Bottleneck a FPS v ${gameLabel || 'hraní'} ${data.resolution ? `v ${data.resolution}` : ''}`;
+    ? `${data.cpu.name} + ${data.gpu.name} ${gameLabel} ${resLabel} Bottleneck & FPS`
+    : `${data.cpu.name} + ${data.gpu.name} – Bottleneck a FPS v ${gameLabel} ${data.resolution ? `v ${data.resolution}` : ''}`;
 
-  return { title: `${title} | Hardware Guru` };
+  return { 
+    title: `${title} | Hardware Guru`,
+    description: isEn 
+      ? `Detailed bottleneck analysis for ${data.cpu.name} and ${data.gpu.name} ${resLabel}. Check gaming performance and PSU requirements.`
+      : `Detailná analýza bottlenecku pre ${data.cpu.name} a ${data.gpu.name} ${data.resolution ? `v rozlíšení ${data.resolution}` : ''}.`,
+    alternates: {
+        canonical: `https://thehardwareguru.cz/bottleneck/${rawSlug.replace(/^en-/, '')}`,
+        languages: { 
+            'en': `https://thehardwareguru.cz/en/bottleneck/${rawSlug.replace(/^en-/, '')}`,
+            'cs': `https://thehardwareguru.cz/bottleneck/${rawSlug.replace(/^en-/, '')}`
+        }
+    }
+  };
 }
 
 export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
@@ -105,12 +109,11 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
   const data = await getAnalysisData(rawSlug);
 
   if (!data?.cpu || !data?.gpu) return (
-    <div className="error-screen" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a0b0d', color: '#fff', textAlign: 'center', padding: '40px' }}>
-        <div>
+    <div className="error-screen" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a0b0d', color: '#fff' }}>
+        <div style={{ textAlign: 'center' }}>
             <AlertTriangle size={64} color="#ef4444" style={{ margin: '0 auto 20px' }} />
-            <h2 style={{ fontWeight: '950', fontSize: '2rem' }}>KOMPONENTA NENALEZENA</h2>
-            <p style={{ color: '#9ca3af', maxWidth: '500px', margin: '20px auto' }}>Omlouváme se, ale kombinaci těchto komponent se nepodařilo v databázi najít. Zkuste prosím vyhledávání na úvodní straně.</p>
-            <a href="/" style={{ display: 'inline-block', padding: '15px 30px', background: '#f59e0b', color: '#000', borderRadius: '12px', fontWeight: '950', textDecoration: 'none' }}>ZPĚT DOMŮ</a>
+            <h2 style={{ fontWeight: '950' }}>KOMPONENT NENÁJDENÝ</h2>
+            <a href="/" style={{ marginTop: '20px', display: 'inline-block', padding: '12px 25px', background: '#f59e0b', color: '#000', borderRadius: '12px', fontWeight: '950', textDecoration: 'none' }}>SPÄŤ NA ÚVOD</a>
         </div>
     </div>
   );
@@ -128,7 +131,7 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
   const statusColor = bottleneckScore < 15 ? '#10b981' : (bottleneckScore < 30 ? '#f59e0b' : '#ef4444');
   const recommendedPsu = Math.ceil(((Number(cpu.tdp_w) || 65) + (Number(gpu.tdp_w) || 200)) * 1.6 / 50) * 50;
 
-  // Čipset a RAM logika
+  // 🛡️ GURU LOGIC: Čipsety a RAM presne podľa tvojich pokynov
   const chipsetLabel = (() => {
     if (isAmd) {
       if (cpuName.includes('9000') || cpuName.includes('7000')) return 'B850 / X870 / X870E';
@@ -143,16 +146,14 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
     return 'DDR5 6000 MT/s';
   })();
 
-  // 🚀 GURU FPS LOOKUP: Cyberpunk fallback pokud není hra v URL
+  // 🚀 GURU FPS LOOKUP: Podpora pre 8+ hier z databázy
   const activeGame = gameSlug || 'cyberpunk-2077';
   const rawFps = gpu?.game_fps;
   const fpsData = Array.isArray(rawFps) ? rawFps[0] : (rawFps || {});
   const gameBase = activeGame.replace(/-/g, '_');
-  const gameShort = activeGame.replace('-2077', '').replace(/-/g, '_');
   
   const getFpsByRes = (res) => Number(
       fpsData[`${gameBase}_${res}`] || 
-      fpsData[`${gameShort}_${res}`] || 
       fpsData[`${activeGame.replace(/-/g, '_')}_${res}`] ||
       0
   );
@@ -181,10 +182,12 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
 
         <AdSpace slot="1234567890" /> 
 
+        {/* 🚀 HLAVNÁ KARTA S BOTTLENECK SCORE */}
         <section className="glass-card main-hero" style={{ width: '100%', maxWidth: '900px', margin: '0 auto 60px' }}>
             <div className="hero-label">{isEn ? 'Calculated System Bottleneck' : 'Vypočítaný bottleneck systému'}</div>
             <div className="score-text" style={{ color: statusColor, textShadow: `0 0 60px ${statusColor}50` }}>{bottleneckScore}%</div>
             
+            {/* 🚀 FPS GRID - Zvýrazňuje rozlíšenie z URL */}
             {hasFps && (
                 <div className="fps-resolutions-grid">
                     <div className={`fps-res-item ${resolution === '1080p' ? 'active-seo' : ''}`}>
@@ -207,14 +210,29 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
             </div>
         </section>
 
+        {/* 🚀 ODPORÚČANIA PRE ZOSTAVU */}
         <section style={{ width: '100%', marginBottom: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <h2 className="section-h2">{isEn ? 'BUILD RECOMMENDATIONS' : 'DOPORUČENÍ PRO SESTAVU'}</h2>
+          <h2 className="section-h2">{isEn ? 'BUILD RECOMMENDATIONS' : 'ODPORÚČANIA PRE ZOSTAVU'}</h2>
           <div className="specs-grid">
-              <div className="glass-card spec-item"><PlugZap size={32} color="#f59e0b" /><div className="spec-label">PSU</div><div className="spec-val">{recommendedPsu}W</div></div>
-              <div className="glass-card spec-item"><Layers size={32} color="#66fcf1" /><div className="spec-label">CHIPSET</div><div className="spec-val" style={{ fontSize: '22px' }}>{chipsetLabel}</div></div>
-              <div className="glass-card spec-item"><Database size={32} color="#a855f7" /><div className="spec-label">RAM</div><div className="spec-val" style={{ fontSize: '22px' }}>{ramLabel}</div></div>
+              <div className="glass-card spec-item">
+                  <PlugZap size={32} color="#f59e0b" />
+                  <div className="spec-label">PSU</div>
+                  <div className="spec-val">{recommendedPsu}W</div>
+              </div>
+              <div className="glass-card spec-item">
+                  <Layers size={32} color="#66fcf1" />
+                  <div className="spec-label">CHIPSET</div>
+                  <div className="spec-val" style={{ fontSize: '20px' }}>{chipsetLabel}</div>
+              </div>
+              <div className="glass-card spec-item">
+                  <Database size={32} color="#a855f7" />
+                  <div className="spec-label">RAM</div>
+                  <div className="spec-val" style={{ fontSize: '20px' }}>{ramLabel}</div>
+              </div>
           </div>
         </section>
+
+        <AdSpace slot="0987654321" height="250px" />
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', width: '100%', justifyContent: 'center', marginTop: '40px' }}>
             <a href="https://kick.com/thehardwareguru" target="_blank" className="btn-deals"><Flame size={20} /> WATCH LIVE ON KICK</a>
@@ -243,7 +261,7 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
         .specs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%; max-width: 1100px; justify-content: center; margin: 0 auto; }
         .spec-item { padding: 45px 30px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px; }
         .spec-label { font-size: 11px; font-weight: 950; text-transform: uppercase; color: #6b7280; letter-spacing: 2px; }
-        .spec-val { font-size: 32px; font-weight: 950; color: #fff; }
+        .spec-val { font-size: 28px; font-weight: 950; color: #fff; }
         .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; text-transform: uppercase; margin-bottom: 40px; border-left: 5px solid #66fcf1; padding-left: 20px; align-self: flex-start; }
         
         .btn-deals, .btn-support { flex: 1; max-width: 350px; min-width: 280px; padding: 22px; border-radius: 20px; font-weight: 950; text-align: center; display: flex; align-items: center; justify-content: center; gap: 12px; text-transform: uppercase; transition: 0.3s; text-decoration: none; }
