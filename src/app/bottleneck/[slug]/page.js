@@ -5,13 +5,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK ENGINE V8.0 (CHIPSET & RAM SPECIFIC FIX)
+ * GURU BOTTLENECK ENGINE V8.5 (FPS RESOLUTION GRID & CHIPSET FIX)
  * Cesta: src/app/bottleneck/[slug]/page.js
  * 🚀 STATUS: LIVE - AdSense ID ca-pub-5468223287024993
- * 🛡️ FIX 1: Čipsety pro AMD 7000-9000 nastaveny na B850 / X870 / X870E.
- * 🛡️ FIX 2: Čipsety pro AMD 5000 (AM4) nastaveny na X570 / B550 / A520.
- * 🛡️ FIX 3: RAM pro AMD 5000 nastavena na DDR4 3600 MT/s.
- * 🛡️ DESIGN: Zachováno absolutní centrování a SEO metadata.
+ * 🛡️ NEW: Přidáno zobrazení FPS pro 1080p, 1440p a 4K přímo v Hero sekci.
+ * 🛡️ FIX: Čipsety a RAM pro AMD (B850/X870 pro AM5, B550/DDR4 pro AM4).
+ * 🛡️ DESIGN: Zachováno absolutní centrování a SEO standardy.
  */
 
 export const runtime = "nodejs";
@@ -133,7 +132,6 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
   const statusColor = bottleneckScore < 15 ? '#10b981' : (bottleneckScore < 30 ? '#f59e0b' : '#ef4444');
   const recommendedPsu = Math.ceil(((Number(cpu.tdp_w) || 65) + (Number(gpu.tdp_w) || 200)) * 1.6 / 50) * 50;
 
-  // 🚀 GURU LOGIC: Doporučený čipset a RAM dle požadavků
   const chipsetLabel = (() => {
     if (isAmd) {
       if (cpuName.includes('9000') || cpuName.includes('7000')) return 'B850 / X870 / X870E';
@@ -148,10 +146,20 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
     return 'DDR5 6000 MT/s';
   })();
 
+  // 🚀 GURU FPS LOOKUP: Tahání dat pro 3 rozlišení
   const fpsData = gpu?.game_fps?.[0] || {};
   const gameBase = gameSlug ? gameSlug.replace(/-/g, '_') : null;
   const gameShort = gameSlug ? gameSlug.replace('-2077', '').replace(/-/g, '_') : null;
-  const specificFps = gameBase ? (fpsData[`${gameBase}_1440p`] || fpsData[`${gameShort}_1440p`] || fpsData[`${gameBase}_1080p`] || 0) : null;
+  
+  const getFpsByRes = (res) => {
+    if (!gameBase) return 0;
+    return Number(fpsData[`${gameBase}_${res}`] || fpsData[`${gameShort}_${res}`] || 0);
+  };
+
+  const f1080 = getFpsByRes('1080p');
+  const f1440 = getFpsByRes('1440p');
+  const f4k = getFpsByRes('4k');
+  const hasFps = f1080 > 0 || f1440 > 0 || f4k > 0;
 
   const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
   const faqSchema = {
@@ -189,21 +197,35 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
 
         <AdSpace slot="1234567890" /> 
 
+        {/* 🚀 CENTERED GAUGE CARD */}
         <section className="glass-card main-hero" style={{ width: '100%', maxWidth: '900px', margin: '0 auto 60px' }}>
             <div className="hero-label">{isEn ? 'Calculated System Bottleneck' : 'Vypočítaný bottleneck systému'}</div>
             <div className="score-text" style={{ color: statusColor, textShadow: `0 0 60px ${statusColor}50` }}>{bottleneckScore}%</div>
             
-            {specificFps > 0 && (
-                <div style={{ marginBottom: '25px', fontSize: '28px', fontWeight: '950', color: '#66fcf1', textTransform: 'uppercase' }}>
-                    ~{specificFps} FPS <span style={{ fontSize: '13px', color: '#9ca3af', letterSpacing: '1px' }}>{gameSlug.replace(/-/g, ' ')} 1440p</span>
+            {/* 🚀 NOVÁ FPS SEKCE: 1080p, 1440p, 4K */}
+            {hasFps && (
+                <div className="fps-resolutions-grid">
+                    <div className="fps-res-item">
+                        <span className="res-tag">1080p</span>
+                        <div className="res-fps">{f1080 || '--'} <span className="res-unit">FPS</span></div>
+                    </div>
+                    <div className="fps-res-item featured">
+                        <span className="res-tag">1440p</span>
+                        <div className="res-fps">{f1440 || '--'} <span className="res-unit">FPS</span></div>
+                    </div>
+                    <div className="fps-res-item">
+                        <span className="res-tag">4K</span>
+                        <div className="res-fps">{f4k || '--'} <span className="res-unit">FPS</span></div>
+                    </div>
                 </div>
             )}
 
-            <div className="status-badge" style={{ background: `${statusColor}20`, color: statusColor, border: `1px solid ${statusColor}40` }}>
+            <div className="status-badge" style={{ background: `${statusColor}20`, color: statusColor, border: `1px solid ${statusColor}40`, marginTop: '30px' }}>
                 {bottleneckScore < 15 ? (isEn ? 'PERFECT MATCH' : 'IDEÁLNÍ PÁROVÁNÍ') : (isEn ? 'BOTTLENECK DETECTED' : 'ZJIŠTĚN BOTTLENECK')}
             </div>
         </section>
 
+        {/* 🚀 CENTERED SPECS GRID */}
         <section style={{ width: '100%', marginBottom: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '40px', width: '100%', justifyContent: 'center' }}>
               <div style={{ height: '4px', width: '40px', background: '#66fcf1', borderRadius: '10px' }}></div>
@@ -222,12 +244,12 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
               <div className="glass-card spec-item">
                   <Layers size={32} color="#66fcf1" />
                   <div className="spec-label">{isEn ? 'Optimal Chipset' : 'Optimální čipset'}</div>
-                  <div className="spec-val" style={{ fontSize: '24px' }}>{chipsetLabel}</div>
+                  <div className="spec-val" style={{ fontSize: '22px' }}>{chipsetLabel}</div>
               </div>
               <div className="glass-card spec-item">
                   <Database size={32} color="#a855f7" />
                   <div className="spec-label">Standard RAM</div>
-                  <div className="spec-val" style={{ fontSize: '24px' }}>{ramLabel}</div>
+                  <div className="spec-val" style={{ fontSize: '22px' }}>{ramLabel}</div>
               </div>
           </div>
         </section>
@@ -249,15 +271,24 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
         .hero-label { color: #6b7280; font-size: 13px; font-weight: 950; text-transform: uppercase; letter-spacing: 4px; margin-bottom: 20px; }
         .score-text { font-size: clamp(90px, 18vw, 150px); font-weight: 950; line-height: 1; margin: 10px 0; }
         .status-badge { padding: 15px 45px; border-radius: 50px; display: inline-block; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; font-size: 14px; }
+        
+        .fps-resolutions-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 600px; margin: 30px auto 0; }
+        .fps-res-item { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .fps-res-item.featured { background: rgba(102, 252, 241, 0.05); border-color: rgba(102, 252, 241, 0.2); transform: scale(1.05); }
+        .res-tag { font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 5px; }
+        .res-fps { font-size: 28px; font-weight: 950; color: #fff; }
+        .res-unit { font-size: 12px; color: #66fcf1; }
+
         .specs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%; max-width: 1100px; justify-content: center; margin: 0 auto; }
         .spec-item { padding: 45px 30px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px; }
         .spec-label { font-size: 11px; font-weight: 950; text-transform: uppercase; color: #6b7280; letter-spacing: 2px; }
         .spec-val { font-size: 32px; font-weight: 950; color: #fff; }
+        
         .btn-deals, .btn-support { flex: 1; max-width: 350px; min-width: 280px; padding: 22px; border-radius: 20px; font-weight: 950; text-align: center; display: flex; align-items: center; justify-content: center; gap: 12px; text-transform: uppercase; transition: 0.3s; text-decoration: none; }
         .btn-deals { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; }
         .btn-support { background: #eab308; color: #000 !important; }
         .btn-deals:hover, .btn-support:hover { transform: scale(1.05); filter: brightness(1.1); }
-        @media (max-width: 768px) { .specs-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .specs-grid { grid-template-columns: 1fr; } .fps-resolutions-grid { grid-template-columns: 1fr; scale: 0.9; } }
       `}} />
     </div>
   );
