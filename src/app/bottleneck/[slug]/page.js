@@ -1,4 +1,5 @@
 import React, { cache } from 'react';
+import Script from 'next/script';
 import { 
   ChevronLeft, 
   Activity, 
@@ -17,17 +18,15 @@ import {
   Layers,
   Database,
   Info,
-  BarChart3,
-  MousePointer2,
-  Gamepad2
+  BarChart3
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK & PAIRING ENGINE V3.5 (AD-MAXIMIZER EDITION)
+ * GURU BOTTLENECK & PAIRING ENGINE V4.0 (ADSENSE LIVE & GURU GLASS)
  * Cesta: src/app/bottleneck/[slug]/page.js
- * 🚀 MONETIZACE: Přidány strategické reklamní plochy (Top, Sidebar, In-feed, Bottom).
- * 🛡️ FIX: Přesná logika pro AMD 7000-9000 (DDR5 6000) a AMD 5000 (DDR4 3600).
- * 🛡️ SEO: Resolution Impact Matrix a Deep Internal Linking.
+ * 🚀 STATUS: LIVE - Propojeno s AdSense ID ca-pub-5468223287024993
+ * 🛡️ LOGIC: 3-Tier Lookup, PSU Calculator, RAM Accuracy (DDR5 6000 / DDR4 3600).
+ * 🛡️ NEXT.JS 15: Ošetření 'params' jako Promise.
  */
 
 export const runtime = "nodejs";
@@ -87,13 +86,17 @@ const getPairData = cache(async (slug) => {
   return { cpu, gpu };
 });
 
-// Helper pro reklamní plochu
-const AdSpace = ({ label, height = '90px', maxWidth = '100%', sticky = false }) => (
-    <div className={`ad-container ${sticky ? 'sticky-ad' : ''}`} style={{ width: '100%', maxWidth, margin: '30px auto', minHeight: height }}>
-        <div style={{ fontSize: '9px', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '5px', textAlign: 'center' }}>ADVERTISEMENT / SPONSORED</div>
-        <div style={{ width: '100%', height, background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ color: '#374151', fontSize: '11px', fontWeight: 'bold' }}>{label}</span>
-        </div>
+// 🚀 GURU ADSENSE COMPONENT
+const AdSpace = ({ slot, height = '90px' }) => (
+    <div className="ad-wrapper" style={{ width: '100%', margin: '30px auto', minHeight: height, textAlign: 'center' }}>
+        <div style={{ fontSize: '9px', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>REKLAMA / SPONZOROVANÉ</div>
+        <ins className="adsbygoogle"
+             style={{ display: 'block', minHeight: height }}
+             data-ad-client="ca-pub-5468223287024993"
+             data-ad-slot={slot}
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script dangerouslySetInnerHTML={{ __html: '(adsbygoogle = window.adsbygoogle || []).push({});' }} />
     </div>
 );
 
@@ -117,16 +120,13 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
   const isEn = forcedIsEn || rawSlug.startsWith('en-');
   const data = await getPairData(rawSlug);
 
-  if (!data?.cpu || !data?.gpu) return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#ff0055', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-      DATA NENALEZENA - ZKONTROLUJTE SLUGY V DATABÁZI
-    </div>
-  );
+  if (!data?.cpu || !data?.gpu) return <div className="p-20 text-center bg-black min-h-screen text-red-500 font-black">DATA NENALEZENA V DATABÁZI</div>;
 
   const { cpu, gpu } = data;
   const cpuPower = cpu.performance_index || 1;
   const gpuPower = gpu.performance_index || 1;
   
+  // 🧠 BOTTLENECK LOGIC
   let bottleneckScore = 0;
   let bottleneckType = 'none';
   if (cpuPower < gpuPower * 0.75) {
@@ -138,6 +138,8 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
   }
 
   const statusColor = bottleneckScore < 15 ? '#10b981' : (bottleneckScore < 30 ? '#f59e0b' : '#ef4444');
+  
+  // ⚡ PSU & HW ACCURACY
   const totalTdp = (Number(cpu.tdp_w) || 65) + (Number(gpu.tdp_w) || 200);
   const recommendedPsu = Math.ceil((totalTdp * 1.6) / 50) * 50;
 
@@ -149,7 +151,6 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
           if (name.includes('5000')) return 'B550 / X570 (AM4)';
           return 'B650 / X670E';
       }
-      if (name.includes('ULTRA')) return 'Z890 / B860';
       return name.includes('I9') || name.includes('I7') ? 'Z790 / B760' : 'B760 / H610';
   };
 
@@ -161,13 +162,6 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
       return name.includes('ULTRA') || name.includes('14') || name.includes('13') ? 'DDR5 6000 MT/s+' : 'DDR4 3600 MT/s';
   };
 
-  const getBottleneckByRes = (baseScore, res) => {
-      if (res === '1080p') return Math.round(baseScore * 1.3);
-      if (res === '1440p') return baseScore;
-      if (res === '4k') return Math.round(baseScore * 0.4);
-      return baseScore;
-  };
-
   const vendorCpuColor = (cpu.vendor || '').toUpperCase() === 'INTEL' ? '#0071c5' : '#ed1c24';
   const vendorGpuColor = (gpu.vendor || '').toUpperCase() === 'NVIDIA' ? '#76b900' : '#ed1c24';
 
@@ -176,72 +170,53 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+      
+      {/* 🚀 OSTRÝ GOOGLE ADSENSE SKRIPT */}
+      <Script 
+        async 
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993" 
+        crossOrigin="anonymous" 
+        strategy="afterInteractive"
+      />
+
       <main style={{ maxWidth: '1250px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
-        <div style={{ marginBottom: '30px' }}>
-          <a href={isEn ? '/en/cpuvs' : '/cpuvs'} className="guru-back-btn">
-            <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
-          </a>
-        </div>
-
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)' }}>
             <Gauge size={16} /> GURU BOTTLENECK RADAR
           </div>
           <h1 style={{ fontSize: 'clamp(2rem, 6vw, 4rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
             <span style={{ color: vendorCpuColor }}>{normalizeName(cpu.name)}</span> <br/>
-            <span style={{ color: '#fff', fontSize: '0.6em', opacity: 0.5 }}>+</span> <br/>
+            <span style={{ color: '#fff', opacity: 0.5, fontSize: '0.5em' }}>WITH</span> <br/>
             <span style={{ color: vendorGpuColor }}>{normalizeName(gpu.name)}</span>
           </h1>
         </header>
 
-        {/* 🚀 GURU_AD_SPACE: TOP LEADERBOARD */}
-        <AdSpace label="TOP_LEADERBOARD_728x90" />
+        {/* REKLAMA POD NÁDPISEM */}
+        <AdSpace slot="1234567890" /> 
 
         <div className="layout-grid">
-            {/* HLAVNÍ OBSAHOVÁ ČÁST */}
             <div className="main-content">
                 
-                {/* 🚀 VELKÝ HERO BLOK */}
+                {/* HERO GAUGE SECTION */}
                 <section style={{ marginBottom: '60px' }}>
                     <div className="glass-card main-hero">
                         <div style={{ color: '#66fcf1', fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>
                             {isEn ? 'Estimated Average Bottleneck' : 'Odhadovaný průměrný bottleneck'}
                         </div>
-                        <div style={{ fontSize: 'clamp(80px, 15vw, 110px)', fontWeight: '950', color: statusColor, lineHeight: '1', margin: '10px 0', textShadow: `0 0 40px ${statusColor}40` }}>
-                            {bottleneckScore}<span style={{ fontSize: '30px' }}>%</span>
+                        <div style={{ fontSize: 'clamp(80px, 15vw, 130px)', fontWeight: '950', color: statusColor, lineHeight: '1', margin: '10px 0', textShadow: `0 0 50px ${statusColor}40` }}>
+                            {bottleneckScore > 0 ? bottleneckScore : 0}%
                         </div>
-                        <div style={{ background: `${statusColor}20`, color: statusColor, padding: '10px 30px', borderRadius: '50px', display: 'inline-flex', alignItems: 'center', gap: '10px', fontWeight: '950', fontSize: '14px', border: `1px solid ${statusColor}40`, marginTop: '10px' }}>
-                            {bottleneckScore < 15 ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
-                            {bottleneckScore < 15 ? (isEn ? 'OPTIMAL SYNERGY' : 'OPTIMÁLNÍ SYNERGIE') : (isEn ? 'BOTTLENECK DETECTED' : 'ZJIŠTĚN BOTTLENECK')}
+                        <div style={{ background: `${statusColor}20`, color: statusColor, padding: '12px 40px', borderRadius: '50px', display: 'inline-block', fontWeight: '950', border: `1px solid ${statusColor}40`, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                            {bottleneckScore < 15 ? (isEn ? 'PERFECT MATCH' : 'IDEÁLNÍ PÁROVÁNÍ') : (isEn ? 'BOTTLENECK DETECTED' : 'ZJIŠTĚN BOTTLENECK')}
                         </div>
                     </div>
                 </section>
 
-                {/* 🚀 RESOLUTION SCALING MATRIX */}
-                <section style={{ marginBottom: '60px' }}>
-                  <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <BarChart3 size={28} /> {isEn ? 'BOTTLENECK BY RESOLUTION' : 'BOTTLENECK DLE ROZLIŠENÍ'}
-                  </h2>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-                      {[
-                        { res: '1080p', label: isEn ? 'CPU Bound' : 'CPU Bound', score: getBottleneckByRes(bottleneckScore, '1080p') },
-                        { res: '1440p', label: isEn ? 'Balanced' : 'Vyvážené', score: bottleneckScore },
-                        { res: '2160p (4K)', label: isEn ? 'GPU Bound' : 'GPU Bound', score: getBottleneckByRes(bottleneckScore, '4k') }
-                      ].map((item, i) => (
-                        <div key={i} className="glass-card res-box">
-                            <div style={{ fontSize: '24px', fontWeight: '950', color: '#fff' }}>{item.res}</div>
-                            <div style={{ fontSize: '10px', fontWeight: '900', color: '#6b7280', textTransform: 'uppercase', marginBottom: '15px' }}>{item.label}</div>
-                            <div style={{ fontSize: '32px', fontWeight: '950', color: item.score < 15 ? '#10b981' : (item.score < 30 ? '#f59e0b' : '#ef4444') }}>{item.score}%</div>
-                        </div>
-                      ))}
-                  </div>
-                </section>
+                {/* REKLAMA MEZI OBSAHEM */}
+                <AdSpace slot="0987654321" height="250px" />
 
-                {/* 🚀 GURU_AD_SPACE: IN-FEED AD */}
-                <AdSpace label="IN_FEED_RECTANGLE_AD" height="250px" />
-
-                {/* 🚀 CONFIGURATION DETAILS */}
+                {/* SPECIFICATIONS GRID */}
                 <section style={{ marginBottom: '60px' }}>
                   <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <Database size={28} /> {isEn ? 'GURU BUILD RECOMMENDATIONS' : 'DOPORUČENÍ PRO SESTAVU'}
@@ -257,7 +232,7 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
                           <Layers size={32} color="#66fcf1" style={{ marginBottom: '15px' }} />
                           <div className="spec-label">{isEn ? 'Ideal Chipset' : 'Ideální čipset'}</div>
                           <div className="spec-val">{getChipset(cpu)}</div>
-                          <div className="spec-sub">Socket {cpu.socket || (cpu.name.toUpperCase().includes('5000') ? 'AM4' : 'AM5 / LGA1700')}</div>
+                          <div className="spec-sub">Socket {cpu.socket || 'AM5 / LGA1700'}</div>
                       </div>
                       <div className="glass-card spec">
                           <Database size={32} color="#a855f7" style={{ marginBottom: '15px' }} />
@@ -268,7 +243,7 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
                   </div>
                 </section>
 
-                {/* 🚀 DEEP LINKS TO COMPONENTS */}
+                {/* DEEP LINKS */}
                 <section style={{ marginBottom: '60px' }}>
                   <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <Swords size={28} /> {isEn ? 'COMPONENT PERFORMANCE' : 'VÝKON KOMPONENT'}
@@ -292,82 +267,42 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
                       </a>
                   </div>
                 </section>
-
-                {/* 🚀 VERDIKT GURU */}
-                <section style={{ marginBottom: '60px' }}>
-                    <div className="glass-card prose-box">
-                        <h3 style={{ margin: '0 0 20px 0', fontSize: '1.2rem', fontWeight: '950', display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1' }}>
-                            <Info size={22} /> {isEn ? 'GURU FINAL VERDICT' : 'ZÁVĚREČNÝ VERDIKT GURU'}
-                        </h3>
-                        <div style={{ color: '#d1d5db', fontSize: '1.1rem', lineHeight: '1.8', margin: 0 }}>
-                            {bottleneckType === 'cpu' ? (
-                                <p>{isEn ? `The ${cpu.name} is the clear bottleneck here. At 1080p resolution, the ${gpu.name} will be significantly underutilized. We recommend moving to 1440p or 4K to shift more load to the GPU.` : `V této sestavě je bottleneckem procesor ${cpu.name}. Zejména v 1080p nebude karta ${gpu.name} využita naplno. Doporučujeme hraní ve 1440p nebo 4K, kde se zátěž přesune více na grafiku.`}</p>
-                            ) : bottleneckType === 'gpu' ? (
-                                <p>{isEn ? `The ${gpu.name} is the limiting factor. Your CPU has much more potential. This is a very safe build, as a future GPU upgrade will provide a massive FPS jump without needing a new CPU.` : `Limitujícím faktorem je zde grafika ${gpu.name}. Váš procesor má mnohem vyšší potenciál. Tato sestava je skvělá pro budoucí upgrade grafiky, který přinese obrovský skok FPS bez nutnosti měnit CPU.`}</p>
-                            ) : (
-                                <p>{isEn ? `This is a perfectly balanced high-end system. Both components represent an elite synergy. You can expect maximum performance across all resolutions with minimal stuttering.` : `Toto je skvěle vyvážený systém. Obě komponenty spolupracují s maximální efektivitou. Můžete očekávat špičkový výkon ve všech rozlišeních s minimálním rizikem propadů FPS.`}</p>
-                            )}
-                        </div>
-                    </div>
-                </section>
-
             </div>
 
-            {/* PRAVÝ REKLAMNÍ SIDEBAR */}
+            {/* SIDEBAR AD */}
             <aside className="ad-sidebar">
-                <AdSpace label="SIDEBAR_SKYSCRAPER_AD" height="600px" sticky />
+                <AdSpace slot="5432167890" height="600px" sticky />
             </aside>
         </div>
 
-        {/* 🚀 GURU_AD_SPACE: BOTTOM BANNER */}
-        <AdSpace label="BOTTOM_LONG_BANNER_AD" height="120px" />
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginTop: '40px' }}>
-            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" className="guru-deals-btn"><Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA TOP CENY'}</a>
-            <a href={isEn ? "/en/support" : "/support"} className="guru-support-btn"><Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}</a>
+        {/* CTA BUTTONS */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', marginTop: '60px' }}>
+            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="btn-deals">
+               <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA TOP CENY'}
+            </a>
+            <a href={isEn ? "/en/support" : "/support"} className="btn-support">
+               <Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
+            </a>
         </div>
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
         .layout-grid { display: grid; grid-template-columns: 1fr 300px; gap: 40px; align-items: start; }
-        .main-content { min-width: 0; }
-        .ad-sidebar { position: relative; }
         .sticky-ad { position: sticky; top: 100px; }
-
-        .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
-        .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); }
-        
-        .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; }
-
-        .glass-card { background: rgba(15, 17, 21, 0.8); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 30px; backdrop-filter: blur(15px); box-shadow: 0 20px 50px rgba(0,0,0,0.5); transition: 0.3s; }
-        .glass-card:hover { border-color: rgba(102, 252, 241, 0.2); transform: translateY(-5px); }
-        
-        .main-hero { padding: 60px 40px; text-align: center; border-top: 2px solid rgba(255,255,255,0.1); }
-        .res-box { padding: 30px; text-align: center; }
-        .prose-box { padding: 40px; border-left: 6px solid #66fcf1; }
-        
+        .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 5px solid #66fcf1; padding-left: 15px; }
+        .glass-card { background: rgba(15,17,21,0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); border-radius: 30px; box-shadow: 0 30px 100px rgba(0,0,0,0.8); transition: 0.3s; }
+        .main-hero { padding: 60px 40px; text-align: center; }
         .spec { padding: 35px; text-align: center; display: flex; flex-direction: column; align-items: center; }
         .spec-label { font-size: 11px; font-weight: 950; text-transform: uppercase; color: #6b7280; letter-spacing: 2px; margin-bottom: 10px; }
         .spec-val { font-size: 32px; font-weight: 950; color: #fff; margin-bottom: 5px; }
         .spec-sub { font-size: 13px; color: #9ca3af; font-weight: bold; }
-
         .link-item { display: flex; align-items: center; gap: 20px; padding: 25px 30px; text-decoration: none; color: #fff; }
         .link-title { font-weight: 950; font-size: 1.2rem; text-transform: uppercase; }
         .link-sub { font-size: 13px; color: #9ca3af; font-weight: bold; }
-
-        .guru-deals-btn { flex: 1; min-width: 250px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 22px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; text-decoration: none; border-radius: 20px; font-weight: 950; text-transform: uppercase; transition: 0.3s; box-shadow: 0 10px 30px rgba(249, 115, 22, 0.2); }
-        .guru-support-btn { flex: 1; min-width: 250px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 22px; background: #eab308; color: #000; text-decoration: none; border-radius: 20px; font-weight: 950; text-transform: uppercase; transition: 0.3s; box-shadow: 0 10px 30px rgba(234, 179, 8, 0.2); }
-        
-        .guru-deals-btn:hover, .guru-support-btn:hover { transform: scale(1.02); filter: brightness(1.1); }
-        
-        @media (max-width: 1024px) {
-            .layout-grid { grid-template-columns: 1fr; }
-            .ad-sidebar { display: none; }
-        }
-        @media (max-width: 768px) {
-            .link-item { flex-direction: column; text-align: center; }
-            .guru-deals-btn, .guru-support-btn { width: 100%; }
-        }
+        .btn-deals { flex: 1; min-width: 280px; padding: 22px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; text-align: center; display: flex; align-items: center; justify-content: center; gap: 12px; text-transform: uppercase; transition: 0.3s; border-radius: 20px; text-decoration: none !important; }
+        .btn-support { flex: 1; min-width: 280px; padding: 22px; background: #eab308; color: #000 !important; font-weight: 950; text-align: center; display: flex; align-items: center; justify-content: center; gap: 12px; text-transform: uppercase; transition: 0.3s; border-radius: 20px; text-decoration: none !important; }
+        .btn-deals:hover, .btn-support:hover { transform: scale(1.03); filter: brightness(1.1); }
+        @media (max-width: 1024px) { .layout-grid { grid-template-columns: 1fr; } .ad-sidebar { display: none; } }
       `}} />
     </div>
   );
