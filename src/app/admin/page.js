@@ -7,15 +7,14 @@ import {
   CheckCircle2, RefreshCw, Send, Sparkles, Flame, Plus, X, 
   ExternalLink, Lightbulb, BookOpen, Wrench, Video, Cpu, Lock, Calendar, Terminal,
   LayoutDashboard, Image as ImageIcon, CalendarDays, Layers, ChevronRight, Play,
-  Download, Eye, Check, RotateCcw, Smartphone, Monitor, ArrowLeft, TrendingUp, Cpu as CpuIcon, Gamepad2, Star, Heart, Ghost, Brain, Link2, PlusCircle, Loader2
+  Download, Eye, Check, RotateCcw, Smartphone, Monitor, ArrowLeft, TrendingUp, Gamepad2, Star, Heart, Ghost, Brain
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V16.0 - DB MANAGER UPDATE
+ * GURU ULTIMATE COMMAND CENTER V16.1 - UI FIX
  * Cesta: src/app/admin/page.js
- * - ZACHOVÁNO: Inteligentní sémantická deduplikace.
- * - ZACHOVÁNO: Odesílání na Make.com ve 4 polích.
- * - NEW: Integrovaná sekce "DATABÁZE" pro bleskové přidávání CPU/GPU/Her.
+ * 🛡️ FIX: Odstraněny nebezpečné importy ikon (Link2, Loader2, PlusCircle, dvojitý Cpu), 
+ * které způsobovaly "Client-side exception" při přepnutí na záložku Databáze.
  */
 
 // --- 🚀 GURU ENV ENGINE ---
@@ -593,7 +592,7 @@ export default function AdminApp() {
           <div className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                <CpuIcon color="#eab308" size={32} />
+                <Cpu color="#eab308" size={32} />
                 <h2 style={{ margin: 0, fontSize: '32px', fontWeight: 950 }}>Intel <span style={{ color: '#eab308' }}>Hub</span></h2>
               </div>
               <button onClick={fetchIntelFeed} disabled={intelLoading} className="sidebar-btn active" style={{ width: 'auto', padding: '10px 25px', background: '#eab308', color: '#000' }}>
@@ -678,7 +677,7 @@ export default function AdminApp() {
                 <Monitor size={18} /> NOVÁ GRAFIKA
               </button>
               <button onClick={() => setDbTab('cpu')} className={`db-tab-btn ${dbTab === 'cpu' ? 'active' : ''}`}>
-                <CpuIcon size={18} /> NOVÝ PROCESOR
+                <Cpu size={18} /> NOVÝ PROCESOR
               </button>
             </div>
 
@@ -748,7 +747,7 @@ export default function AdminApp() {
                 {dbTab !== 'games' && (
                   <>
                     <div className="input-group full">
-                      <label><Link2 size={14} style={{display:'inline', verticalAlign:'middle'}}/> AFFILIATE LINK CZ (ALZA)</label>
+                      <label><ShoppingCart size={14} style={{display:'inline', verticalAlign:'middle'}}/> AFFILIATE LINK CZ (ALZA)</label>
                       <input type="text" name="buy_link_cz" value={dbFormData.buy_link_cz} onChange={handleDbInputChange} placeholder="https://alza.cz/..." />
                     </div>
                     <div className="input-group full">
@@ -767,7 +766,7 @@ export default function AdminApp() {
               )}
 
               <button type="submit" disabled={dbLoading} style={{ width: '100%', marginTop: '40px', padding: '20px', borderRadius: '16px', border: 'none', background: '#66fcf1', color: '#000', fontSize: '16px', fontWeight: '950', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', cursor: dbLoading ? 'not-allowed' : 'pointer', transition: '0.3s', boxShadow: '0 0 30px rgba(102, 252, 241, 0.3)' }}>
-                {dbLoading ? <Loader2 className="spin" size={20} /> : <PlusCircle size={20} />}
+                {dbLoading ? <RefreshCw className="spin" size={20} /> : <Plus size={20} />}
                 {dbLoading ? 'Odesílám do cloudu...' : `VLOŽIT ${dbTab.toUpperCase()} A AKTIVOVAT STRÁNKY`}
               </button>
             </form>
