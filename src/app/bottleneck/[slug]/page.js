@@ -22,11 +22,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK & PAIRING ENGINE V4.5 (ULTIMATE SEO & ADSENSE)
+ * GURU BOTTLENECK & PAIRING ENGINE V4.6 (ULTIMATE LOOKUP FIX)
  * Cesta: src/app/bottleneck/[slug]/page.js
  * 🚀 STATUS: LIVE - Propojeno s AdSense ID ca-pub-5468223287024993
- * 🛡️ SEO FIX: Přidány JSON-LD Schema (FAQ & TechArticle) a Canonical Alternates.
- * 🛡️ LOGIC: 3-Tier Lookup, PSU Calculator, RAM Accuracy.
+ * 🛡️ FIX: "DATA NENALEZENA" - Implementován Chunk-based Regex Search (nejrobustnější metoda).
+ * 🛡️ SEO: JSON-LD Schema (FAQ) a Canonical Alternates zachovány.
  */
 
 export const runtime = "nodejs";
@@ -38,41 +38,57 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const normalizeName = (name = '') => name.replace(/AMD |Intel |NVIDIA |GeForce |Ryzen |Core |Radeon /gi, '');
 const slugify = (text) => text.toLowerCase().replace(/graphics|gpu|processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim();
 
-// 🛡️ GURU ENGINE: Robustní vyhledávání CPU
-const findCpu = async (slug) => {
+// 🛡️ GURU ENGINE: Robustní vyhledávání CPU (Chunk-based)
+const findCpu = async (slugPart) => {
+  if (!supabaseUrl || !slugPart) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+
+  // Tier 1: Exact slug match
   try {
-    const res = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&slug=eq.${slug}&limit=1`, { headers, cache: 'no-store' });
-    const data = await res.json();
-    if (data?.length) return data[0];
-    const clean = slug.replace(/-/g, ' ').replace(/ryzen|core|intel|amd/gi, '').trim();
-    const tokens = clean.split(/\s+/).filter(t => t.length > 0);
-    if (tokens.length > 0) {
-        const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
-        const res2 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&and=(${conditions})&limit=1`, { headers, cache: 'no-store' });
-        const data2 = await res2.json();
-        return data2?.[0] || null;
-    }
-  } catch (e) { return null; }
+      const url1 = `${supabaseUrl}/rest/v1/cpus?select=*&slug=eq.${slugPart}&limit=1`;
+      const res1 = await fetch(url1, { headers, cache: 'no-store' });
+      if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
+  } catch(e) {}
+
+  // Tier 2: Chunk-based ILIKE match (Nejspolehlivější pro HW)
+  try {
+      const clean = slugPart.replace(/-/g, " ").replace(/ryzen|core|intel|amd|ultra/gi, "").trim();
+      const chunks = clean.match(/\d+|[a-zA-Z]+/g);
+      if (chunks && chunks.length > 0) {
+          const searchPattern = `%${chunks.join('%')}%`;
+          const url2 = `${supabaseUrl}/rest/v1/cpus?select=*&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`;
+          const res2 = await fetch(url2, { headers, cache: 'no-store' });
+          if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
+      }
+  } catch(e) {}
+
   return null;
 };
 
-// 🛡️ GURU ENGINE: Robustní vyhledávání GPU
-const findGpu = async (slug) => {
+// 🛡️ GURU ENGINE: Robustní vyhledávání GPU (Chunk-based)
+const findGpu = async (slugPart) => {
+  if (!supabaseUrl || !slugPart) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+
+  // Tier 1: Exact slug match
   try {
-    const res = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*&slug=eq.${slug}&limit=1`, { headers, cache: 'no-store' });
-    const data = await res.json();
-    if (data?.length) return data[0];
-    const clean = slug.replace(/-/g, ' ').replace(/geforce|rtx|radeon|rx|nvidia|amd/gi, '').trim();
-    const tokens = clean.split(/\s+/).filter(t => t.length > 0);
-    if (tokens.length > 0) {
-        const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
-        const res2 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*&and=(${conditions})&limit=1`, { headers, cache: 'no-store' });
-        const data2 = await res2.json();
-        return data2?.[0] || null;
-    }
-  } catch (e) { return null; }
+      const url1 = `${supabaseUrl}/rest/v1/gpus?select=*&slug=eq.${slugPart}&limit=1`;
+      const res1 = await fetch(url1, { headers, cache: 'no-store' });
+      if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
+  } catch(e) {}
+
+  // Tier 2: Chunk-based ILIKE match
+  try {
+      const clean = slugPart.replace(/-/g, " ").replace(/geforce|rtx|radeon|rx|nvidia|amd/gi, "").trim();
+      const chunks = clean.match(/\d+|[a-zA-Z]+/g);
+      if (chunks && chunks.length > 0) {
+          const searchPattern = `%${chunks.join('%')}%`;
+          const url2 = `${supabaseUrl}/rest/v1/gpus?select=*&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`;
+          const res2 = await fetch(url2, { headers, cache: 'no-store' });
+          if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
+      }
+  } catch(e) {}
+
   return null;
 };
 
@@ -104,7 +120,7 @@ export async function generateMetadata({ params }) {
   const data = await getPairData(rawSlug);
   if (!data?.cpu || !data?.gpu) return { title: 'Analysis | Hardware Guru' };
 
-  const canonicalUrl = `https://thehardwareguru.cz/bottleneck/${data.cpu.slug}-with-${data.gpu.slug}`;
+  const canonicalUrl = `https://thehardwareguru.cz/bottleneck/${data.cpu.slug || slugify(data.cpu.name)}-with-${data.gpu.slug || slugify(data.gpu.name)}`;
 
   return { 
     title: isEn 
@@ -116,7 +132,7 @@ export async function generateMetadata({ params }) {
     alternates: {
         canonical: canonicalUrl,
         languages: {
-            'en': `https://thehardwareguru.cz/en/bottleneck/${data.cpu.slug}-with-${data.gpu.slug}`,
+            'en': `https://thehardwareguru.cz/en/bottleneck/${data.cpu.slug || slugify(data.cpu.name)}-with-${data.gpu.slug || slugify(data.gpu.name)}`,
             'cs': canonicalUrl
         }
     }
@@ -129,7 +145,11 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
   const isEn = forcedIsEn || rawSlug.startsWith('en-');
   const data = await getPairData(rawSlug);
 
-  if (!data?.cpu || !data?.gpu) return <div className="p-20 text-center bg-black min-h-screen text-red-500 font-black">DATA NENALEZENA V DATABÁZI</div>;
+  if (!data?.cpu || !data?.gpu) return (
+    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#ff0055', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>
+      DATA NENALEZENA V DATABÁZI - ZKONTROLUJTE SLUGY
+    </div>
+  );
 
   const { cpu, gpu } = data;
   const cpuPower = cpu.performance_index || 1;
@@ -174,7 +194,6 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
   const safeCpuSlug = cpu.slug || slugify(cpu.name);
   const safeGpuSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
 
-  // 🚀 JSON-LD FAQ Schema
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
