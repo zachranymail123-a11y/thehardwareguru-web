@@ -1,19 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - ULTIMATE SITEMAP GENERATOR V17.3 (404 FIX)
+ * GURU SEO ENGINE - ULTIMATE SITEMAP GENERATOR V17.4 (404 FIX & DB OPTIMIZED)
  * Cesta: src/app/sitemap.js
- * 🛡️ FIX 1: Přidáno 'force-dynamic', aby sitemap nespadla na Vercelu při buildu (to způsobovalo 404).
- * 🛡️ FIX 2: 'id' je explicitně převedeno na Number(), protože Next.js ho může posílat jako string ("0").
- * 🛡️ FIX 3: Navýšeno na 40 segmentů, aby každý segment měl 100% pod 50k URLs.
+ * 🛡️ FIX 1: Odstraněno 'force-dynamic'. To způsobovalo, že Next.js nevygeneroval hlavní index soubor sitemap.xml a vracel 404.
+ * 🛡️ FIX 2: Oddělené dotazy do DB. Pro segmenty 1-39 už netaháme články a upgrady, čímž chráníme Supabase před přetížením.
  */
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0; // Žádná cache, vždy aktuální stav
+export const revalidate = 86400; // 24 hodin - Nutné pro vygenerování indexu sitemap.xml (Next.js ISG)
 
 export async function generateSitemaps() {
+  // Generujeme 40 sitemáp pro pokrytí celého vesmíru kombinací
   const sitemaps = [];
-  for (let i = 0; i <= 39; i++) { // Zvýšeno na 40 pro absolutní jistotu limitu Google (50k/soubor)
+  for (let i = 0; i <= 39; i++) {
     sitemaps.push({ id: i });
   }
   return sitemaps;
@@ -29,21 +28,32 @@ export default async function sitemap({ id }) {
   // 🚀 GURU CRITICAL FIX: Next.js v produkci předává ID jako String ("0"). Musíme ho převést!
   const currentId = Number(id || 0);
 
-  const slugify = (text) => text.toLowerCase().replace(/nvidia|amd|geforce|radeon|intel|processor|graphics|gpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim();
+  const slugify = (text) => text ? text.toLowerCase().replace(/nvidia|amd|geforce|radeon|intel|processor|graphics|gpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
   try {
-    const [gpus, cpus, posts, gamesRes, gpuUpg, cpuUpg] = await Promise.all([
-      supabase.from('gpus').select('slug, name, performance_index').order('performance_index', { ascending: false }).limit(1000),
-      supabase.from('cpus').select('slug, name, performance_index').order('performance_index', { ascending: false }).limit(1000),
-      supabase.from('posts').select('slug'),
-      supabase.from('games').select('slug'),
-      supabase.from('gpu_upgrades').select('slug, slug_en'),
-      supabase.from('cpu_upgrades').select('slug, slug_en')
-    ]);
+    let gpus, cpus, posts, gamesRes, gpuUpg, cpuUpg;
+
+    // 🚀 GURU DB OPTIMALIZACE: Taháme jen to, co daný segment skutečně potřebuje
+    if (currentId === 0) {
+        [gpus, cpus, posts, gamesRes, gpuUpg, cpuUpg] = await Promise.all([
+          supabase.from('gpus').select('slug, name, performance_index').order('performance_index', { ascending: false }).limit(1000),
+          supabase.from('cpus').select('slug, name, performance_index').order('performance_index', { ascending: false }).limit(1000),
+          supabase.from('posts').select('slug'),
+          supabase.from('games').select('slug'),
+          supabase.from('gpu_upgrades').select('slug, slug_en'),
+          supabase.from('cpu_upgrades').select('slug, slug_en')
+        ]);
+    } else {
+        [gpus, cpus, gamesRes] = await Promise.all([
+          supabase.from('gpus').select('slug, name, performance_index').order('performance_index', { ascending: false }).limit(150),
+          supabase.from('cpus').select('slug, name, performance_index').order('performance_index', { ascending: false }).limit(150),
+          supabase.from('games').select('slug')
+        ]);
+    }
 
     const routes = [];
 
-    const dbGames = gamesRes.data?.map(g => g.slug).filter(Boolean) || [];
+    const dbGames = gamesRes?.data?.map(g => g.slug).filter(Boolean) || [];
     const bottleneckGames = dbGames.length > 0 ? dbGames : [
       'cyberpunk-2077', 'warzone', 'fortnite', 'starfield', 'cs2', 'rdr2', 'alan-wake-2', 'hogwarts-legacy'
     ];
@@ -66,14 +76,14 @@ export default async function sitemap({ id }) {
         routes.push({ url: `${baseUrl}/en${p.url}`, lastModified: currentDate, priority: p.priority - 0.1 });
       });
 
-      posts.data?.forEach(p => {
+      posts?.data?.forEach(p => {
          if (p.slug) {
             routes.push({ url: `${baseUrl}/clanky/${p.slug}`, lastModified: currentDate, priority: 0.8 });
             routes.push({ url: `${baseUrl}/en/clanky/${p.slug}`, lastModified: currentDate, priority: 0.7 });
          }
       });
 
-      gpus.data?.forEach(g => {
+      gpus?.data?.forEach(g => {
         const safeSlug = g.slug || slugify(g.name);
         if (!safeSlug) return;
         routes.push({ url: `${baseUrl}/gpu/${safeSlug}`, lastModified: currentDate, priority: 0.8 });
@@ -84,7 +94,7 @@ export default async function sitemap({ id }) {
         });
       });
 
-      cpus.data?.forEach(c => {
+      cpus?.data?.forEach(c => {
         const safeSlug = c.slug || slugify(c.name);
         if (!safeSlug) return;
         routes.push({ url: `${baseUrl}/cpu/${safeSlug}`, lastModified: currentDate, priority: 0.8 });
@@ -95,7 +105,7 @@ export default async function sitemap({ id }) {
         });
       });
 
-      [...(gpuUpg.data || []), ...(cpuUpg.data || [])].forEach(u => {
+      [...(gpuUpg?.data || []), ...(cpuUpg?.data || [])].forEach(u => {
         const base = u.slug.includes('cpu') ? '/cpu-upgrade' : '/gpu-upgrade';
         routes.push({ url: `${baseUrl}${base}/${u.slug}`, lastModified: currentDate, priority: 0.6 });
         routes.push({ url: `${baseUrl}/en${base}/${u.slug_en || `en-${u.slug}`}`, lastModified: currentDate, priority: 0.5 });
@@ -104,8 +114,8 @@ export default async function sitemap({ id }) {
 
     // --- ID 1 až 39: MONSTER RESOLUTION CLUSTER ---
     if (currentId >= 1 && currentId <= 39) {
-      const topCpus = cpus.data?.slice(0, 150) || []; 
-      const topGpus = gpus.data?.slice(0, 150) || []; 
+      const topCpus = cpus?.data?.slice(0, 150) || []; 
+      const topGpus = gpus?.data?.slice(0, 150) || []; 
       
       const chunkSize = Math.ceil(topCpus.length / 39);
       const start = (currentId - 1) * chunkSize;
