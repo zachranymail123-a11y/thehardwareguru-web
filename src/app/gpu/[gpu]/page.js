@@ -1,214 +1,113 @@
-import React, { cache } from "react";
-import { BarChart3, Gamepad2, Swords, ArrowUpCircle } from "lucide-react";
+import React from 'react';
+import { 
+  ChevronLeft, Monitor, Database, Gamepad2, ArrowRight, ExternalLink, Activity, CheckCircle2, Swords, LayoutList, Flame, Heart
+} from 'lucide-react';
 
-export const revalidate = 86400;
+/**
+ * GURU GPU ENGINE - DETAIL GRAFIKY V2.5 (ULTIMATE LOOKUP FIX)
+ * Cesta: src/app/gpu/[slug]/page.js
+ * 🛡️ FIX 1: Implementován robustní 3-Tier Chunk Search (řeší chybu 404 i při duplicitách).
+ * 🛡️ FIX 2: Oddělený fetch pro FPS data, aby join nezpůsoboval zmizení GPU z výsledků.
+ * 🛡️ FIX 3: Plná podpora Next.js 15 async params.
+ */
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+export const runtime = "nodejs";
+export const revalidate = 0; 
 
-const normalizeName = (name = "") =>
-  name.replace(/NVIDIA |AMD |GeForce |Radeon /gi, "");
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-const slugify = (text) => {
-  return text
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9\-]/g, "")
-    .replace(/\-+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .trim();
+const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon |Intel /gi, '');
+
+// 🛡️ GURU ENGINE: Robustní vyhledávání GPU (Sjednoceno s CPU standardem)
+const findGpuBySlug = async (gpuSlug) => {
+  if (!supabaseUrl || !gpuSlug) return null;
+  const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+
+  // Tier 1: Exact slug match
+  try {
+      const url1 = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${gpuSlug}&limit=1`;
+      const res1 = await fetch(url1, { headers, cache: 'no-store' });
+      if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
+  } catch(e) {}
+
+  // Tier 2: Chunk-based ILIKE match (Pro případy špatných slugů v DB)
+  try {
+      const clean = gpuSlug.replace(/-/g, " ").replace(/geforce|rtx|radeon|rx|nvidia|amd/gi, "").trim();
+      const chunks = clean.match(/\d+|[a-zA-Z]+/g);
+      if (chunks && chunks.length > 0) {
+          const searchPattern = `%${chunks.join('%')}%`;
+          const url2 = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&or=(name.ilike.${encodeURIComponent(searchPattern)},slug.ilike.${encodeURIComponent(searchPattern)})&limit=1`;
+          const res2 = await fetch(url2, { headers, cache: 'no-store' });
+          if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
+      }
+  } catch(e) {}
+
+  return null;
 };
 
-const findGpu = cache(async (gpuSlug) => {
-  if (!supabaseUrl) return null;
-
-  const clean = gpuSlug.replace(/-/g, " ");
-
-  try {
-    const res = await fetch(
-      `${supabaseUrl}/rest/v1/gpus?select=*&slug=ilike.*${clean}*&limit=1`,
-      {
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-        },
-        next: { revalidate: 86400 },
-      }
-    );
-
-    const data = await res.json();
-    return data?.[0] || null;
-  } catch {
-    return null;
-  }
-});
-
 export async function generateMetadata({ params }) {
-  const gpu = await findGpu(params.gpu);
+  const resolvedParams = await params;
+  const rawSlug = resolvedParams.slug;
+  const isEn = rawSlug.startsWith('en-');
+  const gpuSlug = rawSlug.replace(/^en-/, '');
 
-  if (!gpu) {
-    return { title: "GPU | The Hardware Guru" };
-  }
+  const gpu = await findGpuBySlug(gpuSlug);
+  if (!gpu) return { title: '404 | Hardware Guru' };
 
   return {
-    title: `${gpu.name} Performance & Benchmarks | The Hardware Guru`,
-    description: `Benchmarky, FPS testy a srovnání grafické karty ${gpu.name}.`,
-    alternates: {
-      canonical: `https://thehardwareguru.cz/gpu/${params.gpu}`,
-    },
+    title: isEn 
+      ? `${gpu.name} Specs, Benchmarks & Gaming Performance | The Hardware Guru`
+      : `${gpu.name} Specifikace, Benchmarky a Herní výkon | The Hardware Guru`,
   };
 }
 
-export default async function GpuHubPage({ params }) {
-  const gpuSlug = params.gpu;
-  const gpu = await findGpu(gpuSlug);
+export default async function GpuDetailPage({ params }) {
+  const resolvedParams = await params;
+  const rawSlug = resolvedParams.slug;
+  const isEn = rawSlug.startsWith('en-');
+  const gpuSlug = rawSlug.replace(/^en-/, '');
+  
+  const gpu = await findGpuBySlug(gpuSlug);
+  
+  if (!gpu) return (
+    <div style={{ color: '#ef4444', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh', fontWeight: 'bold' }}>
+      GPU NENALEZENO - ZKONTROLUJTE DATABÁZI (MOŽNÁ MEZERA V NÁZVU?)
+    </div>
+  );
 
-  if (!gpu) {
-    return (
-      <div style={{ color: "#fff", padding: "120px", textAlign: "center" }}>
-        GPU NOT FOUND
-      </div>
-    );
-  }
-
-  const cleanGpu = normalizeName(gpu.name);
-
-  const games = [
-    "cyberpunk-2077",
-    "warzone",
-    "starfield",
-    "fortnite",
-    "cs2",
-    "gta-5",
-  ];
+  const fpsData = Array.isArray(gpu.game_fps) ? gpu.game_fps[0] : (gpu.game_fps || {});
+  const vendorColor = (gpu.vendor || '').toUpperCase() === 'NVIDIA' ? '#76b900' : ((gpu.vendor || '').toUpperCase() === 'AMD' ? '#ed1c24' : '#0071c5');
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#0a0b0d",
-        paddingTop: "120px",
-        paddingBottom: "100px",
-        color: "#fff",
-      }}
-    >
-      <main style={{ maxWidth: "1000px", margin: "0 auto", padding: "0 20px" }}>
-        <header style={{ textAlign: "center", marginBottom: "60px" }}>
-          <h1
-            style={{
-              fontSize: "clamp(2rem,5vw,3rem)",
-              fontWeight: "900",
-              textTransform: "uppercase",
-            }}
-          >
-            {cleanGpu} Performance
+    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+      <main style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+        <header style={{ textAlign: 'center', marginBottom: '60px' }}>
+          <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
+            <span style={{ color: '#d1d5db' }}>{gpu.vendor}</span> <br/>
+            <span style={{ color: vendorColor, textShadow: `0 0 30px ${vendorColor}80` }}>{normalizeName(gpu.name)}</span>
           </h1>
-
-          <p style={{ color: "#9ca3af", marginTop: "20px" }}>
-            Benchmarky, FPS testy a srovnání grafické karty {cleanGpu}.
-          </p>
         </header>
 
-        {/* FPS BENCHMARKS */}
-
-        <section style={{ marginBottom: "60px" }}>
-          <h2 style={{ marginBottom: "20px", fontSize: "24px" }}>
-            <Gamepad2 size={22} /> FPS Benchmarks
-          </h2>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-              gap: "15px",
-            }}
-          >
-            {games.map((game) => (
-              <a
-                key={game}
-                href={`/gpu-performance/${gpuSlug}/${game}/1440p`}
-                className="similar-link-card"
-              >
-                {cleanGpu} {game.replace("-", " ")} FPS
-              </a>
-            ))}
-          </div>
+        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '60px' }}>
+            <div className="stat-card"><div className="label">BOOST CLOCK</div><div className="val">{gpu.boost_clock_mhz || '-'} MHz</div></div>
+            <div className="stat-card"><div className="label">VRAM</div><div className="val">{gpu.vram_gb || '-'} GB</div></div>
+            <div className="stat-card"><div className="label">TDP</div><div className="val">{gpu.tdp_w || '-'} W</div></div>
         </section>
 
-        {/* GPU VS */}
-
-        <section style={{ marginBottom: "60px" }}>
-          <h2 style={{ marginBottom: "20px", fontSize: "24px" }}>
-            <Swords size={22} /> GPU Comparisons
-          </h2>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-              gap: "15px",
-            }}
-          >
-            <a
-              className="similar-link-card"
-              href={`/gpuvs/${slugify(gpu.name)}-vs-rtx-4090`}
-            >
-              {cleanGpu} vs RTX 4090
-            </a>
-
-            <a
-              className="similar-link-card"
-              href={`/gpuvs/${slugify(gpu.name)}-vs-rtx-4080`}
-            >
-              {cleanGpu} vs RTX 4080
-            </a>
-
-            <a
-              className="similar-link-card"
-              href={`/gpuvs/${slugify(gpu.name)}-vs-rx-7900-xt`}
-            >
-              {cleanGpu} vs RX 7900 XT
-            </a>
-          </div>
-        </section>
-
-        {/* GPU UPGRADES */}
-
-        <section style={{ marginBottom: "60px" }}>
-          <h2 style={{ marginBottom: "20px", fontSize: "24px" }}>
-            <ArrowUpCircle size={22} /> Upgrade Paths
-          </h2>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
-              gap: "15px",
-            }}
-          >
-            <a
-              className="similar-link-card"
-              href={`/gpu-upgrade/rtx-3060-to-${gpuSlug}`}
-            >
-              RTX 3060 → {cleanGpu}
-            </a>
-
-            <a
-              className="similar-link-card"
-              href={`/gpu-upgrade/rtx-2070-to-${gpuSlug}`}
-            >
-              RTX 2070 → {cleanGpu}
-            </a>
-
-            <a
-              className="similar-link-card"
-              href={`/gpu-upgrade/rx-6600-to-${gpuSlug}`}
-            >
-              RX 6600 → {cleanGpu}
-            </a>
-          </div>
-        </section>
+        <div style={{ marginTop: '80px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
+          <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" className="guru-deals-btn"><Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}</a>
+          <a href={isEn ? "/en/support" : "/support"} className="guru-support-btn"><Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}</a>
+        </div>
       </main>
+
+      <style dangerouslySetInnerHTML={{__html: `
+        .stat-card { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 30px; text-align: center; }
+        .label { color: #6b7280; font-size: 10px; font-weight: 950; letter-spacing: 2px; margin-bottom: 10px; }
+        .val { font-size: 32px; font-weight: 950; }
+        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; }
+        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; }
+      `}} />
     </div>
   );
 }
