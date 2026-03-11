@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU RSS ENGINE V22.1 - ULTIMATE GSC RECOVERY
+ * GURU RSS ENGINE V22.2 - THE "GO PLAY" EDITION
  * Cesta: src/app/rss.xml/route.js
- * 🛡️ FIX 1: Robustní inicializace Supabase (zkouší Service Key, pak Anon Key).
- * 🛡️ FIX 2: safeCDATA a xmlEscape aplikovány striktně na každý výstup.
- * 🛡️ FIX 3: Odstraněna chyba parsování URL u obrázků (přidáno nativní URL escapování).
+ * 🛡️ FIX 1: Odstraněn neexistující sloupec 'author' ze selectu (hlavní příčina Erroru).
+ * 🛡️ FIX 2: safeCDATA sanitizace (řeší pád na znaku ]]>).
+ * 🛡️ FIX 3: xmlEscape pro URL (řeší & v SAS tokenech OpenAI).
+ * 🛡️ FIX 4: Content-Type: application/xml pro bezchybné zobrazení v prohlížeči i GSC.
  */
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +14,6 @@ export const revalidate = 0;
 
 const baseUrl = 'https://thehardwareguru.cz';
 
-// Inicializace s pojistkou proti pádu při chybějícím env
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -21,6 +21,9 @@ const supabase = (supabaseUrl && supabaseKey)
   ? createClient(supabaseUrl, supabaseKey) 
   : null;
 
+/**
+ * XML escape - ošetřuje speciální znaky v atributech (např. v URL)
+ */
 const xmlEscape = (str = '') =>
   str.toString().replace(/[<>&'"]/g, (c) => {
     switch (c) {
@@ -33,16 +36,20 @@ const xmlEscape = (str = '') =>
     }
   });
 
+/**
+ * CDATA safe - ošetřuje vnořené uzavírací značky CDATA
+ */
 const safeCDATA = (str = '') =>
   str.toString().replace(/]]>/g, ']]]]><![CDATA[>');
 
 export async function GET() {
   try {
-    if (!supabase) throw new Error("Supabase client not initialized - missing ENV keys");
+    if (!supabase) throw new Error("Supabase client not initialized");
 
+    // 🚀 GURU FIX: Author vyhozen ze selectu, protože v tabulce neexistuje
     const { data: posts, error } = await supabase
       .from('posts')
-      .select(`id, slug, title, description, seo_description, image_url, created_at, author`)
+      .select(`id, slug, title, description, seo_description, image_url, created_at`)
       .order('created_at', { ascending: false })
       .limit(30);
 
@@ -69,7 +76,6 @@ export async function GET() {
       const link = `${baseUrl}/clanky/${p.slug}`;
       const title = safeCDATA(p.title || '');
       const desc = safeCDATA(p.description || p.seo_description || '');
-      // 🚀 GURU FIX: Pro URL obrázku musíme použít xmlEscape i kvůli SAS tokenům (&)
       const image = p.image_url ? xmlEscape(p.image_url) : null;
       const pubDate = new Date(p.created_at).toUTCString();
 
@@ -78,7 +84,7 @@ export async function GET() {
       xml += `    <link>${xmlEscape(link)}</link>\n`;
       xml += `    <guid isPermaLink="true">${xmlEscape(link)}</guid>\n`;
       xml += `    <pubDate>${pubDate}</pubDate>\n`;
-      xml += `    <dc:creator><![CDATA[${safeCDATA(p.author || 'Guru Team')}]]></dc:creator>\n`;
+      xml += `    <dc:creator><![CDATA[Guru Team]]></dc:creator>\n`;
       xml += `    <description><![CDATA[${desc}]]></description>\n`;
       xml += `    <content:encoded><![CDATA[${desc}]]></content:encoded>\n`;
 
@@ -100,11 +106,10 @@ export async function GET() {
 
   } catch (error) {
     console.error('RSS ENGINE ERROR:', error);
-    // Vracíme aspoň validní XML i při chybě, aby GSC nehlásil "not well formed"
     return new Response(
-      `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>The Hardware Guru</title><item><title>Feed temporarily unavailable</title><link>${baseUrl}</link><description>${xmlEscape(error.message)}</description></item></channel></rss>`,
+      `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Error</title><description>${xmlEscape(error.message)}</description></channel></rss>`,
       { 
-        status: 200, // Vrátíme 200 aby Google feed nezahodil úplně
+        status: 200,
         headers: { 'Content-Type': 'application/xml; charset=utf-8' }
       }
     );
