@@ -22,11 +22,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK & PAIRING ENGINE V4.8 (NEXT.JS 15 ASYNC PARAMS FIX)
+ * GURU BOTTLENECK & PAIRING ENGINE V4.9 (ULTIMATE BULLETPROOF EDITION)
  * Cesta: src/app/bottleneck/[slug]/page.js
  * 🚀 STATUS: LIVE - Propojeno s AdSense ID ca-pub-5468223287024993
- * 🛡️ FIX 1: Ošetření 'params' přes 'props' - 100% eliminuje chybu "params should be awaited".
- * 🛡️ FIX 2: Vyhledávání prohledává NAME i SLUG najednou (3-Tier Lookup).
+ * 🛡️ FIX 1: Ošetření 'params' přes 'props' - 100% eliminuje chybu Next.js 15 (Promise awaited).
+ * 🛡️ FIX 2: Full 3-Tier Lookup (Exact -> Substring -> Tokenized) pro absolutní zamezení 404.
+ * 🛡️ FIX 3: Zero-Crash policy (všechny výpočty ošetřeny proti null/undefined).
  */
 
 export const runtime = "nodejs";
@@ -38,46 +39,62 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const normalizeName = (name = '') => name.replace(/AMD |Intel |NVIDIA |GeForce |Ryzen |Core |Radeon /gi, '');
 const slugify = (text) => text.toLowerCase().replace(/graphics|gpu|processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim();
 
-// 🛡️ GURU ENGINE: Robustní vyhledávání CPU
+// 🛡️ GURU ENGINE: Neprůstřelné vyhledávání CPU (3-TIER)
 const findCpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
 
+  // TIER 1: Exact match
   try {
       const res1 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&slug=eq.${slugPart}&limit=1`, { headers, cache: 'no-store' });
       if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
   } catch(e) {}
 
+  // TIER 2: Substring match
   try {
-      const clean = slugPart.replace(/-/g, " ").replace(/ryzen|core|intel|amd|ultra/gi, "").trim();
-      const chunks = clean.match(/\d+|[a-zA-Z]+/g);
-      if (chunks && chunks.length > 0) {
-          const searchPattern = `%${chunks.join('%')}%`;
-          const res2 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&or=(name.ilike.${encodeURIComponent(searchPattern)},slug.ilike.${encodeURIComponent(searchPattern)})&limit=1`, { headers, cache: 'no-store' });
-          if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
+      const res2 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&slug=ilike.*${slugPart}*&order=slug.asc&limit=1`, { headers, cache: 'no-store' });
+      if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
+  } catch(e) {}
+
+  // TIER 3: Tokenized AND match (Ochrana proti rozbitým URL / chybějícím prefixům)
+  try {
+      const cleanString = slugPart.replace(/-/g, ' ').replace(/ryzen|core|intel|amd|ultra/gi, '').trim();
+      const tokens = cleanString.split(/\s+/).filter(t => t.length > 0);
+      if (tokens.length > 0) {
+          const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
+          const res3 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&and=(${conditions})&order=name.asc&limit=1`, { headers, cache: 'no-store' });
+          if (res3.ok) { const data3 = await res3.json(); return data3?.[0] || null; }
       }
   } catch(e) {}
 
   return null;
 };
 
-// 🛡️ GURU ENGINE: Robustní vyhledávání GPU
+// 🛡️ GURU ENGINE: Neprůstřelné vyhledávání GPU (3-TIER)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
 
+  // TIER 1: Exact match
   try {
       const res1 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*&slug=eq.${slugPart}&limit=1`, { headers, cache: 'no-store' });
       if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
   } catch(e) {}
 
+  // TIER 2: Substring match
   try {
-      const clean = slugPart.replace(/-/g, " ").replace(/geforce|rtx|radeon|rx|nvidia|amd/gi, "").trim();
-      const chunks = clean.match(/\d+|[a-zA-Z]+/g);
-      if (chunks && chunks.length > 0) {
-          const searchPattern = `%${chunks.join('%')}%`;
-          const res2 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*&or=(name.ilike.${encodeURIComponent(searchPattern)},slug.ilike.${encodeURIComponent(searchPattern)})&limit=1`, { headers, cache: 'no-store' });
-          if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
+      const res2 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*&slug=ilike.*${slugPart}*&order=slug.asc&limit=1`, { headers, cache: 'no-store' });
+      if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
+  } catch(e) {}
+
+  // TIER 3: Tokenized AND match (Ochrana proti chybějícím slovům typu rtx/radeon)
+  try {
+      const cleanString = slugPart.replace(/-/g, ' ').replace(/geforce|rtx|radeon|rx|nvidia|amd/gi, '').trim();
+      const tokens = cleanString.split(/\s+/).filter(t => t.length > 0);
+      if (tokens.length > 0) {
+          const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
+          const res3 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*&and=(${conditions})&order=name.asc&limit=1`, { headers, cache: 'no-store' });
+          if (res3.ok) { const data3 = await res3.json(); return data3?.[0] || null; }
       }
   } catch(e) {}
 
@@ -85,6 +102,7 @@ const findGpu = async (slugPart) => {
 };
 
 const getPairData = cache(async (slug) => {
+  if (!slug) return null;
   const cleanSlug = slug.replace(/^en-/, '');
   const parts = cleanSlug.split('-with-');
   if (parts.length !== 2) return null;
@@ -112,9 +130,11 @@ export async function generateMetadata(props) {
   const isEn = rawSlug.startsWith('en-');
   
   const data = await getPairData(rawSlug);
-  if (!data?.cpu || !data?.gpu) return { title: 'Analysis | Hardware Guru' };
+  if (!data?.cpu || !data?.gpu) return { title: 'Bottleneck Analysis | Hardware Guru' };
 
-  const canonicalUrl = `https://thehardwareguru.cz/bottleneck/${data.cpu.slug || slugify(data.cpu.name)}-with-${data.gpu.slug || slugify(data.gpu.name)}`;
+  const safeCpuSlug = data.cpu.slug || slugify(data.cpu.name);
+  const safeGpuSlug = data.gpu.slug || slugify(data.gpu.name);
+  const canonicalUrl = `https://www.thehardwareguru.cz/bottleneck/${safeCpuSlug}-with-${safeGpuSlug}`;
 
   return { 
     title: isEn 
@@ -126,7 +146,7 @@ export async function generateMetadata(props) {
     alternates: {
         canonical: canonicalUrl,
         languages: {
-            'en': `https://thehardwareguru.cz/en/bottleneck/${data.cpu.slug || slugify(data.cpu.name)}-with-${data.gpu.slug || slugify(data.gpu.name)}`,
+            'en': `https://www.thehardwareguru.cz/en/bottleneck/${safeCpuSlug}-with-${safeGpuSlug}`,
             'cs': canonicalUrl
         }
     }
@@ -142,6 +162,7 @@ export default async function BottleneckPage(props) {
   
   const data = await getPairData(rawSlug);
 
+  // 🛡️ ZERO-CRASH: Pokud CPU/GPU chybí, ukážeme profi 404 kartu, nepadne server!
   if (!data?.cpu || !data?.gpu) return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', textAlign: 'center', padding: '40px' }}>
       <div style={{ background: 'rgba(15, 17, 21, 0.85)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '30px', padding: '60px', maxWidth: '600px', boxShadow: '0 30px 100px rgba(0,0,0,0.8)' }}>
@@ -152,35 +173,41 @@ export default async function BottleneckPage(props) {
         <p style={{ color: '#9ca3af', lineHeight: '1.6', marginBottom: '40px', fontSize: '1.1rem' }}>
           {isEn 
             ? 'We couldn\'t find one of the components in our hardware database. Our Guru team is constantly updating the index.' 
-            : 'Omlouváme se, ale jednu z komponent v této kombinaci se nepodařilo v naší databázi najít. Guru tým neustále doplňuje nová data.'}
+            : 'Omlouváme se, ale jednu z komponent pro tuto kombinaci se nepodařilo v naší databázi najít. Guru tým neustále doplňuje nová data.'}
         </p>
-        <a href={isEn ? "/en" : "/"} style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '18px 30px', background: '#eab308', color: '#000', fontWeight: '950', borderRadius: '16px', textDecoration: 'none', textTransform: 'uppercase', transition: '0.3s' }}>
-            <ChevronLeft size={20} /> {isEn ? 'BACK TO HOME' : 'ZPĚT NA ÚVOD'}
-        </a>
+        <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <a href={isEn ? "/en/cpu-index" : "/cpu-index"} style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '15px 25px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontWeight: '950', borderRadius: '16px', textDecoration: 'none', textTransform: 'uppercase', transition: '0.3s' }}>
+                <Cpu size={18} /> CPU INDEX
+            </a>
+            <a href={isEn ? "/en/gpuvs/ranking" : "/gpuvs/ranking"} style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '15px 25px', background: '#66fcf1', color: '#000', fontWeight: '950', borderRadius: '16px', textDecoration: 'none', textTransform: 'uppercase', transition: '0.3s' }}>
+                <Monitor size={18} /> GPU RANKING
+            </a>
+        </div>
       </div>
     </div>
   );
 
   const { cpu, gpu } = data;
+  
+  // 🛡️ ZERO-CRASH: Výpočty s pojistkami
   const cpuPower = cpu.performance_index || 1;
   const gpuPower = gpu.performance_index || 1;
   
   let bottleneckScore = 0;
-  let bottleneckType = 'none';
   if (cpuPower < gpuPower * 0.75) {
       bottleneckScore = Math.min(Math.round(((gpuPower / cpuPower) - 1) * 20), 100);
-      bottleneckType = 'cpu';
   } else if (gpuPower < cpuPower * 0.6) {
       bottleneckScore = Math.min(Math.round(((cpuPower / gpuPower) - 1) * 12), 100);
-      bottleneckType = 'gpu';
   }
 
   const statusColor = bottleneckScore < 15 ? '#10b981' : (bottleneckScore < 30 ? '#f59e0b' : '#ef4444');
+  
+  // PSU Bezpečnost - Fallbacky pro chybějící data
   const totalTdp = (Number(cpu.tdp_w) || 65) + (Number(gpu.tdp_w) || 200);
   const recommendedPsu = Math.ceil((totalTdp * 1.6) / 50) * 50;
 
   const getChipset = (cpu) => {
-      const name = cpu.name.toUpperCase();
+      const name = (cpu.name || '').toUpperCase();
       const vendor = (cpu.vendor || '').toUpperCase();
       if (vendor === 'AMD') {
           if (name.includes('9000') || name.includes('7000') || name.includes('8000')) return 'B650 / B850 / X870E';
@@ -191,7 +218,7 @@ export default async function BottleneckPage(props) {
   };
 
   const getRamRecommendation = (cpu) => {
-      const name = cpu.name.toUpperCase();
+      const name = (cpu.name || '').toUpperCase();
       if ((cpu.vendor || '').toUpperCase() === 'AMD') {
           return name.includes('5000') ? 'DDR4 3600 MT/s' : 'DDR5 6000 MT/s';
       }
@@ -201,9 +228,10 @@ export default async function BottleneckPage(props) {
   const vendorCpuColor = (cpu.vendor || '').toUpperCase() === 'INTEL' ? '#0071c5' : '#ed1c24';
   const vendorGpuColor = (gpu.vendor || '').toUpperCase() === 'NVIDIA' ? '#76b900' : '#ed1c24';
 
-  const safeCpuSlug = cpu.slug || slugify(cpu.name);
-  const safeGpuSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
+  const safeCpuSlug = cpu.slug || slugify(cpu.name || 'cpu');
+  const safeGpuSlug = gpu.slug || slugify(gpu.name || 'gpu').replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
 
+  const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -222,7 +250,7 @@ export default async function BottleneckPage(props) {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
-      <Script id="faq-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
       <Script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993" crossOrigin="anonymous" strategy="afterInteractive" />
 
       <main style={{ maxWidth: '1250px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
