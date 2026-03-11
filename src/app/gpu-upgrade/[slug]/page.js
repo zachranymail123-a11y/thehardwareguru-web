@@ -1,11 +1,29 @@
 import React, { cache } from 'react';
-import { ChevronLeft, Zap, ArrowRight, Activity, ArrowUpCircle, LayoutList, BarChart3, Gamepad2, Coins, CheckCircle2, Swords } from 'lucide-react';
+import { 
+  ChevronLeft, 
+  Zap, 
+  ArrowRight, 
+  Activity, 
+  ArrowUpCircle, 
+  LayoutList, 
+  BarChart3, 
+  Gamepad2, 
+  Coins, 
+  CheckCircle2, 
+  Swords,
+  Flame,
+  Heart,
+  Monitor,
+  ExternalLink
+} from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V116.0 (BULLETPROOF PARAMS & 3-TIER FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V118.0 (FINAL DESIGN & CTA FIX)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: Imunní vůči názvu složky (params.slug vs params.gpu). Ošetřeno pro Vercel build.
- * 🛡️ FIX 2: 3-Tier vyhledávač aplikován na obě karty pro zamezení chyb "GPU NOT FOUND".
+ * 🛡️ DESIGN: Identický vizuál jako CPU Upgrade (Hero karty, Grid, barvy).
+ * 🛡️ FIX 1: Doplněna chybějící CTA tlačítka (Affiliate & Podpora) na konec stránky.
+ * 🛡️ FIX 2: Neprůstřelné parametry (params.slug || params.gpu).
+ * 🛡️ FIX 3: 3-Tier vyhledávač pro obě karty (zamezuje chybám GPU NOT FOUND).
  */
 
 export const runtime = "nodejs";
@@ -88,14 +106,13 @@ const getUpgradeData = cache(async (rawSlug) => {
 });
 
 export async function generateMetadata({ params }) {
-  // Ochrana parametrů (funguje jak pro [slug], tak pro [gpu] složky)
   const rawSlug = params?.slug || params?.gpu || '';
   const isEn = rawSlug.startsWith('en-');
   const upgrade = await getUpgradeData(rawSlug);
   if (!upgrade) return { title: '404 | Hardware Guru' };
 
   return { 
-    title: isEn ? `Upgrade ${upgrade.oldGpu.name} to ${upgrade.newGpu.name}` : `Upgrade z ${upgrade.oldGpu.name} na ${upgrade.newGpu.name}`,
+    title: isEn ? `Upgrade ${upgrade.oldGpu.name} to ${upgrade.newGpu.name} | The Hardware Guru` : `Upgrade z ${upgrade.oldGpu.name} na ${upgrade.newGpu.name} | The Hardware Guru`,
     alternates: {
         canonical: `https://thehardwareguru.cz/gpu-upgrade/${upgrade.slug}`,
         languages: { 'en': `https://thehardwareguru.cz/en/gpu-upgrade/${upgrade.slug}`, 'cs': `https://thehardwareguru.cz/gpu-upgrade/${upgrade.slug}` }
@@ -104,7 +121,6 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function GpuUpgradePage({ params }) {
-  // Ochrana parametrů
   const rawSlug = params?.slug || params?.gpu || '';
   const isEn = rawSlug.startsWith('en-');
   const upgrade = await getUpgradeData(rawSlug);
@@ -141,34 +157,35 @@ export default async function GpuUpgradePage({ params }) {
   const diffs = [cyberpunkDiff, warzoneDiff, starfieldDiff].filter(v => Number.isFinite(v) && v !== 0);
   const avgDiff = diffs.length ? Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length) : finalPerfDiff;
 
-  // Bezpečný slug pro VS Engine odkaz
-  const safeSlugA = gpuA.slug || slugify(gpuA.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
-  const safeSlugB = gpuB.slug || slugify(gpuB.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
+  const vendorColorB = getVendorColor(gpuB.vendor);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
-          <a href={isEn ? '/en/gpuvs' : '/gpuvs'} className="guru-back-btn"><ChevronLeft size={16} /> {isEn ? 'GPU BATTLES' : 'GPU DUELY'}</a>
+          <a href={isEn ? '/en/gpuvs' : '/gpuvs'} className="guru-back-btn">
+            <ChevronLeft size={16} /> {isEn ? 'BACK TO VS ENGINE' : 'ZPĚT NA SROVNÁNÍ'}
+          </a>
         </div>
 
         <header style={{ marginBottom: '50px', textAlign: 'center' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', padding: '6px 16px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.1)' }}>
             <ArrowUpCircle size={14} /> GURU UPGRADE ANALYSIS
           </div>
-          <h1 style={{ fontSize: 'clamp(1.8rem, 4vw, 3rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0' }}>
+          <h1 style={{ fontSize: 'clamp(1.8rem, 4vw, 3rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0', lineHeight: '1.2' }}>
             {isEn ? "SHOULD YOU UPGRADE FROM" : "VYPLATÍ SE UPGRADE Z"} <br/>
             <span style={{ color: '#9ca3af' }}>{normalizeName(gpuA.name)}</span> <br/>
             <span style={{ color: '#66fcf1' }}>TO {normalizeName(gpuB.name)}?</span>
           </h1>
 
           {isWorthIt && (
-            <div className="guru-verdict" style={{ borderColor: '#66fcf1', color: '#66fcf1', background: 'rgba(102, 252, 241, 0.05)', display: 'inline-block', marginTop: '20px', padding: '10px 25px', borderRadius: '50px', fontWeight: '950' }}>
+            <div className="guru-verdict" style={{ borderColor: '#66fcf1', color: '#66fcf1', background: 'rgba(102, 252, 241, 0.05)', display: 'inline-block', marginTop: '20px', padding: '10px 25px', borderRadius: '50px', fontWeight: '950', border: '1px solid #66fcf140', textTransform: 'uppercase' }}>
                 {isEn ? 'VERDICT:' : 'VERDIKT:'} <strong>{normalizeName(gpuB.name)}</strong> {isEn ? 'is a solid upgrade' : 'je dobrý upgrade'} ({finalPerfDiff > 0 ? '+' : ''}{finalPerfDiff}%)
             </div>
           )}
         </header>
 
+        {/* 🚀 UPGRADE RING */}
         <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '60px' }}>
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid #4b5563`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', filter: 'grayscale(0.5)' }}>
                 <span style={{ color: '#9ca3af', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px' }}>{isEn ? 'CURRENT GPU' : 'SOUČASNÁ KARTA'}</span>
@@ -177,18 +194,19 @@ export default async function GpuUpgradePage({ params }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ background: 'linear-gradient(135deg, #66fcf1 0%, #45a29e 100%)', width: '70px', height: '70px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', border: '5px solid #0f1115', boxShadow: '0 0 30px rgba(102, 252, 241, 0.5)' }}><ArrowRight size={32} /></div>
             </div>
-            <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid ${getVendorColor(gpuB.vendor)}`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', transform: 'scale(1.05)', boxShadow: '0 0 40px rgba(102, 252, 241, 0.3)' }}>
-                <span style={{ color: getVendorColor(gpuB.vendor), fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px' }}>{isEn ? 'NEW UPGRADE' : 'NOVÝ UPGRADE'}</span>
+            <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid ${vendorColorB}`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', transform: 'scale(1.05)', boxShadow: '0 0 40px rgba(102, 252, 241, 0.3)' }}>
+                <span style={{ color: vendorColorB, fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px' }}>{isEn ? 'NEW UPGRADE' : 'NOVÝ UPGRADE'}</span>
                 <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '15px 0 10px 0' }}>{normalizeName(gpuB.name)}</h2>
                 <div style={{ fontSize: '14px', color: '#66fcf1', fontWeight: '950' }}>{finalPerfDiff > 0 ? '+' : ''}{finalPerfDiff}% {isEn ? 'RAW POWER' : 'VÝKONU NAVÍC'}</div>
             </div>
         </div>
 
-        {Object.keys(fpsA || {}).length > 0 && Object.keys(fpsB || {}).length > 0 && (
+        {/* 🚀 SHRNUTÍ HERNÍHO VÝKONU */}
+        {Object.keys(fpsA || {}).length > 0 && (
             <section style={{ marginBottom: '60px' }}>
                 <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '40px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)', borderLeft: '6px solid #66fcf1' }}>
-                    <h2 style={{ color: '#66fcf1', fontSize: '1.8rem', fontWeight: '950', marginBottom: '30px', textTransform: 'uppercase' }}>
-                        <BarChart3 size={28} style={{ display: 'inline', marginRight: '10px' }} /> {isEn ? 'PERFORMANCE & FPS GAIN' : 'NÁRŮST VÝKONU A FPS'}
+                    <h2 style={{ color: '#66fcf1', fontSize: '1.8rem', fontWeight: '950', marginBottom: '30px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <BarChart3 size={28} /> {isEn ? 'PERFORMANCE & FPS GAIN' : 'NÁRŮST VÝKONU A FPS'}
                     </h2>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                         {[
@@ -211,11 +229,12 @@ export default async function GpuUpgradePage({ params }) {
             </section>
         )}
 
+        {/* 🚀 TABULKA PARAMETRŮ */}
         <section style={{ marginBottom: '60px' }}>
-          <h2 style={{ color: '#fff', fontSize: '2rem', fontWeight: '950', margin: '0 0 30px 0', textTransform: 'uppercase', borderLeft: '4px solid #66fcf1', paddingLeft: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <LayoutList size={28} /> {isEn ? 'UPGRADE SPECIFICATIONS' : 'POROVNÁNÍ PARAMETRŮ'}
           </h2>
-          <div style={{ background: 'rgba(15, 17, 21, 0.95)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+          <div style={{ background: 'rgba(15, 17, 21, 0.95)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
              <div style={{ display: 'flex', alignItems: 'center', padding: '20px 30px', borderBottom: '1px solid rgba(255,255,255,0.02)', background: 'rgba(0,0,0,0.5)', color: '#9ca3af', fontSize: '10px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '1px' }}>
                  <div style={{ flex: 1, textAlign: 'right' }}>{isEn ? 'CURRENT' : 'SOUČASNÁ'}</div>
                  <div style={{ width: '180px', textAlign: 'center' }}></div>
@@ -227,6 +246,7 @@ export default async function GpuUpgradePage({ params }) {
                { label: 'BOOST CLOCK', valA: gpuA?.boost_clock_mhz ? `${gpuA.boost_clock_mhz} MHz` : '-', valB: gpuB?.boost_clock_mhz ? `${gpuB.boost_clock_mhz} MHz` : '-', winA: gpuA?.boost_clock_mhz, winB: gpuB?.boost_clock_mhz },
                { label: 'TDP (SPOTŘEBA)', valA: gpuA?.tdp_w ? `${gpuA.tdp_w} W` : '-', valB: gpuB?.tdp_w ? `${gpuB.tdp_w} W` : '-', winA: gpuA?.tdp_w ?? 999, winB: gpuB?.tdp_w ?? 999, lower: true },
                { label: isEn ? 'ARCHITECTURE' : 'ARCHITEKTURA', valA: gpuA?.architecture ?? '-', valB: gpuB?.architecture ?? '-', winA: 0, winB: 0 },
+               { label: isEn ? 'RELEASE YEAR' : 'ROK VYDÁNÍ', valA: gpuA?.release_date ? new Date(gpuA.release_date).getFullYear() : '-', valB: gpuB?.release_date ? new Date(gpuB.release_date).getFullYear() : '-', winA: 0, winB: 0 },
                { label: isEn ? 'MSRP PRICE' : 'ZAVÁDĚCÍ CENA', valA: gpuA?.release_price_usd ? `$${gpuA.release_price_usd}` : '-', valB: gpuB?.release_price_usd ? `$${gpuB.release_price_usd}` : '-', winA: gpuA?.release_price_usd, winB: gpuB?.release_price_usd, lower: true }
              ].map((row, i) => (
                <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '20px 30px', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
@@ -238,25 +258,51 @@ export default async function GpuUpgradePage({ params }) {
           </div>
         </section>
 
-        <section style={{ textAlign: 'center', marginTop: '80px' }}>
-            <a href={`/${isEn ? 'en/' : ''}gpuvs/${safeSlugA}-vs-${safeSlugB}`} className="btn-action primary">
+        {/* 🚀 DEEP DIVE CROSS LINKS */}
+        <section style={{ textAlign: 'center', marginTop: '60px' }}>
+            <div style={{ color: '#9ca3af', marginBottom: '20px', fontWeight: 'bold', fontSize: '14px', textTransform: 'uppercase' }}>
+              {isEn ? 'Full detailed analysis' : 'Kompletní detailní analýza'}
+            </div>
+            <a href={`/${isEn ? 'en/' : ''}gpuvs/${gpuA.slug}-vs-${gpuB.slug}`} className="launch-btn">
                 <Swords size={20} /> {isEn ? 'FULL BENCHMARK COMPARISON' : 'KOMPLETNÍ SROVNÁNÍ BENCHMARKŮ'} <ArrowRight size={18} />
             </a>
         </section>
+
+        {/* 🚀 GLOBÁLNÍ CTA TLAČÍTKA (Affiliate & Podpora) */}
+        <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
+          <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
+            {isEn ? "Help us build this database by supporting us." : "Pomohl ti tento rozbor při výběru? Podpoř naši databázi."}
+          </h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
+            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn" style={{ flex: '1 1 280px' }}>
+              <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
+            </a>
+            <a href={isEn ? "/en/support" : "/support"} className="guru-support-btn" style={{ flex: '1 1 280px' }}>
+              <Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
+            </a>
+          </div>
+        </div>
 
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); }
+        .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; }
+        
+        .launch-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 40px; background: linear-gradient(135deg, #66fcf1 0%, #45a29e 100%); color: #0b0c10; border-radius: 16px; font-weight: 950; font-size: 15px; text-decoration: none; text-transform: uppercase; transition: 0.3s; box-shadow: 0 10px 30px rgba(102, 252, 241, 0.3); }
+        .launch-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
 
-        .btn-action { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 20px 45px; border-radius: 16px; font-weight: 950; font-size: 15px; text-decoration: none; text-transform: uppercase; transition: 0.3s; border: 1px solid transparent; }
-        .btn-action.primary { background: linear-gradient(135deg, #66fcf1 0%, #45a29e 100%); color: #0b0c10; box-shadow: 0 10px 30px rgba(102, 252, 241, 0.3); }
-        .btn-action.primary:hover { transform: scale(1.05); filter: brightness(1.1); }
+        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
+        .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
+
+        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
+        .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
 
         @media (max-width: 768px) {
             .guru-grid-ring { grid-template-columns: 1fr !important; gap: 15px !important; }
             .guru-grid-ring > div:nth-child(2) { margin: -10px 0 !important; transform: rotate(90deg) !important; }
+            .guru-deals-btn, .guru-support-btn { width: 100%; font-size: 15px; padding: 18px 30px; }
         }
       `}} />
     </div>
