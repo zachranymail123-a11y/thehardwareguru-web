@@ -22,11 +22,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK & PAIRING ENGINE V4.6 (ULTIMATE LOOKUP FIX)
+ * GURU BOTTLENECK & PAIRING ENGINE V4.7 (ULTIMATE LOOKUP & UI FIX)
  * Cesta: src/app/bottleneck/[slug]/page.js
  * 🚀 STATUS: LIVE - Propojeno s AdSense ID ca-pub-5468223287024993
- * 🛡️ FIX: "DATA NENALEZENA" - Implementován Chunk-based Regex Search (nejrobustnější metoda).
- * 🛡️ SEO: JSON-LD Schema (FAQ) a Canonical Alternates zachovány.
+ * 🛡️ FIX 1: Vyhledávání nyní prohledává NAME i SLUG najednou (řeší "Data nenalezena").
+ * 🛡️ FIX 2: Vylepšený "Not Found" design v Guru stylu.
+ * 🛡️ HW: AMD 7000-9000 (DDR5 6000), AMD 5000 (DDR4 3600) přesně dle zadání.
  */
 
 export const runtime = "nodejs";
@@ -38,7 +39,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const normalizeName = (name = '') => name.replace(/AMD |Intel |NVIDIA |GeForce |Ryzen |Core |Radeon /gi, '');
 const slugify = (text) => text.toLowerCase().replace(/graphics|gpu|processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim();
 
-// 🛡️ GURU ENGINE: Robustní vyhledávání CPU (Chunk-based)
+// 🛡️ GURU ENGINE: Robustní vyhledávání CPU (Check Name & Slug)
 const findCpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
@@ -50,13 +51,13 @@ const findCpu = async (slugPart) => {
       if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
   } catch(e) {}
 
-  // Tier 2: Chunk-based ILIKE match (Nejspolehlivější pro HW)
+  // Tier 2: Aggressive Chunk Search (Name OR Slug)
   try {
       const clean = slugPart.replace(/-/g, " ").replace(/ryzen|core|intel|amd|ultra/gi, "").trim();
       const chunks = clean.match(/\d+|[a-zA-Z]+/g);
       if (chunks && chunks.length > 0) {
           const searchPattern = `%${chunks.join('%')}%`;
-          const url2 = `${supabaseUrl}/rest/v1/cpus?select=*&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`;
+          const url2 = `${supabaseUrl}/rest/v1/cpus?select=*&or=(name.ilike.${encodeURIComponent(searchPattern)},slug.ilike.${encodeURIComponent(searchPattern)})&limit=1`;
           const res2 = await fetch(url2, { headers, cache: 'no-store' });
           if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
       }
@@ -65,7 +66,7 @@ const findCpu = async (slugPart) => {
   return null;
 };
 
-// 🛡️ GURU ENGINE: Robustní vyhledávání GPU (Chunk-based)
+// 🛡️ GURU ENGINE: Robustní vyhledávání GPU (Check Name & Slug)
 const findGpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
@@ -77,13 +78,13 @@ const findGpu = async (slugPart) => {
       if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
   } catch(e) {}
 
-  // Tier 2: Chunk-based ILIKE match
+  // Tier 2: Aggressive Chunk Search (Name OR Slug)
   try {
       const clean = slugPart.replace(/-/g, " ").replace(/geforce|rtx|radeon|rx|nvidia|amd/gi, "").trim();
       const chunks = clean.match(/\d+|[a-zA-Z]+/g);
       if (chunks && chunks.length > 0) {
           const searchPattern = `%${chunks.join('%')}%`;
-          const url2 = `${supabaseUrl}/rest/v1/gpus?select=*&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`;
+          const url2 = `${supabaseUrl}/rest/v1/gpus?select=*&or=(name.ilike.${encodeURIComponent(searchPattern)},slug.ilike.${encodeURIComponent(searchPattern)})&limit=1`;
           const res2 = await fetch(url2, { headers, cache: 'no-store' });
           if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
       }
@@ -146,8 +147,21 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
   const data = await getPairData(rawSlug);
 
   if (!data?.cpu || !data?.gpu) return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#ff0055', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>
-      DATA NENALEZENA V DATABÁZI - ZKONTROLUJTE SLUGY
+    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', textAlign: 'center', padding: '40px' }}>
+      <div style={{ background: 'rgba(15, 17, 21, 0.85)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '30px', padding: '60px', maxWidth: '600px', boxShadow: '0 30px 100px rgba(0,0,0,0.8)' }}>
+        <AlertTriangle size={64} color="#ef4444" style={{ margin: '0 auto 30px' }} />
+        <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: '950', marginBottom: '20px', textTransform: 'uppercase' }}>
+            {isEn ? 'COMPONENT NOT FOUND' : 'KOMPONENTA NENALEZENA'}
+        </h2>
+        <p style={{ color: '#9ca3af', lineHeight: '1.6', marginBottom: '40px', fontSize: '1.1rem' }}>
+          {isEn 
+            ? 'We couldn\'t find one of the components in our hardware database. Our Guru team is constantly updating the index.' 
+            : 'Omlouváme se, ale jednu z komponent v této kombinaci se nepodařilo v naší databázi najít. Guru tým neustále doplňuje nová data.'}
+        </p>
+        <a href={isEn ? "/en" : "/"} style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '18px 30px', background: '#eab308', color: '#000', fontWeight: '950', borderRadius: '16px', textDecoration: 'none', textTransform: 'uppercase', transition: '0.3s' }}>
+            <ChevronLeft size={20} /> {isEn ? 'BACK TO HOME' : 'ZPĚT NA ÚVOD'}
+        </a>
+      </div>
     </div>
   );
 
