@@ -1,156 +1,199 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - ULTIMATE SITEMAP GENERATOR V17.4 (404 FIX & DB OPTIMIZED)
+ * GURU SEO ENGINE - ULTIMATE SITEMAP GENERATOR V18.0 (ALL URLS & 404 FIX)
  * Cesta: src/app/sitemap.js
- * 🛡️ FIX 1: Odstraněno 'force-dynamic'. To způsobovalo, že Next.js nevygeneroval hlavní index soubor sitemap.xml a vracel 404.
- * 🛡️ FIX 2: Oddělené dotazy do DB. Pro segmenty 1-39 už netaháme články a upgrady, čímž chráníme Supabase před přetížením.
+ * 🚀 CÍL: 100% pokrytí VŠECH adres bez umělých limitů. 
+ * 🛡️ FIX 1: Dynamický výpočet počtu sitemáp na základě reálného počtu CPU v databázi. 
+ * 🛡️ FIX 2: Pokud je chunk prázdný, vrací kořenovou URL, aby Next.js nehodil chybu 404.
+ * 🛡️ FIX 3: Plně optimalizované dotazy pro Supabase, aby nedošlo k přetížení paměti.
  */
 
-export const revalidate = 86400; // 24 hodin - Nutné pro vygenerování indexu sitemap.xml (Next.js ISG)
+export const revalidate = 86400; // Sitemapa se obnoví každých 24 hodin
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+const baseUrl = 'https://thehardwareguru.cz';
+
+// 🚀 GURU: Dynamicky zjistíme, kolik sitemáp reálně potřebujeme
 export async function generateSitemaps() {
-  // Generujeme 40 sitemáp pro pokrytí celého vesmíru kombinací
-  const sitemaps = [];
-  for (let i = 0; i <= 39; i++) {
-    sitemaps.push({ id: i });
+  try {
+    const { count } = await supabase.from('cpus').select('*', { count: 'exact', head: true });
+    const cpuCount = count || 100; // Záchrana, pokud dotaz selže
+    
+    // Na jednu sitemapu dáme 2 procesory.
+    // 2 CPU * (cca 50 GPU) * (8 her) * (3 rozlišení + base) = ~2 600 URL v jedné sitemapě. (Extrémně bezpečné pro limity Googlu)
+    const chunks = Math.ceil(cpuCount / 2);
+    
+    const sitemaps = [{ id: 0 }]; // ID 0 je pro články, profily a statické stránky
+    for (let i = 1; i <= chunks; i++) {
+      sitemaps.push({ id: i });
+    }
+    return sitemaps;
+  } catch (error) {
+    // Pokud selže výpočet, vrátíme fallback mapy
+    return Array.from({ length: 20 }, (_, i) => ({ id: i }));
   }
-  return sitemaps;
 }
 
-export default async function sitemap({ id }) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const supabase = createClient(supabaseUrl, supabaseKey);
-  const baseUrl = 'https://thehardwareguru.cz';
-  const currentDate = new Date().toISOString();
-  
-  // 🚀 GURU CRITICAL FIX: Next.js v produkci předává ID jako String ("0"). Musíme ho převést!
-  const currentId = Number(id || 0);
+// 🛡️ Bezpečný slugify fallback
+const slugify = (text) => text ? text.toLowerCase().replace(/nvidia|amd|geforce|radeon|intel|processor|graphics|gpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
+const cleanGpuSlug = (slug, name) => slug || slugify(name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
 
-  const slugify = (text) => text ? text.toLowerCase().replace(/nvidia|amd|geforce|radeon|intel|processor|graphics|gpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
+export default async function sitemap({ id }) {
+  const currentId = parseInt(id, 10);
+  const currentDate = new Date().toISOString();
+  const routes = [];
 
   try {
-    let gpus, cpus, posts, gamesRes, gpuUpg, cpuUpg;
-
-    // 🚀 GURU DB OPTIMALIZACE: Taháme jen to, co daný segment skutečně potřebuje
+    // ====================================================================
+    // 📌 ID 0: STATICKÉ STRÁNKY, ČLÁNKY, PROFILY, UPGRADY A DUELY
+    // ====================================================================
     if (currentId === 0) {
-        [gpus, cpus, posts, gamesRes, gpuUpg, cpuUpg] = await Promise.all([
-          supabase.from('gpus').select('slug, name, performance_index').order('performance_index', { ascending: false }).limit(1000),
-          supabase.from('cpus').select('slug, name, performance_index').order('performance_index', { ascending: false }).limit(1000),
-          supabase.from('posts').select('slug'),
-          supabase.from('games').select('slug'),
-          supabase.from('gpu_upgrades').select('slug, slug_en'),
-          supabase.from('cpu_upgrades').select('slug, slug_en')
+        const [posts, cpus, gpus, cpuUpg, gpuUpg, cpuDuels, gpuDuels] = await Promise.all([
+            supabase.from('posts').select('slug'),
+            supabase.from('cpus').select('name, slug'),
+            supabase.from('gpus').select('name, slug'),
+            supabase.from('cpu_upgrades').select('slug, slug_en'),
+            supabase.from('gpu_upgrades').select('slug, slug_en'),
+            supabase.from('cpu_duels').select('slug, slug_en'),
+            supabase.from('gpu_duels').select('slug, slug_en')
         ]);
-    } else {
-        [gpus, cpus, gamesRes] = await Promise.all([
-          supabase.from('gpus').select('slug, name, performance_index').order('performance_index', { ascending: false }).limit(150),
-          supabase.from('cpus').select('slug, name, performance_index').order('performance_index', { ascending: false }).limit(150),
-          supabase.from('games').select('slug')
+
+        // Statické stránky
+        const staticPaths = ['/', '/clanky', '/gpuvs/ranking', '/cpuvs/ranking', '/cpu-index', '/deals', '/support'];
+        staticPaths.forEach(p => {
+            routes.push({ url: `${baseUrl}${p}`, lastModified: currentDate, priority: 1.0 });
+            routes.push({ url: `${baseUrl}/en${p}`, lastModified: currentDate, priority: 0.9 });
+        });
+
+        // Články
+        posts?.data?.forEach(p => {
+            if (p.slug) {
+                routes.push({ url: `${baseUrl}/clanky/${p.slug}`, lastModified: currentDate, priority: 0.8 });
+                routes.push({ url: `${baseUrl}/en/clanky/${p.slug}`, lastModified: currentDate, priority: 0.7 });
+            }
+        });
+
+        const coreGames = ['cyberpunk-2077', 'warzone', 'starfield', 'cs2'];
+
+        // CPU Profily a jejich FPS
+        cpus?.data?.forEach(c => {
+            const safeSlug = c.slug || slugify(c.name);
+            if (!safeSlug) return;
+            routes.push({ url: `${baseUrl}/cpu/${safeSlug}`, lastModified: currentDate, priority: 0.8 });
+            routes.push({ url: `${baseUrl}/en/cpu/${safeSlug}`, lastModified: currentDate, priority: 0.7 });
+            routes.push({ url: `${baseUrl}/cpu-performance/${safeSlug}`, lastModified: currentDate, priority: 0.7 });
+            routes.push({ url: `${baseUrl}/en/cpu-performance/${safeSlug}`, lastModified: currentDate, priority: 0.6 });
+            routes.push({ url: `${baseUrl}/cpu-recommend/${safeSlug}`, lastModified: currentDate, priority: 0.7 });
+            routes.push({ url: `${baseUrl}/en/cpu-recommend/${safeSlug}`, lastModified: currentDate, priority: 0.6 });
+            
+            coreGames.forEach(gm => {
+                routes.push({ url: `${baseUrl}/cpu-fps/${safeSlug}/${gm}`, lastModified: currentDate, priority: 0.7 });
+                routes.push({ url: `${baseUrl}/en/cpu-fps/${safeSlug}/${gm}`, lastModified: currentDate, priority: 0.6 });
+            });
+        });
+
+        // GPU Profily a jejich FPS
+        gpus?.data?.forEach(g => {
+            const safeSlug = cleanGpuSlug(g.slug, g.name);
+            if (!safeSlug) return;
+            routes.push({ url: `${baseUrl}/gpu/${safeSlug}`, lastModified: currentDate, priority: 0.8 });
+            routes.push({ url: `${baseUrl}/en/gpu/${safeSlug}`, lastModified: currentDate, priority: 0.7 });
+            routes.push({ url: `${baseUrl}/gpu-performance/${safeSlug}`, lastModified: currentDate, priority: 0.7 });
+            routes.push({ url: `${baseUrl}/en/gpu-performance/${safeSlug}`, lastModified: currentDate, priority: 0.6 });
+            routes.push({ url: `${baseUrl}/gpu-recommend/${safeSlug}`, lastModified: currentDate, priority: 0.7 });
+            routes.push({ url: `${baseUrl}/en/gpu-recommend/${safeSlug}`, lastModified: currentDate, priority: 0.6 });
+
+            coreGames.forEach(gm => {
+                routes.push({ url: `${baseUrl}/gpu-fps/${safeSlug}/${gm}`, lastModified: currentDate, priority: 0.7 });
+                routes.push({ url: `${baseUrl}/en/gpu-fps/${safeSlug}/${gm}`, lastModified: currentDate, priority: 0.6 });
+            });
+        });
+
+        // Duely a Upgrady
+        [...(cpuUpg?.data || [])].forEach(u => {
+            if (u.slug) routes.push({ url: `${baseUrl}/cpu-upgrade/${u.slug}`, lastModified: currentDate, priority: 0.6 });
+            if (u.slug_en) routes.push({ url: `${baseUrl}/en/cpu-upgrade/${u.slug_en}`, lastModified: currentDate, priority: 0.5 });
+        });
+        [...(gpuUpg?.data || [])].forEach(u => {
+            if (u.slug) routes.push({ url: `${baseUrl}/gpu-upgrade/${u.slug}`, lastModified: currentDate, priority: 0.6 });
+            if (u.slug_en) routes.push({ url: `${baseUrl}/en/gpu-upgrade/${u.slug_en}`, lastModified: currentDate, priority: 0.5 });
+        });
+        [...(cpuDuels?.data || [])].forEach(d => {
+            if (d.slug) routes.push({ url: `${baseUrl}/cpuvs/${d.slug}`, lastModified: currentDate, priority: 0.6 });
+            if (d.slug_en) routes.push({ url: `${baseUrl}/en/cpuvs/${d.slug_en}`, lastModified: currentDate, priority: 0.5 });
+        });
+        [...(gpuDuels?.data || [])].forEach(d => {
+            if (d.slug) routes.push({ url: `${baseUrl}/gpuvs/${d.slug}`, lastModified: currentDate, priority: 0.6 });
+            if (d.slug_en) routes.push({ url: `${baseUrl}/en/gpuvs/${d.slug_en}`, lastModified: currentDate, priority: 0.5 });
+        });
+
+        return routes;
+    }
+
+    // ====================================================================
+    // 📌 ID > 0: MEGA BOTTLENECK CLUSTER (VŠECHNA CPU, GPU, HRY, ROZLIŠENÍ)
+    // ====================================================================
+    if (currentId > 0) {
+        const limit = 2; 
+        const offset = (currentId - 1) * limit;
+
+        // Vytáhneme POUZE ty CPU, které patří do tohoto ID (Chrání paměť serveru)
+        const cpusRes = await supabase.from('cpus').select('name, slug').order('performance_index', { ascending: false }).range(offset, offset + limit - 1);
+        
+        // Záchranná brzda proti 404 prázdnému poli
+        if (!cpusRes.data || cpusRes.data.length === 0) {
+            return [{ url: baseUrl, lastModified: currentDate }];
+        }
+
+        // Vytáhneme kompletně všechny grafiky a hry v DB
+        const [gpusRes, gamesRes] = await Promise.all([
+            supabase.from('gpus').select('name, slug'),
+            supabase.from('games').select('slug')
         ]);
+
+        const gpus = gpusRes.data || [];
+        const dbGames = gamesRes?.data?.map(g => g.slug).filter(Boolean) || [];
+        const games = dbGames.length > 0 ? dbGames : ['cyberpunk-2077', 'warzone', 'fortnite', 'starfield', 'cs2', 'rdr2', 'alan-wake-2', 'hogwarts-legacy'];
+        const resolutions = ['1080p', '1440p', '4k'];
+
+        // Generování masivní matice všech kombinací
+        cpusRes.data.forEach(c => {
+            gpus.forEach(g => {
+                const safeCpuSlug = c.slug || slugify(c.name);
+                const safeGpuSlug = cleanGpuSlug(g.slug, g.name);
+                if (!safeCpuSlug || !safeGpuSlug) return;
+
+                const pairPath = `/bottleneck/${safeCpuSlug}-with-${safeGpuSlug}`;
+                
+                // Základní bottleneck
+                routes.push({ url: `${baseUrl}${pairPath}`, lastModified: currentDate, priority: 0.6 });
+                routes.push({ url: `${baseUrl}/en${pairPath}`, lastModified: currentDate, priority: 0.5 });
+                
+                games.forEach(game => {
+                    // Hra (bez rozlišení)
+                    routes.push({ url: `${baseUrl}${pairPath}-in-${game}`, lastModified: currentDate, priority: 0.5 });
+                    routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}`, lastModified: currentDate, priority: 0.4 });
+
+                    // Rozlišení
+                    resolutions.forEach(res => {
+                        routes.push({ url: `${baseUrl}${pairPath}-in-${game}-at-${res}`, lastModified: currentDate, priority: 0.5 });
+                        routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}-at-${res}`, lastModified: currentDate, priority: 0.4 });
+                    });
+                });
+            });
+        });
+
+        // Finální pojistka proti chybě 404
+        if (routes.length === 0) routes.push({ url: baseUrl, lastModified: currentDate });
+        return routes;
     }
 
-    const routes = [];
-
-    const dbGames = gamesRes?.data?.map(g => g.slug).filter(Boolean) || [];
-    const bottleneckGames = dbGames.length > 0 ? dbGames : [
-      'cyberpunk-2077', 'warzone', 'fortnite', 'starfield', 'cs2', 'rdr2', 'alan-wake-2', 'hogwarts-legacy'
-    ];
-    const resolutions = ['1080p', '1440p', '4k'];
-
-    // --- ID 0: CORE SITE & HW PROFILY ---
-    if (currentId === 0) {
-      const staticPaths = [
-        { url: '/', priority: 1.0 }, 
-        { url: '/clanky', priority: 0.9 },
-        { url: '/gpuvs/ranking', priority: 0.9 }, 
-        { url: '/cpuvs/ranking', priority: 0.9 },
-        { url: '/cpu-index', priority: 0.9 },
-        { url: '/deals', priority: 0.9 }, 
-        { url: '/support', priority: 0.5 }
-      ];
-      
-      staticPaths.forEach(p => {
-        routes.push({ url: `${baseUrl}${p.url}`, lastModified: currentDate, priority: p.priority });
-        routes.push({ url: `${baseUrl}/en${p.url}`, lastModified: currentDate, priority: p.priority - 0.1 });
-      });
-
-      posts?.data?.forEach(p => {
-         if (p.slug) {
-            routes.push({ url: `${baseUrl}/clanky/${p.slug}`, lastModified: currentDate, priority: 0.8 });
-            routes.push({ url: `${baseUrl}/en/clanky/${p.slug}`, lastModified: currentDate, priority: 0.7 });
-         }
-      });
-
-      gpus?.data?.forEach(g => {
-        const safeSlug = g.slug || slugify(g.name);
-        if (!safeSlug) return;
-        routes.push({ url: `${baseUrl}/gpu/${safeSlug}`, lastModified: currentDate, priority: 0.8 });
-        routes.push({ url: `${baseUrl}/en/gpu/${safeSlug}`, lastModified: currentDate, priority: 0.7 });
-        bottleneckGames.forEach(gm => {
-          routes.push({ url: `${baseUrl}/gpu-fps/${safeSlug}/${gm}`, lastModified: currentDate, priority: 0.7 });
-          routes.push({ url: `${baseUrl}/en/gpu-fps/${safeSlug}/${gm}`, lastModified: currentDate, priority: 0.6 });
-        });
-      });
-
-      cpus?.data?.forEach(c => {
-        const safeSlug = c.slug || slugify(c.name);
-        if (!safeSlug) return;
-        routes.push({ url: `${baseUrl}/cpu/${safeSlug}`, lastModified: currentDate, priority: 0.8 });
-        routes.push({ url: `${baseUrl}/en/cpu/${safeSlug}`, lastModified: currentDate, priority: 0.7 });
-        bottleneckGames.forEach(gm => {
-          routes.push({ url: `${baseUrl}/cpu-fps/${safeSlug}/${gm}`, lastModified: currentDate, priority: 0.7 });
-          routes.push({ url: `${baseUrl}/en/cpu-fps/${safeSlug}/${gm}`, lastModified: currentDate, priority: 0.6 });
-        });
-      });
-
-      [...(gpuUpg?.data || []), ...(cpuUpg?.data || [])].forEach(u => {
-        const base = u.slug.includes('cpu') ? '/cpu-upgrade' : '/gpu-upgrade';
-        routes.push({ url: `${baseUrl}${base}/${u.slug}`, lastModified: currentDate, priority: 0.6 });
-        routes.push({ url: `${baseUrl}/en${base}/${u.slug_en || `en-${u.slug}`}`, lastModified: currentDate, priority: 0.5 });
-      });
-    }
-
-    // --- ID 1 až 39: MONSTER RESOLUTION CLUSTER ---
-    if (currentId >= 1 && currentId <= 39) {
-      const topCpus = cpus?.data?.slice(0, 150) || []; 
-      const topGpus = gpus?.data?.slice(0, 150) || []; 
-      
-      const chunkSize = Math.ceil(topCpus.length / 39);
-      const start = (currentId - 1) * chunkSize;
-      const end = start + chunkSize;
-      const targetCpus = topCpus.slice(start, end);
-
-      targetCpus.forEach(c => {
-        topGpus.forEach(g => {
-          const safeCpuSlug = c.slug || slugify(c.name);
-          const safeGpuSlug = g.slug || slugify(g.name);
-          
-          if(!safeCpuSlug || !safeGpuSlug) return;
-          
-          const pairPath = `/bottleneck/${safeCpuSlug}-with-${safeGpuSlug}`;
-          
-          routes.push({ url: `${baseUrl}${pairPath}`, lastModified: currentDate, priority: 0.6 });
-          routes.push({ url: `${baseUrl}/en${pairPath}`, lastModified: currentDate, priority: 0.5 });
-          
-          bottleneckGames.forEach(game => {
-             routes.push({ url: `${baseUrl}${pairPath}-in-${game}`, lastModified: currentDate, priority: 0.5 });
-             routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}`, lastModified: currentDate, priority: 0.4 });
-
-             resolutions.forEach(res => {
-                routes.push({ url: `${baseUrl}${pairPath}-in-${game}-at-${res}`, lastModified: currentDate, priority: 0.5 });
-                routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}-at-${res}`, lastModified: currentDate, priority: 0.4 });
-             });
-          });
-        });
-      });
-    }
-
-    // Next.js limit je 50k URL na soubor
-    return routes.slice(0, 50000);
   } catch (error) {
     console.error("GURU SITEMAP ENGINE CRASH:", error);
-    return [];
+    // Jakákoliv chyba by sitemapu zničila - pošleme alespoň kořen ať to nespadne do 404
+    return [{ url: baseUrl, lastModified: new Date().toISOString() }];
   }
 }
