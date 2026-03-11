@@ -22,11 +22,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK & PAIRING ENGINE V4.0 (ADSENSE LIVE & GURU GLASS)
+ * GURU BOTTLENECK & PAIRING ENGINE V4.5 (ULTIMATE SEO & ADSENSE)
  * Cesta: src/app/bottleneck/[slug]/page.js
  * 🚀 STATUS: LIVE - Propojeno s AdSense ID ca-pub-5468223287024993
- * 🛡️ LOGIC: 3-Tier Lookup, PSU Calculator, RAM Accuracy (DDR5 6000 / DDR4 3600).
- * 🛡️ NEXT.JS 15: Ošetření 'params' jako Promise.
+ * 🛡️ SEO FIX: Přidány JSON-LD Schema (FAQ & TechArticle) a Canonical Alternates.
+ * 🛡️ LOGIC: 3-Tier Lookup, PSU Calculator, RAM Accuracy.
  */
 
 export const runtime = "nodejs";
@@ -45,7 +45,6 @@ const findCpu = async (slug) => {
     const res = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&slug=eq.${slug}&limit=1`, { headers, cache: 'no-store' });
     const data = await res.json();
     if (data?.length) return data[0];
-    
     const clean = slug.replace(/-/g, ' ').replace(/ryzen|core|intel|amd/gi, '').trim();
     const tokens = clean.split(/\s+/).filter(t => t.length > 0);
     if (tokens.length > 0) {
@@ -65,7 +64,6 @@ const findGpu = async (slug) => {
     const res = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*&slug=eq.${slug}&limit=1`, { headers, cache: 'no-store' });
     const data = await res.json();
     if (data?.length) return data[0];
-    
     const clean = slug.replace(/-/g, ' ').replace(/geforce|rtx|radeon|rx|nvidia|amd/gi, '').trim();
     const tokens = clean.split(/\s+/).filter(t => t.length > 0);
     if (tokens.length > 0) {
@@ -86,7 +84,6 @@ const getPairData = cache(async (slug) => {
   return { cpu, gpu };
 });
 
-// 🚀 GURU ADSENSE COMPONENT
 const AdSpace = ({ slot, height = '90px' }) => (
     <div className="ad-wrapper" style={{ width: '100%', margin: '30px auto', minHeight: height, textAlign: 'center' }}>
         <div style={{ fontSize: '9px', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>REKLAMA / SPONZOROVANÉ</div>
@@ -107,10 +104,22 @@ export async function generateMetadata({ params }) {
   const data = await getPairData(rawSlug);
   if (!data?.cpu || !data?.gpu) return { title: 'Analysis | Hardware Guru' };
 
+  const canonicalUrl = `https://thehardwareguru.cz/bottleneck/${data.cpu.slug}-with-${data.gpu.slug}`;
+
   return { 
     title: isEn 
-      ? `${data.cpu.name} + ${data.gpu.name} Bottleneck, PSU & Build Guide`
-      : `${data.cpu.name} + ${data.gpu.name} – Bottleneck, zdroj a konfigurace`,
+      ? `${data.cpu.name} + ${data.gpu.name} Bottleneck & Build Guide | Hardware Guru`
+      : `${data.cpu.name} + ${data.gpu.name} – Analýza bottlenecku a zdroje | Hardware Guru`,
+    description: isEn 
+      ? `Will ${data.cpu.name} bottleneck ${data.gpu.name}? See detailed analysis, recommended PSU, and gaming synergy score.`
+      : `Bude ${data.cpu.name} brzdit kartu ${data.gpu.name}? Podívejte se na analýzu bottlenecku, doporučený zdroj a synergii sestavy.`,
+    alternates: {
+        canonical: canonicalUrl,
+        languages: {
+            'en': `https://thehardwareguru.cz/en/bottleneck/${data.cpu.slug}-with-${data.gpu.slug}`,
+            'cs': canonicalUrl
+        }
+    }
   };
 }
 
@@ -126,7 +135,6 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
   const cpuPower = cpu.performance_index || 1;
   const gpuPower = gpu.performance_index || 1;
   
-  // 🧠 BOTTLENECK LOGIC
   let bottleneckScore = 0;
   let bottleneckType = 'none';
   if (cpuPower < gpuPower * 0.75) {
@@ -138,8 +146,6 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
   }
 
   const statusColor = bottleneckScore < 15 ? '#10b981' : (bottleneckScore < 30 ? '#f59e0b' : '#ef4444');
-  
-  // ⚡ PSU & HW ACCURACY
   const totalTdp = (Number(cpu.tdp_w) || 65) + (Number(gpu.tdp_w) || 200);
   const recommendedPsu = Math.ceil((totalTdp * 1.6) / 50) * 50;
 
@@ -168,16 +174,27 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
   const safeCpuSlug = cpu.slug || slugify(cpu.name);
   const safeGpuSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
 
+  // 🚀 JSON-LD FAQ Schema
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": isEn ? `Will ${cpu.name} bottleneck ${gpu.name}?` : `Bude procesor ${cpu.name} brzdit kartu ${gpu.name}?`,
+        "acceptedAnswer": { "@type": "Answer", "text": bottleneckScore < 15 
+            ? (isEn ? `No, this is an ideal pairing with only ${bottleneckScore}% bottleneck.` : `Ne, toto je ideální pár s bottleneckem pouze ${bottleneckScore} %.`)
+            : (isEn ? `Yes, there is a ${bottleneckScore}% bottleneck detected.` : `Ano, byl detekován bottleneck ve výši ${bottleneckScore} %.`)
+        }
+      }
+    ]
+  };
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
-      {/* 🚀 OSTRÝ GOOGLE ADSENSE SKRIPT */}
-      <Script 
-        async 
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993" 
-        crossOrigin="anonymous" 
-        strategy="afterInteractive"
-      />
+      <Script id="faq-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <Script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993" crossOrigin="anonymous" strategy="afterInteractive" />
 
       <main style={{ maxWidth: '1250px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
@@ -192,35 +209,22 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
           </h1>
         </header>
 
-        {/* REKLAMA POD NÁDPISEM */}
         <AdSpace slot="1234567890" /> 
 
         <div className="layout-grid">
             <div className="main-content">
-                
-                {/* HERO GAUGE SECTION */}
                 <section style={{ marginBottom: '60px' }}>
                     <div className="glass-card main-hero">
-                        <div style={{ color: '#66fcf1', fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>
-                            {isEn ? 'Estimated Average Bottleneck' : 'Odhadovaný průměrný bottleneck'}
-                        </div>
-                        <div style={{ fontSize: 'clamp(80px, 15vw, 130px)', fontWeight: '950', color: statusColor, lineHeight: '1', margin: '10px 0', textShadow: `0 0 50px ${statusColor}40` }}>
-                            {bottleneckScore > 0 ? bottleneckScore : 0}%
-                        </div>
-                        <div style={{ background: `${statusColor}20`, color: statusColor, padding: '12px 40px', borderRadius: '50px', display: 'inline-block', fontWeight: '950', border: `1px solid ${statusColor}40`, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                            {bottleneckScore < 15 ? (isEn ? 'PERFECT MATCH' : 'IDEÁLNÍ PÁROVÁNÍ') : (isEn ? 'BOTTLENECK DETECTED' : 'ZJIŠTĚN BOTTLENECK')}
-                        </div>
+                        <div style={{ color: '#66fcf1', fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>{isEn ? 'Estimated Average Bottleneck' : 'Odhadovaný průměrný bottleneck'}</div>
+                        <div style={{ fontSize: 'clamp(80px, 15vw, 130px)', fontWeight: '950', color: statusColor, lineHeight: '1', margin: '10px 0', textShadow: `0 0 50px ${statusColor}40` }}>{bottleneckScore > 0 ? bottleneckScore : 0}%</div>
+                        <div style={{ background: `${statusColor}20`, color: statusColor, padding: '12px 40px', borderRadius: '50px', display: 'inline-block', fontWeight: '950', border: `1px solid ${statusColor}40`, textTransform: 'uppercase', letterSpacing: '1px' }}>{bottleneckScore < 15 ? (isEn ? 'PERFECT MATCH' : 'IDEÁLNÍ PÁROVÁNÍ') : (isEn ? 'BOTTLENECK DETECTED' : 'ZJIŠTĚN BOTTLENECK')}</div>
                     </div>
                 </section>
 
-                {/* REKLAMA MEZI OBSAHEM */}
                 <AdSpace slot="0987654321" height="250px" />
 
-                {/* SPECIFICATIONS GRID */}
                 <section style={{ marginBottom: '60px' }}>
-                  <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Database size={28} /> {isEn ? 'GURU BUILD RECOMMENDATIONS' : 'DOPORUČENÍ PRO SESTAVU'}
-                  </h2>
+                  <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><Database size={28} /> {isEn ? 'GURU BUILD RECOMMENDATIONS' : 'DOPORUČENÍ PRO SESTAVU'}</h2>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
                       <div className="glass-card spec">
                           <PlugZap size={32} color="#f59e0b" style={{ marginBottom: '15px' }} />
@@ -243,46 +247,20 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
                   </div>
                 </section>
 
-                {/* DEEP LINKS */}
                 <section style={{ marginBottom: '60px' }}>
-                  <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Swords size={28} /> {isEn ? 'COMPONENT PERFORMANCE' : 'VÝKON KOMPONENT'}
-                  </h2>
+                  <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}><Swords size={28} /> {isEn ? 'COMPONENT PERFORMANCE' : 'VÝKON KOMPONENT'}</h2>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                      <a href={isEn ? `/en/cpu/${safeCpuSlug}` : `/cpu/${safeCpuSlug}`} className="glass-card link-item">
-                          <Cpu size={24} color="#f59e0b" />
-                          <div style={{ flex: 1 }}>
-                              <div className="link-title">{cpu.name}</div>
-                              <div className="link-sub">{isEn ? 'Benchmarks' : 'Benchmarky'}</div>
-                          </div>
-                          <ArrowRight size={20} />
-                      </a>
-                      <a href={isEn ? `/en/gpu/${safeGpuSlug}` : `/gpu/${safeGpuSlug}`} className="glass-card link-item">
-                          <Monitor size={24} color="#66fcf1" />
-                          <div style={{ flex: 1 }}>
-                              <div className="link-title">{gpu.name}</div>
-                              <div className="link-sub">{isEn ? 'FPS Tests' : 'FPS testy'}</div>
-                          </div>
-                          <ArrowRight size={20} />
-                      </a>
+                      <a href={isEn ? `/en/cpu/${safeCpuSlug}` : `/cpu/${safeCpuSlug}`} className="glass-card link-item"><Cpu size={24} color="#f59e0b" /><div style={{ flex: 1 }}><div className="link-title">{cpu.name}</div><div className="link-sub">{isEn ? 'Benchmarks' : 'Benchmarky'}</div></div><ArrowRight size={20} /></a>
+                      <a href={isEn ? `/en/gpu/${safeGpuSlug}` : `/gpu/${safeGpuSlug}`} className="glass-card link-item"><Monitor size={24} color="#66fcf1" /><div style={{ flex: 1 }}><div className="link-title">{gpu.name}</div><div className="link-sub">{isEn ? 'FPS Tests' : 'FPS testy'}</div></div><ArrowRight size={20} /></a>
                   </div>
                 </section>
             </div>
-
-            {/* SIDEBAR AD */}
-            <aside className="ad-sidebar">
-                <AdSpace slot="5432167890" height="600px" sticky />
-            </aside>
+            <aside className="ad-sidebar"><AdSpace slot="5432167890" height="600px" sticky /></aside>
         </div>
 
-        {/* CTA BUTTONS */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', marginTop: '60px' }}>
-            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="btn-deals">
-               <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA TOP CENY'}
-            </a>
-            <a href={isEn ? "/en/support" : "/support"} className="btn-support">
-               <Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
-            </a>
+            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="btn-deals"><Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA TOP CENY'}</a>
+            <a href={isEn ? "/en/support" : "/support"} className="btn-support"><Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}</a>
         </div>
       </main>
 
