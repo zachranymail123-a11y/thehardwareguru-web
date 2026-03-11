@@ -4,11 +4,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK ENGINE V14.2 (FIXED COMPILATION & SEO)
+ * GURU BOTTLENECK ENGINE V14.3 (ROBUST LOOKUP FIX)
  * Cesta: src/app/bottleneck/[slug]/page.js
  * 🚀 STATUS: LIVE - AdSense ID ca-pub-5468223287024993
- * 🛡️ FIX 1: Odstraněn import 'next/script' pro kompatibilitu v Canvasu. Skript vložen přímo.
- * 🛡️ FIX 2: Oprava asynchronního parsování parametrů pro Next.js 15.
+ * 🛡️ FIX 1: Obnoven Tokenizovaný vyhledávač (Tier 3), který řeší "COMPONENT NOT FOUND".
+ * 🛡️ FIX 2: Odstraněny závislosti na next/script pro stabilitu v Canvasu.
  * 🛡️ ARCH: Podpora unikátních stránek CPU + GPU + HRA + ROZLIŠENÍ.
  */
 
@@ -17,7 +17,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 const normalizeName = (name = '') => name.replace(/AMD |Intel |NVIDIA |GeForce |Ryzen |Core |Radeon /gi, '');
 
-// 🛡️ GURU ENGINE: 3-TIER LOOKUP (Exact -> ilike -> Fallback)
+// 🛡️ GURU ENGINE: 3-TIER BULLETPROOF LOOKUP
 const findHw = async (table, slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
@@ -29,12 +29,22 @@ const findHw = async (table, slugPart) => {
       const res1 = await fetch(url1, { headers, cache: 'no-store' });
       if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
       
-      // TIER 2: Fallback na ilike vyhledávání
+      // TIER 2: Substring match na slug
       const url2 = `${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&slug=ilike.*${slugPart}*&limit=1`;
       const res2 = await fetch(url2, { headers, cache: 'no-store' });
       if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
 
-      // TIER 3: Absolutní fallback
+      // TIER 3: Tokenized Search (Nejsilnější - rozbije slug na slova a hledá shodu v NAME)
+      const clean = slugPart.replace(/-/g, ' ').replace(/ryzen|core|intel|amd|geforce|rtx|radeon|rx/gi, '').trim();
+      const tokens = clean.split(/\s+/).filter(t => t.length > 0);
+      if (tokens.length > 0) {
+          const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
+          const url3 = `${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&and=(${conditions})&limit=1`;
+          const res3 = await fetch(url3, { headers, cache: 'no-store' });
+          if (res3.ok) { const data3 = await res3.json(); if (data3?.length) return data3[0]; }
+      }
+
+      // POSLEDNÍ POKUS: Absolutní fallback na slug bez joinu
       const resF = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&slug=eq.${slugPart}&limit=1`, { headers, cache: 'no-store' });
       if (resF.ok) { const dataF = await resF.json(); if (dataF?.length) return dataF[0]; }
   } catch(e) { console.error("Database Lookup Error", e); }
@@ -112,6 +122,7 @@ export default async function App({ params }) {
         <div style={{ textAlign: 'center' }}>
             <AlertTriangle size={64} color="#ef4444" style={{ margin: '0 auto 20px' }} />
             <h2 style={{ fontWeight: '950' }}>KOMPONENT NENÁJDENÝ</h2>
+            <p style={{ color: '#6b7280', marginTop: '10px' }}>Systém nedokázal identifikovat zadaný hardware. Zkontrolujte prosím URL.</p>
             <a href="/" style={{ marginTop: '20px', display: 'inline-block', padding: '12px 25px', background: '#f59e0b', color: '#000', borderRadius: '12px', fontWeight: '950', textDecoration: 'none' }}>SPÄŤ NA ÚVOD</a>
         </div>
     </div>
@@ -130,7 +141,7 @@ export default async function App({ params }) {
   const statusColor = bottleneckScore < 15 ? '#10b981' : (bottleneckScore < 30 ? '#f59e0b' : '#ef4444');
   const recommendedPsu = Math.ceil(((Number(cpu.tdp_w) || 65) + (Number(gpu.tdp_w) || 200)) * 1.6 / 50) * 50;
 
-  // 🛡️ GURU LOGIC: Čipsety a RAM dle tvého příkazu
+  // 🛡️ GURU LOGIC: Čipsety a RAM dle zadání
   const chipsetLabel = (() => {
     if (isAmd) {
       if (cpuName.includes('9000') || cpuName.includes('7000')) return 'B850 / X870 / X870E';
@@ -164,7 +175,6 @@ export default async function App({ params }) {
 
   return (
     <div className="guru-page-container">
-      {/* AdSense Injekce bez next/script */}
       <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993" crossOrigin="anonymous"></script>
 
       <main style={{ maxWidth: '1250px', margin: '0 auto', width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -182,6 +192,7 @@ export default async function App({ params }) {
 
         <AdSpace slot="1234567890" /> 
 
+        {/* 🚀 MAIN GAUGE CARD */}
         <section className="glass-card main-hero" style={{ width: '100%', maxWidth: '900px', margin: '0 auto 60px' }}>
             <div className="hero-label">{isEn ? 'Calculated System Bottleneck' : 'Vypočítaný bottleneck systému'}</div>
             <div className="score-text" style={{ color: statusColor, textShadow: `0 0 60px ${statusColor}50` }}>{bottleneckScore}%</div>
@@ -209,6 +220,7 @@ export default async function App({ params }) {
             </div>
         </section>
 
+        {/* 🚀 RECOMMENDATIONS GRID */}
         <section style={{ width: '100%', marginBottom: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <h2 className="section-h2">{isEn ? 'BUILD RECOMMENDATIONS' : 'DOPORUČENÍ PRE ZOSTAVU'}</h2>
           <div className="specs-grid">
@@ -259,7 +271,7 @@ export default async function App({ params }) {
         .specs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%; max-width: 1100px; justify-content: center; margin: 0 auto; }
         .spec-item { padding: 45px 30px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px; }
         .spec-label { font-size: 11px; font-weight: 950; text-transform: uppercase; color: #6b7280; letter-spacing: 2px; }
-        .spec-val { font-size: 28px; font-weight: 950; color: #fff; }
+        .spec-val { font-size: 20px; font-weight: 950; color: #fff; }
         .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; text-transform: uppercase; margin-bottom: 40px; border-left: 5px solid #66fcf1; padding-left: 20px; align-self: flex-start; }
         
         .btn-deals, .btn-support { flex: 1; max-width: 350px; min-width: 280px; padding: 22px; border-radius: 20px; font-weight: 950; text-align: center; display: flex; align-items: center; justify-content: center; gap: 12px; text-transform: uppercase; transition: 0.3s; text-decoration: none; }
