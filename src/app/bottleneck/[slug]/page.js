@@ -5,11 +5,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK ENGINE V11.0 (RESOLUTION URL HANDLER & SEO)
+ * GURU BOTTLENECK ENGINE V12.0 (FINAL SEO & ROBUST LOOKUP)
  * Cesta: src/app/bottleneck/[slug]/page.js
  * 🚀 STATUS: LIVE - AdSense ID ca-pub-5468223287024993
- * 🛡️ NEW: Podpora pro rozlišení v URL (...-at-4k) pro long-tail SEO.
- * 🛡️ DESIGN: Vycentrovaný layout s neonovým zvýrazněním aktivního rozlišení.
+ * 🛡️ FIX 1: Navrácen 3-Tier robustní vyhledávač (Exact -> ilike -> Tokenized).
+ * 🛡️ FIX 2: Oprava parsování složených URL pro "at-resolution" a "in-game".
+ * 🛡️ FIX 3: Automatický fallback na Cyberpunk FPS, pokud v URL chybí hra.
  * 🛡️ NEXT.JS 15: Plně asynchronní zpracování params.
  */
 
@@ -21,22 +22,36 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 const normalizeName = (name = '') => name.replace(/AMD |Intel |NVIDIA |GeForce |Ryzen |Core |Radeon /gi, '');
 
-// 🛡️ GURU ENGINE: 3-TIER LOOKUP s benchmarky
+// 🛡️ GURU ENGINE: Neprůstřelné vyhledávání (3-TIER s benchmarky)
 const findHw = async (table, slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
   const joinQuery = table === 'gpus' ? 'game_fps!gpu_id(*)' : 'cpu_game_fps!cpu_id(*)';
 
   try {
-      // Tier 1: Exact match
+      // TIER 1: Přesný slug match
       const url1 = `${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&slug=eq.${slugPart}&limit=1`;
       const res1 = await fetch(url1, { headers, cache: 'no-store' });
       if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
       
-      // Fallback
+      // TIER 2: Substring match (řeší chybějící nvidia-/amd- prefixy v URL)
+      const url2 = `${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&slug=ilike.*${slugPart}*&order=slug.asc&limit=1`;
+      const res2 = await fetch(url2, { headers, cache: 'no-store' });
+      if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
+
+      // TIER 3: Tokenized search (rozbije slug na slova a hledá shodu)
+      const clean = slugPart.replace(/-/g, ' ').replace(/ryzen|core|intel|amd|geforce|rtx|radeon|rx/gi, '').trim();
+      const tokens = clean.split(/\s+/).filter(t => t.length > 0);
+      if (tokens.length > 0) {
+          const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
+          const res3 = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&and=(${conditions})&limit=1`, { headers, cache: 'no-store' });
+          if (res3.ok) { const data3 = await res3.json(); if (data3?.length) return data3[0]; }
+      }
+
+      // ABSOLUTNÍ FALLBACK: Čistá data bez joinu
       const resF = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&slug=eq.${slugPart}&limit=1`, { headers, cache: 'no-store' });
       if (resF.ok) { const dataF = await resF.json(); if (dataF?.length) return dataF[0]; }
-  } catch(e) {}
+  } catch(e) { console.error("Lookup Engine Error:", e); }
   return null;
 };
 
@@ -44,17 +59,17 @@ const getAnalysisData = cache(async (slug) => {
   if (!slug) return null;
   const cleanSlug = slug.replace(/^en-/, '');
   
-  // 🚀 LOGIKA PARSOVÁNÍ: CPU-with-GPU-in-GAME-at-RES
-  const resPart = cleanSlug.split('-at-');
-  const resolution = resPart[1] || null; // 1080p, 1440p, 4k
+  // Parsování URL: CPU-with-GPU-in-GAME-at-RES
+  const resParts = cleanSlug.split('-at-');
+  const resolution = resParts[1] || null;
   
-  const gamePart = resPart[0].split('-in-');
-  const gameSlug = gamePart[1] || null;
+  const gameParts = resParts[0].split('-in-');
+  const gameSlug = gameParts[1] || null;
   
-  const hwPart = gamePart[0].split('-with-');
-  if (hwPart.length !== 2) return null;
+  const hwParts = gameParts[0].split('-with-');
+  if (hwParts.length !== 2) return null;
   
-  const [cpu, gpu] = await Promise.all([findHw('cpus', hwPart[0]), findHw('gpus', hwPart[1])]);
+  const [cpu, gpu] = await Promise.all([findHw('cpus', hwParts[0]), findHw('gpus', hwParts[1])]);
   return { cpu, gpu, gameSlug, resolution };
 });
 
@@ -89,7 +104,16 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
   const isEn = forcedIsEn || rawSlug.startsWith('en-');
   const data = await getAnalysisData(rawSlug);
 
-  if (!data?.cpu || !data?.gpu) return <div className="error-screen" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a0b0d', color: '#fff', textAlign: 'center' }}>COMPONENT NOT FOUND</div>;
+  if (!data?.cpu || !data?.gpu) return (
+    <div className="error-screen" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a0b0d', color: '#fff', textAlign: 'center', padding: '40px' }}>
+        <div>
+            <AlertTriangle size={64} color="#ef4444" style={{ margin: '0 auto 20px' }} />
+            <h2 style={{ fontWeight: '950', fontSize: '2rem' }}>KOMPONENTA NENALEZENA</h2>
+            <p style={{ color: '#9ca3af', maxWidth: '500px', margin: '20px auto' }}>Omlouváme se, ale kombinaci těchto komponent se nepodařilo v databázi najít. Zkuste prosím vyhledávání na úvodní straně.</p>
+            <a href="/" style={{ display: 'inline-block', padding: '15px 30px', background: '#f59e0b', color: '#000', borderRadius: '12px', fontWeight: '950', textDecoration: 'none' }}>ZPĚT DOMŮ</a>
+        </div>
+    </div>
+  );
 
   const { cpu, gpu, gameSlug, resolution } = data;
   const cpuPower = cpu.performance_index || 1;
@@ -104,7 +128,7 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
   const statusColor = bottleneckScore < 15 ? '#10b981' : (bottleneckScore < 30 ? '#f59e0b' : '#ef4444');
   const recommendedPsu = Math.ceil(((Number(cpu.tdp_w) || 65) + (Number(gpu.tdp_w) || 200)) * 1.6 / 50) * 50;
 
-  // 🚀 GURU LOGIC: Doporučený čipset a RAM
+  // Čipset a RAM logika
   const chipsetLabel = (() => {
     if (isAmd) {
       if (cpuName.includes('9000') || cpuName.includes('7000')) return 'B850 / X870 / X870E';
@@ -119,13 +143,19 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
     return 'DDR5 6000 MT/s';
   })();
 
-  // 🚀 GURU FPS LOOKUP
+  // 🚀 GURU FPS LOOKUP: Cyberpunk fallback pokud není hra v URL
   const activeGame = gameSlug || 'cyberpunk-2077';
   const rawFps = gpu?.game_fps;
   const fpsData = Array.isArray(rawFps) ? rawFps[0] : (rawFps || {});
   const gameBase = activeGame.replace(/-/g, '_');
+  const gameShort = activeGame.replace('-2077', '').replace(/-/g, '_');
   
-  const getFpsByRes = (res) => Number(fpsData[`${gameBase}_${res}`] || fpsData[`${activeGame.replace(/-/g, '_')}_${res}`] || 0);
+  const getFpsByRes = (res) => Number(
+      fpsData[`${gameBase}_${res}`] || 
+      fpsData[`${gameShort}_${res}`] || 
+      fpsData[`${activeGame.replace(/-/g, '_')}_${res}`] ||
+      0
+  );
 
   const f1080 = getFpsByRes('1080p');
   const f1440 = getFpsByRes('1440p');
@@ -151,7 +181,6 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
 
         <AdSpace slot="1234567890" /> 
 
-        {/* 🚀 CENTERED GAUGE CARD */}
         <section className="glass-card main-hero" style={{ width: '100%', maxWidth: '900px', margin: '0 auto 60px' }}>
             <div className="hero-label">{isEn ? 'Calculated System Bottleneck' : 'Vypočítaný bottleneck systému'}</div>
             <div className="score-text" style={{ color: statusColor, textShadow: `0 0 60px ${statusColor}50` }}>{bottleneckScore}%</div>
@@ -178,7 +207,6 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
             </div>
         </section>
 
-        {/* 🚀 CENTERED SPECS GRID */}
         <section style={{ width: '100%', marginBottom: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <h2 className="section-h2">{isEn ? 'BUILD RECOMMENDATIONS' : 'DOPORUČENÍ PRO SESTAVU'}</h2>
           <div className="specs-grid">
