@@ -5,11 +5,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK ENGINE V7.6 (FINAL CENTERED & ADSENSE FIXED)
+ * GURU BOTTLENECK ENGINE V7.7 (BULLETPROOF LOOKUP & CENTERED)
  * 🚀 STATUS: LIVE - AdSense ID ca-pub-5468223287024993
- * 🛡️ FIX 1: Absolutní vertikální a horizontální centrování Hero i Gridů.
- * 🛡️ FIX 2: AdSense ID implementováno v AdSpace i Globálním Scriptu.
- * 🛡️ NEW: Multi-layer game detection v URL pro SEO násobení.
+ * 🛡️ FIX 1: Oprava relací v PostgREST (cpu_game_fps vs game_fps).
+ * 🛡️ FIX 2: Absolutní horizontální centrování dle screenshotu.
+ * 🛡️ FIX 3: Robustní 3-Tier vyhledávání s fallbackem bez joinu (Zamezuje 404).
  */
 
 export const runtime = "nodejs";
@@ -21,21 +21,37 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const normalizeName = (name = '') => name.replace(/AMD |Intel |NVIDIA |GeForce |Ryzen |Core |Radeon /gi, '');
 const slugify = (text) => text.toLowerCase().replace(/graphics|gpu|processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim();
 
+// 🛡️ GURU ENGINE: Neprůstřelné vyhledávání (3-TIER s korektními relacemi)
 const findHw = async (table, slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+  
+  // Relace se liší pro CPU a GPU tabulku
+  const joinQuery = table === 'gpus' ? 'game_fps!gpu_id(*)' : 'cpu_game_fps!cpu_id(*)';
+
   try {
-      const res1 = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*,game_fps!gpu_id(*)&slug=eq.${slugPart}&limit=1`, { headers, cache: 'no-store' });
+      // TIER 1: Přesný slug match s benchmarky
+      const url1 = `${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&slug=eq.${slugPart}&limit=1`;
+      const res1 = await fetch(url1, { headers, cache: 'no-store' });
       if (res1.ok) { const data = await res1.json(); if (data?.length) return data[0]; }
       
+      // Fallback: Pokud join selže, zkusíme aspoň čistou entitu
+      const resF = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*&slug=eq.${slugPart}&limit=1`, { headers, cache: 'no-store' });
+      if (resF.ok) { const dataF = await resF.json(); if (dataF?.length) return dataF[0]; }
+
+      // TIER 2: Agresivní hledání podle jména (Tokens)
       const clean = slugPart.replace(/-/g, ' ').replace(/ryzen|core|intel|amd|geforce|rtx|radeon|rx/gi, '').trim();
       const tokens = clean.split(/\s+/).filter(t => t.length > 0);
       if (tokens.length > 0) {
           const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
-          const res2 = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*,game_fps!gpu_id(*)&and=(${conditions})&limit=1`, { headers, cache: 'no-store' });
-          if (res2.ok) { const data2 = await res2.json(); return data2?.[0] || null; }
+          const res2 = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&and=(${conditions})&limit=1`, { headers, cache: 'no-store' });
+          if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
+          
+          // Fallback bez joinu pro Tier 2
+          const res2F = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*&and=(${conditions})&limit=1`, { headers, cache: 'no-store' });
+          if (res2F.ok) { const data2F = await res2F.json(); return data2F?.[0] || null; }
       }
-  } catch(e) {}
+  } catch(e) { console.error("Lookup Crash:", e); }
   return null;
 };
 
@@ -49,7 +65,6 @@ const getAnalysisData = cache(async (slug) => {
   return { cpu, gpu, gameSlug };
 });
 
-// 🚀 ADSENSE COMPONENT WITH YOUR ID: ca-pub-5468223287024993
 const AdSpace = ({ slot, height = '90px' }) => (
     <div className="ad-wrapper" style={{ width: '100%', margin: '30px auto', minHeight: height, textAlign: 'center' }}>
         <div style={{ fontSize: '9px', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>REKLAMA / SPONZOROVANÉ</div>
@@ -84,7 +99,16 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
   const isEn = forcedIsEn || rawSlug.startsWith('en-');
   const data = await getAnalysisData(rawSlug);
 
-  if (!data?.cpu || !data?.gpu) return <div className="error-screen">COMPONENT NOT FOUND</div>;
+  if (!data?.cpu || !data?.gpu) return (
+    <div className="error-screen" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a0b0d', color: '#fff', textAlign: 'center' }}>
+      <div>
+        <AlertTriangle size={64} color="#ef4444" style={{ margin: '0 auto 20px' }} />
+        <h2 style={{ fontWeight: '950' }}>KOMPONENTA NENALEZENA</h2>
+        <p style={{ color: '#9ca3af' }}>Zkontrolujte URL adresu nebo hledejte v databázi.</p>
+        <a href="/" style={{ marginTop: '20px', display: 'inline-block', padding: '10px 20px', background: '#f59e0b', color: '#000', borderRadius: '10px', fontWeight: 'bold' }}>ZPĚT DOMŮ</a>
+      </div>
+    </div>
+  );
 
   const { cpu, gpu, gameSlug } = data;
   const cpuPower = cpu.performance_index || 1;
@@ -173,7 +197,7 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-page-container { min-height: 100vh; background: #0a0b0d; background-image: url("/bg-guru.png"); background-size: cover; background-attachment: fixed; padding-top: 120px; padding-bottom: 100px; color: #fff; }
-        .radar-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; fontSize: 11px; fontWeight: 950; textTransform: uppercase; letterSpacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.05); }
+        .radar-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.05); }
         .hero-title { font-size: clamp(2.2rem, 6vw, 4.5rem); font-weight: 950; text-transform: uppercase; line-height: 1.1; margin: 0; }
         .glass-card { background: rgba(15,17,21,0.85); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); border-radius: 30px; box-shadow: 0 30px 100px rgba(0,0,0,0.8); transition: 0.3s; }
         .main-hero { padding: 80px 40px; text-align: center; }
@@ -188,7 +212,6 @@ export default async function BottleneckPage({ params, isEn: forcedIsEn }) {
         .btn-deals { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
         .btn-support { background: #eab308; color: #000; }
         .btn-deals:hover, .btn-support:hover { transform: scale(1.05); filter: brightness(1.1); }
-        .error-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #000; color: #ef4444; font-weight: 950; font-size: 2rem; }
         @media (max-width: 768px) { .specs-grid { grid-template-columns: 1fr; } }
       `}} />
     </div>
