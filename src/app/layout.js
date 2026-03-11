@@ -77,6 +77,20 @@ export default function RootLayout({ children, params }) {
           `}
         </Script>
 
+        {/* ADSENSE FUNDING CHOICES API (Pro AdBlock Recovery "Předplatit") */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.googlefc = window.googlefc || {};
+              window.googlefc.controlledMessagingFunction = function(message) {
+                // Logika pro ověření předplatitele. 
+                // Prozatím vracíme false, takže se hláška zobrazí všem s AdBlockem.
+                return false;
+              };
+            `
+          }}
+        />
+
       </head>
 
       <body style={{
