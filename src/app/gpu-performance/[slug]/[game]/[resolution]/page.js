@@ -17,8 +17,8 @@ import {
  * GURU GPU PERFORMANCE ENGINE V2.0 (SEO CLUSTER)
  * Cesta: src/app/gpu-performance/[slug]/[game]/[resolution]/page.js
  * 🚀 TARGET: Extrémně specifické dotazy (např. "RTX 4070 Cyberpunk 4k fps").
- * 🛡️ DESIGN: Identický vizuál s hlavními profily (Hero bloky, Grid, CTA).
- * 🛡️ FIX: Ošetřeno tahání parametrů a opraveny odkazy do p*če (404).
+ * 🛡️ DESIGN: 1:1 identický vizuál s CPU sekcí (Hero bloky, Grid, GURU CTA).
+ * 🛡️ FIX: Ošetřeno tahání parametrů a zachována kritická cache pro DB.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -45,7 +45,6 @@ const findGpuBySlug = cache(async (gpuSlug) => {
     if (!supabaseUrl || !gpuSlug) return null;
     const clean = gpuSlug.replace(/-/g, " ").replace(/geforce|radeon|nvidia|amd/gi, "").trim();
     
-    // Ochrana proti uříznutí přípon (xt, ti, super)
     const chunks = clean.match(/\d+|[a-zA-Z]+/g);
     if (!chunks || chunks.length === 0) return null;
     
@@ -70,11 +69,9 @@ const getPerformanceData = cache(async (gpuSlug, gameSlug, resolution) => {
     const gameKey = gameSlug.replace('-2077', '').replace(/-/g, '_');
     const fpsData = gpu?.game_fps ? (Array.isArray(gpu.game_fps) ? gpu.game_fps[0] : gpu.game_fps) : {};
 
-    // Base FPS je u nás 1440p
     const baseFps = fpsData[`${gameKey}_1440p`] || 0;
     let finalFps = baseFps;
 
-    // Pokud nemáme v DB přesné sloupce pro 1080p a 4K, použijeme standardní škálování
     if (resolution === '1080p') {
         finalFps = fpsData[`${gameKey}_1080p`] || Math.round(baseFps * 1.4);
     } else if (resolution === '4k') {
@@ -165,47 +162,18 @@ export default async function GpuPerformancePage({ params }) {
     if (finalFps >= 100) { verdictColor = '#10b981'; verdictTextEn = 'ULTIMATE EXPERIENCE'; verdictTextCs = 'PERFEKTNÍ PLYNULOST'; }
     else if (finalFps >= 60) { verdictColor = '#66fcf1'; verdictTextEn = 'SMOOTH GAMING'; verdictTextCs = 'PLYNULÉ HRANÍ'; }
     else if (finalFps >= 30) { verdictColor = '#eab308'; verdictTextEn = 'PLAYABLE (CONSOLE LEVEL)'; verdictTextCs = 'HRATELNÉ (KONZOLOVÝ ZÁŽITEK)'; }
-
-    // 🚀 SEO SCHEMATA
-    const faqSchema = {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-            {
-                "@type": "Question",
-                "name": isEn ? `How much FPS does ${cleanGpuName} get in ${gameLabel} at ${resLabel}?` : `Kolik FPS má ${cleanGpuName} ve hře ${gameLabel} na ${resLabel}?`,
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": isEn 
-                        ? `The ${cleanGpuName} achieves an average of ${finalFps} FPS in ${gameLabel} when running at ${resLabel} resolution with high/ultra settings.`
-                        : `Karta ${cleanGpuName} dosahuje průměrně ${finalFps} FPS ve hře ${gameLabel} při rozlišení ${resLabel} a vysokých/ultra detailech.`
-                }
-            },
-            {
-                "@type": "Question",
-                "name": isEn ? `Is ${cleanGpuName} good for ${resLabel} gaming?` : `Je ${cleanGpuName} dobrá pro ${resLabel} hraní?`,
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": isEn
-                        ? `Based on our benchmarks, the performance is classified as ${verdictTextEn.toLowerCase()} for this specific scenario.`
-                        : `Na základě našich benchmarků je výkon hodnocen jako ${verdictTextCs.toLowerCase()} pro tento konkrétní scénář.`
-                }
-            }
-        ]
-    };
+    else if (finalFps === 0) { verdictColor = '#4b5563'; verdictTextEn = 'NO DATA'; verdictTextCs = 'NEDOSTATEK DAT'; }
 
     const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
             
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
-
             <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
                 
                 <div style={{ marginBottom: '30px' }}>
-                    <a href={isEn ? '/en/gpuvs' : '/gpuvs'} className="guru-back-btn">
-                        <ChevronLeft size={16} /> {isEn ? 'BACK TO VS ENGINE' : 'ZPĚT DO VELÍNA'}
+                    <a href={isEn ? `/en/gpu-performance/${safeSlug}` : `/gpu-performance/${safeSlug}`} className="guru-back-btn">
+                        <ChevronLeft size={16} /> {isEn ? 'BACK TO GPU PROFILE' : 'ZPĚT NA VÝKON GRAFIKY'}
                     </a>
                 </div>
 
@@ -213,21 +181,20 @@ export default async function GpuPerformancePage({ params }) {
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(102,252,241,0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)' }}>
                         <Activity size={16} /> GURU FPS RADAR
                     </div>
-                    {/* 🚀 GURU SEO: Přesná shoda pro H1 (GPU + Hra + Rozlišení) */}
                     <h1 style={{ fontSize: 'clamp(2rem, 6vw, 3.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
                         <span style={{ color: vendorColor }}>{cleanGpuName}</span> <br/>
                         <span style={{ color: '#66fcf1' }}>{gameLabel}</span> FPS <span style={{ fontSize: '0.6em', verticalAlign: 'middle', opacity: 0.8 }}>({resLabel})</span>
                     </h1>
                 </header>
 
-                {/* 🚀 VELKÝ HERO BLOK (Ve stylu CPU) */}
+                {/* 🚀 VELKÝ HERO BLOK */}
                 <section style={{ marginBottom: '60px' }}>
                     <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderLeft: `8px solid ${verdictColor}`, borderRadius: '24px', padding: '50px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
                         <div style={{ color: verdictColor, fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>
                             {isEn ? 'AVERAGE FRAMERATE' : 'PRŮMĚRNÁ SNÍMKOVÁ FREKVENCE'}
                         </div>
                         <div style={{ fontSize: 'clamp(80px, 15vw, 120px)', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0', textShadow: `0 0 40px ${verdictColor}40` }}>
-                            {finalFps > 0 ? finalFps : 'N/A'} <span style={{ fontSize: 'clamp(20px, 4vw, 30px)', color: verdictColor }}>FPS</span>
+                            {finalFps > 0 ? finalFps : 'N/A'} {finalFps > 0 && <span style={{ fontSize: 'clamp(20px, 4vw, 30px)', color: verdictColor }}>FPS</span>}
                         </div>
                         <div style={{ background: `${verdictColor}20`, color: verdictColor, padding: '10px 25px', borderRadius: '50px', display: 'inline-flex', alignItems: 'center', gap: '10px', fontWeight: '950', fontSize: '14px', border: `1px solid ${verdictColor}40`, marginTop: '10px' }}>
                             <Crosshair size={18} /> {isEn ? verdictTextEn : verdictTextCs}
@@ -256,14 +223,14 @@ export default async function GpuPerformancePage({ params }) {
                     </div>
                 </section>
 
-                {/* 🚀 OPRAVENÉ DEEP DIVE ODKAZY (Zamezuje 404 chybám) */}
+                {/* 🚀 DEEP DIVE ODKAZY */}
                 <section style={{ marginBottom: '60px' }}>
                   <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: vendorColor }}>
                     <Activity size={28} /> {isEn ? 'DEEP DIVE ANALYSIS' : 'DETAILNÍ ANALÝZA'}
                   </h2>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-                      <a href={isEn ? `/en/gpu/${safeSlug}` : `/gpu/${safeSlug}`} className="deep-link-card">
-                          <Activity size={32} color={vendorColor} />
+                      <a href={isEn ? `/en/gpu-performance/${safeSlug}` : `/gpu-performance/${safeSlug}`} className="deep-link-card">
+                          <BarChart3 size={32} color={vendorColor} />
                           <div>
                               <h3>{isEn ? 'Full GPU Profile' : 'Kompletní Profil'}</h3>
                               <p>{isEn ? 'All specifications and hardware index.' : 'Všechny specifikace a HW index.'}</p>
@@ -292,7 +259,7 @@ export default async function GpuPerformancePage({ params }) {
                 {/* 🚀 GLOBÁLNÍ CTA TLAČÍTKA */}
                 <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
                   <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
-                    {isEn ? "Help us build this database by supporting us." : "Pomohl ti tento profil při výběru? Podpoř naši databázi."}
+                    {isEn ? "Help us build this database by supporting us." : "Pomohla ti tato analýza? Podpoř naši databázi."}
                   </h4>
                   <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
                     <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn" style={{ flex: '1 1 280px' }}>
