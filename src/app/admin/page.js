@@ -15,6 +15,7 @@ import {
  * Cesta: src/app/admin/page.js
  * 🛡️ FIX: Odstraněny nebezpečné importy ikon (Link2, Loader2, PlusCircle, dvojitý Cpu), 
  * které způsobovaly "Client-side exception" při přepnutí na záložku Databáze.
+ * 🛡️ FIX 2: Opravena fatální chyba s neescapovanou proměnnou {slug} v JSX textu.
  */
 
 // --- 🚀 GURU ENV ENGINE ---
@@ -761,7 +762,7 @@ export default function AdminApp() {
               {dbTab === 'games' && (
                 <div style={{ padding: '20px', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', borderRadius: '15px', marginTop: '20px', border: '1px dashed rgba(245, 158, 11, 0.3)', fontSize: '12px', fontWeight: 'bold' }}>
                   <AlertTriangle size={16} style={{display:'inline', verticalAlign:'middle', marginRight:'5px'}} />
-                  Poznámka: Přidání hry do tabulky `games` je první krok. Pro zobrazení FPS benchmarků u karet nezapomeň v Supabase v tabulkách `game_fps` a `cpu_game_fps` vytvořit odpovídající sloupce (např. `{slug}_1440p`).
+                  Poznámka: Přidání hry do tabulky `games` je první krok. Pro zobrazení FPS benchmarků u karet nezapomeň v Supabase v tabulkách `game_fps` a `cpu_game_fps` vytvořit odpovídající sloupce (např. [slug]_1440p).
                 </div>
               )}
 
