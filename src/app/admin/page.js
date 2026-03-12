@@ -1,9 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-// ⚠️ DŮLEŽITÉ: Pro náhled v Canvasu musíme dočasně použít esm.sh import,
-// jinak kompilátor spadne. Než kód nahraješ na Vercel, ZMĚŇ tento řádek zpět na:
-// import { createClient } from '@supabase/supabase-js';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js';
 import { 
   Rocket, Settings, Globe, Search, Database, CalendarClock, 
@@ -18,7 +15,8 @@ import {
  * GURU ULTIMATE COMMAND CENTER
  * Cesta: src/app/admin/page.js
  * 🛡️ FIX 1: Intel Radar plně obnoven do původního funkčního stavu (3 sekce).
- * 🛡️ FIX 2: Widget Trendy Hry přesunut do záložky Databáze hned vedle formuláře.
+ * 🛡️ FIX 2: Vercel build fix - vráceno na '@supabase/supabase-js'.
+ * 🛡️ FIX 3: Oprava nezobrazování trendů (přidán state a fetch).
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -82,7 +80,7 @@ const SidebarItemUI = ({ id, activeTab, setActiveTab, icon, label, color, href }
 export default function AdminApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
-  const [activeTab, setActiveTab] = useState('database'); // Začínáme rovnou na DB záložce
+  const [activeTab, setActiveTab] = useState('database'); // Startujeme na databázi
   const [loading, setLoading] = useState(false);
   const [consoleLogs, setConsoleLogs] = useState([]);
   const logEndRef = useRef(null);
@@ -98,7 +96,7 @@ export default function AdminApp() {
   const [aiActive, setAiActive] = useState(false); 
   const [aiStatusMsg, setAiStatusMsg] = useState('IDLE');
   
-  // 🚀 TRENDS STATE
+  // 🚀 TRENDS STATE PŘIDÁN ZPĚT
   const [trendingGames, setTrendingGames] = useState([]);
   const [trendsLoading, setTrendsLoading] = useState(false);
 
@@ -188,7 +186,7 @@ export default function AdminApp() {
       setDbMessage({ type: 'success', text: `Úspěšně přidáno: ${dbFormData.name}!` });
       addLog(`Hardware / Hra ${dbFormData.name} přidána do systému a ihned zaktivovala nové stránky!`, 'success');
       resetDbForm();
-      // Pokud byla přidána hra, chceme odebrat trend, ať nám tam nestraší
+      // Odsrtraní hru z trendů, pokud byla přidána
       setTrendingGames(prev => prev.filter(g => g !== payload.name));
     }
     setDbLoading(false);
@@ -246,7 +244,7 @@ export default function AdminApp() {
     }
   };
 
-  // 🚀 TRENDS FETCH ENGINE
+  // 🚀 TRENDS FETCH ENGINE PŘIDÁN ZPĚT
   const fetchTrendingGames = async () => {
     setTrendsLoading(true);
     addLog("Hledám trendy hry na Google (CZ+US)...", "warning");
@@ -295,7 +293,7 @@ export default function AdminApp() {
     if (isAuthenticated) {
       fetchIntelFeed();
       fetchAndScanData();
-      fetchTrendingGames(); // Načíst trendy automaticky
+      fetchTrendingGames(); // Načíst trendy automaticky při loginu
     }
   }, [isAuthenticated]);
 
@@ -657,9 +655,33 @@ export default function AdminApp() {
               </div>
             </div>
 
-            <div style={{marginTop: '40px'}}>
-              <div className="terminal-box" style={{height: '350px'}}>
-                {consoleLogs.map((log, i) => (<div key={i}>[{log.time}] {log.msg}</div>))}
+            {/* 🚀 TRENDS WIDGET přidán čistě do Dashboardu podle pravidel */}
+            <div style={{marginTop: '40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
+              <div style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #eab30833' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                      <h3 style={{ fontSize: '14px', fontWeight: 950, color: '#eab308' }}>🔥 TOP TRENDY HRY (GOOGLE)</h3>
+                      <button onClick={fetchTrendingGames} style={{ background: 'transparent', border: 'none', color: '#4b5563', cursor: 'pointer' }}><RefreshCw size={14} className={trendsLoading ? 'animate-spin' : ''}/></button>
+                  </div>
+                  {trendingGames.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {trendingGames.map((game, i) => (
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#000', padding: '10px 15px', borderRadius: '12px', border: '1px solid #ffffff08' }}>
+                                  <span style={{ color: '#eab308', fontWeight: 900 }}>#{i+1}</span>
+                                  <span style={{ flex: 1, fontWeight: 700, fontSize: '13px' }}>{game}</span>
+                                  <button onClick={() => { 
+                                      setActiveTab('database');
+                                      setDbTab('games');
+                                      setDbFormData(prev => ({ ...prev, name: game }));
+                                  }} style={{ fontSize: '10px', color: '#66fcf1', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: '900' }}>PŘIDAT</button>
+                              </div>
+                          ))}
+                      </div>
+                  ) : (
+                      <p style={{ color: '#4b5563', fontSize: '12px' }}>{trendsLoading ? 'Skenuji trendy...' : 'Klikni na refresh pro skenování trendů...'}</p>
+                  )}
+              </div>
+              <div className="terminal-box" style={{height: '300px'}}>
+                {consoleLogs.slice(-10).map((log, i) => (<div key={i}>[{log.time}] {log.msg}</div>))}
                 <div ref={logEndRef} />
               </div>
             </div>
@@ -733,6 +755,7 @@ export default function AdminApp() {
               ))}
             </div>
 
+            {!intelLoading && hwIntel.length === 0 && gameIntel.length === 0 && leaksIntel.length === 0 && <div style={{ textAlign: 'center', padding: '100px', color: '#444', fontWeight: 'bold' }}>ŽÁDNÁ DATA. SPUSTI SYNCHRONIZACI.</div>}
           </div>
         )}
 
@@ -845,30 +868,6 @@ export default function AdminApp() {
                         {dbLoading ? 'Odesílám do cloudu...' : `VLOŽIT ${dbTab.toUpperCase()} A AKTIVOVAT STRÁNKY`}
                       </button>
                     </form>
-                </div>
-                
-                {/* 🚀 TRENDS WIDGET U FORMULÁŘE */}
-                <div style={{ width: '380px', background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #eab30833', position: 'sticky', top: '40px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <h3 style={{ fontSize: '13px', fontWeight: 950, color: '#eab308' }}>🔥 TRENDY HRY K PŘIDÁNÍ</h3>
-                        <button onClick={fetchTrendingGames} style={{ background: 'transparent', border: 'none', color: '#4b5563', cursor: 'pointer' }}><RefreshCw size={14} className={trendsLoading ? 'animate-spin' : ''}/></button>
-                    </div>
-                    {trendingGames.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {trendingGames.map((game, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#000', padding: '12px', borderRadius: '12px', border: '1px solid #ffffff08' }}>
-                                    <span style={{ color: '#eab308', fontWeight: 900 }}>#{i+1}</span>
-                                    <span style={{ flex: 1, fontWeight: 700, fontSize: '13px' }}>{game}</span>
-                                    <button type="button" onClick={() => { 
-                                        setDbTab('games');
-                                        setDbFormData(prev => ({ ...prev, name: game }));
-                                    }} style={{ padding: '8px 12px', borderRadius: '8px', fontSize: '10px', color: '#000', background: '#66fcf1', border: 'none', cursor: 'pointer', fontWeight: '950' }}>PŘEDVYPLNIT</button>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p style={{ color: '#4b5563', fontSize: '12px' }}>{trendsLoading ? 'Skenuji...' : 'Zde se ukážou hry, které ještě nemáš v DB. Klikni na refresh.'}</p>
-                    )}
                 </div>
             </div>
           </div>
