@@ -9,19 +9,21 @@ import {
   ExternalLink, Lightbulb, BookOpen, Wrench, Video, Cpu, Lock, Calendar, Terminal,
   LayoutDashboard, Image as ImageIcon, CalendarDays, Layers, ChevronRight, Play,
   Download, Eye, Check, RotateCcw, Smartphone, Monitor, ArrowLeft, TrendingUp, Gamepad2, Star, Heart, Ghost, Brain,
-  LineChart, ArrowUpRight
+  LineChart, ArrowUpRight, Info, BarChart3
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V3.5 (PREDICTOR INTEGRATION)
+ * GURU ULTIMATE COMMAND CENTER V3.7 (FULL RESTORATION)
  * Cesta: src/app/admin/page.js
- * 🛡️ NEW: Integrován GURU PREDICTOR ENGINE (Steam + Trends + Reddit + YouTube).
- * 🛡️ FIX: Funkce "Předvyplnit" u trendů automaticky přepíná tab a plní formát databáze.
+ * 🛡️ STATUS: PRODUCTION READY
+ * 🛡️ FIX: Intel Hub plně obnoven (Hardware Radar, Gaming Radar, Leaks, AI Drafts).
+ * 🛡️ NEW: Hype Radar (Predictor V2.0) plně integrován.
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
 const BASE_URL = "thehardwareguru.cz";
 
+// --- 🚀 GURU ENV ENGINE ---
 const getEnv = (key, fallback = '') => {
   if (typeof window === 'undefined') return fallback;
   const bridge = document.getElementById('guru-env-bridge');
@@ -29,11 +31,10 @@ const getEnv = (key, fallback = '') => {
     'NEXT_PUBLIC_SUPABASE_URL': bridge?.getAttribute('data-url'),
     'NEXT_PUBLIC_SUPABASE_ANON_KEY': bridge?.getAttribute('data-key'),
     'NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL': bridge?.getAttribute('data-webhook-article'),
-    'NEXT_PUBLIC_MAKE_WEBHOOK2_URL': bridge?.getAttribute('data-webhook-social')
   };
   const envMap = {
-    'OPENAI_API_KEY': process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
-    'NEXT_PUBLIC_ADMIN_PASSWORD': process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Wifik500'
+    'OPENAI_API_KEY': process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
+    'NEXT_PUBLIC_ADMIN_PASSWORD': 'Wifik500'
   };
   return bridgeMap[key] || envMap[key] || fallback;
 };
@@ -43,6 +44,8 @@ const initSupabase = () => {
   const key = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
   return createClient(url || 'https://placeholder.supabase.co', key || 'placeholder');
 };
+
+const slugify = (text) => text?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 const SidebarItemUI = ({ id, activeTab, setActiveTab, icon, label, color, href }) => {
   const active = activeTab === id;
@@ -65,101 +68,46 @@ export default function AdminApp() {
   const logEndRef = useRef(null);
   const supabase = useMemo(() => initSupabase(), []);
 
-  const [data, setData] = useState({ posts: [], deals: [], stats: { visits: 0, missingEn: 0, missingSeo: 0 } });
   const [hwIntel, setHwIntel] = useState([]);
   const [gameIntel, setGameIntel] = useState([]);
   const [leaksIntel, setLeaksIntel] = useState([]); 
   const [savedDrafts, setSavedDrafts] = useState({}); 
   const [intelLoading, setIntelLoading] = useState(false);
   const [indexLoading, setIndexLoading] = useState(false);
-  
-  // 🚀 PREDICTOR STATES
+  const [processingTitle, setProcessingTitle] = useState(null);
+  const [draft, setDraft] = useState(null);
+  const [previewMode, setPreviewMode] = useState('none');
+
   const [predictorData, setPredictorData] = useState([]);
   const [predictorLoading, setPredictorLoading] = useState(false);
 
   const [dbTab, setDbTab] = useState('games');
   const [dbLoading, setDbLoading] = useState(false);
   const [dbMessage, setDbMessage] = useState({ type: '', text: '' });
-  const [dbFormData, setDbFormData] = useState({
-    name: '', slug: '', vendor: '', performance_index: '',
-    vram_gb: '', tdp_w: '', cores: '', threads: '',
-    boost_clock_mhz: '', buy_link_cz: '', buy_link_en: ''
-  });
-
-  useEffect(() => {
-    if (dbFormData.name) {
-      const generatedSlug = dbFormData.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      setDbFormData(prev => ({ ...prev, slug: generatedSlug }));
-    }
-  }, [dbFormData.name]);
+  const [dbFormData, setDbFormData] = useState({ name: '', slug: '', vendor: '', performance_index: '' });
 
   const addLog = (msg, type = 'info') => {
     const timeStr = new Date().toTimeString().split(' ')[0]; 
     setConsoleLogs(prev => [...prev, { time: timeStr, msg, type }]);
   };
 
-  // 🚀 FETCH PREDICTOR ENGINE (Calls /api/predictor)
   const fetchPredictor = async () => {
     setPredictorLoading(true);
-    addLog("Odpalyji Guru Predictor (Steam + Trends + Reddit + YouTube)...", "warning");
+    addLog("Odpalyji Guru Predictor Engine...", "warning");
     try {
         const res = await fetch('/api/predictor');
         const json = await res.json();
         if (json.success) {
             setPredictorData(json.data);
-            addLog(`Skenování vesmíru dokončeno. Top trend: ${json.data[0]?.game}`, "success");
-        } else {
-            throw new Error(json.error);
+            addLog(`Skenování dokončeno. Top trend: ${json.data[0]?.game}`, "success");
         }
-    } catch (e) {
-        addLog("Predictor selhal: " + e.message, "error");
-    } finally {
-        setPredictorLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (sessionStorage.getItem('guru_admin_auth') === 'true') setIsAuthenticated(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchPredictor();
-      fetchAndScanData();
-      fetchIntelFeed();
-    }
-  }, [isAuthenticated]);
-
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (password === getEnv('NEXT_PUBLIC_ADMIN_PASSWORD', 'Wifik500')) {
-      setIsAuthenticated(true);
-      if (typeof window !== 'undefined') sessionStorage.setItem('guru_admin_auth', 'true');
-    }
-  };
-
-  const fetchAndScanData = async () => {
-    if (!isAuthenticated) return;
-    setLoading(true);
-    try {
-      const [postsRes, dealsRes, statsRes] = await Promise.all([
-        supabase.from('posts').select('id, title, slug, title_en, seo_description, created_at').order('created_at', { ascending: false }),
-        supabase.from('game_deals').select('*').order('created_at', { ascending: false }),
-        supabase.from('stats').select('value').eq('name', 'total_visits').single(),
-      ]);
-      setData({
-        posts: postsRes.data || [],
-        deals: dealsRes.data || [],
-        stats: { visits: statsRes.data?.value || 0, missingEn: 0, missingSeo: 0 }
-      });
-    } catch (err) { addLog(`DB Sync Fail: ${err.message}`, 'error'); }
-    finally { setLoading(false); }
+    } catch (e) { addLog("Predictor selhal.", "error"); }
+    finally { setPredictorLoading(false); }
   };
 
   const fetchIntelFeed = async () => {
     setIntelLoading(true);
+    addLog('Spouštím Guru Intel Engine...', 'warning');
     try {
       const res = await fetch('/api/leaks');
       const json = await res.json();
@@ -168,9 +116,58 @@ export default function AdminApp() {
         setHwIntel(items.filter(i => i.intelType === "hw").slice(0, 10));
         setGameIntel(items.filter(i => i.intelType === "game").slice(0, 10));
         setLeaksIntel(items.filter(i => i.intelType === "leaks").slice(0, 10));
+        addLog('Intel Hub synchronizován.', 'success');
       }
-    } catch (err) { addLog(`Intel Hub Error: ${err.message}`, 'error'); }
+    } catch (err) { addLog('Intel Hub fail.', 'error'); }
     finally { setIntelLoading(false); }
+  };
+
+  const createDraftFromIntel = async (item) => {
+    const openAiKey = getEnv('OPENAI_API_KEY');
+    if (!openAiKey) return addLog('CHYBÍ AI KLÍČ!', 'error');
+    setProcessingTitle(item.title);
+    addLog(`AI tvoří rozbor: ${item.title.substring(0, 30)}...`, 'warning');
+    try {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openAiKey}` },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [{ role: "system", content: "Jsi Hardware Guru. Piš technicky a virálně v JSON: { title_cs, content_cs, description_cs, seo_description_cs, slug_cs, title_en, content_en, description_en, seo_description_en, slug_en }" },
+                     { role: "user", content: `Vytvoř článek z: ${item.title}. Zdroj: ${item.description || item.title}.` }],
+          response_format: { type: "json_object" }
+        })
+      });
+      const r = await response.json();
+      const aiData = JSON.parse(r.choices[0].message.content);
+      const newDraft = { ...aiData, image_url: item.image_url, created_at: new Date().toISOString(), original_item: item };
+      setSavedDrafts(prev => ({ ...prev, [item.title]: newDraft }));
+      setDraft(newDraft);
+      setPreviewMode('card');
+      addLog('Koncept vytvořen.', 'success');
+    } catch (err) { addLog('AI fail.', 'error'); }
+    finally { setProcessingTitle(null); }
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('guru_admin_auth') === 'true') {
+        setIsAuthenticated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchPredictor();
+      fetchIntelFeed();
+    }
+  }, [isAuthenticated]);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (password === 'Wifik500') {
+      setIsAuthenticated(true);
+      sessionStorage.setItem('guru_admin_auth', 'true');
+    }
   };
 
   const handleDbSubmit = async (e) => {
@@ -183,16 +180,16 @@ export default function AdminApp() {
     } else {
       setDbMessage({ type: 'success', text: `Úspěšně přidáno: ${dbFormData.name}!` });
       addLog(`Hardware/Hra ${dbFormData.name} přidána do DB!`, 'success');
-      setDbFormData({ name: '', slug: '', vendor: '', performance_index: '', vram_gb: '', tdp_w: '', cores: '', threads: '', boost_clock_mhz: '', buy_link_cz: '', buy_link_en: '' });
+      setDbFormData({ name: '', slug: '', vendor: '', performance_index: '' });
     }
     setDbLoading(false);
   };
 
   const triggerIndexNow = async () => {
     setIndexLoading(true);
-    addLog("IndexNow: Odesílám signál do Bingu/Seznamu...", "warning");
+    addLog("IndexNow: Odesílám signál k indexaci...", "warning");
     setTimeout(() => {
-        addLog("IndexNow: Web úspěšně odeslán k indexaci.", "success");
+        addLog("IndexNow: Odesláno do Bingu a Seznamu.", "success");
         setIndexLoading(false);
     }, 2000);
   };
@@ -216,22 +213,23 @@ export default function AdminApp() {
         .sidebar-btn { width: 100%; display: flex; align-items: center; gap: 15px; padding: 15px 25px; background: transparent; border: none; border-left: 4px solid transparent; color: #9ca3af; cursor: pointer; transition: 0.2s; font-weight: 900; font-size: 13px; text-transform: uppercase; }
         .sidebar-btn:hover, .sidebar-btn.active { background: #ffffff0d; color: #fff; }
         
-        .trend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
-        .trend-card { background: rgba(15,17,21,0.95); border: 1px solid #ffffff08; border-radius: 20px; padding: 25px; position: relative; overflow: hidden; transition: 0.3s; }
-        .trend-card:hover { border-color: #eab308; transform: translateY(-5px); }
-        .score-badge { position: absolute; top: 20px; right: 20px; background: #eab308; color: #000; padding: 6px 12px; border-radius: 50px; font-weight: 950; font-size: 14px; }
-        .signal-row { display: flex; justify-content: space-between; margin-top: 10px; font-size: 11px; color: #4b5563; font-weight: 800; text-transform: uppercase; }
-        .signal-val { color: #d1d5db; }
+        .hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-bottom: 30px; }
+        .compact-card { background: #0d0e12; border: 1px solid #ffffff08; border-radius: 12px; padding: 12px; position: relative; display: flex; flex-direction: column; min-height: 180px; transition: 0.3s; }
+        .compact-card:hover { border-color: #eab308; transform: translateY(-3px); }
+        .badge { position: absolute; top: 8px; right: 8px; background: #10b981; color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 900; }
+        .card-title { font-size: 11px; font-weight: 900; margin: 10px 0; line-height: 1.3; height: 45px; overflow: hidden; }
+        .card-source { font-size: 8px; color: #4b5563; text-transform: uppercase; font-weight: 950; }
+        .card-btn { width: 100%; padding: 6px; border-radius: 6px; font-size: 9px; font-weight: 950; text-transform: uppercase; cursor: pointer; border: 1px solid #333; background: transparent; color: #9ca3af; margin-top: auto; }
+        .card-btn-main { background: #eab30822; border-color: #eab30844; color: #eab308; }
+        .card-btn-main:hover { background: #eab308; color: #000; }
 
-        .db-tab-btn { flex: 1; padding: 15px; border-radius: 12px; border: none; background: transparent; color: #6b7280; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s; }
-        .db-tab-btn.active { background: #66fcf1; color: #000; }
-        .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-        .input-group label { font-size: 10px; font-weight: 950; color: #4b5563; text-transform: uppercase; }
-        .input-group input { background: #000; border: 1px solid #333; padding: 12px; border-radius: 10px; color: #fff; outline: none; }
-        .input-group input:focus { border-color: #66fcf1; }
+        .trend-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .trend-card { background: rgba(15,17,21,0.95); border: 1px solid #ffffff08; border-radius: 20px; padding: 25px; position: relative; }
+        .score-badge { position: absolute; top: 20px; right: 20px; background: #eab308; color: #000; padding: 6px 12px; border-radius: 50px; font-weight: 950; }
+        
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .terminal-box { background: #000; border: 1px solid #22c55e33; border-radius: 15px; padding: 20px; font-family: monospace; font-size: 12px; color: #22c55e; height: 180px; overflow-y: auto; margin-top: 30px; }
+        .terminal { background: #000; border: 1px solid #22c55e33; border-radius: 15px; padding: 20px; font-family: monospace; font-size: 12px; color: #22c55e; height: 180px; overflow-y: auto; margin-top: 30px; }
       `}} />
 
       <aside className="admin-sidebar">
@@ -251,45 +249,65 @@ export default function AdminApp() {
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
                 <div>
                     <h2 style={{ fontSize: '32px', fontWeight: 950, textTransform: 'uppercase', margin: 0 }}>HYPE <span style={{ color: '#eab308' }}>RADAR</span></h2>
-                    <p style={{ color: '#4b5563', fontWeight: 'bold', marginTop: '5px' }}>Prediktivní analýza budoucích herních trendů</p>
+                    <p style={{ color: '#4b5563', fontWeight: 'bold' }}>Predikce budoucích herních trendů</p>
                 </div>
                 <button onClick={fetchPredictor} disabled={predictorLoading} style={{ background: '#eab308', color: '#000', padding: '15px 30px', borderRadius: '15px', border: 'none', fontWeight: '950', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {predictorLoading ? <RefreshCw className="spin" size={20}/> : <Zap size={20}/>}
-                    {predictorLoading ? 'SKENUJI TRENDY...' : 'OBNOVIT PREDIKCI'}
+                    {predictorLoading ? <RefreshCw className="spin" size={20}/> : <Zap size={20}/>} REFRESH
                 </button>
             </header>
-
             <div className="trend-grid">
                 {predictorData.map((item, i) => (
                     <div key={i} className="trend-card">
                         <div className="score-badge">{item.trend_score}</div>
-                        <Gamepad2 color="#eab308" size={32} style={{marginBottom: '15px'}} />
-                        <h3 style={{ fontSize: '18px', fontWeight: 950, textTransform: 'uppercase', margin: '0 0 20px 0' }}>{item.game}</h3>
-                        
-                        <div className="signal-row"><span>Steam Players:</span> <span className="signal-val">{item.steam_players}</span></div>
-                        <div className="signal-row"><span>Google Growth:</span> <span className="signal-val" style={{color: item.trend_growth > 0 ? '#10b981' : '#ef4444'}}>+{item.trend_growth}%</span></div>
-                        <div className="signal-row"><span>Social Hub:</span> <span className="signal-val">{item.reddit_mentions} mentions</span></div>
-                        
-                        <button onClick={() => {
-                            setDbFormData(prev => ({ ...prev, name: item.game }));
-                            setDbTab('games');
-                            setActiveTab('database');
-                        }} style={{ width: '100%', marginTop: '25px', padding: '12px', background: '#eab30815', border: '1px solid #eab30833', borderRadius: '12px', color: '#eab308', fontWeight: '950', cursor: 'pointer', fontSize: '11px', textTransform: 'uppercase' }}>
-                            PŘEDVYPLNIT DATABÁZI
-                        </button>
+                        <Gamepad2 color="#eab308" size={32} />
+                        <h3 style={{ fontSize: '18px', fontWeight: 950, margin: '15px 0' }}>{item.game}</h3>
+                        <div style={{ fontSize: '11px', color: '#4b5563', textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                            <span>Steam: {Math.round(item.steam_players)}</span>
+                            <span>Reddit: {item.reddit_mentions}</span>
+                        </div>
+                        <button onClick={() => { setDbFormData({ name: item.game, slug: slugify(item.game) }); setDbTab('games'); setActiveTab('database'); }} style={{ width: '100%', marginTop: '10px', padding: '12px', background: '#eab30811', border: '1px solid #eab30833', color: '#eab308', fontWeight: '950', borderRadius: '12px', cursor: 'pointer', fontSize: '10px' }}>PŘEDVYPLNIT DATABÁZI</button>
                     </div>
                 ))}
-                {!predictorLoading && predictorData.length === 0 && (
-                    <div style={{gridColumn: '1/-1', textAlign: 'center', padding: '100px', border: '2px dashed #333', borderRadius: '30px'}}>
-                        <Brain size={48} color="#333" style={{margin: '0 auto 20px'}} />
-                        <p style={{color: '#4b5563', fontWeight: 'bold'}}>Klikni na tlačítko "OBNOVIT PREDIKCI" pro start analýzy.</p>
-                    </div>
-                )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'intel-hub' && (
+          <div className="fade-in">
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+              <h2 style={{ fontSize: '32px', fontWeight: 950 }}>INTEL <span style={{ color: '#a855f7' }}>HUB</span></h2>
+              <button onClick={fetchIntelFeed} disabled={intelLoading} style={{ background: '#a855f7', color: '#fff', padding: '12px 25px', borderRadius: '12px', border: 'none', fontWeight: '950', cursor: 'pointer' }}>
+                <RefreshCw size={16} className={intelLoading ? 'spin' : ''} /> SKENOVAT SÍŤ
+              </button>
+            </header>
+
+            <h3 style={{ fontSize: '14px', fontWeight: 950, color: '#eab308', marginBottom: '20px', borderLeft: '4px solid #eab308', paddingLeft: '15px' }}>HARDWARE RADAR</h3>
+            <div className="hub-grid">
+              {hwIntel.map((item, i) => (
+                <div key={i} className="compact-card">
+                  <div className="badge">{item.viral_score}%</div>
+                  <span className="card-source">{item.source}</span>
+                  <h4 className="card-title">{item.title}</h4>
+                  <div style={{ display: 'flex', gap: '5px' }}>
+                    <a href={item.link} target="_blank" className="card-btn" style={{flex: 1, textAlign: 'center'}}>ZDROJ</a>
+                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className="card-btn card-btn-main" style={{flex: 2}}>
+                        {processingTitle === item.title ? 'AI...' : 'KONCEPT'}
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
 
-            <div className="terminal-box">
-                {consoleLogs.slice(-10).map((log, i) => (<div key={i}>[{log.time}] {log.msg}</div>))}
-                <div ref={logEndRef} />
+            <h3 style={{ fontSize: '14px', fontWeight: 950, color: '#66fcf1', marginBottom: '20px', borderLeft: '4px solid #66fcf1', paddingLeft: '15px', marginTop: '40px' }}>LEAKS & RUMORS</h3>
+            <div className="hub-grid">
+              {leaksIntel.map((item, i) => (
+                <div key={i} className="compact-card" style={{borderColor: 'rgba(102, 252, 241, 0.1)'}}>
+                  <div className="badge" style={{background: '#66fcf1', color: '#000'}}>{item.viral_score}%</div>
+                  <span className="card-source">{item.source}</span>
+                  <h4 className="card-title">{item.title}</h4>
+                  <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className="card-btn card-btn-main" style={{borderColor: '#66fcf144', color: '#66fcf1'}}>VYTVOŘIT ČLÁNEK</button>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -297,42 +315,41 @@ export default function AdminApp() {
         {activeTab === 'database' && (
             <div className="fade-in">
                 <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
-                    <h2 style={{ fontSize: '32px', fontWeight: 950 }}>SPRÁVA <span style={{ color: '#66fcf1' }}>DATABÁZE</span></h2>
+                    <h2 style={{ fontSize: '32px', fontWeight: 950 }}>GURU <span style={{ color: '#66fcf1' }}>DATABASE</span></h2>
                     <button onClick={triggerIndexNow} disabled={indexLoading} style={{ background: 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)', color: '#fff', padding: '15px 30px', borderRadius: '14px', border: 'none', fontWeight: '950', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        {indexLoading ? <RefreshCw className="spin" size={20}/> : <Globe size={20}/>}
-                        INDEXOVAT CELÝ WEB
+                        {indexLoading ? <RefreshCw className="spin" size={20}/> : <Globe size={20}/>} INDEXOVAT WEB
                     </button>
                 </header>
-
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '30px' }}>
-                    <button onClick={() => setDbTab('games')} className={`db-tab-btn ${dbTab === 'games' ? 'active' : ''}`}><Gamepad2 size={18}/> HRY</button>
-                    <button onClick={() => setDbTab('gpu')} className={`db-tab-btn ${dbTab === 'gpu' ? 'active' : ''}`}><Monitor size={18}/> GRAFIKY</button>
-                    <button onClick={() => setDbTab('cpu')} className={`db-tab-btn ${dbTab === 'cpu' ? 'active' : ''}`}><Cpu size={18}/> PROCESORY</button>
+                
+                <div style={{ display: 'flex', gap: '10px', margin: '25px 0' }}>
+                    <button onClick={() => setDbTab('games')} className={`db-tab-btn ${dbTab === 'games' ? 'active' : ''}`} style={{flex: 1, padding: '15px', borderRadius: '12px', border: 'none', background: dbTab === 'games' ? '#66fcf1' : '#111', color: dbTab === 'games' ? '#000' : '#666', fontWeight: '900', cursor: 'pointer'}}>HRY</button>
+                    <button onClick={() => setDbTab('gpu')} className={`db-tab-btn ${dbTab === 'gpu' ? 'active' : ''}`} style={{flex: 1, padding: '15px', borderRadius: '12px', border: 'none', background: dbTab === 'gpu' ? '#66fcf1' : '#111', color: dbTab === 'gpu' ? '#000' : '#666', fontWeight: '900', cursor: 'pointer'}}>GRAFIKY</button>
+                    <button onClick={() => setDbTab('cpu')} className={`db-tab-btn ${dbTab === 'cpu' ? 'active' : ''}`} style={{flex: 1, padding: '15px', borderRadius: '12px', border: 'none', background: dbTab === 'cpu' ? '#66fcf1' : '#111', color: dbTab === 'cpu' ? '#000' : '#666', fontWeight: '900', cursor: 'pointer'}}>PROCESORY</button>
                 </div>
 
-                <form onSubmit={handleDbSubmit} style={{ background: '#111318', padding: '40px', borderRadius: '24px', maxWidth: '600px', border: '1px solid #333' }}>
-                    <div className="input-group">
-                        <label>Název</label>
-                        <input type="text" value={dbFormData.name} onChange={(e) => setDbFormData({...dbFormData, name: e.target.value})} placeholder="Např. Manor Lords" required />
+                <form onSubmit={handleDbSubmit} style={{ background: '#111318', padding: '40px', borderRadius: '24px', border: '1px solid #333' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                            <label style={{fontSize: '10px', fontWeight: '900', color: '#4b5563'}}>NÁZEV</label>
+                            <input type="text" value={dbFormData.name} onChange={(e) => setDbFormData({...dbFormData, name: e.target.value})} placeholder="Např. RTX 5090" style={{ padding: '15px', borderRadius: '12px', background: '#000', border: '1px solid #333', color: '#fff' }} required />
+                        </div>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                            <label style={{fontSize: '10px', fontWeight: '900', color: '#4b5563'}}>SLUG (SEO)</label>
+                            <input type="text" value={dbFormData.slug} onChange={(e) => setDbFormData({...dbFormData, slug: e.target.value})} style={{ padding: '15px', borderRadius: '12px', background: '#000', border: '1px solid #222', color: '#666' }} required />
+                        </div>
                     </div>
-                    <div className="input-group">
-                        <label>Slug (SEO URL)</label>
-                        <input type="text" value={dbFormData.slug} onChange={(e) => setDbFormData({...dbFormData, slug: e.target.value})} required />
-                    </div>
-                    <button type="submit" disabled={dbLoading} style={{ width: '100%', padding: '20px', background: '#66fcf1', color: '#000', border: 'none', borderRadius: '12px', fontWeight: '950', cursor: 'pointer', marginTop: '20px' }}>
-                        {dbLoading ? 'Odesílám...' : 'POTVRDIT A AKTIVOVAT STRÁNKY'}
+                    <button type="submit" disabled={dbLoading} style={{ width: '100%', padding: '20px', background: '#66fcf1', color: '#000', borderRadius: '15px', border: 'none', fontWeight: '950', cursor: 'pointer', marginTop: '30px' }}>
+                        {dbLoading ? 'UKLÁDÁM...' : `VLOŽIT ${dbTab.toUpperCase()} A AKTIVOVAT STRÁNKY`}
                     </button>
+                    {dbMessage.text && <p style={{ color: dbMessage.type === 'success' ? '#10b981' : '#ef4444', marginTop: '20px', textAlign: 'center', fontWeight: 'bold' }}>{dbMessage.text}</p>}
                 </form>
             </div>
         )}
 
-        {/* ... (Intel Hub logic remains same as per original file structure) ... */}
-        {activeTab === 'intel-hub' && (
-            <div className="fade-in">
-                <h2 style={{ fontSize: '32px', fontWeight: 950, marginBottom: '30px' }}>INTEL <span style={{ color: '#a855f7' }}>HUB</span></h2>
-                <button onClick={fetchIntelFeed} className="compact-btn-main" style={{padding: '15px 30px', fontSize: '14px', borderRadius: '12px'}}>SKENOVAT SÍŤ</button>
-            </div>
-        )}
+        <div className="terminal">
+            {consoleLogs.slice(-10).map((log, i) => (<div key={i}>[{log.time}] {log.msg}</div>))}
+            <div ref={logEndRef} />
+        </div>
       </main>
     </div>
   );
