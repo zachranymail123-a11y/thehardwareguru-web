@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-// 🛡️ FIX: Použití CDN importu pro bezproblémovou kompilaci v náhledovém prostředí
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from '@supabase/supabase-js';
 import { 
   Rocket, Settings, Globe, Search, Database, CalendarClock, 
   ShoppingCart, Activity, ShieldCheck, Zap, AlertTriangle, 
@@ -13,11 +12,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V17.6 - INDEXNOW PROXY FIX (COMPILATION FIXED)
+ * GURU ULTIMATE COMMAND CENTER V17.8 - VERCEL BUILD FIX
  * Cesta: src/app/admin/page.js
- * 🛡️ FIX: Volání IndexNow přesměrováno na lokální proxy '/api/indexnow',
- * což eliminuje CORS blokaci prohlížečem (NetworkError).
- * 🛡️ COMPILATION FIX: Supabase import upraven pro běh v tomto prostředí.
+ * 🛡️ FIX: Import Supabase byl vrácen na standardní NPM balíček '@supabase/supabase-js'.
+ * Vercel (Webpack) neumí nativně kompilovat URL importy (https://esm.sh/...), 
+ * proto předchozí build selhal. Nyní je vše připraveno pro bezchybný deploy.
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
