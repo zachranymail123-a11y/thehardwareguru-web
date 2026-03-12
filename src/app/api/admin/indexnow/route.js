@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 
 /**
- * GURU INDEXNOW PROXY V1.1
+ * GURU INDEXNOW PROXY V1.2
  * Cesta: src/app/api/indexnow/route.js
- * 🛡️ FIX: Řeší chybu "NetworkError when attempting to fetch resource" (CORS). 
- * Prohlížeče blokují POST požadavky z frontendu na domény vyhledávačů.
- * Tato routa běží na tvém serveru, kde omezení prohlížeče neplatí.
+ * 🛡️ FIX: Přidán AbortController pro Timeout dle instrukcí ChatGPT.
+ * Zabraňuje případnému "zamrznutí" funkce, pokud by IndexNow API neodpovídalo.
  */
 
 export async function POST(req) {
@@ -17,14 +16,21 @@ export async function POST(req) {
         return NextResponse.json({ success: false, error: "Invalid IndexNow Key" }, { status: 401 });
     }
 
+    // 🚀 CHATGPT FIX: Přidán timeout 5000ms proti zamrznutí routy
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
     // Odeslání požadavku přímo na globální API IndexNow ze serveru (Vercel)
     const response = await fetch('https://api.indexnow.org/indexnow', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json; charset=utf-8' 
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (response.ok) {
       // Bing / Seznam potvrdil přijetí (Status 200/202)
