@@ -1,8 +1,8 @@
 /**
- * GURU ROBOTS ENGINE V2.0
+ * GURU ROBOTS ENGINE V2.1
  * Cesta: src/app/robots.txt/route.js
  * 🚀 CÍL: Perfektní indexace, eliminace duplicit a ochrana před AI crawlery.
- * 🛡️ FIX: Zahrnuje Cache-Control pro okamžité a stabilní servírování Googlebotu a přidává Sitemapu natvrdo.
+ * 🛡️ FIX: Zahrnuje Cache-Control a přidává Sitemapu i RSS Feed discovery pro Googlebot.
  */
 
 export async function GET() {
@@ -22,6 +22,10 @@ Disallow: /*?*
 
 # Speciální pravidla pro sitemapy (Kritické pro GSC)
 Sitemap: https://thehardwareguru.cz/sitemap.xml
+
+# RSS Discovery (Zajišťuje nejrychlejší objevování nových URL přes Google Feed crawler)
+Feed: https://thehardwareguru.cz/rss.xml
+Feed: https://thehardwareguru.cz/rss-comparisons.xml
 
 # --- AI & SCRAPER PROTECTION ---
 # Zákaz pro AI boty, kteří těží data bez návštěvnosti
