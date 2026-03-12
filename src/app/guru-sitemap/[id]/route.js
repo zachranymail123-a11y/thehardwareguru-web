@@ -1,10 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - CHUNK GENERATOR V29.0 (100% DYNAMIC GAMES)
+ * GURU SEO ENGINE - CHUNK GENERATOR V30.0 (FAIL-SAFE EDITION)
  * Cesta: src/app/guru-sitemap/[id]/route.js
- * 🛡️ FIX: CPU a GPU sekce nyní tahají seznam her přímo z tabulky 'games'. 
- * Jakákoliv nová hra přidána v administraci se automaticky propíše do sitemapy bez nutnosti úpravy kódu.
+ * 🛡️ FIX 1: Řazení CPU pro chunky matice probíhá podle jména ('name'), aby systém nikdy nespadl na chybějícím indexu výkonu.
+ * 🛡️ FIX 2: Přidána safeDate() funkce chránící generátor před pádem kvůli chybným datům v DB (Invalid time value).
  */
 
 export const revalidate = 86400; 
@@ -17,6 +17,12 @@ const baseUrl = 'https://thehardwareguru.cz';
 const escapeXml = (str) => str ? str.replace(/[<>&'"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[c])) : '';
 const slugify = (text) => text?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '').replace(/\-+/g, '-').replace(/^-+|-+$/g, '').trim();
 const cleanGpuSlug = (s, n) => s || slugify(n).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
+
+// 🛡️ Bezpečný převod data proti pádům (RangeError: Invalid time value)
+const safeDate = (dateStr) => {
+    if (!dateStr) return null;
+    try { return new Date(dateStr).toISOString(); } catch(e) { return null; }
+};
 
 export async function GET(req, props) {
     const params = await props.params;
@@ -41,14 +47,13 @@ export async function GET(req, props) {
         } else if (type === 'posts') {
             const { data } = await supabase.from('posts').select('slug, created_at');
             data?.forEach(p => {
-                const d = p.created_at ? new Date(p.created_at).toISOString() : null;
+                const d = safeDate(p.created_at);
                 if (p.slug) {
                     routes.push({ url: `${baseUrl}/clanky/${p.slug}`, lastmod: d, priority: '0.9', changefreq: 'weekly' });
                     routes.push({ url: `${baseUrl}/en/clanky/${p.slug}`, lastmod: d, priority: '0.8', changefreq: 'weekly' });
                 }
             });
         } else if (type === 'cpu') {
-            // 🚀 GURU FIX: Plně dynamické načítání her i pro CPU profily
             const [cpusRes, gamesRes] = await Promise.all([
                 supabase.from('cpus').select('name, slug, created_at'),
                 supabase.from('games').select('slug')
@@ -59,7 +64,7 @@ export async function GET(req, props) {
 
             data?.forEach(c => {
                 const s = c.slug || slugify(c.name);
-                const d = c.created_at ? new Date(c.created_at).toISOString() : null;
+                const d = safeDate(c.created_at);
                 routes.push({ url: `${baseUrl}/cpu/${s}`, lastmod: d, priority: '0.9', changefreq: 'monthly' });
                 routes.push({ url: `${baseUrl}/en/cpu/${s}`, lastmod: d, priority: '0.8', changefreq: 'monthly' });
                 routes.push({ url: `${baseUrl}/cpu-performance/${s}`, lastmod: d, priority: '0.8', changefreq: 'monthly' });
@@ -70,7 +75,6 @@ export async function GET(req, props) {
                 });
             });
         } else if (type === 'gpu') {
-            // 🚀 GURU FIX: Plně dynamické načítání her i pro GPU profily
             const [gpusRes, gamesRes] = await Promise.all([
                 supabase.from('gpus').select('name, slug, created_at'),
                 supabase.from('games').select('slug')
@@ -81,7 +85,7 @@ export async function GET(req, props) {
 
             data?.forEach(g => {
                 const s = cleanGpuSlug(g.slug, g.name);
-                const d = g.created_at ? new Date(g.created_at).toISOString() : null;
+                const d = safeDate(g.created_at);
                 routes.push({ url: `${baseUrl}/gpu/${s}`, lastmod: d, priority: '0.9', changefreq: 'monthly' });
                 routes.push({ url: `${baseUrl}/en/gpu/${s}`, lastmod: d, priority: '0.8', changefreq: 'monthly' });
                 routes.push({ url: `${baseUrl}/gpu-performance/${s}`, lastmod: d, priority: '0.8', changefreq: 'monthly' });
@@ -97,12 +101,12 @@ export async function GET(req, props) {
                 supabase.from('gpu_duels').select('slug, slug_en, created_at')
             ]);
             cpuDuels.data?.forEach(d => {
-                const dt = d.created_at ? new Date(d.created_at).toISOString() : null;
+                const dt = safeDate(d.created_at);
                 if (d.slug) routes.push({ url: `${baseUrl}/cpuvs/${d.slug}`, lastmod: dt, priority: '0.7', changefreq: 'monthly' });
                 if (d.slug_en) routes.push({ url: `${baseUrl}/en/cpuvs/${d.slug_en}`, lastmod: dt, priority: '0.6', changefreq: 'monthly' });
             });
             gpuDuels.data?.forEach(d => {
-                const dt = d.created_at ? new Date(d.created_at).toISOString() : null;
+                const dt = safeDate(d.created_at);
                 if (d.slug) routes.push({ url: `${baseUrl}/gpuvs/${d.slug}`, lastmod: dt, priority: '0.7', changefreq: 'monthly' });
                 if (d.slug_en) routes.push({ url: `${baseUrl}/en/gpuvs/${d.slug_en}`, lastmod: dt, priority: '0.6', changefreq: 'monthly' });
             });
@@ -112,12 +116,12 @@ export async function GET(req, props) {
                 supabase.from('gpu_upgrades').select('slug, slug_en, created_at')
             ]);
             cpuUpg.data?.forEach(u => {
-                const dt = u.created_at ? new Date(u.created_at).toISOString() : null;
+                const dt = safeDate(u.created_at);
                 if (u.slug) routes.push({ url: `${baseUrl}/cpu-upgrade/${u.slug}`, lastmod: dt, priority: '0.7', changefreq: 'monthly' });
                 if (u.slug_en) routes.push({ url: `${baseUrl}/en/cpu-upgrade/${u.slug_en}`, lastmod: dt, priority: '0.6', changefreq: 'monthly' });
             });
             gpuUpg.data?.forEach(u => {
-                const dt = u.created_at ? new Date(u.created_at).toISOString() : null;
+                const dt = safeDate(u.created_at);
                 if (u.slug) routes.push({ url: `${baseUrl}/gpu-upgrade/${u.slug}`, lastmod: dt, priority: '0.7', changefreq: 'monthly' });
                 if (u.slug_en) routes.push({ url: `${baseUrl}/en/gpu-upgrade/${u.slug_en}`, lastmod: dt, priority: '0.6', changefreq: 'monthly' });
             });
@@ -131,8 +135,15 @@ export async function GET(req, props) {
             const limit = 2; 
             const offset = (chunkId - 1) * limit;
 
-            const { data: cpus } = await supabase.from('cpus').select('name, slug').order('performance_index', { ascending: false }).range(offset, offset + limit - 1);
+            // 🚀 GURU FIX: Bezpečnější řazení pomocí "name" (zabraní pádu pokud chybí performance_index)
+            const { data: cpus, error: cpuErr } = await supabase
+                .from('cpus')
+                .select('name, slug')
+                .order('name') 
+                .range(offset, offset + limit - 1);
             
+            if (cpuErr) console.error("SITEMAP DB ERROR:", cpuErr);
+
             if (!cpus || cpus.length === 0) {
                 return new Response(emptyXml, { headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, s-maxage=86400' } });
             }
@@ -192,6 +203,7 @@ export async function GET(req, props) {
         });
 
     } catch (err) {
+        console.error("SITEMAP CATCH ERROR:", err);
         return new Response(emptyXml, { headers: { 'Content-Type': 'application/xml; charset=utf-8' } });
     }
 }
