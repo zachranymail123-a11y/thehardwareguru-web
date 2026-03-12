@@ -869,6 +869,30 @@ export default function AdminApp() {
                       </button>
                     </form>
                 </div>
+                
+                {/* 🚀 TRENDS WIDGET U FORMULÁŘE */}
+                <div style={{ width: '380px', background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #eab30833', position: 'sticky', top: '40px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <h3 style={{ fontSize: '13px', fontWeight: 950, color: '#eab308' }}>🔥 TRENDY HRY K PŘIDÁNÍ</h3>
+                        <button onClick={fetchTrendingGames} style={{ background: 'transparent', border: 'none', color: '#4b5563', cursor: 'pointer' }}><RefreshCw size={14} className={trendsLoading ? 'animate-spin' : ''}/></button>
+                    </div>
+                    {trendingGames.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {trendingGames.map((game, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#000', padding: '12px', borderRadius: '12px', border: '1px solid #ffffff08' }}>
+                                    <span style={{ color: '#eab308', fontWeight: 900 }}>#{i+1}</span>
+                                    <span style={{ flex: 1, fontWeight: 700, fontSize: '13px' }}>{game}</span>
+                                    <button type="button" onClick={() => { 
+                                        setDbTab('games');
+                                        setDbFormData(prev => ({ ...prev, name: game }));
+                                    }} style={{ padding: '8px 12px', borderRadius: '8px', fontSize: '10px', color: '#000', background: '#66fcf1', border: 'none', cursor: 'pointer', fontWeight: '950' }}>PŘEDVYPLNIT</button>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p style={{ color: '#4b5563', fontSize: '12px' }}>{trendsLoading ? 'Skenuji...' : 'Zde se ukážou hry, které ještě nemáš v DB. Klikni na refresh.'}</p>
+                    )}
+                </div>
             </div>
           </div>
         )}
