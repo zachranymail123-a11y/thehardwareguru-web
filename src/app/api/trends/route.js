@@ -36,7 +36,13 @@ async function getTrendingKeywords() {
       signal: AbortSignal.timeout(5000)
     })
 
+    -- 🛡️ GURU FIX: Zabráníme stahování chybových stránek, pokud nás Google dočasně zablokuje.
+    if (!res.ok) continue;
+
     const xml = await res.text()
+
+    -- 🛡️ GURU FIX: Ujistíme se, že čteme validní RSS XML a ne HTML stránku s chybou 404.
+    if (!xml.includes('<rss')) continue;
 
     const titles = xml.match(/<title>(.*?)<\/title>/g)
 
@@ -44,7 +50,8 @@ async function getTrendingKeywords() {
 
       const title = t.replace(/<\/?title>/g,'').trim()
 
-      if (title !== 'Daily Search Trends' && title.length > 2) {
+      -- Ignorujeme defaultní tagy a pro jistotu odfiltrujeme i zbytky "404"
+      if (title !== 'Daily Search Trends' && title.length > 2 && !title.includes('404')) {
         keywords.add(title)
       }
 
@@ -81,6 +88,9 @@ async function getIGDBToken() {
 
 async function igdbIsGame(name, token) {
 
+  -- Ochrana: Odstranění uvozovek z názvu, aby nespadl dotaz na IGDB
+  const safeName = name.replace(/"/g, '');
+
   const res = await fetch(
     'https://api.igdb.com/v4/games',
     {
@@ -89,7 +99,7 @@ async function igdbIsGame(name, token) {
         'Client-ID':process.env.TWITCH_CLIENT_ID,
         'Authorization':`Bearer ${token}`
       },
-      body:`search "${name}"; fields name; limit 1;`,
+      body:`search "${safeName}"; fields name; limit 1;`,
       signal: AbortSignal.timeout(5000)
     }
   )
@@ -113,6 +123,11 @@ export async function GET() {
     const existing = new Set(games?.map(g => g.slug) || [])
 
     const keywords = await getTrendingKeywords()
+    
+    -- Žádný heuristický fallback. Pokud Google Trends nevrátí data, zůstane prostě prázdno.
+    if (keywords.length === 0) {
+      return NextResponse.json({ success: true, data: [] })
+    }
 
     const token = await getIGDBToken()
 
