@@ -1,9 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - CHUNK GENERATOR V28.0 (ANTI-VERCEL-404 EDITION)
+ * GURU SEO ENGINE - CHUNK GENERATOR V29.0 (100% DYNAMIC GAMES)
  * Cesta: src/app/guru-sitemap/[id]/route.js
- * 🛡️ FIX: Cesta přejmenována z /sitemap/ na /guru-sitemap/ pro obejití bloku.
+ * 🛡️ FIX: CPU a GPU sekce nyní tahají seznam her přímo z tabulky 'games'. 
+ * Jakákoliv nová hra přidána v administraci se automaticky propíše do sitemapy bez nutnosti úpravy kódu.
  */
 
 export const revalidate = 86400; 
@@ -21,13 +22,14 @@ export async function GET(req, props) {
     const params = await props.params;
     const id = params.id; 
 
+    const emptyXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`;
+
     if (!id || !id.endsWith('.xml')) {
-        return new Response('Not found', { status: 404 });
+        return new Response(emptyXml, { headers: { 'Content-Type': 'application/xml; charset=utf-8' } });
     }
 
     const type = id.replace('.xml', '');
     const routes = [];
-    const emptyXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`;
 
     try {
         if (type === 'pages') {
@@ -46,8 +48,15 @@ export async function GET(req, props) {
                 }
             });
         } else if (type === 'cpu') {
-            const { data } = await supabase.from('cpus').select('name, slug, created_at');
-            const games = ['cyberpunk-2077', 'warzone', 'starfield', 'cs2'];
+            // 🚀 GURU FIX: Plně dynamické načítání her i pro CPU profily
+            const [cpusRes, gamesRes] = await Promise.all([
+                supabase.from('cpus').select('name, slug, created_at'),
+                supabase.from('games').select('slug')
+            ]);
+            const data = cpusRes.data;
+            const dbGames = gamesRes.data?.map(g => g.slug).filter(Boolean) || [];
+            const games = dbGames.length > 0 ? dbGames : ['cyberpunk-2077', 'warzone', 'starfield', 'cs2'];
+
             data?.forEach(c => {
                 const s = c.slug || slugify(c.name);
                 const d = c.created_at ? new Date(c.created_at).toISOString() : null;
@@ -61,8 +70,15 @@ export async function GET(req, props) {
                 });
             });
         } else if (type === 'gpu') {
-            const { data } = await supabase.from('gpus').select('name, slug, created_at');
-            const games = ['cyberpunk-2077', 'warzone', 'starfield', 'cs2'];
+            // 🚀 GURU FIX: Plně dynamické načítání her i pro GPU profily
+            const [gpusRes, gamesRes] = await Promise.all([
+                supabase.from('gpus').select('name, slug, created_at'),
+                supabase.from('games').select('slug')
+            ]);
+            const data = gpusRes.data;
+            const dbGames = gamesRes.data?.map(g => g.slug).filter(Boolean) || [];
+            const games = dbGames.length > 0 ? dbGames : ['cyberpunk-2077', 'warzone', 'starfield', 'cs2'];
+
             data?.forEach(g => {
                 const s = cleanGpuSlug(g.slug, g.name);
                 const d = g.created_at ? new Date(g.created_at).toISOString() : null;
