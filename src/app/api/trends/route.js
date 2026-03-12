@@ -22,106 +22,117 @@ const slugify = (text) =>
     .replace(/^-+|-+$/g,'')
 
 async function getTrendingKeywords() {
-
   const regions = ['CZ','US']
   const keywords = new Set()
 
   for (const geo of regions) {
+    try {
+        const rss = `https://trends.google.com/trends/trendingsearches/daily/rss?geo=${geo}`
+        const res = await fetch(rss, {
+          cache:'no-store',
+          signal: AbortSignal.timeout(5000)
+        })
 
-    const rss =
-      `https://trends.google.com/trends/trendingsearches/daily/rss?geo=${geo}`
+        if (!res.ok) continue;
 
-    const res = await fetch(rss,{
-      cache:'no-store',
-      signal: AbortSignal.timeout(5000)
-    })
+        const xml = await res.text()
+        const titles = xml.match(/<title>(.*?)<\/title>/g)
 
-    const xml = await res.text()
-
-    const titles = xml.match(/<title>(.*?)<\/title>/g)
-
-    titles?.forEach(t => {
-
-      const title = t.replace(/<\/?title>/g,'').trim()
-
-      if (title !== 'Daily Search Trends' && title.length > 2) {
-        keywords.add(title)
-      }
-
-    })
-
+        titles?.forEach(t => {
+          const title = t.replace(/<\/?title>/g,'').trim()
+          if (title !== 'Daily Search Trends' && title.length > 2) {
+            keywords.add(title)
+          }
+        })
+    } catch (e) {
+        console.error(`Google Trends Error for ${geo}:`, e.message);
+    }
   }
 
   return Array.from(keywords)
 }
 
 async function getIGDBToken() {
+  const clientId = process.env.TWITCH_CLIENT_ID;
+  const clientSecret = process.env.TWITCH_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+      throw new Error('CHYBÍ TWITCH_CLIENT_ID NEBO TWITCH_CLIENT_SECRET V PROSTŘEDÍ VERCELU! (Nezapomeň udělat redeploy)');
+  }
 
   const res = await fetch(
     'https://id.twitch.tv/oauth2/token',
     {
-      method:'POST',
-      body:new URLSearchParams({
-        client_id:process.env.TWITCH_CLIENT_ID,
-        client_secret:process.env.TWITCH_CLIENT_SECRET,
-        grant_type:'client_credentials'
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        grant_type: 'client_credentials'
       }),
       signal: AbortSignal.timeout(5000)
     }
   )
 
   if (!res.ok) {
-    throw new Error('Failed to get IGDB token')
+    const errText = await res.text();
+    throw new Error(`Twitch Auth Error (${res.status}): ${errText}`);
   }
 
   const json = await res.json()
-
   return json.access_token
 }
 
 async function igdbIsGame(name, token) {
+  // Ochrana: Odstranění uvozovek, aby se nerozbila IGDB search query
+  const safeName = name.replace(/"/g, '').replace(/\\/g, '');
 
   const res = await fetch(
     'https://api.igdb.com/v4/games',
     {
       method:'POST',
       headers:{
-        'Client-ID':process.env.TWITCH_CLIENT_ID,
-        'Authorization':`Bearer ${token}`
+        'Accept': 'application/json',
+        'Client-ID': process.env.TWITCH_CLIENT_ID,
+        'Authorization': `Bearer ${token}`
       },
-      body:`search "${name}"; fields name; limit 1;`,
+      body: `search "${safeName}"; fields name; limit 1;`,
       signal: AbortSignal.timeout(5000)
     }
   )
 
-  if (!res.ok) return false
+  if (!res.ok) {
+     console.error("IGDB Query Error:", await res.text());
+     return false;
+  }
 
   const data = await res.json()
-
   return Array.isArray(data) && data.length > 0
 }
 
 export async function GET() {
-
   try {
-
-    const { data:games, error } =
-      await supabase.from('games').select('slug')
-
+    const { data:games, error } = await supabase.from('games').select('slug')
     if (error) throw error
 
     const existing = new Set(games?.map(g => g.slug) || [])
 
+    // 1. Získání klíčových slov z Google
     const keywords = await getTrendingKeywords()
+    if (keywords.length === 0) {
+        throw new Error('Google Trends nevrátil žádná data. Možná blokuje Vercel IP.');
+    }
 
+    // 2. Získání tokenu z Twitche (s detailní chybou, pokud selže)
     const token = await getIGDBToken()
 
     const results = []
 
+    // 3. Filtrace přes IGDB
     for (const keyword of keywords) {
-
       const slug = slugify(keyword)
-
       if (existing.has(slug)) continue
 
       const isGame = await igdbIsGame(keyword, token)
@@ -131,21 +142,18 @@ export async function GET() {
       }
 
       if (results.length >= 5) break
-
     }
 
     return NextResponse.json({
-      success:true,
-      data:results
+      success: true,
+      data: results
     })
 
   } catch(e) {
-
+    console.error("TRENDS API CRASH:", e.message);
     return NextResponse.json({
-      success:false,
-      error:e.message
-    },{status:500})
-
+      success: false,
+      error: e.message
+    }, { status: 500 })
   }
-
 }
