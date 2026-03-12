@@ -20,16 +20,18 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - DETAIL V117.1 (SEO GOLD FIX)
+ * GURU GPU DUELS ENGINE - DETAIL V117.6 (FINAL METADATA & OG FIX)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * 🛡️ FIX 1: Starý regex vyhledávač kompletně nahrazen za náš 3-Tier Slug systém!
  * 🛡️ FIX 2: Pozitivní matematika pro souhrn FPS (vždy ukazuje % náskok vítěze).
- * 🛡️ FIX 3: Imunní vůči parametrům slug vs gpu a plný bypass cache.
- * 🛡️ FIX 4: Zlatý SEO Standard s ItemList, Offers a FAQPage (dle instrukcí ChatGPT).
+ * 🛡️ FIX 3: Zlatý SEO Standard - Product schema přesunuto na ROOT úroveň JSON-LD!
+ * 🛡️ FIX 4: Canonical doména v metadata používá relativní path pro prevenci redirect loopů.
+ * 🛡️ FIX 5: Synchronizace cache strategií ('force-cache' u fetchů společně s revalidate 3600).
+ * 🛡️ FIX 6: Doplněna chybějící 'description' a rozšířen 'openGraph' přesně dle ChatGPT.
  */
 
 export const runtime = "nodejs";
-export const revalidate = 0; 
+export const revalidate = 3600; 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -56,12 +58,12 @@ const findGpuBySlug = async (gpuSlug) => {
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
 
   try {
-      const res1 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${gpuSlug}&limit=1`, { headers, cache: 'no-store' });
+      const res1 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${gpuSlug}&limit=1`, { headers, cache: 'force-cache' });
       if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
   } catch(e) {}
 
   try {
-      const res2 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=ilike.*${gpuSlug}*&order=slug.asc`, { headers, cache: 'no-store' });
+      const res2 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=ilike.*${gpuSlug}*&order=slug.asc`, { headers, cache: 'force-cache' });
       if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
   } catch(e) {}
 
@@ -70,7 +72,7 @@ const findGpuBySlug = async (gpuSlug) => {
       const tokens = cleanString.split(/\s+/).filter(t => t.length > 0);
       if (tokens.length > 0) {
           const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
-          const res3 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&and=(${conditions})&order=name.asc`, { headers, cache: 'no-store' });
+          const res3 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&and=(${conditions})&order=name.asc`, { headers, cache: 'force-cache' });
           if (res3.ok) { const data3 = await res3.json(); return data3?.[0] || null; }
       }
   } catch(e) {}
@@ -82,7 +84,7 @@ const getSimilarDuels = async (gpuId, currentSlug) => {
     try {
         const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=title_cs,title_en,slug,slug_en&or=(gpu_a_id.eq.${gpuId},gpu_b_id.eq.${gpuId})&slug=neq.${currentSlug}&limit=4`, {
             headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-            cache: 'no-store'
+            cache: 'force-cache'
         });
         if (!res.ok) return [];
         return await res.json();
@@ -136,7 +138,7 @@ const getDuelData = cache(async (rawSlug) => {
   const selectQuery = `*,gpuA:gpus!gpu_a_id(*,game_fps!gpu_id(*)),gpuB:gpus!gpu_b_id(*,game_fps!gpu_id(*))`;
   try {
       const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${cleanSlug}&limit=1`, {
-          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, cache: 'no-store'
+          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, cache: 'force-cache'
       });
       if (!res.ok) return null;
       const data = await res.json();
@@ -158,11 +160,34 @@ export async function generateMetadata({ params }) {
     ? (isEn ? `${winner.name} vs ${loser.name} – ${diff}% Faster (Benchmark)` : `${winner.name} vs ${loser.name} – benchmark a FPS (+${diff} % výkon)`)
     : (isEn ? `${gpuA.name} vs ${gpuB.name} – Comparison` : `${gpuA.name} vs ${gpuB.name} – srovnání výkonu`);
 
+  const fullTitle = `${title} | The Hardware Guru`;
+  
+  // 🚀 GURU FIX: Přidána description a fallbacky (SEO Optimalizace)
+  const description = isEn
+    ? (duel.seo_description_en || `Detailed performance and specs comparison between ${gpuA.name} and ${gpuB.name}.`)
+    : (duel.seo_description_cs || `Detailní srovnání výkonu a parametrů mezi ${gpuA.name} a ${gpuB.name}.`);
+
   return { 
-    title: `${title} | The Hardware Guru`, 
+    title: fullTitle, 
+    description: description,
     alternates: { 
-      canonical: `https://www.thehardwareguru.cz/gpuvs/${duel.slug}`,
-      languages: { "en": `https://www.thehardwareguru.cz/en/gpuvs/${(duel.slug_en || `en-${duel.slug}`).replace(/^en-en-/,'en-')}`, "cs": `https://www.thehardwareguru.cz/gpuvs/${duel.slug}` }
+      canonical: `/gpuvs/${duel.slug}`,
+      languages: { 
+        "en": `/en/gpuvs/${(duel.slug_en || `en-${duel.slug}`).replace(/^en-en-/,'en-')}`, 
+        "cs": `/gpuvs/${duel.slug}` 
+      }
+    },
+    robots: {
+      index: true,
+      follow: true
+    },
+    // 🚀 GURU FIX: Obohacený openGraph objekt pro dokonalý sociální snippet
+    openGraph: {
+      type: "article",
+      url: `/gpuvs/${duel.slug}`,
+      title: fullTitle,
+      description: description,
+      siteName: "The Hardware Guru"
     }
   };
 }
@@ -172,7 +197,7 @@ export default async function GpuDuelDetail({ params }) {
   const isEn = rawSlug.startsWith('en-');
   const duel = await getDuelData(rawSlug);
   
-  if (!duel) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>DUEL NENALEZEN</div>;
+  if (!duel) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>DUEL NENALEZENO</div>;
 
   const { gpuA, gpuB } = duel;
   const similarPromise = gpuA?.id ? getSimilarDuels(gpuA.id, duel.slug) : Promise.resolve([]);
@@ -215,13 +240,20 @@ export default async function GpuDuelDetail({ params }) {
   const safeSlugB = gpuB.slug || slugify(gpuB.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
   const upgradeUrl = winner && loser ? `/${isEn ? 'en/' : ''}gpu-upgrade/${slugify(loser.name)}-to-${slugify(winner.name)}` : null;
 
-  // 🚀 GURU FIX: Zlatý SEO Standard s ItemList, Offers a FAQPage (dle instrukcí ChatGPT)
+  // 🚀 GURU FIX: Centralizovaná baseUrl pro bezpečné a absolutní JSON-LD URLs
+  const baseUrl = "https://thehardwareguru.cz";
+
+  // 🚀 GURU FIX: Zlatý SEO Standard s ItemList, Offers a FAQPage rozdělený na kořenovou úroveň
   const productSchemaA = {
+    "@context": "https://schema.org",
     "@type": "Product",
     "name": normalizeName(gpuA.name),
-    "image": "https://www.thehardwareguru.cz/logo.png",
+    "image": `${baseUrl}/logo.png`,
     "description": isEn ? `Performance analysis and benchmarks for ${normalizeName(gpuA.name)}` : `Analýza výkonu a benchmarky pro ${normalizeName(gpuA.name)}`,
     "brand": { "@type": "Brand", "name": gpuA.vendor || "Hardware" },
+    "category": "GPU",
+    "sku": gpuA.slug || safeSlugA,
+    "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu-performance/${safeSlugA}`,
     "aggregateRating": {
       "@type": "AggregateRating",
       "ratingValue": 4.8,
@@ -234,16 +266,20 @@ export default async function GpuDuelDetail({ params }) {
       "priceCurrency": "USD",
       "price": gpuA.release_price_usd || 499,
       "availability": "https://schema.org/InStock",
-      "url": `https://www.thehardwareguru.cz/${isEn ? 'en/' : ''}gpu-performance/${safeSlugA}`
+      "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu-performance/${safeSlugA}`
     }
   };
 
   const productSchemaB = {
+    "@context": "https://schema.org",
     "@type": "Product",
     "name": normalizeName(gpuB.name),
-    "image": "https://www.thehardwareguru.cz/logo.png",
+    "image": `${baseUrl}/logo.png`,
     "description": isEn ? `Performance analysis and benchmarks for ${normalizeName(gpuB.name)}` : `Analýza výkonu a benchmarky pro ${normalizeName(gpuB.name)}`,
     "brand": { "@type": "Brand", "name": gpuB.vendor || "Hardware" },
+    "category": "GPU",
+    "sku": gpuB.slug || safeSlugB,
+    "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu-performance/${safeSlugB}`,
     "aggregateRating": {
       "@type": "AggregateRating",
       "ratingValue": 4.7,
@@ -256,7 +292,7 @@ export default async function GpuDuelDetail({ params }) {
       "priceCurrency": "USD",
       "price": gpuB.release_price_usd || 399,
       "availability": "https://schema.org/InStock",
-      "url": `https://www.thehardwareguru.cz/${isEn ? 'en/' : ''}gpu-performance/${safeSlugB}`
+      "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu-performance/${safeSlugB}`
     }
   };
 
@@ -264,8 +300,22 @@ export default async function GpuDuelDetail({ params }) {
     "@context": "https://schema.org",
     "@type": "ItemList",
     "itemListElement": [
-      productSchemaA,
-      productSchemaB
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "item": {
+           "@id": productSchemaA.url,
+           "name": productSchemaA.name
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "item": {
+           "@id": productSchemaB.url,
+           "name": productSchemaB.name
+        }
+      }
     ]
   };
 
@@ -300,7 +350,9 @@ export default async function GpuDuelDetail({ params }) {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
-      {/* 🚀 INJEKCE JSON-LD DO STRÁNKY (ITEM LIST + FAQ) */}
+      {/* 🚀 INJEKCE JSON-LD DO STRÁNKY (SEPARÁTNÍ PRODUCT ROOT DLE GOOGLE BEST PRACTICES) */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(productSchemaA) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(productSchemaB) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(itemListSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
       
