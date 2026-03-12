@@ -7,6 +7,13 @@ import SupportWidget from '../components/SupportWidget';
 import Navbar from '../components/Navbar'; 
 import { Analytics } from '@vercel/analytics/react';
 
+/**
+ * GURU ROOT LAYOUT V2.5 (SEO CANONICAL & HREFLANG FIX)
+ * 🛡️ FIX 1: Absolutní Canonical URL namísto relativních (dle ChatGPT).
+ * 🛡️ FIX 2: Přidán x-default do hreflang clusteru pro globální SEO signál.
+ * 🛡️ FIX 3: Sjednocena doména na https://thehardwareguru.cz (bez www).
+ */
+
 export const metadata = {
   title: {
     default: 'The Hardware Guru | Tech, Gaming & AI',
@@ -15,18 +22,21 @@ export const metadata = {
 
   description: 'Exkluzivní novinky ze světa hardwaru, recenze her a streamy s unikátní AI. Tvůj průvodce moderní technologií.',
 
-  // ✅ sjednocená canonical doména
+  // ✅ Sjednocená základní doména bez www
   metadataBase: new URL('https://thehardwareguru.cz'),
 
   alternates: {
-    canonical: '/',
+    // 🚀 GURU SEO FIX: Použití absolutních URL zamezí chybám v GSC
+    canonical: 'https://thehardwareguru.cz',
     languages: {
-      cs: '/',
-      en: '/en'
+      'cs': 'https://thehardwareguru.cz',
+      'en': 'https://thehardwareguru.cz/en',
+      // 🚀 GURU SEO FIX: x-default je kritický pro správnou indexaci clusteru
+      'x-default': 'https://thehardwareguru.cz'
     }
   },
 
-  // ✅ lepší crawl pro Google
+  // ✅ Lepší crawl pro Google
   robots: {
     index: true,
     follow: true,
