@@ -12,11 +12,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V17.5 - INDEXNOW INTEGRATION
+ * GURU ULTIMATE COMMAND CENTER V17.6 - INDEXNOW PROXY FIX
  * Cesta: src/app/admin/page.js
- * 🛡️ FIX: Odstraněno require() a nahrazeno standardním ESM importem dle pravidel ChatGPT.
- * 🚀 NEW: Přidána funkce IndexNow pro okamžitou indexaci (Bing, Seznam).
- * 🛡️ STAV: Zachována veškerá původní logika a design z V16.1.
+ * 🛡️ FIX: Volání IndexNow přesměrováno na lokální proxy '/api/indexnow',
+ * což eliminuje CORS blokaci prohlížečem (NetworkError).
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -190,7 +189,7 @@ export default function AdminApp() {
   const triggerIndexNow = async () => {
     if (!supabase) return;
     setIndexLoading(true);
-    addLog("Spouštím globální indexaci přes IndexNow...", "warning");
+    addLog("Spouštím globální indexaci přes interní proxy...", "warning");
 
     try {
       const [posts, cpus, gpus] = await Promise.all([
@@ -211,9 +210,10 @@ export default function AdminApp() {
       cpus.data?.forEach(c => c.slug && urlList.push(`https://${BASE_URL}/cpu/${c.slug}`));
       gpus.data?.forEach(g => g.slug && urlList.push(`https://${BASE_URL}/gpu/${g.slug}`));
 
-      const response = await fetch('https://api.indexnow.org/indexnow', {
+      // 🛡️ GURU FIX: Voláme vnitřní API routu /api/indexnow
+      const response = await fetch('/api/indexnow', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           host: BASE_URL,
           key: INDEXNOW_KEY,
@@ -222,11 +222,13 @@ export default function AdminApp() {
         })
       });
 
-      if (response.ok) {
+      const resData = await response.json();
+
+      if (response.ok && resData.success) {
         setDbMessage({ type: 'success', text: `IndexNow: ${urlList.length} adres odesláno k okamžité indexaci!` });
         addLog(`IndexNow úspěšně odpálil ${urlList.length} URL do Bingu a Seznamu.`, 'success');
       } else {
-        throw new Error(`API Error: ${response.status}`);
+        throw new Error(resData.error || `API Error: ${response.status}`);
       }
     } catch (err) {
       setDbMessage({ type: 'error', text: `IndexNow selhal: ${err.message}` });
@@ -481,6 +483,17 @@ export default function AdminApp() {
       fetchAndScanData();
     } catch (err) { addLog(`KRITICKÁ CHYBA: ${err.message}`, 'error'); }
   };
+
+  if (!isAuthenticated) return (
+    <div style={{ minHeight: '100vh', background: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+      <form onSubmit={handleLogin} style={{ background: '#111318', padding: '50px', borderRadius: '30px', border: '1px solid #eab30866', textAlign: 'center', maxWidth: '400px', width: '100%' }}>
+        <Lock size={50} color="#eab308" style={{ margin: '0 auto 20px' }} />
+        <h1>GURU VELÍN</h1>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Guru heslo..." style={{ width: '100%', padding: '15px', borderRadius: '12px', background: '#000', border: '1px solid #333', color: '#fff', marginBottom: '20px', textAlign: 'center' }} />
+        <button type="submit" style={{ width: '100%', padding: '15px', background: '#eab308', color: '#000', border: 'none', borderRadius: '12px', fontWeight: '900', cursor: 'pointer' }}>VSTOUPIT</button>
+      </form>
+    </div>
+  );
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0b0d', display: 'flex', color: '#fff', fontFamily: 'sans-serif' }}>
