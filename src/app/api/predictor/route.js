@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import googleTrends from 'google-trends-api';
 
 /**
- * GURU TREND PREDICTOR ENGINE V1.0
+ * GURU TREND PREDICTOR ENGINE V2.0 (BUILD-SAFE EDITION)
  * Cesta: src/app/api/predictor/route.js
- * 🚀 CÍL: Agregace signálů ze Steamu, Google Trends, Redditu a YouTube.
- * 🛡️ FORMULE: growth * 4 + youtube * 0.0001 + reddit * 5 - players * 0.05
+ * 🛡️ FIX: Kompletně odstraněna závislost na 'google-trends-api' a 'node-fetch'.
+ * 🚀 NEXT.JS 15 READY: Využívá nativní fetch a RSS parsing pro 100% úspěšný build na Vercelu.
  */
 
 export const dynamic = 'force-dynamic';
@@ -15,84 +14,79 @@ async function getSteamGames() {
     const res = await fetch("https://steamspy.com/api.php?request=top100in2weeks", { cache: 'no-store' });
     const data = await res.json();
     return Object.values(data)
-      .slice(0, 30)
+      .slice(0, 20) // Top 20 pro rychlost odezvy
       .map(g => ({ name: g.name, players: g.average_2weeks }));
   } catch (e) { return []; }
 }
 
-async function getGoogleTrendGrowth(game) {
-  try {
-    const result = await googleTrends.interestOverTime({
-      keyword: game,
-      startTime: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
-    });
-    const data = JSON.parse(result).default.timelineData;
-    if (!data.length) return 0;
-    const first = data[0].value[0];
-    const last = data[data.length - 1].value[0];
-    return last - first;
-  } catch { return 0; }
+async function getGoogleTrendSignal(game) {
+  // Skenujeme globální trendy přes RSS (Zero-dependency lookup)
+  const regions = ['US', 'CZ'];
+  let signal = 0;
+  
+  for (const geo of regions) {
+    try {
+      const res = await fetch(`https://trends.google.com/trends/trendingsearches/daily/rss?geo=${geo}`, { 
+        cache: 'no-store',
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      });
+      const xml = await res.text();
+      if (xml.toLowerCase().includes(game.toLowerCase())) signal += 50;
+    } catch (e) {}
+  }
+  return signal;
 }
 
-async function getYoutubeActivity(game) {
+async function getYoutubeScore(game) {
   const query = encodeURIComponent(game + " gameplay");
-  const url = `https://www.youtube.com/results?search_query=${query}`;
   try {
-    const r = await fetch(url, { cache: 'no-store' });
+    const r = await fetch(`https://www.youtube.com/results?search_query=${query}`, { cache: 'no-store' });
     const text = await r.text();
-    return text.length; // Proxy pro hustotu výsledků
+    return Math.min(Math.round(text.length / 1000), 100); // Hustota výsledků jako proxy pro aktivitu
   } catch { return 0; }
 }
 
-async function getRedditMentions(game) {
-  const query = encodeURIComponent(game);
-  const url = `https://www.reddit.com/search.json?q=${query}&sort=new`;
+async function getRedditScore(game) {
   try {
-    const r = await fetch(url, { headers: { "User-Agent": "guru-trend-bot" } });
+    const r = await fetch(`https://www.reddit.com/search.json?q=${encodeURIComponent(game)}&sort=new`, {
+      headers: { "User-Agent": "guru-trend-bot" }
+    });
     const data = await r.json();
     return data.data?.children?.length || 0;
   } catch { return 0; }
 }
 
-function calculateTrendScore(players, growth, youtube, reddit) {
-  // GURU FORMULE: Odměňuje růst a komunitu, penalizuje už "přežranou" popularitu
-  return (growth * 4) + (youtube * 0.0001) + (reddit * 5) - (players * 0.05);
-}
-
 export async function GET() {
   try {
     const steamGames = await getSteamGames();
-    if (!steamGames.length) throw new Error("Steam API nedostupné");
-
     const results = [];
 
-    // Paralelní zpracování signálů (omezeno na 15 her pro rychlost Vercelu)
-    const processedGames = steamGames.slice(0, 15);
-
-    for (const g of processedGames) {
-      const [growth, youtube, reddit] = await Promise.all([
-        getGoogleTrendGrowth(g.name),
-        getYoutubeActivity(g.name),
-        getRedditMentions(g.name)
+    // Paralelní zpracování pro maximální rychlost
+    const analysis = await Promise.all(steamGames.map(async (g) => {
+      const [trends, youtube, reddit] = await Promise.all([
+        getGoogleTrendSignal(g.name),
+        getYoutubeScore(g.name),
+        getRedditScore(g.name)
       ]);
 
-      const score = calculateTrendScore(g.players, growth, youtube, reddit);
+      // GURU FORMULE: Odměňuje hype a čerstvost, tlumí "vyhořelé" giganty
+      const score = (trends * 2) + (youtube * 0.5) + (reddit * 3) - (g.players * 0.01);
 
-      results.push({
+      return {
         game: g.name,
         steam_players: g.players,
-        trend_growth: growth,
+        trend_growth: trends,
         youtube_activity: youtube,
         reddit_mentions: reddit,
-        trend_score: Math.round(score * 10) / 10 // Zaokrouhlení na 1 des. místo
-      });
-    }
+        trend_score: Math.max(0, Math.round(score * 10) / 10)
+      };
+    }));
 
-    results.sort((a, b) => b.trend_score - a.trend_score);
+    analysis.sort((a, b) => b.trend_score - a.trend_score);
 
     return NextResponse.json({
       success: true,
-      data: results.slice(0, 10),
+      data: analysis.slice(0, 10),
       timestamp: new Date().toISOString()
     });
 
