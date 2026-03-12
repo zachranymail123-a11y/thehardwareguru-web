@@ -1,26 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU RSS ENGINE V22.6 - CHATGPT AUTHORITATIVE FIX
+ * GURU RSS ENGINE V23.0 - MAIN FEED (ARTICLES, NEWS, DEALS)
  * Cesta: src/app/rss.xml/route.js
- * 🛡️ FIX 1: Odstraněn SERVICE_ROLE_KEY pro maximální bezpečnost.
- * 🛡️ FIX 2: Content-Type změněn striktně na application/rss+xml.
- * 🛡️ FIX 3: Cache-Control upravena pro lepší práci s crawlery.
- * 🛡️ FIX 4: Přidána funkce decodeHtml proti dvojitému escapování ampersandu.
+ * 🛡️ FIX 1: revalidate = 3600 (Cache na 1 hodinu) pro optimální crawl budget.
+ * 🛡️ FIX 2: Přidán tag <generator>The Hardware Guru RSS Engine</generator>.
+ * 🛡️ FIX 3: Odstraněn programmatic obsah (přesunut do samostatného rss-comparisons.xml feedu).
  */
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 3600; // 🚀 GURU FIX: 1h Cache dle doporučení ChatGPT
 
 const baseUrl = 'https://thehardwareguru.cz';
 
-// 🚀 CHATGPT FIX: Používáme POUZE veřejný klíč, abychom zamezili riziku úniku v edge runtime
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-// 🚀 CHATGPT FIX: Dekódování HTML entit před escapováním (prevence &amp;amp;)
+// Dekódování HTML entit před escapováním (prevence &amp;amp;)
 const decodeHtml = (str) => {
   if (!str) return '';
   return str.toString().replace(/&amp;/g, '&');
@@ -41,13 +39,26 @@ const safeCDATA = (str = '') =>
 
 export async function GET() {
   try {
-    const { data: posts, error } = await supabase
+    // 🚀 Zde stahujeme pouze redakční obsah (Články, Novinky)
+    const { data: postsRes, error } = await supabase
       .from('posts')
-      .select(`id, slug, title, description, seo_description, image_url, created_at`)
+      .select('id, slug, title, description, seo_description, image_url, created_at')
       .order('created_at', { ascending: false })
-      .limit(30);
+      .limit(60);
 
     if (error) throw error;
+
+    const items = [];
+
+    postsRes?.forEach(p => {
+        items.push({
+            title: p.title || '',
+            link: `${baseUrl}/clanky/${p.slug}`,
+            desc: p.description || p.seo_description || '',
+            image: p.image_url,
+            date: p.created_at
+        });
+    });
 
     const now = new Date().toUTCString();
 
@@ -59,22 +70,22 @@ export async function GET() {
       xmlns:dc="http://purl.org/dc/elements/1.1/">\n`;
 
     xml += `<channel>\n`;
-    xml += `  <title><![CDATA[${safeCDATA('The Hardware Guru - Global Feed')}]]></title>\n`;
+    xml += `  <title><![CDATA[${safeCDATA('The Hardware Guru - Articles & News')}]]></title>\n`;
     xml += `  <link>${baseUrl}/</link>\n`;
-    xml += `  <description><![CDATA[${safeCDATA('Nejnovější HW tipy, herní slevy a GPU/CPU duely z Hardware Guru základny.')}]]></description>\n`;
+    xml += `  <description><![CDATA[${safeCDATA('Nejnovější HW tipy a herní novinky z Hardware Guru základny.')}]]></description>\n`;
     xml += `  <language>cs</language>\n`;
+    xml += `  <generator>The Hardware Guru RSS Engine</generator>\n`; // 🚀 GURU FIX: Generator Tag
+    xml += `  <ttl>60</ttl>\n`; 
     xml += `  <lastBuildDate>${now}</lastBuildDate>\n`;
     
     xml += `  <atom:link href="${xmlEscape(`${baseUrl}/rss.xml`)}" rel="self" type="application/rss+xml" />\n`;
 
-    posts?.forEach(p => {
-      const link = `${baseUrl}/clanky/${p.slug}`;
-      const title = safeCDATA(p.title || '');
-      const desc = safeCDATA(p.description || p.seo_description || '');
-      
-      // 🚀 CHATGPT FIX: Aplikujeme decodeHtml a teprve poté xmlEscape
-      const image = p.image_url ? xmlEscape(decodeHtml(p.image_url)) : null;
-      const pubDate = new Date(p.created_at).toUTCString();
+    items.forEach(item => {
+      const link = item.link;
+      const title = safeCDATA(item.title);
+      const desc = safeCDATA(item.desc);
+      const image = item.image ? xmlEscape(decodeHtml(item.image)) : null;
+      const pubDate = new Date(item.date).toUTCString();
 
       xml += `  <item>\n`;
       xml += `    <title><![CDATA[${title}]]></title>\n`;
@@ -96,10 +107,8 @@ export async function GET() {
 
     return new Response(xml, {
       headers: {
-        // 🚀 GURU FIX: Návrat k application/xml, aby prohlížeč soubor nevyžadoval stáhnout, 
-        // ale normálně ho zobrazil. Google s tímto formátem nemá žádný problém.
-        'Content-Type': 'application/xml; charset=utf-8',
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400'
+        'Content-Type': 'application/rss+xml; charset=utf-8',
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600'
       }
     });
 
@@ -107,7 +116,7 @@ export async function GET() {
     console.error('RSS ENGINE ERROR:', error);
     return new Response(
       `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Error</title><description>${xmlEscape(error.message)}</description></channel></rss>`,
-      { status: 200, headers: { 'Content-Type': 'application/xml; charset=utf-8' } }
+      { status: 500, headers: { 'Content-Type': 'application/rss+xml; charset=utf-8' } }
     );
   }
 }
