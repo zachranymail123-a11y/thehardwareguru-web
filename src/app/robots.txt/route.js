@@ -2,12 +2,10 @@
  * GURU ROBOTS ENGINE V2.0
  * Cesta: src/app/robots.txt/route.js
  * 🚀 CÍL: Perfektní indexace, eliminace duplicit a ochrana před AI crawlery.
- * 🛡️ FIX: Zahrnuje Cache-Control pro okamžité a stabilní servírování Googlebotu.
+ * 🛡️ FIX: Zahrnuje Cache-Control pro okamžité a stabilní servírování Googlebotu a přidává Sitemapu natvrdo.
  */
 
 export async function GET() {
-  const siteUrl = 'https://thehardwareguru.cz';
-  
   const robots = `# GURU ROBOTS CONFIG - thehardwareguru.cz
 User-agent: *
 Allow: /
@@ -23,7 +21,7 @@ Disallow: /static/
 Disallow: /*?*
 
 # Speciální pravidla pro sitemapy (Kritické pro GSC)
-Sitemap: ${siteUrl}/sitemap.xml
+Sitemap: https://thehardwareguru.cz/sitemap.xml
 
 # --- AI & SCRAPER PROTECTION ---
 # Zákaz pro AI boty, kteří těží data bez návštěvnosti
