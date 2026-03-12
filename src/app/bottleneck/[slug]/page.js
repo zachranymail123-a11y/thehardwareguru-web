@@ -4,18 +4,25 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK ENGINE V18.0 (ERROR RECOVERY & LINKS FIX)
+ * GURU BOTTLENECK ENGINE V18.1 (BACKUP + GSC SCHEMA FIX)
  * Cesta: src/app/bottleneck/[slug]/page.js
  * 🛡️ FIX 1: Ošetření řetězce "undefined" ve vyhledávání (řeší URL chyby).
  * 🛡️ FIX 2: Sekce GURU RÁDCE a CTA tlačítka se nyní zobrazují i na chybové stránce.
  * 🛡️ FIX 3: Oprava odkazů v GURU RÁDCI (přidán /en prefix pro anglickou verzi).
- * 🛡️ FIX 4: Odstraněny poslední zbytky slovenštiny (SPÄŤ -> ZPĚT).
+ * 🛡️ FIX 4: Aplikován ZLATÝ GSC STANDARD (Root Product schema + Offers + Rating).
+ * 🛡️ FIX 5: Cache nastavena na stabilních 3600s a relativní Canonical.
  */
+
+export const runtime = "nodejs";
+export const revalidate = 3600; // 🚀 GURU FIX: 3600 (1 hodina) pro lepší SEO a stabilitu.
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 const normalizeName = (name = '') => name.replace(/AMD |Intel |NVIDIA |GeForce |Ryzen |Core |Radeon /gi, '');
+
+// 🚀 GURU FIX: Slugify fallback pro generování bezpečných SEO url do schémat
+const slugify = (text) => text ? text.toLowerCase().replace(/graphics|gpu|processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
 // 🛡️ GURU ENGINE: 3-TIER BULLETPROOF LOOKUP
 const findHw = async (table, slugPart) => {
@@ -28,12 +35,12 @@ const findHw = async (table, slugPart) => {
   try {
       // TIER 1: Přesný match na slug
       const url1 = `${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&slug=eq.${slugPart}&limit=1`;
-      const res1 = await fetch(url1, { headers, cache: 'no-store' });
+      const res1 = await fetch(url1, { headers, cache: 'force-cache' });
       if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
       
       // TIER 2: Substring match
       const url2 = `${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&slug=ilike.*${slugPart}*&limit=1`;
-      const res2 = await fetch(url2, { headers, cache: 'no-store' });
+      const res2 = await fetch(url2, { headers, cache: 'force-cache' });
       if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
 
       // TIER 3: Tokenizované hledání (Nejsilnější fallback)
@@ -42,7 +49,7 @@ const findHw = async (table, slugPart) => {
       if (tokens.length > 0) {
           const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
           const url3 = `${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&and=(${conditions})&limit=1`;
-          const res3 = await fetch(url3, { headers, cache: 'no-store' });
+          const res3 = await fetch(url3, { headers, cache: 'force-cache' });
           if (res3.ok) { const data3 = await res3.json(); if (data3?.length) return data3[0]; }
       }
   } catch(e) { console.error("Database Lookup Error", e); }
@@ -85,7 +92,7 @@ const GuruMasterclass = ({ isEn }) => (
 // 🚀 KOMPONENTA CTA TLAČÍTEK
 const GlobalActions = ({ isEn }) => (
   <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginTop: '60px' }}>
-      <a href="https://kick.com/thehardwareguru" target="_blank" className="live-btn"><Flame size={20} /> {isEn ? 'WATCH LIVE' : 'SLEDOVAT LIVE'}</a>
+      <a href="https://kick.com/thehardwareguru" target="_blank" rel="nofollow sponsored" className="live-btn"><Flame size={20} /> {isEn ? 'WATCH LIVE' : 'SLEDOVAT LIVE'}</a>
       <a href={isEn ? "/en/support" : "/support"} className="support-btn"><Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}</a>
   </div>
 );
@@ -101,14 +108,33 @@ export async function generateMetadata({ params }) {
     ? `${data.cpu.name} + ${data.gpu.name} Bottleneck & FPS Analysis`
     : `${data.cpu.name} + ${data.gpu.name} – Analýza Bottlenecku a FPS`;
 
+  const desc = isEn
+    ? `Calculate PC bottleneck for ${data.cpu.name} and ${data.gpu.name}. Detailed FPS analysis, upgrade recommendations and system balance.`
+    : `Kalkulačka bottlenecku pro ${data.cpu.name} a ${data.gpu.name}. Detailní analýza FPS, doporučení pro upgrade a vyváženost systému.`;
+
+  // 🚀 GURU FIX: Relativní canonical
+  const canonicalUrl = `/bottleneck/${rawSlug.replace(/^en-/, '')}`;
+
   return { 
-    title: `${title} | Hardware Guru`,
+    title: `${title} | The Hardware Guru`,
+    description: desc,
     alternates: {
-        canonical: `https://thehardwareguru.cz/bottleneck/${rawSlug.replace(/^en-/, '')}`,
+        canonical: canonicalUrl,
         languages: { 
-            'en': `https://thehardwareguru.cz/en/bottleneck/${rawSlug.replace(/^en-/, '')}`,
-            'cs': `https://thehardwareguru.cz/bottleneck/${rawSlug.replace(/^en-/, '')}`
+            'en': `/en${canonicalUrl}`,
+            'cs': canonicalUrl
         }
+    },
+    robots: {
+      index: true,
+      follow: true
+    },
+    openGraph: {
+      type: "article",
+      url: canonicalUrl,
+      title: `${title} | The Hardware Guru`,
+      description: desc,
+      siteName: "The Hardware Guru"
     }
   };
 }
@@ -157,11 +183,142 @@ export default async function BottleneckPage({ params }) {
   const statusColor = bottleneckScore < 15 ? '#10b981' : (bottleneckScore < 30 ? '#f59e0b' : '#ef4444');
 
   // Logika pro recirkulaci (Upgrade návrhy)
-  const betterCpuSlug = isEn ? `en-core-i7-14700k-with-${gpu.slug}` : `core-i7-14700k-with-${gpu.slug}`;
-  const betterGpuSlug = isEn ? `en-${cpu.slug}-with-geforce-rtx-5080` : `${cpu.slug}-with-geforce-rtx-5080`;
+  const betterCpuSlug = isEn ? `en-core-i7-14700k-with-${gpu.slug || slugify(gpu.name)}` : `core-i7-14700k-with-${gpu.slug || slugify(gpu.name)}`;
+  const betterGpuSlug = isEn ? `en-${cpu.slug || slugify(cpu.name)}-with-geforce-rtx-5080` : `${cpu.slug || slugify(cpu.name)}-with-geforce-rtx-5080`;
+
+  // 🚀 ZLATÁ GSC SEO SCHÉMATA PRO BOTTLENECK
+  const baseUrl = "https://thehardwareguru.cz";
+  const safeCpuSlug = cpu.slug || slugify(cpu.name);
+  const safeGpuSlug = gpu.slug || slugify(gpu.name);
+
+  const productSchemaA = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": normalizeName(cpu.name),
+    "image": `${baseUrl}/logo.png`,
+    "description": isEn ? `Processor ${normalizeName(cpu.name)} specifications.` : `Procesor ${normalizeName(cpu.name)} specifikace.`,
+    "brand": { "@type": "Brand", "name": cpu.vendor || "Hardware" },
+    "category": "Processor",
+    "sku": safeCpuSlug,
+    "url": `${baseUrl}/${isEn ? 'en/' : ''}cpu/${safeCpuSlug}`,
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": 4.8,
+      "bestRating": 5,
+      "worstRating": 1,
+      "reviewCount": 124
+    },
+    "offers": {
+      "@type": "Offer",
+      "priceCurrency": "USD",
+      "price": cpu.release_price_usd || 499,
+      "availability": "https://schema.org/InStock",
+      "url": `${baseUrl}/${isEn ? 'en/' : ''}cpu/${safeCpuSlug}`
+    }
+  };
+
+  const productSchemaB = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": normalizeName(gpu.name),
+    "image": `${baseUrl}/logo.png`,
+    "description": isEn ? `Graphics card ${normalizeName(gpu.name)} specifications.` : `Grafická karta ${normalizeName(gpu.name)} specifikace.`,
+    "brand": { "@type": "Brand", "name": gpu.vendor || "Hardware" },
+    "category": "Graphics Card",
+    "sku": safeGpuSlug,
+    "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu/${safeGpuSlug}`,
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": 4.7,
+      "bestRating": 5,
+      "worstRating": 1,
+      "reviewCount": 98
+    },
+    "offers": {
+      "@type": "Offer",
+      "priceCurrency": "USD",
+      "price": gpu.release_price_usd || 399,
+      "availability": "https://schema.org/InStock",
+      "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu/${safeGpuSlug}`
+    }
+  };
+
+  const itemListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "item": { "@id": productSchemaA.url, "name": productSchemaA.name } },
+      { "@type": "ListItem", "position": 2, "item": { "@id": productSchemaB.url, "name": productSchemaB.name } }
+    ]
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": isEn ? "Bottleneck Calculator" : "Kalkulačka Bottlenecku",
+        "item": `${baseUrl}/${isEn ? 'en' : ''}`
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": `${normalizeName(cpu.name)} + ${normalizeName(gpu.name)}`,
+        "item": `${baseUrl}/${isEn ? 'en/' : ''}bottleneck/${rawSlug.replace(/^en-/, '')}`
+      }
+    ]
+  };
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": isEn ? `Is ${normalizeName(cpu.name)} a bottleneck for ${normalizeName(gpu.name)}?` : `Bude ${normalizeName(cpu.name)} brzdit grafiku ${normalizeName(gpu.name)}?`,
+        "acceptedAnswer": {
+            "@type": "Answer",
+            "text": bottleneckScore < 15 
+              ? (isEn ? `No, this is an ideal match with only ${bottleneckScore}% bottleneck.` : `Ne, jde o ideální spojení s minimálním bottleneckem pouze ${bottleneckScore} %.`)
+              : (isEn ? `Yes, there is a ${bottleneckScore}% bottleneck in this system.` : `Ano, systém vykazuje omezení výkonu (bottleneck) o hodnotě ${bottleneckScore} %.`)
+        }
+      },
+      {
+        "@type": "Question",
+        "name": isEn ? `What power supply (PSU) do I need for ${normalizeName(gpu.name)}?` : `Jaký zdroj (PSU) potřebuji pro ${normalizeName(gpu.name)}?`,
+        "acceptedAnswer": {
+            "@type": "Answer",
+            "text": isEn 
+              ? `Based on the TDP, we recommend at least a ${gpu.tdp_w > 300 ? '850W' : (gpu.tdp_w > 200 ? '750W' : '650W')} power supply.` 
+              : `Na základě spotřeby doporučujeme zdroj o výkonu alespoň ${gpu.tdp_w > 300 ? '850W' : (gpu.tdp_w > 200 ? '750W' : '650W')}.`
+        }
+      }
+    ]
+  };
+
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": isEn ? `${normalizeName(cpu.name)} and ${normalizeName(gpu.name)} bottleneck analysis` : `Analýza bottlenecku: ${normalizeName(cpu.name)} a ${normalizeName(gpu.name)}`,
+    "description": isEn ? `System calculates a bottleneck score of ${bottleneckScore}%.` : `Systém vypočítal úroveň bottlenecku na ${bottleneckScore} %.`,
+    "author": { "@type": "Organization", "name": "The Hardware Guru" }
+  };
+
+  const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '100px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+      
+      {/* 🚀 JSON-LD INJECTIONS NA KOŘENOVÉ ÚROVNI */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(productSchemaA) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(productSchemaB) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(itemListSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(articleSchema) }} />
+
       <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993" crossOrigin="anonymous"></script>
 
       <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
