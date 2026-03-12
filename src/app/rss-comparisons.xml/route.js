@@ -1,12 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU RSS ENGINE V23.0 - PROGRAMMATIC SEO FEED (DUELS & UPGRADES)
+ * GURU RSS ENGINE V23.1 - PROGRAMMATIC SEO FEED (DUELS & UPGRADES)
  * Cesta: src/app/rss-comparisons.xml/route.js
  * 🚀 CÍL: Dedikovaný feed výhradně pro obří HW databázi. 
  * 🛡️ FIX 1: revalidate = 3600 (Cache na 1 hodinu).
  * 🛡️ FIX 2: Přidán tag <generator>The Hardware Guru RSS Engine</generator>.
- * 🛡️ FIX 3: Content-Type je striktně 'application/rss+xml; charset=utf-8' pro GSC a čtečky.
+ * 🛡️ FIX 3: Content-Type změněn na 'application/xml; charset=utf-8', aby prohlížeč soubor nestahoval, ale rovnou zobrazil!
  */
 
 export const dynamic = 'force-dynamic';
@@ -130,7 +130,8 @@ export async function GET() {
 
     return new Response(xml, {
       headers: {
-        'Content-Type': 'application/rss+xml; charset=utf-8',
+        // 🚀 GURU FIX: Změněno na application/xml. GSC to bez problémů přečte, ale Chrome to přestane stahovat!
+        'Content-Type': 'application/xml; charset=utf-8',
         'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600'
       }
     });
@@ -139,7 +140,8 @@ export async function GET() {
     console.error('RSS COMPARISONS ENGINE ERROR:', error);
     return new Response(
       `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Error</title><description>${xmlEscape(error.message)}</description></channel></rss>`,
-      { status: 500, headers: { 'Content-Type': 'application/rss+xml; charset=utf-8' } }
+      // 🚀 Změněno také v error fallbacku
+      { status: 500, headers: { 'Content-Type': 'application/xml; charset=utf-8' } }
     );
   }
 }
