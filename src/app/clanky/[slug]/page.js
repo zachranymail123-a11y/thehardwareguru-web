@@ -3,12 +3,22 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart, Info, BarChart3, Gamepad2 } from 'lucide-react';
 
+/**
+ * GURU ARTICLE ENGINE V2.5 (ULTIMATE GSC STANDARD)
+ * Cesta: src/app/clanky/[slug]/page.js
+ * 🛡️ FIX 1: Absolutní Canonical URL a x-default v metadata (Zlatý standard).
+ * 🛡️ FIX 2: Podpora Next.js 15 asynchronních parametrů.
+ * 🛡️ FIX 3: Obohacené TechArticle JSON-LD schéma.
+ * 🛡️ FIX 4: Sjednocená doména bez www (thehardwareguru.cz).
+ */
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
+const baseUrl = "https://thehardwareguru.cz";
 
-// 🚀 GURU SEO: Dynamické Meta Tagy
+// 🚀 GURU SEO: Dynamické Meta Tagy s Hreflang Clusterem
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   
@@ -23,14 +33,28 @@ export async function generateMetadata({ params }) {
   const isEn = post.slug_en === slug && slug !== post.slug;
   const title = isEn && post.title_en ? post.title_en : post.title;
   const desc = isEn && post.seo_description_en ? post.seo_description_en : post.seo_description;
+  
+  // 🚀 ZLATÝ GSC STANDARD: Absolutní linky
+  const canonicalUrl = `${baseUrl}/clanky/${post.slug}`;
 
   return {
     title: `${title} | The Hardware Guru`,
     description: desc,
+    alternates: {
+        canonical: canonicalUrl,
+        languages: {
+            'en': `${baseUrl}/en/clanky/${post.slug_en || `en-${post.slug}`}`,
+            'cs': canonicalUrl,
+            'x-default': canonicalUrl
+        }
+    },
     openGraph: {
       title,
       description: desc,
-      images: post.image_url ? [post.image_url] : [],
+      images: post.image_url ? [post.image_url] : [`${baseUrl}/logo.png`],
+      url: canonicalUrl,
+      type: 'article',
+      siteName: 'The Hardware Guru'
     }
   };
 }
@@ -57,11 +81,31 @@ export default async function ArticleDetail({ params }) {
     : `KOUPIT ZA NEJLEPŠÍ CENU ${priceDisplay ? `(${priceDisplay})` : ''}`;
   const backLink = isEn ? '/en/clanky' : '/clanky';
 
+  // 🚀 JSON-LD SCHEMA PRO GSC
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": title,
+    "image": post.image_url ? [post.image_url] : [`${baseUrl}/logo.png`],
+    "datePublished": post.created_at,
+    "dateModified": post.updated_at || post.created_at,
+    "author": { "@type": "Organization", "name": "The Hardware Guru" },
+    "publisher": {
+      "@type": "Organization",
+      "name": "The Hardware Guru",
+      "logo": { "@type": "ImageObject", "url": `${baseUrl}/logo.png` }
+    },
+    "description": isEn ? post.seo_description_en : post.seo_description
+  };
+
+  const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
+
   return (
     <div style={{ 
         minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', 
         backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px' 
     }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(articleSchema) }} />
       
       <main style={{ 
           maxWidth: '900px', margin: '0 auto', background: 'rgba(15, 17, 21, 0.95)', 
@@ -130,12 +174,12 @@ export default async function ArticleDetail({ params }) {
             </div>
           )}
 
-          {/* --- 📚 GURU RÁDCE (Evergreen sekce) --- */}
+          {/* --- 📚 GURU RÁDCE (Evergreen sekce pro recirkulaci) --- */}
           <section style={{ marginTop: '70px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '50px' }}>
              <h2 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #a855f7', paddingLeft: '15px' }}>
                 {isEn ? 'GURU MASTERCLASS' : 'GURU RÁDCE'}
              </h2>
-             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '15px' }}>
                   <a href={isEn ? "/en/clanky/jak-vyresit-bottleneck-navod" : "/clanky/jak-vyresit-bottleneck-navod"} className="article-link-card">
                       <Info size={18} /> {isEn ? 'How to fix bottleneck' : 'Jak vyřešit bottleneck'}
                   </a>
@@ -148,7 +192,7 @@ export default async function ArticleDetail({ params }) {
              </div>
           </section>
 
-          {/* --- 🚀 GURU GLOBÁLNÍ CTA --- */}
+          {/* --- 🚀 GURU GLOBÁLNÍ CTA (Podpora a Slevy) --- */}
           <div style={{ 
             marginTop: '50px', 
             paddingTop: '40px', 
@@ -194,6 +238,8 @@ export default async function ArticleDetail({ params }) {
         .guru-prose h2 { color: #66fcf1; font-size: 2.2rem; font-weight: 950; margin-top: 2.5em; margin-bottom: 1em; text-transform: uppercase; letter-spacing: 1px; }
         .guru-prose p { margin-bottom: 1.5em; }
         .guru-prose strong { color: #fff; font-weight: 900; }
+        .guru-prose ul { margin-bottom: 1.5em; padding-left: 20px; list-style-type: disc; color: #66fcf1; }
+        .guru-prose li { margin-bottom: 10px; color: #d1d5db; }
         
         @media (max-width: 768px) {
           .guru-prose { font-size: 1.05rem; }
