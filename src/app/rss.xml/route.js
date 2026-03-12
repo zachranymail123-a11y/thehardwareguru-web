@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU RSS ENGINE V22.3 - THE AMPERSAND FIX
+ * GURU RSS ENGINE V22.5 - THE DEFINITIVE AMPERSAND FIX
  * Cesta: src/app/rss.xml/route.js
  * 🛡️ FIX: Agresivní xmlEscape pro atributy URL. 
- * Adresy z OpenAI obsahují znaky '&' (tokeny), které v XML MUSÍ být zapsány jako '&amp;'.
+ * Adresy z OpenAI obsahují znaky '&' (SAS tokeny), které v XML MUSÍ být zapsány jako '&amp;'.
  * Bez toho Google Search Console i prohlížeč hlásí: "Dokument není dobře zformátován".
+ * 🛡️ FIX 2: Odstraněny neexistující sloupce (author) pro stabilitu databáze.
  */
 
 export const dynamic = 'force-dynamic';
@@ -18,8 +19,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-// 🚀 GURU ULTRA ESCAPE: Musí ošetřit '&' v SAS tokenech OpenAI URL adres
+/**
+ * 🚀 GURU ULTRA ESCAPE: Musí ošetřit '&' v SAS tokenech OpenAI URL adres.
+ * Důležité: Replace ampersandu (&) musí proběhnout jako PRVNÍ.
+ */
 const xmlEscape = (str = '') => {
+  if (!str) return '';
   return str.toString()
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -28,11 +33,15 @@ const xmlEscape = (str = '') => {
     .replace(/'/g, '&apos;');
 };
 
+/**
+ * CDATA safe - ošetřuje vnořené uzavírací značky CDATA, které by rozbily parser.
+ */
 const safeCDATA = (str = '') =>
   str.toString().replace(/]]>/g, ']]]]><![CDATA[>');
 
 export async function GET() {
   try {
+    // 🚀 GURU SELECT: Taháme jen existující sloupce (author vynechán)
     const { data: posts, error } = await supabase
       .from('posts')
       .select(`id, slug, title, description, seo_description, image_url, created_at`)
@@ -51,11 +60,13 @@ export async function GET() {
       xmlns:dc="http://purl.org/dc/elements/1.1/">\n`;
 
     xml += `<channel>\n`;
-    xml += `  <title><![CDATA[${safeCDATA('The Hardware Guru')}]]></title>\n`;
+    xml += `  <title><![CDATA[${safeCDATA('The Hardware Guru - Global Feed')}]]></title>\n`;
     xml += `  <link>${baseUrl}/</link>\n`;
-    xml += `  <description><![CDATA[${safeCDATA('Hardware novinky, benchmarky a herní tipy z Guru základny.')}]]></description>\n`;
+    xml += `  <description><![CDATA[${safeCDATA('Nejnovější HW tipy, herní slevy a GPU/CPU duely z Hardware Guru základny.')}]]></description>\n`;
     xml += `  <language>cs</language>\n`;
     xml += `  <lastBuildDate>${now}</lastBuildDate>\n`;
+    
+    // Self-link musí být escapovaný
     xml += `  <atom:link href="${xmlEscape(`${baseUrl}/rss.xml`)}" rel="self" type="application/rss+xml" />\n`;
 
     posts?.forEach(p => {
@@ -63,7 +74,7 @@ export async function GET() {
       const title = safeCDATA(p.title || '');
       const desc = safeCDATA(p.description || p.seo_description || '');
       
-      // 🚀 GURU FIX: URL obrázku MUSÍ být escapována kvůli '&' v SAS tokenech
+      // 🚀 GURU FIX: URL obrázku MUSÍ být escapována kvůli '&' v SAS tokenech z OpenAI
       const image = p.image_url ? xmlEscape(p.image_url) : null;
       const pubDate = new Date(p.created_at).toUTCString();
 
@@ -83,10 +94,11 @@ export async function GET() {
       xml += `  </item>\n`;
     });
 
-    xml += `  </channel></rss>`;
+    xml += `</channel></rss>`;
 
     return new Response(xml, {
       headers: {
+        // 🚀 application/xml zajistí zobrazení stromu v prohlížeči místo stahování
         'Content-Type': 'application/xml; charset=utf-8',
         'Cache-Control': 'public, s-maxage=43200, stale-while-revalidate=3600'
       }
