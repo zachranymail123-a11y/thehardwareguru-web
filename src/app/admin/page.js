@@ -1,11 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-// ⚠️ UPOZORNĚNÍ PRO VERCEL: 
-// Pro náhled v tomto prostředí je nutné použít URL import (esm.sh).
-// PŘED nahráním do vašeho repozitáře a na Vercel ZMĚŇTE tento řádek na:
-// import { createClient } from '@supabase/supabase-js';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { 
   Rocket, Settings, Globe, Search, Database, CalendarClock, 
   ShoppingCart, Activity, ShieldCheck, Zap, AlertTriangle, 
@@ -19,7 +15,7 @@ import {
  * GURU ULTIMATE COMMAND CENTER
  * Cesta: src/app/admin/page.js
  * 🛡️ FIX 1: Intel Radar plně obnoven do původního funkčního stavu (3 sekce).
- * 🛡️ FIX 2: Dočasný fix importu pro správné fungování náhledu (Canvas).
+ * 🛡️ FIX 2: Absolutní a finální odstranění esm.sh pro bezchybný Vercel build.
  * 🛡️ FIX 3: Oprava nezobrazování trendů (přidán state a fetch).
  */
 
@@ -659,9 +655,33 @@ export default function AdminApp() {
               </div>
             </div>
 
-            <div style={{marginTop: '40px'}}>
-              <div className="terminal-box" style={{height: '350px'}}>
-                {consoleLogs.map((log, i) => (<div key={i}>[{log.time}] {log.msg}</div>))}
+            {/* 🚀 TRENDS WIDGET přidán čistě do Dashboardu podle pravidel */}
+            <div style={{marginTop: '40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
+              <div style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #eab30833' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                      <h3 style={{ fontSize: '14px', fontWeight: 950, color: '#eab308' }}>🔥 TOP TRENDY HRY (GOOGLE)</h3>
+                      <button onClick={fetchTrendingGames} style={{ background: 'transparent', border: 'none', color: '#4b5563', cursor: 'pointer' }}><RefreshCw size={14} className={trendsLoading ? 'animate-spin' : ''}/></button>
+                  </div>
+                  {trendingGames.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {trendingGames.map((game, i) => (
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#000', padding: '10px 15px', borderRadius: '12px', border: '1px solid #ffffff08' }}>
+                                  <span style={{ color: '#eab308', fontWeight: 900 }}>#{i+1}</span>
+                                  <span style={{ flex: 1, fontWeight: 700, fontSize: '13px' }}>{game}</span>
+                                  <button onClick={() => { 
+                                      setActiveTab('database');
+                                      setDbTab('games');
+                                      setDbFormData(prev => ({ ...prev, name: game }));
+                                  }} style={{ fontSize: '10px', color: '#66fcf1', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: '900' }}>PŘIDAT</button>
+                              </div>
+                          ))}
+                      </div>
+                  ) : (
+                      <p style={{ color: '#4b5563', fontSize: '12px' }}>{trendsLoading ? 'Skenuji trendy...' : 'Klikni na refresh pro skenování trendů...'}</p>
+                  )}
+              </div>
+              <div className="terminal-box" style={{height: '300px'}}>
+                {consoleLogs.slice(-10).map((log, i) => (<div key={i}>[{log.time}] {log.msg}</div>))}
                 <div ref={logEndRef} />
               </div>
             </div>
