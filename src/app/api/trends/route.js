@@ -3,10 +3,14 @@ import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  throw new Error('Missing Supabase environment variables')
+}
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
 const slugify = (text) =>
   text?.toLowerCase()
@@ -27,7 +31,11 @@ async function getTrendingKeywords() {
     const rss =
       `https://trends.google.com/trends/trendingsearches/daily/rss?geo=${geo}`
 
-    const res = await fetch(rss,{ cache:'no-store' })
+    const res = await fetch(rss,{
+      cache:'no-store',
+      signal: AbortSignal.timeout(5000)
+    })
+
     const xml = await res.text()
 
     const titles = xml.match(/<title>(.*?)<\/title>/g)
@@ -47,21 +55,31 @@ async function getTrendingKeywords() {
   return Array.from(keywords)
 }
 
-async function igdbIsGame(name) {
+async function getIGDBToken() {
 
-  const tokenRes = await fetch(
-    `https://id.twitch.tv/oauth2/token`,
+  const res = await fetch(
+    'https://id.twitch.tv/oauth2/token',
     {
       method:'POST',
       body:new URLSearchParams({
         client_id:process.env.TWITCH_CLIENT_ID,
         client_secret:process.env.TWITCH_CLIENT_SECRET,
         grant_type:'client_credentials'
-      })
+      }),
+      signal: AbortSignal.timeout(5000)
     }
   )
 
-  const token = await tokenRes.json()
+  if (!res.ok) {
+    throw new Error('Failed to get IGDB token')
+  }
+
+  const json = await res.json()
+
+  return json.access_token
+}
+
+async function igdbIsGame(name, token) {
 
   const res = await fetch(
     'https://api.igdb.com/v4/games',
@@ -69,27 +87,34 @@ async function igdbIsGame(name) {
       method:'POST',
       headers:{
         'Client-ID':process.env.TWITCH_CLIENT_ID,
-        'Authorization':`Bearer ${token.access_token}`
+        'Authorization':`Bearer ${token}`
       },
-      body:`search "${name}"; fields name; limit 1;`
+      body:`search "${name}"; fields name; limit 1;`,
+      signal: AbortSignal.timeout(5000)
     }
   )
 
+  if (!res.ok) return false
+
   const data = await res.json()
 
-  return data.length > 0
+  return Array.isArray(data) && data.length > 0
 }
 
 export async function GET() {
 
   try {
 
-    const { data:games } =
+    const { data:games, error } =
       await supabase.from('games').select('slug')
 
-    const existing = new Set(games?.map(g=>g.slug) || [])
+    if (error) throw error
+
+    const existing = new Set(games?.map(g => g.slug) || [])
 
     const keywords = await getTrendingKeywords()
+
+    const token = await getIGDBToken()
 
     const results = []
 
@@ -99,7 +124,7 @@ export async function GET() {
 
       if (existing.has(slug)) continue
 
-      const isGame = await igdbIsGame(keyword)
+      const isGame = await igdbIsGame(keyword, token)
 
       if (isGame) {
         results.push(keyword)
@@ -122,4 +147,5 @@ export async function GET() {
     },{status:500})
 
   }
+
 }
