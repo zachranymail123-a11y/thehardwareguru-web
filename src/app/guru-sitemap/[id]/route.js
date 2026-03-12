@@ -1,11 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - CHUNK GENERATOR V32.0 (CACHE BUSTER & DEBUG EDITION)
+ * GURU SEO ENGINE - CHUNK GENERATOR V33.0 (DB COLUMN FIX)
  * Cesta: src/app/guru-sitemap/[id]/route.js
- * 🛡️ FIX 1: Cache snížena na 3600 (1 hodina), aby se vymazal včerejší prázdný Vercel Cache!
- * 🛡️ FIX 2: Supabase klient vrácen, ale s 'persistSession: false' proti Serverless timeoutům.
- * 🛡️ FIX 3: GURU DEBUG INJECTION - Pokud je XML prázdné, do zdrojového kódu (CTRL+U) se zapíše přesný důvod chyby.
+ * 🛡️ FIX: Odstraněno dotazování na neexistující sloupec 'slug' z tabulky 'cpus'. 
+ * Skript si slug pro URL bezpečně a dynamicky vygeneruje z 'name'.
  */
 
 export const revalidate = 3600; 
@@ -29,7 +28,6 @@ const safeDate = (dateStr) => {
 };
 
 // 🚀 GURU DEBUG GENERÁTOR
-// Pokud něco selže, nevyhodí to 404 ani Error, ale vytvoří prázdné XML s tajným HTML komentářem
 const generateDebugXml = (msg) => {
     return `<?xml version="1.0" encoding="UTF-8"?>\n<!-- GURU DEBUG INFO: ${escapeXml(msg)} -->\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`;
 };
@@ -68,7 +66,8 @@ export async function GET(req, props) {
             });
             
         } else if (type === 'cpu') {
-            const { data: cpus, error: cpuErr } = await supabase.from('cpus').select('name, slug, created_at');
+            // 🚀 GURU FIX: Zde byl odstraněn 'slug' ze selectu pro tabulku cpus
+            const { data: cpus, error: cpuErr } = await supabase.from('cpus').select('name, created_at');
             if (cpuErr) return new Response(generateDebugXml(`CPU DB ERROR: ${cpuErr.message}`), { headers: xmlHeaders });
             
             const { data: gamesData } = await supabase.from('games').select('slug');
@@ -76,7 +75,7 @@ export async function GET(req, props) {
             const games = dbGames.length > 0 ? dbGames : ['cyberpunk-2077', 'warzone', 'starfield', 'cs2'];
 
             cpus?.forEach(c => {
-                const s = c.slug || slugify(c.name);
+                const s = slugify(c.name); // Spoléháme se čistě na dynamický slug
                 const d = safeDate(c.created_at);
                 routes.push({ url: `${baseUrl}/cpu/${s}`, lastmod: d, priority: '0.9', changefreq: 'monthly' });
                 routes.push({ url: `${baseUrl}/en/cpu/${s}`, lastmod: d, priority: '0.8', changefreq: 'monthly' });
@@ -145,13 +144,13 @@ export async function GET(req, props) {
             const limit = 2; 
             const offset = (chunkId - 1) * limit;
 
+            // 🚀 GURU FIX: Zde byl také odstraněn 'slug' pro tabulku cpus.
             const { data: cpus, error: cpuErr } = await supabase
                 .from('cpus')
-                .select('name, slug')
+                .select('name')
                 .order('name')
                 .range(offset, offset + limit - 1);
             
-            // 🚀 GURU DEBUGGER ZACHYTÍ CHYBY ZDE
             if (cpuErr) return new Response(generateDebugXml(`CPU MATICE CHYBA: ${cpuErr.message}`), { headers: xmlHeaders });
             if (!cpus || cpus.length === 0) return new Response(generateDebugXml(`OK - ZADNE DALSI CPU PRO OFFSET ${offset} (Konec DB)`), { headers: xmlHeaders });
 
@@ -168,7 +167,7 @@ export async function GET(req, props) {
             const resolutions = ['1080p', '1440p', '4k'];
 
             cpus.forEach(cpu => {
-                const cpuSlug = cpu.slug || slugify(cpu.name);
+                const cpuSlug = slugify(cpu.name); // 🚀 Používáme jen dynamický slug
                 gpus.forEach(gpu => {
                     const gpuSlug = cleanGpuSlug(gpu.slug, gpu.name);
                     if (!cpuSlug || !gpuSlug) return;
