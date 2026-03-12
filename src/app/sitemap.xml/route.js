@@ -1,50 +1,53 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - SITEMAP INDEX V20.0
+ * GURU SEO ENGINE - SITEMAP INDEX V21.1
  * Cesta: src/app/sitemap.xml/route.js
- * 🚀 CÍL: Hlavní rozcestník pro Google, který odkazuje na jednotlivé sitemapy.
+ * 🛡️ FIX 1: Přidán parametr <lastmod> k indexu přesně podle ChatGPT.
+ * 🛡️ FIX 2: Zajištěna logická konzistence indexů (0 = statické stránky, 1..N = matrix).
  */
-
-const baseUrl = 'https://thehardwareguru.cz'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
-  let cpuCount = 100
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
+export async function GET() {
+  const baseUrl = 'https://thehardwareguru.cz';
+  const now = new Date().toISOString(); 
+  
+  let chunks = 39; // Fallback
+  
   try {
-    // 🛡️ GURU FIX: Počítáme CPU přes service_role, aby count nebyl null
     const { count } = await supabase
       .from('cpus')
-      .select('*', { count: 'exact', head: true })
-
-    cpuCount = count || 100
+      .select('*', { count: 'exact', head: true });
+      
+    if (count) {
+      chunks = Math.ceil(count / 2);
+    }
   } catch (e) {
-    console.error("DB Count Error:", e);
+    console.error("GURU SITEMAP INDEX ERROR:", e);
   }
-
-  // Rozdělíme na chunky (2 CPU na jeden XML soubor)
-  const chunks = Math.ceil(cpuCount / 2)
-
-  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`
-  xml += `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
-
-  for (let i = 0; i <= chunks; i++) {
-    xml += `  <sitemap>\n    <loc>${baseUrl}/sitemap/${i}.xml</loc>\n  </sitemap>\n`
+  
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+  xml += `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+  
+  // 0. chunk - základní statické stránky, profily, články (zcela odděleno)
+  xml += `  <sitemap>\n    <loc>${baseUrl}/sitemap/0.xml</loc>\n    <lastmod>${now}</lastmod>\n  </sitemap>\n`;
+  
+  // 1..N. chunk - dynamický bottleneck matrix (zde začínáme od jedničky)
+  for (let i = 1; i <= chunks; i++) {
+    xml += `  <sitemap>\n    <loc>${baseUrl}/sitemap/${i}.xml</loc>\n    <lastmod>${now}</lastmod>\n  </sitemap>\n`;
   }
-
-  xml += `</sitemapindex>`
-
+  
+  xml += `</sitemapindex>`;
+  
   return new Response(xml, {
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
-      'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate'
+      'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=600'
     }
-  })
+  });
 }
