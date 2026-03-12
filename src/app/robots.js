@@ -4,6 +4,6 @@ export default function robots() {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://thehardwareguru.cz/sitemap-index.xml',
+    sitemap: 'https://thehardwareguru.cz/sitemap.xml',
   }
 }
