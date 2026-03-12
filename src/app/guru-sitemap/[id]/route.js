@@ -1,11 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - CHUNK GENERATOR V34.0 (FULL CONTENT COVERAGE)
+ * GURU SEO ENGINE - CHUNK GENERATOR V35.0 (EFFICIENCY OPTIMIZATION)
  * Cesta: src/app/guru-sitemap/[id]/route.js
- * 🛡️ FIX 1: Přidány chybějící hlavní rozcestníky (/tipy, /tweaky, /rady, /slovnik) do 'pages'.
- * 🛡️ FIX 2: Do 'posts' chunku se nyní dynamicky tahají data ze všech 5 obsahových tabulek 
- * (posts, tipy, tweaky, rady, slovnik), čímž je zaručena 100% indexace celého webu.
+ * 🚀 OPTIMALIZACE: Limit zvýšen na 5 CPU na jeden soubor (cca 25k-30k URL).
+ * To snižuje počet souborů, které musí Google/Bing crawlovat, a zvyšuje efektivitu indexace.
  */
 
 export const revalidate = 3600; 
@@ -14,7 +13,6 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const baseUrl = 'https://thehardwareguru.cz';
 
-// Návrat k oficiálnímu klientovi s blokací paměťových úniků (ideální pro Vercel API routy)
 const supabase = createClient(supabaseUrl, supabaseKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
 });
@@ -28,7 +26,6 @@ const safeDate = (dateStr) => {
     try { return new Date(dateStr).toISOString(); } catch(e) { return null; }
 };
 
-// 🚀 GURU DEBUG GENERÁTOR
 const generateDebugXml = (msg) => {
     return `<?xml version="1.0" encoding="UTF-8"?>\n<!-- GURU DEBUG INFO: ${escapeXml(msg)} -->\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`;
 };
@@ -48,7 +45,6 @@ export async function GET(req, props) {
 
     try {
         if (type === 'pages') {
-            // 🚀 GURU FIX: Zahrnuty všechny chybějící huby pro kompletní indexaci
             const staticPaths = [
                 '/', '/clanky', '/gpuvs/ranking', '/cpuvs/ranking', '/cpu-index', 
                 '/deals', '/support', '/tipy', '/tweaky', '/rady', '/slovnik'
@@ -59,7 +55,6 @@ export async function GET(req, props) {
             });
             
         } else if (type === 'posts') {
-            // 🚀 GURU FIX: Plná agregace ze všech redakčních tabulek webu!
             const [postsRes, tipyRes, tweakyRes, radyRes, slovnikRes] = await Promise.all([
                 supabase.from('posts').select('slug, created_at'),
                 supabase.from('tipy').select('slug, created_at'),
@@ -68,7 +63,6 @@ export async function GET(req, props) {
                 supabase.from('slovnik').select('slug, created_at')
             ]);
             
-            // Pomocná funkce pro bezpečné plnění routes
             const addContentRoutes = (data, basePath) => {
                 data?.forEach(p => {
                     const d = safeDate(p.created_at);
@@ -86,14 +80,15 @@ export async function GET(req, props) {
             addContentRoutes(slovnikRes.data, 'slovnik');
             
         } else if (type === 'cpu') {
-            const { data: cpus, error: cpuErr } = await supabase.from('cpus').select('name, created_at');
-            if (cpuErr) return new Response(generateDebugXml(`CPU DB ERROR: ${cpuErr.message}`), { headers: xmlHeaders });
-            
-            const { data: gamesData } = await supabase.from('games').select('slug');
-            const dbGames = gamesData?.map(g => g.slug).filter(Boolean) || [];
+            const [cpusRes, gamesRes] = await Promise.all([
+                supabase.from('cpus').select('name, created_at'),
+                supabase.from('games').select('slug')
+            ]);
+            const data = cpusRes.data;
+            const dbGames = gamesRes.data?.map(g => g.slug).filter(Boolean) || [];
             const games = dbGames.length > 0 ? dbGames : ['cyberpunk-2077', 'warzone', 'starfield', 'cs2'];
 
-            cpus?.forEach(c => {
+            data?.forEach(c => {
                 const s = slugify(c.name); 
                 const d = safeDate(c.created_at);
                 routes.push({ url: `${baseUrl}/cpu/${s}`, lastmod: d, priority: '0.9', changefreq: 'monthly' });
@@ -107,11 +102,12 @@ export async function GET(req, props) {
             });
             
         } else if (type === 'gpu') {
-            const { data: gpus, error: gpuErr } = await supabase.from('gpus').select('name, slug, created_at');
-            if (gpuErr) return new Response(generateDebugXml(`GPU DB ERROR: ${gpuErr.message}`), { headers: xmlHeaders });
-
-            const { data: gamesData } = await supabase.from('games').select('slug');
-            const dbGames = gamesData?.map(g => g.slug).filter(Boolean) || [];
+            const [gpusRes, gamesRes] = await Promise.all([
+                supabase.from('gpus').select('name, slug, created_at'),
+                supabase.from('games').select('slug')
+            ]);
+            const data = gpusRes.data;
+            const dbGames = gamesRes.data?.map(g => g.slug).filter(Boolean) || [];
             const games = dbGames.length > 0 ? dbGames : ['cyberpunk-2077', 'warzone', 'starfield', 'cs2'];
 
             gpus?.forEach(g => {
@@ -160,7 +156,8 @@ export async function GET(req, props) {
                 return new Response(generateDebugXml(`Neplatne ID chunku: ${chunkId}`), { headers: xmlHeaders });
             }
 
-            const limit = 2; 
+            // 🚀 GURU: Limit zvýšen na 5 CPU na soubor pro vyšší efektivitu indexace
+            const limit = 5; 
             const offset = (chunkId - 1) * limit;
 
             const { data: cpus, error: cpuErr } = await supabase
@@ -214,7 +211,6 @@ export async function GET(req, props) {
             return new Response(generateDebugXml(`SKRIPT DOBEHL, ALE POLE ROUTES JE PRAZDNE. TYP: ${type}`), { headers: xmlHeaders });
         }
 
-        // Vše OK, generujeme ostré XML
         let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
         routes.forEach(r => {
             xml += `  <url>\n    <loc>${escapeXml(r.url)}</loc>\n`;
