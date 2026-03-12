@@ -1,10 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - CHUNK GENERATOR V33.0 (DB COLUMN FIX)
+ * GURU SEO ENGINE - CHUNK GENERATOR V34.0 (FULL CONTENT COVERAGE)
  * Cesta: src/app/guru-sitemap/[id]/route.js
- * 🛡️ FIX: Odstraněno dotazování na neexistující sloupec 'slug' z tabulky 'cpus'. 
- * Skript si slug pro URL bezpečně a dynamicky vygeneruje z 'name'.
+ * 🛡️ FIX 1: Přidány chybějící hlavní rozcestníky (/tipy, /tweaky, /rady, /slovnik) do 'pages'.
+ * 🛡️ FIX 2: Do 'posts' chunku se nyní dynamicky tahají data ze všech 5 obsahových tabulek 
+ * (posts, tipy, tweaky, rady, slovnik), čímž je zaručena 100% indexace celého webu.
  */
 
 export const revalidate = 3600; 
@@ -47,26 +48,44 @@ export async function GET(req, props) {
 
     try {
         if (type === 'pages') {
-            const staticPaths = ['/', '/clanky', '/gpuvs/ranking', '/cpuvs/ranking', '/cpu-index', '/deals', '/support'];
+            // 🚀 GURU FIX: Zahrnuty všechny chybějící huby pro kompletní indexaci
+            const staticPaths = [
+                '/', '/clanky', '/gpuvs/ranking', '/cpuvs/ranking', '/cpu-index', 
+                '/deals', '/support', '/tipy', '/tweaky', '/rady', '/slovnik'
+            ];
             staticPaths.forEach(p => {
                 routes.push({ url: `${baseUrl}${p}`, priority: '1.0', changefreq: 'daily' });
                 routes.push({ url: `${baseUrl}/en${p}`, priority: '0.9', changefreq: 'daily' });
             });
             
         } else if (type === 'posts') {
-            const { data, error } = await supabase.from('posts').select('slug, created_at');
-            if (error) return new Response(generateDebugXml(`POSTS DB ERROR: ${error.message}`), { headers: xmlHeaders });
+            // 🚀 GURU FIX: Plná agregace ze všech redakčních tabulek webu!
+            const [postsRes, tipyRes, tweakyRes, radyRes, slovnikRes] = await Promise.all([
+                supabase.from('posts').select('slug, created_at'),
+                supabase.from('tipy').select('slug, created_at'),
+                supabase.from('tweaky').select('slug, created_at'),
+                supabase.from('rady').select('slug, created_at'),
+                supabase.from('slovnik').select('slug, created_at')
+            ]);
             
-            data?.forEach(p => {
-                const d = safeDate(p.created_at);
-                if (p.slug) {
-                    routes.push({ url: `${baseUrl}/clanky/${p.slug}`, lastmod: d, priority: '0.9', changefreq: 'weekly' });
-                    routes.push({ url: `${baseUrl}/en/clanky/${p.slug}`, lastmod: d, priority: '0.8', changefreq: 'weekly' });
-                }
-            });
+            // Pomocná funkce pro bezpečné plnění routes
+            const addContentRoutes = (data, basePath) => {
+                data?.forEach(p => {
+                    const d = safeDate(p.created_at);
+                    if (p.slug) {
+                        routes.push({ url: `${baseUrl}/${basePath}/${p.slug}`, lastmod: d, priority: '0.9', changefreq: 'weekly' });
+                        routes.push({ url: `${baseUrl}/en/${basePath}/${p.slug}`, lastmod: d, priority: '0.8', changefreq: 'weekly' });
+                    }
+                });
+            };
+
+            addContentRoutes(postsRes.data, 'clanky');
+            addContentRoutes(tipyRes.data, 'tipy');
+            addContentRoutes(tweakyRes.data, 'tweaky');
+            addContentRoutes(radyRes.data, 'rady');
+            addContentRoutes(slovnikRes.data, 'slovnik');
             
         } else if (type === 'cpu') {
-            // 🚀 GURU FIX: Zde byl odstraněn 'slug' ze selectu pro tabulku cpus
             const { data: cpus, error: cpuErr } = await supabase.from('cpus').select('name, created_at');
             if (cpuErr) return new Response(generateDebugXml(`CPU DB ERROR: ${cpuErr.message}`), { headers: xmlHeaders });
             
@@ -75,7 +94,7 @@ export async function GET(req, props) {
             const games = dbGames.length > 0 ? dbGames : ['cyberpunk-2077', 'warzone', 'starfield', 'cs2'];
 
             cpus?.forEach(c => {
-                const s = slugify(c.name); // Spoléháme se čistě na dynamický slug
+                const s = slugify(c.name); 
                 const d = safeDate(c.created_at);
                 routes.push({ url: `${baseUrl}/cpu/${s}`, lastmod: d, priority: '0.9', changefreq: 'monthly' });
                 routes.push({ url: `${baseUrl}/en/cpu/${s}`, lastmod: d, priority: '0.8', changefreq: 'monthly' });
@@ -144,7 +163,6 @@ export async function GET(req, props) {
             const limit = 2; 
             const offset = (chunkId - 1) * limit;
 
-            // 🚀 GURU FIX: Zde byl také odstraněn 'slug' pro tabulku cpus.
             const { data: cpus, error: cpuErr } = await supabase
                 .from('cpus')
                 .select('name')
@@ -167,7 +185,7 @@ export async function GET(req, props) {
             const resolutions = ['1080p', '1440p', '4k'];
 
             cpus.forEach(cpu => {
-                const cpuSlug = slugify(cpu.name); // 🚀 Používáme jen dynamický slug
+                const cpuSlug = slugify(cpu.name); 
                 gpus.forEach(gpu => {
                     const gpuSlug = cleanGpuSlug(gpu.slug, gpu.name);
                     if (!cpuSlug || !gpuSlug) return;
