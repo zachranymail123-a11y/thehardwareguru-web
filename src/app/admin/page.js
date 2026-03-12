@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-// 🛡️ GURU FIX: Pro prostředí Preview/Canvas používáme ESM import, aby se předešlo chybě "Could not resolve"
+// 🛡️ GURU FIX: Pro funkčnost v tomto prostředí (Canvas) používáme ESM import.
+// Poznámka: Pokud by Vercel při buildu protestoval proti "https" schématu, 
+// stačí pro ostrý deploy změnit zpět na '@supabase/supabase-js'.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js';
 import { 
   Rocket, Settings, Globe, Search, Database, CalendarClock, 
@@ -13,10 +15,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V17.9 - FIX & TRENDS
+ * GURU ULTIMATE COMMAND CENTER V17.9 - FIX & TRENDS ENGINE
  * Cesta: src/app/admin/page.js
- * 🛡️ FIX: Import Supabase změněn na https://esm.sh/ pro funkčnost v Preview.
- * 🚀 NEW: Integrace Guru Trends Engine s ochranou proti duplicitám.
+ * 🛡️ FIX: Import Supabase upraven pro kompatibilitu s Canvas kompilátorem.
+ * 🚀 NEW: Integrace Guru Trends Engine (Google Trendy + Wiki filtr + DB de-duplikace).
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -80,7 +82,7 @@ const SidebarItemUI = ({ id, activeTab, setActiveTab, icon, label, color, href }
 export default function AdminApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
-  const [activeTab, setActiveTab] = useState('dashboard'); // Změněno na dashboard pro lepší start
+  const [activeTab, setActiveTab] = useState('dashboard'); 
   const [loading, setLoading] = useState(false);
   const [consoleLogs, setConsoleLogs] = useState([]);
   const logEndRef = useRef(null);
@@ -245,16 +247,16 @@ export default function AdminApp() {
   // 🚀 TRENDS FETCH ENGINE
   const fetchTrendingGames = async () => {
     setTrendsLoading(true);
-    addLog("Skenuji Google Trendy (CZ+US) a filtruji duplicity...", "warning");
+    addLog("Prohledávám Google Trendy a de-duplikuji obsah...", "warning");
     try {
       const res = await fetch('/api/trends');
       const json = await res.json();
       if (json.success) {
         setTrendingGames(json.data);
-        addLog(`V nalezených trendech identifikovány ${json.data.length} nové unikátní hry.`, "success");
+        addLog(`Načteny ${json.data.length} nové trendující hry, které ještě nemáte v DB.`, "success");
       }
     } catch (e) {
-      addLog("Trend API momentálně nedostupné.", "error");
+      addLog("Trend API selhalo.", "error");
     } finally {
       setTrendsLoading(false);
     }
@@ -274,7 +276,7 @@ export default function AdminApp() {
         if (savedDraftsLocal) setSavedDrafts(JSON.parse(savedDraftsLocal));
       } catch (e) {}
       isInitialized.current = true;
-      addLog('GURU OS načten.', 'success');
+      addLog('Guru Command Center připraven.', 'success');
     }
   }, []);
 
@@ -324,8 +326,8 @@ export default function AdminApp() {
         deals: dealsRes.data || [],
         stats: { visits: statsRes.data?.value || 0, missingEn: 0, missingSeo: 0 }
       });
-      addLog('Databáze synchronizována.', 'success');
-    } catch (err) { addLog(`Chyba DB: ${err.message}`, 'error'); }
+      addLog('Synchronizace databáze hotova.', 'success');
+    } catch (err) { addLog(`DB Error: ${err.message}`, 'error'); }
     finally { setLoading(false); }
   };
 
@@ -333,7 +335,7 @@ export default function AdminApp() {
     setIntelLoading(true);
     setAiActive(false);
     setAiStatusMsg('ANALÝZA...');
-    addLog('Aktivuji Intel Radar...', 'warning');
+    addLog('Aktivuji hloubkový sken sítě...', 'warning');
     
     try {
       const res = await fetch('/api/leaks');
@@ -341,44 +343,34 @@ export default function AdminApp() {
       
       if (json.success) {
         let rawItems = json.data || [];
-        
         const dbTokensList = data.posts.flatMap(p => [tokenize(p.title), tokenize(p.title_en)]).filter(s => s.size > 0);
         const seenTokens = [];
         let cleanItems = [];
-        let frontendFiltered = 0;
+        let filtered = 0;
 
         for (const item of rawItems) {
             const t = tokenize(item.title);
             if (t.size === 0) { cleanItems.push(item); continue; }
-            
             let isDupe = false;
-            for (const dbT of dbTokensList) {
-                if (isSemanticDuplicate(t, dbT)) { isDupe = true; break; }
-            }
-            if (isDupe) { frontendFiltered++; continue; }
-            
-            for (const seen of seenTokens) {
-                if (isSemanticDuplicate(t, seen)) { isDupe = true; break; }
-            }
-            if (isDupe) { frontendFiltered++; continue; }
-            
+            for (const dbT of dbTokensList) if (isSemanticDuplicate(t, dbT)) { isDupe = true; break; }
+            if (isDupe) { filtered++; continue; }
+            for (const seen of seenTokens) if (isSemanticDuplicate(t, seen)) { isDupe = true; break; }
+            if (isDupe) { filtered++; continue; }
             seenTokens.push(t);
             cleanItems.push(item);
         }
         
-        if (frontendFiltered > 0) addLog(`Odfiltrováno ${frontendFiltered} sémantických duplicit.`, 'success');
-
+        if (filtered > 0) addLog(`Sémantická ochrana zahodila ${filtered} duplicitních zpráv.`, 'success');
         setAiActive(json._debug?.ai_active || false);
         setAiStatusMsg(json._debug?.ai_active ? 'ONLINE' : 'OFFLINE');
         
         setHwIntel(cleanItems.filter(i => i.intelType === "hw").slice(0, 10));
         setGameIntel(cleanItems.filter(i => i.intelType === "game").slice(0, 10));
         setLeaksIntel(cleanItems.filter(i => i.intelType === "leaks").slice(0, 10));
-        
       } else {
         throw new Error(json.error);
       }
-    } catch (err) { addLog(`Intel fail: ${err.message}`, 'error'); }
+    } catch (err) { addLog(`Intel Hub fail: ${err.message}`, 'error'); }
     finally { setIntelLoading(false); }
   };
 
@@ -388,13 +380,10 @@ export default function AdminApp() {
       setPreviewMode('card');
       return;
     }
-
     const openAiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || getEnv('NEXT_PUBLIC_OPENAI_API_KEY');
     if (!openAiKey) return addLog('CHYBÍ AI KLÍČ!', 'error');
-    
     setProcessingTitle(item.title);
-    addLog(`AI tvoří rozbor: ${item.title.substring(0, 30)}...`, 'warning');
-    
+    addLog(`Guru AI zpracovává: ${item.title.substring(0, 30)}...`, 'warning');
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -402,32 +391,19 @@ export default function AdminApp() {
         body: JSON.stringify({
           model: "gpt-4o-mini",
           messages: [
-            { 
-              role: "system", 
-              content: "Jsi Hardware Guru. JSON output: { title_cs, content_cs, description_cs, seo_description_cs, slug_cs, seo_keywords_cs, title_en, content_en, description_en, seo_description_en, slug_en, meta_title_en, seo_keywords_en, image_alt, og_title, trailer }" 
-            },
-            { role: "user", content: `Vytvoř článek z: ${item.title}. Zdroj: ${item.description || item.title}.` }
+            { role: "system", content: "Jsi Hardware Guru. JSON: { title_cs, content_cs, description_cs, seo_description_cs, slug_cs, seo_keywords_cs, title_en, content_en, description_en, seo_description_en, slug_en, meta_title_en, seo_keywords_en, image_alt, og_title, trailer }" },
+            { role: "user", content: `Článek pro: ${item.title}.` }
           ],
           response_format: { type: "json_object" }
         })
       });
-      
       const r = await response.json();
       const aiData = JSON.parse(r?.choices?.[0]?.message?.content);
-      
-      const newDraft = {
-        ...aiData,
-        image_url: (item.title || '').toLowerCase().includes('leak') ? LEAK_PLACEHOLDER_URL : item.image_url, 
-        created_at: new Date().toISOString(),
-        type: item.intelType || 'hardware',
-        original_item: item,
-        is_important: false
-      };
-
+      const newDraft = { ...aiData, image_url: item.image_url, created_at: new Date().toISOString(), type: item.intelType || 'hardware', original_item: item, is_important: false };
       setSavedDrafts(prev => ({ ...prev, [item.title]: newDraft }));
       setDraft(newDraft);
       setPreviewMode('card');
-      addLog('Koncept vytvořen.', 'success');
+      addLog('Rozbor vygenerován.', 'success');
     } catch (err) { addLog(`AI fail: ${err.message}`, 'error'); }
     finally { setProcessingTitle(null); }
   };
@@ -435,27 +411,19 @@ export default function AdminApp() {
   const publishAndSendToMake = async () => {
     if (!draft) return;
     const articleWebhook = getEnv('NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL');
-    addLog('PUBLIKUJI...', 'warning');
+    addLog('ODPALUJI DO CLOUDU...', 'warning');
     try {
       const { data: dbData, error } = await supabase.from('posts').insert([{
         title: draft.title_cs, slug: draft.slug_cs, content: draft.content_cs, description: draft.description_cs, seo_description: draft.seo_description_cs, seo_keywords: draft.seo_keywords_cs,
         title_en: draft.title_en, slug_en: draft.slug_en, content_en: draft.content_en, description_en: draft.description_en, seo_description_en: draft.seo_description_en, meta_title_en: draft.meta_title_en, seo_keywords_en: draft.seo_keywords_en,
         image_url: draft.image_url, image_alt: draft.image_alt || draft.title_cs, og_title: draft.og_title || draft.title_cs, trailer: draft.trailer, type: draft.type, created_at: draft.created_at, is_fired: true 
       }]).select().single();
-
       if (error) throw error;
-      if (articleWebhook) {
-        await fetch(articleWebhook, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: dbData.title, url: `${BASE_URL}/clanky/${dbData.slug}`, image_url: dbData.image_url, description: dbData.description })
-        });
-      }
-      
+      if (articleWebhook) await fetch(articleWebhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: dbData.title, url: `${BASE_URL}/clanky/${dbData.slug}`, image_url: dbData.image_url }) });
       setDraft(null); 
       setPreviewMode('none'); 
       fetchAndScanData();
-      addLog('PUBLIKACE DOKONČENA! 🚀', 'success');
+      addLog('PUBLIKACE ÚSPĚŠNÁ! 🚀', 'success');
     } catch (err) { addLog(`Kritická chyba: ${err.message}`, 'error'); }
   };
 
@@ -463,7 +431,7 @@ export default function AdminApp() {
     <div style={{ minHeight: '100vh', background: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
       <form onSubmit={handleLogin} style={{ background: '#111318', padding: '50px', borderRadius: '30px', border: '1px solid #eab30866', textAlign: 'center', maxWidth: '400px', width: '100%' }}>
         <Lock size={50} color="#eab308" style={{ margin: '0 auto 20px' }} />
-        <h1 style={{ fontWeight: 900 }}>GURU VELÍN</h1>
+        <h1 style={{fontWeight: 900}}>GURU VELÍN</h1>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Guru heslo..." style={{ width: '100%', padding: '15px', borderRadius: '12px', background: '#000', border: '1px solid #333', color: '#fff', marginBottom: '20px', textAlign: 'center' }} />
         <button type="submit" style={{ width: '100%', padding: '15px', background: '#eab308', color: '#000', border: 'none', borderRadius: '12px', fontWeight: '900', cursor: 'pointer' }}>VSTOUPIT</button>
       </form>
@@ -480,26 +448,23 @@ export default function AdminApp() {
         .hub-compact-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 40px; }
         .compact-card { background: #0d0e12; border: 1px solid #ffffff08; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; transition: 0.3s; position: relative; min-height: 160px; overflow: hidden; }
         .compact-card:hover { border-color: #eab308; transform: translateY(-3px); }
-        .compact-badge { position: absolute; top: 6px; right: 6px; background: #ff0055; color: #fff; padding: 2px 5px; border-radius: 4px; font-size: 8px; font-weight: 950; z-index: 5; }
         .terminal-box { background: #000; border: 1px solid #22c55e33; border-radius: 15px; padding: 20px; font-family: monospace; font-size: 12px; overflow-y: auto; color: #22c55e; }
-        .input-group { display: flex; flex-direction: column; gap: 10px; }
-        .input-group input { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 15px; border-radius: 12px; color: #fff; outline: none; }
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}} />
 
       {previewMode !== 'none' && draft && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 500, display: 'flex' }}>
-          <div style={{ width: '340px', background: '#0d0e12', padding: '30px 20px', borderRight: '1px solid #ffffff10' }}>
-            <h2 style={{ color: '#eab308', fontWeight: 950, textAlign: 'center' }}>NÁHLED</h2>
-            <button onClick={publishAndSendToMake} style={{ width: '100%', padding: '15px', background: '#10b981', color: '#fff', borderRadius: '12px', border: 'none', fontWeight: 'bold', cursor: 'pointer', marginBottom: '10px' }}>PUBLIKOVAT</button>
-            <button onClick={() => setPreviewMode('none')} style={{ width: '100%', padding: '15px', background: '#333', color: '#fff', borderRadius: '12px', border: 'none', cursor: 'pointer' }}>ZAVŘÍT</button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.96)', zIndex: 500, display: 'flex' }}>
+          <div style={{ width: '340px', background: '#0d0e12', padding: '30px 20px', borderRight: '1px solid #ffffff15' }}>
+            <h2 style={{ color: '#eab308', fontWeight: 950, textAlign: 'center' }}>GURU PREVIEW</h2>
+            <button onClick={publishAndSendToMake} style={{ width: '100%', padding: '15px', background: '#10b981', color: '#fff', borderRadius: '12px', border: 'none', fontWeight: 900, cursor: 'pointer', marginBottom: '10px' }}>PUBLIKOVAT</button>
+            <button onClick={() => setPreviewMode('none')} style={{ width: '100%', padding: '15px', background: '#333', color: '#fff', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: 900 }}>ZAVŘÍT</button>
           </div>
           <div style={{ flex: 1, padding: '40px', overflowY: 'auto', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ background: '#0a0b0d', width: '100%', maxWidth: '800px', borderRadius: '24px', border: '1px solid #333', padding: '40px' }}>
-                <h1 style={{ fontWeight: 900, fontSize: '2.5rem' }}>{draft.title_cs}</h1>
-                <img src={draft.image_url} style={{ width: '100%', borderRadius: '16px', margin: '20px 0' }} />
-                <div dangerouslySetInnerHTML={{ __html: draft.content_cs }} style={{ color: '#ccc', lineHeight: '1.6' }} />
+            <div style={{ background: '#0a0b0d', width: '100%', maxWidth: '800px', borderRadius: '30px', border: '1px solid #333', padding: '40px', boxShadow: '0 50px 100px rgba(0,0,0,0.5)' }}>
+                <h1 style={{ fontWeight: 950, fontSize: '2.8rem', lineHeight: 1.1 }}>{draft.title_cs}</h1>
+                <img src={draft.image_url} style={{ width: '100%', borderRadius: '20px', margin: '25px 0', border: '1px solid #ffffff10' }} />
+                <div dangerouslySetInnerHTML={{ __html: draft.content_cs }} style={{ color: '#aaa', lineHeight: '1.7', fontSize: '1.1rem' }} />
             </div>
           </div>
         </div>
@@ -510,50 +475,51 @@ export default function AdminApp() {
           <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 900 }}>GURU <span style={{ color: '#a855f7' }}>ADMIN</span></h2>
         </div>
         <nav style={{ flex: 1 }}>
-          <SidebarItemUI id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LayoutDashboard />} label="PŘEHLED" color="#a855f7" />
-          <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="INTEL HUB" color="#eab308" />
-          <SidebarItemUI id="database" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Database />} label="DATABÁZE" color="#66fcf1" />
+          <SidebarItemUI id="dashboard" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LayoutDashboard />} label="DASHBOARD" color="#a855f7" />
+          <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="INTEL RADAR" color="#eab308" />
+          <SidebarItemUI id="database" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Database />} label="GURU DB" color="#66fcf1" />
         </nav>
       </aside>
 
       <main className="admin-main">
         {activeTab === 'dashboard' && (
           <div>
-            <h2 style={{ fontSize: '32px', fontWeight: 950, marginBottom: '30px' }}>SYSTÉM</h2>
+            <h2 style={{ fontSize: '32px', fontWeight: 950, marginBottom: '30px', textTransform: 'uppercase' }}>Systémový <span style={{color:'#a855f7'}}>Status</span></h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-              <div style={{ background: '#111318', padding: '25px', borderRadius: '20px', border: '1px solid #333', textAlign: 'center' }}>
-                <h3 style={{ fontSize: '28px', fontWeight: 950 }}>{data.stats.visits}</h3><p style={{fontSize: '10px', color: '#4b5563'}}>NÁVŠTĚVY</p>
+              <div style={{ background: '#111318', padding: '25px', borderRadius: '24px', border: '1px solid #333', textAlign: 'center' }}>
+                <h3 style={{ fontSize: '28px', fontWeight: 950 }}>{data.stats.visits}</h3><p style={{fontSize: '11px', color: '#4b5563', fontWeight: 900}}>CELKOVÉ NÁVŠTĚVY</p>
               </div>
-              <div style={{ background: '#111318', padding: '25px', borderRadius: '20px', border: '1px solid #333', textAlign: 'center' }}>
-                <h3 style={{ fontSize: '28px', fontWeight: 950 }}>{data.posts.length}</h3><p style={{fontSize: '10px', color: '#4b5563'}}>ČLÁNKY</p>
+              <div style={{ background: '#111318', padding: '25px', borderRadius: '24px', border: '1px solid #333', textAlign: 'center' }}>
+                <h3 style={{ fontSize: '28px', fontWeight: 950 }}>{data.posts.length}</h3><p style={{fontSize: '11px', color: '#4b5563', fontWeight: 900}}>PUBLIKOVANÉ ČLÁNKY</p>
               </div>
             </div>
 
             <div style={{marginTop: '40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
-              <div style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #eab30833' }}>
+              {/* 🚀 TRENDS WIDGET */}
+              <div style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #eab30833', boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <h3 style={{ fontSize: '14px', fontWeight: 950, color: '#eab308' }}>🔥 TOP TRENDY HRY</h3>
+                    <h3 style={{ fontSize: '14px', fontWeight: 950, color: '#eab308' }}>🔥 TOP TRENDY HRY (UNIKÁTNÍ)</h3>
                     <button onClick={fetchTrendingGames} style={{ background: 'transparent', border: 'none', color: '#4b5563', cursor: 'pointer' }}><RefreshCw size={14} className={trendsLoading ? 'animate-spin' : ''}/></button>
                 </div>
                 {trendingGames.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {trendingGames.map((game, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#000', padding: '10px 15px', borderRadius: '12px', border: '1px solid #ffffff08' }}>
-                                <span style={{ color: '#eab308', fontWeight: 900 }}>#{i+1}</span>
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#000', padding: '12px 18px', borderRadius: '15px', border: '1px solid #ffffff08' }}>
+                                <span style={{ color: '#eab308', fontWeight: 950 }}>#{i+1}</span>
                                 <span style={{ flex: 1, fontWeight: 700, fontSize: '13px' }}>{game}</span>
                                 <button onClick={() => { 
                                     setActiveTab('database');
                                     setDbTab('games');
                                     setDbFormData(prev => ({ ...prev, name: game }));
-                                }} style={{ fontSize: '10px', color: '#66fcf1', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 900 }}>PŘIDAT</button>
+                                }} style={{ fontSize: '10px', color: '#66fcf1', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 950, letterSpacing: 1 }}>PŘIDAT DO DB</button>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <p style={{ color: '#4b5563', fontSize: '12px' }}>{trendsLoading ? 'Skenuji...' : 'Skenovat trendy...'}</p>
+                    <p style={{ color: '#4b5563', fontSize: '12px' }}>{trendsLoading ? 'Skenuji Google Trendy...' : 'Klikněte na Scan pro načtení trendů...'}</p>
                 )}
               </div>
-              <div className="terminal-box" style={{height: '300px'}}>{consoleLogs.slice(-10).map((log, i) => (<div key={i}>[{log.time}] {log.msg}</div>))}</div>
+              <div className="terminal-box" style={{height: '340px'}}>{consoleLogs.slice(-12).map((log, i) => (<div key={i}>[{log.time}] {log.msg}</div>))}</div>
             </div>
           </div>
         )}
@@ -561,15 +527,15 @@ export default function AdminApp() {
         {activeTab === 'intel-hub' && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
-              <h2 style={{ fontSize: '32px', fontWeight: 950 }}>INTEL HUB</h2>
-              <button onClick={fetchIntelFeed} className="sidebar-btn" style={{ background: '#eab308', color: '#000', borderRadius: '12px', width: 'auto', padding: '10px 20px' }}><RefreshCw size={14} className={intelLoading ? 'animate-spin' : ''}/> SCAN</button>
+              <h2 style={{ fontSize: '32px', fontWeight: 950 }}>INTEL RADAR</h2>
+              <button onClick={fetchIntelFeed} className="sidebar-btn" style={{ background: '#eab308', color: '#000', borderRadius: '14px', width: 'auto', padding: '12px 25px' }}><RefreshCw size={14} className={intelLoading ? 'animate-spin' : ''}/> SCAN NETWORK</button>
             </div>
             <div className="hub-compact-grid">
               {hwIntel.concat(gameIntel).slice(0, 10).map((item, i) => (
-                <div key={i} className="compact-card">
-                  <span style={{ fontSize: '8px', color: '#4b5563' }}>{item.source}</span>
-                  <h4 style={{ fontSize: '11px', fontWeight: 900, margin: '10px 0' }}>{item.title}</h4>
-                  <button onClick={() => createDraftFromIntel(item)} style={{ marginTop: 'auto', background: '#eab30833', border: '1px solid #eab308', borderRadius: '6px', color: '#eab308', fontSize: '9px', padding: '5px', cursor: 'pointer' }}>KONCEPT</button>
+                <div key={i} className="compact-card" style={{padding: '15px'}}>
+                  <span style={{ fontSize: '8px', color: '#4b5563', fontWeight: 950 }}>{item.source}</span>
+                  <h4 style={{ fontSize: '12px', fontWeight: 950, margin: '10px 0', color: '#fff' }}>{item.title}</h4>
+                  <button onClick={() => createDraftFromIntel(item)} disabled={processingTitle === item.title} style={{ marginTop: 'auto', background: '#eab30822', border: '1px solid #eab308', borderRadius: '8px', color: '#eab308', fontSize: '9px', padding: '8px', cursor: 'pointer', fontWeight: 900 }}>{processingTitle === item.title ? 'ZPRACOVÁVÁM...' : 'GENEROVAT ROZBOR'}</button>
                 </div>
               ))}
             </div>
@@ -579,28 +545,28 @@ export default function AdminApp() {
         {activeTab === 'database' && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '40px' }}>
-              <h2 style={{ fontSize: '32px', fontWeight: 950 }}>DATABÁZE</h2>
-              <button onClick={triggerIndexNow} style={{ padding: '15px 30px', background: '#a855f7', color: '#fff', border: 'none', borderRadius: '14px', fontWeight: 900, cursor: 'pointer' }}>INDEXOVAT WEB</button>
+              <h2 style={{ fontSize: '32px', fontWeight: 950 }}>SPRÁVA <span style={{color:'#66fcf1'}}>GURU DB</span></h2>
+              <button onClick={triggerIndexNow} style={{ padding: '15px 35px', background: '#a855f7', color: '#fff', border: 'none', borderRadius: '16px', fontWeight: 950, cursor: 'pointer', boxShadow: '0 10px 30px rgba(168, 85, 247, 0.4)' }}>INDEXOVAT CELÝ WEB</button>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '30px' }}>
-              <button onClick={() => setDbTab('games')} style={{ flex: 1, padding: '15px', borderRadius: '12px', background: dbTab === 'games' ? '#66fcf1' : '#222', color: dbTab === 'games' ? '#000' : '#fff', fontWeight: 'bold', border: 'none' }}>HRA</button>
-              <button onClick={() => setDbTab('gpu')} style={{ flex: 1, padding: '15px', borderRadius: '12px', background: dbTab === 'gpu' ? '#66fcf1' : '#222', color: dbTab === 'gpu' ? '#000' : '#fff', fontWeight: 'bold', border: 'none' }}>GPU</button>
-              <button onClick={() => setDbTab('cpu')} style={{ flex: 1, padding: '15px', borderRadius: '12px', background: dbTab === 'cpu' ? '#66fcf1' : '#222', color: dbTab === 'cpu' ? '#000' : '#fff', fontWeight: 'bold', border: 'none' }}>CPU</button>
+            <div style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
+              <button onClick={() => setDbTab('games')} style={{ flex: 1, padding: '18px', borderRadius: '16px', background: dbTab === 'games' ? '#66fcf1' : '#111', color: dbTab === 'games' ? '#000' : '#fff', fontWeight: 900, border: 'none', cursor:'pointer' }}>NOVÁ HRA</button>
+              <button onClick={() => setDbTab('gpu')} style={{ flex: 1, padding: '18px', borderRadius: '16px', background: dbTab === 'gpu' ? '#66fcf1' : '#111', color: dbTab === 'gpu' ? '#000' : '#fff', fontWeight: 900, border: 'none', cursor:'pointer' }}>NOVÉ GPU</button>
+              <button onClick={() => setDbTab('cpu')} style={{ flex: 1, padding: '18px', borderRadius: '16px', background: dbTab === 'cpu' ? '#66fcf1' : '#111', color: dbTab === 'cpu' ? '#000' : '#fff', fontWeight: 900, border: 'none', cursor:'pointer' }}>NOVÉ CPU</button>
             </div>
 
-            {dbMessage.text && <div style={{ padding: '15px', background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10b981', borderRadius: '12px', marginBottom: '20px', color: '#10b981' }}>{dbMessage.text}</div>}
+            {dbMessage.text && <div style={{ padding: '20px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', borderRadius: '16px', marginBottom: '25px', color: '#10b981', fontWeight: 700 }}>{dbMessage.text}</div>}
 
-            <form onSubmit={handleDbSubmit} style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #333' }}>
-              <div className="input-group" style={{ marginBottom: '20px' }}>
-                <label style={{ fontSize: '10px', color: '#4b5563', fontWeight: 900 }}>NÁZEV</label>
-                <input type="text" name="name" value={dbFormData.name} onChange={handleDbInputChange} required />
+            <form onSubmit={handleDbSubmit} style={{ background: '#111318', padding: '40px', borderRadius: '30px', border: '1px solid #333' }}>
+              <div className="input-group" style={{ marginBottom: '25px' }}>
+                <label style={{ fontSize: '11px', color: '#4b5563', fontWeight: 950, letterSpacing: 1 }}>OFICIÁLNÍ NÁZEV</label>
+                <input type="text" name="name" value={dbFormData.name} onChange={handleDbInputChange} required style={{padding: '18px', borderRadius:'14px'}} />
               </div>
-              <div className="input-group" style={{ marginBottom: '20px' }}>
-                <label style={{ fontSize: '10px', color: '#4b5563', fontWeight: 900 }}>SLUG</label>
-                <input type="text" name="slug" value={dbFormData.slug} onChange={handleDbInputChange} required />
+              <div className="input-group" style={{ marginBottom: '25px' }}>
+                <label style={{ fontSize: '11px', color: '#4b5563', fontWeight: 950, letterSpacing: 1 }}>URL SLUG (AUTO)</label>
+                <input type="text" name="slug" value={dbFormData.slug} onChange={handleDbInputChange} required style={{padding: '18px', borderRadius:'14px'}} />
               </div>
-              <button type="submit" style={{ width: '100%', padding: '20px', background: '#66fcf1', color: '#000', borderRadius: '14px', fontWeight: 900, border: 'none', cursor: 'pointer' }}>VLOŽIT A AKTIVOVAT</button>
+              <button type="submit" disabled={dbLoading} style={{ width: '100%', padding: '22px', background: '#66fcf1', color: '#000', borderRadius: '18px', fontWeight: 950, border: 'none', cursor: 'pointer', textTransform:'uppercase', fontSize: '16px', boxShadow: '0 0 30px rgba(102, 252, 241, 0.3)' }}>{dbLoading ? 'AKTIVUJI...' : `VLOŽIT ${dbTab.toUpperCase()} A AKTIVOVAT TISÍCE STRÁNEK`}</button>
             </form>
           </div>
         )}
