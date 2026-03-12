@@ -20,13 +20,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - DETAIL V118.1 (GSC SCHEMA & EOF FIX)
+ * GURU GPU DUELS ENGINE - DETAIL V118.6 (ULTIMATE GSC STANDARD)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * 🛡️ FIX 1: Obohaceno Product Schema pro obě GPU o 'offers' a 'aggregateRating'.
  * 🛡️ FIX 2: Všechna schémata (Product, FAQ, Breadcrumb, Article, ItemList) vložena na root úroveň.
- * 🛡️ FIX 3: Cache vrácena na stabilních 3600s a 'force-cache' u fetchů pro lepší SEO.
- * 🛡️ FIX 4: Canonical doména v metadata používá relativní path proti redirect loopům.
- * 🛡️ FIX 5: Ochrana proti EOF (End Of File) truncation chybě na Vercelu.
+ * 🛡️ FIX 3: Cache vrácena na stabilních 3600s a absolutní Canonical + x-default (Zlatý standard).
+ * 🛡️ FIX 4: Perzistentní cache (generateAndPersistDuel) plně integrována.
  */
 
 export const runtime = "nodejs";
@@ -34,6 +33,7 @@ export const revalidate = 3600;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const baseUrl = "https://thehardwareguru.cz";
 
 const slugify = (text) => {
   return text.toLowerCase().replace(/nvidia|amd|geforce|radeon|graphics|gpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim();
@@ -71,7 +71,8 @@ const findGpuBySlug = async (gpuSlug) => {
       const tokens = cleanString.split(/\s+/).filter(t => t.length > 0);
       if (tokens.length > 0) {
           const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
-          const res3 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&and=(${conditions})&order=name.asc`, { headers, cache: 'force-cache' });
+          const url3 = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&and=(${conditions})&order=name.asc`;
+          const res3 = await fetch(url3, { headers, cache: 'force-cache' });
           if (res3.ok) { const data3 = await res3.json(); return data3?.[0] || null; }
       }
   } catch(e) {}
@@ -104,7 +105,9 @@ async function generateAndPersistDuel(rawSlug) {
         slug: cleanSlug, slug_en: `en-${cleanSlug}`, gpu_a_id: cardA.id, gpu_b_id: cardB.id,
         title_cs: `Srovnání grafických karet: ${cardA.name} vs ${cardB.name}`, 
         title_en: `Graphics cards comparison: ${cardA.name} vs ${cardB.name}`,
-        content_cs: '', content_en: '', seo_description_cs: `Srovnání ${cardA.name} vs ${cardB.name}.`, seo_description_en: `Comparison of ${cardA.name} vs ${cardB.name}.`,
+        content_cs: '', content_en: '', 
+        seo_description_cs: `Detailní srovnání výkonu a parametrů mezi ${cardA.name} a ${cardB.name}.`, 
+        seo_description_en: `Detailed performance and specs comparison between ${cardA.name} and ${cardB.name}.`,
         created_at: new Date().toISOString()
     };
 
@@ -146,7 +149,8 @@ const getDuelData = cache(async (rawSlug) => {
 });
 
 export async function generateMetadata({ params }) {
-  const rawSlug = params?.slug || params?.gpu || '';
+  const resolvedParams = await params;
+  const rawSlug = resolvedParams?.slug || resolvedParams?.gpu || '';
   const isEn = rawSlug.startsWith('en-');
   const duel = await getDuelData(rawSlug);
   if (!duel) return { title: '404 | Hardware Guru' };
@@ -163,14 +167,17 @@ export async function generateMetadata({ params }) {
     ? (duel.seo_description_en || `Detailed performance and specs comparison between ${gpuA.name} and ${gpuB.name}.`)
     : (duel.seo_description_cs || `Detailní srovnání výkonu a parametrů mezi ${gpuA.name} a ${gpuB.name}.`);
 
+  const canonicalUrl = `${baseUrl}/gpuvs/${duel.slug}`;
+
   return { 
     title: fullTitle, 
     description: description,
     alternates: { 
-      canonical: `/gpuvs/${duel.slug}`,
+      canonical: canonicalUrl,
       languages: { 
-        "en": `/en/gpuvs/${(duel.slug_en || `en-${duel.slug}`).replace(/^en-en-/,'en-')}`, 
-        "cs": `/gpuvs/${duel.slug}` 
+        "en": `${baseUrl}/en/gpuvs/${(duel.slug_en || `en-${duel.slug}`).replace(/^en-en-/,'en-')}`, 
+        "cs": canonicalUrl,
+        "x-default": canonicalUrl
       }
     },
     robots: {
@@ -179,7 +186,7 @@ export async function generateMetadata({ params }) {
     },
     openGraph: {
       type: "article",
-      url: `/gpuvs/${duel.slug}`,
+      url: canonicalUrl,
       title: fullTitle,
       description: description,
       siteName: "The Hardware Guru"
@@ -188,11 +195,12 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function GpuDuelDetail({ params }) {
-  const rawSlug = params?.slug || params?.gpu || '';
+  const resolvedParams = await params;
+  const rawSlug = resolvedParams?.slug || resolvedParams?.gpu || '';
   const isEn = rawSlug.startsWith('en-');
   const duel = await getDuelData(rawSlug);
   
-  if (!duel) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>DUEL NENALEZEN</div>;
+  if (!duel) return <div style={{ color: '#ef4444', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>DUEL NENALEZEN</div>;
 
   const { gpuA, gpuB } = duel;
   const similarPromise = gpuA?.id ? getSimilarDuels(gpuA.id, duel.slug) : Promise.resolve([]);
@@ -234,9 +242,7 @@ export default async function GpuDuelDetail({ params }) {
   const safeSlugB = gpuB.slug || slugify(gpuB.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
   const upgradeUrl = winner && loser ? `/${isEn ? 'en/' : ''}gpu-upgrade/${slugify(loser.name)}-to-${slugify(winner.name)}` : null;
 
-  // 🚀 ZLATÁ GSC SEO SCHÉMATA
-  const baseUrl = "https://thehardwareguru.cz";
-
+  // 🚀 ZLATÁ GSC SEO SCHÉMATA (Root Level)
   const productSchemaA = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -296,18 +302,12 @@ export default async function GpuDuelDetail({ params }) {
       {
         "@type": "ListItem",
         "position": 1,
-        "item": {
-           "@id": productSchemaA.url,
-           "name": productSchemaA.name
-        }
+        "item": { "@id": productSchemaA.url, "name": productSchemaA.name }
       },
       {
         "@type": "ListItem",
         "position": 2,
-        "item": {
-           "@id": productSchemaB.url,
-           "name": productSchemaB.name
-        }
+        "item": { "@id": productSchemaB.url, "name": productSchemaB.name }
       }
     ]
   };
@@ -419,7 +419,11 @@ export default async function GpuDuelDetail({ params }) {
                 <div className="content-box-style" style={{ borderLeft: '6px solid #66fcf1' }}>
                     <h2 className="section-h2" style={{ color: '#66fcf1', border: 'none', padding: 0 }}><BarChart3 size={28} style={{ display: 'inline', marginRight: '10px' }} /> {isEn ? 'GAMING PERFORMANCE SUMMARY' : 'SHRNUTÍ HERNÍHO VÝKONU'}</h2>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '30px' }}>
-                        {[{ label: 'CYBERPUNK 2077', diff: cyberpunkLead }, { label: 'WARZONE', diff: warzoneLead }, { label: 'STARFIELD', diff: starfieldLead }].map((item, i) => (
+                        {[
+                          { label: 'CYBERPUNK 2077', diff: cyberpunkLead }, 
+                          { label: 'WARZONE', diff: warzoneLead }, 
+                          { label: 'STARFIELD', diff: starfieldLead }
+                        ].map((item, i) => (
                             <div key={i} className="summary-item">
                                 <span className="summary-label">{item.label}</span>
                                 <div className="summary-val" style={{ color: '#66fcf1' }}>{item.diff > 0 ? `+${item.diff}` : '0'} %</div>
@@ -456,7 +460,7 @@ export default async function GpuDuelDetail({ params }) {
         </section>
 
         <section style={{ marginBottom: '60px' }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: '950', color: '#66fcf1', textTransform: 'uppercase', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '15px' }}><Activity size={36} /> {isEn ? 'DEEP DIVE ANALYSIS' : 'DETAILNÍ ANALÝZA'}</h2>
+          <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><Activity size={36} /> {isEn ? 'DEEP DIVE ANALYSIS' : 'DETAILNÍ ANALÝZA'}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px' }}>
               {[gpuA, gpuB].map((gpu, i) => {
                   const safeSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
@@ -499,6 +503,8 @@ export default async function GpuDuelDetail({ params }) {
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
+        .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); }
+
         .guru-ranking-link { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
         .guru-verdict { margin-top: 25px; color: #66fcf1; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 10px 25px; background: rgba(102, 252, 241, 0.05); border: 1px solid rgba(102, 252, 241, 0.2); border-radius: 50px; display: inline-flex; align-items: center; gap: 10px; }
         .guru-upgrade-pill { display: inline-flex; align-items: center; gap: 10px; padding: 10px 25px; background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; margin-top: 25px; transition: 0.3s; }
