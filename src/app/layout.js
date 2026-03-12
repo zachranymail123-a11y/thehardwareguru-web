@@ -54,12 +54,18 @@ export default function RootLayout({ children, params }) {
     <html lang={locale}>
       <head>
 
-        {/* RSS FEED */}
+        {/* 🚀 RSS FEEDY - Discovery linky pro Googlebot */}
         <link
           rel="alternate"
           type="application/rss+xml"
           title="The Hardware Guru RSS Feed"
           href="https://thehardwareguru.cz/rss.xml"
+        />
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title="Hardware Guru Comparisons RSS"
+          href="https://thehardwareguru.cz/rss-comparisons.xml"
         />
 
         {/* GOOGLE ANALYTICS */}
