@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK ENGINE V18.1 (BACKUP + GSC SCHEMA FIX)
+ * GURU BOTTLENECK ENGINE V18.1 (ZÁLOHA + GSC SCHEMA FIX)
  * Cesta: src/app/bottleneck/[slug]/page.js
  * 🛡️ FIX 1: Ošetření řetězce "undefined" ve vyhledávání (řeší URL chyby).
  * 🛡️ FIX 2: Sekce GURU RÁDCE a CTA tlačítka se nyní zobrazují i na chybové stránce.
