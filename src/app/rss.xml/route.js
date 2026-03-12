@@ -1,18 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU RSS ENGINE V23.0 - MAIN FEED (ARTICLES, NEWS, DEALS)
+ * GURU RSS ENGINE V23.3 - MAIN SEO FEED (ARTICLES, NEWS)
  * Cesta: src/app/rss.xml/route.js
- * 🛡️ FIX 1: revalidate = 3600 (Cache na 1 hodinu) pro optimální crawl budget.
+ * 🚀 CÍL: Hlavní feed pro redakční obsah (články, novinky).
+ * 🛡️ FIX 1: revalidate = 3600 (Cache na 1 hodinu).
  * 🛡️ FIX 2: Přidán tag <generator>The Hardware Guru RSS Engine</generator>.
- * 🛡️ FIX 3: Odstraněn programmatic obsah (přesunut do samostatného rss-comparisons.xml feedu).
+ * 🛡️ FIX 3: Content-Type je striktně 'application/rss+xml; charset=utf-8' (GSC standard).
  */
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 3600; // 🚀 GURU FIX: 1h Cache dle doporučení ChatGPT
+export const revalidate = 3600; // 🚀 GURU FIX: 1h Cache
 
 const baseUrl = 'https://thehardwareguru.cz';
 
+// Používáme POUZE veřejný klíč
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -39,7 +41,7 @@ const safeCDATA = (str = '') =>
 
 export async function GET() {
   try {
-    // 🚀 Zde stahujeme pouze redakční obsah (Články, Novinky)
+    // 🚀 Taháme POUZE redakční obsah (Články a novinky)
     const { data: postsRes, error } = await supabase
       .from('posts')
       .select('id, slug, title, description, seo_description, image_url, created_at')
@@ -74,7 +76,7 @@ export async function GET() {
     xml += `  <link>${baseUrl}/</link>\n`;
     xml += `  <description><![CDATA[${safeCDATA('Nejnovější HW tipy a herní novinky z Hardware Guru základny.')}]]></description>\n`;
     xml += `  <language>cs</language>\n`;
-    xml += `  <generator>The Hardware Guru RSS Engine</generator>\n`; // 🚀 GURU FIX: Generator Tag
+    xml += `  <generator>The Hardware Guru RSS Engine</generator>\n`; // 🚀 GURU FIX
     xml += `  <ttl>60</ttl>\n`; 
     xml += `  <lastBuildDate>${now}</lastBuildDate>\n`;
     
@@ -107,6 +109,7 @@ export async function GET() {
 
     return new Response(xml, {
       headers: {
+        // 🚀 GURU FIX: Zpět striktně na application/rss+xml; charset=utf-8
         'Content-Type': 'application/rss+xml; charset=utf-8',
         'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600'
       }
