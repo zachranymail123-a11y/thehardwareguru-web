@@ -1,12 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - CHUNK GENERATOR V37.0 (ULTIMATE GSC EDITION)
+ * GURU SEO ENGINE - CHUNK GENERATOR V37.1 (FULL DYNAMIC & EN COVERAGE)
  * Cesta: src/app/guru-sitemap/[id]/route.js
- * 🛡️ FIX 1: Absolutně čisté XML bez komentářů pro 100% validitu v GSC.
- * 🛡️ FIX 2: Limit 5 CPU na soubor (shoda s Master Indexem).
- * 🛡️ FIX 3: Plná podpora sekcí Tipy, Tweaky, Rady a Slovník.
- * 🛡️ FIX 4: Dynamické načítání her z DB pro všechny FPS podstránky.
+ * 🛡️ FIX 1: Doplněny chybějící EN varianty pro CPU/GPU Performance, Recommend a FPS stránky.
+ * 🛡️ FIX 2: Plně dynamické načítání her z DB - sitemapa se nafukuje s každou novou hrou.
+ * 🛡️ FIX 3: Čisté XML bez komentářů pro GSC validitu.
  */
 
 export const revalidate = 3600; 
@@ -73,7 +72,7 @@ export async function GET(req, props) {
             addContentRoutes(radyRes.data, 'rady');
             addContentRoutes(slovnikRes.data, 'slovnik');
 
-        // --- 3. CPU PROFILY + FPS ---
+        // --- 3. CPU PROFILY + FPS (DYNAMICKÉ HRY) ---
         } else if (type === 'cpu') {
             const [cpusRes, gamesRes] = await Promise.all([
                 supabase.from('cpus').select('name, created_at'),
@@ -85,14 +84,20 @@ export async function GET(req, props) {
                 const d = safeDate(c.created_at);
                 routes.push({ url: `${baseUrl}/cpu/${s}`, lastmod: d, priority: '0.9', changefreq: 'monthly' });
                 routes.push({ url: `${baseUrl}/en/cpu/${s}`, lastmod: d, priority: '0.8' });
+                
                 routes.push({ url: `${baseUrl}/cpu-performance/${s}`, lastmod: d, priority: '0.8' });
+                routes.push({ url: `${baseUrl}/en/cpu-performance/${s}`, lastmod: d, priority: '0.7' });
+                
                 routes.push({ url: `${baseUrl}/cpu-recommend/${s}`, lastmod: d, priority: '0.8' });
+                routes.push({ url: `${baseUrl}/en/cpu-recommend/${s}`, lastmod: d, priority: '0.7' });
+                
                 dbGames.forEach(g => {
                     routes.push({ url: `${baseUrl}/cpu-fps/${s}/${g}`, lastmod: d, priority: '0.7' });
+                    routes.push({ url: `${baseUrl}/en/cpu-fps/${s}/${g}`, lastmod: d, priority: '0.6' });
                 });
             });
 
-        // --- 4. GPU PROFILY + FPS ---
+        // --- 4. GPU PROFILY + FPS (DYNAMICKÉ HRY) ---
         } else if (type === 'gpu') {
             const [gpusRes, gamesRes] = await Promise.all([
                 supabase.from('gpus').select('name, slug, created_at'),
@@ -104,10 +109,16 @@ export async function GET(req, props) {
                 const d = safeDate(g.created_at);
                 routes.push({ url: `${baseUrl}/gpu/${s}`, lastmod: d, priority: '0.9', changefreq: 'monthly' });
                 routes.push({ url: `${baseUrl}/en/gpu/${s}`, lastmod: d, priority: '0.8' });
+                
                 routes.push({ url: `${baseUrl}/gpu-performance/${s}`, lastmod: d, priority: '0.8' });
+                routes.push({ url: `${baseUrl}/en/gpu-performance/${s}`, lastmod: d, priority: '0.7' });
+                
                 routes.push({ url: `${baseUrl}/gpu-recommend/${s}`, lastmod: d, priority: '0.8' });
+                routes.push({ url: `${baseUrl}/en/gpu-recommend/${s}`, lastmod: d, priority: '0.7' });
+                
                 dbGames.forEach(gm => {
                     routes.push({ url: `${baseUrl}/gpu-fps/${s}/${gm}`, lastmod: d, priority: '0.7' });
+                    routes.push({ url: `${baseUrl}/en/gpu-fps/${s}/${gm}`, lastmod: d, priority: '0.6' });
                 });
             });
 
