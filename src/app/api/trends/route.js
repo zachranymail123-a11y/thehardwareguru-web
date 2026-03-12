@@ -1,15 +1,31 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU TRENDS ENGINE V1.0
+ * GURU TRENDS ENGINE V1.1 - DUPLICATE PROTECTION
  * Cesta: src/app/api/trends/route.js
  * 🛡️ LOGIKA: 
  * 1. Stáhne denní trendy z Google RSS (CZ a US).
- * 2. Ověří každý trend přes Wikipedia API.
- * 3. Pokud Wikipedia potvrdí, že jde o "videohru", zařadí ji do Top 3.
+ * 2. Načte existující hry z DB, aby zamezil duplicitám.
+ * 3. Ověří každý trend přes Wikipedia API.
+ * 4. Pokud Wikipedia potvrdí, že jde o hru a NENÍ v DB, zařadí ji do Top 3.
  */
 
 export const dynamic = 'force-dynamic';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Pomocná funkce pro slugify (shodná s DB triggerem)
+const slugify = (text) => 
+  text?.toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\-]/g, '')
+    .replace(/\-+/g, '-')
+    .replace(/^-+|-+$/g, '') || '';
 
 async function isGameOnWiki(query) {
   const langs = ['cs', 'en'];
@@ -20,6 +36,7 @@ async function isGameOnWiki(query) {
       if (res.ok) {
         const data = await res.json();
         const text = (data.extract || '').toLowerCase();
+        // Hledáme klíčová slova potvrzující herní tématiku
         if (text.includes('videohra') || text.includes('video game') || text.includes('herní série') || text.includes('game series')) {
           return true;
         }
@@ -33,7 +50,11 @@ async function isGameOnWiki(query) {
 
 export async function GET() {
   try {
-    // Získání trendů z Google RSS (jednoduchá cesta bez pytrends)
+    // 1. Získání existujících her z DB pro kontrolu duplicit
+    const { data: existingGames } = await supabase.from('games').select('slug');
+    const existingSlugs = new Set(existingGames?.map(g => g.slug) || []);
+
+    // 2. Získání trendů z Google RSS
     const regions = ['CZ', 'US'];
     let candidates = new Set();
 
@@ -42,7 +63,6 @@ export async function GET() {
       const res = await fetch(rssUrl);
       const xml = await res.text();
       
-      // Jednoduchý regex pro vytažení <title> z RSS (titulky trendů)
       const matches = xml.match(/<title>(.*?)<\/title>/g);
       if (matches) {
         matches.forEach(m => {
@@ -57,11 +77,21 @@ export async function GET() {
     const gameTrends = [];
     const candidateList = Array.from(candidates);
 
-    // Paralelní ověření přes Wikipedii (limitujeme na prvních 15 trendů pro rychlost)
-    for (const item of candidateList.slice(0, 15)) {
+    // 3. Filtrace a validace (přeskakujeme to, co už máme)
+    for (const item of candidateList) {
+      const currentSlug = slugify(item);
+      
+      // 🛡️ GURU DUPLICATE CHECK: Pokud už slug v DB máme, zahodíme ho
+      if (existingSlugs.has(currentSlug)) {
+        continue;
+      }
+
+      // 🛡️ WIKI CHECK: Ověříme, zda jde o hru
       if (await isGameOnWiki(item)) {
         gameTrends.push(item);
       }
+
+      // Potřebujeme jen top 3 nové hry
       if (gameTrends.length >= 3) break;
     }
 
