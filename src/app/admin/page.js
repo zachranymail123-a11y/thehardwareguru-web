@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { createClient } from '@supabase/supabase-js';
+// PŘED NAHRÁNÍM NA VERCEL ZMĚŇTE TENTO ŘÁDEK NA: import { createClient } from '@supabase/supabase-js';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js';
 import { 
   Rocket, Settings, Globe, Search, Database, CalendarClock, 
   ShoppingCart, Activity, ShieldCheck, Zap, AlertTriangle, 
