@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-// 🛡️ GURU FIX: Pro funkčnost v tomto prostředí (Canvas) používáme ESM import.
-// Poznámka: Pokud by Vercel při buildu protestoval proti "https" schématu, 
-// stačí pro ostrý deploy změnit zpět na '@supabase/supabase-js'.
-import { createClient } from 'https://esm.sh/@supabase/supabase-js';
+// 🛡️ GURU FIX (dle ChatGPT): Vracíme standardní statický import pro Vercel build.
+// Tato verze je 100% kompatibilní s Webpackem a produkčním nasazením.
+import { createClient } from '@supabase/supabase-js';
 import { 
   Rocket, Settings, Globe, Search, Database, CalendarClock, 
   ShoppingCart, Activity, ShieldCheck, Zap, AlertTriangle, 
@@ -15,9 +14,9 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V17.9 - FIX & TRENDS ENGINE
+ * GURU ULTIMATE COMMAND CENTER V17.9 - FINAL PRODUCTION BUILD
  * Cesta: src/app/admin/page.js
- * 🛡️ FIX: Import Supabase upraven pro kompatibilitu s Canvas kompilátorem.
+ * 🛡️ FIX: Odstraněny https://esm.sh/ importy (oprava UnhandledSchemeError).
  * 🚀 NEW: Integrace Guru Trends Engine (Google Trendy + Wiki filtr + DB de-duplikace).
  */
 
