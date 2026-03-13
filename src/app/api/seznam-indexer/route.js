@@ -1,24 +1,23 @@
 import { NextResponse } from 'next/server';
 import { XMLParser } from 'fast-xml-parser';
+import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEZNAM AUTO-INDEXER V2.0 (CRON & RATE LIMIT READY)
+ * GURU SEZNAM AUTO-INDEXER V3.0 (WITH PERMANENT MEMORY)
  * Cesta: src/app/api/seznam-indexer/route.js
- * 🛡️ LIMITS: 
- * - Max 5 dotazů / s (nastaveno 600ms delay = ~1.6 req/s)
- * - Max 100 dotazů / min (600ms delay zajistí max 100/min)
- * - Max 500 dotazů / den (kontrolováno parametrem limit)
+ * 🚀 CÍL: Posílat Seznamu pokaždé unikátní URL adresy a pamatovat si je v DB.
  */
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const sitemapName = searchParams.get('sitemap') || 'pages'; 
-  
-  // 🚀 GURU LIMIT: Maximálně 500 denně dle pravidel Seznamu. 
-  // Pro jedno spuštění doporučuji 15, aby Vercel nehodil Timeout (10s limit).
   const limit = Math.min(parseInt(searchParams.get('limit') || '15', 10), 500); 
 
   const apiKey = process.env.SEZNAM_API_KEY;
@@ -30,33 +29,50 @@ export async function GET(request) {
   const sitemapUrl = `${baseUrl}/guru-sitemap/${sitemapName}.xml`;
 
   try {
-    // 1. STÁHNUTÍ SITEMAPY
+    // 1. NAČTENÍ JIŽ ODESLANÝCH URL Z DATABÁZE (PAMĚŤ)
+    const { data: alreadyIndexed } = await supabase
+        .from('seznam_indexed_urls')
+        .select('url');
+    
+    const indexedSet = new Set(alreadyIndexed?.map(item => item.url) || []);
+
+    // 2. STÁHNUTÍ SITEMAPY
     const sitemapRes = await fetch(sitemapUrl, { cache: 'no-store' });
     if (!sitemapRes.ok) {
        return NextResponse.json({ error: `Nelze načíst sitemapu: ${sitemapUrl}. HTTP ${sitemapRes.status}` });
     }
     const xmlData = await sitemapRes.text();
 
-    // 2. PARSOVÁNÍ URL
+    // 3. PARSOVÁNÍ URL
     const parser = new XMLParser();
     const parsed = parser.parse(xmlData);
 
-    let urls = [];
+    let allUrlsFromSitemap = [];
     if (parsed.urlset && parsed.urlset.url) {
-        urls = Array.isArray(parsed.urlset.url) ? parsed.urlset.url : [parsed.urlset.url];
+        const rawUrls = Array.isArray(parsed.urlset.url) ? parsed.urlset.url : [parsed.urlset.url];
+        allUrlsFromSitemap = rawUrls.map(u => u.loc);
     }
 
-    if (urls.length === 0) return NextResponse.json({ message: `Sitemapa ${sitemapName}.xml je prázdná.` });
+    if (allUrlsFromSitemap.length === 0) return NextResponse.json({ message: `Sitemapa ${sitemapName}.xml je prázdná.` });
 
-    // Náhodně zamícháme nebo vezmeme prvních N podle limitu
-    const urlsToProcess = urls.slice(0, limit).map(u => u.loc);
+    // 4. FILTRACE - VYBEREME JEN TY, KTERÉ JSME JEŠTĚ NEPOSLALI
+    const urlsToProcess = allUrlsFromSitemap
+        .filter(url => !indexedSet.has(url))
+        .slice(0, limit);
+
+    if (urlsToProcess.length === 0) {
+        return NextResponse.json({ 
+            guru_status: "FINISHED", 
+            message: `Všechny adresy ze sitemapy ${sitemapName}.xml již byly Seznamu odeslány.` 
+        });
+    }
+
     const results = [];
+    const successfulUrls = [];
 
-    // 3. CYKLUS S INTELLIGENTNÍM DELAYEM (600ms)
+    // 5. CYKLUS ODESÍLÁNÍ S DELAYEM
     for (const url of urlsToProcess) {
         try {
-            // 🚀 GURU FIX: Přesný formát z tvého úspěšného cURL testu
-            // URL parametry key a url v POST požadavku
             const targetUrl = `https://reporter.seznam.cz/wm-api/web/document/reindex?key=${apiKey}&url=${encodeURIComponent(url)}`;
             
             const seznamRes = await fetch(targetUrl, {
@@ -65,32 +81,40 @@ export async function GET(request) {
                     'accept': 'application/json',
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
                 },
-                body: '' // cURL ukázal prázdné body (-d '')
+                body: ''
             });
 
-            const responseText = await seznamRes.text();
-            let seznamData = null;
-            try { seznamData = JSON.parse(responseText); } catch(e) { seznamData = responseText; }
+            const ok = seznamRes.status === 200 || seznamRes.status === 201;
+
+            if (ok) {
+                successfulUrls.push({ url });
+            }
 
             results.push({
                 url,
                 status: seznamRes.status,
-                ok: seznamRes.status === 200 || seznamRes.status === 201,
-                seznam_response: seznamData
+                ok: ok
             });
 
         } catch (err) {
             results.push({ url, error: err.message, status: 500, ok: false });
         }
         
-        // 🚀 RATE LIMIT BYPASS: 600ms pauza zajistí dodržení 100 req/min i 5 req/s
         await new Promise(resolve => setTimeout(resolve, 600));
+    }
+
+    // 6. ZÁPIS ÚSPĚŠNÝCH URL DO PAMĚTI (SUPABASE)
+    if (successfulUrls.length > 0) {
+        await supabase
+            .from('seznam_indexed_urls')
+            .upsert(successfulUrls, { onConflict: 'url' });
     }
 
     return NextResponse.json({
         guru_status: "SUCCESS",
         processed_count: results.length,
-        message: `Odesláno ${results.filter(r => r.ok).length} URL do Seznamu (Rate limit 600ms dodržen).`,
+        new_indexed_count: successfulUrls.length,
+        message: `Odesláno ${successfulUrls.length} nových URL.`,
         results: results
     });
 
