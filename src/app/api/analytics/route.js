@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 
 /**
- * GURU ANALYTICS ENGINE V3.0 (LIVE DATA & BUILD SAFE)
+ * GURU ANALYTICS ENGINE V3.1 (LIVE DATA & VERCEL KEY FIX)
  * Cesta: src/app/api/analytics/route.js
  * 🚀 CÍL: Reálné napojení na GA4.
- * 🛡️ FIX: Dynamický import zaručuje, že Vercel nehodí chybu při buildu.
+ * 🛡️ FIX: Robustní čištění private key (odstranění uvozovek z Vercelu a oprava zalomení).
  */
 
 export const dynamic = 'force-dynamic';
@@ -13,8 +13,20 @@ export const revalidate = 3600; // Data se kešují na 1 hodinu
 export async function GET() {
   const propertyId = process.env.GA_PROPERTY_ID;
   const clientEmail = process.env.GA_CLIENT_EMAIL;
-  // Ošetření zalomení řádků v klíči, které Vercel často rozbije
-  const privateKey = process.env.GA_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  
+  // 🛡️ GURU FIX: Získání klíče z Vercelu a robustní očištění
+  let privateKey = process.env.GA_PRIVATE_KEY || '';
+  
+  // Odstranění přebytečných uvozovek (častý Vercel bug)
+  if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+    privateKey = privateKey.slice(1, -1);
+  }
+  if (privateKey.startsWith("'") && privateKey.endsWith("'")) {
+    privateKey = privateKey.slice(1, -1);
+  }
+  
+  // Oprava zalomení řádků
+  privateKey = privateKey.replace(/\\n/g, '\n');
 
   // Pokud chybí klíče v prostředí, vrátíme fallback
   if (!propertyId || !clientEmail || !privateKey) {
@@ -52,7 +64,7 @@ export async function GET() {
   } catch (error) {
     console.error("GA4 FETCH ERROR:", error);
     // Pokud na webu uvidíš "13 844", znamená to, že knihovna NENÍ nainstalovaná 
-    // nebo jsou Google Analytics klíče neplatné.
+    // nebo jsou Google Analytics klíče stále neplatné (zkontroluj Google Cloud / IAM).
     return NextResponse.json({ totalUsers: "13 844" }, { status: 200 }); 
   }
 }
