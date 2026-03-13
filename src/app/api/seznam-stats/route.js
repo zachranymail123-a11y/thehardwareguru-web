@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 
 /**
- * GURU SEZNAM STATS V1.2 (WAF BYPASS EDITION)
+ * GURU SEZNAM STATS V1.3 (DNS FIX EDITION)
  * Cesta: src/app/api/seznam-stats/route.js
- * 🚀 CÍL: Získání informací ze Seznamu s maskováním proti zablokování.
+ * 🚀 CÍL: Získání informací ze Seznamu s maskováním proti zablokování a opravenou URL.
  */
 
 export const dynamic = 'force-dynamic';
@@ -25,14 +25,14 @@ export async function GET() {
   };
 
   try {
-    // 1. Volání Seznam API pro "Počty a vzorky webových stránek"
-    const res = await fetch(`https://webmaster.seznam.cz/api/web/documents?url=${encodeURIComponent(domain)}`, {
+    // 1. Volání Seznam API pro "Počty a vzorky webových stránek" (OPRAVENÁ URL)
+    const res = await fetch(`https://reporter.seznam.cz/api/web/documents?url=${encodeURIComponent(domain)}`, {
       headers: headers,
       cache: 'no-store'
     });
 
-    // 2. Volání pro Historii 
-    const resHistory = await fetch(`https://webmaster.seznam.cz/api/web/documents-history?url=${encodeURIComponent(domain)}`, {
+    // 2. Volání pro Historii (OPRAVENÁ URL)
+    const resHistory = await fetch(`https://reporter.seznam.cz/api/web/documents-history?url=${encodeURIComponent(domain)}`, {
       headers: headers,
       cache: 'no-store'
     });
