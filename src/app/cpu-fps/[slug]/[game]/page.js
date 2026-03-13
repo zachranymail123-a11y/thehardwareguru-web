@@ -12,13 +12,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU FPS ENGINE - BENCHMARK PAGE V1.5 (FINAL SLUG & RTX 5090)
+ * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.0 (TOTAL DB FIX)
  * Cesta: src/app/cpu-fps/[slug]/[game]/page.js
- * 🛡️ FIX 1: Sjednocen parametr na [slug] pro shodu s GPU a fix buildu.
- * 🛡️ FIX 2: Agresivní branding testovací sestavy s RTX 5090.
- * 🛡️ FIX 3: Opraven mapovací klíč pro hry (cyberpunk-2077 -> cyberpunk).
- * 🛡️ FIX 4: Revalidate 0 + no-store = okamžitý refresh dat z DB.
- * 🛡️ GLOBAL: Bulletproof 3-Tier Lookup s filtrací vendorů.
+ * 🛡️ FIX 1: Kompletně odstraněny dotazy na 'slug' sloupec v DB (opravuje Error 500).
+ * 🛡️ FIX 2: Vylepšený Tokenized AND match - najde CPU i z URL s balastem (amd-, intel-).
+ * 🛡️ FIX 3: Striktní ošetření asynchronních parametrů pro Next.js 15.
  */
 
 export const runtime = "nodejs";
@@ -29,42 +27,37 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 
-// 🛡️ GURU ENGINE: 3-TIER SYSTEM PRO CPU (Exact, Substring, Tokenized)
+// 🚀 GURU GLOBAL LOOKUP: Najde hardware bez nutnosti mít v DB sloupec 'slug'
 const findCpuBySlug = async (cpuSlug) => {
   if (!supabaseUrl || !cpuSlug || cpuSlug === 'undefined') return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
 
-  // TIER 1: Exact match na slug
   try {
-      const url1 = `${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=eq.${cpuSlug}&limit=1`;
-      const res1 = await fetch(url1, { headers, cache: 'no-store' });
-      if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
-  } catch(e) {}
-
-  // TIER 2: Substring match
-  try {
-      const url2 = `${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=ilike.*${cpuSlug}*&order=slug.asc&limit=1`;
-      const res2 = await fetch(url2, { headers, cache: 'no-store' });
-      if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
-  } catch(e) {}
-
-  // TIER 3: Tokenized AND match (🛡️ GLOBAL FIX: Filtrace vendorů)
-  try {
+      // 🛡️ GURU FILTR: Odstraníme vendor balast a pomlčky
       const cleanString = cpuSlug.replace(/-/g, ' ').replace(/amd|intel|ryzen|core|ultra|processor|cpu/gi, '').trim();
       const tokens = cleanString.split(/\s+/).filter(t => t.length > 0);
+      
       if (tokens.length > 0) {
+          // Sestavíme dotaz: Všechny tokeny musí být obsaženy v poli 'name' (např. "9" AND "9900")
           const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
-          const url3 = `${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&and=(${conditions})&order=name.asc&limit=1`;
-          const res3 = await fetch(url3, { headers, cache: 'no-store' });
-          if (res3.ok) { const data3 = await res3.json(); return data3?.[0] || null; }
+          const url = `${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&and=(${conditions})&limit=1`;
+          
+          const res = await fetch(url, { headers, cache: 'no-store' });
+          if (res.ok) {
+              const data = await res.json();
+              return data?.[0] || null;
+          }
       }
-  } catch(e) {}
+  } catch(e) {
+      console.error("GURU LOOKUP CRASH:", e);
+  }
   return null;
 };
 
 export async function generateMetadata(props) {
   const params = await props.params;
   const { slug: rawCpuSlug, game: rawGameSlug } = params;
+  
   const isEn = rawCpuSlug.startsWith('en-');
   const cpuSlug = rawCpuSlug.replace(/^en-/, '');
   const gameSlug = rawGameSlug.replace(/^en-/, '');
@@ -73,25 +66,23 @@ export async function generateMetadata(props) {
   if (!cpu) return { title: '404 | Hardware Guru' };
 
   const gameLabel = gameSlug.replace(/-/g, ' ').toUpperCase();
-  const fpsData = Array.isArray(cpu.cpu_game_fps) ? cpu.cpu_game_fps[0] : (cpu.cpu_game_fps || {});
+  const fpsData = cpu.cpu_game_fps?.[0] || {};
   const gameKey = gameSlug.replace('-2077', '').replace(/-/g, '_');
   const fps = Number(fpsData[`${gameKey}_1440p`] || fpsData[`${gameKey}_1080p`] || 0);
 
-  const safeSlug = cpu.slug || cpuSlug;
-
   return {
     title: isEn 
-      ? `${cpu.name} ${gameLabel} FPS Benchmark (RTX 5090 Test) | The Hardware Guru`
-      : `${cpu.name} ${gameLabel} FPS Benchmark (Test s RTX 5090) | The Hardware Guru`,
+      ? `${cpu.name} ${gameLabel} FPS (Tested on RTX 5090) | The Hardware Guru`
+      : `${cpu.name} ${gameLabel} FPS (Testováno s RTX 5090) | The Hardware Guru`,
     description: isEn
-      ? `Real CPU performance of ${cpu.name} in ${gameLabel} tested with NVIDIA RTX 5090. Average ${fps} FPS. Detailed technical analysis.`
-      : `Podívejte se na reálný výkon procesoru ${cpu.name} ve hře ${gameLabel} testovaný s NVIDIA RTX 5090. Průměrně ${fps} FPS. Detailní analýza.`,
+      ? `Real CPU performance of ${cpu.name} in ${gameLabel} tested with NVIDIA RTX 5090. Average ${fps} FPS.`
+      : `Podívejte se na reálný výkon procesoru ${cpu.name} ve hře ${gameLabel} s kartou NVIDIA RTX 5090. Průměrně ${fps} FPS.`,
     alternates: {
-        canonical: `https://thehardwareguru.cz/cpu-fps/${safeSlug}/${gameSlug}`,
+        canonical: `https://thehardwareguru.cz/cpu-fps/${cpuSlug}/${gameSlug}`,
         languages: {
-            'en': `https://thehardwareguru.cz/en/cpu-fps/${safeSlug}/${gameSlug}`,
-            'cs': `https://thehardwareguru.cz/cpu-fps/${safeSlug}/${gameSlug}`,
-            'x-default': `https://thehardwareguru.cz/cpu-fps/${safeSlug}/${gameSlug}`
+            'en': `https://thehardwareguru.cz/en/cpu-fps/${cpuSlug}/${gameSlug}`,
+            'cs': `https://thehardwareguru.cz/cpu-fps/${cpuSlug}/${gameSlug}`,
+            'x-default': `https://thehardwareguru.cz/cpu-fps/${cpuSlug}/${gameSlug}`
         }
     }
   };
@@ -105,17 +96,25 @@ export default async function App(props) {
   const gameSlug = rawGameSlug.replace(/^en-/, '');
   
   const cpu = await findCpuBySlug(cpuSlug);
-  if (!cpu) return <div style={{ color: '#ef4444', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>CPU NENALEZENO</div>;
+  
+  if (!cpu) return (
+    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+        <div style={{ textAlign: 'center', padding: '40px', border: '1px solid #ef4444', borderRadius: '20px' }}>
+            <h1 style={{ color: '#ef4444', fontWeight: '900' }}>404 | CPU NENALEZENO</h1>
+            <p style={{ color: '#4b5563', marginTop: '10px' }}>Databáze neobsahuje procesor s klíčem: {cpuSlug}</p>
+        </div>
+    </div>
+  );
 
   const gameKey = gameSlug.replace('-2077', '').replace(/-/g, '_');
-  const fpsData = Array.isArray(cpu.cpu_game_fps) ? cpu.cpu_game_fps[0] : (cpu.cpu_game_fps || {});
+  const fpsData = cpu.cpu_game_fps?.[0] || {};
   
-  // 🚀 GURU FIX: Absolutní pojistka proti undefined
+  // 🚀 GURU: Bezpečné načtení FPS s fallbacky
   const fpsBase = Number(fpsData[`${gameKey}_1440p`] || fpsData[`${gameKey}_1080p`] || 0);
   
-  const fps1080p = Math.round(fpsBase * 1.25);
+  const fps1080p = fpsBase > 0 ? Math.round(fpsBase * 1.25) : 0;
   const fps1440p = fpsBase;
-  const fps4k = Math.round(fpsBase * 0.85);
+  const fps4k = fpsBase > 0 ? Math.round(fpsBase * 0.85) : 0;
 
   const getVerdict = (f) => {
       if (f >= 120) return { en: 'ESPORTS READY', cz: 'ESPORT ÚROVEŇ', color: '#10b981' };
@@ -127,14 +126,13 @@ export default async function App(props) {
   const verdict = getVerdict(fps1440p);
   const verdictText = isEn ? verdict.en : verdict.cz;
   const cleanGameLabel = gameSlug.replace(/-/g, ' ');
-  const safeProfileSlug = cpu.slug || cpuSlug;
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
-          <a href={isEn ? `/en/cpu/${safeProfileSlug}` : `/cpu/${safeProfileSlug}`} className="guru-back-btn">
+          <a href={isEn ? `/en/cpu/${cpuSlug}` : `/cpu/${cpuSlug}`} className="guru-back-btn">
             <ChevronLeft size={16} /> {isEn ? 'BACK TO CPU PROFILE' : 'ZPĚT NA PROFIL'}
           </a>
         </div>
@@ -144,7 +142,6 @@ export default async function App(props) {
              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', padding: '6px 20px', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '50px', background: 'rgba(245,158,11,0.05)' }}>
                <Gauge size={16} /> GURU CPU RADAR
              </div>
-             {/* 🚀 GURU: MASIVNÍ RTX 5090 BRANDING */}
              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#76b900', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', padding: '6px 20px', border: '1px solid rgba(118, 185, 0, 0.5)', borderRadius: '50px', background: 'rgba(118, 185, 0, 0.1)', boxShadow: '0 0 30px rgba(118, 185, 0, 0.2)' }}>
                <Zap size={14} fill="currentColor" /> {isEn ? 'TESTED ON NVIDIA RTX 5090' : 'TESTOVÁNO S NVIDIA RTX 5090'}
              </div>
@@ -156,7 +153,6 @@ export default async function App(props) {
           </h1>
         </header>
 
-        {/* 🚀 FPS HERO CARD */}
         <section style={{ marginBottom: '60px' }}>
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(245, 158, 11, 0.2)', borderLeft: `10px solid ${verdict.color}`, borderRadius: '24px', padding: '60px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
                 <div style={{ color: '#9ca3af', fontSize: '13px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>
@@ -173,7 +169,6 @@ export default async function App(props) {
             </div>
         </section>
 
-        {/* 🚀 RESOLUTION SCALING (RTX 5090 PAIRING) */}
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Monitor size={28} /> {isEn ? 'SCALING WITH RTX 5090' : 'ŠKÁLOVÁNÍ S RTX 5090'}
@@ -194,7 +189,6 @@ export default async function App(props) {
           </div>
         </section>
 
-        {/* 🚀 SEO CONTENT & HARDWARE CONTEXT */}
         <section style={{ marginBottom: '60px' }}>
             <div className="content-box-style">
                 <div className="guru-prose">
@@ -219,7 +213,6 @@ export default async function App(props) {
             </div>
         </section>
 
-        {/* 🚀 CROSS-LINK TO VS ENGINE */}
         <section style={{ textAlign: 'center', marginTop: '80px' }}>
             <div style={{ color: '#9ca3af', marginBottom: '20px', fontWeight: 'bold', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}>
               {isEn ? 'Want more benchmarks? Compare this CPU' : 'Chcete více benchmarků? Porovnejte tento procesor'}
