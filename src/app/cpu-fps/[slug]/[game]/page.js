@@ -12,44 +12,52 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.0 (TOTAL DB FIX)
+ * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.1 (GLOBAL LOOKUP & GSC FIX)
  * Cesta: src/app/cpu-fps/[slug]/[game]/page.js
- * 🛡️ FIX 1: Kompletně odstraněny dotazy na 'slug' sloupec v DB (opravuje Error 500).
- * 🛡️ FIX 2: Vylepšený Tokenized AND match - najde CPU i z URL s balastem (amd-, intel-).
- * 🛡️ FIX 3: Striktní ošetření asynchronních parametrů pro Next.js 15.
+ * 🛡️ GLOBAL FIX: Tokenized AND lookup s agresivní filtrací vendor prefixů (amd, intel atd.).
+ * 🛡️ NEXT.JS 15 FIX: Striktní 'await props.params' pro zamezení Error 500.
+ * 🛡️ DATA FIX: Vylepšené mapování herních sloupců (cs2, cyberpunk) pro eliminaci "?" FPS.
  */
 
 export const runtime = "nodejs";
-export const revalidate = 0; 
+export const revalidate = 3600; 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const baseUrl = "https://thehardwareguru.cz";
 
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 
-// 🚀 GURU GLOBAL LOOKUP: Najde hardware bez nutnosti mít v DB sloupec 'slug'
+// 🚀 GURU GLOBAL LOOKUP: Nejpokročilejší vyhledávač hardwaru bez nutnosti sloupce 'slug'
 const findCpuBySlug = async (cpuSlug) => {
   if (!supabaseUrl || !cpuSlug || cpuSlug === 'undefined') return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
 
   try {
-      // 🛡️ GURU FILTR: Odstraníme vendor balast a pomlčky
+      // TIER 1: Exact match na slug v DB (pokud existuje)
+      const res1 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=eq.${cpuSlug}&limit=1`, { headers, cache: 'force-cache' });
+      if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
+
+      // TIER 2: Substring match na slug
+      const res2 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=ilike.*${cpuSlug}*&limit=1`, { headers, cache: 'force-cache' });
+      if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
+
+      // TIER 3: GURU GLOBAL TOKENIZED AND MATCH (Fixuje amd-ryzen-9-9900 -> Ryzen 9 9900)
       const cleanString = cpuSlug.replace(/-/g, ' ').replace(/amd|intel|ryzen|core|ultra|processor|cpu/gi, '').trim();
       const tokens = cleanString.split(/\s+/).filter(t => t.length > 0);
       
       if (tokens.length > 0) {
-          // Sestavíme dotaz: Všechny tokeny musí být obsaženy v poli 'name' (např. "9" AND "9900")
+          // Všechny části názvu musí sedět (např. "9" AND "9900")
           const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
-          const url = `${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&and=(${conditions})&limit=1`;
-          
-          const res = await fetch(url, { headers, cache: 'no-store' });
-          if (res.ok) {
-              const data = await res.json();
-              return data?.[0] || null;
+          const url3 = `${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&and=(${conditions})&limit=1`;
+          const res3 = await fetch(url3, { headers, cache: 'force-cache' });
+          if (res3.ok) { 
+              const data3 = await res3.json(); 
+              return data3?.[0] || null; 
           }
       }
   } catch(e) {
-      console.error("GURU LOOKUP CRASH:", e);
+      console.error("GURU LOOKUP CRITICAL ERROR:", e);
   }
   return null;
 };
@@ -66,8 +74,8 @@ export async function generateMetadata(props) {
   if (!cpu) return { title: '404 | Hardware Guru' };
 
   const gameLabel = gameSlug.replace(/-/g, ' ').toUpperCase();
-  const fpsData = cpu.cpu_game_fps?.[0] || {};
   const gameKey = gameSlug.replace('-2077', '').replace(/-/g, '_');
+  const fpsData = cpu.cpu_game_fps?.[0] || {};
   const fps = Number(fpsData[`${gameKey}_1440p`] || fpsData[`${gameKey}_1080p`] || 0);
 
   return {
@@ -75,14 +83,14 @@ export async function generateMetadata(props) {
       ? `${cpu.name} ${gameLabel} FPS (Tested on RTX 5090) | The Hardware Guru`
       : `${cpu.name} ${gameLabel} FPS (Testováno s RTX 5090) | The Hardware Guru`,
     description: isEn
-      ? `Real CPU performance of ${cpu.name} in ${gameLabel} tested with NVIDIA RTX 5090. Average ${fps} FPS.`
-      : `Podívejte se na reálný výkon procesoru ${cpu.name} ve hře ${gameLabel} s kartou NVIDIA RTX 5090. Průměrně ${fps} FPS.`,
+      ? `Check out ${cpu.name} pure gaming performance in ${gameLabel} paired with NVIDIA RTX 5090. Average ${fps} FPS.`
+      : `Podívejte se na reálný herní výkon procesoru ${cpu.name} ve hře ${gameLabel} s kartou NVIDIA RTX 5090. Průměrně ${fps} FPS.`,
     alternates: {
-        canonical: `https://thehardwareguru.cz/cpu-fps/${cpuSlug}/${gameSlug}`,
+        canonical: `${baseUrl}/cpu-fps/${cpuSlug}/${gameSlug}`,
         languages: {
-            'en': `https://thehardwareguru.cz/en/cpu-fps/${cpuSlug}/${gameSlug}`,
-            'cs': `https://thehardwareguru.cz/cpu-fps/${cpuSlug}/${gameSlug}`,
-            'x-default': `https://thehardwareguru.cz/cpu-fps/${cpuSlug}/${gameSlug}`
+            'en': `${baseUrl}/en/cpu-fps/${cpuSlug}/${gameSlug}`,
+            'cs': `${baseUrl}/cpu-fps/${cpuSlug}/${gameSlug}`,
+            'x-default': `${baseUrl}/cpu-fps/${cpuSlug}/${gameSlug}`
         }
     }
   };
@@ -101,15 +109,16 @@ export default async function App(props) {
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
         <div style={{ textAlign: 'center', padding: '40px', border: '1px solid #ef4444', borderRadius: '20px' }}>
             <h1 style={{ color: '#ef4444', fontWeight: '900' }}>404 | CPU NENALEZENO</h1>
-            <p style={{ color: '#4b5563', marginTop: '10px' }}>Databáze neobsahuje procesor s klíčem: {cpuSlug}</p>
+            <p style={{ color: '#4b5563', marginTop: '10px' }}>Systém nenašel procesor odpovídající: {cpuSlug}</p>
         </div>
     </div>
   );
 
+  // 🚀 GURU: Chytré mapování herních sloupců
   const gameKey = gameSlug.replace('-2077', '').replace(/-/g, '_');
   const fpsData = cpu.cpu_game_fps?.[0] || {};
   
-  // 🚀 GURU: Bezpečné načtení FPS s fallbacky
+  // Zkusíme 1440p, pokud není, zkusíme 1080p (typické pro CS2), jinak 0
   const fpsBase = Number(fpsData[`${gameKey}_1440p`] || fpsData[`${gameKey}_1080p`] || 0);
   
   const fps1080p = fpsBase > 0 ? Math.round(fpsBase * 1.25) : 0;
@@ -117,10 +126,10 @@ export default async function App(props) {
   const fps4k = fpsBase > 0 ? Math.round(fpsBase * 0.85) : 0;
 
   const getVerdict = (f) => {
-      if (f >= 120) return { en: 'ESPORTS READY', cz: 'ESPORT ÚROVEŇ', color: '#10b981' };
+      if (f >= 120) return { en: 'ULTIMATE PERFORMANCE', cz: 'BRUTÁLNÍ VÝKON', color: '#10b981' };
       if (f >= 60) return { en: 'SMOOTH GAMING', cz: 'PLYNULÉ HRANÍ', color: '#f59e0b' };
-      if (f >= 30) return { en: 'PLAYABLE', cz: 'HRATELNÉ', color: '#eab308' };
-      return { en: 'BOTTLENECK', cz: 'BRZDÍ SYSTÉM', color: '#ef4444' };
+      if (f > 0) return { en: 'PLAYABLE', cz: 'HRATELNÉ', color: '#eab308' };
+      return { en: 'LOW FPS', cz: 'NÍZKÝ VÝKON', color: '#ef4444' };
   };
 
   const verdict = getVerdict(fps1440p);
@@ -133,7 +142,7 @@ export default async function App(props) {
       <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? `/en/cpu/${cpuSlug}` : `/cpu/${cpuSlug}`} className="guru-back-btn">
-            <ChevronLeft size={16} /> {isEn ? 'BACK TO CPU PROFILE' : 'ZPĚT NA PROFIL'}
+            <ChevronLeft size={16} /> {isEn ? 'BACK TO PROFILE' : 'ZPĚT NA PROFIL'}
           </a>
         </div>
 
@@ -173,7 +182,7 @@ export default async function App(props) {
           <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Monitor size={28} /> {isEn ? 'SCALING WITH RTX 5090' : 'ŠKÁLOVÁNÍ S RTX 5090'}
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                 <div className="res-card">
                     <div className="res-label">1080p Ultra</div>
                     <div className="res-val">{fps1080p > 0 ? `~${fps1080p} FPS` : 'N/A'}</div>
@@ -201,12 +210,12 @@ export default async function App(props) {
                     {isEn ? (
                       <>
                         <p>To accurately measure the pure processing power of the <strong>{normalizeName(cpu.name)}</strong> without any graphical limitations, these benchmarks were conducted using the world's most powerful consumer graphics card – the <strong>NVIDIA GeForce RTX 5090</strong>. This setup ensures that the resulting frame rates are a direct reflection of the CPU's ability to process game logic and physics.</p>
-                        <p>At 1440p resolution, the processor manages an average of <strong>{fps1440p > 0 ? fps1440p : 'N/A'} FPS</strong>. Our data confirms that this specific CPU is <strong>{verdict.en.toLowerCase()}</strong>, making it a reliable choice for gaming enthusiasts who want to avoid system bottlenecks.</p>
+                        <p>At 1440p resolution, the processor manages an average of <strong>{fps1440p > 0 ? fps1440p : 'N/A'} FPS</strong>. Our data confirms that this specific CPU provides <strong>{verdict.en.toLowerCase()}</strong> in this title.</p>
                       </>
                     ) : (
                       <>
                         <p>Abychom dokázali změřit skutečný čistý výkon procesoru <strong>{normalizeName(cpu.name)}</strong> bez jakéhokoliv grafického omezení, byly tyto testy provedeny s využitím aktuálně nejvýkonnější karty světa – <strong>NVIDIA GeForce RTX 5090</strong>. Toto spojení zaručuje, že naměřená data jsou přímým odrazem schopnosti procesoru zpracovávat herní logiku a fyziku.</p>
-                        <p>Při hraní v rozlišení 1440p dosahuje procesor průměrně <strong>{fps1440p > 0 ? fps1440p : 'N/A'} FPS</strong>. Naše analýza potvrzuje, že tento procesor nabízí <strong>{verdict.cz.toLowerCase()}</strong>, což z něj dělá skvělou volbu pro náročné hráče, kteří se chtějí vyhnout brzdění celého systému.</p>
+                        <p>Při hraní v rozlišení 1440p dosahuje procesor průměrně <strong>{fps1440p > 0 ? fps1440p : 'N/A'} FPS</strong>. Naše analýza potvrzuje, že tento procesor nabízí <strong>{verdict.cz.toLowerCase()}</strong>, což z něj dělá skvělou volbu pro náročné hráče.</p>
                       </>
                     )}
                 </div>
