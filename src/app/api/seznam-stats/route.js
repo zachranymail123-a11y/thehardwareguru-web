@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 
 /**
- * GURU SEZNAM STATS V1.4 (FINAL HOST FIX)
+ * GURU SEZNAM STATS V1.5 (CURL DOCS FIX)
  * Cesta: src/app/api/seznam-stats/route.js
- * 🚀 CÍL: Návrat na správnou doménu webmaster.seznam.cz (odstranění 404).
+ * 🚀 CÍL: Přesná implementace podle oficiální Seznam Webmaster dokumentace.
+ * 🛡️ FIX: API klíč se posílá jako URL parametr 'key', změněn base endpoint na '/wm-api/web/'.
  */
 
 export const dynamic = 'force-dynamic';
@@ -16,23 +17,24 @@ export async function GET() {
 
   const domain = 'https://thehardwareguru.cz';
 
-  // 🚀 GURU FIX: Globální hlavičky vč. maskování za Chrome prohlížeč
+  // Obyčejné hlavičky, jak to ukazuje cURL (žádný Bearer token)
   const headers = {
-    'Authorization': `Bearer ${apiKey}`,
-    'Content-Type': 'application/json',
-    'X-API-Key': apiKey,
+    'accept': 'application/json',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
   };
 
   try {
-    // 1. Volání Seznam API pro "Počty a vzorky webových stránek" (Zpět na webmaster)
-    const res = await fetch(`https://webmaster.seznam.cz/api/web/documents?url=${encodeURIComponent(domain)}`, {
+    // 1. Volání Seznam API pro "Počty a vzorky webových stránek"
+    // Přesně podle dokumentace: /wm-api/web/documents?key=...&url=...
+    const urlDocuments = `https://reporter.seznam.cz/wm-api/web/documents?key=${apiKey}&url=${encodeURIComponent(domain)}`;
+    const res = await fetch(urlDocuments, {
       headers: headers,
       cache: 'no-store'
     });
 
-    // 2. Volání pro Historii (Zpět na webmaster)
-    const resHistory = await fetch(`https://webmaster.seznam.cz/api/web/documents-history?url=${encodeURIComponent(domain)}`, {
+    // 2. Volání pro Historii 
+    const urlHistory = `https://reporter.seznam.cz/wm-api/web/documents-history?key=${apiKey}&url=${encodeURIComponent(domain)}`;
+    const resHistory = await fetch(urlHistory, {
       headers: headers,
       cache: 'no-store'
     });
@@ -41,7 +43,8 @@ export async function GET() {
       const errorText = await res.text().catch(() => 'Neznámá chyba z body');
       return NextResponse.json({ 
         success: false, 
-        error: `Seznam zamítl požadavek: HTTP ${res.status} | Odpověď: ${errorText}` 
+        error: `Seznam zamítl požadavek: HTTP ${res.status} | Odpověď: ${errorText}`,
+        debug_url_used: urlDocuments.replace(apiKey, '[SKRYTY_KLIC]') // Pro debugování v Adminu
       });
     }
 
@@ -55,7 +58,6 @@ export async function GET() {
     });
 
   } catch (error) {
-    // Získáme detailní důvod síťového selhání
     const detailedError = error.cause?.message || error.message;
     console.error("SEZNAM STATS ERROR:", detailedError);
     return NextResponse.json({ success: false, error: detailedError });
