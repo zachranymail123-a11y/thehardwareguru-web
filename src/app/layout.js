@@ -8,11 +8,11 @@ import Navbar from '../components/Navbar';
 import { Analytics } from '@vercel/analytics/react';
 
 /**
- * GURU ROOT LAYOUT V2.6 (SEO CANONICAL, HREFLANG FIX & EVERGREEN FOOTER)
- * 🛡️ FIX 1: Absolutní Canonical URL namísto relativních (dle ChatGPT).
- * 🛡️ FIX 2: Přidán x-default do hreflang clusteru pro globální SEO signál.
- * 🛡️ FIX 3: Sjednocena doména na https://thehardwareguru.cz (bez www).
- * 🛡️ FIX 4: Přidán globální SEO Footer s Evergreen články.
+ * GURU ROOT LAYOUT V2.7 (FOOTER CTR & SITEMAP FIX)
+ * Cesta: src/app/layout.js
+ * 🛡️ FIX 1: Přidán odkaz na HTML sitemapu (/sitemap) do patičky s vysokým CTR názvem.
+ * 🛡️ FIX 2: Sjednocená doména na https://thehardwareguru.cz (bez www).
+ * 🛡️ FIX 3: Absolutní Canonical URL + x-default pro globální SEO.
  */
 
 export const metadata = {
@@ -27,7 +27,6 @@ export const metadata = {
   metadataBase: new URL('https://thehardwareguru.cz'),
 
   alternates: {
-    // 🚀 GURU SEO FIX: Použití absolutních URL zamezí chybám v GSC
     canonical: 'https://thehardwareguru.cz',
     languages: {
       'cs': 'https://thehardwareguru.cz',
@@ -94,14 +93,12 @@ export default function RootLayout({ children, params }) {
           `}
         </Script>
 
-        {/* ADSENSE FUNDING CHOICES API (Pro AdBlock Recovery "Předplatit") */}
+        {/* ADSENSE FUNDING CHOICES API */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               window.googlefc = window.googlefc || {};
               window.googlefc.controlledMessagingFunction = function(message) {
-                // Logika pro ověření předplatitele. 
-                // Prozatím vracíme false, takže se hláška zobrazí všem s AdBlockem.
                 return false;
               };
             `
@@ -142,11 +139,13 @@ export default function RootLayout({ children, params }) {
           {children}
         </main>
 
-        {/* 🚀 GURU SEO FOOTER (Evergreen Link Juice) */}
+        {/* 🚀 GURU SEO FOOTER (Evergreen & Sitemap Link Juice) */}
         <footer style={{ padding: '40px 20px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto', background: '#0a0b0d' }}>
           <style dangerouslySetInnerHTML={{__html: `
             .guru-footer-link { color: #9ca3af; text-decoration: none; transition: 0.2s; }
             .guru-footer-link:hover { color: #fff !important; }
+            .guru-footer-sitemap { color: #a855f7 !important; font-weight: 950 !important; }
+            .guru-footer-sitemap:hover { color: #fff !important; text-shadow: 0 0 10px rgba(168, 85, 247, 0.5); }
           `}} />
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase' }}>
             <a href={locale === 'en' ? "/en/clanky/jak-vyresit-bottleneck-navod" : "/clanky/jak-vyresit-bottleneck-navod"} className="guru-footer-link">
@@ -159,6 +158,11 @@ export default function RootLayout({ children, params }) {
             <span style={{ color: '#333' }}>|</span>
             <a href={locale === 'en' ? "/en/clanky/jak-usetrit-na-hardwaru-navod" : "/clanky/jak-usetrit-na-hardwaru-navod"} className="guru-footer-link">
               {locale === 'en' ? 'Save on Hardware' : 'Jak ušetřit na HW'}
+            </a>
+            <span style={{ color: '#333' }}>|</span>
+            {/* 🚀 GURU SITEMAP FIX: Odkaz s vysokým CTR pro lepší navigaci a indexaci */}
+            <a href={locale === 'en' ? "/en/sitemap" : "/sitemap"} className="guru-footer-link guru-footer-sitemap">
+              {locale === 'en' ? 'COMPLETE NAVIGATION' : 'KOMPLETNÍ NAVIGACE'}
             </a>
           </div>
         </footer>
@@ -177,16 +181,13 @@ export default function RootLayout({ children, params }) {
         <Script id="google-news-swg-init" strategy="afterInteractive">
           {`
             (self.SWG_BASIC = self.SWG_BASIC || []).push(basicSubscriptions => {
-
               window.swgSubscriptions = basicSubscriptions;
-
               basicSubscriptions.init({
                 type: "NewsArticle",
                 isPartOfType: ["Product"],
                 isPartOfProductId: "CAow2M_FDA:openaccess",
                 clientOptions: { theme: "light", lang: "${locale}" },
               });
-
             });
           `}
         </Script>
@@ -206,13 +207,10 @@ export default function RootLayout({ children, params }) {
         <Script id="onesignal-init" strategy="lazyOnload">
           {`
             window.OneSignalDeferred = window.OneSignalDeferred || [];
-
             OneSignalDeferred.push(async function(OneSignal) {
-
               await OneSignal.init({
                 appId: "1ea5ad89-5f3e-4922-b2c8-e8cd05304047"
               });
-
             });
           `}
         </Script>
