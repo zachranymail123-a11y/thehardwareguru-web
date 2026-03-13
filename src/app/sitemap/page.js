@@ -3,10 +3,11 @@ import { Map, Layers, Cpu, Monitor, FileText, Swords, TrendingUp } from 'lucide-
 import Link from 'next/link';
 
 /**
- * GURU HTML SITEMAP V1.1
+ * GURU HTML SITEMAP V1.2
  * Cesta: src/app/sitemap/page.js
  * 🚀 CÍL: Rozcestník pro uživatele a Googleboty (odstraňuje chybu 404 z /sitemap).
  * 🛡️ FIX: Doplněna chybějící sekce pro Tipy, Tweaky, Rady a Slovník.
+ * 🛡️ FIX 2: Přidán odkaz na Katalog grafik (Index) do sekce Hardware Žebříčky.
  */
 
 export const metadata = {
@@ -31,7 +32,8 @@ export default function SitemapPage() {
     { title: 'Hardware Žebříčky', icon: <TrendingUp size={24} color="#f59e0b" />, links: [
         { name: 'Žebříček procesorů (CPU Tier List)', url: '/cpuvs/ranking' },
         { name: 'Katalog procesorů (Index)', url: '/cpu-index' },
-        { name: 'Žebříček grafik (GPU Tier List)', url: '/gpuvs/ranking' }
+        { name: 'Žebříček grafik (GPU Tier List)', url: '/gpuvs/ranking' },
+        { name: 'Katalog grafik (Index)', url: '/gpu-index' }
     ]},
     { title: 'Srovnávače (VS Engine)', icon: <Swords size={24} color="#ff0055" />, links: [
         { name: 'Srovnávač grafických karet', url: '/gpuvs' },
