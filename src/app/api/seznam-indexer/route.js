@@ -3,10 +3,10 @@ import { XMLParser } from 'fast-xml-parser';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU MASTER INDEXER V5.0 (TOTAL SEARCH DOMINATION)
+ * GURU MASTER INDEXER V5.1 (TOTAL SEARCH DOMINATION - REPORT READY)
  * Cesta: src/app/api/seznam-indexer/route.js
  * 🚀 CIEĽ: Pokryť Seznam, Bing a ďalšie české vyhľadávače v jednom cykle.
- * 🛡️ LOGIKA: Seznam Webmaster API + IndexNow Push + Supabase pamäť.
+ * 🛡️ FIX: Výsledok IndexNow pushu sa teraz zobrazuje priamo v JSON reporte.
  */
 
 export const dynamic = 'force-dynamic';
@@ -90,10 +90,11 @@ export async function GET(request) {
 
     // 🚀 3. MASTER PUSH: ODOSLANIE DO VYHĽADÁVAČOV
     const successfulUrls = [];
+    let indexNowReport = { ok: false, status: 0, message: "Not attempted" };
 
     // --- A) INDEXNOW PUSH (Bing, Tiscali, Seznam-IndexNow Hub) ---
     try {
-        await fetch('https://api.indexnow.org/indexnow', {
+        const inRes = await fetch('https://api.indexnow.org/indexnow', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json; charset=utf-8' },
             body: JSON.stringify({
@@ -103,7 +104,15 @@ export async function GET(request) {
                 urlList: urlsToProcess
             })
         });
-    } catch (e) { console.error("IndexNow Push Failed", e); }
+        indexNowReport = { 
+            ok: inRes.ok, 
+            status: inRes.status, 
+            message: inRes.ok ? "Batch successfully sent to IndexNow Hub" : "IndexNow Hub rejected the request" 
+        };
+    } catch (e) { 
+        indexNowReport = { ok: false, status: 500, message: e.message };
+        console.error("IndexNow Push Failed", e); 
+    }
 
     // --- B) SEZNAM SPECIFIC PUSH (Priame API cez POST) ---
     for (const url of urlsToProcess) {
@@ -133,6 +142,7 @@ export async function GET(request) {
     return NextResponse.json({
         guru_status: "SUCCESS",
         targets: ["Seznam.cz", "Bing.com", "IndexNow Partners"],
+        index_now_result: indexNowReport, // 🚀 TU TO UVIDÍŠ!
         sitemap_processed: activeSitemapName,
         sent_count: successfulUrls.length,
         message: `Odoslaných ${successfulUrls.length} nových URL z ${activeSitemapName}.`
