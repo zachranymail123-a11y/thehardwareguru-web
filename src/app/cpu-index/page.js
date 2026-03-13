@@ -4,16 +4,16 @@ import {
   Cpu, 
   Database, 
   Activity, 
-  Swords, 
-  ArrowRight
+  Swords
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU CPU ENGINE - KATALOG PROCESORŮ V1.0
+ * GURU CPU ENGINE - KATALOG PROCESORŮ V1.2 (NEXT.JS 15 SAFE)
  * Cesta: src/app/cpu-index/page.js
  * 🛡️ ARCH: SEO Hub, Řazení dle výkonu, AMD vs Intel rozdělení.
- * 💡 TIP: Pro EN verzi zkopíruj do /en/cpu-index/page.js a změň `isEn` na true.
+ * 🛡️ FIX 1: nullsFirst: false zajistí, že CPU bez indexu nebudou nahoře.
+ * 🛡️ FIX 2: Připraveno pro proxy pattern (přijímá isEn jako explicitní prop).
  */
 
 export const revalidate = 3600; // Cache na 1 hodinu pro rychlost a šetření DB
@@ -22,11 +22,10 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
+const slugify = (text) => text ? text.toLowerCase().replace(/processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
-export async function generateMetadata() {
-  // Pro EN verzi v /en/ složce by se toto dynamicky přepnulo, zde nastavujeme základ
-  const isEn = false; // Změň na true v /en/ složce
-  
+export async function generateMetadata(props) {
+  const isEn = props?.isEn === true;
   return {
     title: isEn 
       ? 'CPU Database & Performance Index | The Hardware Guru' 
@@ -38,25 +37,26 @@ export async function generateMetadata() {
       canonical: 'https://thehardwareguru.cz/cpu-index',
       languages: {
         'en': 'https://thehardwareguru.cz/en/cpu-index',
-        'cs': 'https://thehardwareguru.cz/cpu-index'
+        'cs': 'https://thehardwareguru.cz/cpu-index',
+        'x-default': 'https://thehardwareguru.cz/cpu-index'
       }
     }
   };
 }
 
-export default async function CpuIndexPage() {
-  const isEn = false; // 🚀 GURU: Pro nasazení do /en/cpu-index/page.js stačí změnit na true
-
+export default async function CpuIndexPage(props) {
+  const isEn = props?.isEn === true;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. Fetch všech CPU seřazených podle hrubého výkonu
+  // 1. Fetch všech CPU seřazených podle hrubého výkonu (nulls padají na konec)
   const { data: cpus, error } = await supabase
     .from('cpus')
     .select('name, slug, vendor, cores, threads, boost_clock_mhz, performance_index')
-    .order('performance_index', { ascending: false });
+    .order('performance_index', { ascending: false, nullsFirst: false })
+    .order('name', { ascending: true });
 
   if (error || !cpus) {
-    return <div style={{ color: '#f00', padding: '100px', textAlign: 'center' }}>CHYBA NAČÍTÁNÍ DATABÁZE PROCESORŮ</div>;
+    return <div style={{ color: '#ef4444', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>CHYBA NAČÍTÁNÍ DATABÁZE PROCESORŮ</div>;
   }
 
   // 2. Rozdělení na vendory pro vizuální bloky
@@ -66,12 +66,14 @@ export default async function CpuIndexPage() {
   // Helper pro renderování karet
   const renderCpuCards = (cpuList, vendorColor) => {
     return cpuList.map((cpu, index) => {
-      const isTopTier = index < 3; // Zvýraznění TOP 3 procesorů v dané kategorii
+      // Zvýrazníme první 3, pokud mají skutečný výkon
+      const isTopTier = index < 3 && cpu.performance_index > 0; 
+      const safeSlug = cpu.slug || slugify(cpu.name);
       
       return (
         <a 
-          key={cpu.slug} 
-          href={isEn ? `/en/cpu/${cpu.slug}` : `/cpu/${cpu.slug}`} 
+          key={safeSlug} 
+          href={isEn ? `/en/cpu/${safeSlug}` : `/cpu/${safeSlug}`} 
           className="cpu-card"
           style={{ borderTop: `4px solid ${isTopTier ? vendorColor : '#374151'}` }}
         >
@@ -90,8 +92,10 @@ export default async function CpuIndexPage() {
                <span className="spec-val">{cpu.threads || '-'}</span>
             </div>
             <div className="spec-item">
-               <span className="spec-label">BOOST</span>
-               <span className="spec-val">{cpu.boost_clock_mhz ? `${cpu.boost_clock_mhz} MHz` : '-'}</span>
+               <span className="spec-label">INDEX</span>
+               <span className="spec-val" style={{ color: cpu.performance_index ? vendorColor : '#6b7280' }}>
+                 {cpu.performance_index || 'N/A'}
+               </span>
             </div>
           </div>
           
@@ -159,12 +163,14 @@ export default async function CpuIndexPage() {
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #f59e0b; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(245, 158, 11, 0.3); transition: 0.3s; }
+        .guru-back-btn:hover { background: rgba(245, 158, 11, 0.1); transform: translateX(-5px); }
+        
         .vendor-h2 { color: #fff; font-size: 2.2rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 5px solid; padding-left: 15px; display: flex; align-items: center; gap: 15px; }
         
         .cpu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         
         .cpu-card { display: flex; flex-direction: column; background: rgba(15, 17, 21, 0.95); border-radius: 16px; border-left: 1px solid rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; padding: 25px; transition: 0.3s; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .cpu-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.6); background: rgba(25, 27, 31, 0.95); }
+        .cpu-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.6); background: rgba(25, 27, 31, 0.95); border-color: rgba(255,255,255,0.1); }
         
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; min-height: 50px; }
         .card-header h3 { margin: 0; font-size: 1.3rem; font-weight: 950; text-transform: uppercase; line-height: 1.2; }
