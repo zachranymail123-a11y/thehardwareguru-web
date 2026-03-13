@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 
 /**
- * GURU ANALYTICS ENGINE V3.2 (DEBUG MODE)
+ * GURU ANALYTICS ENGINE V3.3 (HISTORICAL MERGE)
  * Cesta: src/app/api/analytics/route.js
- * 🚀 CÍL: Zjistit přesný důvod selhání Google API.
+ * 🚀 CÍL: Zjistit přesný důvod selhání Google API a spojit historii s GA4.
  */
 
 export const dynamic = 'force-dynamic';
@@ -51,12 +51,17 @@ export async function GET() {
       metrics: [{ name: 'totalUsers' }],
     });
 
-    const totalUsers = response.rows?.[0]?.metricValues?.[0]?.value || "13842";
-    const formatted = Number(totalUsers).toLocaleString('cs-CZ');
+    // 🚀 GURU FIX: Sčítáme historii s nově nasazeným GA4
+    const apiUsers = parseInt(response.rows?.[0]?.metricValues?.[0]?.value || "0", 10);
+    const historicalBase = 13842; // Tvé staré publikum
+    const totalUsers = historicalBase + apiUsers;
+
+    const formatted = totalUsers.toLocaleString('cs-CZ');
 
     return NextResponse.json({ 
       totalUsers: formatted, 
-      status: "live" 
+      status: "live",
+      ga4_users: apiUsers
     });
 
   } catch (error) {
