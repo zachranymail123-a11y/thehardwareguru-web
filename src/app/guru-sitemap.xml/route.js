@@ -1,7 +1,7 @@
 /**
- * GURU SEO ENGINE - MASTER SITEMAP INDEX V37.0 (MAX DISCOVERY EDITION)
+ * GURU SEO ENGINE - MASTER SITEMAP INDEX V38.0 (SEO FIX EDITION)
  * Cesta: src/app/guru-sitemap.xml/route.js
- * 🚀 FIX: Přidány RSS feedy přímo do indexu pro bleskovou indexaci novinek (Google Discover ready).
+ * 🛡️ FIX: Odstraněny RSS feedy ze sitemap indexu (dle doporučení ChatGPT, RSS nepatří do XML sitemapy).
  * 🚀 DYNAMIKA: Index inteligentně počítá přesný počet chunků matice podle aktuálního počtu CPU v DB.
  * 🛡️ CÍL: 100% pokrytí celého webu v jednom souboru pro GSC.
  */
@@ -34,13 +34,8 @@ export async function GET() {
   namedMaps.forEach(m => {
     xml += `  <sitemap>\n    <loc>${baseUrl}/guru-sitemap/${m}.xml</loc>\n  </sitemap>\n`;
   });
-
-  // 2. RSS FEEDY (Google je miluje pro rychlou indexaci novinek a Discover)
-  // Jsou zde jako další "vstupní brány" pro crawlera
-  xml += `  <sitemap>\n    <loc>${baseUrl}/rss.xml</loc>\n  </sitemap>\n`;
-  xml += `  <sitemap>\n    <loc>${baseUrl}/rss-comparisons.xml</loc>\n  </sitemap>\n`;
   
-  // 3. PROGRAMMATICKÉ CHUNKY (Matice Bottlenecku)
+  // 2. PROGRAMMATICKÉ CHUNKY (Matice Bottlenecku)
   // Vypíšeme jen ty sitemapy, které mají reálná data (zamezuje chybám v GSC)
   for (let i = 1; i <= chunksNeeded; i++) {
     xml += `  <sitemap>\n    <loc>${baseUrl}/guru-sitemap/${i}.xml</loc>\n  </sitemap>\n`;
