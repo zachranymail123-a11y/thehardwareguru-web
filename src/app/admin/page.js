@@ -409,30 +409,19 @@ export default function AdminApp() {
                     <div style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #10b98140', marginBottom: '40px', boxShadow: '0 20px 50px rgba(16, 185, 129, 0.1)' }}>
                         <h3 style={{ fontSize: '14px', fontWeight: 950, color: '#10b981', marginBottom: '20px', borderLeft: '4px solid #10b981', paddingLeft: '15px', letterSpacing: '1px' }}>ŽIVÁ DATA ZE SEZNAM.CZ VYHLEDÁVAČE</h3>
                         
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '20px' }}>
-                            <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.2)', textAlign: 'center' }}>
-                                <div style={{ fontSize: '10px', fontWeight: '950', color: '#10b981', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '10px' }}>Celkem zaindexováno</div>
-                                <div style={{ fontSize: '32px', fontWeight: '950', color: '#fff' }}>
-                                    {seznamStats.data?.count !== undefined ? seznamStats.data.count : (seznamStats.data?.total !== undefined ? seznamStats.data.total : 'N/A')}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+                            <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '40px', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.2)', textAlign: 'center' }}>
+                                <div style={{ fontSize: '12px', fontWeight: '950', color: '#10b981', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '15px' }}>Celkem zaindexováno URL</div>
+                                <div style={{ fontSize: '64px', fontWeight: '950', color: '#fff', lineHeight: '1' }}>
+                                    {/* 🚀 GURU FIX: Správná cesta k číslu podle reálného JSONu od Seznamu */}
+                                    {seznamStats.data?.content?.count ?? seznamStats.data?.documents?.content?.count ?? 'N/A'}
                                 </div>
                             </div>
                         </div>
 
-                        {seznamStats.data?.samples && Array.isArray(seznamStats.data.samples) && (
-                            <div style={{ marginTop: '20px' }}>
-                                <h4 style={{ fontSize: '11px', fontWeight: '950', color: '#4b5563', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '15px' }}>Ukázka zaindexovaných URL</h4>
-                                <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #222', overflow: 'hidden' }}>
-                                    {seznamStats.data.samples.slice(0, 10).map((url, i) => (
-                                        <div key={i} style={{ padding: '12px 20px', borderBottom: '1px solid #222', fontSize: '12px', color: '#d1d5db', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <CheckCircle2 size={14} color="#10b981" /> <a href={url} target="_blank" rel="noreferrer" style={{ color: '#d1d5db', textDecoration: 'none' }}>{url}</a>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {(!seznamStats.data?.count && !seznamStats.data?.samples && !seznamStats.data?.total) && (
-                            <pre style={{ background: '#000', padding: '20px', borderRadius: '12px', border: '1px solid #333', color: '#10b981', fontSize: '12px', overflowX: 'auto', whiteSpace: 'pre-wrap' }}>
+                        {/* Záchranný výpis se ukáže už POUZE tehdy, když Seznam nepošle číslo */}
+                        {(seznamStats.data?.content?.count === undefined && seznamStats.data?.documents?.content?.count === undefined) && (
+                            <pre style={{ marginTop: '20px', background: '#000', padding: '20px', borderRadius: '12px', border: '1px solid #333', color: '#10b981', fontSize: '12px', overflowX: 'auto', whiteSpace: 'pre-wrap' }}>
                                 {JSON.stringify(seznamStats.data, null, 2)}
                             </pre>
                         )}
@@ -459,8 +448,12 @@ export default function AdminApp() {
                         {seznamResults.map((r, i) => (
                             <div key={i} style={{ padding: '15px 20px', borderBottom: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
                                 <a href={r.url} target="_blank" rel="noreferrer" style={{ color: '#d1d5db', fontSize: '13px', wordBreak: 'break-all', textDecoration: 'none' }}>{r.url}</a>
-                                <span style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: '950', letterSpacing: '1px', background: r.ok ? '#10b98122' : '#ef444422', color: r.ok ? '#10b981' : '#ef4444' }}>
-                                    {r.ok ? 'ZAINDEXOVÁNO' : 'CHYBA'}
+                                <span 
+                                    title={!r.ok ? JSON.stringify(r.seznam_response) : ''}
+                                    style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: '950', letterSpacing: '1px', background: r.ok ? '#10b98122' : '#ef444422', color: r.ok ? '#10b981' : '#ef4444' }}
+                                >
+                                    {/* 🚀 GURU FIX: Zobrazení přesného HTTP kódu chyby */}
+                                    {r.ok ? 'ZAINDEXOVÁNO' : `CHYBA ${r.status || '500'}`}
                                 </span>
                             </div>
                         ))}
