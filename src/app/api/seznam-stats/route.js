@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 
 /**
- * GURU SEZNAM STATS V1.0
+ * GURU SEZNAM STATS V1.1 (DEBUG EDITION)
  * Cesta: src/app/api/seznam-stats/route.js
- * 🚀 CÍL: Získání informací o počtu zaindexovaných stránek na Seznamu.
+ * 🚀 CÍL: Získání informací s přesným debugováním chyb od Seznamu.
  */
 
 export const dynamic = 'force-dynamic';
@@ -14,36 +14,32 @@ export async function GET() {
     return NextResponse.json({ error: "Chybí SEZNAM_API_KEY ve Vercelu!" }, { status: 400 });
   }
 
+  // Seznam Webmaster API většinou vyžaduje specifikovat, pro jaký web data chceme
+  const domain = 'https://thehardwareguru.cz';
+
   try {
-    // Volání Seznam API pro "Počty a vzorky webových stránek" (z tvého screenshotu)
-    const res = await fetch('https://webmaster.seznam.cz/api/web/documents', {
+    const res = await fetch(`https://webmaster.seznam.cz/api/web/documents?url=${encodeURIComponent(domain)}`, {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-API-Key': apiKey // Přidáno pro jistotu, některé CZ API to preferují
       },
       cache: 'no-store'
     });
 
-    // Pro jistotu stáhneme i historii
-    const resHistory = await fetch('https://webmaster.seznam.cz/api/web/documents-history', {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      cache: 'no-store'
-    });
+    if (!res.ok) {
+      const errorText = await res.text();
+      return NextResponse.json({ 
+        success: false, 
+        error: `HTTP ${res.status} | Odpověď Seznamu: ${errorText}` 
+      });
+    }
 
-    const data = res.ok ? await res.json() : { error: await res.text() };
-    const historyData = resHistory.ok ? await resHistory.json() : null;
-
-    return NextResponse.json({ 
-        success: res.ok, 
-        data: data,
-        history: historyData
-    });
+    const data = await res.json();
+    return NextResponse.json({ success: true, data: data });
 
   } catch (error) {
     console.error("SEZNAM STATS ERROR:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message });
   }
 }
