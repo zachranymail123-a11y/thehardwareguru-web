@@ -21,7 +21,7 @@ Disallow: /static/
 Disallow: /*?*
 
 # Speciální pravidla pro sitemapy (Kritické pro GSC)
-Sitemap: https://thehardwareguru.cz/sitemap.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap.xml
 
 # RSS Discovery (Zajišťuje nejrychlejší objevování nových URL přes Google Feed crawler)
 Feed: https://thehardwareguru.cz/rss.xml
