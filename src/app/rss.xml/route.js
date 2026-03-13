@@ -1,26 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU RSS ENGINE V23.3 - MAIN SEO FEED (ARTICLES, NEWS)
+ * GURU RSS ENGINE V23.4 - MAIN SEO FEED (ARTICLES, NEWS)
  * Cesta: src/app/rss.xml/route.js
  * 🚀 CÍL: Hlavní feed pro redakční obsah (články, novinky).
- * 🛡️ FIX 1: revalidate = 3600 (Cache na 1 hodinu).
- * 🛡️ FIX 2: Přidán tag <generator>The Hardware Guru RSS Engine</generator>.
- * 🛡️ FIX 3: Content-Type je striktně 'application/rss+xml; charset=utf-8' (GSC standard).
+ * 🛡️ FIX: Změněno Content-Type na 'application/xml', aby se feed nestahoval, ale otevíral v prohlížeči.
  */
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 3600; // 🚀 GURU FIX: 1h Cache
+export const revalidate = 3600; 
 
 const baseUrl = 'https://thehardwareguru.cz';
 
-// Používáme POUZE veřejný klíč
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-// Dekódování HTML entit před escapováním (prevence &amp;amp;)
 const decodeHtml = (str) => {
   if (!str) return '';
   return str.toString().replace(/&amp;/g, '&');
@@ -41,7 +37,6 @@ const safeCDATA = (str = '') =>
 
 export async function GET() {
   try {
-    // 🚀 Taháme POUZE redakční obsah (Články a novinky)
     const { data: postsRes, error } = await supabase
       .from('posts')
       .select('id, slug, title, description, seo_description, image_url, created_at')
@@ -76,7 +71,7 @@ export async function GET() {
     xml += `  <link>${baseUrl}/</link>\n`;
     xml += `  <description><![CDATA[${safeCDATA('Nejnovější HW tipy a herní novinky z Hardware Guru základny.')}]]></description>\n`;
     xml += `  <language>cs</language>\n`;
-    xml += `  <generator>The Hardware Guru RSS Engine</generator>\n`; // 🚀 GURU FIX
+    xml += `  <generator>The Hardware Guru RSS Engine</generator>\n`; 
     xml += `  <ttl>60</ttl>\n`; 
     xml += `  <lastBuildDate>${now}</lastBuildDate>\n`;
     
@@ -109,8 +104,8 @@ export async function GET() {
 
     return new Response(xml, {
       headers: {
-        // 🚀 GURU FIX: Zpět striktně na application/rss+xml; charset=utf-8
-        'Content-Type': 'application/rss+xml; charset=utf-8',
+        // 🚀 GURU FIX: Změněno na application/xml (Google to čte, prohlížeč to zobrazí a nestáhne)
+        'Content-Type': 'application/xml; charset=utf-8',
         'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600'
       }
     });
@@ -119,7 +114,7 @@ export async function GET() {
     console.error('RSS ENGINE ERROR:', error);
     return new Response(
       `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Error</title><description>${xmlEscape(error.message)}</description></channel></rss>`,
-      { status: 500, headers: { 'Content-Type': 'application/rss+xml; charset=utf-8' } }
+      { status: 500, headers: { 'Content-Type': 'application/xml; charset=utf-8' } }
     );
   }
 }
