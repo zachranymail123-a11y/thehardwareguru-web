@@ -13,11 +13,10 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V3.7 (FULL RESTORATION)
+ * GURU ULTIMATE COMMAND CENTER V3.8 (FULL RESTORATION + SEZNAM INDEXER)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
- * 🛡️ FIX: Intel Hub plně obnoven (Hardware Radar, Gaming Radar, Leaks, AI Drafts).
- * 🛡️ NEW: Hype Radar (Predictor V2.0) plně integrován.
+ * 🛡️ FIX: Sloučena tvoje V3.7 verze administrace s novým nástrojem Seznam Indexer.
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -85,6 +84,14 @@ export default function AdminApp() {
   const [dbLoading, setDbLoading] = useState(false);
   const [dbMessage, setDbMessage] = useState({ type: '', text: '' });
   const [dbFormData, setDbFormData] = useState({ name: '', slug: '', vendor: '', performance_index: '' });
+
+  // --- SEZNAM INDEXER STATE ---
+  const [seznamLoading, setSeznamLoading] = useState(false);
+  const [seznamResults, setSeznamResults] = useState([]);
+  const [seznamSitemap, setSeznamSitemap] = useState('pages');
+  const [seznamLimit, setSeznamLimit] = useState(50);
+  const [seznamStatsLoading, setSeznamStatsLoading] = useState(false);
+  const [seznamStats, setSeznamStats] = useState(null);
 
   const addLog = (msg, type = 'info') => {
     const timeStr = new Date().toTimeString().split(' ')[0]; 
@@ -194,6 +201,43 @@ export default function AdminApp() {
     }, 2000);
   };
 
+  // --- SEZNAM INDEXER HANDLERS ---
+  const handleSeznamIndex = async () => {
+    setSeznamLoading(true);
+    addLog(`Spouštím Seznam Indexer pro sitemapu: ${seznamSitemap} (Limit: ${seznamLimit})...`, 'warning');
+    try {
+        const res = await fetch(`/api/seznam-indexer?sitemap=${seznamSitemap}&limit=${seznamLimit}`);
+        const data = await res.json();
+        if (res.ok && data.guru_status === "SUCCESS") {
+            addLog(`Seznam Indexer: Úspěšně odesláno ${data.results?.length || 0} adries.`, 'success');
+            setSeznamResults(data.results || []);
+        } else {
+            addLog(`Seznam Error: ${data.error || 'Neznámá chyba'}`, 'error');
+        }
+    } catch (err) {
+        addLog(`Seznam Request Failed: ${err.message}`, 'error');
+    }
+    setSeznamLoading(false);
+  };
+
+  const handleSeznamStats = async () => {
+    setSeznamStatsLoading(true);
+    addLog('Stahuji živá data ze Seznam.cz API...', 'warning');
+    try {
+        const res = await fetch(`/api/seznam-stats`);
+        const json = await res.json();
+        if (json.success) {
+            addLog('Statistiky Seznamu úspěšně načteny.', 'success');
+            setSeznamStats(json);
+        } else {
+            addLog(`Chyba načítání Seznam API: ${json.error || 'Neznámá chyba'}`, 'error');
+        }
+    } catch (err) {
+        addLog(`Seznam Stats Request Failed: ${err.message}`, 'error');
+    }
+    setSeznamStatsLoading(false);
+  };
+
   if (!isAuthenticated) return (
     <div style={{ minHeight: '100vh', background: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
       <form onSubmit={handleLogin} style={{ background: '#111318', padding: '50px', borderRadius: '30px', border: '1px solid #eab30866', textAlign: 'center', maxWidth: '400px', width: '100%' }}>
@@ -240,6 +284,7 @@ export default function AdminApp() {
           <SidebarItemUI id="predictor" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Brain />} label="HYPE RADAR" color="#eab308" />
           <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="INTEL HUB" color="#a855f7" />
           <SidebarItemUI id="database" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Database />} label="DATABÁZE" color="#66fcf1" />
+          <SidebarItemUI id="seznam-indexer" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Search />} label="SEZNAM INDEXER" color="#ef4444" />
         </nav>
       </aside>
 
@@ -343,6 +388,90 @@ export default function AdminApp() {
                     </button>
                     {dbMessage.text && <p style={{ color: dbMessage.type === 'success' ? '#10b981' : '#ef4444', marginTop: '20px', textAlign: 'center', fontWeight: 'bold' }}>{dbMessage.text}</p>}
                 </form>
+            </div>
+        )}
+
+        {activeTab === 'seznam-indexer' && (
+            <div className="fade-in">
+                <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 40px 0' }}>
+                    <h2 style={{ fontSize: '32px', fontWeight: 950, textTransform: 'uppercase', margin: 0 }}>SEZNAM <span style={{ color: '#ef4444' }}>INDEXER</span></h2>
+                    <div style={{ display: 'flex', gap: '15px' }}>
+                        <button onClick={handleSeznamStats} disabled={seznamStatsLoading} style={{ background: '#10b981', color: '#fff', padding: '15px 30px', borderRadius: '14px', border: 'none', fontWeight: '950', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {seznamStatsLoading ? <RefreshCw className="spin" size={20}/> : <BarChart3 size={20}/>} STÁHNOUT STATISTIKY
+                        </button>
+                        <button onClick={handleSeznamIndex} disabled={seznamLoading} style={{ background: '#ef4444', color: '#fff', padding: '15px 30px', borderRadius: '14px', border: 'none', fontWeight: '950', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {seznamLoading ? <RefreshCw className="spin" size={20}/> : <Send size={20}/>} ODESLAT URL
+                        </button>
+                    </div>
+                </header>
+
+                {seznamStats && (
+                    <div style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #10b98140', marginBottom: '40px', boxShadow: '0 20px 50px rgba(16, 185, 129, 0.1)' }}>
+                        <h3 style={{ fontSize: '14px', fontWeight: 950, color: '#10b981', marginBottom: '20px', borderLeft: '4px solid #10b981', paddingLeft: '15px', letterSpacing: '1px' }}>ŽIVÁ DATA ZE SEZNAM.CZ VYHLEDÁVAČE</h3>
+                        
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+                            <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.2)', textAlign: 'center' }}>
+                                <div style={{ fontSize: '10px', fontWeight: '950', color: '#10b981', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '10px' }}>Celkem zaindexováno</div>
+                                <div style={{ fontSize: '32px', fontWeight: '950', color: '#fff' }}>
+                                    {seznamStats.data?.count !== undefined ? seznamStats.data.count : (seznamStats.data?.total !== undefined ? seznamStats.data.total : 'N/A')}
+                                </div>
+                            </div>
+                        </div>
+
+                        {seznamStats.data?.samples && Array.isArray(seznamStats.data.samples) && (
+                            <div style={{ marginTop: '20px' }}>
+                                <h4 style={{ fontSize: '11px', fontWeight: '950', color: '#4b5563', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '15px' }}>Ukázka zaindexovaných URL</h4>
+                                <div style={{ background: '#000', borderRadius: '12px', border: '1px solid #222', overflow: 'hidden' }}>
+                                    {seznamStats.data.samples.slice(0, 10).map((url, i) => (
+                                        <div key={i} style={{ padding: '12px 20px', borderBottom: '1px solid #222', fontSize: '12px', color: '#d1d5db', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <CheckCircle2 size={14} color="#10b981" /> <a href={url} target="_blank" rel="noreferrer" style={{ color: '#d1d5db', textDecoration: 'none' }}>{url}</a>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {(!seznamStats.data?.count && !seznamStats.data?.samples && !seznamStats.data?.total) && (
+                            <pre style={{ background: '#000', padding: '20px', borderRadius: '12px', border: '1px solid #333', color: '#10b981', fontSize: '12px', overflowX: 'auto', whiteSpace: 'pre-wrap' }}>
+                                {JSON.stringify(seznamStats.data, null, 2)}
+                            </pre>
+                        )}
+                    </div>
+                )}
+
+                <div style={{ background: '#111318', padding: '30px', borderRadius: '24px', border: '1px solid #333', marginBottom: '40px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        <div>
+                            <label style={{ fontSize: '11px', fontWeight: '950', color: '#4b5563', letterSpacing: '2px', display: 'block', marginBottom: '10px' }}>SITEMAPA (např. pages, 1, 2...)</label>
+                            <input type="text" value={seznamSitemap} onChange={(e) => setSeznamSitemap(e.target.value)} style={{ width: '100%', padding: '15px', borderRadius: '12px', background: '#000', border: '1px solid #222', color: '#fff', outline: 'none' }} />
+                        </div>
+                        <div>
+                            <label style={{ fontSize: '11px', fontWeight: '950', color: '#4b5563', letterSpacing: '2px', display: 'block', marginBottom: '10px' }}>LIMIT URL (doporučeno max 150)</label>
+                            <input type="number" value={seznamLimit} onChange={(e) => setSeznamLimit(e.target.value)} style={{ width: '100%', padding: '15px', borderRadius: '12px', background: '#000', border: '1px solid #222', color: '#fff', outline: 'none' }} />
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style={{ fontSize: '14px', fontWeight: 950, color: '#ef4444', marginBottom: '20px', borderLeft: '4px solid #ef4444', paddingLeft: '15px', letterSpacing: '1px' }}>PŘEHLED ODESLANÝCH ADRES</h3>
+                
+                {seznamResults.length > 0 ? (
+                    <div style={{ background: '#111318', borderRadius: '24px', border: '1px solid #333', overflow: 'hidden' }}>
+                        {seznamResults.map((r, i) => (
+                            <div key={i} style={{ padding: '15px 20px', borderBottom: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
+                                <a href={r.url} target="_blank" rel="noreferrer" style={{ color: '#d1d5db', fontSize: '13px', wordBreak: 'break-all', textDecoration: 'none' }}>{r.url}</a>
+                                <span style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: '950', letterSpacing: '1px', background: r.ok ? '#10b98122' : '#ef444422', color: r.ok ? '#10b981' : '#ef4444' }}>
+                                    {r.ok ? 'ZAINDEXOVÁNO' : 'CHYBA'}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div style={{ padding: '60px 40px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px dashed #333', color: '#6b7280' }}>
+                        <Search size={48} color="#333" style={{ margin: '0 auto 20px' }} />
+                        <div style={{ fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px' }}>Zatím nebyly odeslány žádné adresy.</div>
+                        <div style={{ marginTop: '10px', fontSize: '13px' }}>Vyplň sitemapu a klikni na odeslat.</div>
+                    </div>
+                )}
             </div>
         )}
 
