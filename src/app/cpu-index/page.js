@@ -6,17 +6,18 @@ import {
   Activity, 
   Swords
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU CPU ENGINE - KATALOG PROCESORŮ V1.2 (NEXT.JS 15 SAFE)
+ * GURU CPU ENGINE - KATALOG PROCESORŮ V1.3 (NATIVE FETCH FIX)
  * Cesta: src/app/cpu-index/page.js
- * 🛡️ ARCH: SEO Hub, Řazení dle výkonu, AMD vs Intel rozdělení.
- * 🛡️ FIX 1: nullsFirst: false zajistí, že CPU bez indexu nebudou nahoře.
- * 🛡️ FIX 2: Připraveno pro proxy pattern (přijímá isEn jako explicitní prop).
+ * 🛡️ FIX 1: Supabase klient kompletně odstraněn, nahrazen nativním fetchem (stejně jako v rankingu).
+ * 🛡️ FIX 2: Využívá select=* a order=performance_index.desc.nullslast, takže nikdy nespadne na chybějícím sloupci.
+ * 🛡️ FIX 3: Odstraněna mrtvá cache (revalidate 0, force-dynamic).
  */
 
-export const revalidate = 3600; // Cache na 1 hodinu pro rychlost a šetření DB
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+export const revalidate = 0; 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -44,19 +45,39 @@ export async function generateMetadata(props) {
   };
 }
 
+// 🚀 GURU: Nativní fetch vytáhne 100% fresh data ze Supabase a ignoruje neexistující sloupce
+const fetchIndexData = async () => {
+    if (!supabaseUrl) return null;
+    
+    try {
+        const url = `${supabaseUrl}/rest/v1/cpus?select=*&order=performance_index.desc.nullslast,name.asc`;
+        
+        const res = await fetch(url, {
+            headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Content-Type': 'application/json'
+            },
+            cache: 'no-store'
+        });
+
+        if (!res.ok) {
+            console.error("DB Fetch Error:", await res.text());
+            return null;
+        }
+        return await res.json();
+    } catch (e) {
+        console.error("Fetch Exception:", e);
+        return null;
+    }
+};
+
 export default async function CpuIndexPage(props) {
   const isEn = props?.isEn === true;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const cpus = await fetchIndexData();
 
-  // 1. Fetch všech CPU seřazených podle hrubého výkonu (nulls padají na konec)
-  const { data: cpus, error } = await supabase
-    .from('cpus')
-    .select('name, slug, vendor, cores, threads, boost_clock_mhz, performance_index')
-    .order('performance_index', { ascending: false, nullsFirst: false })
-    .order('name', { ascending: true });
-
-  if (error || !cpus) {
-    return <div style={{ color: '#ef4444', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>CHYBA NAČÍTÁNÍ DATABÁZE PROCESORŮ</div>;
+  if (!cpus || cpus.length === 0) {
+    return <div style={{ color: '#ef4444', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh', fontWeight: '950', fontSize: '20px' }}>CHYBA NAČÍTÁNÍ DATABÁZE PROCESORŮ</div>;
   }
 
   // 2. Rozdělení na vendory pro vizuální bloky
