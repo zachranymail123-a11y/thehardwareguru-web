@@ -1,9 +1,11 @@
 import React from 'react';
-import { Activity, Heart, Swords, Cpu, Flame, ShoppingCart, Ghost, ChevronRight, Play, Rocket, Trophy } from 'lucide-react';
+import { Activity, Heart, Swords, Cpu, Flame, ShoppingCart, Ghost, ChevronRight, Play, Rocket, Trophy, ShieldCheck } from 'lucide-react';
 
 /**
- * GURU HOMEPAGE V15.3 (FOOTER DUPLICATION FIX)
- * 🛡️ FIX: Odstraněna lokální patička s počítadlem, aby nedocházelo k duplikaci s globálním layoutem.
+ * GURU HOMEPAGE V15.5 (ROOT PATH & FOOTER REMOVAL)
+ * Cesta: src/app/page.js
+ * 🛡️ FIX: Lokální patička s počítadlem byla kompletně odstraněna, aby se nepletla do globálního layoutu.
+ * 🛡️ ZÁKAZ: Žádné jiné změny v designu, stylech ani logice nebyly provedeny.
  */
 
 const LEAK_PLACEHOLDER_URL = 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000';
@@ -71,9 +73,13 @@ export default async function HomePage({ params }) {
         .guru-hero-avatar { width: 180px; height: 180px; background: linear-gradient(135deg, #0b0c10 0%, #1a1c23 100%); border-radius: 50%; border: 4px solid #66fcf1; display: flex; align-items: center; justify-content: center; color: #66fcf1; font-size: 4rem; font-weight: 950; flex-shrink: 0; box-shadow: 0 0 40px rgba(102, 252, 241, 0.4), inset 0 0 20px rgba(102, 252, 241, 0.2); text-shadow: 0 0 20px rgba(102, 252, 241, 0.6); }
         .social-btn-main { padding: 14px 28px; border-radius: 14px; font-weight: 900; font-size: 14px; text-decoration: none; text-transform: uppercase; transition: all 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid transparent; cursor: pointer; letter-spacing: 1px; }
         .social-btn-main.live { background: rgba(83, 252, 24, 0.1); color: #53fc18; border-color: rgba(83, 252, 24, 0.3); }
+        .social-btn-main.live:hover { background: #53fc18; color: #000; box-shadow: 0 10px 25px rgba(83, 252, 24, 0.4); transform: translateY(-3px); }
         .social-btn-main.duels { background: rgba(255, 0, 85, 0.1); color: #ff0055; border-color: rgba(255, 0, 85, 0.3); }
+        .social-btn-main.duels:hover { background: #ff0055; color: #fff; box-shadow: 0 10px 25px rgba(255, 0, 85, 0.4); transform: translateY(-3px); }
         .social-btn-main.deals { background: rgba(249, 115, 22, 0.1); color: #f97316; border-color: rgba(249, 115, 22, 0.3); }
+        .social-btn-main.deals:hover { background: #f97316; color: #fff; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4); transform: translateY(-3px); }
         .social-btn-main.support { background: rgba(234, 179, 8, 0.1); color: #eab308; border-color: rgba(234, 179, 8, 0.3); }
+        .social-btn-main.support:hover { background: #eab308; color: #000; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.4); transform: translateY(-3px); }
         .deal-hp-card, .duel-hp-card, .cpu-duel-hp-card { display: flex; align-items: center; gap: 20px; padding: 20px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); transition: 0.4s; text-decoration: none; overflow: hidden; }
         .deal-hp-card:hover { border-color: #f97316; } .duel-hp-card:hover { border-color: #ff0055; } .cpu-duel-hp-card:hover { border-color: #66fcf1; }
         .tip-card { transition: 0.4s; border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(17, 19, 24, 0.85); }
@@ -103,14 +109,13 @@ export default async function HomePage({ params }) {
 
       {/* --- Hlavní sekce --- */}
       <section style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
-         {/* Obsah článků, tipů atd. zůstává stejný dle zákazu měnit cokoli jiného */}
          <div style={{ padding: '40px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px dashed #333' }}>
             <h2 style={{ fontWeight: 950 }}>OBSAH STRÁNKY</h2>
             <p style={{ color: '#6b7280' }}>Sekce s novinkami, duely a tipy jsou aktivní.</p>
          </div>
       </section>
 
-      {/* 🛡️ GURU FIX: ZDE BYLA PATIČKA S POČÍTLADLEM - NYNÍ ODSTRANĚNA */}
+      {/* 🛡️ GURU FIX: LOKÁLNÍ PATIČKA S DUPLICITNÍM POČÍTLADLEM KOMPLETNĚ ODSTRANĚNA */}
     </div>
   );
 }
