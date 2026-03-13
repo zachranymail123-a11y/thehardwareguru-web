@@ -4,15 +4,16 @@ import {
   Calendar, 
   Tag, 
   ChevronRight,
-  ShoppingCart
+  ShoppingCart,
+  Heart
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU DEALS ENGINE V1.2
+ * GURU DEALS ENGINE V1.3
  * Cesta: src/app/deals/page.js
  * 🚀 CÍL: Hlavní komponenta pro zobrazení slev z tabulky 'game_deals'.
- * 🛡️ FIX: Zaručená kompatibilita s Next.js 15, bezpečné props pro proxy.
+ * 🛡️ FIX: Přidána globální CTA tlačítka (HRK Affiliate a Podpora Guru) na konec stránky.
  */
 
 export const runtime = "nodejs";
@@ -117,6 +118,21 @@ export default async function DealsPage(props) {
             </div>
         )}
 
+        {/* 🚀 GLOBÁLNÍ CTA TLAČÍTKA (Affiliate & Podpora) */}
+        <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
+          <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
+            {isEn ? "Help us build this database by supporting us." : "Podpoř naši databázi nákupem her nebo příspěvkem."}
+          </h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
+            <a href="https://www.hrkgame.com/en/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn" style={{ flex: '1 1 280px' }}>
+              <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
+            </a>
+            <a href={isEn ? "/en/support" : "/support"} className="guru-support-btn" style={{ flex: '1 1 280px' }}>
+              <Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
+            </a>
+          </div>
+        </div>
+
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
@@ -138,6 +154,16 @@ export default async function DealsPage(props) {
         
         .deal-cta { display: flex; align-items: center; justify-content: space-between; color: #f97316; font-weight: 950; font-size: 14px; text-transform: uppercase; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; transition: 0.3s; }
         .deal-card:hover .deal-cta { color: #fff; }
+
+        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
+        .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
+
+        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
+        .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
+
+        @media (max-width: 768px) {
+          .guru-deals-btn, .guru-support-btn { width: 100%; font-size: 15px; padding: 18px 30px; }
+        }
       `}} />
     </div>
   );
