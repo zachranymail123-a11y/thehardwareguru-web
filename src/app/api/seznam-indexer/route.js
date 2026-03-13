@@ -21,7 +21,8 @@ export async function GET(request) {
   }
 
   const baseUrl = 'https://thehardwareguru.cz';
-  const sitemapUrl = `${baseUrl}/sitemap/${sitemapName}.xml`;
+  // 🚀 GURU FIX: Oprava cesty na tvoji unikátní architekturu (guru-sitemap místo sitemap)
+  const sitemapUrl = `${baseUrl}/guru-sitemap/${sitemapName}.xml`;
 
   try {
     const sitemapRes = await fetch(sitemapUrl, { cache: 'no-store' });
