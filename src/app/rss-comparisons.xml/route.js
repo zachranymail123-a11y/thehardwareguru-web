@@ -1,20 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU RSS ENGINE V23.2 - PROGRAMMATIC SEO FEED (DUELS & UPGRADES)
+ * GURU RSS ENGINE V23.4 - PROGRAMMATIC SEO FEED (DUELS & UPGRADES)
  * Cesta: src/app/rss-comparisons.xml/route.js
- * 🚀 CÍL: Dedikovaný feed výhradně pro obří HW databázi. 
- * 🛡️ FIX 1: revalidate = 3600 (Cache na 1 hodinu).
- * 🛡️ FIX 2: Přidán tag <generator>The Hardware Guru RSS Engine</generator>.
- * 🛡️ FIX 3: Content-Type je striktně 'application/rss+xml; charset=utf-8' pro maximální SEO kompatibilitu.
+ * 🛡️ FIX: Změněno Content-Type na 'application/xml' proti automatickému stahování v prohlížeči.
  */
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 3600; // 🚀 GURU FIX: 1h Cache
+export const revalidate = 3600; 
 
 const baseUrl = 'https://thehardwareguru.cz';
 
-// 🚀 Používáme POUZE veřejný klíč, zamezujeme úniku service_role klíče
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -35,7 +31,6 @@ const safeCDATA = (str = '') =>
 
 export async function GET() {
   try {
-    // 🚀 Zde taháme POUZE generovaný programmatic obsah pro HW matici
     const [gpuDuelsRes, cpuDuelsRes, gpuUpgRes, cpuUpgRes] = await Promise.all([
       supabase.from('gpu_duels').select('slug, title_cs, seo_description_cs, created_at').order('created_at', { ascending: false }).limit(25),
       supabase.from('cpu_duels').select('slug, title_cs, seo_description_cs, created_at').order('created_at', { ascending: false }).limit(25),
@@ -45,7 +40,6 @@ export async function GET() {
 
     const items = [];
 
-    // Mapování GPU duelů
     gpuDuelsRes.data?.forEach(d => {
         items.push({
             title: d.title_cs || `Srovnání grafik: ${d.slug.replace(/-/g, ' ')}`,
@@ -55,7 +49,6 @@ export async function GET() {
         });
     });
 
-    // Mapování CPU duelů
     cpuDuelsRes.data?.forEach(d => {
         items.push({
             title: d.title_cs || `Srovnání procesorů: ${d.slug.replace(/-/g, ' ')}`,
@@ -65,7 +58,6 @@ export async function GET() {
         });
     });
 
-    // Mapování GPU upgradů
     gpuUpgRes.data?.forEach(u => {
         items.push({
             title: u.title_cs || `Upgrade analýza: ${u.slug.replace(/-/g, ' ')}`,
@@ -75,7 +67,6 @@ export async function GET() {
         });
     });
 
-    // Mapování CPU upgradů
     cpuUpgRes.data?.forEach(u => {
         items.push({
             title: u.title_cs || `Upgrade analýza: ${u.slug.replace(/-/g, ' ')}`,
@@ -85,9 +76,8 @@ export async function GET() {
         });
     });
 
-    // Seřazení chronologicky od nejnovějších a oříznutí
     items.sort((a, b) => new Date(b.date) - new Date(a.date));
-    const finalItems = items.slice(0, 100); // Ideální počet pro tento feed
+    const finalItems = items.slice(0, 100); 
 
     const now = new Date().toUTCString();
 
@@ -130,8 +120,8 @@ export async function GET() {
 
     return new Response(xml, {
       headers: {
-        // 🚀 GURU FIX: Zpět striktně na application/rss+xml; charset=utf-8
-        'Content-Type': 'application/rss+xml; charset=utf-8',
+        // 🚀 GURU FIX: Změněno na application/xml (Google to čte, prohlížeč to zobrazí a nestáhne)
+        'Content-Type': 'application/xml; charset=utf-8',
         'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600'
       }
     });
@@ -140,7 +130,7 @@ export async function GET() {
     console.error('RSS COMPARISONS ENGINE ERROR:', error);
     return new Response(
       `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Error</title><description>${xmlEscape(error.message)}</description></channel></rss>`,
-      { status: 500, headers: { 'Content-Type': 'application/rss+xml; charset=utf-8' } }
+      { status: 500, headers: { 'Content-Type': 'application/xml; charset=utf-8' } }
     );
   }
 }
