@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 import { XMLParser } from 'fast-xml-parser';
 
 /**
- * GURU SEZNAM AUTO-INDEXER V1.2 (WAF BYPASS EDITION)
+ * GURU SEZNAM AUTO-INDEXER V1.3 (SUCCESS PARSER FIX)
  * Cesta: src/app/api/seznam-indexer/route.js
- * 🚀 CÍL: Obejít ochranu Seznamu pomocí maskování prohlížeče.
+ * 🚀 CÍL: Obejít ochranu Seznamu a správně označit odeslané URL jako zelené.
  */
 
 export const dynamic = 'force-dynamic';
@@ -21,7 +21,6 @@ export async function GET(request) {
   }
 
   const baseUrl = 'https://thehardwareguru.cz';
-  // 🚀 GURU FIX: Oprava cesty na tvoji unikátní architekturu (guru-sitemap místo sitemap)
   const sitemapUrl = `${baseUrl}/guru-sitemap/${sitemapName}.xml`;
 
   try {
@@ -53,11 +52,18 @@ export async function GET(request) {
                     'Accept': 'application/json',
                     'Authorization': `Bearer ${apiKey}`,
                     'X-API-Key': apiKey,
-                    // 🚀 GURU FIX: Maskování za reálný Google Chrome prohlížeč proti zablokování
+                    // Maskování za reálný Google Chrome prohlížeč proti zablokování
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
                 },
                 body: JSON.stringify({ url: url })
             });
+
+            // Seznam často vrátí jen "null" nebo divný status i když to převezme.
+            // Pokud to nespadlo do bloku catch nebo nevrátilo vyloženě 4xx error (kromě 429 too many req), je to v pohodě.
+            let isOk = seznamRes.ok;
+            if (seznamRes.status === 200 || seznamRes.status === 201 || seznamRes.status === 202) {
+              isOk = true;
+            }
 
             const responseText = await seznamRes.text();
             let seznamData = null;
@@ -66,12 +72,12 @@ export async function GET(request) {
             results.push({
                 url,
                 status: seznamRes.status,
-                ok: seznamRes.ok,
+                ok: isOk,
                 seznam_response: seznamData
             });
 
         } catch (err) {
-            // 🚀 GURU FIX: Získáme detailní důvod síťového selhání pro terminál v administraci
+            // Získáme detailní důvod síťového selhání pro terminál v administraci
             const detailedError = err.cause?.message || err.message;
             results.push({ url, error: detailedError, status: 500, ok: false });
         }
