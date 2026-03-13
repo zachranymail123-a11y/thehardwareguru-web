@@ -8,10 +8,11 @@ import Navbar from '../components/Navbar';
 import { Analytics } from '@vercel/analytics/react';
 
 /**
- * GURU ROOT LAYOUT V2.5 (SEO CANONICAL & HREFLANG FIX)
+ * GURU ROOT LAYOUT V2.6 (SEO CANONICAL, HREFLANG FIX & EVERGREEN FOOTER)
  * 🛡️ FIX 1: Absolutní Canonical URL namísto relativních (dle ChatGPT).
  * 🛡️ FIX 2: Přidán x-default do hreflang clusteru pro globální SEO signál.
  * 🛡️ FIX 3: Sjednocena doména na https://thehardwareguru.cz (bez www).
+ * 🛡️ FIX 4: Přidán globální SEO Footer s Evergreen články.
  */
 
 export const metadata = {
@@ -140,6 +141,23 @@ export default function RootLayout({ children, params }) {
         }}>
           {children}
         </main>
+
+        {/* 🚀 GURU SEO FOOTER (Evergreen Link Juice) */}
+        <footer style={{ padding: '40px 20px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto', background: '#0a0b0d' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+            <a href={locale === 'en' ? "/en/clanky/jak-vyresit-bottleneck-navod" : "/clanky/jak-vyresit-bottleneck-navod"} style={{ color: '#9ca3af', textDecoration: 'none', transition: '0.2s' }} onMouseOver={(e) => e.target.style.color = '#fff'} onMouseOut={(e) => e.target.style.color = '#9ca3af'}>
+              {locale === 'en' ? 'How to fix bottleneck' : 'Jak vyřešit Bottleneck'}
+            </a>
+            <span style={{ color: '#333' }}>|</span>
+            <a href={locale === 'en' ? "/en/clanky/nejlepsi-cpu-pro-rtx-5090-5080" : "/clanky/nejlepsi-cpu-pro-rtx-5090-5080"} style={{ color: '#9ca3af', textDecoration: 'none', transition: '0.2s' }} onMouseOver={(e) => e.target.style.color = '#fff'} onMouseOut={(e) => e.target.style.color = '#9ca3af'}>
+              {locale === 'en' ? 'Best CPU for RTX 50' : 'Nejlepší CPU pro RTX 50'}
+            </a>
+            <span style={{ color: '#333' }}>|</span>
+            <a href={locale === 'en' ? "/en/clanky/jak-usetrit-na-hardwaru-navod" : "/clanky/jak-usetrit-na-hardwaru-navod"} style={{ color: '#9ca3af', textDecoration: 'none', transition: '0.2s' }} onMouseOver={(e) => e.target.style.color = '#fff'} onMouseOut={(e) => e.target.style.color = '#9ca3af'}>
+              {locale === 'en' ? 'Save on Hardware' : 'Jak ušetřit na HW'}
+            </a>
+          </div>
+        </footer>
 
         <SestavyBubble />
         <SupportWidget />
