@@ -144,16 +144,20 @@ export default function RootLayout({ children, params }) {
 
         {/* 🚀 GURU SEO FOOTER (Evergreen Link Juice) */}
         <footer style={{ padding: '40px 20px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto', background: '#0a0b0d' }}>
+          <style dangerouslySetInnerHTML={{__html: `
+            .guru-footer-link { color: #9ca3af; text-decoration: none; transition: 0.2s; }
+            .guru-footer-link:hover { color: #fff !important; }
+          `}} />
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-            <a href={locale === 'en' ? "/en/clanky/jak-vyresit-bottleneck-navod" : "/clanky/jak-vyresit-bottleneck-navod"} style={{ color: '#9ca3af', textDecoration: 'none', transition: '0.2s' }} onMouseOver={(e) => e.target.style.color = '#fff'} onMouseOut={(e) => e.target.style.color = '#9ca3af'}>
+            <a href={locale === 'en' ? "/en/clanky/jak-vyresit-bottleneck-navod" : "/clanky/jak-vyresit-bottleneck-navod"} className="guru-footer-link">
               {locale === 'en' ? 'How to fix bottleneck' : 'Jak vyřešit Bottleneck'}
             </a>
             <span style={{ color: '#333' }}>|</span>
-            <a href={locale === 'en' ? "/en/clanky/nejlepsi-cpu-pro-rtx-5090-5080" : "/clanky/nejlepsi-cpu-pro-rtx-5090-5080"} style={{ color: '#9ca3af', textDecoration: 'none', transition: '0.2s' }} onMouseOver={(e) => e.target.style.color = '#fff'} onMouseOut={(e) => e.target.style.color = '#9ca3af'}>
+            <a href={locale === 'en' ? "/en/clanky/nejlepsi-cpu-pro-rtx-5090-5080" : "/clanky/nejlepsi-cpu-pro-rtx-5090-5080"} className="guru-footer-link">
               {locale === 'en' ? 'Best CPU for RTX 50' : 'Nejlepší CPU pro RTX 50'}
             </a>
             <span style={{ color: '#333' }}>|</span>
-            <a href={locale === 'en' ? "/en/clanky/jak-usetrit-na-hardwaru-navod" : "/clanky/jak-usetrit-na-hardwaru-navod"} style={{ color: '#9ca3af', textDecoration: 'none', transition: '0.2s' }} onMouseOver={(e) => e.target.style.color = '#fff'} onMouseOut={(e) => e.target.style.color = '#9ca3af'}>
+            <a href={locale === 'en' ? "/en/clanky/jak-usetrit-na-hardwaru-navod" : "/clanky/jak-usetrit-na-hardwaru-navod"} className="guru-footer-link">
               {locale === 'en' ? 'Save on Hardware' : 'Jak ušetřit na HW'}
             </a>
           </div>
