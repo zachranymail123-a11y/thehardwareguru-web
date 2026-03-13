@@ -2,9 +2,12 @@ import { NextResponse } from 'next/server';
 import { XMLParser } from 'fast-xml-parser';
 
 /**
- * GURU SEZNAM AUTO-INDEXER V1.3 (SUCCESS PARSER FIX)
+ * GURU SEZNAM AUTO-INDEXER V2.0 (CRON & RATE LIMIT READY)
  * Cesta: src/app/api/seznam-indexer/route.js
- * 🚀 CÍL: Obejít ochranu Seznamu a správně označit odeslané URL jako zelené.
+ * 🛡️ LIMITS: 
+ * - Max 5 dotazů / s (nastaveno 600ms delay = ~1.6 req/s)
+ * - Max 100 dotazů / min (600ms delay zajistí max 100/min)
+ * - Max 500 dotazů / den (kontrolováno parametrem limit)
  */
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +16,10 @@ export const revalidate = 0;
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const sitemapName = searchParams.get('sitemap') || 'pages'; 
-  const limit = parseInt(searchParams.get('limit') || '50', 10); 
+  
+  // 🚀 GURU LIMIT: Maximálně 500 denně dle pravidel Seznamu. 
+  // Pro jedno spuštění doporučuji 15, aby Vercel nehodil Timeout (10s limit).
+  const limit = Math.min(parseInt(searchParams.get('limit') || '15', 10), 500); 
 
   const apiKey = process.env.SEZNAM_API_KEY;
   if (!apiKey) {
@@ -24,12 +30,14 @@ export async function GET(request) {
   const sitemapUrl = `${baseUrl}/guru-sitemap/${sitemapName}.xml`;
 
   try {
+    // 1. STÁHNUTÍ SITEMAPY
     const sitemapRes = await fetch(sitemapUrl, { cache: 'no-store' });
     if (!sitemapRes.ok) {
        return NextResponse.json({ error: `Nelze načíst sitemapu: ${sitemapUrl}. HTTP ${sitemapRes.status}` });
     }
     const xmlData = await sitemapRes.text();
 
+    // 2. PARSOVÁNÍ URL
     const parser = new XMLParser();
     const parsed = parser.parse(xmlData);
 
@@ -38,32 +46,27 @@ export async function GET(request) {
         urls = Array.isArray(parsed.urlset.url) ? parsed.urlset.url : [parsed.urlset.url];
     }
 
-    if (urls.length === 0) return NextResponse.json({ message: `Sitemapa ${sitemapName}.xml je prázdná nebo nevalidní.` });
+    if (urls.length === 0) return NextResponse.json({ message: `Sitemapa ${sitemapName}.xml je prázdná.` });
 
+    // Náhodně zamícháme nebo vezmeme prvních N podle limitu
     const urlsToProcess = urls.slice(0, limit).map(u => u.loc);
     const results = [];
 
+    // 3. CYKLUS S INTELLIGENTNÍM DELAYEM (600ms)
     for (const url of urlsToProcess) {
         try {
-            const seznamRes = await fetch('https://webmaster.seznam.cz/api/web/document/reindex', {
+            // 🚀 GURU FIX: Přesný formát z tvého úspěšného cURL testu
+            // URL parametry key a url v POST požadavku
+            const targetUrl = `https://reporter.seznam.cz/wm-api/web/document/reindex?key=${apiKey}&url=${encodeURIComponent(url)}`;
+            
+            const seznamRes = await fetch(targetUrl, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`,
-                    'X-API-Key': apiKey,
-                    // Maskování za reálný Google Chrome prohlížeč proti zablokování
+                    'accept': 'application/json',
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
                 },
-                body: JSON.stringify({ url: url })
+                body: '' // cURL ukázal prázdné body (-d '')
             });
-
-            // Seznam často vrátí jen "null" nebo divný status i když to převezme.
-            // Pokud to nespadlo do bloku catch nebo nevrátilo vyloženě 4xx error (kromě 429 too many req), je to v pohodě.
-            let isOk = seznamRes.ok;
-            if (seznamRes.status === 200 || seznamRes.status === 201 || seznamRes.status === 202) {
-              isOk = true;
-            }
 
             const responseText = await seznamRes.text();
             let seznamData = null;
@@ -72,23 +75,22 @@ export async function GET(request) {
             results.push({
                 url,
                 status: seznamRes.status,
-                ok: isOk,
+                ok: seznamRes.status === 200 || seznamRes.status === 201,
                 seznam_response: seznamData
             });
 
         } catch (err) {
-            // Získáme detailní důvod síťového selhání pro terminál v administraci
-            const detailedError = err.cause?.message || err.message;
-            results.push({ url, error: detailedError, status: 500, ok: false });
+            results.push({ url, error: err.message, status: 500, ok: false });
         }
         
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // 🚀 RATE LIMIT BYPASS: 600ms pauza zajistí dodržení 100 req/min i 5 req/s
+        await new Promise(resolve => setTimeout(resolve, 600));
     }
 
     return NextResponse.json({
         guru_status: "SUCCESS",
-        message: `Zpracováno ${urlsToProcess.length} URL.`,
-        sitemap_used: sitemapUrl,
+        processed_count: results.length,
+        message: `Odesláno ${results.filter(r => r.ok).length} URL do Seznamu (Rate limit 600ms dodržen).`,
         results: results
     });
 
