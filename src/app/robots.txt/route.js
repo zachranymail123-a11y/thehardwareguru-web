@@ -20,8 +20,10 @@ Disallow: /static/
 # To zabrání indexaci filtrů nebo vyhledávání, které by dělaly bordel v GSC
 Disallow: /*?*
 
-# Speciální pravidla pro sitemapy (Kritické pro GSC)
+# Speciální pravidla pro sitemapy a RSS feedy (Kritické pro GSC a Seznam)
 Sitemap: https://thehardwareguru.cz/sitemap.xml
+Sitemap: https://thehardwareguru.cz/rss.xml
+Sitemap: https://thehardwareguru.cz/rss-comparisons.xml
 
 # --- AI & SCRAPER PROTECTION ---
 # Zákaz pro AI boty, kteří těží data bez návštěvnosti
