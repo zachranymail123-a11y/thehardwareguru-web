@@ -16,7 +16,7 @@ Disallow: /api/
 Disallow: /admin/
 
 # Sitemapy a RSS (Zlatý standard pro GSC a Seznam)
-Sitemap: https://thehardwareguru.cz/sitemap.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap.xml
 Sitemap: https://thehardwareguru.cz/rss.xml
 Sitemap: https://thehardwareguru.cz/rss-comparisons.xml
 
