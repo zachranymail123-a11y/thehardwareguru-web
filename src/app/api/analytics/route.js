@@ -1,23 +1,22 @@
 import { NextResponse } from 'next/server';
 
 /**
- * GURU ANALYTICS ENGINE V3.1 (LIVE DATA & VERCEL KEY FIX)
+ * GURU ANALYTICS ENGINE V3.2 (DEBUG MODE)
  * Cesta: src/app/api/analytics/route.js
- * 🚀 CÍL: Reálné napojení na GA4.
- * 🛡️ FIX: Robustní čištění private key (odstranění uvozovek z Vercelu a oprava zalomení).
+ * 🚀 CÍL: Zjistit přesný důvod selhání Google API.
  */
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 3600; // Data se kešují na 1 hodinu
+export const revalidate = 0; // Pro debugování vypneme cache úplně
 
 export async function GET() {
-  const propertyId = process.env.GA_PROPERTY_ID;
-  const clientEmail = process.env.GA_CLIENT_EMAIL;
+  const propertyId = process.env.GA_PROPERTY_ID || '';
+  const clientEmail = process.env.GA_CLIENT_EMAIL || '';
   
-  // 🛡️ GURU FIX: Získání klíče z Vercelu a robustní očištění
+  // 1. Získání klíče z Vercelu
   let privateKey = process.env.GA_PRIVATE_KEY || '';
   
-  // Odstranění přebytečných uvozovek (častý Vercel bug)
+  // 2. Odstranění přebytečných uvozovek (častý Vercel bug)
   if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
     privateKey = privateKey.slice(1, -1);
   }
@@ -25,17 +24,17 @@ export async function GET() {
     privateKey = privateKey.slice(1, -1);
   }
   
-  // Oprava zalomení řádků
+  // 3. Oprava zalomení řádků
   privateKey = privateKey.replace(/\\n/g, '\n');
 
-  // Pokud chybí klíče v prostředí, vrátíme fallback
-  if (!propertyId || !clientEmail || !privateKey) {
-    return NextResponse.json({ totalUsers: "13 842" });
+  // 4. Očištění Property ID (kdybys tam omylem dal slovo 'properties/')
+  const cleanPropertyId = propertyId.replace('properties/', '');
+
+  if (!cleanPropertyId || !clientEmail || !privateKey) {
+    return NextResponse.json({ totalUsers: "13 842", debug_error: "Env proměnné se nenačetly na serveru!" });
   }
 
   try {
-    // 🚀 GURU FIX: Dynamické načtení Google knihovny až za běhu.
-    // To kompletně řeší problém padajícího Vercelu.
     const gaData = await import('@google-analytics/data');
     const BetaAnalyticsDataClient = gaData.BetaAnalyticsDataClient;
 
@@ -46,9 +45,8 @@ export async function GET() {
       },
     });
 
-    // 📈 Dotaz na celkový počet unikátních uživatelů od začátku
     const [response] = await analyticsDataClient.runReport({
-      property: `properties/${propertyId}`,
+      property: `properties/${cleanPropertyId}`,
       dateRanges: [{ startDate: '2024-01-01', endDate: 'today' }],
       metrics: [{ name: 'totalUsers' }],
     });
@@ -63,8 +61,13 @@ export async function GET() {
 
   } catch (error) {
     console.error("GA4 FETCH ERROR:", error);
-    // Pokud na webu uvidíš "13 844", znamená to, že knihovna NENÍ nainstalovaná 
-    // nebo jsou Google Analytics klíče stále neplatné (zkontroluj Google Cloud / IAM).
-    return NextResponse.json({ totalUsers: "13 844" }, { status: 200 }); 
+    
+    // 🚀 GURU DEBUG: Místo tichého selhání vypíšeme přesnou chybovou hlášku
+    return NextResponse.json({ 
+      totalUsers: "13 844", 
+      debug_error: error.message || "Neznámá chyba",
+      debug_email: clientEmail ? "Nalezen" : "Chybí",
+      debug_property: cleanPropertyId
+    }, { status: 200 }); 
   }
 }
