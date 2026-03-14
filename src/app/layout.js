@@ -1,5 +1,6 @@
 import './globals.css'; 
 import Script from 'next/script';
+import { headers } from 'next/headers';
 import SestavyBubble from '../components/SestavyBubble'; 
 import Tracker from '../components/Tracker'; 
 import SocialTracker from '../components/SocialTracker';
@@ -9,9 +10,10 @@ import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
 
 /**
- * GURU ROOT LAYOUT V3.1 (BING SEO OPTIMIZED)
- * 🛡️ FIX 1: Implementace hreflang pro odblokování Bingu (CZ/EN rozlišení).
- * 🛡️ FIX 2: Zachování dynamického počítadla a SEO fixů z V3.0.
+ * GURU ROOT LAYOUT V3.1 (BING & GSC SEO OPTIMIZED)
+ * 🚀 CÍL: Eliminovat "Duplicate Content" v Bing a Google pomocí dynamických hreflang tagů.
+ * 🛡️ FIX 1: Přidána dynamická generace <link rel="alternate" hreflang="..."> dle aktuální cesty.
+ * 🛡️ FIX 2: Absolutní X-Default pro mezinárodní SEO.
  */
 
 export const metadata = {
@@ -21,12 +23,13 @@ export const metadata = {
   },
   description: 'Exkluzivní novinky ze světa hardwaru, recenze her a streamy s unikátní AI.',
   metadataBase: new URL('https://thehardwareguru.cz'),
+  // Globální fallback pro statické stránky (dynamické cesty to přebíjí)
   alternates: {
-    canonical: '/',
+    canonical: 'https://thehardwareguru.cz',
     languages: {
-      'cs-CZ': '/',
-      'en-US': '/en',
-      'x-default': '/',
+      'cs': 'https://thehardwareguru.cz',
+      'en': 'https://thehardwareguru.cz/en',
+      'x-default': 'https://thehardwareguru.cz'
     }
   },
   robots: {
@@ -36,8 +39,32 @@ export const metadata = {
   },
 }
 
-export default function RootLayout({ children, params }) {
-  const locale = params?.locale || params?.lang || 'cs';
+export default async function RootLayout({ children, params }) {
+  // Await params pro Next.js 15
+  const resolvedParams = await params;
+  const locale = resolvedParams?.locale || resolvedParams?.lang || 'cs';
+
+  // 🚀 GURU SEO: Získání aktuální cesty pro přesné HREFLANG tagy
+  const headersList = await headers();
+  const fullUrl = headersList.get('x-url') || headersList.get('referer') || '';
+  let currentPath = '';
+  
+  if (fullUrl) {
+    try {
+      const urlObj = new URL(fullUrl);
+      currentPath = urlObj.pathname;
+    } catch (e) {
+      currentPath = '';
+    }
+  }
+
+  // Odstranění /en pro získání čisté základní cesty
+  const cleanPath = currentPath.replace(/^\/en(\/|$)/, '/');
+  
+  // Konstrukce absolutních URL
+  const baseUrl = 'https://thehardwareguru.cz';
+  const urlCs = `${baseUrl}${cleanPath === '/' ? '' : cleanPath}`;
+  const urlEn = `${baseUrl}/en${cleanPath === '/' ? '' : cleanPath}`;
 
   const envVars = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
@@ -48,6 +75,13 @@ export default function RootLayout({ children, params }) {
     <html lang={locale}>
       <head>
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS" href="https://thehardwareguru.cz/rss.xml" />
+        
+        {/* 🚀 GURU SEO: Dynamické HREFLANG Tagy pro Bing/Google */}
+        <link rel="alternate" hrefLang="cs" href={urlCs} />
+        <link rel="alternate" hrefLang="en" href={urlEn} />
+        <link rel="alternate" hrefLang="x-default" href={urlCs} />
+        <link rel="canonical" href={locale === 'en' ? urlEn : urlCs} />
+
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-9W5FBC9P68" strategy="afterInteractive" />
         <Script id="google-analytics" strategy="afterInteractive">
           {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-9W5FBC9P68');`}
