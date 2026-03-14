@@ -9,11 +9,11 @@ import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
 
 /**
- * GURU ROOT LAYOUT V4.1 (FINAL CANONICAL FIX)
+ * GURU ROOT LAYOUT V4.2 (RSS FEEDS FIX)
  * Cesta: src/app/layout.js
  * 🚀 CÍL: Propustit 195.8K stránek z guru-sitemap do indexu Bingu a Googlu.
- * 🛡️ FIX: Zcela odstraněn objekt 'alternates' s globálním canonicalem. 
- * Toto zamezuje masivnímu blokování stránek (Duplicate Content) ve vyhledávačích.
+ * 🛡️ FIX 1: Zcela odstraněn objekt 'alternates' s globálním canonicalem. 
+ * 🛡️ FIX 2: Doplněn druhý chybějící RSS feed (rss-comparisons.xml) do hlavičky!
  */
 
 export const metadata = {
@@ -45,7 +45,9 @@ export default async function RootLayout({ children, params }) {
   return (
     <html lang={locale}>
       <head>
-        <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS" href="https://thehardwareguru.cz/rss.xml" />
+        {/* 🚀 GURU RSS FEEDY (Oba dva správně nasazené) */}
+        <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Novinky" href="https://thehardwareguru.cz/rss.xml" />
+        <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Srovnání" href="https://thehardwareguru.cz/rss-comparisons.xml" />
         
         {/* 🚀 GURU FIX: 
           Next.js 14/15 si canonical a hreflang vygeneruje SÁM podle 'export const metadata' 
