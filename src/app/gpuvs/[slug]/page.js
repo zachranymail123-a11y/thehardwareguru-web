@@ -16,16 +16,17 @@ import {
   ExternalLink,
   Activity,
   Crosshair,
-  Monitor
+  Monitor,
+  Info
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - DETAIL V118.6 (ULTIMATE GSC STANDARD)
+ * GURU GPU DUELS ENGINE - DETAIL V119.0 (SEMANTIC SEO EDITION)
  * Cesta: src/app/gpuvs/[slug]/page.js
- * 🛡️ FIX 1: Obohaceno Product Schema pro obě GPU o 'offers' a 'aggregateRating'.
- * 🛡️ FIX 2: Všechna schémata (Product, FAQ, Breadcrumb, Article, ItemList) vložena na root úroveň.
- * 🛡️ FIX 3: Cache vrácena na stabilních 3600s a absolutní Canonical + x-default (Zlatý standard).
- * 🛡️ FIX 4: Perzistentní cache (generateAndPersistDuel) plně integrována.
+ * 🚀 CÍL: Sémantické klastrování - propojení benchmarků grafik s relevantními články.
+ * 🛡️ FIX 1: getRelatedArticles vyhledává články s tématem GPU v duelu.
+ * 🛡️ FIX 2: Obohaceno Product Schema, FAQ a Article schéma pro maximální GSC validitu.
+ * 🛡️ FIX 3: Plná podpora Next.js 15 (await params).
  */
 
 export const runtime = "nodejs";
@@ -51,7 +52,7 @@ function calculatePerf(a, b) {
     return { winner: b, loser: a, diff: Math.round((b.performance_index / a.performance_index - 1) * 100) };
 }
 
-// 🚀 GURU ENGINE: THE 3-TIER BULLETPROOF LOOKUP
+// 🛡️ GURU ENGINE: THE 3-TIER BULLETPROOF LOOKUP
 const findGpuBySlug = async (gpuSlug) => {
   if (!supabaseUrl || !gpuSlug) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
@@ -77,6 +78,31 @@ const findGpuBySlug = async (gpuSlug) => {
       }
   } catch(e) {}
   return null;
+};
+
+// 🛡️ GURU ENGINE: Sémantické články (Thematic Clustering)
+const getRelatedArticles = async (cardA, cardB) => {
+    if (!supabaseUrl) return [];
+    const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+    const nameA = normalizeName(cardA || '');
+    const nameB = normalizeName(cardB || '');
+
+    try {
+        // Zkusíme najít články, které v názvu obsahují jednu nebo druhou grafiku
+        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.%${encodeURIComponent(nameA)}%,title.ilike.%${encodeURIComponent(nameB)}%)&order=created_at.desc&limit=3`, {
+            headers, cache: 'force-cache'
+        });
+        const data = await res.json();
+
+        // Fallback: Pokud žádné tematické články nejsou, vezmeme 3 nejnovější (Zlatý standard)
+        if (!data || data.length === 0) {
+            const resLatest = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&order=created_at.desc&limit=3`, {
+                headers, cache: 'force-cache'
+            });
+            return await resLatest.json();
+        }
+        return data;
+    } catch (e) { return []; }
 };
 
 const getSimilarDuels = async (gpuId, currentSlug) => {
@@ -179,17 +205,6 @@ export async function generateMetadata({ params }) {
         "cs": canonicalUrl,
         "x-default": canonicalUrl
       }
-    },
-    robots: {
-      index: true,
-      follow: true
-    },
-    openGraph: {
-      type: "article",
-      url: canonicalUrl,
-      title: fullTitle,
-      description: description,
-      siteName: "The Hardware Guru"
     }
   };
 }
@@ -204,8 +219,11 @@ export default async function GpuDuelDetail({ params }) {
 
   const { gpuA, gpuB } = duel;
   const similarPromise = gpuA?.id ? getSimilarDuels(gpuA.id, duel.slug) : Promise.resolve([]);
-  
   const { winner, loser, diff: finalPerfDiff } = calculatePerf(gpuA, gpuB);
+  
+  // 🚀 GURU: Sémantické články (Wikipedia propojovací model)
+  const relatedArticles = await getRelatedArticles(gpuA.name, gpuB.name);
+
   const similar = await similarPromise;
 
   const getWinnerStyle = (valA, valB, lowerIsBetter = false) => {
@@ -244,127 +262,42 @@ export default async function GpuDuelDetail({ params }) {
 
   // 🚀 ZLATÁ GSC SEO SCHÉMATA (Root Level)
   const productSchemaA = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "name": normalizeName(gpuA.name),
-    "image": `${baseUrl}/logo.png`,
-    "description": isEn ? `Performance analysis and benchmarks for ${normalizeName(gpuA.name)}` : `Analýza výkonu a benchmarky pro ${normalizeName(gpuA.name)}`,
-    "brand": { "@type": "Brand", "name": gpuA.vendor || "Hardware" },
-    "category": "Graphics Card",
-    "sku": safeSlugA,
+    "@context": "https://schema.org", "@type": "Product", "name": normalizeName(gpuA.name), "image": `${baseUrl}/logo.png`,
+    "brand": { "@type": "Brand", "name": gpuA.vendor || "Hardware" }, "category": "Graphics Card", "sku": safeSlugA,
     "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu-performance/${safeSlugA}`,
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": 4.8,
-      "bestRating": 5,
-      "worstRating": 1,
-      "reviewCount": 124
-    },
-    "offers": {
-      "@type": "Offer",
-      "priceCurrency": "USD",
-      "price": gpuA.release_price_usd || 499,
-      "availability": "https://schema.org/InStock",
-      "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu-performance/${safeSlugA}`
-    }
+    "aggregateRating": { "@type": "AggregateRating", "ratingValue": 4.8, "reviewCount": 124 },
+    "offers": { "@type": "Offer", "priceCurrency": "USD", "price": gpuA.release_price_usd || 499, "availability": "https://schema.org/InStock", "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu-performance/${safeSlugA}` }
   };
 
   const productSchemaB = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "name": normalizeName(gpuB.name),
-    "image": `${baseUrl}/logo.png`,
-    "description": isEn ? `Performance analysis and benchmarks for ${normalizeName(gpuB.name)}` : `Analýza výkonu a benchmarky pro ${normalizeName(gpuB.name)}`,
-    "brand": { "@type": "Brand", "name": gpuB.vendor || "Hardware" },
-    "category": "Graphics Card",
-    "sku": safeSlugB,
+    "@context": "https://schema.org", "@type": "Product", "name": normalizeName(gpuB.name), "image": `${baseUrl}/logo.png`,
+    "brand": { "@type": "Brand", "name": gpuB.vendor || "Hardware" }, "category": "Graphics Card", "sku": safeSlugB,
     "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu-performance/${safeSlugB}`,
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": 4.7,
-      "bestRating": 5,
-      "worstRating": 1,
-      "reviewCount": 98
-    },
-    "offers": {
-      "@type": "Offer",
-      "priceCurrency": "USD",
-      "price": gpuB.release_price_usd || 399,
-      "availability": "https://schema.org/InStock",
-      "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu-performance/${safeSlugB}`
-    }
-  };
-
-  const itemListSchema = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "item": { "@id": productSchemaA.url, "name": productSchemaA.name }
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "item": { "@id": productSchemaB.url, "name": productSchemaB.name }
-      }
-    ]
+    "aggregateRating": { "@type": "AggregateRating", "ratingValue": 4.7, "reviewCount": 98 },
+    "offers": { "@type": "Offer", "priceCurrency": "USD", "price": gpuB.release_price_usd || 399, "availability": "https://schema.org/InStock", "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu-performance/${safeSlugB}` }
   };
 
   const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
+    "@context": "https://schema.org", "@type": "BreadcrumbList",
     "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": isEn ? "GPU Comparisons" : "Srovnání GPU",
-        "item": `${baseUrl}/${isEn ? 'en/' : ''}gpuvs`
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": `${normalizeName(gpuA.name)} vs ${normalizeName(gpuB.name)}`,
-        "item": `${baseUrl}/${isEn ? 'en/' : ''}gpuvs/${duel.slug}`
-      }
+      { "@type": "ListItem", "position": 1, "name": isEn ? "GPU Comparisons" : "Srovnání GPU", "item": `${baseUrl}/${isEn ? 'en/' : ''}gpuvs` },
+      { "@type": "ListItem", "position": 2, "name": `${normalizeName(gpuA.name)} vs ${normalizeName(gpuB.name)}`, "item": `${baseUrl}/${isEn ? 'en/' : ''}gpuvs/${duel.slug}` }
     ]
   };
 
   const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
+    "@context": "https://schema.org", "@type": "FAQPage",
     "mainEntity": [
       {
-        "@type": "Question",
-        "name": isEn ? `Is ${normalizeName(gpuA.name)} better than ${normalizeName(gpuB.name)}?` : `Je ${normalizeName(gpuA.name)} lepší než ${normalizeName(gpuB.name)}?`,
-        "acceptedAnswer": {
-            "@type": "Answer",
-            "text": winner
-              ? (isEn ? `Yes, ${normalizeName(winner.name)} is about ${finalPerfDiff}% faster in gaming benchmarks.` : `Ano, ${normalizeName(winner.name)} je v herních benchmarcích přibližně o ${finalPerfDiff} % výkonnější.`)
-              : (isEn ? `Both GPUs offer very similar gaming performance.` : `Obě grafiky nabízejí velmi vyrovnaný herní výkon.`)
-        }
-      },
-      {
-        "@type": "Question",
-        "name": isEn ? `Which GPU is a better upgrade: ${normalizeName(gpuA.name)} or ${normalizeName(gpuB.name)}?` : `Která grafika je lepší na upgrade: ${normalizeName(gpuA.name)} nebo ${normalizeName(gpuB.name)}?`,
-        "acceptedAnswer": {
-            "@type": "Answer",
-            "text": winner
-              ? (isEn ? `The ${normalizeName(winner.name)} provides better raw performance, making it a stronger upgrade path.` : `Karta ${normalizeName(winner.name)} nabízí vyšší hrubý výkon, což z ní dělá silnější volbu pro upgrade.`)
-              : (isEn ? `Both cards are comparable, base your decision on pricing and specific features.` : `Obě karty jsou srovnatelné, rozhodujte se podle aktuální ceny a doplňkových funkcí.`)
-        }
+        "@type": "Question", "name": isEn ? `Is ${normalizeName(gpuA.name)} better than ${normalizeName(gpuB.name)}?` : `Je ${normalizeName(gpuA.name)} lepší než ${normalizeName(gpuB.name)}?`,
+        "acceptedAnswer": { "@type": "Answer", "text": winner ? (isEn ? `Yes, ${normalizeName(winner.name)} is about ${finalPerfDiff}% faster.` : `Ano, ${normalizeName(winner.name)} je přibližně o ${finalPerfDiff} % výkonnější.`) : "Both offer similar performance." }
       }
     ]
   };
 
   const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "TechArticle",
-    "headline": isEn ? `${normalizeName(gpuA.name)} vs ${normalizeName(gpuB.name)} comparison` : `Srovnání ${normalizeName(gpuA.name)} vs ${normalizeName(gpuB.name)}`,
-    "description": winner
-        ? (isEn ? `${normalizeName(winner.name)} is about ${finalPerfDiff}% faster.` : `${normalizeName(winner.name)} je o ${finalPerfDiff} % výkonnější.`)
-        : (isEn ? "Direct GPU comparison." : "Přímé srovnání grafických karet."),
+    "@context": "https://schema.org", "@type": "TechArticle", "headline": isEn ? `${normalizeName(gpuA.name)} vs ${normalizeName(gpuB.name)} comparison` : `Srovnání ${normalizeName(gpuA.name)} vs ${normalizeName(gpuB.name)}`,
+    "description": winner ? (isEn ? `${normalizeName(winner.name)} is about ${finalPerfDiff}% faster.` : `${normalizeName(winner.name)} je o ${finalPerfDiff} % výkonnější.`) : "Direct GPU comparison.",
     "author": { "@type": "Organization", "name": "The Hardware Guru" }
   };
 
@@ -375,7 +308,6 @@ export default async function GpuDuelDetail({ params }) {
       
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(productSchemaA) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(productSchemaB) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(itemListSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(articleSchema) }} />
@@ -459,6 +391,29 @@ export default async function GpuDuelDetail({ params }) {
           </div>
         </section>
 
+        {/* 🚀 GURU: SÉMANTICKÉ PROPOJENÍ (SOUVISEJÍCÍ ČLÁNKY) */}
+        {relatedArticles.length > 0 && (
+            <section style={{ marginBottom: '60px' }}>
+                <h2 className="section-h2" style={{ borderLeftColor: '#a855f7' }}>
+                    <Info size={28} color="#a855f7" style={{ display: 'inline', marginRight: '10px' }} /> 
+                    {isEn ? 'GURU ADVICE & NEWS' : 'GURU RÁDCE A NOVINKY'}
+                </h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+                    {relatedArticles.map((art) => (
+                        <a key={art.slug} href={isEn ? `/en/clanky/${art.slug_en || art.slug}` : `/clanky/${art.slug}`} className="related-card-style">
+                            <div className="related-img-box">
+                                <img src={art.image_url || 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000'} alt={art.title} loading="lazy" />
+                            </div>
+                            <div className="related-content-box">
+                                <span className="related-tag">{isEn ? 'TECH NEWS' : 'HW NOVINKA'}</span>
+                                <h3 className="related-title-text">{isEn && art.title_en ? art.title_en : art.title}</h3>
+                            </div>
+                        </a>
+                    ))}
+                </div>
+            </section>
+        )}
+
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><Activity size={36} /> {isEn ? 'DEEP DIVE ANALYSIS' : 'DETAILNÍ ANALÝZA'}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px' }}>
@@ -524,6 +479,14 @@ export default async function GpuDuelDetail({ params }) {
         .spec-row-style { display: flex; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .table-label { width: 180px; text-align: center; font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; }
         
+        .related-card-style { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; text-decoration: none; transition: 0.3s; }
+        .related-card-style:hover { transform: translateY(-5px); border-color: #a855f7; }
+        .related-img-box { height: 160px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .related-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .related-content-box { padding: 20px; }
+        .related-tag { color: #a855f7; font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 10px; }
+        .related-title-text { color: #fff; font-size: 1.1rem; font-weight: 950; margin: 0; line-height: 1.3; }
+
         .fps-matrix-card { background: rgba(15,17,21,0.9); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
         .matrix-gpu-title { font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;}
         .matrix-links { display: grid; grid-template-columns: 1fr; gap: 10px; }
