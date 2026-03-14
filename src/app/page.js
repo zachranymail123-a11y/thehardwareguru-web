@@ -2,12 +2,12 @@ import React from 'react';
 import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu } from 'lucide-react';
 
 /**
- * GURU HOMEPAGE V15.3 - FULL SSR & GOLDEN RICH RESULTS FIX
+ * GURU HOMEPAGE V15.4 - FULL SSR & GOLDEN RICH RESULTS FIX
  * Cesta: src/app/page.js
  * 🛡️ FIX 1: Komponenta next/image odstraněna kvůli chybám při kompilaci v aktuálním prostředí.
  * 🛡️ FIX 2: Změněno z "use client" na asynchronní Server Component pro 100% SEO indexaci Googlem.
  * 🛡️ FIX 3: Odstraněno serverové volání increment_total_visits (zamezení nafukování statistik z crawlerů).
- * 🛡️ FIX 4: Aplikován Zlatý GSC Standard - vložena schémata WebSite (se SearchAction) a Organization.
+ * 🛡️ FIX 4: Opraven format WebSite (EntryPoint) a přidáno masivní FAQ schema pro Brand SEO.
  */
 
 const LEAK_PLACEHOLDER_URL = 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000';
@@ -100,7 +100,10 @@ export default async function HomePage({ params }) {
     "url": currentUrl,
     "potentialAction": {
       "@type": "SearchAction",
-      "target": `${baseUrl}/search?q={search_term_string}`,
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": `${baseUrl}/search?q={search_term_string}`
+      },
       "query-input": "required name=search_term_string"
     }
   };
@@ -110,11 +113,34 @@ export default async function HomePage({ params }) {
     "@type": "Organization",
     "name": "The Hardware Guru",
     "url": baseUrl,
-    "logo": {
-      "@type": "ImageObject",
-      "url": `${baseUrl}/logo.png`
-    },
-    "image": [`${baseUrl}/logo.png`]
+    "logo": `${baseUrl}/logo.png`,
+    "image": [`${baseUrl}/logo.png`],
+    "sameAs": [
+      "https://kick.com/thehardwareguru"
+    ]
+  };
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": isEn ? "What is The Hardware Guru?" : "Co je to The Hardware Guru?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": isEn ? "The Hardware Guru is an official technology base and database for gamers. We provide detailed CPU and GPU benchmarks, bottleneck analysis, and hardware reviews." : "The Hardware Guru je technologická základna a databáze pro hráče. Poskytujeme detailní benchmarky procesorů a grafických karet, analýzu bottlenecku a hardwarové recenze."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": isEn ? "How does the Bottleneck Calculator work?" : "Jak funguje kalkulačka bottlenecku?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": isEn ? "Our engine compares raw hardware performance indexes and real-world gaming data to determine if your CPU is holding back your GPU (or vice versa) in specific resolutions." : "Náš engine porovnává indexy hrubého výkonu a reálná herní data, aby určil, zda váš procesor brzdí grafickou kartu (nebo naopak) v konkrétním rozlišení."
+        }
+      }
+    ]
   };
 
   const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
@@ -125,6 +151,7 @@ export default async function HomePage({ params }) {
       {/* JSON-LD INJECTIONS */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(websiteSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
 
       <style>{`
         /* --- GURU GLOBÁLNÍ STYLY A KARTY --- */
