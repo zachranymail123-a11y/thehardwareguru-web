@@ -6,20 +6,19 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - V4.0 (DEEP CONTENT SEO EDITION)
+ * GURU GPU DUELS ENGINE - V4.1 (CHATGPT CANONICAL FIX)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * 🚀 CÍL: Fix pro Bing "Thin Content" - Masivní nárůst textového obsahu (Long-form SEO).
- * 🛡️ FIX 1: Dynamické generování sekcí Architektura, DLSS vs FSR, Kompletní doporučení.
- * 🛡️ FIX 2: Rozšířeno JSON-LD FAQ Schema pro Rich Snippets v Google/Bing.
+ * 🛡️ FIX 1: Úplná oprava Canonical tagů (dle ChatGPT). EN verze má nyní svůj EN canonical.
+ * 🛡️ FIX 2: Zajištěn čistý Server-Side render bez useEffect fetchů (obsah je rovnou v HTML).
  * 🛡️ FIX 3: Striktní 'await props.params' (Next.js 15 safe).
  */
 
 export const runtime = "nodejs";
 export const revalidate = 3600; 
 
-// 🚀 GURU FIX: Zapnutí částečného Statického Generování (SSG)
-// Vercel díky tomuto vygeneruje čisté, bleskové HTML pro 100 nejpopulárnějších duelů rovnou při buildu.
-// Ostatní duely se vygenerují dynamicky při prvním přístupu a pak zůstanou staticky uložené (ISR).
+// 🚀 GURU FIX: Zapnutí částečného Statického Generování (SSG / ISR)
+// Vercel vygeneruje čisté, bleskové HTML rovnou při buildu/prvním requestu (bez JS obsahu pro boty).
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
@@ -29,7 +28,6 @@ export async function generateStaticParams() {
   if (!supabaseUrl) return [];
 
   try {
-      // Vytáhneme 100 existujících duelů z DB pro statický build
       const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=slug&limit=100`, {
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
           next: { revalidate: 86400 }
@@ -38,7 +36,6 @@ export async function generateStaticParams() {
       if (!res.ok) return [];
       const duels = await res.json();
       
-      // Vrátíme pole objektů se slugy pro pre-render
       return duels.map((duel) => ({
           slug: duel.slug,
       }));
@@ -129,14 +126,22 @@ export async function generateMetadata(props) {
 
   const { gpuA, gpuB } = duel;
   
+  // 🚀 GURU FIX: Oprava Canonical Tagu (dle doporučení ChatGPT).
+  // Dynamicky nastavíme POUZE 1 přesný canonical tag podle aktuální jazykové verze.
+  const canonicalUrl = isEn ? `${baseUrl}/en/gpuvs/${duel.slug}` : `${baseUrl}/gpuvs/${duel.slug}`;
+  
   return { 
     title: isEn ? `${gpuA.name} vs ${gpuB.name} – Gaming Benchmarks & Review` : `Srovnání: ${gpuA.name} vs ${gpuB.name} – Výkon, Testy a Parametry`,
     description: isEn 
         ? `Detailed comparison of ${gpuA.name} vs ${gpuB.name}. Deep dive into 1440p gaming benchmarks, DLSS vs FSR analysis, ray tracing performance, architecture and VRAM.`
         : `Detailní srovnání ${gpuA.name} vs ${gpuB.name}. Hluboká analýza herního výkonu, DLSS vs FSR, ray tracingu, architektury a spotřeby energie.`,
     alternates: {
-        canonical: `${baseUrl}/gpuvs/${duel.slug}`,
-        languages: { 'en': `${baseUrl}/en/gpuvs/${duel.slug}`, 'cs': `${baseUrl}/gpuvs/${duel.slug}`, 'x-default': `${baseUrl}/gpuvs/${duel.slug}` }
+        canonical: canonicalUrl,
+        // Odstraněn x-default pro čistotu podle návodu, ponechány jen přesné mutace
+        languages: { 
+            'en': `${baseUrl}/en/gpuvs/${duel.slug}`, 
+            'cs': `${baseUrl}/gpuvs/${duel.slug}` 
+        }
     }
   };
 }
