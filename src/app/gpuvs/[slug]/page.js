@@ -12,6 +12,7 @@ import {
  * 🚀 CÍL: 100% zelená v Google Search Console.
  * 🛡️ FIX 1: Přidány TechArticle a Product schémata s 'offers', 'shippingDetails' a 'hasMerchantReturnPolicy'.
  * 🛡️ FIX 2: Image pole převedeno na Array ['url'], jak to vyžaduje GSC.
+ * 🛡️ FIX 3: Oprava syntax erroru (justifyContent) při buildu na Vercelu.
  */
 
 export const runtime = "nodejs";
@@ -329,8 +330,8 @@ export default async function GpuVsDetailPage(props) {
                 </a>
             </div>
             
-            <div style={{ display: 'flex', alignItems: 'center', justify-content: 'center' }}>
-                <div style={{ background: '#0a0b0d', width: '70px', height: '70px', borderRadius: '50%', display: 'flex', alignItems: 'center', justify-content: 'center', color: '#ff0055', border: '2px solid #ff0055', fontWeight: '950', fontSize: '24px', boxShadow: '0 0 30px rgba(255, 0, 85, 0.3)' }}>VS</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ background: '#0a0b0d', width: '70px', height: '70px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff0055', border: '2px solid #ff0055', fontWeight: '950', fontSize: '24px', boxShadow: '0 0 30px rgba(255, 0, 85, 0.3)' }}>VS</div>
             </div>
             
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid ${getVendorColor(gpuB.vendor)}`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
