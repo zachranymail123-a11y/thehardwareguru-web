@@ -1,44 +1,93 @@
-"use client";
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { PenTool, ChevronRight, Loader2, Zap, ShieldCheck } from 'lucide-react';
+import { PenTool, ChevronRight, Zap, ShieldCheck, Heart, Flame, Info, Monitor } from 'lucide-react';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+/**
+ * GURU GUIDES ARCHIVE ENGINE V2.0 (GOLDEN RICH RESULTS FIX)
+ * Cesta: src/app/rady/page.js
+ * 🚀 CÍL: 100% zelená v GSC a blesková indexace praktických návodů.
+ * 🛡️ FIX 1: Přepsáno na Server Component (SSR) pro maximální SEO autoritu.
+ * 🛡️ FIX 2: Implementován Golden Rich standard - ItemList a BreadcrumbList JSON-LD.
+ * 🛡️ FIX 3: Podpora CZ/EN varianty a absolutních Canonical URL.
+ */
 
-export default function RadyArchivePage() {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  const pathname = usePathname() || '';
-  const isEn = pathname.startsWith('/en');
+export const runtime = "nodejs";
+export const revalidate = 3600; 
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data, error } = await supabase
-          .from('rady')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (!error && data) setItems(data);
-        document.title = isEn ? 'Hardware Guru Guides | Technical Base' : 'Guru Hardware Rady | Technická základna';
-      } catch (err) {
-        console.error("GURU DB FAIL:", err);
-      } finally {
-        setLoading(false);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const baseUrl = "https://thehardwareguru.cz";
+
+// 🚀 GURU SEO: Dynamické Meta Tagy pro archiv rad
+export async function generateMetadata(props) {
+  const isEn = props?.isEn === true;
+  const title = isEn ? 'Hardware Guru Guides | Technical Knowledge Base' : 'Guru Hardware Rady | Technická základna';
+  const desc = isEn 
+    ? 'Field-tested guides, technical solutions and hardware tips for every PC enthusiast.' 
+    : 'Prověřené návody z praxe, technická řešení a hardwarové tipy pro každého PC nadšence.';
+
+  return {
+    title: `${title} | The Hardware Guru`,
+    description: desc,
+    alternates: {
+      canonical: `${baseUrl}/rady`,
+      languages: {
+        'en': `${baseUrl}/en/rady`,
+        'cs': `${baseUrl}/rady`,
+        'x-default': `${baseUrl}/rady`
       }
     }
-    fetchData();
-  }, [isEn]);
+  };
+}
+
+export default async function RadyArchivePage(props) {
+  const isEn = props?.isEn === true;
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  // 1. GURU FETCH: Získání dat přímo na serveru
+  const { data: items, error } = await supabase
+    .from('rady')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("GURU GUIDES FETCH FAIL:", error);
+  }
+
+  const safeItems = items || [];
+
+  // 🚀 ZLATÁ GSC SEO SCHÉMATA (ItemList pro seznam rad)
+  const itemListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": isEn ? "Hardware Guides & Solutions" : "Hardwarové rady a návody",
+    "description": isEn ? "Collection of practical technical guides." : "Sbírka praktických technických návodů.",
+    "itemListElement": safeItems.map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "url": `${baseUrl}${isEn ? '/en' : ''}/rady/${isEn && item.slug_en ? item.slug_en : item.slug}`
+    }))
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Guru", "item": baseUrl },
+      { "@type": "ListItem", "position": 2, "name": isEn ? "Guides" : "Rady", "item": `${baseUrl}${isEn ? '/en' : ''}/rady` }
+    ]
+  };
+
+  const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
   return (
     <div style={pageWrapper}>
-      <style>{`
+      {/* JSON-LD INJECTIONS */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(itemListSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbSchema) }} />
+
+      <style dangerouslySetInnerHTML={{ __html: `
         .rada-card { 
             background: rgba(10, 11, 13, 0.9); 
             backdrop-filter: blur(15px);
@@ -66,21 +115,12 @@ export default function RadyArchivePage() {
             margin-bottom: 25px;
             border: 1px solid rgba(168, 85, 247, 0.2);
         }
-        .social-btn { 
-            padding: 12px 24px; 
-            text-decoration: none; 
-            font-weight: 900; 
-            border-radius: 14px; 
-            transition: 0.3s; 
-            font-size: 12px; 
-            display: inline-block; 
-            border: 1px solid currentColor;
-            text-transform: uppercase;
-        }
-        .social-btn:hover { transform: scale(1.05); filter: brightness(1.2); }
-      `}</style>
+        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
+        .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
+        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
+        .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
+      `}} />
 
-      {/* --- HLAVNÍ OBSAH --- */}
       <main style={{ maxWidth: '1300px', margin: '60px auto', padding: '0 20px', width: '100%', flex: '1 0 auto' }}>
         <header style={{ textAlign: 'center', marginBottom: '80px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '25px' }}>
@@ -95,11 +135,13 @@ export default function RadyArchivePage() {
             </p>
         </header>
 
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '100px' }}><Loader2 className="animate-spin" size={64} color="#a855f7" /></div>
+        {safeItems.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '100px', color: '#4b5563', fontWeight: 'bold' }}>
+            {isEn ? 'NO GUIDES FOUND IN DATABASE' : 'V DATABÁZI NENALEZENY ŽÁDNÉ RADY'}
+          </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '35px' }}>
-            {items.map((rada) => {
+            {safeItems.map((rada) => {
               const displayTitle = (isEn && rada.title_en) ? rada.title_en : rada.title;
               const displayDesc = (isEn && rada.description_en) ? rada.description_en : rada.description;
               const displaySlug = (isEn && rada.slug_en) ? rada.slug_en : rada.slug;
@@ -123,9 +165,23 @@ export default function RadyArchivePage() {
             })}
           </div>
         )}
+
+        {/* 🚀 GURU GLOBÁLNÍ CTA TLAČÍTKA (Golden standard) */}
+        <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
+          <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
+            {isEn ? "Did these guides help you? Support us by buying games at the best prices." : "Pomohly ti tyto rady? Podpoř nás nákupem her za ty nejlepší ceny."}
+          </h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
+            <a href="https://www.hrkgame.com/en/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn" style={{ flex: '1 1 280px' }}>
+              <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
+            </a>
+            <Link href={isEn ? "/en/support" : "/support"} className="guru-support-btn" style={{ flex: '1 1 280px' }}>
+              <Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
+            </Link>
+          </div>
+        </div>
       </main>
 
-      {/* --- GURU FOOTER (MULTI-LANG) --- */}
       <footer style={footerStyle}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <h2 style={{ color: '#a855f7', marginBottom: '30px', textTransform: 'uppercase', fontWeight: '950', fontSize: '36px' }}>
@@ -137,13 +193,6 @@ export default function RadyArchivePage() {
               : "Vítej ve světě The Hardware Guru! Jsem tvůj průvodce moderní technologií, hardwarem a gamingem. Tato sekce rad vznikla proto, aby ses i ty stal pánem svého hardwaru."
             }
           </p>
-          
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap', marginBottom: '50px' }}>
-            <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ color: '#53fc18' }}>KICK LIVE</a>
-            <a href="https://www.youtube.com/@thehardwareguru_czech" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ color: '#ff0000' }}>YOUTUBE</a>
-            <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ color: '#5865F2' }}>DISCORD</a>
-          </div>
-          
           <p style={{ fontSize: '13px', color: '#444', fontWeight: '900', letterSpacing: '2px' }}>
             © {new Date().getFullYear()} THE HARDWARE GURU SYSTEM • ELITE TECH BASE
           </p>
