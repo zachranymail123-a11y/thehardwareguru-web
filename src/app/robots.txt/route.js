@@ -15,8 +15,6 @@ Disallow: /admin/
 
 # Sitemapy a RSS feedy (Vše přes direktivu Sitemap:)
 Sitemap: https://thehardwareguru.cz/guru-sitemap.xml
-Sitemap: https://thehardwareguru.cz/rss.xml
-Sitemap: https://thehardwareguru.cz/rss-comparisons.xml
 
 # AI protection
 User-agent: GPTBot
