@@ -5,11 +5,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU ENGINE - DETAIL GRAFIKY V1.9 (SEMANTIC SEO EDITION)
+ * GURU GPU ENGINE - DETAIL GRAFIKY V2.0 (SEMANTIC SEO FINAL)
  * Cesta: src/app/gpu/[gpu]/page.js
  * 🚀 CÍL: Sémantické klastrování - propojení profilu karty s relevantními články z DB.
- * 🛡️ FIX 1: getRelatedArticles vyhledává články o konkrétní GPU.
- * 🛡️ FIX 2: Implementován fallback na nejnovější HW novinky, pokud pro danou kartu není článek.
+ * 🛡️ FIX 1: getRelatedArticles nyní prohledává title i title_en.
+ * 🛡️ FIX 2: Nejsilnější fallback - pokud není shoda, VŽDY vytáhne 3 nejnovější zprávy.
  * 🛡️ FIX 3: Striktní Next.js 15 compliance (await props.params).
  */
 
@@ -30,21 +30,25 @@ const getRelatedArticles = async (gpuName) => {
     const name = normalizeName(gpuName || '');
 
     try {
-        // Hledáme články obsahující název karty v češtině (výchozí)
-        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&title=ilike.%${encodeURIComponent(name)}%&order=created_at.desc&limit=3`, {
+        // 1. POKUS: Najít články, které mají název karty v titulku (CZ i EN)
+        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.%${encodeURIComponent(name)}%,title_en.ilike.%${encodeURIComponent(name)}%)&order=created_at.desc&limit=3`, {
             headers, cache: 'force-cache'
         });
         const data = await res.json();
 
-        // Fallback: Pokud o této kartě není specifický článek, vezmeme 3 nejnovější trháky z archivu
+        // 2. POKUS: Pokud nic, vezmeme prostě 3 nejnovější (Zlatý standard)
         if (!data || data.length === 0) {
             const resLatest = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&order=created_at.desc&limit=3`, {
                 headers, cache: 'force-cache'
             });
-            return await resLatest.json();
+            const latestData = await resLatest.json();
+            return Array.isArray(latestData) ? latestData : [];
         }
         return data;
-    } catch (e) { return []; }
+    } catch (e) { 
+        console.error("Related articles error:", e);
+        return []; 
+    }
 };
 
 const findGpuBySlug = async (gpuSlug) => {
@@ -101,7 +105,7 @@ export default async function GpuDetailPage(props) {
   const vendorColor = (gpu.vendor || '').toUpperCase() === 'NVIDIA' ? '#76b900' : ((gpu.vendor || '').toUpperCase() === 'AMD' ? '#ed1c24' : '#66fcf1');
   const safeSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
 
-  // 🚀 GURU: Načtení sémantických článků pro tuto grafickou kartu
+  // 🚀 GURU: Načtení sémantických článků
   const relatedArticles = await getRelatedArticles(gpu.name);
 
   const productSchema = {
@@ -156,7 +160,7 @@ export default async function GpuDetailPage(props) {
             <div className="stat-card"><div className="label">PERFORMANCE</div><div className="val">{gpu.performance_index || '-'} PTS</div></div>
         </section>
 
-        {/* 🚀 GURU: SÉMANTICKÉ PROPOJENÍ (ČLÁNKY O TÉTO KARTĚ) */}
+        {/* 🚀 GURU: SÉMANTICKÉ PROPOJENÍ (ČLÁNKY O TÉTO KARTĚ NEBO NEJNOVĚJŠÍ) */}
         {relatedArticles.length > 0 && (
             <section style={{ marginBottom: '60px' }}>
                 <h2 className="section-h2" style={{ borderLeftColor: '#a855f7' }}>
@@ -190,7 +194,7 @@ export default async function GpuDetailPage(props) {
                   </div>
                   <ArrowRight size={20} className="link-arrow" />
               </a>
-              <a href={isEn ? `/en/gpu-recommend/${safeSlug}` : `/gpu-recommend/${safeSlug}`} className="deep-link-card">
+              <a href={isEn ? `/en/gpu-recommend/${safeSlug}` : `/en/gpu-recommend/${safeSlug}`} className="deep-link-card">
                   <CheckCircle2 size={32} color="#10b981" />
                   <div>
                       <h3>{isEn ? 'Guru Verdict' : 'Guru Verdikt'}</h3>
@@ -236,7 +240,7 @@ export default async function GpuDetailPage(props) {
         .deep-link-card:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-5px); }
 
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
-        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
+        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
       `}} />
     </div>
   );
