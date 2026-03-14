@@ -7,20 +7,21 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - V5.0 (ENTERPRISE SEO FIX)
+ * GURU GPU DUELS ENGINE - V5.1 (STRICT STATIC SEO FIX)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * 🚀 CÍL: Fix pro Bing "Thin Content" a Enterprise SEO standardy (ChatGPT).
  * 🛡️ FIX 1: Úplně odstraněn 'generateAndPersistDuel'. Stránky se negenerují při requestu!
  * 🛡️ FIX 2: Limit v 'generateStaticParams' zvýšen na 10000 pro masivní Build-time SSG.
  * 🛡️ FIX 3: Nasazeno tvrdé 'notFound()' pro 404, pokud duel v DB reálně neexistuje.
  * 🛡️ FIX 4: Přidány Entity linky na individuální profily GPU pro sémantické propojení.
+ * 🛡️ FIX 5: dynamicParams = false. Zákaz fallback renderingu, Bing dostane jen 100% statické URL.
  */
 
 export const runtime = "nodejs";
 export const revalidate = 3600; 
 
-// Vercel vygeneruje čisté, bleskové HTML rovnou při buildu/prvním requestu.
-export const dynamicParams = true;
+// 🚀 GURU FIX: Zákaz fallback renderingu pro SEO. Všechny URL musí být známé už při buildu.
+export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -29,7 +30,7 @@ export async function generateStaticParams() {
   if (!supabaseUrl) return [];
 
   try {
-      // 🚀 GURU FIX: Zvýšeno na 10000 pro maximální pokrytí při buildu
+      // Zvýšeno na 10000 pro maximální pokrytí při buildu
       const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=slug&limit=10000`, {
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
           next: { revalidate: 86400 }
@@ -76,7 +77,7 @@ const findGpuBySlug = async (gpuSlug) => {
   return null;
 };
 
-// 🚀 GURU FIX: Odstraněna request-time generace. Data se tahají jen z DB.
+// Odstraněna request-time generace. Data se tahají jen z DB.
 const getDuelData = cache(async (rawSlug) => {
   if (!supabaseUrl || !rawSlug) return null;
   const cleanSlug = rawSlug.replace(/^en-/, '');
@@ -97,7 +98,7 @@ export async function generateMetadata(props) {
   
   const duel = await getDuelData(rawSlug);
   
-  // 🚀 GURU FIX: Tvrdá 404 pro SEO
+  // Tvrdá 404 pro SEO
   if (!duel) notFound();
 
   const { gpuA, gpuB } = duel;
@@ -127,7 +128,7 @@ export default async function GpuVsDetailPage(props) {
   
   const duel = await getDuelData(rawSlug);
   
-  // 🚀 GURU FIX: Tvrdá 404 pro SEO
+  // Tvrdá 404 pro SEO
   if (!duel) notFound();
 
   const { gpuA, gpuB } = duel;
@@ -155,7 +156,7 @@ export default async function GpuVsDetailPage(props) {
 
   const calcSafeDiff = (oldF, newF) => (!oldF || !newF || oldF === 0) ? 0 : Math.round(((newF / oldF) - 1) * 100);
   
-  // 🚀 DYNAMICKÁ LOGIKA PRO LONG-FORM SEO TEXTY
+  // DYNAMICKÁ LOGIKA PRO LONG-FORM SEO TEXTY
   const getRtWinner = () => {
     if (gpuA.vendor === 'NVIDIA' && gpuB.vendor === 'AMD') return gpuA;
     if (gpuB.vendor === 'NVIDIA' && gpuA.vendor === 'AMD') return gpuB;
@@ -188,7 +189,7 @@ export default async function GpuVsDetailPage(props) {
   const upA = getUpscaling(gpuA.vendor);
   const upB = getUpscaling(gpuB.vendor);
 
-  // 🚀 ZLATÁ GSC SEO SCHÉMATA (FAQ Schema)
+  // ZLATÁ GSC SEO SCHÉMATA (FAQ Schema)
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -253,7 +254,7 @@ export default async function GpuVsDetailPage(props) {
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid ${getVendorColor(gpuA.vendor)}`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
                 <span style={{ color: getVendorColor(gpuA.vendor), fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px' }}>{gpuA.vendor} GPU</span>
                 <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '15px 0 15px 0', lineHeight: '1.1' }}>{normalizeName(gpuA.name)}</h2>
-                {/* 🚀 GURU FIX: ENTITY CROSS-LINKING PRO BING SEO */}
+                {/* ENTITY CROSS-LINKING PRO BING SEO */}
                 <a href={isEn ? `/en/gpu/${getSafeGpuSlug(gpuA)}` : `/gpu/${getSafeGpuSlug(gpuA)}`} className="entity-link" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: getVendorColor(gpuA.vendor), fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', textDecoration: 'none', background: 'rgba(255,255,255,0.05)', padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <Activity size={12} /> {isEn ? 'View Profile' : 'Profil grafiky'}
                 </a>
@@ -266,7 +267,7 @@ export default async function GpuVsDetailPage(props) {
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid ${getVendorColor(gpuB.vendor)}`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
                 <span style={{ color: getVendorColor(gpuB.vendor), fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px' }}>{gpuB.vendor} GPU</span>
                 <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '15px 0 15px 0', lineHeight: '1.1' }}>{normalizeName(gpuB.name)}</h2>
-                {/* 🚀 GURU FIX: ENTITY CROSS-LINKING PRO BING SEO */}
+                {/* ENTITY CROSS-LINKING PRO BING SEO */}
                 <a href={isEn ? `/en/gpu/${getSafeGpuSlug(gpuB)}` : `/gpu/${getSafeGpuSlug(gpuB)}`} className="entity-link" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: getVendorColor(gpuB.vendor), fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', textDecoration: 'none', background: 'rgba(255,255,255,0.05)', padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <Activity size={12} /> {isEn ? 'View Profile' : 'Profil grafiky'}
                 </a>
