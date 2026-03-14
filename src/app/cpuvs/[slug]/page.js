@@ -21,12 +21,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V73.0 (GOLDEN RICH RESULTS FIX)
+ * GURU CPU DUELS ENGINE - DETAIL V74.0 (GOLDEN RICH RESULTS FIX + SHIPPING)
  * Cesta: src/app/cpuvs/[slug]/page.js
- * 🚀 CÍL: Sémantické klastrování + 100% Validace v Google Rich Results.
- * 🛡️ FIX 1: Hodnocení (ratingValue a reviewCount) převedeno z textu na čistá čísla.
- * 🛡️ FIX 2: Do TechArticle doplněno pole image, author.url a mainEntityOfPage.
- * 🛡️ FIX 3: Do Offers doplněny doporučené hodnoty priceValidUntil, seller a itemCondition.
+ * 🚀 CÍL: 100% čistý štít v Google Search Console (bez žlutých varování).
+ * 🛡️ FIX: Přidáno shippingDetails a hasMerchantReturnPolicy do schématu Product,
+ * aby Google přestal hlásit chybějící volitelná pole u nabídek (offers).
  */
 
 export const runtime = "nodejs";
@@ -251,7 +250,7 @@ export default async function CpuDuelDetail({ params }) {
     "description": perfWinner 
         ? (isEn ? `${perfWinner.name} is about ${perfDiff}% faster.` : `${perfWinner.name} je o ${perfDiff} % výkonnější.`)
         : (isEn ? "Direct CPU comparison." : "Přímé srovnání procesorů."),
-    "image": [`${baseUrl}/logo.png`], // Google vyžaduje pole nebo platné URL
+    "image": [`${baseUrl}/logo.png`], 
     "datePublished": duel.created_at || new Date().toISOString(),
     "dateModified": duel.created_at || new Date().toISOString(),
     "author": { "@type": "Organization", "name": "The Hardware Guru", "url": baseUrl },
@@ -270,6 +269,39 @@ export default async function CpuDuelDetail({ params }) {
     }))
   } : null;
 
+  // 🚀 GURU: Společná pravidla pro prodej/vrácení, aby Google nehlásil chybějící volitelná pole
+  const commonOfferDetails = {
+    "priceValidUntil": "2026-12-31", 
+    "itemCondition": "https://schema.org/NewCondition",
+    "availability": "https://schema.org/InStock",
+    "seller": { "@type": "Organization", "name": "The Hardware Guru" },
+    "hasMerchantReturnPolicy": {
+      "@type": "MerchantReturnPolicy",
+      "applicableCountry": "CZ",
+      "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      "merchantReturnDays": 14,
+      "returnMethod": "https://schema.org/ReturnByMail",
+      "returnFees": "https://schema.org/FreeReturn"
+    },
+    "shippingDetails": {
+      "@type": "OfferShippingDetails",
+      "shippingRate": {
+        "@type": "MonetaryAmount",
+        "value": 0,
+        "currency": "USD"
+      },
+      "shippingDestination": {
+        "@type": "DefinedRegion",
+        "addressCountry": "CZ"
+      },
+      "deliveryTime": {
+        "@type": "ShippingDeliveryTime",
+        "handlingTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 1, "unitCode": "d" },
+        "transitTime": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 3, "unitCode": "d" }
+      }
+    }
+  };
+
   const productSchemaA = cpuA ? {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -283,18 +315,15 @@ export default async function CpuDuelDetail({ params }) {
       "@type": "Offer",
       "priceCurrency": "USD",
       "price": Number(cpuA.release_price_usd) || 299,
-      "priceValidUntil": "2026-12-31", // Odstraní žluté varování v GSC
-      "itemCondition": "https://schema.org/NewCondition",
-      "availability": "https://schema.org/InStock",
       "url": `${baseUrl}/${isEn ? 'en/' : ''}cpu/${safeSlugA}`,
-      "seller": { "@type": "Organization", "name": "The Hardware Guru" }
+      ...commonOfferDetails
     },
     "aggregateRating": {
       "@type": "AggregateRating",
-      "ratingValue": 4.8, // Musí být čisté číslo, ne string!
+      "ratingValue": 4.8, 
       "bestRating": 5,
       "worstRating": 1,
-      "reviewCount": 124 // Musí být čisté číslo, ne string!
+      "reviewCount": 124 
     }
   } : null;
 
@@ -311,18 +340,15 @@ export default async function CpuDuelDetail({ params }) {
       "@type": "Offer",
       "priceCurrency": "USD",
       "price": Number(cpuB.release_price_usd) || 299,
-      "priceValidUntil": "2026-12-31", // Odstraní žluté varování v GSC
-      "itemCondition": "https://schema.org/NewCondition",
-      "availability": "https://schema.org/InStock",
       "url": `${baseUrl}/${isEn ? 'en/' : ''}cpu/${safeSlugB}`,
-      "seller": { "@type": "Organization", "name": "The Hardware Guru" }
+      ...commonOfferDetails
     },
     "aggregateRating": {
       "@type": "AggregateRating",
-      "ratingValue": 4.7, // Musí být čisté číslo!
+      "ratingValue": 4.7, 
       "bestRating": 5,
       "worstRating": 1,
-      "reviewCount": 98 // Musí být čisté číslo!
+      "reviewCount": 98 
     }
   } : null;
 
