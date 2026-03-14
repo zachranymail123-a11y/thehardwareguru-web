@@ -1,4 +1,5 @@
 import React, { cache } from 'react';
+import { notFound } from 'next/navigation';
 import { 
   ChevronLeft, 
   ShieldCheck, 
@@ -20,16 +21,43 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V69.0 (SEMANTIC SEO EDITION)
+ * GURU CPU DUELS ENGINE - DETAIL V70.0 (STRICT STATIC SEO)
  * Cesta: src/app/cpuvs/[slug]/page.js
  * 🚀 CÍL: Sémantické klastrování - propojení benchmarků s relevantními články.
  * 🛡️ FIX 1: getRelatedArticles vyhledává články s tématem procesorů v duelu.
  * 🛡️ FIX 2: Ošetřen fallback na nejnovější články, pokud sémantická shoda neexistuje.
  * 🛡️ FIX 3: Plná podpora Next.js 15 (await params) a GSC standardů.
+ * 🛡️ FIX 4: Zákaz fallback renderingu (dynamicParams = false) a Build-time SSG.
  */
 
 export const runtime = "nodejs";
-export const revalidate = 3600; 
+export const revalidate = 86400; 
+
+// 🚀 GURU FIX: Zákaz fallback renderingu pro SEO. Všechny URL musí být známé už při buildu.
+export const dynamicParams = false;
+
+export async function generateStaticParams() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  
+  if (!supabaseUrl) return [];
+
+  try {
+      const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=slug&limit=10000`, {
+          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
+          next: { revalidate: 86400 }
+      });
+      
+      if (!res.ok) return [];
+      const duels = await res.json();
+      
+      return duels.map((duel) => ({
+          slug: duel.slug,
+      }));
+  } catch (e) {
+      return [];
+  }
+}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -96,42 +124,7 @@ const getSimilarDuels = async (cpuId, currentSlug) => {
     } catch (e) { return []; }
 };
 
-async function generateAndPersistDuel(slug) {
-  if (!supabaseUrl) return null;
-  try {
-    const cleanSlug = slug.replace(/^en-/, '');
-    let parts = cleanSlug.includes('-vs-') ? cleanSlug.split('-vs-') : cleanSlug.split('-to-');
-    if (!parts || parts.length !== 2) return null;
-
-    const [cpuA, cpuB] = await Promise.all([findCpu(parts[0]), findCpu(parts[1])]);
-    if (!cpuA || !cpuB) return null;
-
-    const payload = {
-        slug: cleanSlug, slug_en: `en-${cleanSlug}`, cpu_a_id: cpuA.id, cpu_b_id: cpuB.id,
-        title_cs: `Srovnání procesorů: ${cpuA.name} vs ${cpuB.name}`, title_en: `Processors comparison: ${cpuA.name} vs ${cpuB.name}`,
-        content_cs: '', content_en: '', seo_description_cs: `Srovnání ${cpuA.name} vs ${cpuB.name}.`, seo_description_en: `Comparison of ${cpuA.name} vs ${cpuB.name}.`,
-        created_at: new Date().toISOString()
-    };
-
-    const selectQuery = "*,cpuA:cpus!cpu_a_id(*),cpuB:cpus!cpu_b_id(*)";
-    const dbRes = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}`, {
-        method: 'POST',
-        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation,resolution=merge-duplicates' },
-        body: JSON.stringify(payload)
-    });
-
-    if (!dbRes.ok) {
-        const checkExisting = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${encodeURIComponent(cleanSlug)}`, {
-            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, cache: 'no-store'
-        });
-        const data = await checkExisting.json();
-        return data[0] || null;
-    }
-    const inserted = await dbRes.json();
-    return inserted[0];
-  } catch (err) { return null; }
-}
-
+// Odstraněna request-time generace. Data se tahají jen z DB.
 const getDuelData = cache(async (slug) => {
   if (!supabaseUrl || !slug) return null;
   const cleanSlug = slug.replace(/^en-/, '');
@@ -142,7 +135,7 @@ const getDuelData = cache(async (slug) => {
       });
       if (!res.ok) return null;
       const data = await res.json();
-      if (!data || data.length === 0) return await generateAndPersistDuel(slug);
+      if (!data || data.length === 0) return null; // 🚀 Vrátí null -> povede na notFound()
       return data[0];
   } catch (e) { return null; }
 });
@@ -150,7 +143,10 @@ const getDuelData = cache(async (slug) => {
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const duel = await getDuelData(slug);
-  if (!duel) return { title: '404 | The Hardware Guru' };
+  
+  // 🚀 GURU FIX: Tvrdá 404 pro SEO
+  if (!duel) notFound();
+
   const isEn = slug?.startsWith('en-');
   const { cpuA, cpuB } = duel;
   const hasPerfData = cpuA?.performance_index > 0 && cpuB?.performance_index > 0;
@@ -177,7 +173,9 @@ export async function generateMetadata({ params }) {
 export default async function CpuDuelDetail({ params }) {
   const { slug } = await params;
   const duel = await getDuelData(slug);
-  if (!duel) return <div style={{ color: '#ef4444', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>DUEL NENALEZEN</div>;
+  
+  // 🚀 GURU FIX: Tvrdá 404 pro SEO
+  if (!duel) notFound();
 
   const isEn = slug?.startsWith('en-');
   const { cpuA, cpuB } = duel;
