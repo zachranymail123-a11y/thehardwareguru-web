@@ -1,16 +1,15 @@
 import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { Calendar, Monitor, Eye, Zap, ArrowRight, Info, Play, Heart, Flame, ShieldCheck } from 'lucide-react';
-import ExpectedGamesGrid from '@/components/ExpectedGamesGrid'; // Pokud ji máš externě, jinak ji definujeme dole
+import { Monitor, Info, Play, Heart, Flame, ShieldCheck, ArrowRight, Zap } from 'lucide-react';
 
 /**
- * GURU EXPECTED GAMES ENGINE V4.0 (GOLDEN RICH RESULTS FIX)
+ * GURU EXPECTED GAMES ARCHIVE - V5.0 (GOLDEN RICH & BUILD FIX)
  * Cesta: src/app/ocekavane-hry/page.js
- * 🚀 CÍL: 100% zelená v GSC a blesková indexace technických rozborů.
- * 🛡️ FIX 1: Přepsáno na Server Component (SSR) pro maximální SEO autoritu.
- * 🛡️ FIX 2: Implementován Golden Rich standard - ItemList a BreadcrumbList JSON-LD.
- * 🛡️ FIX 3: Zachována interaktivita videí přes vnitřní klientský most.
+ * 🚀 CÍL: 100% zelená v GSC a oprava build erroru (use client directive).
+ * 🛡️ FIX 1: Přepsáno na čistý Server Component. Odstraněna direktiva "use client".
+ * 🛡️ FIX 2: Video hover efekty vyřešeny čistě přes CSS (blesková rychlost, 0 JS overhead).
+ * 🛡️ FIX 3: Implementován Golden Rich standard (ItemList, Breadcrumbs, Absolute URLs).
  */
 
 export const runtime = "nodejs";
@@ -42,6 +41,8 @@ export async function generateMetadata(props) {
   };
 }
 
+const slugify = (text) => text?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '').replace(/\-+/g, '-').replace(/^-+|-+$/g, '').trim();
+
 export default async function ExpectedGamesArchive(props) {
   const isEn = props?.isEn === true;
   const supabase = createClient(supabaseUrl, supabaseKey);
@@ -59,7 +60,7 @@ export default async function ExpectedGamesArchive(props) {
 
   const safeItems = items || [];
 
-  // 🚀 ZLATÁ GSC SEO SCHÉMATA (ItemList pro seznam her)
+  // 🚀 ZLATÁ GSC SEO SCHÉMATA (Golden Rich standard)
   const itemListSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -89,6 +90,45 @@ export default async function ExpectedGamesArchive(props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(itemListSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbSchema) }} />
 
+      <style dangerouslySetInnerHTML={{ __html: `
+        .expected-card { 
+            background: rgba(10, 11, 13, 0.94); 
+            border: 1px solid rgba(102, 252, 241, 0.2); 
+            border-radius: 32px; 
+            overflow: hidden; 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            height: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            backdrop-filter: blur(15px); 
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7); 
+            text-decoration: none; 
+            position: relative;
+        }
+        .expected-card:hover { 
+            transform: translateY(-12px) scale(1.02); 
+            border-color: #66fcf1; 
+            box-shadow: 0 20px 60px rgba(102, 252, 241, 0.2); 
+        }
+        .card-image-wrapper { width: 100%; height: 240px; overflow: hidden; position: relative; background: #000; }
+        
+        /* 🚀 GURU: PURE CSS VIDEO HOVER ENGINE */
+        .card-video-hover { 
+            width: 100%; height: 100%; object-fit: cover; 
+            position: absolute; top: 0; left: 0; z-index: 2; 
+            display: none; opacity: 0; transition: opacity 0.3s;
+        }
+        .expected-card:hover .card-video-hover { display: block; opacity: 1; }
+        .expected-card:hover .card-poster { opacity: 0; }
+
+        .video-badge { position: absolute; top: 20px; right: 20px; background: #ff0055; color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 10px; font-weight: 900; display: flex; align-items: center; gap: 6px; z-index: 5; box-shadow: 0 0 20px rgba(255, 0, 85, 0.4); text-transform: uppercase; letter-spacing: 1px; }
+        .desc-text { color: #9ca3af; font-size: 14px; line-height: 1.6; margin-bottom: 25px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
+        .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
+        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
+        .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
+      `}} />
+
       <header style={headerStyle}>
         <div style={headerContentBox}>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '20px' }}>
@@ -100,16 +140,60 @@ export default async function ExpectedGamesArchive(props) {
           <p style={subtitleStyle}>
             {isEn 
               ? 'Technical breakdowns with live video trailers.' 
-              : 'Technické rozbory s interaktivními video ukázkami.'}
+              : 'Technické rozbory s interaktivními video ukážkami.'}
           </p>
         </div>
       </header>
 
       <main style={gridContainer}>
-        {/* 🚀 GURU CLIENT BRIDGE: Předáváme data klientské komponentě pro hover videa */}
-        <GamesGridClient items={safeItems} isEn={isEn} />
+        <div style={grid}>
+          {safeItems.map((item) => {
+            const actualSlug = (isEn && item.slug_en) ? item.slug_en : item.slug;
+            const displayTitle = (isEn && item.title_en) ? item.title_en : item.title;
+            const hasVideo = item.trailer || (item.video_id && item.video_id.length > 5);
+            const hasMp4 = item.trailer && item.trailer.includes('.mp4');
 
-        {/* 🚀 GURU GLOBÁLNÍ CTA TLAČÍTKA (Golden standard) */}
+            return (
+              <Link key={item.id} href={isEn ? `/en/ocekavane-hry/${actualSlug}` : `/ocekavane-hry/${actualSlug}`} style={{ textDecoration: 'none' }}>
+                <article className="expected-card">
+                  <div className="card-image-wrapper">
+                    {/* Poster (vždy viditelný pro roboty) */}
+                    <img 
+                      src={item.image_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e'} 
+                      alt={displayTitle} 
+                      className="card-poster"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8, transition: '0.3s' }} 
+                    />
+                    
+                    {/* 🎥 CSS Hover Video */}
+                    {hasMp4 && (
+                      <video 
+                        className="card-video-hover" 
+                        src={item.trailer} 
+                        muted 
+                        loop 
+                        playsInline 
+                        autoPlay
+                      />
+                    )}
+
+                    {hasVideo && <div className="video-badge"><Play size={12} fill="#fff" /> VIDEO</div>}
+                    
+                    <div style={techBadge}><Zap size={12} /> {isEn ? 'TECH PREVIEW' : 'TECHNICKÝ ROZBOR'}</div>
+                  </div>
+                  
+                  <div style={{ padding: '30px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <h3 style={cardTitleStyle}>{displayTitle}</h3>
+                    <p className="desc-text">{(isEn ? item.description_en : item.description) || (isEn ? 'Detailed technical analysis.' : 'Detailní technický rozbor.')}</p>
+                    <div style={moreBtn}>{isEn ? 'VIEW ANALYSIS' : 'ZOBRAZIT ROZBOR'} <ArrowRight size={18} /></div>
+                  </div>
+                </article>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* 🚀 GURU GLOBÁLNÍ CTA TLAČÍTKA */}
         <div style={{ marginTop: '100px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
           <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
             {isEn ? "Want to see more hardware tests? Support the Guru project." : "Chceš vidět další technické rozbory? Podpoř projekt Guru."}
@@ -124,73 +208,6 @@ export default async function ExpectedGamesArchive(props) {
           </div>
         </div>
       </main>
-    </div>
-  );
-}
-
-// --- 🚀 VNITŘNÍ KLIENTSKÝ MOST (PRO HOVER VIDEA) ---
-// Definujeme ji přímo zde pro jednoduchost nasazení v Canvasu
-"use client";
-function GamesGridClient({ items, isEn }) {
-  const [hoveredId, setHoveredId] = React.useState(null);
-
-  return (
-    <div style={grid}>
-      <style dangerouslySetInnerHTML={{ __html: `
-        .expected-card { background: rgba(10, 11, 13, 0.94); border: 1px solid rgba(102, 252, 241, 0.2); border-radius: 32px; overflow: hidden; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); height: 100%; display: flex; flex-direction: column; backdrop-filter: blur(15px); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7); text-decoration: none; position: relative; }
-        .expected-card:hover { transform: translateY(-12px) scale(1.02); border-color: #66fcf1; box-shadow: 0 20px 60px rgba(102, 252, 241, 0.2); }
-        .expected-card:hover .play-overlay { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-        .card-image-wrapper { width: 100%; height: 240px; overflow: hidden; position: relative; background: #000; }
-        .play-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: rgba(102, 252, 241, 0.8); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; opacity: 0; transition: 0.3s; z-index: 10; pointer-events: none; }
-        .card-video-preview { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 2; }
-        .video-badge { position: absolute; top: 20px; right: 20px; background: #ff0055; color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 10px; font-weight: 900; display: flex; align-items: center; gap: 6px; z-index: 5; box-shadow: 0 0 20px rgba(255, 0, 85, 0.4); text-transform: uppercase; letter-spacing: 1px; }
-        .desc-text { color: #9ca3af; font-size: 14px; line-height: 1.6; margin-bottom: 25px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
-        .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
-        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
-        .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
-      `}} />
-      
-      {items.map((item) => {
-        const actualSlug = (isEn && item.slug_en) ? item.slug_en : item.slug;
-        const displayTitle = (isEn && item.title_en) ? item.title_en : item.title;
-        const hasTrailerLink = item.trailer && item.trailer.includes('.mp4');
-        const hasVideo = item.trailer || (item.video_id && item.video_id.length > 5);
-
-        return (
-          <Link 
-            key={item.id} 
-            href={isEn ? `/en/ocekavane-hry/${actualSlug.trim()}` : `/ocekavane-hry/${actualSlug.trim()}`} 
-            onMouseEnter={() => setHoveredId(item.id)}
-            onMouseLeave={() => setHoveredId(null)}
-            style={{ textDecoration: 'none' }}
-          >
-            <article className="expected-card">
-              <div className="card-image-wrapper">
-                {hasTrailerLink && hoveredId === item.id ? (
-                  <video className="card-video-preview" src={item.trailer} autoPlay muted loop playsInline />
-                ) : (
-                  <img 
-                    src={item.image_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e'} 
-                    alt={displayTitle} 
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: hasVideo ? 0.7 : 0.8 }} 
-                  />
-                )}
-                {hasVideo && <div className="video-badge"><Play size={12} fill="#fff" /> VIDEO</div>}
-                {hasVideo && hoveredId !== item.id && (
-                  <div className="play-overlay"><Play size={30} fill="currentColor" /></div>
-                )}
-                <div style={techBadge}><Info size={12} /> {isEn ? 'TECH PREVIEW' : 'TECHNICKÝ ROZBOR'}</div>
-              </div>
-              <div style={{ padding: '30px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <h3 style={cardTitleStyle}>{displayTitle}</h3>
-                <p className="desc-text">{(isEn ? item.description_en : item.description) || (isEn ? 'Detailed technical analysis.' : 'Detailný technický rozbor.')}</p>
-                <div style={moreBtn}>{isEn ? 'VIEW ANALYSIS' : 'ZOBRAZIŤ ROZBOR'} <ArrowRight size={18} /></div>
-              </div>
-            </article>
-          </Link>
-        );
-      })}
     </div>
   );
 }
