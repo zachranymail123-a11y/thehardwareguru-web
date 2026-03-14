@@ -9,11 +9,11 @@ import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
 
 /**
- * GURU ROOT LAYOUT V4.6 (ADSENSE & RSS EDITION)
+ * GURU ROOT LAYOUT V4.7 (AMP ADSENSE EDITION)
  * Cesta: src/app/layout.js
- * 🚀 CÍL: Aktivace globální reklamy a propuštění 195.8K stránek do indexu.
- * 🛡️ ADS: Nasazen globální Google AdSense skript (ca-pub-5468223287024993).
- * 🛡️ SEO: Zachovány RSS feedy a dynamické generování canonicalů v page.js.
+ * 🚀 CÍL: Aktivace AMP automatických reklam pro maximální mobilní RPM.
+ * 🛡️ ADS: Implementován AMP Auto Ads skript a komponenta (ca-pub-5468223287024993).
+ * 🛡️ SEO: Zachovány RSS feedy, Google Analytics a dynamické canonicaly.
  */
 
 export const metadata = {
@@ -43,11 +43,19 @@ export default async function RootLayout({ children, params }) {
   return (
     <html lang={locale}>
       <head>
-        {/* 🚀 GOOGLE ADSENSE GLOBAL TAG (Povinné pro schválení a Auto Ads) */}
+        {/* 🚀 GOOGLE ADSENSE GLOBAL TAG (Standardní Auto Ads) */}
         <Script 
           async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993"
           crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+
+        {/* 🚀 1. KROK: AMP ADSENSE SCRIPT (Podle screenshotu) */}
+        <Script 
+          async 
+          custom-element="amp-auto-ads"
+          src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"
           strategy="afterInteractive"
         />
 
@@ -63,6 +71,10 @@ export default async function RootLayout({ children, params }) {
       </head>
 
       <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        
+        {/* 🚀 2. KROK: AMP AUTO ADS COMPONENT (Hned za body tagem) */}
+        <amp-auto-ads type="adsense" data-ad-client="ca-pub-5468223287024993"></amp-auto-ads>
+
         <div id="guru-env-bridge" style={{ display: 'none' }} data-url={envVars.NEXT_PUBLIC_SUPABASE_URL} data-key={envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY} />
         
         <Navbar />
