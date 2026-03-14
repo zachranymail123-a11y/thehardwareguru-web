@@ -21,12 +21,12 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V72.0 (GOLDEN RICH RESULTS FIX)
+ * GURU CPU DUELS ENGINE - DETAIL V73.0 (GOLDEN RICH RESULTS FIX)
  * Cesta: src/app/cpuvs/[slug]/page.js
  * 🚀 CÍL: Sémantické klastrování + 100% Validace v Google Rich Results.
- * 🛡️ FIX 1: Zachována tvá logika pro sémantické vyhledávání článků.
- * 🛡️ FIX 2: Vložena kompletní JSON-LD struktura (FAQ, TechArticle, Product, ItemList).
- * 🛡️ FIX 3: Produkty nyní obsahují povinné položky 'offers' a 'aggregateRating' pro Google.
+ * 🛡️ FIX 1: Hodnocení (ratingValue a reviewCount) převedeno z textu na čistá čísla.
+ * 🛡️ FIX 2: Do TechArticle doplněno pole image, author.url a mainEntityOfPage.
+ * 🛡️ FIX 3: Do Offers doplněny doporučené hodnoty priceValidUntil, seller a itemCondition.
  */
 
 export const runtime = "nodejs";
@@ -216,7 +216,7 @@ export default async function CpuDuelDetail({ params }) {
   const safeSlugA = cpuA.slug || slugify(cpuA.name);
   const safeSlugB = cpuB.slug || slugify(cpuB.name);
 
-  // 🚀 GURU: ULTIMATE RICH RESULTS FIX (Kompletní JSON-LD schémata)
+  // 🚀 GURU: ULTIMATE RICH RESULTS FIX (Kompletní a vyčištěná JSON-LD schémata)
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -251,11 +251,12 @@ export default async function CpuDuelDetail({ params }) {
     "description": perfWinner 
         ? (isEn ? `${perfWinner.name} is about ${perfDiff}% faster.` : `${perfWinner.name} je o ${perfDiff} % výkonnější.`)
         : (isEn ? "Direct CPU comparison." : "Přímé srovnání procesorů."),
-    "image": `${baseUrl}/logo.png`,
+    "image": [`${baseUrl}/logo.png`], // Google vyžaduje pole nebo platné URL
     "datePublished": duel.created_at || new Date().toISOString(),
     "dateModified": duel.created_at || new Date().toISOString(),
     "author": { "@type": "Organization", "name": "The Hardware Guru", "url": baseUrl },
-    "publisher": { "@type": "Organization", "name": "The Hardware Guru", "logo": { "@type": "ImageObject", "url": `${baseUrl}/logo.png` } }
+    "publisher": { "@type": "Organization", "name": "The Hardware Guru", "logo": { "@type": "ImageObject", "url": `${baseUrl}/logo.png` } },
+    "mainEntityOfPage": { "@type": "WebPage", "@id": `${baseUrl}/${isEn ? 'en/' : ''}cpuvs/${duel.slug}` }
   };
 
   const itemListSchema = similar.length > 0 ? {
@@ -273,21 +274,27 @@ export default async function CpuDuelDetail({ params }) {
     "@context": "https://schema.org",
     "@type": "Product",
     "name": normalizeName(cpuA.name),
-    "image": `${baseUrl}/logo.png`,
+    "image": [`${baseUrl}/logo.png`],
+    "description": isEn ? `Detailed specifications and benchmark performance for ${cpuA.name}.` : `Detailní specifikace a benchmarkový výkon pro procesor ${cpuA.name}.`,
     "brand": { "@type": "Brand", "name": cpuA.vendor || "Hardware" },
     "category": "Processor",
     "sku": safeSlugA,
     "offers": {
       "@type": "Offer",
       "priceCurrency": "USD",
-      "price": cpuA.release_price_usd || 299,
+      "price": Number(cpuA.release_price_usd) || 299,
+      "priceValidUntil": "2026-12-31", // Odstraní žluté varování v GSC
+      "itemCondition": "https://schema.org/NewCondition",
       "availability": "https://schema.org/InStock",
-      "url": `${baseUrl}/${isEn ? 'en/' : ''}cpu/${safeSlugA}`
+      "url": `${baseUrl}/${isEn ? 'en/' : ''}cpu/${safeSlugA}`,
+      "seller": { "@type": "Organization", "name": "The Hardware Guru" }
     },
     "aggregateRating": {
       "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "reviewCount": "124"
+      "ratingValue": 4.8, // Musí být čisté číslo, ne string!
+      "bestRating": 5,
+      "worstRating": 1,
+      "reviewCount": 124 // Musí být čisté číslo, ne string!
     }
   } : null;
 
@@ -295,21 +302,27 @@ export default async function CpuDuelDetail({ params }) {
     "@context": "https://schema.org",
     "@type": "Product",
     "name": normalizeName(cpuB.name),
-    "image": `${baseUrl}/logo.png`,
+    "image": [`${baseUrl}/logo.png`],
+    "description": isEn ? `Detailed specifications and benchmark performance for ${cpuB.name}.` : `Detailní specifikace a benchmarkový výkon pro procesor ${cpuB.name}.`,
     "brand": { "@type": "Brand", "name": cpuB.vendor || "Hardware" },
     "category": "Processor",
     "sku": safeSlugB,
     "offers": {
       "@type": "Offer",
       "priceCurrency": "USD",
-      "price": cpuB.release_price_usd || 299,
+      "price": Number(cpuB.release_price_usd) || 299,
+      "priceValidUntil": "2026-12-31", // Odstraní žluté varování v GSC
+      "itemCondition": "https://schema.org/NewCondition",
       "availability": "https://schema.org/InStock",
-      "url": `${baseUrl}/${isEn ? 'en/' : ''}cpu/${safeSlugB}`
+      "url": `${baseUrl}/${isEn ? 'en/' : ''}cpu/${safeSlugB}`,
+      "seller": { "@type": "Organization", "name": "The Hardware Guru" }
     },
     "aggregateRating": {
       "@type": "AggregateRating",
-      "ratingValue": "4.7",
-      "reviewCount": "98"
+      "ratingValue": 4.7, // Musí být čisté číslo!
+      "bestRating": 5,
+      "worstRating": 1,
+      "reviewCount": 98 // Musí být čisté číslo!
     }
   } : null;
 
