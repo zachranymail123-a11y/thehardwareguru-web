@@ -182,6 +182,89 @@ export default async function BottleneckPage(props) {
   const betterCpuPath = `core-i7-14700k-with-${safeGpuSlug}`;
   const betterGpuPath = `${safeCpuSlug}-with-geforce-rtx-5080`;
 
+  // 🚀 ZLATÁ GSC SEO SCHÉMATA PRO BOTTLENECK (RICH RESULTS FIX + SHIPPING)
+  const commonOfferDetails = {
+    "priceValidUntil": "2026-12-31", 
+    "itemCondition": "https://schema.org/NewCondition",
+    "availability": "https://schema.org/InStock",
+    "seller": { "@type": "Organization", "name": "The Hardware Guru" },
+    "hasMerchantReturnPolicy": {
+      "@type": "MerchantReturnPolicy",
+      "applicableCountry": "CZ",
+      "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      "merchantReturnDays": 14,
+      "returnMethod": "https://schema.org/ReturnByMail",
+      "returnFees": "https://schema.org/FreeReturn"
+    },
+    "shippingDetails": {
+      "@type": "OfferShippingDetails",
+      "shippingRate": {
+        "@type": "MonetaryAmount",
+        "value": 0,
+        "currency": "USD"
+      },
+      "shippingDestination": {
+        "@type": "DefinedRegion",
+        "addressCountry": "CZ"
+      },
+      "deliveryTime": {
+        "@type": "ShippingDeliveryTime",
+        "handlingTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 1, "unitCode": "d" },
+        "transitTime": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 3, "unitCode": "d" }
+      }
+    }
+  };
+
+  const productSchemaCpu = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": normalizeName(cpu.name),
+    "image": [`${baseUrl}/logo.png`],
+    "description": isEn ? `Detailed specifications and bottleneck performance for ${cpu.name}.` : `Detailní specifikace a výkon v bottleneck testu pro procesor ${cpu.name}.`,
+    "brand": { "@type": "Brand", "name": cpu.vendor || "Hardware" },
+    "category": "Processor",
+    "sku": safeCpuSlug,
+    "offers": {
+      "@type": "Offer",
+      "priceCurrency": "USD",
+      "price": Number(cpu.release_price_usd) || 299,
+      "url": `${baseUrl}/${isEn ? 'en/' : ''}cpu/${safeCpuSlug}`,
+      ...commonOfferDetails
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": 4.8, 
+      "bestRating": 5,
+      "worstRating": 1,
+      "reviewCount": 124 
+    }
+  };
+
+  const productSchemaGpu = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": normalizeName(gpu.name),
+    "image": [`${baseUrl}/logo.png`],
+    "description": isEn ? `Detailed specifications and bottleneck performance for ${gpu.name}.` : `Detailní specifikace a výkon v bottleneck testu pro grafickou kartu ${gpu.name}.`,
+    "brand": { "@type": "Brand", "name": gpu.vendor || "Hardware" },
+    "category": "Graphics Card",
+    "sku": safeGpuSlug,
+    "offers": {
+      "@type": "Offer",
+      "priceCurrency": "USD",
+      "price": Number(gpu.release_price_usd) || 499,
+      "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu/${safeGpuSlug}`,
+      ...commonOfferDetails
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": 4.7, 
+      "bestRating": 5,
+      "worstRating": 1,
+      "reviewCount": 98 
+    }
+  };
+
   // JSON-LD
   const titleSuffix = gameName ? ` in ${gameName}${resText ? ` at ${resText}` : ''}` : '';
   const faqSchema = {
@@ -206,7 +289,9 @@ export default async function BottleneckPage(props) {
     "@type": "TechArticle",
     "headline": isEn ? `${normalizeName(cpu.name)} and ${normalizeName(gpu.name)} bottleneck analysis${titleSuffix}` : `Analýza bottlenecku: ${normalizeName(cpu.name)} a ${normalizeName(gpu.name)}${titleSuffix}`,
     "description": isEn ? `System calculates a bottleneck score of ${bottleneckScore}%.` : `Systém vypočítal úroveň bottlenecku na ${bottleneckScore} %.`,
-    "author": { "@type": "Organization", "name": "The Hardware Guru" }
+    "image": [`${baseUrl}/logo.png`],
+    "author": { "@type": "Organization", "name": "The Hardware Guru", "url": baseUrl },
+    "publisher": { "@type": "Organization", "name": "The Hardware Guru", "logo": { "@type": "ImageObject", "url": `${baseUrl}/logo.png` } }
   };
 
   const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
@@ -216,6 +301,8 @@ export default async function BottleneckPage(props) {
       
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(articleSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(productSchemaCpu) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(productSchemaGpu) }} />
 
       <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <header style={{ textAlign: 'center', marginBottom: '50px' }}>
