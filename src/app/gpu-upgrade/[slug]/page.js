@@ -1,4 +1,5 @@
 import React, { cache } from 'react';
+import { notFound } from 'next/navigation';
 import { 
   ChevronLeft, 
   Zap, 
@@ -18,16 +19,43 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V118.0 (FINAL DESIGN & CTA FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V119.0 (STRICT STATIC SEO)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
  * 🛡️ DESIGN: Identický vizuál jako CPU Upgrade (Hero karty, Grid, barvy).
  * 🛡️ FIX 1: Doplněna chybějící CTA tlačítka (Affiliate & Podpora) na konec stránky.
  * 🛡️ FIX 2: Neprůstřelné parametry (params.slug || params.gpu).
  * 🛡️ FIX 3: 3-Tier vyhledávač pro obě karty (zamezuje chybám GPU NOT FOUND).
+ * 🛡️ FIX 4: Zákaz fallback renderingu (dynamicParams = false) a Build-time SSG.
  */
 
 export const runtime = "nodejs";
-export const revalidate = 0; 
+export const revalidate = 86400; 
+
+// 🚀 GURU FIX: Zákaz fallback renderingu pro SEO. Všechny URL musí být známé už při buildu.
+export const dynamicParams = false;
+
+export async function generateStaticParams() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  
+  if (!supabaseUrl) return [];
+
+  try {
+      const res = await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades?select=slug&limit=10000`, {
+          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
+          next: { revalidate: 86400 }
+      });
+      
+      if (!res.ok) return [];
+      const upgrades = await res.json();
+      
+      return upgrades.map((upg) => ({
+          slug: upg.slug,
+      }));
+  } catch (e) {
+      return [];
+  }
+}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -57,50 +85,21 @@ const findGpuBySlug = async (gpuSlug) => {
           const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
           const res3 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&and=(${conditions})&order=name.asc`, { headers, cache: 'no-store' });
           if (res3.ok) { const data3 = await res3.json(); return data3?.[0] || null; }
-      }
+    }
   } catch(e) {}
   return null;
 };
 
-async function generateAndPersistUpgrade(rawSlug) {
-  if (!supabaseUrl) return null;
-  try {
-    const cleanSlug = rawSlug.replace(/^en-/, '');
-    const parts = cleanSlug.includes('-to-') ? cleanSlug.split('-to-') : cleanSlug.split('-vs-');
-    if (parts.length !== 2) return null;
-
-    const [gpuA, gpuB] = await Promise.all([findGpuBySlug(parts[0]), findGpuBySlug(parts[1])]);
-    if (!gpuA || !gpuB) return null;
-
-    const payload = {
-        slug: cleanSlug, slug_en: `en-${cleanSlug}`, old_gpu_id: gpuA.id, new_gpu_id: gpuB.id,
-        title_cs: `Upgrade z ${gpuA.name} na ${gpuB.name}`, title_en: `Upgrade from ${gpuA.name} to ${gpuB.name}`, 
-        content_cs: '', content_en: '', seo_description_cs: `Vyplatí se přechod z ${gpuA.name} na ${gpuB.name}?`, seo_description_en: `Is it worth upgrading from ${gpuA.name} to ${gpuB.name}?`,
-        created_at: new Date().toISOString()
-    };
-
-    await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades`, {
-        method: 'POST',
-        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation,resolution=merge-duplicates' },
-        body: JSON.stringify(payload)
-    });
-
-    const selectQuery = "*,oldGpu:gpus!old_gpu_id(*,game_fps!gpu_id(*)),newGpu:gpus!new_gpu_id(*,game_fps!gpu_id(*))";
-    const checkExisting = await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades?select=${encodeURIComponent(selectQuery)}&slug=eq.${encodeURIComponent(cleanSlug)}`, { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, cache: 'no-store' });
-    const data = await checkExisting.json();
-    return data[0] || null;
-  } catch (err) { return null; }
-}
-
+// Odstraněna request-time generace. Data se tahají jen z DB.
 const getUpgradeData = cache(async (rawSlug) => {
   if (!supabaseUrl || !rawSlug) return null;
   const cleanSlug = rawSlug.replace(/^en-/, '');
   const selectQuery = `*,oldGpu:gpus!old_gpu_id(*,game_fps!gpu_id(*)),newGpu:gpus!new_gpu_id(*,game_fps!gpu_id(*))`;
   try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades?select=${encodeURIComponent(selectQuery)}&slug=eq.${cleanSlug}&limit=1`, { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }, cache: 'no-store' });
+      const res = await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades?select=${encodeURIComponent(selectQuery)}&slug=eq.${cleanSlug}&limit=1`, { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }, cache: 'force-cache' });
       if (!res.ok) return null;
       const data = await res.json();
-      if (!data || data.length === 0) return await generateAndPersistUpgrade(rawSlug);
+      if (!data || data.length === 0) return null; // 🚀 Vrátí null -> povede na notFound()
       return data[0];
   } catch (e) { return null; }
 });
@@ -109,7 +108,9 @@ export async function generateMetadata({ params }) {
   const rawSlug = params?.slug || params?.gpu || '';
   const isEn = rawSlug.startsWith('en-');
   const upgrade = await getUpgradeData(rawSlug);
-  if (!upgrade) return { title: '404 | Hardware Guru' };
+  
+  // 🚀 GURU FIX: Tvrdá 404 pro SEO
+  if (!upgrade) notFound();
 
   return { 
     title: isEn ? `Upgrade ${upgrade.oldGpu.name} to ${upgrade.newGpu.name} | The Hardware Guru` : `Upgrade z ${upgrade.oldGpu.name} na ${upgrade.newGpu.name} | The Hardware Guru`,
@@ -125,7 +126,8 @@ export default async function GpuUpgradePage({ params }) {
   const isEn = rawSlug.startsWith('en-');
   const upgrade = await getUpgradeData(rawSlug);
   
-  if (!upgrade) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>UPGRADE PATH NENALEZENA</div>;
+  // 🚀 GURU FIX: Tvrdá 404 pro SEO
+  if (!upgrade) notFound();
 
   const { oldGpu: gpuA, newGpu: gpuB } = upgrade;
   if (!gpuA || !gpuB) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center' }}>GPU DATA ERROR</div>;
