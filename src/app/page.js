@@ -2,12 +2,12 @@ import React from 'react';
 import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu } from 'lucide-react';
 
 /**
- * GURU HOMEPAGE V15.2 - FULL SSR & NATIVE IMG (COMPILATION FIX)
+ * GURU HOMEPAGE V15.3 - FULL SSR & GOLDEN RICH RESULTS FIX
  * Cesta: src/app/page.js
  * 🛡️ FIX 1: Komponenta next/image odstraněna kvůli chybám při kompilaci v aktuálním prostředí.
  * 🛡️ FIX 2: Změněno z "use client" na asynchronní Server Component pro 100% SEO indexaci Googlem.
  * 🛡️ FIX 3: Odstraněno serverové volání increment_total_visits (zamezení nafukování statistik z crawlerů).
- * 🚀 ZACHOVÁNO: Nativní fetch, Guru design, CPU/GPU Duely.
+ * 🛡️ FIX 4: Aplikován Zlatý GSC Standard - vložena schémata WebSite (se SearchAction) a Organization.
  */
 
 const LEAK_PLACEHOLDER_URL = 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000';
@@ -89,8 +89,43 @@ export default async function HomePage({ params }) {
     latestCpuDuels: Array.isArray(cpuDuelsRes) ? cpuDuelsRes : []
   };
 
+  // 🚀 ZLATÁ GSC SEO SCHÉMATA PRO HOMEPAGE (GOLDEN RICH RESULTS FIX)
+  const baseUrl = "https://thehardwareguru.cz";
+  const currentUrl = isEn ? `${baseUrl}/en` : baseUrl;
+
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "The Hardware Guru",
+    "url": currentUrl,
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": `${baseUrl}/search?q={search_term_string}`,
+      "query-input": "required name=search_term_string"
+    }
+  };
+
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "The Hardware Guru",
+    "url": baseUrl,
+    "logo": {
+      "@type": "ImageObject",
+      "url": `${baseUrl}/logo.png`
+    },
+    "image": [`${baseUrl}/logo.png`]
+  };
+
+  const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#fff', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', fontFamily: 'sans-serif' }}>
+      
+      {/* JSON-LD INJECTIONS */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(websiteSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
+
       <style>{`
         /* --- GURU GLOBÁLNÍ STYLY A KARTY --- */
         .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); }
