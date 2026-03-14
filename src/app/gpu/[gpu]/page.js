@@ -5,16 +5,16 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU ENGINE - DETAIL GRAFIKY V2.0 (SEMANTIC SEO FINAL)
+ * GURU GPU ENGINE - DETAIL GRAFIKY V2.1 (SEMANTIC SEO FIX)
  * Cesta: src/app/gpu/[gpu]/page.js
- * 🚀 CÍL: Sémantické klastrování - propojení profilu karty s relevantními články z DB.
- * 🛡️ FIX 1: getRelatedArticles nyní prohledává title i title_en.
- * 🛡️ FIX 2: Nejsilnější fallback - pokud není shoda, VŽDY vytáhne 3 nejnovější zprávy.
+ * 🚀 CÍL: 100% funkční sémantické propojení s články a novinkami.
+ * 🛡️ FIX 1: Robustnější getRelatedArticles - pokud nenajde shodu, VŽDY vrátí 3 nejnovější příspěvky.
+ * 🛡️ FIX 2: Odstraněna force-cache pro okamžité zobrazení novinek po nasazení.
  * 🛡️ FIX 3: Striktní Next.js 15 compliance (await props.params).
  */
 
 export const runtime = "nodejs";
-export const revalidate = 3600; 
+export const revalidate = 0; // 🚀 GURU: Dočasně nastaveno na 0 pro okamžitý test
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -23,30 +23,31 @@ const baseUrl = "https://thehardwareguru.cz";
 const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon |Intel /gi, '');
 const slugify = (text) => text ? text.toLowerCase().replace(/graphics|gpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
-// 🛡️ GURU ENGINE: Sémantické články (Thematic Clustering)
+// 🛡️ GURU ENGINE: Sémantické články (Opravený Fetch)
 const getRelatedArticles = async (gpuName) => {
     if (!supabaseUrl) return [];
     const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
     const name = normalizeName(gpuName || '');
 
     try {
-        // 1. POKUS: Najít články, které mají název karty v titulku (CZ i EN)
+        // 1. POKUS: Najít články obsahující název karty (např. 5090)
         const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.%${encodeURIComponent(name)}%,title_en.ilike.%${encodeURIComponent(name)}%)&order=created_at.desc&limit=3`, {
-            headers, cache: 'force-cache'
+            headers, cache: 'no-store'
         });
-        const data = await res.json();
+        
+        let data = [];
+        if (res.ok) data = await res.json();
 
-        // 2. POKUS: Pokud nic, vezmeme prostě 3 nejnovější (Zlatý standard)
+        // 2. FALLBACK: Pokud nic tematického není, vezmeme prostě 3 nejnovější (aby tam nebylo prázdno)
         if (!data || data.length === 0) {
             const resLatest = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&order=created_at.desc&limit=3`, {
-                headers, cache: 'force-cache'
+                headers, cache: 'no-store'
             });
-            const latestData = await resLatest.json();
-            return Array.isArray(latestData) ? latestData : [];
+            if (resLatest.ok) data = await resLatest.json();
         }
-        return data;
+        
+        return Array.isArray(data) ? data : [];
     } catch (e) { 
-        console.error("Related articles error:", e);
         return []; 
     }
 };
@@ -55,7 +56,7 @@ const findGpuBySlug = async (gpuSlug) => {
   if (!supabaseUrl || !gpuSlug || gpuSlug === 'undefined') return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
   try {
-      const res1 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${gpuSlug}&limit=1`, { headers, cache: 'force-cache' });
+      const res1 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${gpuSlug}&limit=1`, { headers, cache: 'no-store' });
       if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
       
       const clean = gpuSlug.replace(/-/g, " ").trim();
@@ -63,7 +64,7 @@ const findGpuBySlug = async (gpuSlug) => {
       if (chunks && chunks.length > 0) {
           const searchPattern = `%${chunks.join('%')}%`;
           const url2 = `${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&or=(name.ilike.${encodeURIComponent(searchPattern)},slug.ilike.${encodeURIComponent(searchPattern)})&limit=1`;
-          const res2 = await fetch(url2, { headers, cache: 'force-cache' });
+          const res2 = await fetch(url2, { headers, cache: 'no-store' });
           if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
       }
   } catch(e) {}
@@ -73,7 +74,7 @@ const findGpuBySlug = async (gpuSlug) => {
 export async function generateMetadata(props) {
   const params = await props.params;
   const rawSlug = params?.slug || params?.gpu || '';
-  const isEn = props?.isEn || rawSlug.startsWith('en-');
+  const isEn = rawSlug.startsWith('en-');
   const gpuSlug = rawSlug.replace(/^en-/, '');
 
   const gpu = await findGpuBySlug(gpuSlug);
@@ -96,7 +97,7 @@ export async function generateMetadata(props) {
 export default async function GpuDetailPage(props) {
   const params = await props.params;
   const rawSlug = params?.slug || params?.gpu || '';
-  const isEn = props?.isEn || rawSlug.startsWith('en-');
+  const isEn = rawSlug.startsWith('en-');
   const gpuSlug = rawSlug.replace(/^en-/, '');
   
   const gpu = await findGpuBySlug(gpuSlug);
@@ -160,8 +161,8 @@ export default async function GpuDetailPage(props) {
             <div className="stat-card"><div className="label">PERFORMANCE</div><div className="val">{gpu.performance_index || '-'} PTS</div></div>
         </section>
 
-        {/* 🚀 GURU: SÉMANTICKÉ PROPOJENÍ (ČLÁNKY O TÉTO KARTĚ NEBO NEJNOVĚJŠÍ) */}
-        {relatedArticles.length > 0 && (
+        {/* 🚀 GURU: SÉMANTICKÉ PROPOJENÍ (ZDE TO BUDE!) */}
+        {relatedArticles && relatedArticles.length > 0 && (
             <section style={{ marginBottom: '60px' }}>
                 <h2 className="section-h2" style={{ borderLeftColor: '#a855f7' }}>
                     <Info size={28} color="#a855f7" style={{ display: 'inline', marginRight: '10px' }} /> 
@@ -194,7 +195,7 @@ export default async function GpuDetailPage(props) {
                   </div>
                   <ArrowRight size={20} className="link-arrow" />
               </a>
-              <a href={isEn ? `/en/gpu-recommend/${safeSlug}` : `/en/gpu-recommend/${safeSlug}`} className="deep-link-card">
+              <a href={isEn ? `/en/gpu-recommend/${safeSlug}` : `/gpu-recommend/${safeSlug}`} className="deep-link-card">
                   <CheckCircle2 size={32} color="#10b981" />
                   <div>
                       <h3>{isEn ? 'Guru Verdict' : 'Guru Verdikt'}</h3>
