@@ -9,11 +9,12 @@ import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
 
 /**
- * GURU ROOT LAYOUT V4.7 (AMP ADSENSE EDITION)
+ * GURU ROOT LAYOUT V4.8 (GOLDEN RICH & ADSENSE DOMINATION)
  * Cesta: src/app/layout.js
- * 🚀 CÍL: Aktivace AMP automatických reklam pro maximální mobilní RPM.
- * 🛡️ ADS: Implementován AMP Auto Ads skript a komponenta (ca-pub-5468223287024993).
- * 🛡️ SEO: Zachovány RSS feedy, Google Analytics a dynamické canonicaly.
+ * 🚀 CÍL: Oprava "Nebyly zjištěny žádné položky" v GSC a aktivace AdSense.
+ * 🛡️ FIX 1: Globální schémata Organization a WebSite vložena do hlavičky (Rich Results Fix).
+ * 🛡️ ADS: Implementován AMP i standardní AdSense skript (ca-pub-5468223287024993).
+ * 🛡️ SEO: Odstraněny Duplicity, zachovány RSS a Analytics.
  */
 
 export const metadata = {
@@ -34,15 +35,52 @@ export default async function RootLayout({ children, params }) {
   // Await params pro Next.js 15 (Striktní architektura)
   const resolvedParams = await params;
   const locale = resolvedParams?.locale || resolvedParams?.lang || 'cs';
+  const isEn = locale === 'en';
 
   const envVars = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
   };
 
+  // 🚀 ZLATÁ GSC SEO SCHÉMATA (GLOBÁLNÍ IDENTITA)
+  const baseUrl = "https://thehardwareguru.cz";
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "The Hardware Guru",
+    "url": baseUrl,
+    "logo": `${baseUrl}/logo.png`,
+    "image": [`${baseUrl}/logo.png`],
+    "sameAs": [
+      "https://kick.com/thehardwareguru",
+      "https://youtube.com/@TheHardwareGuru_Czech"
+    ]
+  };
+
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "The Hardware Guru",
+    "url": isEn ? `${baseUrl}/en` : baseUrl,
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": `${baseUrl}/search?q={search_term_string}`
+      },
+      "query-input": "required name=search_term_string"
+    }
+  };
+
+  const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
+
   return (
     <html lang={locale}>
       <head>
+        {/* 🚀 GOOGLE DETECTION FIX: Schémata vkládáme přímo do head pro 100% detekci */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(websiteSchema) }} />
+
         {/* 🚀 GOOGLE ADSENSE GLOBAL TAG (Standardní Auto Ads) */}
         <Script 
           async 
@@ -51,7 +89,7 @@ export default async function RootLayout({ children, params }) {
           strategy="afterInteractive"
         />
 
-        {/* 🚀 1. KROK: AMP ADSENSE SCRIPT (Podle screenshotu) */}
+        {/* 🚀 AMP ADSENSE SCRIPT */}
         <Script 
           async 
           custom-element="amp-auto-ads"
@@ -72,7 +110,7 @@ export default async function RootLayout({ children, params }) {
 
       <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         
-        {/* 🚀 2. KROK: AMP AUTO ADS COMPONENT (Hned za body tagem) */}
+        {/* 🚀 AMP AUTO ADS COMPONENT */}
         <amp-auto-ads type="adsense" data-ad-client="ca-pub-5468223287024993"></amp-auto-ads>
 
         <div id="guru-env-bridge" style={{ display: 'none' }} data-url={envVars.NEXT_PUBLIC_SUPABASE_URL} data-key={envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY} />
