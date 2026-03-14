@@ -1,10 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - CHUNK GENERATOR V39.1 (404 PREVENTION + E-E-A-T)
+ * GURU SEO ENGINE - CHUNK GENERATOR V39.2 (404 PREVENTION + E-E-A-T)
  * Cesta: src/app/guru-sitemap/[id]/route.js
  * 🛡️ FIX 1: Přidána generateStaticParams(). Next.js nyní předem zná URL pro podsitemapy, což řeší 404 Errory!
- * 🛡️ FIX 2: Do statických cest (pages) byly přidány kritické E-E-A-T stránky (about, contact, atd.).
+ * 🛡️ FIX 2: Do statických cest (pages) byly přidány kritické E-E-A-T stránky (about, contact, privacy-policy, terms-of-service).
+ * 🛡️ FIX 3: Opraveno chybějící generování /en/ variant pro FPS a Bottleneck matici!
  */
 
 export const revalidate = 3600; 
@@ -48,8 +49,12 @@ export async function GET(req, props) {
 
     try {
         if (type === 'pages') {
-            // 🚀 GURU E-E-A-T FIX: Přidány statické cesty /about, /contact, /privacy-policy, /terms-of-service
-            const staticPaths = ['/', '/clanky', '/gpuvs', '/cpuvs', '/gpuvs/ranking', '/cpuvs/ranking', '/gpu-index', '/cpu-index', '/deals', '/support', '/tipy', '/tweaky', '/rady', '/slovnik', '/about', '/contact', '/privacy-policy', '/terms-of-service'];
+            // 🚀 GURU E-E-A-T FIX: Přidány statické cesty pro O nás, Kontakt, Zásady a Podmínky (CZ i EN)
+            const staticPaths = [
+                '/', '/clanky', '/gpuvs', '/cpuvs', '/gpuvs/ranking', '/cpuvs/ranking', 
+                '/gpu-index', '/cpu-index', '/deals', '/support', '/tipy', '/tweaky', 
+                '/rady', '/slovnik', '/about', '/contact', '/privacy-policy', '/terms-of-service'
+            ];
             staticPaths.forEach(p => {
                 routes.push({ url: `${baseUrl}${p}`, priority: '1.0', changefreq: 'daily' });
                 routes.push({ url: `${baseUrl}/en${p}`, priority: '0.9', changefreq: 'daily' });
@@ -81,6 +86,7 @@ export async function GET(req, props) {
                 routes.push({ url: `${baseUrl}/en/cpu/${s}`, lastmod: d, priority: '0.8' });
                 games.forEach(g => {
                     routes.push({ url: `${baseUrl}/cpu-fps/${s}/${g}`, lastmod: d, priority: '0.7' });
+                    routes.push({ url: `${baseUrl}/en/cpu-fps/${s}/${g}`, lastmod: d, priority: '0.6' }); // 🚀 EN FIX
                 });
             });
         } else if (type === 'gpu') {
@@ -94,6 +100,7 @@ export async function GET(req, props) {
                 routes.push({ url: `${baseUrl}/en/gpu/${s}`, lastmod: d, priority: '0.8' });
                 games.forEach(gm => {
                     routes.push({ url: `${baseUrl}/gpu-fps/${s}/${gm}`, lastmod: d, priority: '0.7' });
+                    routes.push({ url: `${baseUrl}/en/gpu-fps/${s}/${gm}`, lastmod: d, priority: '0.6' }); // 🚀 EN FIX
                 });
             });
         } else if (type === 'duels' || type === 'upgrades') {
@@ -140,8 +147,10 @@ export async function GET(req, props) {
                     routes.push({ url: `${baseUrl}/en${pairPath}`, priority: '0.5' });
                     games.forEach(game => {
                         routes.push({ url: `${baseUrl}${pairPath}-in-${game}`, priority: '0.5' });
+                        routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}`, priority: '0.4' }); // 🚀 EN FIX
                         resolutions.forEach(res => {
                             routes.push({ url: `${baseUrl}${pairPath}-in-${game}-at-${res}`, priority: '0.4' });
+                            routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}-at-${res}`, priority: '0.3' }); // 🚀 EN FIX
                         });
                     });
                 });
