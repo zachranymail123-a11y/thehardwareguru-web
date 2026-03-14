@@ -1,16 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU BING CHUNKER V1.0 (EXCLUSIVE RESET BRANCH)
+ * GURU BING CHUNKER V1.1 (SERVICE ROLE & FULL COVERAGE)
  * Cesta: src/app/bing-sitemap/[id]/route.js
  * 🚀 CÍL: Odbavit 119k+ URL pro Bing pod novou adresou.
- * 🛡️ FIX: Striktní Next.js 15 compliance (await params).
+ * 🛡️ FIX 1: Používá SUPABASE_SERVICE_ROLE_KEY pro obcházení RLS (Bing uvidí vše!).
+ * 🛡️ FIX 2: Doplněny chybějící větve pro 'duels' a 'upgrades', které Bingbotu chyběly.
+ * 🛡️ FIX 3: Striktní Next.js 15 compliance (await params).
  */
 
 export const revalidate = 86400; 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// 🚀 GURU FIX: Používáme Service Role Key, aby Bing mohl číst všechna data i přes RLS politiky
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const baseUrl = 'https://thehardwareguru.cz';
 
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -57,6 +60,34 @@ export async function GET(req, props) {
                 const s = cleanGpuSlug(g.slug, g.name);
                 routes.push({ url: `${baseUrl}/gpu/${s}`, priority: '0.9' });
                 routes.push({ url: `${baseUrl}/en/gpu/${s}`, priority: '0.8' });
+            });
+        } else if (type === 'duels') {
+            // 🚀 GURU FIX: Doplněno srovnání GPU a CPU (Bing uvidí tisíce kombinací)
+            const [gpuDuels, cpuDuels] = await Promise.all([
+                supabase.from('gpu_duels').select('slug'),
+                supabase.from('cpu_duels').select('slug')
+            ]);
+            gpuDuels.data?.forEach(d => {
+                routes.push({ url: `${baseUrl}/gpuvs/${d.slug}`, priority: '0.7' });
+                routes.push({ url: `${baseUrl}/en/gpuvs/en-${d.slug}`, priority: '0.6' });
+            });
+            cpuDuels.data?.forEach(d => {
+                routes.push({ url: `${baseUrl}/cpuvs/${d.slug}`, priority: '0.7' });
+                routes.push({ url: `${baseUrl}/en/cpuvs/en-${d.slug}`, priority: '0.6' });
+            });
+        } else if (type === 'upgrades') {
+            // 🚀 GURU FIX: Doplněny upgrady GPU a CPU
+            const [gpuUpg, cpuUpg] = await Promise.all([
+                supabase.from('gpu_upgrades').select('slug'),
+                supabase.from('cpu_upgrades').select('slug')
+            ]);
+            gpuUpg.data?.forEach(u => {
+                routes.push({ url: `${baseUrl}/gpu-upgrade/${u.slug}`, priority: '0.7' });
+                routes.push({ url: `${baseUrl}/en/gpu-upgrade/en-${u.slug}`, priority: '0.6' });
+            });
+            cpuUpg.data?.forEach(u => {
+                routes.push({ url: `${baseUrl}/cpu-upgrade/${u.slug}`, priority: '0.7' });
+                routes.push({ url: `${baseUrl}/en/cpu-upgrade/en-${u.slug}`, priority: '0.6' });
             });
         } else if (!isNaN(parseInt(type, 10))) {
             const chunkId = parseInt(type, 10);
