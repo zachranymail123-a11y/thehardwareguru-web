@@ -1,4 +1,5 @@
 import React, { cache } from 'react';
+import { notFound } from 'next/navigation';
 import { 
   ChevronLeft, 
   ShieldCheck, 
@@ -21,15 +22,42 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU UPGRADE ENGINE - DETAIL V114.6 (ULTIMATE GSC STANDARD)
+ * GURU CPU UPGRADE ENGINE - DETAIL V115.0 (STRICT STATIC SEO)
  * Cesta: src/app/cpu-upgrade/[slug]/page.js
  * 🛡️ FIX 1: Absolutní Canonical URL a x-default v metadata (dle ChatGPT).
  * 🛡️ FIX 2: Obohacené Product Schema pro obě CPU o 'offers' a 'aggregateRating'.
- * 🛡️ FIX 3: Revalidate 3600s a plná podpora Next.js 15 (await params).
+ * 🛡️ FIX 3: Revalidate 86400s a plná podpora Next.js 15 (await params).
+ * 🛡️ FIX 4: Zákaz fallback renderingu (dynamicParams = false) a Build-time SSG.
  */
 
 export const runtime = "nodejs";
-export const revalidate = 3600; 
+export const revalidate = 86400; 
+
+// 🚀 GURU FIX: Zákaz fallback renderingu pro SEO. Všechny URL musí být známé už při buildu.
+export const dynamicParams = false;
+
+export async function generateStaticParams() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  
+  if (!supabaseUrl) return [];
+
+  try {
+      const res = await fetch(`${supabaseUrl}/rest/v1/cpu_upgrades?select=slug&limit=10000`, {
+          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
+          next: { revalidate: 86400 }
+      });
+      
+      if (!res.ok) return [];
+      const upgrades = await res.json();
+      
+      return upgrades.map((upg) => ({
+          slug: upg.slug,
+      }));
+  } catch (e) {
+      return [];
+  }
+}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -88,41 +116,7 @@ const getSimilarUpgrades = async (cpuId, currentSlug) => {
     } catch (e) { return []; }
 };
 
-async function generateAndPersistUpgrade(slug) {
-  if (!supabaseUrl) return null;
-  try {
-    const cleanSlug = slug.replace(/^en-/, '');
-    const parts = cleanSlug.includes('-to-') ? cleanSlug.split('-to-') : cleanSlug.split('-vs-');
-    if (parts.length !== 2) return null;
-
-    const [cpuA, cpuB] = await Promise.all([findCpu(parts[0]), findCpu(parts[1])]);
-    if (!cpuA || !cpuB) return null;
-
-    const payload = {
-        slug: cleanSlug, slug_en: `en-${cleanSlug}`, 
-        old_cpu_id: cpuA.id, new_cpu_id: cpuB.id,
-        title_cs: `Upgrade z ${cpuA.name} na ${cpuB.name}`, title_en: `Upgrade from ${cpuA.name} to ${cpuB.name}`, 
-        content_cs: '', content_en: '', 
-        seo_description_cs: `Vyplatí se přechod z procesoru ${cpuA.name} na ${cpuB.name}? Podívejte se na reálné srovnání.`,
-        seo_description_en: `Is it worth upgrading your processor from ${cpuA.name} to ${cpuB.name}? See real benchmarks.`,
-        created_at: new Date().toISOString()
-    };
-
-    await fetch(`${supabaseUrl}/rest/v1/cpu_upgrades`, {
-        method: 'POST',
-        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation,resolution=merge-duplicates' },
-        body: JSON.stringify(payload)
-    });
-
-    const selectQuery = "*,oldCpu:cpus!old_cpu_id(*,cpu_game_fps!cpu_id(*)),newCpu:cpus!new_cpu_id(*,cpu_game_fps!cpu_id(*))";
-    const checkExisting = await fetch(`${supabaseUrl}/rest/v1/cpu_upgrades?select=${encodeURIComponent(selectQuery)}&slug=eq.${encodeURIComponent(cleanSlug)}`, {
-        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, cache: 'no-store'
-    });
-    const data = await checkExisting.json();
-    return data[0] || null;
-  } catch (err) { return null; }
-}
-
+// Odstraněna request-time generace. Data se tahají jen z DB.
 const getUpgradeData = cache(async (slug) => {
   if (!supabaseUrl || !slug) return null;
   const cleanSlug = slug.replace(/^en-/, '');
@@ -133,7 +127,7 @@ const getUpgradeData = cache(async (slug) => {
       });
       if (!res.ok) return null;
       const data = await res.json();
-      if (!data || data.length === 0) return await generateAndPersistUpgrade(slug);
+      if (!data || data.length === 0) return null; // 🚀 Vrátí null -> povede na notFound()
       return data[0];
   } catch (e) { return null; }
 });
@@ -141,7 +135,9 @@ const getUpgradeData = cache(async (slug) => {
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const upgrade = await getUpgradeData(slug);
-  if (!upgrade) return { title: '404 | Hardware Guru' };
+  
+  // 🚀 GURU FIX: Tvrdá 404 pro SEO
+  if (!upgrade) notFound();
   
   const isEn = slug?.startsWith('en-');
   const { oldCpu, newCpu } = upgrade;
@@ -165,7 +161,9 @@ export async function generateMetadata({ params }) {
 export default async function App({ params }) {
   const { slug } = await params;
   const upgrade = await getUpgradeData(slug);
-  if (!upgrade) return <div style={{ color: '#ef4444', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>UPGRADE NENALEZEN</div>;
+  
+  // 🚀 GURU FIX: Tvrdá 404 pro SEO
+  if (!upgrade) notFound();
 
   const isEn = slug?.startsWith('en-');
   const { oldCpu: cpuA, newCpu: cpuB } = upgrade;
