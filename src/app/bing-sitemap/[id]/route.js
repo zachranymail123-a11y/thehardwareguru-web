@@ -1,12 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU BING CHUNKER V1.6 (TOTAL 200k+ PARITY)
+ * GURU BING CHUNKER V1.7 (RECOVERY & FULL EN COVERAGE)
  * Cesta: src/app/bing-sitemap/[id]/route.js
- * 🚀 CÍL: 100% pokrytí (CZ i EN) pro všechny kombinace her a rozlišení.
- * 🛡️ FIX 1: Doplněny chybějící EN routy do všech vnořených smyček (Hry, Rozlišení).
- * 🛡️ FIX 2: Snížen limit na 2 CPU per chunk pro stabilitu a rychlost odezvy.
- * 🛡️ FIX 3: Přidán 'lastmod' pro všechny záznamy (Bing to vyžaduje pro trust).
+ * 🚀 CÍL: Překonat 200k+ URL adres a obnovit indexaci článků.
+ * 🛡️ FIX 1: Obnovena zmizelá sekce 'posts' (Články, Tipy, Tweaky).
+ * 🛡️ FIX 2: Doplněny EN verze do VŠECH smyček (FPS, Bottleneck, Performance).
+ * 🛡️ FIX 3: Snížen limit na 2 CPU per chunk pro eliminaci Bing timeoutů.
  */
 
 export const revalidate = 86400; 
@@ -40,13 +40,36 @@ export async function GET(req, props) {
     const routes = [];
 
     try {
+        // --- 1. ZÁKLADNÍ STRÁNKY ---
         if (type === 'pages') {
             const staticPaths = ['/', '/clanky', '/gpuvs', '/cpuvs', '/gpuvs/ranking', '/cpuvs/ranking', '/gpu-index', '/cpu-index', '/deals', '/support', '/tipy', '/tweaky', '/rady', '/slovnik'];
             staticPaths.forEach(p => {
-                routes.push({ url: `${baseUrl}${p}`, priority: '1.0', changefreq: 'daily' });
-                routes.push({ url: `${baseUrl}/en${p}`, priority: '0.9', changefreq: 'daily' });
+                routes.push({ url: `${baseUrl}${p}`, priority: '1.0' });
+                routes.push({ url: `${baseUrl}/en${p}`, priority: '0.9' });
             });
-        } else if (type === 'cpu') {
+        } 
+        
+        // --- 2. ČLÁNKY (OBNOVENO) ---
+        else if (type === 'posts') {
+            const [pRes, tRes, twRes, rRes, sRes] = await Promise.all([
+                supabase.from('posts').select('slug, created_at'),
+                supabase.from('tipy').select('slug, created_at'),
+                supabase.from('tweaky').select('slug, created_at'),
+                supabase.from('rady').select('slug, created_at'),
+                supabase.from('slovnik').select('slug, created_at')
+            ]);
+            const add = (data, path) => data?.forEach(i => {
+                if (i.slug) {
+                    const dt = safeDate(i.created_at);
+                    routes.push({ url: `${baseUrl}/${path}/${i.slug}`, lastmod: dt, priority: '0.9' });
+                    routes.push({ url: `${baseUrl}/en/${path}/${i.slug}`, lastmod: dt, priority: '0.8' });
+                }
+            });
+            add(pRes.data, 'clanky'); add(tRes.data, 'tipy'); add(twRes.data, 'tweaky'); add(rRes.data, 'rady'); add(sRes.data, 'slovnik');
+        }
+
+        // --- 3. CPU PROFILY & VARIANTY ---
+        else if (type === 'cpu') {
             const { data: cpus } = await supabase.from('cpus').select('name, created_at');
             const { data: gamesRes } = await supabase.from('games').select('slug');
             const games = gamesRes?.map(g => g.slug) || ['cyberpunk-2077'];
@@ -55,12 +78,18 @@ export async function GET(req, props) {
                 const d = safeDate(c.created_at);
                 routes.push({ url: `${baseUrl}/cpu/${s}`, lastmod: d, priority: '0.9' });
                 routes.push({ url: `${baseUrl}/en/cpu/${s}`, lastmod: d, priority: '0.8' });
+                routes.push({ url: `${baseUrl}/cpu-performance/${s}`, lastmod: d, priority: '0.8' });
+                routes.push({ url: `${baseUrl}/en/cpu-performance/${s}`, lastmod: d, priority: '0.7' });
+                
                 games.forEach(g => {
                     routes.push({ url: `${baseUrl}/cpu-fps/${s}/${g}`, lastmod: d, priority: '0.7' });
-                    routes.push({ url: `${baseUrl}/en/cpu-fps/${s}/${g}`, lastmod: d, priority: '0.6' }); // 🚀 GURU FIX
+                    routes.push({ url: `${baseUrl}/en/cpu-fps/${s}/${g}`, lastmod: d, priority: '0.6' });
                 });
             });
-        } else if (type === 'gpu') {
+        } 
+        
+        // --- 4. GPU PROFILY & VARIANTY ---
+        else if (type === 'gpu') {
             const { data: gpus } = await supabase.from('gpus').select('name, slug, created_at');
             const { data: gamesRes } = await supabase.from('games').select('slug');
             const games = gamesRes?.map(g => g.slug) || ['cyberpunk-2077'];
@@ -69,12 +98,18 @@ export async function GET(req, props) {
                 const d = safeDate(g.created_at);
                 routes.push({ url: `${baseUrl}/gpu/${s}`, lastmod: d, priority: '0.9' });
                 routes.push({ url: `${baseUrl}/en/gpu/${s}`, lastmod: d, priority: '0.8' });
+                routes.push({ url: `${baseUrl}/gpu-performance/${s}`, lastmod: d, priority: '0.8' });
+                routes.push({ url: `${baseUrl}/en/gpu-performance/${s}`, lastmod: d, priority: '0.7' });
+
                 games.forEach(gm => {
                     routes.push({ url: `${baseUrl}/gpu-fps/${s}/${gm}`, lastmod: d, priority: '0.7' });
-                    routes.push({ url: `${baseUrl}/en/gpu-fps/${s}/${gm}`, lastmod: d, priority: '0.6' }); // 🚀 GURU FIX
+                    routes.push({ url: `${baseUrl}/en/gpu-fps/${s}/${gm}`, lastmod: d, priority: '0.6' });
                 });
             });
-        } else if (type.startsWith('duels-') || type.startsWith('upgrades-')) {
+        } 
+        
+        // --- 5. DUELY & UPGRADY ---
+        else if (type.startsWith('duels-') || type.startsWith('upgrades-')) {
             const isUpg = type.startsWith('upgrades-');
             const table = isUpg ? 'gpu_upgrades' : 'gpu_duels';
             const pageNum = parseInt(type.split('-')[1], 10);
@@ -86,9 +121,12 @@ export async function GET(req, props) {
                 const dt = safeDate(d.created_at);
                 const path = isUpg ? 'gpu-upgrade' : 'gpuvs';
                 routes.push({ url: `${baseUrl}/${path}/${d.slug}`, lastmod: dt, priority: '0.7' });
-                routes.push({ url: `${baseUrl}/en/${path}/en-${d.slug}`, lastmod: dt, priority: '0.6' }); // 🚀 GURU FIX
+                routes.push({ url: `${baseUrl}/en/${path}/en-${d.slug}`, lastmod: dt, priority: '0.6' });
             });
-        } else if (!isNaN(parseInt(type, 10))) {
+        } 
+
+        // --- 6. MEGA BOTTLENECK MATICE ---
+        else if (!isNaN(parseInt(type, 10))) {
             const chunkId = parseInt(type, 10);
             const limit = 2; 
             const offset = (chunkId - 1) * limit;
@@ -111,10 +149,10 @@ export async function GET(req, props) {
                     
                     games.forEach(game => {
                         routes.push({ url: `${baseUrl}${pairPath}-in-${game}`, priority: '0.5' });
-                        routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}`, priority: '0.4' }); // 🚀 GURU FIX
+                        routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}`, priority: '0.4' });
                         resolutions.forEach(res => {
                             routes.push({ url: `${baseUrl}${pairPath}-in-${game}-at-${res}`, priority: '0.4' });
-                            routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}-at-${res}`, priority: '0.3' }); // 🚀 GURU FIX
+                            routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}-at-${res}`, priority: '0.3' });
                         });
                     });
                 });
