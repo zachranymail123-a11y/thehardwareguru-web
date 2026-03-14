@@ -1,9 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - CHUNK GENERATOR V39.0 (404 PREVENTION FIX)
+ * GURU SEO ENGINE - CHUNK GENERATOR V39.1 (404 PREVENTION + E-E-A-T)
  * Cesta: src/app/guru-sitemap/[id]/route.js
  * 🛡️ FIX 1: Přidána generateStaticParams(). Next.js nyní předem zná URL pro podsitemapy, což řeší 404 Errory!
+ * 🛡️ FIX 2: Do statických cest (pages) byly přidány kritické E-E-A-T stránky (about, contact, atd.).
  */
 
 export const revalidate = 3600; 
@@ -47,7 +48,8 @@ export async function GET(req, props) {
 
     try {
         if (type === 'pages') {
-            const staticPaths = ['/', '/clanky', '/gpuvs', '/cpuvs', '/gpuvs/ranking', '/cpuvs/ranking', '/gpu-index', '/cpu-index', '/deals', '/support', '/tipy', '/tweaky', '/rady', '/slovnik'];
+            // 🚀 GURU E-E-A-T FIX: Přidány statické cesty /about, /contact, /privacy-policy, /terms-of-service
+            const staticPaths = ['/', '/clanky', '/gpuvs', '/cpuvs', '/gpuvs/ranking', '/cpuvs/ranking', '/gpu-index', '/cpu-index', '/deals', '/support', '/tipy', '/tweaky', '/rady', '/slovnik', '/about', '/contact', '/privacy-policy', '/terms-of-service'];
             staticPaths.forEach(p => {
                 routes.push({ url: `${baseUrl}${p}`, priority: '1.0', changefreq: 'daily' });
                 routes.push({ url: `${baseUrl}/en${p}`, priority: '0.9', changefreq: 'daily' });
@@ -95,7 +97,6 @@ export async function GET(req, props) {
                 });
             });
         } else if (type === 'duels' || type === 'upgrades') {
-            // Kombinovaná logika pro duely i upgrady pro zjednodušení bloku
             const isUpg = type === 'upgrades';
             const [cpuRes, gpuRes] = await Promise.all([
                 supabase.from(isUpg ? 'cpu_upgrades' : 'cpu_duels').select('slug, slug_en, created_at'),
