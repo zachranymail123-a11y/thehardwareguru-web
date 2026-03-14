@@ -1,41 +1,93 @@
-"use client";
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Settings, ChevronRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Settings, ChevronRight, Smartphone, Monitor, Heart, Flame, ShieldCheck } from 'lucide-react';
 
-// GURU ENGINE: Připojení k Supabase
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+/**
+ * GURU TWEAKS ARCHIVE ENGINE V2.0 (GOLDEN RICH RESULTS FIX)
+ * Cesta: src/app/tweaky/page.js
+ * 🚀 CÍL: 100% zelená v GSC a blesková indexace všech systémových fixů.
+ * 🛡️ FIX 1: Přepsáno na Server Component (SSR) pro maximální SEO autoritu.
+ * 🛡️ FIX 2: Implementován Golden Rich standard - ItemList a BreadcrumbList JSON-LD.
+ * 🛡️ FIX 3: Podpora CZ/EN varianty a absolutních Canonical URL.
+ */
 
-export default function TweaksArchivePage() {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const pathname = usePathname() || '';
-  const isEn = pathname.startsWith('/en');
+export const runtime = "nodejs";
+export const revalidate = 3600; 
 
-  useEffect(() => {
-    async function fetchData() {
-      const { data, error } = await supabase
-        .from('tweaky')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (!error && data) setItems(data);
-      setLoading(false);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const baseUrl = "https://thehardwareguru.cz";
 
-      // GURU SEO: Dynamický titulek stránky
-      document.title = isEn ? 'Latest Guru Tweaks | Performance & FPS' : 'Nejnovější Guru Tweaky | Výkon a FPS';
+// 🚀 GURU SEO: Dynamické Meta Tagy pro archiv tweaků
+export async function generateMetadata(props) {
+  const isEn = props?.isEn === true;
+  const title = isEn ? 'Latest Guru Tweaks | System Performance & FPS Boost' : 'Nejnovější Guru Tweaky | Výkon a FPS';
+  const desc = isEn 
+    ? 'Deep system modifications, Windows optimizations and hardware tweaks for maximum stability.' 
+    : 'Hloubkové modifikace systému, optimalizace Windows a hardwarové tweaky pro maximální FPS a stabilitu.';
+
+  return {
+    title: `${title} | The Hardware Guru`,
+    description: desc,
+    alternates: {
+      canonical: `${baseUrl}/tweaky`,
+      languages: {
+        'en': `${baseUrl}/en/tweaky`,
+        'cs': `${baseUrl}/tweaky`,
+        'x-default': `${baseUrl}/tweaky`
+      }
     }
-    fetchData();
-  }, [isEn]);
+  };
+}
+
+export default async function TweaksArchivePage(props) {
+  const isEn = props?.isEn === true;
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  // 1. GURU FETCH: Získání dat přímo na serveru bez zbytečného loading spinneru
+  const { data: items, error } = await supabase
+    .from('tweaky')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("GURU TWEAKS FETCH FAIL:", error);
+  }
+
+  const safeItems = items || [];
+
+  // 🚀 ZLATÁ GSC SEO SCHÉMATA (ItemList pro seznam systémových tweaků)
+  const itemListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": isEn ? "System & Gaming Tweaks" : "Systémové a herní tweaky",
+    "description": isEn ? "Collection of system modifications for better FPS." : "Sbírka systémových modifikací pro lepší FPS.",
+    "itemListElement": safeItems.map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "url": `${baseUrl}${isEn ? '/en' : ''}/tweaky/${isEn && item.slug_en ? item.slug_en : item.slug}`
+    }))
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Guru", "item": baseUrl },
+      { "@type": "ListItem", "position": 2, "name": isEn ? "Tweaks" : "Tweaky", "item": `${baseUrl}${isEn ? '/en' : ''}/tweaky` }
+    ]
+  };
+
+  const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
   return (
     <div style={archiveWrapper}>
-      <style>{`
+      {/* JSON-LD INJECTIONS */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(itemListSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbSchema) }} />
+
+      <style dangerouslySetInnerHTML={{ __html: `
         .tweak-card { 
             background: rgba(17, 19, 24, 0.85); 
             border: 1px solid rgba(234, 179, 8, 0.2); 
@@ -47,13 +99,19 @@ export default function TweaksArchivePage() {
             flex-direction: column;
             cursor: pointer;
             text-decoration: none;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
         }
         .tweak-card:hover { 
             transform: translateY(-8px); 
             border-color: #eab308; 
-            box-shadow: 0 0 30px rgba(234, 179, 8, 0.2); 
+            box-shadow: 0 20px 60px rgba(234, 179, 8, 0.2); 
         }
-      `}</style>
+        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
+        .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
+        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
+        .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
+      `}} />
 
       <header style={headerStyle}>
         <h1 style={titleStyle}>
@@ -67,13 +125,13 @@ export default function TweaksArchivePage() {
       </header>
 
       <main style={gridContainer}>
-        {loading ? (
-          <div style={{ textAlign: 'center', gridColumn: '1/-1', padding: '100px' }}>
-            <Loader2 className="animate-spin" size={48} color="#eab308" />
+        {safeItems.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '100px', color: '#4b5563', fontWeight: 'bold' }}>
+            {isEn ? 'NO TWEAKS FOUND' : 'ŽÁDNÉ TWEAKY NENALEZENY'}
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '30px' }}>
-            {items.map((item) => {
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '30px' }}>
+            {safeItems.map((item) => {
               const displayTitle = (isEn && item.title_en) ? item.title_en : item.title;
               const displayDesc = (isEn && item.description_en) ? item.description_en : item.description;
               const displaySlug = (isEn && item.slug_en) ? item.slug_en : item.slug;
@@ -81,12 +139,12 @@ export default function TweaksArchivePage() {
               return (
                 <Link key={item.id} href={isEn ? `/en/tweaky/${displaySlug}` : `/tweaky/${displaySlug}`} style={{ textDecoration: 'none' }}>
                   <article className="tweak-card">
-                    {/* GURU IMAGE BOX: RESTORED FROM BACKUP */}
                     <div style={imageBox}>
                       <img 
                         src={item.image_url && item.image_url !== 'EMPTY' ? item.image_url : 'https://images.unsplash.com/photo-1542751371-adc38448a05e'} 
                         alt={displayTitle} 
                         style={imgStyle} 
+                        loading="lazy"
                       />
                     </div>
 
@@ -106,6 +164,21 @@ export default function TweaksArchivePage() {
             })}
           </div>
         )}
+
+        {/* 🚀 GURU GLOBÁLNÍ CTA TLAČÍTKA (Golden standard) */}
+        <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
+          <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
+            {isEn ? "Want even more performance? Support us and get the best deals." : "Chceš ještě víc výkonu? Podpoř nás a získej ty nejlepší nabídky."}
+          </h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
+            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn" style={{ flex: '1 1 280px' }}>
+              <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
+            </a>
+            <a href={isEn ? "/en/support" : "/support"} className="guru-support-btn" style={{ flex: '1 1 280px' }}>
+              <Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
+            </a>
+          </div>
+        </div>
       </main>
     </div>
   );
@@ -138,7 +211,7 @@ const titleStyle = {
 
 const subtitleStyle = { 
     marginTop: '20px', 
-    color: '#9ca3af', 
+    color: '#d1d5db', 
     fontWeight: '600', 
     fontSize: '18px' 
 };
