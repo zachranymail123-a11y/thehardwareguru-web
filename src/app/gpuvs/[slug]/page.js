@@ -6,16 +6,46 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - V3.0 (PROGRAMMATIC SEO & FAQ EDITION)
+ * GURU GPU DUELS ENGINE - V4.0 (DEEP CONTENT SEO EDITION)
  * Cesta: src/app/gpuvs/[slug]/page.js
- * 🚀 CÍL: Brutální SEO boost pro Bing a Google (Long-form texty a FAQ).
- * 🛡️ FIX 1: Dynamické generování SEO textů (Ray Tracing, Blender, Spotřeba).
- * 🛡️ FIX 2: Vloženo JSON-LD FAQ Schema pro Rich Snippets v Google/Bing.
- * 🛡️ FIX 3: Striktní 'await props.params' (Next.js 15).
+ * 🚀 CÍL: Fix pro Bing "Thin Content" - Masivní nárůst textového obsahu (Long-form SEO).
+ * 🛡️ FIX 1: Dynamické generování sekcí Architektura, DLSS vs FSR, Kompletní doporučení.
+ * 🛡️ FIX 2: Rozšířeno JSON-LD FAQ Schema pro Rich Snippets v Google/Bing.
+ * 🛡️ FIX 3: Striktní 'await props.params' (Next.js 15 safe).
  */
 
 export const runtime = "nodejs";
 export const revalidate = 3600; 
+
+// 🚀 GURU FIX: Zapnutí částečného Statického Generování (SSG)
+// Vercel díky tomuto vygeneruje čisté, bleskové HTML pro 100 nejpopulárnějších duelů rovnou při buildu.
+// Ostatní duely se vygenerují dynamicky při prvním přístupu a pak zůstanou staticky uložené (ISR).
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  
+  if (!supabaseUrl) return [];
+
+  try {
+      // Vytáhneme 100 existujících duelů z DB pro statický build
+      const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=slug&limit=100`, {
+          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
+          next: { revalidate: 86400 }
+      });
+      
+      if (!res.ok) return [];
+      const duels = await res.json();
+      
+      // Vrátíme pole objektů se slugy pro pre-render
+      return duels.map((duel) => ({
+          slug: duel.slug,
+      }));
+  } catch (e) {
+      return [];
+  }
+}
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -60,7 +90,7 @@ async function generateAndPersistDuel(rawSlug) {
     const payload = {
         slug: cleanSlug, slug_en: `en-${cleanSlug}`, gpu_a_id: gpuA.id, gpu_b_id: gpuB.id,
         title_cs: `Srovnání: ${gpuA.name} vs ${gpuB.name}`, title_en: `Comparison: ${gpuA.name} vs ${gpuB.name}`, 
-        content_cs: '', content_en: '', seo_description_cs: `Která grafika je lepší? Srovnání herního výkonu, spotřeby a parametrů ${gpuA.name} vs ${gpuB.name}.`, seo_description_en: `Which GPU is better? Gaming performance, power draw and specs comparison of ${gpuA.name} vs ${gpuB.name}.`,
+        content_cs: '', content_en: '', seo_description_cs: `Která grafika je lepší? Detailní srovnání herního výkonu, architektury, DLSS/FSR a parametrů ${gpuA.name} vs ${gpuB.name}.`, seo_description_en: `Which GPU is better? Detailed gaming performance, architecture, DLSS/FSR and specs comparison of ${gpuA.name} vs ${gpuB.name}.`,
         created_at: new Date().toISOString()
     };
 
@@ -100,10 +130,10 @@ export async function generateMetadata(props) {
   const { gpuA, gpuB } = duel;
   
   return { 
-    title: isEn ? `${gpuA.name} vs ${gpuB.name} – Gaming Performance & Specs` : `Srovnání: ${gpuA.name} vs ${gpuB.name} – Výkon a Parametry`,
+    title: isEn ? `${gpuA.name} vs ${gpuB.name} – Gaming Benchmarks & Review` : `Srovnání: ${gpuA.name} vs ${gpuB.name} – Výkon, Testy a Parametry`,
     description: isEn 
-        ? `Detailed comparison of ${gpuA.name} vs ${gpuB.name}. See 1440p gaming benchmarks, power consumption, ray tracing performance, and VRAM differences.`
-        : `Detailní srovnání ${gpuA.name} vs ${gpuB.name}. Zjistěte rozdíly v herním výkonu, spotřebě, ray tracingu a podívejte se na reálné benchmarky.`,
+        ? `Detailed comparison of ${gpuA.name} vs ${gpuB.name}. Deep dive into 1440p gaming benchmarks, DLSS vs FSR analysis, ray tracing performance, architecture and VRAM.`
+        : `Detailní srovnání ${gpuA.name} vs ${gpuB.name}. Hluboká analýza herního výkonu, DLSS vs FSR, ray tracingu, architektury a spotřeby energie.`,
     alternates: {
         canonical: `${baseUrl}/gpuvs/${duel.slug}`,
         languages: { 'en': `${baseUrl}/en/gpuvs/${duel.slug}`, 'cs': `${baseUrl}/gpuvs/${duel.slug}`, 'x-default': `${baseUrl}/gpuvs/${duel.slug}` }
@@ -144,11 +174,11 @@ export default async function GpuVsDetailPage(props) {
 
   const calcSafeDiff = (oldF, newF) => (!oldF || !newF || oldF === 0) ? 0 : Math.round(((newF / oldF) - 1) * 100);
   
-  // 🚀 GURU: DYNAMICKÁ LOGIKA PRO SEO TEXTY
+  // 🚀 GURU: DYNAMICKÁ LOGIKA PRO LONG-FORM SEO TEXTY
   const getRtWinner = () => {
     if (gpuA.vendor === 'NVIDIA' && gpuB.vendor === 'AMD') return gpuA;
     if (gpuB.vendor === 'NVIDIA' && gpuA.vendor === 'AMD') return gpuB;
-    return winner; // Pokud jsou oba stejný vendor, vyhrává ten silnější
+    return winner; 
   };
   const rtWinner = getRtWinner();
 
@@ -157,7 +187,7 @@ export default async function GpuVsDetailPage(props) {
     const vB = gpuB.vram_gb || 0;
     if (vA > vB) return gpuA;
     if (vB > vA) return gpuB;
-    return winner; // Pokud mají stejnou VRAM, vyhrává výkon
+    return winner; 
   };
   const prodWinner = getProdWinner();
 
@@ -168,25 +198,44 @@ export default async function GpuVsDetailPage(props) {
   };
   const effWinner = getEffWinner();
 
-  // 🚀 ZLATÁ GSC SEO SCHÉMATA (FAQ Schema)
+  const getUpscaling = (vendor) => {
+      const v = (vendor || '').toUpperCase();
+      if (v === 'NVIDIA') return { short: 'DLSS', long: 'Deep Learning Super Sampling (DLSS)' };
+      if (v === 'AMD') return { short: 'FSR', long: 'FidelityFX Super Resolution (FSR)' };
+      return { short: 'XeSS', long: 'Xe Super Sampling' };
+  };
+  const upA = getUpscaling(gpuA.vendor);
+  const upB = getUpscaling(gpuB.vendor);
+
+  // 🚀 ZLATÁ GSC SEO SCHÉMATA (Rozšířené FAQ Schema pro Bing boty)
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "mainEntity": [
       {
         "@type": "Question",
-        "name": isEn ? `Is ${gpuA.name} better than ${gpuB.name} for 1440p gaming?` : `Je ${gpuA.name} lepší než ${gpuB.name} pro 1440p hraní?`,
-        "acceptedAnswer": { "@type": "Answer", "text": isEn ? `The ${winner.name} is generally better, offering around ${finalPerfDiff}% more raw performance.` : `Ano, ${winner.name} je obecně lepší a nabízí přibližně o ${finalPerfDiff} % vyšší hrubý výkon.` }
+        "name": isEn ? `Which is better for gaming: ${gpuA.name} or ${gpuB.name}?` : `Která grafika je lepší na hry: ${gpuA.name} nebo ${gpuB.name}?`,
+        "acceptedAnswer": { "@type": "Answer", "text": isEn ? `Based on raw benchmark data, the ${winner.name} is the superior choice, delivering approximately ${finalPerfDiff}% more performance in modern gaming titles compared to the ${loser.name}.` : `Na základě reálných dat z benchmarků je jasným vítězem ${winner.name}. V moderních herních titulech poskytuje přibližně o ${finalPerfDiff} % vyšší hrubý výkon než ${loser.name}.` }
       },
       {
         "@type": "Question",
-        "name": isEn ? `Which GPU has better Ray Tracing: ${gpuA.name} or ${gpuB.name}?` : `Která grafika má lepší Ray Tracing: ${gpuA.name} nebo ${gpuB.name}?`,
-        "acceptedAnswer": { "@type": "Answer", "text": isEn ? `The ${rtWinner.name} provides superior Ray Tracing capabilities.` : `Model ${rtWinner.name} poskytuje výrazně lepší výkon se zapnutým Ray Tracingem.` }
+        "name": isEn ? `Which GPU has better Ray Tracing performance?` : `Která z těchto karet zvládá lépe Ray Tracing?`,
+        "acceptedAnswer": { "@type": "Answer", "text": isEn ? `The ${rtWinner.name} features more advanced RT cores, providing significantly better frame rates and smoother gameplay when ray tracing effects are enabled.` : `Model ${rtWinner.name} je vybaven pokročilejšími RT jádry, což znamená výrazně stabilnější snímkovou frekvenci a plynulejší hratelnost při zapnutých efektech ray tracingu.` }
       },
       {
         "@type": "Question",
-        "name": isEn ? `Power consumption: ${gpuA.name} vs ${gpuB.name}?` : `Jaká je spotřeba karet ${gpuA.name} a ${gpuB.name}?`,
-        "acceptedAnswer": { "@type": "Answer", "text": isEn ? `The ${gpuA.name} draws ${gpuA.tdp_w}W, while the ${gpuB.name} consumes ${gpuB.tdp_w}W. The ${effWinner.name} is more power efficient.` : `Karta ${gpuA.name} spotřebuje ${gpuA.tdp_w}W, zatímco ${gpuB.name} si vezme ${gpuB.tdp_w}W.` }
+        "name": isEn ? `Power consumption comparison: ${gpuA.name} vs ${gpuB.name}` : `Porovnání spotřeby: Jaký je rozdíl v TDP mezi ${gpuA.name} a ${gpuB.name}?`,
+        "acceptedAnswer": { "@type": "Answer", "text": isEn ? `The ${gpuA.name} has a rated TDP of ${gpuA.tdp_w}W, whereas the ${gpuB.name} sits at ${gpuB.tdp_w}W. This makes the ${effWinner.name} more power-efficient, requiring a less expensive power supply.` : `Karta ${gpuA.name} má stanovené maximální TDP na ${gpuA.tdp_w}W, zatímco ${gpuB.name} si žádá ${gpuB.tdp_w}W. Karta ${effWinner.name} je tedy energeticky úspornější a méně náročná na počítačový zdroj.` }
+      },
+      {
+        "@type": "Question",
+        "name": isEn ? `Which GPU is better for Blender and Unreal Engine 5?` : `Která grafická karta je vhodnější pro Blender a Unreal Engine 5?`,
+        "acceptedAnswer": { "@type": "Answer", "text": isEn ? `For productivity tasks like 3D rendering and game development, the ${prodWinner.name} is highly recommended due to its ${prodWinner.vram_gb}GB of VRAM and robust architecture.` : `Pro náročné pracovní úkoly jako 3D renderování nebo vývoj her je doporučována karta ${prodWinner.name}, a to díky její kapacitě ${prodWinner.vram_gb} GB VRAM a optimalizované architektuře.` }
+      },
+      {
+        "@type": "Question",
+        "name": isEn ? `Does ${gpuA.name} or ${gpuB.name} support better upscaling?` : `Mají tyto karty podporu pro DLSS nebo FSR?`,
+        "acceptedAnswer": { "@type": "Answer", "text": isEn ? `The ${gpuA.name} utilizes ${upA.short}, while the ${gpuB.name} is built around ${upB.short} technology.` : `Grafika ${gpuA.name} využívá technologii ${upA.short}, zatímco ${gpuB.name} se spoléhá na ekosystém ${upB.short}.` }
       }
     ]
   };
@@ -232,40 +281,47 @@ export default async function GpuVsDetailPage(props) {
             </div>
         </div>
 
-        {/* 🚀 PROGRAMMATIC SEO TEXTY (BING & GOOGLE BOOST) */}
+        {/* 🚀 DEEP LONG-FORM CONTENT (BING & GOOGLE SEO BOOST) */}
         <section style={{ marginBottom: '60px' }}>
           <div className="content-box-style">
             <h2 style={{ color: '#fff', fontSize: '2rem', fontWeight: '950', textTransform: 'uppercase', borderLeft: '4px solid #ff0055', paddingLeft: '15px', marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-               <Info size={28} color="#ff0055" /> {isEn ? 'Detailed Hardware Analysis' : 'Detailní Hardwarová Analýza'}
+               <Info size={28} color="#ff0055" /> {isEn ? 'In-Depth Hardware Analysis' : 'Hluboká Hardwarová Analýza'}
             </h2>
             
             <div className="guru-prose">
-              <h3>{isEn ? 'Gaming Performance & Resolution' : 'Herní Výkon a Rozlišení'}</h3>
+              <h3>{isEn ? 'Gaming Benchmark Analysis' : 'Analýza herních benchmarků'}</h3>
               <p>
                 {isEn 
-                  ? `When comparing raw gaming performance, the ${winner.name} takes the lead by approximately ${finalPerfDiff}%. For gamers targeting 1440p or 4K resolutions, this translates to a noticeably smoother experience and more stable frame rates in modern titles compared to the ${loser.name}.`
-                  : `Při srovnání hrubého herního výkonu vede karta ${winner.name} o přibližně ${finalPerfDiff} %. Pro hráče, kteří cílí na rozlišení 1440p nebo 4K, to znamená znatelně plynulejší zážitek a stabilnější snímkovou frekvenci (FPS) v moderních titulech ve srovnání s ${loser.name}.`}
+                  ? `When pitting the ${normalizeName(gpuA.name)} against the ${normalizeName(gpuB.name)} in a direct benchmark battle, the numbers reveal a clear hierarchy. The ${winner.name} pulls ahead with an impressive ${finalPerfDiff}% advantage in raw rasterization performance. For gamers pushing high refresh rates at 1440p or stepping into the demanding world of 4K gaming, this performance gap means the difference between occasional stuttering and a buttery-smooth experience. While the ${loser.name} holds its ground in optimized titles, the sheer computational power of the winner makes it much more future-proof for upcoming Unreal Engine 5 releases.`
+                  : `Při přímém srovnání modelů ${normalizeName(gpuA.name)} a ${normalizeName(gpuB.name)} v herních benchmarcích nám čísla ukazují jasnou hierarchii. Karta ${winner.name} dominuje s výrazným náskokem ${finalPerfDiff} % v hrubém rasterizačním výkonu. Pro náročné hráče, kteří cílí na vysoké FPS v rozlišení 1440p nebo se chtějí vrhnout do světa 4K hraní, znamená tento rozdíl hranici mezi občasnými záseky obrazu a naprosto plynulým herním zážitkem. Přestože si ${loser.name} v dobře optimalizovaných titulech drží své pozice, výpočetní síla vítěze z něj dělá mnohem spolehlivější investici s ohledem na přicházející hry běžící na Unreal Enginu 5.`}
               </p>
 
-              <h3>{isEn ? 'Ray Tracing & Upscaling' : 'Ray Tracing a Upscaling'}</h3>
+              <h3>{isEn ? 'GPU Architecture Explained' : 'Architektura grafického čipu'}</h3>
               <p>
                 {isEn
-                  ? `Ray tracing has become a standard in modern AAA games. In this matchup, the ${rtWinner.name} is the superior choice if you plan to use heavy ray tracing effects in games like Cyberpunk 2077 or Alan Wake 2, due to its specialized architectural cores.`
-                  : `Ray tracing se stal standardem v moderních AAA hrách. V tomto souboji je ${rtWinner.name} lepší volbou, pokud plánujete využívat náročné ray tracing efekty ve hrách jako Cyberpunk 2077 nebo Alan Wake 2, a to díky její pokročilé architektuře jader.`}
+                  ? `Under the hood, these cards represent significantly different engineering approaches. The ${gpuA.name} is powered by the ${gpuA.architecture || 'advanced'} architecture, bringing refined multiprocessors and enhanced cache memory to the table. On the opposing side, the ${gpuB.name} utilizes the ${gpuB.architecture || 'modern'} architecture design. This architectural clash dictates not only how fast frames are rendered but also how effectively the GPU handles complex compute tasks like physics simulations and geometry processing.`
+                  : `Když se podíváme pod pomyslnou kapotu, tyto grafiky reprezentují odlišný inženýrský přístup. Model ${gpuA.name} je postaven na architektuře ${gpuA.architecture || 'pokročilé generace'}, která přináší vylepšené multiprocesory a optimalizovanou vyrovnávací paměť (Cache). Na opačné straně ringu stojí ${gpuB.name} těžící z architektury ${gpuB.architecture || 'moderní koncepce'}. Tento architektonický střet neurčuje jen to, jak rychle se snímky vykreslí, ale také s jakou efektivitou zvládá čip fyzikální simulace nebo komplexní výpočty geometrie ve hře.`}
               </p>
 
-              <h3>{isEn ? 'VRAM & Productivity (Blender, Unreal Engine)' : 'VRAM a Pracovní nasazení (Blender, UE5)'}</h3>
+              <h3>{isEn ? 'Upscaling Technologies: DLSS vs FSR' : 'Technologie Upscalingu: DLSS vs FSR'}</h3>
               <p>
                 {isEn
-                  ? `For 3D rendering, video editing, or game development in Unreal Engine, VRAM capacity is crucial. The ${prodWinner.name} equipped with ${prodWinner.vram_gb}GB of VRAM offers a stronger foundation for content creators who need to handle massive textures and complex 3D scenes.`
-                  : `Pro 3D renderování v Blenderu, střih videa nebo vývoj her v Unreal Engine 5 je kapacita VRAM naprosto klíčová. Model ${prodWinner.name} vybavený ${prodWinner.vram_gb} GB VRAM nabízí silnější základ pro tvůrce obsahu, kteří pracují s masivními texturami a složitými 3D scénami.`}
+                  ? `Raw horsepower isn't everything anymore; AI upscaling is a major deciding factor. The ${gpuA.name} takes advantage of ${upA.long}, while the ${gpuB.name} utilizes ${upB.long}. For heavy titles like Cyberpunk 2077, utilizing these technologies allows you to push graphical settings to the absolute limit without sacrificing frame rates. Furthermore, if you plan on enabling Ray Tracing, the ${rtWinner.name} is structurally better equipped to handle the massive performance penalty associated with tracing light rays in real-time.`
+                  : `Hrubý výkon už dnes není všechno; chytrý AI upscaling se stal hlavním rozhodovacím faktorem. Karta ${gpuA.name} plně využívá potenciál technologie ${upA.long}, zatímco ${gpuB.name} nabízí podporu pro ${upB.long}. V extrémně náročných hrách typu Cyberpunk 2077 vám aktivace těchto technologií umožní posunout grafické nastavení na absolutní maximum, aniž byste obětovali plynulost (FPS). Pokud navíc plánujete hrát se zapnutým Ray Tracingem, model ${rtWinner.name} je hardwarově lépe přizpůsoben k tomu, aby zvládl obrovskou výpočetní zátěž, kterou s sebou realistické nasvícení přináší.`}
               </p>
 
-              <h3>{isEn ? 'Power Consumption (TDP)' : 'Spotřeba energie (TDP) a Zdroj'}</h3>
+              <h3>{isEn ? 'VRAM and Content Creation (Blender, UE5)' : 'Kapacita VRAM a Práce (Blender, UE5)'}</h3>
               <p>
                 {isEn
-                  ? `Looking at power efficiency, the ${gpuA.name} is rated at ${gpuA.tdp_w || 'N/A'}W TDP, while the ${gpuB.name} consumes around ${gpuB.tdp_w || 'N/A'}W. The ${effWinner.name} is the more power-efficient card, meaning it generates less heat and is less demanding on your power supply unit (PSU).`
-                  : `Z hlediska energetické efektivity má ${gpuA.name} stanovené TDP na ${gpuA.tdp_w || 'N/A'} W, zatímco ${gpuB.name} spotřebuje přibližně ${gpuB.tdp_w || 'N/A'} W. Karta ${effWinner.name} je efektivnější, což znamená, že generuje méně odpadního tepla a klade nižší nároky na váš počítačový zdroj (PSU).`}
+                  ? `For content creators, video editors, and 3D artists, Video RAM is often more important than the GPU core itself. With ${gpuA.vram_gb || 'N/A'}GB on the ${gpuA.name} and ${gpuB.vram_gb || 'N/A'}GB on the ${gpuB.name}, the ${prodWinner.name} emerges as the superior workstation card. Extra VRAM ensures that massive 4K video timelines or complex Blender scenes won't crash your system by running out of memory.`
+                  : `Pro tvůrce obsahu, střihače videa a 3D grafiky je kapacita grafické paměti (VRAM) často důležitější než samotný grafický čip. S pamětí ${gpuA.vram_gb || 'N/A'} GB u karty ${gpuA.name} a ${gpuB.vram_gb || 'N/A'} GB u modelu ${gpuB.name} se jako podstatně lepší volba pro pracovní stanici profiluje ${prodWinner.name}. Kapacita paměti navíc je zárukou, že obrovské projekty ve 4K rozlišení nebo složité scény v Blenderu nezpůsobí pád celého systému kvůli nedostatku paměti.`}
+              </p>
+
+              <h3>{isEn ? 'Final Verdict and Power Efficiency' : 'Závěrečné doporučení a spotřeba (TDP)'}</h3>
+              <p>
+                {isEn
+                  ? `To summarize, the ${winner.name} wins this duel regarding gaming performance. However, power efficiency shouldn't be ignored. The ${gpuA.name} consumes up to ${gpuA.tdp_w || 'N/A'}W (TDP), while the ${gpuB.name} tops out around ${gpuB.tdp_w || 'N/A'}W. The ${effWinner.name} runs more efficiently, translating to lower temperatures, quieter cooling fans, and less strain on your power supply.`
+                  : `Závěrem lze konstatovat, že z pohledu herního výkonu tento duel jednoznačně vyhrává ${winner.name}. Nelze však ignorovat ani efektivitu spotřeby. Grafika ${gpuA.name} si z vašeho zdroje vezme až ${gpuA.tdp_w || 'N/A'} W (TDP), zatímco u karty ${gpuB.name} je toto maximum nastaveno na ${gpuB.tdp_w || 'N/A'} W. Karta ${effWinner.name} proto funguje mnohem efektivněji, což v praxi znamená nižší teploty v case, tišší chod ventilátorů a menší zátěž na váš napájecí zdroj.`}
               </p>
             </div>
           </div>
