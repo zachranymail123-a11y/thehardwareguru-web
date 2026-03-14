@@ -9,11 +9,11 @@ import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
 
 /**
- * GURU ROOT LAYOUT V4.9 (EXACT ADSENSE MATCH)
+ * GURU ROOT LAYOUT V5.1 (EXACT ADSENSE MATCH & E-E-A-T)
  * Cesta: src/app/layout.js
- * 🚀 CÍL: 100% čistý AdSense kód podle návodu Google.
- * 🛡️ FIX 1: Odstraněn AMP balast, který mohl kolidovat s Next.js.
- * 🛡️ FIX 2: Nahrazena Next.js <Script> komponenta za nativní HTML <script> pro okamžitou detekci.
+ * 🚀 CÍL: 100% čistý AdSense kód + Zviditelnění E-E-A-T stránek.
+ * 🛡️ FIX 1: Zachován čistý AdSense kód podle návodu Google (bez AMP).
+ * 🛡️ FIX 2: Do patičky přidány povinné E-E-A-T odkazy (O nás, Kontakt, Zásady, Podmínky) pro schválení Googlem.
  */
 
 export const metadata = {
@@ -117,11 +117,13 @@ export default async function RootLayout({ children, params }) {
             .guru-footer-sitemap { color: #a855f7 !important; font-weight: 950 !important; }
             .guru-counter-box { background: #000; border: 1px solid #a855f7; padding: 2px 10px; border-radius: 6px; color: #fff; margin: 0 5px; box-shadow: 0 0 15px rgba(168, 85, 247, 0.3); }
             .copyright { color: #4b5563; font-size: 12px; margin-top: 20px; font-weight: 600; }
+            .eeat-link { color: #6b7280; font-size: 11px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; transition: 0.2s; }
+            .eeat-link:hover { color: #d1d5db; }
           `}} />
           
           <VisitorCounter locale={locale} />
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginBottom: '30px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginBottom: '20px' }}>
             <a href={locale === 'en' ? "/en/clanky/jak-vyresit-bottleneck-navod" : "/clanky/jak-vyresit-bottleneck-navod"} className="guru-footer-link">
               {locale === 'en' ? 'How to fix bottleneck' : 'Jak vyřešit Bottleneck'}
             </a>
@@ -132,6 +134,25 @@ export default async function RootLayout({ children, params }) {
             <span style={{ color: '#333' }}>|</span>
             <a href={locale === 'en' ? "/en/sitemap" : "/sitemap"} className="guru-footer-link guru-footer-sitemap">
               {locale === 'en' ? 'COMPLETE NAVIGATION' : 'KOMPLETNÍ NAVIGACE'}
+            </a>
+          </div>
+
+          {/* 🚀 GURU: E-E-A-T ODKAZY PRO GOOGLE A UŽIVATELE */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginBottom: '30px' }}>
+            <a href={locale === 'en' ? "/en/about" : "/about"} className="eeat-link">
+              {locale === 'en' ? 'About Us' : 'O nás'}
+            </a>
+            <span style={{ color: '#333' }}>•</span>
+            <a href={locale === 'en' ? "/en/contact" : "/contact"} className="eeat-link">
+              {locale === 'en' ? 'Contact' : 'Kontakt'}
+            </a>
+            <span style={{ color: '#333' }}>•</span>
+            <a href={locale === 'en' ? "/en/privacy-policy" : "/privacy-policy"} className="eeat-link">
+              {locale === 'en' ? 'Privacy Policy' : 'Ochrana soukromí'}
+            </a>
+            <span style={{ color: '#333' }}>•</span>
+            <a href={locale === 'en' ? "/en/terms-of-service" : "/terms-of-service"} className="eeat-link">
+              {locale === 'en' ? 'Terms of Service' : 'Podmínky použití'}
             </a>
           </div>
 
