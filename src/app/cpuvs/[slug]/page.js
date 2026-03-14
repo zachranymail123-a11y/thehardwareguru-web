@@ -15,16 +15,17 @@ import {
   LayoutList,
   TrendingUp,
   ArrowRight,
-  ExternalLink
+  ExternalLink,
+  Info
 } from 'lucide-react';
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V68.2 (ULTIMATE GSC STANDARD)
+ * GURU CPU DUELS ENGINE - DETAIL V69.0 (SEMANTIC SEO EDITION)
  * Cesta: src/app/cpuvs/[slug]/page.js
- * 🛡️ FIX 1: Obohaceno Product Schema pro obě CPU o 'offers' a 'aggregateRating' pro GSC validitu.
- * 🛡️ FIX 2: Přidán x-default do hreflang clusteru a absolutní Canonical URL.
- * 🛡️ FIX 3: Plná podpora Next.js 15 (await params).
- * 🛡️ FIX 4: Revalidate nastaven na 3600s (1 hodina) pro optimální SEO.
+ * 🚀 CÍL: Sémantické klastrování - propojení benchmarků s relevantními články.
+ * 🛡️ FIX 1: getRelatedArticles vyhledává články s tématem procesorů v duelu.
+ * 🛡️ FIX 2: Ošetřen fallback na nejnovější články, pokud sémantická shoda neexistuje.
+ * 🛡️ FIX 3: Plná podpora Next.js 15 (await params) a GSC standardů.
  */
 
 export const runtime = "nodejs";
@@ -34,24 +35,20 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const baseUrl = "https://thehardwareguru.cz";
 
-// 🚀 GURU: Agresivní slugify engine
 const slugify = (text) => {
   return text ? text.toLowerCase().replace(/processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 };
 
 const normalizeName = (name = '') => name.replace(/Intel |AMD |Ryzen |Core /gi, '');
 
-// 🛡️ GURU ENGINE: Vyhledávání CPU z DB (ROBUSTNÍ PARSER)
+// 🛡️ GURU ENGINE: Vyhledávání CPU z DB
 const findCpu = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
-  
   const clean = slugPart.replace(/-/g, " ").replace(/ryzen|core|intel|amd|ultra/gi, "").trim();
   const chunks = clean.match(/\d+|[a-zA-Z]+/g);
   if (!chunks || chunks.length === 0) return null;
-  
   const searchPattern = `%${chunks.join('%')}%`;
-
   try {
       const res = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`, {
           headers, cache: 'force-cache'
@@ -62,7 +59,31 @@ const findCpu = async (slugPart) => {
   } catch (e) { return null; }
 };
 
-// 🛡️ GURU ENGINE: Načtení podobných duelů
+// 🛡️ GURU ENGINE: Sémantické články (Thematic Clustering)
+const getRelatedArticles = async (cpuA, cpuB) => {
+    if (!supabaseUrl) return [];
+    const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+    const nameA = normalizeName(cpuA || '');
+    const nameB = normalizeName(cpuB || '');
+
+    try {
+        // Zkusíme najít články, které v názvu obsahují jedno nebo druhé CPU
+        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.%${encodeURIComponent(nameA)}%,title.ilike.%${encodeURIComponent(nameB)}%)&order=created_at.desc&limit=3`, {
+            headers, cache: 'force-cache'
+        });
+        const data = await res.json();
+
+        // Fallback: Pokud žádné tématické články nejsou, vezmeme 3 nejnovější (Zlatý standard)
+        if (!data || data.length === 0) {
+            const resLatest = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&order=created_at.desc&limit=3`, {
+                headers, cache: 'force-cache'
+            });
+            return await resLatest.json();
+        }
+        return data;
+    } catch (e) { return []; }
+};
+
 const getSimilarDuels = async (cpuId, currentSlug) => {
     if (!supabaseUrl || !cpuId) return [];
     try {
@@ -75,7 +96,6 @@ const getSimilarDuels = async (cpuId, currentSlug) => {
     } catch (e) { return []; }
 };
 
-// 🚀 GURU ENGINE: Generování Duelu
 async function generateAndPersistDuel(slug) {
   if (!supabaseUrl) return null;
   try {
@@ -127,18 +147,14 @@ const getDuelData = cache(async (slug) => {
   } catch (e) { return null; }
 });
 
-// SEO Metadata
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const duel = await getDuelData(slug);
   if (!duel) return { title: '404 | The Hardware Guru' };
-
   const isEn = slug?.startsWith('en-');
   const { cpuA, cpuB } = duel;
-  
   const hasPerfData = cpuA?.performance_index > 0 && cpuB?.performance_index > 0;
   let perfWinner = null, perfLoser = null, perfDiff = 0;
-
   if (hasPerfData) {
       if (cpuA.performance_index > cpuB.performance_index) {
           perfWinner = cpuA; perfLoser = cpuB;
@@ -148,30 +164,19 @@ export async function generateMetadata({ params }) {
           perfDiff = Math.round(((cpuB.performance_index / cpuA.performance_index) - 1) * 100);
       }
   }
-
   const title = perfWinner 
     ? (isEn ? `${perfWinner.name} vs ${perfLoser.name} – ${perfDiff}% Faster` : `${perfWinner.name} vs ${perfLoser.name} – benchmark (+${perfDiff} % výkon)`)
     : (isEn ? `${cpuA.name} vs ${cpuB.name} – CPU Comparison` : `${cpuA.name} vs ${cpuB.name} – srovnání procesorů`);
-
   const canonicalUrl = `${baseUrl}/cpuvs/${duel.slug}`;
-
   return { 
     title: `${title} | The Hardware Guru`,
-    alternates: { 
-      canonical: canonicalUrl,
-      languages: {
-        "en": `${baseUrl}/en/cpuvs/${(duel.slug_en || `en-${duel.slug}`).replace(/^en-en-/,'en-')}`,
-        "cs": canonicalUrl,
-        "x-default": canonicalUrl
-      }
-    }
+    alternates: { canonical: canonicalUrl, languages: { "en": `${baseUrl}/en/cpuvs/${(duel.slug_en || `en-${duel.slug}`).replace(/^en-en-/,'en-')}`, "cs": canonicalUrl, "x-default": canonicalUrl } }
   };
 }
 
 export default async function CpuDuelDetail({ params }) {
   const { slug } = await params;
   const duel = await getDuelData(slug);
-  
   if (!duel) return <div style={{ color: '#ef4444', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>DUEL NENALEZEN</div>;
 
   const isEn = slug?.startsWith('en-');
@@ -208,80 +213,23 @@ export default async function CpuDuelDetail({ params }) {
 
   const upgradeUrl = perfWinner && perfLoser ? `/${isEn ? 'en/' : ''}cpu-upgrade/${slugify(perfLoser.name)}-to-${slugify(perfWinner.name)}` : null;
   const similar = await (cpuA?.id ? getSimilarDuels(cpuA.id, duel.slug) : Promise.resolve([]));
+  
+  // 🚀 GURU: Sémantické články (Wikipedia propojovací model)
+  const relatedArticles = await getRelatedArticles(cpuA.name, cpuB.name);
 
   const safeSlugA = cpuA.slug || slugify(cpuA.name);
   const safeSlugB = cpuB.slug || slugify(cpuB.name);
-
-  // 🚀 ZLATÁ GSC SEO SCHÉMATA
-  const productSchemaA = {
-    "@context": "https://schema.org", "@type": "Product", "name": normalizeName(cpuA.name), "image": `${baseUrl}/logo.png`,
-    "brand": { "@type": "Brand", "name": cpuA.vendor || "Hardware" }, "category": "Processor", "sku": safeSlugA,
-    "url": `${baseUrl}/${isEn ? 'en/' : ''}cpu-performance/${safeSlugA}`,
-    "aggregateRating": { "@type": "AggregateRating", "ratingValue": 4.8, "reviewCount": 110 },
-    "offers": { "@type": "Offer", "priceCurrency": "USD", "price": cpuA.release_price_usd || 499, "availability": "https://schema.org/InStock", "url": `${baseUrl}/${isEn ? 'en/' : ''}cpu-performance/${safeSlugA}` }
-  };
-
-  const productSchemaB = {
-    "@context": "https://schema.org", "@type": "Product", "name": normalizeName(cpuB.name), "image": `${baseUrl}/logo.png`,
-    "brand": { "@type": "Brand", "name": cpuB.vendor || "Hardware" }, "category": "Processor", "sku": safeSlugB,
-    "url": `${baseUrl}/${isEn ? 'en/' : ''}cpu-performance/${safeSlugB}`,
-    "aggregateRating": { "@type": "AggregateRating", "ratingValue": 4.7, "reviewCount": 95 },
-    "offers": { "@type": "Offer", "priceCurrency": "USD", "price": cpuB.release_price_usd || 399, "availability": "https://schema.org/InStock", "url": `${baseUrl}/${isEn ? 'en/' : ''}cpu-performance/${safeSlugB}` }
-  };
-
-  const itemListSchema = {
-    "@context": "https://schema.org", "@type": "ItemList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "item": { "@id": productSchemaA.url, "name": productSchemaA.name } },
-      { "@type": "ListItem", "position": 2, "item": { "@id": productSchemaB.url, "name": productSchemaB.name } }
-    ]
-  };
-
-  const breadcrumbSchema = {
-    "@context": "https://schema.org", "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": isEn ? "CPU VS" : "CPU Duely", "item": `${baseUrl}/${isEn ? 'en/' : ''}cpuvs` },
-      { "@type": "ListItem", "position": 2, "name": `${normalizeName(cpuA.name)} vs ${normalizeName(cpuB.name)}`, "item": `${baseUrl}/${isEn ? 'en/' : ''}cpuvs/${duel.slug}` }
-    ]
-  };
-
-  const faqSchema = {
-    "@context": "https://schema.org", "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question", "name": isEn ? `Is ${cpuA.name} better than ${cpuB.name}?` : `Je procesor ${cpuA.name} lepší než ${cpuB.name}?`,
-        "acceptedAnswer": { "@type": "Answer", "text": perfWinner ? (isEn ? `Yes, ${perfWinner.name} is about ${perfDiff}% faster in gaming.` : `Ano, ${perfWinner.name} je ve hrách přibližně o ${perfDiff} % výkonnější.`) : "Both CPUs offer very similar performance." }
-      }
-    ]
-  };
-
-  const articleSchema = {
-    "@context": "https://schema.org", "@type": "TechArticle", "headline": isEn ? `${cpuA.name} vs ${cpuB.name} performance comparison` : `Srovnání výkonu ${cpuA.name} vs ${cpuB.name}`,
-    "description": perfWinner ? (isEn ? `${perfWinner.name} is about ${perfDiff}% faster.` : `${perfWinner.name} je o ${perfDiff} % výkonnější.`) : "Direct CPU comparison.",
-    "author": { "@type": "Organization", "name": "The Hardware Guru" }
-  };
 
   const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(productSchemaA) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(productSchemaB) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(articleSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(itemListSchema) }} />
-
       <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
         <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <a href={backLink} className="guru-back-btn">
-            <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
-          </a>
-          <a href={isEn ? '/en/cpuvs/ranking' : '/cpuvs/ranking'} className="guru-ranking-link">
-            <TrendingUp size={16} /> {isEn ? 'CPU TIER LIST' : 'ŽEBŘÍČEK PROCESORŮ'}
-          </a>
+          <a href={backLink} className="guru-back-btn"><ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}</a>
+          <a href={isEn ? '/en/cpuvs/ranking' : '/cpuvs/ranking'} className="guru-ranking-link"><TrendingUp size={16} /> {isEn ? 'CPU TIER LIST' : 'ŽEBŘÍČEK PROCESORŮ'}</a>
         </div>
 
         <header style={{ marginBottom: '50px', textAlign: 'center' }}>
@@ -290,11 +238,9 @@ export default async function CpuDuelDetail({ params }) {
             <span style={{ opacity: 0.3 }}>|</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={16} /> {formattedDate}</span>
           </div>
-          
           <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', color: '#fff', lineHeight: '1.1', margin: '0', textShadow: '0 0 30px rgba(0,0,0,0.8)' }}>
             {cpuA.name} <span style={{ color: '#ff0055' }}>vs</span> {cpuB.name}
           </h1>
-
           {perfWinner && <div className="guru-verdict">{perfWinner.name} {isEn ? 'is about' : 'je přibližně'} <strong>{perfDiff}%</strong> {isEn ? 'faster in games' : 'výkonnější ve hrách'}</div>}
           {upgradeUrl && <a href={upgradeUrl} className="guru-upgrade-pill"><Zap size={14} fill="currentColor" /> {isEn ? `Upgrade Analysis` : `Analýza upgradu`} <ArrowRight size={14} /></a>}
         </header>
@@ -329,6 +275,29 @@ export default async function CpuDuelDetail({ params }) {
           </div>
         </section>
 
+        {/* 🚀 GURU: SÉMANTICKÉ PROPOJENÍ (SOUVISEJÍCÍ ČLÁNKY) */}
+        {relatedArticles.length > 0 && (
+            <section style={{ marginBottom: '60px' }}>
+                <h2 className="section-h2" style={{ borderLeftColor: '#a855f7' }}>
+                    <Info size={28} color="#a855f7" style={{ display: 'inline', marginRight: '10px' }} /> 
+                    {isEn ? 'GURU ADVICE & NEWS' : 'GURU RÁDCE A NOVINKY'}
+                </h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+                    {relatedArticles.map((art) => (
+                        <a key={art.slug} href={isEn ? `/en/clanky/${art.slug_en || art.slug}` : `/clanky/${art.slug}`} className="related-card-style">
+                            <div className="related-img-box">
+                                <img src={art.image_url || 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000'} alt={art.title} loading="lazy" />
+                            </div>
+                            <div className="related-content-box">
+                                <span className="related-tag">{isEn ? 'TECH NEWS' : 'HW NOVINKA'}</span>
+                                <h3 className="related-title-text">{isEn && art.title_en ? art.title_en : art.title}</h3>
+                            </div>
+                        </a>
+                    ))}
+                </div>
+            </section>
+        )}
+
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: '#66fcf1' }}><Activity size={36} /> {isEn ? 'DEEP DIVE ANALYSIS' : 'DETAILNÍ ANALÝZA'}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px' }}>
@@ -348,6 +317,17 @@ export default async function CpuDuelDetail({ params }) {
           </div>
         </section>
 
+        {similar.length > 0 && (
+          <section style={{ marginBottom: '60px' }}>
+            <h2 className="section-h2"><LayoutList size={28} /> {isEn ? `COMPARE ${normalizeName(cpuA?.name || "")} WITH` : `SROVNEJTE ${normalizeName(cpuA?.name || "")} S...`}</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '15px' }}>
+              {similar.map((s, i) => (
+                <a key={i} href={isEn ? `/en/cpuvs/${s.slug_en ?? `en-${s.slug}`}` : `/cpuvs/${s.slug}`} className="similar-link-card"><Swords size={16} color="#66fcf1" /> {isEn ? (s.title_en ?? s.title_cs) : s.title_cs}</a>
+              ))}
+            </div>
+          </section>
+        )}
+
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%', marginTop: '50px' }}>
           <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn" style={{ flex: '1 1 280px' }}>
              <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
@@ -360,6 +340,7 @@ export default async function CpuDuelDetail({ params }) {
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
+        .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); }
         .guru-ranking-link { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
         .guru-verdict { margin-top: 25px; color: #66fcf1; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 10px 25px; background: rgba(102, 252, 241, 0.05); border: 1px solid rgba(102, 252, 241, 0.2); border-radius: 50px; display: inline-block; }
         .guru-upgrade-pill { display: inline-flex; align-items: center; gap: 10px; padding: 10px 25px; background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; margin-top: 25px; transition: 0.3s; }
@@ -374,6 +355,14 @@ export default async function CpuDuelDetail({ params }) {
         .spec-row-style { display: flex; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .table-label { width: 180px; text-align: center; font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; }
         
+        .related-card-style { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; text-decoration: none; transition: 0.3s; }
+        .related-card-style:hover { transform: translateY(-5px); border-color: #a855f7; }
+        .related-img-box { height: 160px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .related-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .related-content-box { padding: 20px; }
+        .related-tag { color: #a855f7; font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 10px; }
+        .related-title-text { color: #fff; font-size: 1.1rem; font-weight: 950; margin: 0; line-height: 1.3; }
+
         .fps-matrix-card { background: rgba(15,17,21,0.9); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
         .matrix-gpu-title { font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;}
         .matrix-links { display: grid; grid-template-columns: 1fr; gap: 10px; }
@@ -382,7 +371,7 @@ export default async function CpuDuelDetail({ params }) {
         
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
-        @media (max-width: 768px) { .guru-grid-ring { grid-template-columns: 1fr !important; } .vs-badge { margin: 10px auto; rotate: 0deg; } }
+        @media (max-width: 768px) { .guru-grid-ring { grid-template-columns: 1fr !important; } .vs-badge { margin: 10px auto; rotate: 0deg; } .spec-row-style { flex-direction: column !important; gap: 10px; padding: 15px 10px !important; } }
       `}} />
     </div>
   );
