@@ -2,6 +2,14 @@ import React from 'react';
 import { ShieldCheck, Info, Monitor, Cpu, Heart, Flame, Youtube, MessageSquare, Activity } from 'lucide-react';
 import Link from 'next/link';
 
+/**
+ * GURU ABOUT ENGINE V2.0 (GOLDEN RICH RESULTS FIX)
+ * Cesta: src/app/about/page.js
+ * 🚀 CÍL: Maximální E-E-A-T hodnocení pro Google (Expertise, Authoritativeness, Trust).
+ * 🛡️ FIX 1: Přidáno AboutPage a Person JSON-LD schéma pro jasnou identifikaci autora.
+ * 🛡️ FIX 2: Absolutní kanonické URL a x-default v hreflang clusteru.
+ */
+
 export const runtime = "nodejs";
 export const revalidate = 86400;
 
@@ -14,15 +22,17 @@ export async function generateMetadata(props) {
     ? 'Learn more about The Hardware Guru. 20 years of hardware experience, testing methodologies, and our mission to eradicate gaming lag.' 
     : 'Zjistěte více o The Hardware Guru. 20 let zkušeností s hardwarem, metodika testování a naše mise vymýtit lagy ve hrách.';
 
+  const canonicalUrl = `${baseUrl}/about`;
+
   return {
-    title,
+    title: `${title}`,
     description: desc,
     alternates: {
-      canonical: `${baseUrl}/about`,
+      canonical: canonicalUrl,
       languages: {
         'en': `${baseUrl}/en/about`,
-        'cs': `${baseUrl}/about`,
-        'x-default': `${baseUrl}/about`
+        'cs': canonicalUrl,
+        'x-default': canonicalUrl
       }
     }
   };
@@ -31,6 +41,12 @@ export async function generateMetadata(props) {
 export default function AboutPage(props) {
   const isEn = props?.isEn === true;
 
+  const title = isEn ? 'About Us | The Hardware Guru' : 'O nás | The Hardware Guru';
+  const desc = isEn 
+    ? 'Learn more about The Hardware Guru. 20 years of hardware experience, testing methodologies, and our mission to eradicate gaming lag.' 
+    : 'Zjistěte více o The Hardware Guru. 20 let zkušeností s hardwarem, metodika testování a naše mise vymýtit lagy ve hrách.';
+
+  // 🚀 ZLATÁ GSC SEO SCHÉMATA (GOLDEN RICH RESULTS FIX)
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -40,11 +56,33 @@ export default function AboutPage(props) {
     ]
   };
 
+  const aboutPageSchema = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "name": title,
+    "description": desc,
+    "url": `${baseUrl}${isEn ? '/en' : ''}/about`,
+    "mainEntity": {
+      "@type": "Person",
+      "name": "The Hardware Guru",
+      "jobTitle": "Hardware Architect & Reviewer",
+      "description": "Hardware expert, PC builder, and gaming performance optimizer with 20 years of experience.",
+      "sameAs": [
+        "https://kick.com/thehardwareguru",
+        "https://youtube.com/@TheHardwareGuru_Czech",
+        "https://discord.com/invite/n7xThr8"
+      ]
+    }
+  };
+
   const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+      
+      {/* JSON-LD INJECTIONS */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(aboutPageSchema) }} />
 
       <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <header style={{ textAlign: 'center', marginBottom: '60px' }}>
