@@ -1,9 +1,7 @@
 /**
- * GURU ROBOTS ENGINE V3.0 (SEO CRITICAL FIX)
+ * GURU ROBOTS ENGINE V3.3 (SEZNAM SYNTAX FIX)
  * Cesta: src/app/robots.txt/route.js
- * 🚀 CÍL: Perfektní indexace a vizibilita pro Googlebota.
- * 🛡️ FIX: Odstraněno blokování /_next/, /static/ a /*?*. Googlebot nyní může správně
- * renderovat CSS a JS, což je naprosto kritické pro SEO hodnocení a Core Web Vitals.
+ * 🛡️ FIX: Nevalidní tag 'Feed:' nahrazen standardním 'Sitemap:', aby zmizela chyba v Seznam Webmaster.
  */
 
 export async function GET() {
@@ -11,17 +9,17 @@ export async function GET() {
 User-agent: *
 Allow: /
 
-# Blokování administrace a interních API (aby je Google neindexoval)
+# Administrace a API
 Disallow: /api/
 Disallow: /admin/
 
-# Sitemapy a RSS (Zlatý standard pro GSC a Seznam)
+# Sitemapy a RSS feedy (Vše přes direktivu Sitemap:)
 Sitemap: https://thehardwareguru.cz/guru-sitemap.xml
+Sitemap: https://thehardwareguru.cz/bing-sitemap.xml
 Sitemap: https://thehardwareguru.cz/rss.xml
 Sitemap: https://thehardwareguru.cz/rss-comparisons.xml
 
-# --- AI & SCRAPER PROTECTION ---
-# Zákaz pro AI boty, kteří těží data bez návštěvnosti
+# AI protection
 User-agent: GPTBot
 Disallow: /
 
@@ -37,7 +35,7 @@ Disallow: /
 User-agent: PerplexityBot
 Disallow: /
 
-# Zákaz pro otravné SEO nástroje, které zbytečně zatěžují server
+# SEO crawlers
 User-agent: AhrefsBot
 Disallow: /
 
