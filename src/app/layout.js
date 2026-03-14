@@ -9,12 +9,11 @@ import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
 
 /**
- * GURU ROOT LAYOUT V4.8 (GOLDEN RICH & ADSENSE DOMINATION)
+ * GURU ROOT LAYOUT V4.9 (EXACT ADSENSE MATCH)
  * Cesta: src/app/layout.js
- * 🚀 CÍL: Oprava "Nebyly zjištěny žádné položky" v GSC a aktivace AdSense.
- * 🛡️ FIX 1: Globální schémata Organization a WebSite vložena do hlavičky (Rich Results Fix).
- * 🛡️ ADS: Implementován AMP i standardní AdSense skript (ca-pub-5468223287024993).
- * 🛡️ SEO: Odstraněny Duplicity, zachovány RSS a Analytics.
+ * 🚀 CÍL: 100% čistý AdSense kód podle návodu Google.
+ * 🛡️ FIX 1: Odstraněn AMP balast, který mohl kolidovat s Next.js.
+ * 🛡️ FIX 2: Nahrazena Next.js <Script> komponenta za nativní HTML <script> pro okamžitou detekci.
  */
 
 export const metadata = {
@@ -77,25 +76,16 @@ export default async function RootLayout({ children, params }) {
   return (
     <html lang={locale}>
       <head>
-        {/* 🚀 GOOGLE DETECTION FIX: Schémata vkládáme přímo do head pro 100% detekci */}
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(websiteSchema) }} />
-
-        {/* 🚀 GOOGLE ADSENSE GLOBAL TAG (Standardní Auto Ads) */}
-        <Script 
+        {/* 🚀 GOOGLE ADSENSE GLOBAL TAG (Přesně podle tvého screenshotu) */}
+        <script 
           async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
+        ></script>
 
-        {/* 🚀 AMP ADSENSE SCRIPT */}
-        <Script 
-          async 
-          custom-element="amp-auto-ads"
-          src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"
-          strategy="afterInteractive"
-        />
+        {/* 🚀 GOOGLE DETECTION FIX */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(websiteSchema) }} />
 
         {/* 🚀 GURU RSS FEEDY */}
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Novinky" href="https://thehardwareguru.cz/rss.xml" />
@@ -110,9 +100,6 @@ export default async function RootLayout({ children, params }) {
 
       <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         
-        {/* 🚀 AMP AUTO ADS COMPONENT */}
-        <amp-auto-ads type="adsense" data-ad-client="ca-pub-5468223287024993"></amp-auto-ads>
-
         <div id="guru-env-bridge" style={{ display: 'none' }} data-url={envVars.NEXT_PUBLIC_SUPABASE_URL} data-key={envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY} />
         
         <Navbar />
