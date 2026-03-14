@@ -1,51 +1,105 @@
-"use client";
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Book, ChevronRight, Loader2, Search } from 'lucide-react';
+import { Book, ChevronRight, Search, Heart, Flame, ShieldCheck } from 'lucide-react';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+/**
+ * GURU GLOSSARY ENGINE V2.0 (GOLDEN RICH RESULTS FIX)
+ * Cesta: src/app/slovnik/page.js
+ * 🚀 CÍL: 100% zelená v GSC a masivní indexace hardwarových pojmů.
+ * 🛡️ FIX 1: Přepsáno na Server Component (SSR) pro bleskovou indexaci všech definic.
+ * 🛡️ FIX 2: Implementován Golden Rich standard - ItemList a BreadcrumbList JSON-LD.
+ * 🛡️ FIX 3: Vyhledávání přesunuto do URL parametrů (Server-side filtering).
+ */
 
-export default function SlovnikPage() {
-  const [pojmy, setPojmy] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  const pathname = usePathname() || '';
-  const isEn = pathname.startsWith('/en');
+export const runtime = "nodejs";
+export const revalidate = 3600; 
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data, error } = await supabase
-          .from('slovnik')
-          .select('*')
-          .order('title', { ascending: true });
-        
-        if (!error && data) setPojmy(data);
-        document.title = isEn ? 'Hardware Glossary | Guru Base' : 'Guru Hardware Slovník | Databáze';
-      } catch (err) {
-        console.error("GURU DB FAIL:", err);
-      } finally {
-        setLoading(false);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const baseUrl = "https://thehardwareguru.cz";
+
+// 🚀 GURU SEO: Dynamické Meta Tagy pro archiv slovníku
+export async function generateMetadata(props) {
+  const isEn = props?.isEn === true;
+  const title = isEn ? 'Hardware Glossary & Tech Terms | Guru Base' : 'Hardware Slovník a Technické Pojmy | Guru Databáze';
+  const desc = isEn 
+    ? 'Comprehensive dictionary of hardware terms, PC specifications and gaming technology explained.' 
+    : 'Kompletní slovník hardwarových pojmů, PC specifikací a herních technologií. Rozluštěte technický žargon s Guruem.';
+
+  return {
+    title: `${title} | The Hardware Guru`,
+    description: desc,
+    alternates: {
+      canonical: `${baseUrl}/slovnik`,
+      languages: {
+        'en': `${baseUrl}/en/slovnik`,
+        'cs': `${baseUrl}/slovnik`,
+        'x-default': `${baseUrl}/slovnik`
       }
     }
-    fetchData();
-  }, [isEn]);
+  };
+}
 
-  // GURU FILTER: Hledáme v CZ i EN názvech
-  const filteredItems = pojmy.filter(item => {
+export default async function SlovnikPage(props) {
+  // Ošetření searchParams a props pro Next.js 15
+  const searchParams = await props.searchParams;
+  const query = searchParams?.q || '';
+  const isEn = props?.isEn === true;
+  
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  // 1. GURU FETCH: Získání všech pojmů přímo na serveru
+  let dbQuery = supabase
+    .from('slovnik')
+    .select('*')
+    .order('title', { ascending: true });
+
+  const { data: pojmy, error } = await dbQuery;
+
+  if (error) {
+    console.error("GURU GLOSSARY FETCH FAIL:", error);
+  }
+
+  const allItems = pojmy || [];
+
+  // 2. GURU SERVER-SIDE FILTER: Pokud uživatel hledá
+  const filteredItems = allItems.filter(item => {
     const title = (isEn && item.title_en ? item.title_en : item.title).toLowerCase();
-    return title.includes(searchQuery.toLowerCase());
+    return title.includes(query.toLowerCase());
   });
+
+  // 🚀 ZLATÁ GSC SEO SCHÉMATA (ItemList pro seznam definic)
+  const itemListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": isEn ? "Hardware Glossary" : "Hardwarový slovník",
+    "description": isEn ? "Collection of technical terms and definitions." : "Sbírka technických pojmů a jejich definic.",
+    "itemListElement": filteredItems.slice(0, 50).map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "url": `${baseUrl}${isEn ? '/en' : ''}/slovnik/${isEn && item.slug_en ? item.slug_en : item.slug}`
+    }))
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Guru", "item": baseUrl },
+      { "@type": "ListItem", "position": 2, "name": isEn ? "Glossary" : "Slovník", "item": `${baseUrl}${isEn ? '/en' : ''}/slovnik` }
+    ]
+  };
+
+  const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
   return (
     <div style={pageWrapper}>
-      <style>{`
+      {/* JSON-LD INJECTIONS */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(itemListSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbSchema) }} />
+
+      <style dangerouslySetInnerHTML={{ __html: `
         .term-card { 
             background: rgba(10, 11, 13, 0.9); 
             backdrop-filter: blur(15px);
@@ -97,7 +151,11 @@ export default function SlovnikPage() {
             letter-spacing: 1px;
         }
         .social-btn:hover { transform: scale(1.05); filter: brightness(1.2); }
-      `}</style>
+        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
+        .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
+        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
+        .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
+      `}} />
 
       {/* --- HLAVNÍ OBSAH --- */}
       <main style={{ maxWidth: '1300px', margin: '60px auto', padding: '0 20px', width: '100%', flex: '1 0 auto' }}>
@@ -111,19 +169,22 @@ export default function SlovnikPage() {
             </p>
         </header>
 
-        {/* --- VYHLEDÁVÁNÍ (GURU UX IMPROVEMENT) --- */}
-        <div className="search-container">
+        {/* --- VYHLEDÁVÁNÍ (GURU UX IMPROVEMENT přes Form) --- */}
+        <form action={isEn ? "/en/slovnik" : "/slovnik"} method="GET" className="search-container">
           <Search size={24} color="#a855f7" style={{ position: 'absolute', left: '22px', top: '50%', transform: 'translateY(-50%)' }} />
           <input 
+            name="q"
             type="text" 
+            defaultValue={query}
             placeholder={isEn ? "Decode technical terms..." : "Hledat v databázi pojmů..."} 
             className="search-input"
-            onChange={(e) => setSearchQuery(e.target.value)}
           />
-        </div>
+        </form>
 
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '100px' }}><Loader2 className="animate-spin" size={64} color="#a855f7" /></div>
+        {filteredItems.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '100px', color: '#4b5563', fontWeight: 'bold' }}>
+            {isEn ? 'NO TERMS MATCH YOUR SEARCH' : 'HLEDANÝ POJEM NENALEZEN'}
+          </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '30px' }}>
             {filteredItems.map((pojem) => {
@@ -147,9 +208,24 @@ export default function SlovnikPage() {
             })}
           </div>
         )}
+
+        {/* 🚀 GURU GLOBÁLNÍ CTA TLAČÍTKA (Golden standard) */}
+        <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
+          <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
+            {isEn ? "Want to expand your hardware knowledge? Support the Guru project." : "Chceš dál rozšiřovat své HW znalosti? Podpoř projekt Guru."}
+          </h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
+            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn" style={{ flex: '1 1 280px' }}>
+              <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
+            </a>
+            <Link href={isEn ? "/en/support" : "/support"} className="guru-support-btn" style={{ flex: '1 1 280px' }}>
+              <Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
+            </Link>
+          </div>
+        </div>
       </main>
 
-      {/* --- GURU FOOTER (RESTORED & MULTI-LANG) --- */}
+      {/* --- GURU FOOTER --- */}
       <footer style={footerStyle}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <h2 style={{ color: '#a855f7', marginBottom: '30px', textTransform: 'uppercase', fontWeight: '950', fontSize: '36px', letterSpacing: '-1px' }}>
