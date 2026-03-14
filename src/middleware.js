@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server';
 
 /**
- * 🚀 GURU MASTER MIDDLEWARE 2.5 - ANTI-CLOAKING & SAFE SEO ROUTING
+ * 🚀 GURU MASTER MIDDLEWARE 2.7 - GOOGLE & BING BOT FIRST (ZLATÉ PRAVIDLO)
  * Cesta: src/middleware.js
- * 🛡️ FIX 1: Odstraněna detekce botů (isBot) - Bing to oprávněně bral jako "Cloaking" (Maskování).
- * 🛡️ FIX 2: Zrušeno vynucené IP přesměrování pro hluboké odkazy. Pokud Bing z USA 
- * explicitně žádá CZ odkaz, dostane CZ obsah. Přesměruje se POUZE hlavní doména (root).
+ * 🛡️ FIX 1: Návrat Bot Bypassu. Boti (US IP) nesmí dostat redirect ani na rootu! 
+ * Jinak Bing Live Test hlásí cloaking a sitemapa se neindexuje.
+ * 🛡️ FIX 2: Geo-IP redirect pro reálné lidi na / pouze na rootu (SEO Safe).
+ * 🛡️ FIX 3: x-url hlavička pro dynamické hreflang tagy v layoutu.
  */
 export function middleware(request) {
   const { pathname, search, origin } = request.nextUrl;
+  const userAgent = request.headers.get('user-agent') || '';
   
-  // 🚀 GURU SEO: Sestavení absolutní URL a příprava hlaviček pro layout.js (hreflang)
+  // 🚀 GURU SEO: Sestavení absolutní URL pro layout.js (hreflang)
   const absoluteUrl = `${origin}${pathname}${search}`;
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-url', absoluteUrl);
@@ -19,7 +21,7 @@ export function middleware(request) {
     request: { headers: requestHeaders },
   });
 
-  // 🛡️ GURU SHIELD: Absolutní priorita pro API a systémové soubory
+  // 🛡️ GURU SHIELD: Absolutní priorita pro systémové soubory a API
   if (
     pathname.startsWith('/api') || 
     pathname.startsWith('/_next') || 
@@ -30,33 +32,33 @@ export function middleware(request) {
     return nextWithHeaders();
   }
 
-  // 🌍 GEO-IP ENGINE
+  // 🤖 ZLATÉ PRAVIDLO: Crawler z USA musí vidět CZ verzi bez redirectu!
+  // To vyřeší chybu "Blocked" v Bing Webmaster Tools.
+  const isBot = /bot|crawler|spider|crawling|googlebot|bingbot|seznam|yandex|baiduspider|facebookexternalhit|twitterbot/i.test(userAgent);
+  if (isBot) {
+      return nextWithHeaders(); 
+  }
+
+  // 🌍 GEO-IP ENGINE (Pouze pro reálné lidi)
   const country = request.headers.get('x-vercel-ip-country') || 'CZ';
   const hasLocalIP = ['CZ', 'SK'].includes(country.toUpperCase());
   const isForeigner = !hasLocalIP;
 
-  const sections = [
-    'slovnik', 'clanky', 'tipy', 'tweaky', 'rady', 'mikrorecenze', 'deals', 'support',
-    'gpu', 'cpu', 'gpuvs', 'cpuvs', 'gpu-fps', 'cpu-fps', 
-    'gpu-performance', 'cpu-performance', 'gpu-recommend', 'cpu-recommend',
-    'gpu-upgrade', 'cpu-upgrade', 'gpu-index', 'cpu-index', 'bottleneck'
-  ];
-
   // 1. AUTO-REDIRECT PRO CIZINCE POUZE NA ROOTU (/) -> (/en)
-  // Toto je 100% SEO-safe postup. Pouze domovskou stránku můžeme přesměrovat podle lokace.
+  // Toto je jediný povolený způsob IP redirectu dle Google/Bing Guidelines.
   if (pathname === '/' && isForeigner) {
     return NextResponse.redirect(new URL('/en', request.url));
   }
 
-  // 2. KOREKCE NESMYSLNÝCH URL (např. /clanky/en -> /en/clanky)
+  // 2. KOREKCE URL (např. /clanky/en -> /en/clanky)
+  const sections = ['slovnik', 'clanky', 'tipy', 'tweaky', 'rady', 'mikrorecenze', 'deals', 'support', 'gpu', 'cpu', 'gpuvs', 'cpuvs'];
   for (const section of sections) {
     if (pathname.endsWith(`/${section}/en`)) {
       return NextResponse.redirect(new URL(`/en/${section}`, request.url));
     }
   }
 
-  // 🏁 GURU FINAL: Všechny ostatní požadavky (hluboké odkazy) propustíme bez zásahu. 
-  // Pokud americký bot žádá CZ URL, dostane ji. To vyřeší blokaci Bingu!
+  // 🏁 GURU FINAL: Vše ostatní (včetně všech sitemap a hlubokých linků) propustíme čistě.
   return nextWithHeaders();
 }
 
