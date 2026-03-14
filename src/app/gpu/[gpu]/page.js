@@ -1,16 +1,16 @@
 import React from 'react';
 import { 
   ChevronLeft, Monitor, Database, Gamepad2, ArrowRight, ExternalLink, 
-  Activity, CheckCircle2, Swords, LayoutList, ShoppingCart, Flame, Heart
+  Activity, CheckCircle2, Swords, LayoutList, ShoppingCart, Flame, Heart, Info
 } from 'lucide-react';
 
 /**
- * GURU GPU ENGINE - DETAIL GRAFIKY V1.8 (NEXT.JS 15 + GSC STANDARD)
+ * GURU GPU ENGINE - DETAIL GRAFIKY V1.9 (SEMANTIC SEO EDITION)
  * Cesta: src/app/gpu/[gpu]/page.js
- * 🛡️ FIX 1: Striktní 'await props.params' pro Next.js 15 (dle tvého snippetu).
- * 🛡️ FIX 2: Absolutní Canonical URL a x-default hreflang (Zlatý GSC Standard).
- * 🛡️ FIX 3: Obohaceno Product schéma (offers, aggregateRating) pro indexaci.
- * 🛡️ FIX 4: Sjednocená doména bez www (thehardwareguru.cz).
+ * 🚀 CÍL: Sémantické klastrování - propojení profilu karty s relevantními články z DB.
+ * 🛡️ FIX 1: getRelatedArticles vyhledává články o konkrétní GPU.
+ * 🛡️ FIX 2: Implementován fallback na nejnovější HW novinky, pokud pro danou kartu není článek.
+ * 🛡️ FIX 3: Striktní Next.js 15 compliance (await props.params).
  */
 
 export const runtime = "nodejs";
@@ -23,8 +23,32 @@ const baseUrl = "https://thehardwareguru.cz";
 const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon |Intel /gi, '');
 const slugify = (text) => text ? text.toLowerCase().replace(/graphics|gpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
+// 🛡️ GURU ENGINE: Sémantické články (Thematic Clustering)
+const getRelatedArticles = async (gpuName) => {
+    if (!supabaseUrl) return [];
+    const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+    const name = normalizeName(gpuName || '');
+
+    try {
+        // Hledáme články obsahující název karty v češtině (výchozí)
+        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&title=ilike.%${encodeURIComponent(name)}%&order=created_at.desc&limit=3`, {
+            headers, cache: 'force-cache'
+        });
+        const data = await res.json();
+
+        // Fallback: Pokud o této kartě není specifický článek, vezmeme 3 nejnovější trháky z archivu
+        if (!data || data.length === 0) {
+            const resLatest = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&order=created_at.desc&limit=3`, {
+                headers, cache: 'force-cache'
+            });
+            return await resLatest.json();
+        }
+        return data;
+    } catch (e) { return []; }
+};
+
 const findGpuBySlug = async (gpuSlug) => {
-  if (!supabaseUrl || !gpuSlug) return null;
+  if (!supabaseUrl || !gpuSlug || gpuSlug === 'undefined') return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
   try {
       const res1 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${gpuSlug}&limit=1`, { headers, cache: 'force-cache' });
@@ -60,11 +84,7 @@ export async function generateMetadata(props) {
       : `${gpu.name} Specifikace a Výkon | The Hardware Guru`,
     alternates: {
       canonical: canonicalUrl,
-      languages: {
-        'en': `${baseUrl}/en/gpu/${safeSlug}`,
-        'cs': canonicalUrl,
-        'x-default': canonicalUrl
-      }
+      languages: { 'en': `${baseUrl}/en/gpu/${safeSlug}`, 'cs': canonicalUrl, 'x-default': canonicalUrl }
     }
   };
 }
@@ -81,32 +101,14 @@ export default async function GpuDetailPage(props) {
   const vendorColor = (gpu.vendor || '').toUpperCase() === 'NVIDIA' ? '#76b900' : ((gpu.vendor || '').toUpperCase() === 'AMD' ? '#ed1c24' : '#66fcf1');
   const safeSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
 
-  const productSchema = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "name": normalizeName(gpu.name),
-    "image": `${baseUrl}/logo.png`,
-    "description": isEn ? `Performance analysis and specs for ${normalizeName(gpu.name)}` : `Analýza výkonu a parametry pro ${normalizeName(gpu.name)}`,
-    "brand": { "@type": "Brand", "name": gpu.vendor || "Hardware" },
-    "sku": safeSlug,
-    "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu/${safeSlug}`,
-    "aggregateRating": { "@type": "AggregateRating", "ratingValue": 4.8, "reviewCount": 124 },
-    "offers": { 
-        "@type": "Offer", 
-        "priceCurrency": "USD", 
-        "price": gpu.release_price_usd || 499, 
-        "availability": "https://schema.org/InStock",
-        "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu/${safeSlug}`
-    }
-  };
+  // 🚀 GURU: Načtení sémantických článků pro tuto grafickou kartu
+  const relatedArticles = await getRelatedArticles(gpu.name);
 
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": isEn ? "GPU Database" : "Katalog GPU", "item": `${baseUrl}/${isEn ? 'en/' : ''}gpuvs/ranking` },
-      { "@type": "ListItem", "position": 2, "name": normalizeName(gpu.name), "item": `${baseUrl}/${isEn ? 'en/' : ''}gpu/${safeSlug}` }
-    ]
+  const productSchema = {
+    "@context": "https://schema.org", "@type": "Product", "name": normalizeName(gpu.name), "image": `${baseUrl}/logo.png`,
+    "brand": { "@type": "Brand", "name": gpu.vendor || "Hardware" }, "sku": safeSlug, "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu/${safeSlug}`,
+    "aggregateRating": { "@type": "AggregateRating", "ratingValue": 4.8, "reviewCount": 124 },
+    "offers": { "@type": "Offer", "priceCurrency": "USD", "price": gpu.release_price_usd || 499, "availability": "https://schema.org/InStock", "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu/${safeSlug}` }
   };
 
   const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
@@ -114,12 +116,11 @@ export default async function GpuDetailPage(props) {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(productSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbSchema) }} />
 
       <main style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? "/en/gpuvs/ranking" : "/gpuvs/ranking"} className="guru-back-btn">
-            <ChevronLeft size={16} /> {isEn ? 'BACK TO GPU RANKING' : 'ZPĚT DO ŽEBŘÍČKU GPU'}
+            <ChevronLeft size={16} /> {isEn ? 'BACK TO RANKING' : 'ZPĚT DO ŽEBŘÍČKU'}
           </a>
         </div>
 
@@ -131,9 +132,6 @@ export default async function GpuDetailPage(props) {
             <span style={{ color: '#d1d5db' }}>{gpu.vendor}</span> <br/>
             <span style={{ color: vendorColor, textShadow: `0 0 30px ${vendorColor}80` }}>{normalizeName(gpu.name)}</span>
           </h1>
-          <div style={{ marginTop: '20px', color: '#9ca3af', fontSize: '18px', fontWeight: 'bold', letterSpacing: '1px' }}>
-             {gpu.vram_gb} GB VRAM • {gpu.architecture}
-          </div>
         </header>
 
         {/* 🛒 AFFILIATE BUTTONS */}
@@ -157,6 +155,29 @@ export default async function GpuDetailPage(props) {
             <div className="stat-card"><div className="label">TDP</div><div className="val">{gpu.tdp_w || '-'} W</div></div>
             <div className="stat-card"><div className="label">PERFORMANCE</div><div className="val">{gpu.performance_index || '-'} PTS</div></div>
         </section>
+
+        {/* 🚀 GURU: SÉMANTICKÉ PROPOJENÍ (ČLÁNKY O TÉTO KARTĚ) */}
+        {relatedArticles.length > 0 && (
+            <section style={{ marginBottom: '60px' }}>
+                <h2 className="section-h2" style={{ borderLeftColor: '#a855f7' }}>
+                    <Info size={28} color="#a855f7" style={{ display: 'inline', marginRight: '10px' }} /> 
+                    {isEn ? 'GURU INSIGHTS & NEWS' : 'GURU RÁDCE A NOVINKY'}
+                </h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                    {relatedArticles.map((art) => (
+                        <a key={art.slug} href={isEn ? `/en/clanky/${art.slug_en || art.slug}` : `/clanky/${art.slug}`} className="related-card-style">
+                            <div className="related-img-box">
+                                <img src={art.image_url || 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000'} alt={art.title} loading="lazy" />
+                            </div>
+                            <div className="related-content-box">
+                                <span className="related-tag">{isEn ? 'TECH NEWS' : 'HW NOVINKA'}</span>
+                                <h3 className="related-title-text">{isEn && art.title_en ? art.title_en : art.title}</h3>
+                            </div>
+                        </a>
+                    ))}
+                </div>
+            </section>
+        )}
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: vendorColor }}><Database size={28} /> {isEn ? 'DEEP DIVE ANALYSIS' : 'DETAILNÍ ANALÝZA'}</h2>
@@ -188,21 +209,34 @@ export default async function GpuDetailPage(props) {
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
+        .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); }
         .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; display: flex; align-items: center; gap: 12px; }
+        
         .stat-card { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 30px; text-align: center; }
         .label { color: #6b7280; font-size: 10px; font-weight: 950; letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase; }
         .val { font-size: 32px; font-weight: 950; }
+
         .btn-buy { display: flex; align-items: center; gap: 12px; padding: 18px 35px; border-radius: 16px; font-weight: 950; text-decoration: none; text-transform: uppercase; font-size: 14px; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .btn-buy.alza { background: #004996; color: #fff; border: 1px solid #0059b3; }
         .btn-buy.amazon { background: #ff9900; color: #000; border: 1px solid #ffb340; }
         .btn-buy:hover { transform: translateY(-3px); filter: brightness(1.1); }
+
+        .related-card-style { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; text-decoration: none; transition: 0.3s; }
+        .related-card-style:hover { transform: translateY(-5px); border-color: #a855f7; }
+        .related-img-box { height: 160px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .related-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .related-content-box { padding: 20px; }
+        .related-tag { color: #a855f7; font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 10px; }
+        .related-title-text { color: #fff; font-size: 1.1rem; font-weight: 950; margin: 0; line-height: 1.3; }
+
         .deep-link-card { display: flex; align-items: center; gap: 20px; background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; position: relative; }
         .deep-link-card h3 { margin: 0 0 5px 0; font-size: 1.1rem; font-weight: 950; text-transform: uppercase; }
         .deep-link-card p { margin: 0; color: #9ca3af; font-size: 0.85rem; line-height: 1.4; }
         .deep-link-card .link-arrow { position: absolute; right: 25px; color: #4b5563; }
         .deep-link-card:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-5px); }
+
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
-        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
+        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
       `}} />
     </div>
   );
