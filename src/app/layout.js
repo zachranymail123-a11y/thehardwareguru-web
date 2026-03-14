@@ -9,12 +9,11 @@ import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
 
 /**
- * GURU ROOT LAYOUT V4.0 (CRITICAL CANONICAL FIX)
- * 🚀 CÍL: Eliminovat masivní chybu v Bingu (100k+ blokovaných stránek).
- * 🛡️ FIX 1: Zcela odstraněn manuální <link rel="canonical"> a <link rel="alternate"> z <head>.
- * 🛡️ FIX 2: Odstraněno čtení 'x-url' z headers(), které při SSG buildu vracelo prázdný string
- * a nutilo všechny podstránky kanonizovat na root doménu '/'.
- * 🛡️ Nyní se canonical a hreflang korektně propisují z 'generateMetadata' v jednotlivých page.js!
+ * GURU ROOT LAYOUT V4.1 (FINAL CANONICAL FIX)
+ * Cesta: src/app/layout.js
+ * 🚀 CÍL: Propustit 195.8K stránek z guru-sitemap do indexu Bingu a Googlu.
+ * 🛡️ FIX: Zcela odstraněn objekt 'alternates' s globálním canonicalem. 
+ * Toto zamezuje masivnímu blokování stránek (Duplicate Content) ve vyhledávačích.
  */
 
 export const metadata = {
@@ -24,7 +23,8 @@ export const metadata = {
   },
   description: 'Exkluzivní novinky ze světa hardwaru, recenze her a streamy s unikátní AI.',
   metadataBase: new URL('https://thehardwareguru.cz'),
-  // 🚀 GURU FIX: Globální fallback jsme odstranili, každá stránka si definuje SVŮJ přesný canonical.
+  // 🚀 GURU ZLATÉ PRAVIDLO: Objekt 'alternates' zde nesmí být! 
+  // Každá dynamická stránka (page.js) si generuje svůj vlastní unikátní canonical.
   robots: {
     index: true,
     follow: true,
@@ -47,8 +47,10 @@ export default async function RootLayout({ children, params }) {
       <head>
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS" href="https://thehardwareguru.cz/rss.xml" />
         
-        {/* 🚀 GURU: Zde dříve byly natvrdo <link rel="alternate"> a canonical! */}
-        {/* Next.js je nyní vygeneruje SÁM podle export const metadata z každé stránky. */}
+        {/* 🚀 GURU FIX: 
+          Next.js 14/15 si canonical a hreflang vygeneruje SÁM podle 'export const metadata' 
+          z každé příslušné stránky. Cokoliv bys tu napsal natvrdo, by rozbilo SEO celého webu.
+        */}
 
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-9W5FBC9P68" strategy="afterInteractive" />
         <Script id="google-analytics" strategy="afterInteractive">
