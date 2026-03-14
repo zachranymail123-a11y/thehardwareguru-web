@@ -1,4 +1,5 @@
 import React, { cache } from 'react';
+import { notFound } from 'next/navigation';
 import { 
   ChevronLeft, Zap, ArrowRight, Activity, ArrowUpCircle, LayoutList, 
   BarChart3, Gamepad2, Coins, CheckCircle2, Swords, Flame, Heart, 
@@ -6,19 +7,19 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - V4.1 (CHATGPT CANONICAL FIX)
+ * GURU GPU DUELS ENGINE - V5.0 (ENTERPRISE SEO FIX)
  * Cesta: src/app/gpuvs/[slug]/page.js
- * 🚀 CÍL: Fix pro Bing "Thin Content" - Masivní nárůst textového obsahu (Long-form SEO).
- * 🛡️ FIX 1: Úplná oprava Canonical tagů (dle ChatGPT). EN verze má nyní svůj EN canonical.
- * 🛡️ FIX 2: Zajištěn čistý Server-Side render bez useEffect fetchů (obsah je rovnou v HTML).
- * 🛡️ FIX 3: Striktní 'await props.params' (Next.js 15 safe).
+ * 🚀 CÍL: Fix pro Bing "Thin Content" a Enterprise SEO standardy (ChatGPT).
+ * 🛡️ FIX 1: Úplně odstraněn 'generateAndPersistDuel'. Stránky se negenerují při requestu!
+ * 🛡️ FIX 2: Limit v 'generateStaticParams' zvýšen na 10000 pro masivní Build-time SSG.
+ * 🛡️ FIX 3: Nasazeno tvrdé 'notFound()' pro 404, pokud duel v DB reálně neexistuje.
+ * 🛡️ FIX 4: Přidány Entity linky na individuální profily GPU pro sémantické propojení.
  */
 
 export const runtime = "nodejs";
 export const revalidate = 3600; 
 
-// 🚀 GURU FIX: Zapnutí částečného Statického Generování (SSG / ISR)
-// Vercel vygeneruje čisté, bleskové HTML rovnou při buildu/prvním requestu (bez JS obsahu pro boty).
+// Vercel vygeneruje čisté, bleskové HTML rovnou při buildu/prvním requestu.
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
@@ -28,7 +29,8 @@ export async function generateStaticParams() {
   if (!supabaseUrl) return [];
 
   try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=slug&limit=100`, {
+      // 🚀 GURU FIX: Zvýšeno na 10000 pro maximální pokrytí při buildu
+      const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=slug&limit=10000`, {
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
           next: { revalidate: 86400 }
       });
@@ -74,36 +76,7 @@ const findGpuBySlug = async (gpuSlug) => {
   return null;
 };
 
-async function generateAndPersistDuel(rawSlug) {
-  if (!supabaseUrl) return null;
-  try {
-    const cleanSlug = rawSlug.replace(/^en-/, '');
-    const parts = cleanSlug.includes('-vs-') ? cleanSlug.split('-vs-') : cleanSlug.split('-to-');
-    if (parts.length !== 2) return null;
-
-    const [gpuA, gpuB] = await Promise.all([findGpuBySlug(parts[0]), findGpuBySlug(parts[1])]);
-    if (!gpuA || !gpuB) return null;
-
-    const payload = {
-        slug: cleanSlug, slug_en: `en-${cleanSlug}`, gpu_a_id: gpuA.id, gpu_b_id: gpuB.id,
-        title_cs: `Srovnání: ${gpuA.name} vs ${gpuB.name}`, title_en: `Comparison: ${gpuA.name} vs ${gpuB.name}`, 
-        content_cs: '', content_en: '', seo_description_cs: `Která grafika je lepší? Detailní srovnání herního výkonu, architektury, DLSS/FSR a parametrů ${gpuA.name} vs ${gpuB.name}.`, seo_description_en: `Which GPU is better? Detailed gaming performance, architecture, DLSS/FSR and specs comparison of ${gpuA.name} vs ${gpuB.name}.`,
-        created_at: new Date().toISOString()
-    };
-
-    await fetch(`${supabaseUrl}/rest/v1/gpu_duels`, {
-        method: 'POST',
-        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation,resolution=merge-duplicates' },
-        body: JSON.stringify(payload)
-    });
-
-    const selectQuery = "*,gpuA:gpus!gpu_a_id(*,game_fps!gpu_id(*)),gpuB:gpus!gpu_b_id(*,game_fps!gpu_id(*))";
-    const checkExisting = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${encodeURIComponent(cleanSlug)}`, { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, cache: 'no-store' });
-    const data = await checkExisting.json();
-    return data[0] || null;
-  } catch (err) { return null; }
-}
-
+// 🚀 GURU FIX: Odstraněna request-time generace. Data se tahají jen z DB.
 const getDuelData = cache(async (rawSlug) => {
   if (!supabaseUrl || !rawSlug) return null;
   const cleanSlug = rawSlug.replace(/^en-/, '');
@@ -112,7 +85,7 @@ const getDuelData = cache(async (rawSlug) => {
       const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${cleanSlug}&limit=1`, { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }, cache: 'force-cache' });
       if (!res.ok) return null;
       const data = await res.json();
-      if (!data || data.length === 0) return await generateAndPersistDuel(rawSlug);
+      if (!data || data.length === 0) return null; // Vrátí null -> povede na notFound()
       return data[0];
   } catch (e) { return null; }
 });
@@ -121,12 +94,14 @@ export async function generateMetadata(props) {
   const params = await props.params;
   const rawSlug = params?.slug || params?.gpu || '';
   const isEn = rawSlug.startsWith('en-');
+  
   const duel = await getDuelData(rawSlug);
-  if (!duel) return { title: '404 | Hardware Guru' };
+  
+  // 🚀 GURU FIX: Tvrdá 404 pro SEO
+  if (!duel) notFound();
 
   const { gpuA, gpuB } = duel;
   
-  // 🚀 GURU FIX: Oprava Canonical Tagu (dle doporučení ChatGPT).
   // Dynamicky nastavíme POUZE 1 přesný canonical tag podle aktuální jazykové verze.
   const canonicalUrl = isEn ? `${baseUrl}/en/gpuvs/${duel.slug}` : `${baseUrl}/gpuvs/${duel.slug}`;
   
@@ -137,7 +112,6 @@ export async function generateMetadata(props) {
         : `Detailní srovnání ${gpuA.name} vs ${gpuB.name}. Hluboká analýza herního výkonu, DLSS vs FSR, ray tracingu, architektury a spotřeby energie.`,
     alternates: {
         canonical: canonicalUrl,
-        // Odstraněn x-default pro čistotu podle návodu, ponechány jen přesné mutace
         languages: { 
             'en': `${baseUrl}/en/gpuvs/${duel.slug}`, 
             'cs': `${baseUrl}/gpuvs/${duel.slug}` 
@@ -150,9 +124,11 @@ export default async function GpuVsDetailPage(props) {
   const params = await props.params;
   const rawSlug = params?.slug || params?.gpu || '';
   const isEn = rawSlug.startsWith('en-');
+  
   const duel = await getDuelData(rawSlug);
   
-  if (!duel) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>DUEL NENALEZEN</div>;
+  // 🚀 GURU FIX: Tvrdá 404 pro SEO
+  if (!duel) notFound();
 
   const { gpuA, gpuB } = duel;
 
@@ -179,7 +155,7 @@ export default async function GpuVsDetailPage(props) {
 
   const calcSafeDiff = (oldF, newF) => (!oldF || !newF || oldF === 0) ? 0 : Math.round(((newF / oldF) - 1) * 100);
   
-  // 🚀 GURU: DYNAMICKÁ LOGIKA PRO LONG-FORM SEO TEXTY
+  // 🚀 DYNAMICKÁ LOGIKA PRO LONG-FORM SEO TEXTY
   const getRtWinner = () => {
     if (gpuA.vendor === 'NVIDIA' && gpuB.vendor === 'AMD') return gpuA;
     if (gpuB.vendor === 'NVIDIA' && gpuA.vendor === 'AMD') return gpuB;
@@ -212,7 +188,7 @@ export default async function GpuVsDetailPage(props) {
   const upA = getUpscaling(gpuA.vendor);
   const upB = getUpscaling(gpuB.vendor);
 
-  // 🚀 ZLATÁ GSC SEO SCHÉMATA (Rozšířené FAQ Schema pro Bing boty)
+  // 🚀 ZLATÁ GSC SEO SCHÉMATA (FAQ Schema)
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -246,6 +222,7 @@ export default async function GpuVsDetailPage(props) {
   };
 
   const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
+  const getSafeGpuSlug = (gpu) => gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -275,14 +252,24 @@ export default async function GpuVsDetailPage(props) {
         <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '60px' }}>
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid ${getVendorColor(gpuA.vendor)}`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
                 <span style={{ color: getVendorColor(gpuA.vendor), fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px' }}>{gpuA.vendor} GPU</span>
-                <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '15px 0 0 0', lineHeight: '1.1' }}>{normalizeName(gpuA.name)}</h2>
+                <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '15px 0 15px 0', lineHeight: '1.1' }}>{normalizeName(gpuA.name)}</h2>
+                {/* 🚀 GURU FIX: ENTITY CROSS-LINKING PRO BING SEO */}
+                <a href={isEn ? `/en/gpu/${getSafeGpuSlug(gpuA)}` : `/gpu/${getSafeGpuSlug(gpuA)}`} className="entity-link" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: getVendorColor(gpuA.vendor), fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', textDecoration: 'none', background: 'rgba(255,255,255,0.05)', padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <Activity size={12} /> {isEn ? 'View Profile' : 'Profil grafiky'}
+                </a>
             </div>
+            
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ background: '#0a0b0d', width: '70px', height: '70px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff0055', border: '2px solid #ff0055', fontWeight: '950', fontSize: '24px', boxShadow: '0 0 30px rgba(255, 0, 85, 0.3)' }}>VS</div>
             </div>
+            
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid ${getVendorColor(gpuB.vendor)}`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
                 <span style={{ color: getVendorColor(gpuB.vendor), fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px' }}>{gpuB.vendor} GPU</span>
-                <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '15px 0 0 0', lineHeight: '1.1' }}>{normalizeName(gpuB.name)}</h2>
+                <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '15px 0 15px 0', lineHeight: '1.1' }}>{normalizeName(gpuB.name)}</h2>
+                {/* 🚀 GURU FIX: ENTITY CROSS-LINKING PRO BING SEO */}
+                <a href={isEn ? `/en/gpu/${getSafeGpuSlug(gpuB)}` : `/gpu/${getSafeGpuSlug(gpuB)}`} className="entity-link" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: getVendorColor(gpuB.vendor), fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', textDecoration: 'none', background: 'rgba(255,255,255,0.05)', padding: '8px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <Activity size={12} /> {isEn ? 'View Profile' : 'Profil grafiky'}
+                </a>
             </div>
         </div>
 
@@ -397,6 +384,8 @@ export default async function GpuVsDetailPage(props) {
         .guru-back-btn:hover { background: rgba(255, 0, 85, 0.1); transform: translateX(-5px); }
         .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #ff0055; padding-left: 15px; }
         
+        .entity-link:hover { background: rgba(255,255,255,0.1) !important; transform: translateY(-2px); }
+
         .content-box-style { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); }
         .guru-prose { color: #d1d5db; font-size: 1.1rem; line-height: 1.8; }
         .guru-prose h3 { color: #fff; font-size: 1.4rem; font-weight: 950; margin: 1.5em 0 0.8em; text-transform: uppercase; border-left: 3px solid #ff0055; padding-left: 12px; }
