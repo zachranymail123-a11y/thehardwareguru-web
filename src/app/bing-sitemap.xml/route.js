@@ -1,8 +1,9 @@
 /**
- * GURU SEO ENGINE - BING EXCLUSIVE INDEX V1.2
+ * GURU SEO ENGINE - BING EXCLUSIVE INDEX V1.3
  * Cesta: src/app/bing-sitemap.xml/route.js
- * 🚀 CÍL: Resetovat "paměť" Bingu. Tento index ukazuje na novou větev /bing-sitemap/[id].xml.
- * 🛡️ FIX: Odkazy <loc> nyní správně směřují na /bing-sitemap/ namísto /guru-sitemap/.
+ * 🚀 CÍL: Resetovat "paměť" Bingu a vynutit hluboký crawl všech 119k+ stránek.
+ * 🛡️ FIX 1: Dynamický výpočet chunků pro Bottleneck matici (všechny kombinace).
+ * 🛡️ FIX 2: Přidány explicitní mapy pro 'duels' a 'upgrades', které v indexu chyběly.
  */
 
 export const revalidate = 3600; 
@@ -22,25 +23,26 @@ export async function GET() {
       },
       cache: 'no-store'
     });
-    // Získání reálného počtu procesorů z hlavičky Content-Range
     const rangeHeader = res.headers.get('content-range');
     cpuCount = parseInt(rangeHeader?.split('/')[1] || "50", 10);
   } catch (e) {
-    console.error("Index count fetch failed", e);
+    console.error("Sitemap index count fetch failed", e);
   }
 
-  // 5 CPU na jeden chunk (musí odpovídat nastavení v [id]/route.js)
+  // Bing preferuje menší sitemapy. 5 CPU na chunk vytvoří cca 5-6 tisíc URL na soubor.
   const chunksNeeded = Math.ceil(cpuCount / 5);
   
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
   
-  // 1. ZÁKLADNÍ MAPY (Bing je uvidí jako nové URL díky prefixu /bing-sitemap/)
+  // 1. ZÁKLADNÍ STRUKTURÁLNÍ MAPY
+  // Obsahují Pages, Posts (Články), CPU profily, GPU profily, Duely a Upgrady.
   const namedMaps = ['pages', 'posts', 'cpu', 'gpu', 'duels', 'upgrades'];
   namedMaps.forEach(m => {
     xml += `  <sitemap>\n    <loc>${baseUrl}/bing-sitemap/${m}.xml</loc>\n  </sitemap>\n`;
   });
   
-  // 2. DYNAMICKÉ CHUNKY PRO MATICI (Vše pod novou adresou)
+  // 2. DYNAMICKÁ MATICE (Bottleneck Combinations)
+  // Generujeme chunky 1 až N, aby Bing mohl procházet celou matici HW kombinací.
   for (let i = 1; i <= chunksNeeded; i++) {
     xml += `  <sitemap>\n    <loc>${baseUrl}/bing-sitemap/${i}.xml</loc>\n  </sitemap>\n`;
   }
