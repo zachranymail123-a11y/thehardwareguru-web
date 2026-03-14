@@ -9,11 +9,11 @@ import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
 
 /**
- * GURU ROOT LAYOUT V4.2 (RSS FEEDS FIX)
+ * GURU ROOT LAYOUT V4.6 (ADSENSE & RSS EDITION)
  * Cesta: src/app/layout.js
- * 🚀 CÍL: Propustit 195.8K stránek z guru-sitemap do indexu Bingu a Googlu.
- * 🛡️ FIX 1: Zcela odstraněn objekt 'alternates' s globálním canonicalem. 
- * 🛡️ FIX 2: Doplněn druhý chybějící RSS feed (rss-comparisons.xml) do hlavičky!
+ * 🚀 CÍL: Aktivace globální reklamy a propuštění 195.8K stránek do indexu.
+ * 🛡️ ADS: Nasazen globální Google AdSense skript (ca-pub-5468223287024993).
+ * 🛡️ SEO: Zachovány RSS feedy a dynamické generování canonicalů v page.js.
  */
 
 export const metadata = {
@@ -23,8 +23,6 @@ export const metadata = {
   },
   description: 'Exkluzivní novinky ze světa hardwaru, recenze her a streamy s unikátní AI.',
   metadataBase: new URL('https://thehardwareguru.cz'),
-  // 🚀 GURU ZLATÉ PRAVIDLO: Objekt 'alternates' zde nesmí být! 
-  // Každá dynamická stránka (page.js) si generuje svůj vlastní unikátní canonical.
   robots: {
     index: true,
     follow: true,
@@ -33,7 +31,7 @@ export const metadata = {
 }
 
 export default async function RootLayout({ children, params }) {
-  // Await params pro Next.js 15
+  // Await params pro Next.js 15 (Striktní architektura)
   const resolvedParams = await params;
   const locale = resolvedParams?.locale || resolvedParams?.lang || 'cs';
 
@@ -45,15 +43,19 @@ export default async function RootLayout({ children, params }) {
   return (
     <html lang={locale}>
       <head>
-        {/* 🚀 GURU RSS FEEDY (Oba dva správně nasazené) */}
+        {/* 🚀 GOOGLE ADSENSE GLOBAL TAG (Povinné pro schválení a Auto Ads) */}
+        <Script 
+          async 
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+
+        {/* 🚀 GURU RSS FEEDY */}
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Novinky" href="https://thehardwareguru.cz/rss.xml" />
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Srovnání" href="https://thehardwareguru.cz/rss-comparisons.xml" />
         
-        {/* 🚀 GURU FIX: 
-          Next.js 14/15 si canonical a hreflang vygeneruje SÁM podle 'export const metadata' 
-          z každé příslušné stránky. Cokoliv bys tu napsal natvrdo, by rozbilo SEO celého webu.
-        */}
-
+        {/* Google Analytics & GTM */}
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-9W5FBC9P68" strategy="afterInteractive" />
         <Script id="google-analytics" strategy="afterInteractive">
           {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-9W5FBC9P68');`}
