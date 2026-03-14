@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 
 /**
- * 🚀 GURU MASTER MIDDLEWARE 2.4 - BOT BYPASS & FULL HW ROUTING
+ * 🚀 GURU MASTER MIDDLEWARE 2.5 - ANTI-CLOAKING & SAFE SEO ROUTING
  * Cesta: src/middleware.js
- * 🛡️ FIX 1: Detekce Crawlerů (Bingbot, Googlebot) - projdou web bez IP přesměrování!
- * 🛡️ FIX 2: Doplněno pole 'sections' o všechny HW cesty (gpu, gpuvs, bottleneck atd.).
+ * 🛡️ FIX 1: Odstraněna detekce botů (isBot) - Bing to oprávněně bral jako "Cloaking" (Maskování).
+ * 🛡️ FIX 2: Zrušeno vynucené IP přesměrování pro hluboké odkazy. Pokud Bing z USA 
+ * explicitně žádá CZ odkaz, dostane CZ obsah. Přesměruje se POUZE hlavní doména (root).
  */
 export function middleware(request) {
   const { pathname, search, origin } = request.nextUrl;
-  const userAgent = request.headers.get('user-agent') || '';
   
   // 🚀 GURU SEO: Sestavení absolutní URL a příprava hlaviček pro layout.js (hreflang)
   const absoluteUrl = `${origin}${pathname}${search}`;
@@ -30,19 +30,11 @@ export function middleware(request) {
     return nextWithHeaders();
   }
 
-  // 🤖 GURU BOT-BYPASS: Boti nesmí být NIKDY přesměrováni podle IP adresy!
-  // Jinak Google a Bing ze svých US serverů nikdy nezaindexují CZ verzi webu.
-  const isBot = /bot|crawler|spider|crawling|googlebot|bingbot|seznam|yandex|baiduspider|facebookexternalhit|twitterbot/i.test(userAgent);
-  if (isBot) {
-      return nextWithHeaders(); 
-  }
-
-  // 🌍 GEO-IP ENGINE: Běžní uživatelé
+  // 🌍 GEO-IP ENGINE
   const country = request.headers.get('x-vercel-ip-country') || 'CZ';
   const hasLocalIP = ['CZ', 'SK'].includes(country.toUpperCase());
   const isForeigner = !hasLocalIP;
 
-  // 🚀 GURU FIX: Přidány všechny chybějící hardwarové a aplikační sekce
   const sections = [
     'slovnik', 'clanky', 'tipy', 'tweaky', 'rady', 'mikrorecenze', 'deals', 'support',
     'gpu', 'cpu', 'gpuvs', 'cpuvs', 'gpu-fps', 'cpu-fps', 
@@ -50,31 +42,21 @@ export function middleware(request) {
     'gpu-upgrade', 'cpu-upgrade', 'gpu-index', 'cpu-index', 'bottleneck'
   ];
 
-  // 1. AUTO-REDIRECT PRO CIZINCE NA ROOTU (/) -> (/en)
+  // 1. AUTO-REDIRECT PRO CIZINCE POUZE NA ROOTU (/) -> (/en)
+  // Toto je 100% SEO-safe postup. Pouze domovskou stránku můžeme přesměrovat podle lokace.
   if (pathname === '/' && isForeigner) {
     return NextResponse.redirect(new URL('/en', request.url));
   }
 
-  // 2. GURU ROUTING ENGINE PRO SEKCE
+  // 2. KOREKCE NESMYSLNÝCH URL (např. /clanky/en -> /en/clanky)
   for (const section of sections) {
-    // Pokud už je v EN větvi, propustíme dál
-    if (pathname.startsWith(`/en/${section}`)) {
-      return nextWithHeaders();
-    }
-
-    // Cizinec leze na CZ -> Přesměruj na EN
-    if (pathname.startsWith(`/${section}`) && isForeigner) {
-      const targetPath = pathname.replace(`/${section}`, `/en/${section}`);
-      return NextResponse.redirect(new URL(targetPath, request.url));
-    }
-
-    // Korekce lomítek
     if (pathname.endsWith(`/${section}/en`)) {
       return NextResponse.redirect(new URL(`/en/${section}`, request.url));
     }
   }
 
-  // 🏁 GURU FINAL: Lokální uživatelé (CZ/SK) zůstávají na nativní CZ verzi
+  // 🏁 GURU FINAL: Všechny ostatní požadavky (hluboké odkazy) propustíme bez zásahu. 
+  // Pokud americký bot žádá CZ URL, dostane ji. To vyřeší blokaci Bingu!
   return nextWithHeaders();
 }
 
