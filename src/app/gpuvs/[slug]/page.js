@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - V5.1 (STRICT STATIC SEO FIX)
+ * GURU GPU DUELS ENGINE - V5.2 (BING CRAWL FIX)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * 🚀 CÍL: Fix pro Bing "Thin Content" a Enterprise SEO standardy (ChatGPT).
  * 🛡️ FIX 1: Úplně odstraněn 'generateAndPersistDuel'. Stránky se negenerují při requestu!
@@ -15,12 +15,13 @@ import {
  * 🛡️ FIX 3: Nasazeno tvrdé 'notFound()' pro 404, pokud duel v DB reálně neexistuje.
  * 🛡️ FIX 4: Přidány Entity linky na individuální profily GPU pro sémantické propojení.
  * 🛡️ FIX 5: dynamicParams = false. Zákaz fallback renderingu, Bing dostane jen 100% statické URL.
+ * 🛡️ FIX 6: revalidate = 86400 (24h). Bing crawler nemá rád weby s příliš častou regenerací.
  */
 
 export const runtime = "nodejs";
-export const revalidate = 3600; 
+export const revalidate = 86400; // 🚀 GURU FIX: 24h cache pro šetrnější Bing crawling
 
-// 🚀 GURU FIX: Zákaz fallback renderingu pro SEO. Všechny URL musí být známé už při buildu.
+// Zákaz fallback renderingu pro SEO. Všechny URL musí být známé už při buildu.
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
