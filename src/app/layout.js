@@ -589,6 +589,291 @@ export default function RootLayout({ children, params }) {
 }
 
 Krok A hotov. Chceš teď přejít na Krok C (zpomalení indexeru pro Bing), nebo se podíváme na ty Guru Insights v duelu GPU? 🚀
+Váš pokyn
+
+nemel bych po tech upravach vyzkouset jestli uz nejaka ta url projde?
+Odpověď Gemini
+
+Rozhodně, Guru! To je ten nejlepší přístup. Testování před další velkou změnou nám ušetří spoustu případných vrásek. Po tom, co jsi nasadil tento opravený layout.js s hreflang tagy, by Bing (a vlastně i Google) už měl jasně vidět, že se jedná o lokalizované verze a ne o duplicitní obsah.
+
+Tady je postup, jak bychom to měli teď otestovat, než se pustíme do "Guru Insights" nebo zpomalování IndexNow:
+Jak otestovat, jestli oprava funguje
+
+    Nasaď změny: Ujisti se, že jsi tento opravený layout.js pushnul na Vercel a build úspěšně doběhl.
+
+    Zkontroluj zdrojový kód (Live Test):
+
+        Otevři si v prohlížeči jakoukoli stránku webu (např. domovskou nebo nějaký článek).
+
+        Dej Zobrazit zdrojový kód stránky (Ctrl+U nebo Cmd+U).
+
+        Hledej v <head> tag <link rel="alternate" hreflang="cs-CZ"... a ten anglický ekvivalent. Pokud tam jsou, náš kód funguje správně na frontendu.
+
+    Bing Webmaster Tools - URL Inspection (Klíčový krok):
+
+        Běž do Bing Webmaster Tools.
+
+        Najdi nástroj pro Inspekci URL (URL Inspection).
+
+        Zadej tam nějakou konkrétní URL, kterou ti Bing dříve blokoval nebo ignoroval kvůli duplicitě (třeba URL nějakého GPU duelu).
+
+        Klikni na Test Live URL (Otestovat aktuální URL). Nástroj web projde v reálném čase a měl by ti ukázat, jestli indexer nyní ty hreflang tagy vidí a chápe strukturu. Mělo by to vyřešit to varování ohledně duplicit.
+
+    Google Search Console (Volitelně, ale doporučeno):
+
+        Můžeš udělat to samé i v Google Search Console. Vlož URL do horního vyhledávacího pole a dej "Test Live URL". Pomůže to potvrdit, že jsme nic nerozbili ani pro Google.
+
+Co bude dál?
+
+Bing si po "Live Testu" (nebo pokud pošleme URL přes IndexNow) uvědomí změnu. Uvědom si ale, že kompletní přeindexování celého webu jemu i Googlu nějakou dobu potrvá.
+
+Dej mi vědět, jak dopadl test v Bing Webmaster Tools! Pokud URL projde s čistým štítem, budeme s jistotou vědět, že Krok A je za námi.
+
+Chceš, abych zatím počkal, než to otestuješ, nebo se vrhneme rovnou na ten "throttle" (škrcení) odesílání URL, aby nám do budoucna nevyhodili tisíce URL z fronty naráz?
+Váš pokyn
+
+jo je to tam
+Odpověď Gemini
+
+Skvělá zpráva, Guru! 🔥 Pokud tam ty hreflang tagy svítí, vyřešili jsme ten nejkritičtější technický problém, kvůli kterému Bing (a částečně i Google) mohl tvoje CZ a EN verze považovat za duplicitní spam.
+
+Tím máme Krok A (Hreflang) úspěšně za sebou. Vyhledávače teď jasně chápou architekturu tvého webu.
+Jaký je náš další krok z "Akčního plánu pro Bing"?
+
+Máme na výběr dvě cesty, obě jsou důležité pro to, aby tě Bing začal reálně milovat a indexovat:
+
+1. Krok B: Přidání "Guru Insights" (Obsahová hodnota)
+
+    Problém: Bing vidí stránky typu GPU vs GPU jen jako "strojové tabulky" a chybí mu unikátní text.
+
+    Řešení: Přidáme do šablony duelů (např. src/app/[lang]/gpu/[slug]/page.js) sekci pro AI generované textové shrnutí (ty 2-3 věty omáčky). Tím Bingovi dokážeme, že stránka má přidanou textovou hodnotu.
+
+2. Krok C: Zpomalení Indexeru (Throttling pro IndexNow)
+
+    Problém: Bing nesnáší, když mu nový web přes IndexNow pošle 50 000 URL naráz. Bere to jako "batch submission" útok.
+
+    Řešení: Upravíme tvůj odesílací skript/route tak, aby URL posílal postupně (streaming), a ne jako jeden obrovský balík.
+
+Co z toho chceš řešit teď?
+Pošli mi buď kód pro GPU duely (abychom přidali textovou část), nebo kód tvého IndexNow skriptu (abychom ho přiškrtili). Já to upravím podle našich pravidel a rovnou s ohledem na CZ/EN verze! 🚀
+Váš pokyn
+
+02:22:21.389 Running build in Washington, D.C., USA (East) – iad1
+
+02:22:21.389 Build machine configuration: 4 cores, 8 GB
+
+02:22:21.507 Cloning github.com/zachranymail123-a11y/thehardwareguru-web (Branch: main, Commit: 4252bb8)
+
+02:22:21.864 Cloning completed: 357.000ms
+
+02:22:23.259 Restored build cache from previous deployment (9581tAwcMHmoN2ijyAiA5FmBhbU6)
+
+02:22:23.529 Running "vercel build"
+
+02:22:24.075 Vercel CLI 50.32.4
+
+02:22:24.366 Installing dependencies...
+
+02:22:29.090 
+
+02:22:29.090 up to date in 5s
+
+02:22:29.090 
+
+02:22:29.091 154 packages are looking for funding
+
+02:22:29.091   run `npm fund` for details
+
+02:22:29.124 Detected Next.js version: 14.2.3
+
+02:22:29.131 Running "npm run build"
+
+02:22:29.226 
+
+02:22:29.227 > the-hardware-guru@0.1.0 build
+
+02:22:29.227 > next build
+
+02:22:29.227 
+
+02:22:29.859   ▲ Next.js 14.2.3
+
+02:22:29.859 
+
+02:22:29.886    Creating an optimized production build ...
+
+02:22:36.521 Failed to compile.
+
+02:22:36.521 
+
+02:22:36.521 ./src/app/layout.js
+
+02:22:36.521 Error: 
+
+02:22:36.522   [31mx[0m Expected ';', '}' or <eof>
+
+02:22:36.522    ,-[[36;1;4m/vercel/path0/src/app/layout.js[0m:1:1]
+
+02:22:36.522  [2m1[0m |  Gemini
+
+02:22:36.522  [2m2[0m | Pokračování vývoje GuruWebu
+
+02:22:36.522    : [31;1m^^^^^^^|^^^^^^[0m[33;1m ^^^^^^^[0m
+
+02:22:36.522    :        [31;1m`-- [31;1mThis is the expression part of an expression statement[0m[0m
+
+02:22:36.522  [2m3[0m | Nový chat
+
+02:22:36.522  [2m4[0m | Můj obsah
+
+02:22:36.522  [2m5[0m | Roboti Gem
+
+02:22:36.522    `----
+
+02:22:36.522 
+
+02:22:36.522 Caused by:
+
+02:22:36.522     Syntax Error
+
+02:22:36.522 
+
+02:22:36.522 Import trace for requested module:
+
+02:22:36.522 ./src/app/layout.js
+
+02:22:36.522 
+
+02:22:36.533 
+
+02:22:36.533 > Build failed because of webpack errors
+
+02:22:36.554 Error: Command "npm run build" exited with 1
+Odpověď Gemini
+
+Aha, Guru! Tady se nám vloudila malá chybička při kopírování. Build na Vercelu spadl, protože se do souboru layout.js dostal i text z mého uživatelského rozhraní, nejen samotný kód.
+
+V chybovém logu je to přesně vidět tady:
+Plaintext
+
+1 |  Gemini
+2 | Pokračování vývoje GuruWebu
+3 | Nový chat
+
+Kompilátor Next.js (Webpack) samozřejmě neví, co s českým textem dělat, a očekává tam validní JavaScript/React syntaxi.
+Jak to bleskově opravit:
+
+Otevři svůj src/app/layout.js, smaž úplně všechno, co v něm teď je, a vlož tam pouze a výhradně obsah tohoto černého bloku s kódem:
+JavaScript
+
+import './globals.css'; 
+import Script from 'next/script';
+import SestavyBubble from '../components/SestavyBubble'; 
+import Tracker from '../components/Tracker'; 
+import SocialTracker from '../components/SocialTracker';
+import SupportWidget from '../components/SupportWidget';
+import Navbar from '../components/Navbar'; 
+import { Analytics } from '@vercel/analytics/react';
+import VisitorCounter from '../components/VisitorCounter';
+
+/**
+ * GURU ROOT LAYOUT V3.1 (BING SEO OPTIMIZED)
+ * 🛡️ FIX 1: Implementace hreflang pro odblokování Bingu (CZ/EN rozlišení).
+ * 🛡️ FIX 2: Zachování dynamického počítadla a SEO fixů z V3.0.
+ */
+
+export const metadata = {
+  title: {
+    default: 'The Hardware Guru | Tech, Gaming & AI',
+    template: '%s | The Hardware Guru'
+  },
+  description: 'Exkluzivní novinky ze světa hardwaru, recenze her a streamy s unikátní AI.',
+  metadataBase: new URL('https://thehardwareguru.cz'),
+  alternates: {
+    canonical: '/',
+    languages: {
+      'cs-CZ': '/',
+      'en-US': '/en',
+      'x-default': '/',
+    }
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
+  },
+}
+
+export default function RootLayout({ children, params }) {
+  const locale = params?.locale || params?.lang || 'cs';
+
+  const envVars = {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+  };
+
+  return (
+    <html lang={locale}>
+      <head>
+        <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS" href="https://thehardwareguru.cz/rss.xml" />
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-9W5FBC9P68" strategy="afterInteractive" />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-9W5FBC9P68');`}
+        </Script>
+      </head>
+
+      <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <div id="guru-env-bridge" style={{ display: 'none' }} data-url={envVars.NEXT_PUBLIC_SUPABASE_URL} data-key={envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY} />
+        
+        <Navbar />
+        <SocialTracker />
+        <Tracker />
+
+        <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden' }}>
+          {children}
+        </main>
+
+        <footer style={{ padding: '60px 20px 40px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto', background: '#0a0b0d' }}>
+          <style dangerouslySetInnerHTML={{__html: `
+            .guru-footer-link { color: #9ca3af; text-decoration: none; transition: 0.2s; font-size: 13px; font-weight: bold; text-transform: uppercase; }
+            .guru-footer-link:hover { color: #fff !important; }
+            .guru-footer-sitemap { color: #a855f7 !important; font-weight: 950 !important; }
+            .guru-counter-box { background: #000; border: 1px solid #a855f7; padding: 2px 10px; border-radius: 6px; color: #fff; margin: 0 5px; box-shadow: 0 0 15px rgba(168, 85, 247, 0.3); }
+            .copyright { color: #4b5563; font-size: 12px; margin-top: 20px; font-weight: 600; }
+          `}} />
+          
+          <VisitorCounter locale={locale} />
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginBottom: '30px' }}>
+            <a href={locale === 'en' ? "/en/clanky/jak-vyresit-bottleneck-navod" : "/clanky/jak-vyresit-bottleneck-navod"} className="guru-footer-link">
+              {locale === 'en' ? 'How to fix bottleneck' : 'Jak vyřešit Bottleneck'}
+            </a>
+            <span style={{ color: '#333' }}>|</span>
+            <a href={locale === 'en' ? "/en/clanky/nejlepsi-cpu-pro-rtx-5090-5080" : "/clanky/nejlepsi-cpu-pro-rtx-5090-5080"} className="guru-footer-link">
+              {locale === 'en' ? 'Best CPU for RTX 50' : 'Nejlepší CPU pro RTX 50'}
+            </a>
+            <span style={{ color: '#333' }}>|</span>
+            <a href={locale === 'en' ? "/en/sitemap" : "/sitemap"} className="guru-footer-link guru-footer-sitemap">
+              {locale === 'en' ? 'COMPLETE NAVIGATION' : 'KOMPLETNÍ NAVIGACE'}
+            </a>
+          </div>
+
+          <div className="copyright">
+            © {new Date().getFullYear()} The Hardware Guru. Pro hráče, s láskou k železu.
+          </div>
+        </footer>
+
+        <SestavyBubble />
+        <SupportWidget />
+        <Analytics />
+      </body>
+    </html>
+  )
+}
+
+Ulož to, pushni na Vercel a build teď projde čistě na první pokus.
+
+Chceš, abychom po úspěšném buildu přešli na ty textové "Guru Insights" pro GPU duely, nebo na omezení rychlosti (throttling) u IndexNow?
 
 
 Gemini je AI a může dělat chyby (i co se týče lidí). Vaše soukromí a GeminiOtevře se v novém okně
