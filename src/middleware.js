@@ -1,13 +1,24 @@
 import { NextResponse } from 'next/server';
 
 /**
- * 🚀 GURU MASTER MIDDLEWARE 2.2 - GEO-IP & API BYPASS
- * Tento engine upřednostňuje reálnou polohu IP adresy před jazykem prohlížeče.
- * Zajišťuje, že /api routy (včetně /api/leaks) projdou bez 404 přesměrování.
+ * 🚀 GURU MASTER MIDDLEWARE 2.3 - GEO-IP & API BYPASS & SEO HREFLANG
+ * Cesta: src/middleware.js
+ * Slučuje tvé Geo-IP přesměrování a předávání 'x-url' hlavičky 
+ * pro dynamické SEO hreflang tagy v RootLayoutu.
  */
 export function middleware(request) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search, origin } = request.nextUrl;
   
+  // 🚀 GURU SEO: Sestavení absolutní URL a příprava hlaviček pro layout.js
+  const absoluteUrl = `${origin}${pathname}${search}`;
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-url', absoluteUrl);
+
+  // Pomocná funkce pro bezpečné vracení response s našimi novými hlavičkami
+  const nextWithHeaders = () => NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+
   // 🛡️ GURU SHIELD: Absolutní priorita pro API a systémové soubory
   // Pokud dotaz směřuje na API, statické soubory nebo Next.js interní cesty, 
   // middleware okamžitě končí a propouští požadavek dál bez zásahu.
@@ -18,7 +29,7 @@ export function middleware(request) {
     pathname.startsWith('/favicon.ico') ||
     pathname.includes('.')
   ) {
-    return NextResponse.next();
+    return nextWithHeaders();
   }
 
   // 🌍 GEO-IP ENGINE: Vercel posílá kód země v této hlavičce
@@ -39,9 +50,9 @@ export function middleware(request) {
 
   // 2. GURU ROUTING ENGINE PRO SEKCE
   for (const section of sections) {
-    // Pokud už je v EN větvi, nic neděláme
+    // Pokud už je v EN větvi, propustíme dál s hlavičkami
     if (pathname.startsWith(`/en/${section}`)) {
-      return NextResponse.next();
+      return nextWithHeaders();
     }
 
     // Pokud je detekován jako cizinec a snaží se lézt na CZ cestu, hodíme ho na /en
@@ -57,7 +68,7 @@ export function middleware(request) {
   }
 
   // 🏁 GURU FINAL: Lokální uživatelé (CZ/SK) zůstávají v nativním jazyce
-  return NextResponse.next();
+  return nextWithHeaders();
 }
 
 export const config = {
