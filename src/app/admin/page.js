@@ -13,10 +13,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V3.8 (FULL RESTORATION + SEZNAM INDEXER)
+ * GURU ULTIMATE COMMAND CENTER V3.9 (INTEL HUB & PUBLISH FIX)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
- * 🛡️ FIX: Sloučena tvoje V3.7 verze administrace s novým nástrojem Seznam Indexer.
+ * 🛡️ FIX 1: Navráceno UI pro Gaming Radar (Hry) v Intel Hubu.
+ * 🛡️ FIX 2: Znovu přidán editační modal a funkce pro uložení konceptu do DB + Vercel Push.
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -151,9 +152,53 @@ export default function AdminApp() {
       setSavedDrafts(prev => ({ ...prev, [item.title]: newDraft }));
       setDraft(newDraft);
       setPreviewMode('card');
-      addLog('Koncept vytvořen.', 'success');
+      addLog('Koncept vytvořen a zobrazen.', 'success');
     } catch (err) { addLog('AI fail.', 'error'); }
     finally { setProcessingTitle(null); }
+  };
+
+  // 🚀 GURU FIX: Funkce pro reálnou publikaci a poslání na Vercel Webhook
+  const handlePublishDraft = async () => {
+    if (!draft) return;
+    setLoading(true);
+    addLog(`Publikuji článek: ${draft.title_cs}...`, 'warning');
+    try {
+        const { error } = await supabase.from('posts').insert([{
+            title: draft.title_cs,
+            title_en: draft.title_en,
+            slug: draft.slug_cs || slugify(draft.title_cs),
+            slug_en: draft.slug_en || slugify(draft.title_en),
+            description: draft.description_cs,
+            description_en: draft.description_en,
+            seo_description: draft.seo_description_cs,
+            seo_description_en: draft.seo_description_en,
+            content: draft.content_cs || draft.content, // Fallback
+            content_cs: draft.content_cs,
+            content_en: draft.content_en,
+            image_url: draft.image_url,
+            type: draft.original_item?.intelType === 'game' ? 'game' : 'article',
+            created_at: new Date().toISOString()
+        }]);
+
+        if (error) throw error;
+        addLog('Článek úspěšně publikován do databáze!', 'success');
+
+        // Spuštění Vercel buildu
+        const webhookUrl = getEnv('NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL');
+        if (webhookUrl) {
+            addLog('Odesílám trigger na Vercel Webhook...', 'warning');
+            await fetch(webhookUrl, { method: 'POST' }).catch(() => null);
+            addLog('Vercel Build spuštěn.', 'success');
+        } else {
+            addLog('Webhook URL nenalezena, článek je ale uložen.', 'info');
+        }
+
+        setDraft(null);
+        setPreviewMode('none');
+    } catch (e) {
+        addLog(`Chyba publikace: ${e.message}`, 'error');
+    }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -343,6 +388,24 @@ export default function AdminApp() {
               ))}
             </div>
 
+            {/* 🚀 GURU FIX: Znovuzapojení zobrazení her v Intel Hubu */}
+            <h3 style={{ fontSize: '14px', fontWeight: 950, color: '#ff0055', marginBottom: '20px', borderLeft: '4px solid #ff0055', paddingLeft: '15px', marginTop: '40px' }}>GAMING RADAR</h3>
+            <div className="hub-grid">
+              {gameIntel.map((item, i) => (
+                <div key={i} className="compact-card" style={{borderColor: 'rgba(255, 0, 85, 0.1)'}}>
+                  <div className="badge" style={{background: '#ff0055', color: '#fff'}}>{item.viral_score}%</div>
+                  <span className="card-source">{item.source}</span>
+                  <h4 className="card-title">{item.title}</h4>
+                  <div style={{ display: 'flex', gap: '5px' }}>
+                    <a href={item.link} target="_blank" className="card-btn" style={{flex: 1, textAlign: 'center'}}>ZDROJ</a>
+                    <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className="card-btn card-btn-main" style={{borderColor: '#ff005544', color: '#ff0055', flex: 2}}>
+                        {processingTitle === item.title ? 'AI...' : 'KONCEPT'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
             <h3 style={{ fontSize: '14px', fontWeight: 950, color: '#66fcf1', marginBottom: '20px', borderLeft: '4px solid #66fcf1', paddingLeft: '15px', marginTop: '40px' }}>LEAKS & RUMORS</h3>
             <div className="hub-grid">
               {leaksIntel.map((item, i) => (
@@ -413,13 +476,11 @@ export default function AdminApp() {
                             <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '40px', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.2)', textAlign: 'center' }}>
                                 <div style={{ fontSize: '12px', fontWeight: '950', color: '#10b981', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '15px' }}>Celkem zaindexováno URL</div>
                                 <div style={{ fontSize: '64px', fontWeight: '950', color: '#fff', lineHeight: '1' }}>
-                                    {/* 🚀 GURU FIX: Správná cesta k číslu podle reálného JSONu od Seznamu */}
                                     {seznamStats.data?.content?.count ?? seznamStats.data?.documents?.content?.count ?? 'N/A'}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Záchranný výpis se ukáže už POUZE tehdy, když Seznam nepošle číslo */}
                         {(seznamStats.data?.content?.count === undefined && seznamStats.data?.documents?.content?.count === undefined) && (
                             <pre style={{ marginTop: '20px', background: '#000', padding: '20px', borderRadius: '12px', border: '1px solid #333', color: '#10b981', fontSize: '12px', overflowX: 'auto', whiteSpace: 'pre-wrap' }}>
                                 {JSON.stringify(seznamStats.data, null, 2)}
@@ -452,7 +513,6 @@ export default function AdminApp() {
                                     title={!r.ok ? JSON.stringify(r.seznam_response) : ''}
                                     style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: '950', letterSpacing: '1px', background: r.ok ? '#10b98122' : '#ef444422', color: r.ok ? '#10b981' : '#ef4444' }}
                                 >
-                                    {/* 🚀 GURU FIX: Zobrazení přesného HTTP kódu chyby */}
                                     {r.ok ? 'ZAINDEXOVÁNO' : `CHYBA ${r.status || '500'}`}
                                 </span>
                             </div>
@@ -469,10 +529,64 @@ export default function AdminApp() {
         )}
 
         <div className="terminal">
-            {consoleLogs.slice(-10).map((log, i) => (<div key={i}>[{log.time}] {log.msg}</div>))}
+            {consoleLogs.slice(-15).map((log, i) => (<div key={i} style={{ color: log.type === 'error' ? '#ef4444' : log.type === 'warning' ? '#eab308' : '#22c55e' }}>[{log.time}] {log.msg}</div>))}
             <div ref={logEndRef} />
         </div>
+        
       </main>
+
+      {/* 🚀 GURU FIX: MODAL PRO NÁHLED A PUBLIKACI (VRÁCENO ZPĚT!) */}
+      {draft && previewMode === 'card' && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(5px)' }}>
+            <div style={{ background: '#111318', padding: '40px', borderRadius: '24px', border: '1px solid #a855f7', width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', boxShadow: '0 0 50px rgba(168, 85, 247, 0.2)' }}>
+                <button onClick={() => { setDraft(null); setPreviewMode('none'); }} style={{ position: 'absolute', top: '25px', right: '25px', background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={28}/></button>
+                
+                <h2 style={{ margin: '0 0 25px 0', color: '#a855f7', fontSize: '24px', fontWeight: '950', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Sparkles size={24} /> NÁHLED A PUBLIKACE ČLÁNKU
+                </h2>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                        <div>
+                            <label style={{ fontSize: '10px', fontWeight: '900', color: '#9ca3af', marginBottom: '5px', display: 'block' }}>NÁZEV (CZ)</label>
+                            <input value={draft.title_cs || ''} onChange={e => setDraft({...draft, title_cs: e.target.value})} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} />
+                        </div>
+                        <div>
+                            <label style={{ fontSize: '10px', fontWeight: '900', color: '#9ca3af', marginBottom: '5px', display: 'block' }}>SLUG (CZ)</label>
+                            <input value={draft.slug_cs || ''} onChange={e => setDraft({...draft, slug_cs: e.target.value})} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} />
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label style={{ fontSize: '10px', fontWeight: '900', color: '#9ca3af', marginBottom: '5px', display: 'block' }}>OBSAH (CZ - HTML)</label>
+                        <textarea value={draft.content_cs || ''} onChange={e => setDraft({...draft, content_cs: e.target.value})} rows={6} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px', fontFamily: 'monospace', fontSize: '13px' }} />
+                    </div>
+                    
+                    <div style={{ height: '1px', background: '#333', margin: '15px 0' }}></div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                        <div>
+                            <label style={{ fontSize: '10px', fontWeight: '900', color: '#9ca3af', marginBottom: '5px', display: 'block' }}>NÁZEV (EN)</label>
+                            <input value={draft.title_en || ''} onChange={e => setDraft({...draft, title_en: e.target.value})} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} />
+                        </div>
+                        <div>
+                            <label style={{ fontSize: '10px', fontWeight: '900', color: '#9ca3af', marginBottom: '5px', display: 'block' }}>SLUG (EN)</label>
+                            <input value={draft.slug_en || ''} onChange={e => setDraft({...draft, slug_en: e.target.value})} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px' }} />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style={{ fontSize: '10px', fontWeight: '900', color: '#9ca3af', marginBottom: '5px', display: 'block' }}>OBSAH (EN - HTML)</label>
+                        <textarea value={draft.content_en || ''} onChange={e => setDraft({...draft, content_en: e.target.value})} rows={6} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px', fontFamily: 'monospace', fontSize: '13px' }} />
+                    </div>
+                </div>
+
+                <button onClick={handlePublishDraft} disabled={loading} style={{ width: '100%', padding: '20px', background: 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)', color: '#fff', borderRadius: '15px', border: 'none', fontWeight: '950', cursor: 'pointer', marginTop: '30px', fontSize: '16px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '0 10px 30px rgba(168, 85, 247, 0.3)' }}>
+                    {loading ? <><RefreshCw className="spin" size={20}/> PUBLIKUJI A ODESÍLÁM NA VERCEL...</> : <><Send size={20}/> ULOŽIT DO DB A BUILDNOUT VERCEL</>}
+                </button>
+            </div>
+        </div>
+      )}
     </div>
   );
 }
