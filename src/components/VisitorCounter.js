@@ -10,13 +10,19 @@ export default function VisitorCounter({ locale }) {
       try {
         const res = await fetch("/api/analytics");
 
-        if (res.ok) {
-          const data = await res.json();
+        if (!res.ok) return;
 
-          if (data.pageviews) {
-            const formatted = Number(data.pageviews).toLocaleString("cs-CZ") + "+";
-            setCount(formatted);
-          }
+        const data = await res.json();
+
+        if (data.formatted_pageviews) {
+          setCount(data.formatted_pageviews + "+");
+          return;
+        }
+
+        if (data.pageviews) {
+          const formatted =
+            Number(data.pageviews).toLocaleString("cs-CZ") + "+";
+          setCount(formatted);
         }
       } catch (e) {
         console.error("Counter fetch failed", e);
@@ -24,6 +30,11 @@ export default function VisitorCounter({ locale }) {
     }
 
     getLiveStats();
+
+    // refresh každých 10 minut
+    const interval = setInterval(getLiveStats, 600000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -39,13 +50,13 @@ export default function VisitorCounter({ locale }) {
     >
       {locale === "en" ? (
         <>
-          COMMUNITY SITE VISITED BY{" "}
-          <span className="guru-counter-box">{count}</span> FANS 💪🏼
+          OUR PAGES HAVE{" "}
+          <span className="guru-counter-box">{count}</span> VIEWS 🚀
         </>
       ) : (
         <>
-          KOMUNITNÍ WEB NAVŠTÍVILO JIŽ{" "}
-          <span className="guru-counter-box">{count}</span> FANOUŠKŮ 💪🏼
+          NAŠE STRÁNKY MAJÍ JIŽ{" "}
+          <span className="guru-counter-box">{count}</span> ZOBRAZENÍ 🚀
         </>
       )}
     </div>
