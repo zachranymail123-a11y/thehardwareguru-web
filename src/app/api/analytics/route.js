@@ -1,24 +1,24 @@
 import { NextResponse } from 'next/server';
 
 /**
- * GURU ANALYTICS ENGINE V4.0 (PAGEVIEWS MODE)
- * Cesta: src/app/api/analytics/route.js
- * 🚀 ZMĚNA: místo totalUsers vrací screenPageViews (pageviews)
+ * GURU ANALYTICS ENGINE V5.0 (STABLE COUNTER)
+ * Pageviews counter s historickou základnou.
  */
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 3600; // cache 1 hodinu (šetří GA API)
+export const revalidate = 3600; // cache 1 hodinu
 
 export async function GET() {
+
   const propertyId = process.env.GA_PROPERTY_ID || '';
   const clientEmail = process.env.GA_CLIENT_EMAIL || '';
-
-  // Načtení private key z Vercelu
   let privateKey = process.env.GA_PRIVATE_KEY || '';
+
+  const historicalBase = 8000; // 👈 nastav podle staré návštěvnosti
 
   if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
     privateKey = privateKey.slice(1, -1);
   }
+
   if (privateKey.startsWith("'") && privateKey.endsWith("'")) {
     privateKey = privateKey.slice(1, -1);
   }
@@ -29,15 +29,14 @@ export async function GET() {
 
   if (!cleanPropertyId || !clientEmail || !privateKey) {
     return NextResponse.json({
-      pageviews: "0",
-      debug_error: "Env proměnné se nenačetly na serveru!"
+      pageviews: historicalBase,
+      status: "fallback"
     });
   }
 
   try {
 
-    const gaData = await import('@google-analytics/data');
-    const BetaAnalyticsDataClient = gaData.BetaAnalyticsDataClient;
+    const { BetaAnalyticsDataClient } = await import('@google-analytics/data');
 
     const analyticsDataClient = new BetaAnalyticsDataClient({
       credentials: {
@@ -56,27 +55,31 @@ export async function GET() {
       ],
     });
 
-    const pageViews = parseInt(
+    const gaViews = parseInt(
       response.rows?.[0]?.metricValues?.[0]?.value || "0",
       10
     );
 
-    const formatted = pageViews.toLocaleString('cs-CZ');
+    const totalViews = historicalBase + gaViews;
+
+    const formatted = totalViews.toLocaleString('cs-CZ');
 
     return NextResponse.json({
       pageviews: formatted,
+      raw_pageviews: totalViews,
       status: "live",
-      raw_pageviews: pageViews
+      ga_views: gaViews
     });
 
   } catch (error) {
 
-    console.error("GA4 FETCH ERROR:", error);
+    console.error("GA4 ERROR:", error);
 
     return NextResponse.json({
-      pageviews: "0",
-      debug_error: error.message || "Neznámá chyba"
-    }, { status: 200 });
+      pageviews: historicalBase,
+      raw_pageviews: historicalBase,
+      status: "fallback"
+    });
 
   }
 }
