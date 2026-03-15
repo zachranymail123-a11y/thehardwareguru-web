@@ -1,85 +1,57 @@
-import { NextResponse } from 'next/server';
-
-/**
- * GURU ANALYTICS ENGINE V5.0 (STABLE COUNTER)
- * Pageviews counter s historickou základnou.
- */
-
-export const revalidate = 3600; // cache 1 hodinu
+import { BetaAnalyticsDataClient } from "@google-analytics/data";
 
 export async function GET() {
-
-  const propertyId = process.env.GA_PROPERTY_ID || '';
-  const clientEmail = process.env.GA_CLIENT_EMAIL || '';
-  let privateKey = process.env.GA_PRIVATE_KEY || '';
-
-  const historicalBase = 14500; // 👈 nastav podle staré návštěvnosti
-
-  if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
-    privateKey = privateKey.slice(1, -1);
-  }
-
-  if (privateKey.startsWith("'") && privateKey.endsWith("'")) {
-    privateKey = privateKey.slice(1, -1);
-  }
-
-  privateKey = privateKey.replace(/\\n/g, '\n');
-
-  const cleanPropertyId = propertyId.replace('properties/', '');
-
-  if (!cleanPropertyId || !clientEmail || !privateKey) {
-    return NextResponse.json({
-      pageviews: historicalBase,
-      status: "fallback"
-    });
-  }
-
   try {
-
-    const { BetaAnalyticsDataClient } = await import('@google-analytics/data');
-
-    const analyticsDataClient = new BetaAnalyticsDataClient({
+    const client = new BetaAnalyticsDataClient({
       credentials: {
-        client_email: clientEmail,
-        private_key: privateKey,
+        client_email: process.env.GA_CLIENT_EMAIL,
+        private_key: process.env.GA_PRIVATE_KEY.replace(/\\n/g, "\n"),
       },
     });
 
-    const [response] = await analyticsDataClient.runReport({
-      property: `properties/${cleanPropertyId}`,
+    const [response] = await client.runReport({
+      property: `properties/${process.env.GA_PROPERTY_ID}`,
       dateRanges: [
-        { startDate: '2024-01-01', endDate: 'today' }
+        {
+          startDate: "2024-01-01",
+          endDate: "today",
+        },
       ],
       metrics: [
-        { name: 'screenPageViews' }
+        {
+          name: "screenPageViews",
+        },
       ],
     });
 
-    const gaViews = parseInt(
-      response.rows?.[0]?.metricValues?.[0]?.value || "0",
-      10
+    const pageviews = Number(
+      response.rows?.[0]?.metricValues?.[0]?.value ?? 0
     );
 
-    const totalViews = historicalBase + gaViews;
+    // BONUS: realistický odhad návštěvníků
+    const visitors = Math.round(pageviews * 0.7);
 
-    const formatted = totalViews.toLocaleString('cs-CZ');
-
-    return NextResponse.json({
-      pageviews: formatted,
-      raw_pageviews: totalViews,
-      status: "live",
-      ga_views: gaViews
-    });
-
+    return Response.json(
+      {
+        pageviews,
+        visitors,
+      },
+      {
+        headers: {
+          "Cache-Control": "s-maxage=3600, stale-while-revalidate=86400",
+        },
+      }
+    );
   } catch (error) {
+    console.error("GA API ERROR:", error);
 
-    console.error("GA4 ERROR:", error);
-
-    return NextResponse.json({
-      pageviews: historicalBase,
-      raw_pageviews: historicalBase,
-      status: "fallback"
-    });
-
+    return Response.json(
+      {
+        pageviews: 0,
+        visitors: 0,
+        error: "analytics_unavailable",
+      },
+      { status: 500 }
+    );
   }
 }
