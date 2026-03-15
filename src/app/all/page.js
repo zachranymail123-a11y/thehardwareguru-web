@@ -1,23 +1,19 @@
 import Link from "next/link";
 
 async function getAllPages() {
-  const base = process.env.NEXT_PUBLIC_SITE_URL;
 
-  // načíst sitemap index
-  const res = await fetch(`${base}/guru-sitemap.xml`, {
+  const res = await fetch("https://thehardwareguru.cz/guru-sitemap.xml", {
     next: { revalidate: 3600 }
   });
 
   const xml = await res.text();
 
-  // najít všechny sitemap soubory
   const sitemapUrls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map(
     m => m[1]
   );
 
   let allUrls = [];
 
-  // projít každou sitemapu
   for (const sitemap of sitemapUrls) {
     try {
       const res = await fetch(sitemap);
