@@ -2,10 +2,13 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 
 export async function GET() {
   try {
+
+    const privateKey = process.env.GA_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
     const client = new BetaAnalyticsDataClient({
       credentials: {
         client_email: process.env.GA_CLIENT_EMAIL,
-        private_key: process.env.GA_PRIVATE_KEY.replace(/\\n/g, "\n"),
+        private_key: privateKey,
       },
     });
 
@@ -19,22 +22,37 @@ export async function GET() {
       ],
       metrics: [
         {
-          name: "screenPageViews",
+          name: "eventCount",
         },
       ],
+      dimensions: [
+        {
+          name: "eventName",
+        },
+      ],
+      dimensionFilter: {
+        filter: {
+          fieldName: "eventName",
+          stringFilter: {
+            value: "page_view",
+          },
+        },
+      },
     });
 
     const pageviews = Number(
       response.rows?.[0]?.metricValues?.[0]?.value ?? 0
     );
 
-    // BONUS: realistický odhad návštěvníků
+    // realistický odhad unikátních návštěvníků
     const visitors = Math.round(pageviews * 0.7);
 
     return Response.json(
       {
         pageviews,
         visitors,
+        formatted_pageviews: pageviews.toLocaleString("cs-CZ"),
+        formatted_visitors: visitors.toLocaleString("cs-CZ"),
       },
       {
         headers: {
@@ -42,7 +60,9 @@ export async function GET() {
         },
       }
     );
+
   } catch (error) {
+
     console.error("GA API ERROR:", error);
 
     return Response.json(
