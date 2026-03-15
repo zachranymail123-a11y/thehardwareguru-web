@@ -13,11 +13,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V3.9 (INTEL HUB & PUBLISH FIX)
+ * GURU ULTIMATE COMMAND CENTER V4.0 (WEBHOOK & SOCIALS FIX)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
- * 🛡️ FIX 1: Navráceno UI pro Gaming Radar (Hry) v Intel Hubu.
- * 🛡️ FIX 2: Znovu přidán editační modal a funkce pro uložení konceptu do DB + Vercel Push.
+ * 🛡️ FIX 1: Opraveno čtení proměnné NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL (nyní bezpečně přes process.env).
+ * 🛡️ FIX 2: Do webhooku se nyní posílá JSON payload (Title, URL, Image, Desc), aby Make.com mohl vytvořit posty na sítě!
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -32,9 +32,13 @@ const getEnv = (key, fallback = '') => {
     'NEXT_PUBLIC_SUPABASE_ANON_KEY': bridge?.getAttribute('data-key'),
     'NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL': bridge?.getAttribute('data-webhook-article'),
   };
+  // 🚀 GURU FIX: Zajištěno přímé čtení z environmentu i na klientovi pro Next.js
   const envMap = {
     'OPENAI_API_KEY': process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
-    'NEXT_PUBLIC_ADMIN_PASSWORD': 'Wifik500'
+    'NEXT_PUBLIC_ADMIN_PASSWORD': 'Wifik500',
+    'NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL': process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL || '',
+    'NEXT_PUBLIC_SUPABASE_URL': process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
   };
   return bridgeMap[key] || envMap[key] || fallback;
 };
@@ -157,16 +161,17 @@ export default function AdminApp() {
     finally { setProcessingTitle(null); }
   };
 
-  // 🚀 GURU FIX: Funkce pro reálnou publikaci a poslání na Vercel Webhook
+  // 🚀 GURU FIX: Funkce pro reálnou publikaci a poslání dat na sítě
   const handlePublishDraft = async () => {
     if (!draft) return;
     setLoading(true);
     addLog(`Publikuji článek: ${draft.title_cs}...`, 'warning');
     try {
+        const finalSlug = draft.slug_cs || slugify(draft.title_cs);
         const { error } = await supabase.from('posts').insert([{
             title: draft.title_cs,
             title_en: draft.title_en,
-            slug: draft.slug_cs || slugify(draft.title_cs),
+            slug: finalSlug,
             slug_en: draft.slug_en || slugify(draft.title_en),
             description: draft.description_cs,
             description_en: draft.description_en,
@@ -183,14 +188,30 @@ export default function AdminApp() {
         if (error) throw error;
         addLog('Článek úspěšně publikován do databáze!', 'success');
 
-        // Spuštění Vercel buildu
-        const webhookUrl = getEnv('NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL');
+        // 🚀 GURU FIX: Spuštění Vercel buildu a Make.com s daty pro sociální sítě
+        const webhookUrl = process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL || getEnv('NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL');
         if (webhookUrl) {
-            addLog('Odesílám trigger na Vercel Webhook...', 'warning');
-            await fetch(webhookUrl, { method: 'POST' }).catch(() => null);
-            addLog('Vercel Build spuštěn.', 'success');
+            addLog('Odesílám data na Make.com (Vercel + Sítě)...', 'warning');
+            
+            const articleUrl = `https://thehardwareguru.cz/clanky/${finalSlug}`;
+            
+            await fetch(webhookUrl, { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: "publish",
+                    title: draft.title_cs,
+                    slug: finalSlug,
+                    url: articleUrl,
+                    description: draft.seo_description_cs || draft.description_cs,
+                    image_url: draft.image_url,
+                    type: draft.original_item?.intelType === 'game' ? 'game' : 'article'
+                })
+            }).catch(err => console.error("Webhook trigger failed:", err));
+            
+            addLog('Webhook úspěšně odeslán.', 'success');
         } else {
-            addLog('Webhook URL nenalezena, článek je ale uložen.', 'info');
+            addLog('CHYBA: Webhook URL chybí v .env! Článek je v DB, ale na sítě se neposlal.', 'error');
         }
 
         setDraft(null);
@@ -535,7 +556,7 @@ export default function AdminApp() {
         
       </main>
 
-      {/* 🚀 GURU FIX: MODAL PRO NÁHLED A PUBLIKACI (VRÁCENO ZPĚT!) */}
+      {/* 🚀 GURU FIX: MODAL PRO NÁHLED A PUBLIKACI (OPRAVENÝ PAYLOAD PRO SÍTĚ) */}
       {draft && previewMode === 'card' && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(5px)' }}>
             <div style={{ background: '#111318', padding: '40px', borderRadius: '24px', border: '1px solid #a855f7', width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', boxShadow: '0 0 50px rgba(168, 85, 247, 0.2)' }}>
@@ -582,7 +603,7 @@ export default function AdminApp() {
                 </div>
 
                 <button onClick={handlePublishDraft} disabled={loading} style={{ width: '100%', padding: '20px', background: 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)', color: '#fff', borderRadius: '15px', border: 'none', fontWeight: '950', cursor: 'pointer', marginTop: '30px', fontSize: '16px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '0 10px 30px rgba(168, 85, 247, 0.3)' }}>
-                    {loading ? <><RefreshCw className="spin" size={20}/> PUBLIKUJI A ODESÍLÁM NA VERCEL...</> : <><Send size={20}/> ULOŽIT DO DB A BUILDNOUT VERCEL</>}
+                    {loading ? <><RefreshCw className="spin" size={20}/> PUBLIKUJI A ODESÍLÁM NA SÍTĚ...</> : <><Send size={20}/> ULOŽIT DO DB, BUILDNOUT A ODESLAT NA SÍTĚ</>}
                 </button>
             </div>
         </div>
