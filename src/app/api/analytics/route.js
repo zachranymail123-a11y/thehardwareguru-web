@@ -13,7 +13,7 @@ export async function GET() {
   const clientEmail = process.env.GA_CLIENT_EMAIL || '';
   let privateKey = process.env.GA_PRIVATE_KEY || '';
 
-  const historicalBase = 8000; // 👈 nastav podle staré návštěvnosti
+  const historicalBase = 14500; // 👈 nastav podle staré návštěvnosti
 
   if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
     privateKey = privateKey.slice(1, -1);
