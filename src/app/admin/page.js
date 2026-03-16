@@ -247,12 +247,36 @@ export default function AdminApp() {
     e.preventDefault();
     setDbLoading(true);
     const table = dbTab === 'games' ? 'games' : (dbTab === 'gpu' ? 'gpus' : 'cpus');
-    const { error } = await supabase.from(table).insert([dbFormData]);
+    
+    // 🚀 GURU FIX: Vyčištění payloadu (automatický slug, detekce vendora a odstranění prázdných stringů pro čísla)
+    const payload = {
+        name: dbFormData.name.trim(),
+        slug: slugify(dbFormData.slug || dbFormData.name)
+    };
+
+    if (dbTab !== 'games') {
+        let detectedVendor = dbFormData.vendor;
+        if (!detectedVendor) {
+            const upperName = payload.name.toUpperCase();
+            if (upperName.includes('AMD') || upperName.includes('RYZEN') || upperName.includes('RADEON')) detectedVendor = 'AMD';
+            else if (upperName.includes('INTEL') || upperName.includes('CORE')) detectedVendor = 'INTEL';
+            else if (upperName.includes('NVIDIA') || upperName.includes('GEFORCE') || upperName.includes('RTX')) detectedVendor = 'NVIDIA';
+        }
+        if (detectedVendor) payload.vendor = detectedVendor;
+
+        if (dbFormData.performance_index && dbFormData.performance_index.trim() !== '') {
+            payload.performance_index = parseFloat(dbFormData.performance_index);
+        }
+    }
+
+    const { error } = await supabase.from(table).insert([payload]);
+    
     if (error) {
-      setDbMessage({ type: 'error', text: `Chyba DB: ${error.message}` });
+      setDbMessage({ type: 'error', text: `Chyba DB: ${error.message} (Tip: Spusť v Supabase SQL Editoru "NOTIFY pgrst, reload_schema;")` });
+      addLog(`DB Error: ${error.message}`, 'error');
     } else {
-      setDbMessage({ type: 'success', text: `Úspěšně přidáno: ${dbFormData.name}!` });
-      addLog(`Hardware/Hra ${dbFormData.name} přidána do DB!`, 'success');
+      setDbMessage({ type: 'success', text: `Úspěšně přidáno: ${payload.name}!` });
+      addLog(`${dbTab.toUpperCase()}: ${payload.name} přidáno do DB!`, 'success');
       setDbFormData({ name: '', slug: '', vendor: '', performance_index: '' });
     }
     setDbLoading(false);
