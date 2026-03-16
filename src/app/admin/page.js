@@ -13,12 +13,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V4.4 (AI FALLBACK PROMPT FIX)
+ * GURU ULTIMATE COMMAND CENTER V4.5 (DB SCHEMA & AI PROMPT FIX)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
- * 🛡️ FIX 1: Absolutní zákaz měnit UI nebo jiné funkce dodržen.
- * 🛡️ FIX 2: Pokud AI vynechá jakoukoliv klíčovou hodnotu (např. base_clock), 
- * vyskočí na uživatele prompt(), který se ho na ni doptá před uložením do DB.
+ * 🛡️ FIX 1: Odstraněny neexistující sloupce (base_clock, boost_clock_ghz) z payloadu pro CPU.
+ * 🛡️ FIX 2: Vylepšený AI Fallback, který zachytí i odpovědi "N/A" nebo "Unknown" a VŽDY se uživatele zeptá.
  * 🛡️ FIX 3: Prázdné hodnoty jsou smazány z payloadu, aby nevyvolávaly "Schema Cache" error.
  */
 
@@ -177,7 +176,7 @@ export default function AdminApp() {
             description_en: draft.description_en,
             seo_description: draft.seo_description_cs,
             seo_description_en: draft.seo_description_en,
-            content: draft.content_cs || draft.content,
+            content: draft.content_cs || draft.content, // Fallback
             content_cs: draft.content_cs,
             content_en: draft.content_en,
             image_url: draft.image_url,
@@ -248,6 +247,7 @@ export default function AdminApp() {
         name: dbFormData.name.trim()
     };
 
+    // Podle minulé zprávy - do CPU slug vůbec nedáváme, jen pro games a gpus
     if (dbTab === 'games' || dbTab === 'gpu') {
         payload.slug = slugify(dbFormData.slug || dbFormData.name);
     }
@@ -265,8 +265,9 @@ export default function AdminApp() {
     try {
         let sysPrompt = "";
         
+        // 🚀 GURU FIX: Prompt upraven pouze na relevantní sloupce, odstraněny všechny textové clocks, které rozbíjely DB.
         if (dbTab === 'cpu') {
-            sysPrompt = "Jsi nejlepší HW expert na světě. Máš přístup k nejnovějším datům a leakům z internetu. Vrať POUZE čistý JSON bez markdownu. Musíš vyplnit VŠECHNY tyto klíče absolutně přesnými daty z reality (nenechávej žádný prázdný!): 'vendor' (AMD nebo Intel), 'architecture', 'cores' (číslo), 'threads' (číslo), 'base_clock' (text, např. '4.2 GHz'), 'boost_clock_ghz' (text, např. '5.2 GHz'), 'base_clock_mhz' (číslo), 'boost_clock_mhz' (číslo), 'tdp_w' (číslo), 'l3_cache_mb' (číslo, POZOR: X3D procesory jako 9850X3D nebo 9800X3D mají VŽDY 96MB, 104MB nebo 128MB L3 cache, NIKDY 32MB!), 'release_price_usd' (číslo), 'release_date' (datum ve formátu YYYY-MM-DD), 'performance_index' (číslo od 50 do 150, kde např. 9800X3D=120, 9850X3D=125).";
+            sysPrompt = "Jsi nejlepší HW expert na světě. Máš přístup k nejnovějším datům a leakům z internetu. Vrať POUZE čistý JSON bez markdownu. Musíš vyplnit VŠECHNY tyto klíče absolutně přesnými daty z reality (nenechávej žádný prázdný!): 'vendor' (AMD nebo Intel), 'architecture', 'cores' (číslo), 'threads' (číslo), 'base_clock_mhz' (číslo), 'boost_clock_mhz' (číslo), 'tdp_w' (číslo), 'l3_cache_mb' (číslo, POZOR: X3D procesory jako 9850X3D nebo 9800X3D mají VŽDY 96MB, 104MB nebo 128MB L3 cache, NIKDY 32MB!), 'release_price_usd' (číslo), 'release_date' (datum ve formátu YYYY-MM-DD), 'performance_index' (číslo od 50 do 150, kde např. 9800X3D=120, 9850X3D=125).";
         } else if (dbTab === 'gpu') {
             sysPrompt = "Jsi špičkový HW expert. Vrať POUZE čistý JSON bez markdownu. Vyplň VŠECHNY tyto klíče přesnými daty z reality z internetu (nenechávej žádný prázdný!): 'vendor' (NVIDIA nebo AMD), 'architecture', 'vram_gb' (číslo), 'memory_bus' (text, např. '256-bit'), 'base_clock_mhz' (číslo), 'boost_clock_mhz' (číslo), 'tdp_w' (číslo), 'release_price_usd' (číslo), 'release_date' (datum ve formátu YYYY-MM-DD), 'performance_index' (číslo od 50 do 400).";
         } else if (dbTab === 'games') {
@@ -290,16 +291,23 @@ export default function AdminApp() {
         const r = await aiRes.json();
         const aiData = JSON.parse(r.choices[0].message.content);
         
-        // 🚀 GURU FIX: FALLBACK PROMPT - Záchranná síť, pokud AI něco nenajde
+        // 🚀 GURU FIX: FALLBACK PROMPT - Agresivnější detekce chybějících dat
         if (dbTab !== 'games') {
             const requiredKeys = dbTab === 'cpu' 
-                ? ['vendor', 'architecture', 'cores', 'threads', 'base_clock', 'boost_clock_ghz', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'l3_cache_mb', 'release_price_usd', 'release_date', 'performance_index']
+                ? ['vendor', 'architecture', 'cores', 'threads', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'l3_cache_mb', 'release_price_usd', 'release_date', 'performance_index']
                 : ['vendor', 'architecture', 'vram_gb', 'memory_bus', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'release_price_usd', 'release_date', 'performance_index'];
 
             for (const key of requiredKeys) {
-                // Pokud klíč chybí nebo je vrácen jako null/prázdný string
-                if (aiData[key] === undefined || aiData[key] === null || aiData[key] === '') {
-                    await new Promise(resolve => setTimeout(resolve, 50)); // Drobné zpoždění pro UI (aby se nevyblokoval loading)
+                const val = aiData[key];
+                // Rozpoznáme, jestli AI vygenerovalo halucinaci (N/A, Unknown) nebo prázdnou hodnotu
+                const isMissing = val === undefined || val === null || val === '' || 
+                                  String(val).toUpperCase() === 'N/A' || 
+                                  String(val).toUpperCase() === 'UNKNOWN' ||
+                                  String(val).toUpperCase() === 'NULL' ||
+                                  (typeof val === 'number' && isNaN(val));
+
+                if (isMissing) {
+                    await new Promise(resolve => setTimeout(resolve, 50)); // Drobné zpoždění pro UI rendering okna
                     
                     const userInput = window.prompt(`🚨 GURU AI NENAŠLO HODNOTU PRO:\n\n👉 [ ${key.toUpperCase()} ] u modelu ${payload.name}\n\nZadejte hodnotu ručně (nebo nechte prázdné a přeskočte):`);
                     
@@ -307,15 +315,18 @@ export default function AdminApp() {
                         const isNumeric = ['cores', 'threads', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'l3_cache_mb', 'release_price_usd', 'performance_index', 'vram_gb'].includes(key);
                         aiData[key] = isNumeric ? Number(userInput.trim()) : userInput.trim();
                     } else {
-                        delete aiData[key]; // Zabrání odeslání prázdného stringu do databáze (předejde pádu na schema cache)
+                        delete aiData[key]; // Bezpečné odstranění klíče, aby nespadla databáze
                     }
                 }
             }
         }
 
-        // Vyčistíme všechny ostatní prázdné klíče z AI (ochrana DB před nullovými pády)
+        // Vyčistíme všechny ostatní prázdné nebo neplatné klíče z AI odpovědi (ochrana DB)
         Object.keys(aiData).forEach(k => {
-            if (aiData[k] === null || aiData[k] === '') delete aiData[k];
+            const val = aiData[k];
+            if (val === null || val === '' || String(val).toUpperCase() === 'N/A' || String(val).toUpperCase() === 'UNKNOWN' || (typeof val === 'number' && isNaN(val))) {
+                delete aiData[k];
+            }
         });
 
         payload = { ...payload, ...aiData };
@@ -339,10 +350,11 @@ export default function AdminApp() {
         addLog(`Aktivuji novou hru a dopočítávám FPS matici přes DB Trigger pro: ${payload.name}...`, 'warning');
     }
 
+    // Vložení finálního a 100% čistého JSONu do Supabase
     const { error } = await supabase.from(table).insert([payload]);
     
     if (error) {
-      setDbMessage({ type: 'error', text: `Chyba DB: ${error.message} (Tip: Spustit v Supabase SQL Editoru "NOTIFY pgrst, 'reload schema';")` });
+      setDbMessage({ type: 'error', text: `Chyba DB: ${error.message}` });
       addLog(`DB Error: ${error.message}`, 'error');
     } else {
       setDbMessage({ type: 'success', text: `Úspěšně přidáno: ${payload.name}!` });
