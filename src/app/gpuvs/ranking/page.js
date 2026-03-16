@@ -2,19 +2,22 @@ import React from 'react';
 import { Trophy, Zap, ShieldCheck, Star, Swords, ChevronRight, TrendingUp } from 'lucide-react';
 
 /**
- * GURU GPU RANKING ENGINE V1.0
+ * GURU GPU RANKING ENGINE V1.1 (SEO SILOING FIX)
  * Cesta: src/app/gpuvs/ranking/page.js
  * 🚀 GURU: Tato stránka slouží jako traffic magnet pro klíčová slova "gpu ranking" a "gpu hierarchy".
  * 🛡️ DESIGN: Guru Supreme (Neon, Tier List struktura, agresivní Dark mode).
+ * 🛡️ FIX 1: Přidáno masivní interní prolinkování (Každý řádek nyní vede na profil grafiky).
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
+const slugify = (text) => text ? text.toLowerCase().replace(/graphics|gpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
+
 async function getGpuRanking() {
     if (!supabaseUrl) return [];
     try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/gpus?select=name,vendor,performance_index,architecture,vram_gb&order=performance_index.desc`, {
+        const res = await fetch(`${supabaseUrl}/rest/v1/gpus?select=name,slug,vendor,performance_index,architecture,vram_gb&order=performance_index.desc`, {
             headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
             next: { revalidate: 86400 }
         });
@@ -79,19 +82,24 @@ export default async function GpuRankingPage({ searchParams }) {
                                     {tier.label}
                                 </h2>
                                 <div style={{ background: 'rgba(15, 17, 21, 0.95)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
-                                    {tierGpus.map((gpu, idx) => (
-                                        <div key={idx} style={{ display: 'grid', gridTemplateColumns: '50px 1fr 120px', padding: '20px 30px', borderBottom: idx === tierGpus.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.02)', alignItems: 'center' }} className="ranking-row">
-                                            <span style={{ color: '#4b5563', fontWeight: '900', fontSize: '18px' }}>#{gpus.indexOf(gpu) + 1}</span>
-                                            <div>
-                                                <div style={{ color: getVendorColor(gpu.vendor), fontSize: '10px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '1px' }}>{gpu.vendor} • {gpu.architecture}</div>
-                                                <div style={{ fontSize: '18px', fontWeight: '900', color: '#fff', textTransform: 'uppercase' }}>{gpu.name}</div>
-                                            </div>
-                                            <div style={{ textAlign: 'right' }}>
-                                                <div style={{ color: tier.color, fontWeight: '950', fontSize: '20px' }}>{gpu.performance_index}%</div>
-                                                <div style={{ fontSize: '10px', color: '#4b5563', fontWeight: 'bold' }}>{isEn ? 'REL. POWER' : 'REL. VÝKON'}</div>
-                                            </div>
-                                        </div>
-                                    ))}
+                                    {tierGpus.map((gpu, idx) => {
+                                        const safeSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
+                                        const profileUrl = isEn ? `/en/gpu/${safeSlug}` : `/gpu/${safeSlug}`;
+                                        
+                                        return (
+                                            <a key={idx} href={profileUrl} className="ranking-row" style={{ display: 'grid', gridTemplateColumns: '50px 1fr 120px', padding: '20px 30px', borderBottom: idx === tierGpus.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.02)', alignItems: 'center', textDecoration: 'none' }}>
+                                                <span style={{ color: '#4b5563', fontWeight: '900', fontSize: '18px' }}>#{gpus.indexOf(gpu) + 1}</span>
+                                                <div>
+                                                    <div style={{ color: getVendorColor(gpu.vendor), fontSize: '10px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '1px' }}>{gpu.vendor} • {gpu.architecture}</div>
+                                                    <div className="gpu-name-hover" style={{ fontSize: '18px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', transition: '0.2s' }}>{gpu.name}</div>
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <div style={{ color: tier.color, fontWeight: '950', fontSize: '20px' }}>{gpu.performance_index}%</div>
+                                                    <div style={{ fontSize: '10px', color: '#4b5563', fontWeight: 'bold' }}>{isEn ? 'REL. POWER' : 'REL. VÝKON'}</div>
+                                                </div>
+                                            </a>
+                                        );
+                                    })}
                                 </div>
                             </section>
                         );
@@ -101,16 +109,19 @@ export default async function GpuRankingPage({ searchParams }) {
                 {/* CTA BOX */}
                 <div style={{ marginTop: '100px', background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(0,0,0,0.4) 100%)', padding: '60px 40px', borderRadius: '40px', border: '1px solid rgba(168, 85, 247, 0.3)', textAlign: 'center' }}>
                     <Star color="#a855f7" size={48} style={{ marginBottom: '20px' }} />
-                    <h3 style={{ fontSize: '28px', fontWeight: '950', textTransform: 'uppercase', marginBottom: '15px' }}>{isEn ? 'Need a direct comparison?' : 'Potřebuješ přímé srovnání?'}</h3>
+                    <h3 style={{ fontSize: '28px', fontWeight: '950', textTransform: 'uppercase', marginBottom: '15px', color: '#fff' }}>{isEn ? 'Need a direct comparison?' : 'Potřebuješ přímé srovnání?'}</h3>
                     <p style={{ color: '#9ca3af', marginBottom: '30px' }}>{isEn ? 'Use our Guru VS Engine to compare two specific GPUs head-to-head.' : 'Použij náš Guru VS Engine a porovnej dvě konkrétní grafiky tváří v tvář.'}</p>
-                    <a href={isEn ? "/en/gpuvs" : "/gpuvs"} style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '18px 40px', background: '#a855f7', color: '#fff', textDecoration: 'none', fontWeight: '950', borderRadius: '16px', fontSize: '16px', textTransform: 'uppercase' }}>
+                    <a href={isEn ? "/en/gpuvs" : "/gpuvs"} style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '18px 40px', background: '#a855f7', color: '#fff', textDecoration: 'none', fontWeight: '950', borderRadius: '16px', fontSize: '16px', textTransform: 'uppercase', transition: '0.3s' }}>
                         {isEn ? 'Launch VS Engine' : 'Spustit VS Engine'} <ChevronRight size={20} />
                     </a>
                 </div>
 
             </main>
             <style dangerouslySetInnerHTML={{__html: `
-                .ranking-row:hover { background: rgba(255,255,255,0.02); transition: 0.2s; }
+                .ranking-row { transition: 0.2s; cursor: pointer; }
+                .ranking-row:hover { background: rgba(255,255,255,0.03) !important; }
+                .ranking-row:hover .gpu-name-hover { color: #66fcf1 !important; transform: translateX(5px); }
+                
                 @media (max-width: 768px) {
                   .ranking-row { grid-template-columns: 40px 1fr 80px !important; padding: 15px !important; }
                   .ranking-row div:last-child { font-size: 16px !important; }
