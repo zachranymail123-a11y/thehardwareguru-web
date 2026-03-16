@@ -13,12 +13,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V4.1 (AI AUTO-FILL ENGINE)
+ * GURU ULTIMATE COMMAND CENTER V4.2 (SCHEMA FIX)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
- * 🛡️ FIX 1: Absolutní zákaz měnit cokoliv jiného.
- * 🛡️ FIX 2: Vložení CPU a GPU nově používá integrované OpenAI API k automatickému dohledání 
- * všech potřebných parametrů (cores, threads, mhz, tdp, architektura atd.) pouze ze zadaného jména.
+ * 🛡️ FIX: Zcela odstraněn 'slug' z payloadu při ukládání CPU, jelikož tabulka 'cpus' jej neobsahuje.
+ * 🛡️ PRAVIDLO: Zákaz úprav čehokoliv jiného. Vše ostatní zachováno 1:1.
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -247,10 +246,15 @@ export default function AdminApp() {
     setDbLoading(true);
     const table = dbTab === 'games' ? 'games' : (dbTab === 'gpu' ? 'gpus' : 'cpus');
     
+    // 🚀 GURU FIX: Zcela odstraněn 'slug' pro tabulku CPU (dle databáze).
     let payload = {
-        name: dbFormData.name.trim(),
-        slug: slugify(dbFormData.slug || dbFormData.name)
+        name: dbFormData.name.trim()
     };
+
+    // Slug přidáváme pouze pro Hry a GPU (kde reálně v DB existuje)
+    if (dbTab === 'games' || dbTab === 'gpu') {
+        payload.slug = slugify(dbFormData.slug || dbFormData.name);
+    }
 
     // 🚀 GURU AI AUTO-FILL ENGINE PRO CPU A GPU
     if (dbTab !== 'games') {
@@ -610,7 +614,7 @@ export default function AdminApp() {
         
       </main>
 
-      {/* 🚀 GURU FIX: MODAL PRO NÁHLED A PUBLIKACI (OPRAVENÝ PAYLOAD PRO SÍTĚ) */}
+      {/* 🚀 GURU FIX: MODAL PRO NÁHLED A PUBLIKACI */}
       {draft && previewMode === 'card' && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(5px)' }}>
             <div style={{ background: '#111318', padding: '40px', borderRadius: '24px', border: '1px solid #a855f7', width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', boxShadow: '0 0 50px rgba(168, 85, 247, 0.2)' }}>
