@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK ENGINE V22.1 (REALISTIC SCALING & FPS EDITION)
+ * GURU BOTTLENECK ENGINE V22.2 (REALISTIC SCALING, FPS & SEO SILOING EDITION)
  * Cesta: src/app/bottleneck/[slug]/page.js
  * 🚀 CÍL: Fix masivního "Duplicate Content" v Bingu.
  * 🛡️ FIX 1: Jméno hry a rozlišení z URL propisujeme přímo do SEO Metadat (Title, Desc).
@@ -13,6 +13,7 @@ import {
  * 🛡️ FIX 3: Extrahování a zobrazení odhadovaných FPS pro konkrétní hru přímo v Hero sekci.
  * 🛡️ FIX 4: Opraven routing pro "Lepší CPU/GPU", aby neskládal invalidní 'en-' URL adresy.
  * 🛡️ FIX 5: Zásadní úprava matematiky výpočtu bottlenecku (realistické škálování, 7800X3D + 5090 = rozumných ~20-25% @ 1080p).
+ * 🛡️ FIX 6: Přidáno masivní interní prolinkování (Siloing) - klikací názvy HW na profil, rychlé přepínače rozlišení.
  */
 
 export const runtime = "nodejs";
@@ -196,6 +197,11 @@ export default async function BottleneckPage(props) {
   const betterCpuPath = `core-i7-14700k-with-${safeGpuSlug}`;
   const betterGpuPath = `${safeCpuSlug}-with-geforce-rtx-5080`;
 
+  // Base URL pro aktuální kombo bez rozlišení, slouží pro tvorbu dynamických odkazů
+  const baseComboUrl = gameSlug 
+    ? `${safeCpuSlug}-with-${safeGpuSlug}-in-${gameSlug}`
+    : `${safeCpuSlug}-with-${safeGpuSlug}`;
+
   // 🚀 ZLATÁ GSC SEO SCHÉMATA PRO BOTTLENECK (RICH RESULTS FIX + SHIPPING)
   const commonOfferDetails = {
     "priceValidUntil": "2026-12-31", 
@@ -322,13 +328,32 @@ export default async function BottleneckPage(props) {
         <header style={{ textAlign: 'center', marginBottom: '50px' }}>
           <div className="radar-badge"><Gauge size={16} /> GURU BOTTLENECK RADAR</div>
           <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: 0, lineHeight: '1.1' }}>
-            <span style={{ color: cpu.vendor?.toUpperCase() === 'INTEL' ? '#0071c5' : '#ed1c24' }}>{normalizeName(cpu.name)}</span> <br/>
+            <a href={isEn ? `/en/cpu/${safeCpuSlug}` : `/cpu/${safeCpuSlug}`} style={{ color: cpu.vendor?.toUpperCase() === 'INTEL' ? '#0071c5' : '#ed1c24', textDecoration: 'none' }} title={isEn ? `View ${cpu.name} profile` : `Zobrazit profil ${cpu.name}`}>
+              {normalizeName(cpu.name)}
+            </a> <br/>
             <span style={{ color: '#fff', opacity: 0.3, fontSize: '0.4em', display: 'block', margin: '10px 0' }}>WITH</span>
-            <span style={{ color: gpu.vendor?.toUpperCase() === 'NVIDIA' ? '#76b900' : '#ed1c24' }}>{normalizeName(gpu.name)}</span>
+            <a href={isEn ? `/en/gpu/${safeGpuSlug}` : `/gpu/${safeGpuSlug}`} style={{ color: gpu.vendor?.toUpperCase() === 'NVIDIA' ? '#76b900' : '#ed1c24', textDecoration: 'none' }} title={isEn ? `View ${gpu.name} profile` : `Zobrazit profil ${gpu.name}`}>
+              {normalizeName(gpu.name)}
+            </a>
           </h1>
           {gameName && (
              <div style={{ color: '#66fcf1', fontSize: '15px', fontWeight: '950', marginTop: '25px', letterSpacing: '2px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                 <Gamepad2 size={18} style={{ marginBottom: '-2px' }}/> {isEn ? 'PERFORMANCE IN' : 'VÝKON VE HŘE'} {gameName} {resText && `(${resText})`}
+             </div>
+          )}
+
+          {/* 🚀 GURU SILOING: Rychlé přepínání rozlišení */}
+          {gameName && (
+             <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                {['1080p', '1440p', '4k'].map(res => (
+                   <a 
+                     key={res} 
+                     href={isEn ? `/en/bottleneck/${baseComboUrl}-at-${res}` : `/bottleneck/${baseComboUrl}-at-${res}`} 
+                     className={`res-btn ${resolution === res ? 'active' : ''}`}
+                   >
+                      {res.toUpperCase()}
+                   </a>
+                ))}
              </div>
           )}
         </header>
@@ -429,6 +454,11 @@ export default async function BottleneckPage(props) {
         .status-pill { padding: 12px 35px; border-radius: 50px; display: inline-block; font-weight: 950; fontSize: 14px; text-transform: uppercase; }
         .section-h2 { color: #fff; font-size: 1.5rem; font-weight: 950; text-transform: uppercase; margin-bottom: 30px; padding-left: 15px; }
         
+        /* 🚀 GURU SILOING STYLY */
+        .res-btn { padding: 8px 20px; border-radius: 12px; font-size: 12px; font-weight: 950; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #9ca3af; text-decoration: none; transition: 0.2s; }
+        .res-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .res-btn.active { background: #66fcf120; border-color: #66fcf1; color: #66fcf1; }
+
         .spec-card-box { background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
         .card-label { font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; margin: 10px 0 5px; }
         .card-val { font-size: 18px; font-weight: 950; color: #fff; }
