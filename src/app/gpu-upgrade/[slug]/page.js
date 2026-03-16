@@ -7,12 +7,13 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V120.0 (GOLDEN RICH RESULTS FIX)
+ * GURU GPU UPGRADE ENGINE - DETAIL V120.1 (GOLDEN RICH RESULTS + SEO SILOING)
  * Cesta: src/app/gpu-upgrade/[slug]/page.js
  * 🚀 CÍL: 100% zelená v GSC a ovládnutí doporučení pro upgrade v Google SERP.
  * 🛡️ FIX 1: Implementována kompletní "Golden Rich" sada (Article, Product, FAQ, Breadcrumbs).
  * 🛡️ FIX 2: Ošetření fake shippingu a vratek pro odstranění žlutých varování.
  * 🛡️ FIX 3: Striktní Next.js 15 compliance (await params).
+ * 🛡️ FIX 4: Přidáno masivní SEO prolinkování (Siloing) - Související články a další upgrady.
  */
 
 export const runtime = "nodejs";
@@ -68,6 +69,45 @@ const getUpgradeData = cache(async (rawSlug) => {
   } catch (e) { return null; }
 });
 
+// 🚀 GURU SEO SILOING: Získání sémanticky souvisejících článků
+const getRelatedArticles = async (gpuA_Name, gpuB_Name) => {
+    if (!supabaseUrl) return [];
+    const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+    const nameA = normalizeName(gpuA_Name || '');
+    const nameB = normalizeName(gpuB_Name || '');
+
+    try {
+        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.%${encodeURIComponent(nameA)}%,title_en.ilike.%${encodeURIComponent(nameA)}%,title.ilike.%${encodeURIComponent(nameB)}%,title_en.ilike.%${encodeURIComponent(nameB)}%)&order=created_at.desc&limit=3`, {
+            headers, cache: 'no-store'
+        });
+        
+        let data = [];
+        if (res.ok) data = await res.json();
+
+        if (!data || data.length === 0) {
+            const resLatest = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&type=eq.hardware&order=created_at.desc&limit=3`, {
+                headers, cache: 'no-store'
+            });
+            if (resLatest.ok) data = await resLatest.json();
+        }
+        
+        return Array.isArray(data) ? data : [];
+    } catch (e) { return []; }
+};
+
+// 🚀 GURU SEO SILOING: Získání dalších návrhů na upgrade
+const getMoreUpgrades = async (currentSlug) => {
+    if (!supabaseUrl) return [];
+    const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+    try {
+        const res = await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades?select=title_cs,title_en,slug,slug_en&slug=neq.${currentSlug}&order=created_at.desc&limit=3`, {
+            headers, cache: 'no-store'
+        });
+        if (res.ok) return await res.json();
+        return [];
+    } catch(e) { return []; }
+};
+
 export async function generateMetadata(props) {
   const params = await props.params;
   const rawSlug = params?.slug || '';
@@ -116,6 +156,10 @@ export default async function GpuUpgradePage(props) {
 
   const calcSafeDiff = (oldF, newF) => (!oldF || !newF || oldF === 0) ? 0 : Math.round(((newF / oldF) - 1) * 100);
   const cyberpunkDiff = calcSafeDiff(fpsA?.cyberpunk_2077_1440p, fpsB?.cyberpunk_2077_1440p);
+
+  // 🚀 Fetching Siloing Data
+  const relatedArticles = await getRelatedArticles(gpuA.name, gpuB.name);
+  const moreUpgrades = await getMoreUpgrades(upgrade.slug);
 
   // 🚀 ZLATÁ GSC SEO SCHÉMATA (GOLDEN RICH RESULTS FIX)
   const commonOfferDetails = {
@@ -214,15 +258,11 @@ export default async function GpuUpgradePage(props) {
             <ArrowUpCircle size={14} /> GURU UPGRADE ANALYSIS
           </div>
           <h1 style={{ fontSize: 'clamp(1.8rem, 4vw, 3rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0', lineHeight: '1.2' }}>
-            {isEn ? "UPGRADE FROM" : "UPGRADE Z"} <span style={{ color: '#9ca3af' }}>{normalizeName(gpuA.name)}</span> <br/>
-            <span style={{ color: '#66fcf1' }}>TO {normalizeName(gpuB.name)}?</span>
+            <span style={{ color: '#6b7280', fontSize: '0.6em', display: 'block', marginBottom: '10px' }}>{isEn ? 'UPGRADING FROM' : 'UPGRADE Z'}</span>
+            {normalizeName(gpuA.name)} <br/>
+            <span style={{ color: '#66fcf1', fontSize: '0.6em', display: 'block', margin: '15px 0 10px 0' }}>{isEn ? 'TO' : 'NA'}</span>
+            {normalizeName(gpuB.name)}
           </h1>
-
-          {isWorthIt && (
-            <div className="guru-verdict" style={{ borderColor: '#66fcf1', color: '#66fcf1', background: 'rgba(102, 252, 241, 0.05)', display: 'inline-block', marginTop: '20px', padding: '10px 25px', borderRadius: '50px', fontWeight: '950', border: '1px solid #66fcf140', textTransform: 'uppercase' }}>
-                {isEn ? 'VERDICT:' : 'VERDIKT:'} <strong>{normalizeName(gpuB.name)}</strong> {isEn ? 'is a solid upgrade' : 'je dobrý upgrade'} ({finalPerfDiff > 0 ? '+' : ''}{finalPerfDiff}%)
-            </div>
-          )}
         </header>
 
         <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '60px' }}>
@@ -263,6 +303,46 @@ export default async function GpuUpgradePage(props) {
           </div>
         </section>
 
+        {/* 🚀 GURU SILOING: Sémantické Články & Další Upgrady */}
+        <section style={{ marginBottom: '60px' }}>
+            {relatedArticles.length > 0 && (
+                <div style={{ marginBottom: '40px' }}>
+                    <h2 className="section-h2" style={{ borderLeftColor: '#a855f7', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <Info size={28} color="#a855f7" /> {isEn ? 'RELATED ARTICLES' : 'SOUVISEJÍCÍ ČLÁNKY'}
+                    </h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                        {relatedArticles.map(art => (
+                            <a key={art.slug} href={isEn ? `/en/clanky/${art.slug_en || art.slug}` : `/clanky/${art.slug}`} className="related-card-style">
+                                <div className="related-img-box">
+                                    <img src={art.image_url || 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000'} alt={art.title} loading="lazy" />
+                                </div>
+                                <div className="related-content-box">
+                                    <span className="related-tag">{isEn ? 'TECH NEWS' : 'HW NOVINKA'}</span>
+                                    <h3 className="related-title-text">{isEn && art.title_en ? art.title_en : art.title}</h3>
+                                </div>
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {moreUpgrades.length > 0 && (
+                <div>
+                    <h2 className="section-h2" style={{ borderLeftColor: '#66fcf1', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <ArrowUpCircle size={28} color="#66fcf1" /> {isEn ? 'MORE GPU UPGRADES' : 'DALŠÍ GPU UPGRADY'}
+                    </h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px' }}>
+                        {moreUpgrades.map(upg => (
+                            <a key={upg.slug} href={isEn ? `/en/gpu-upgrade/${upg.slug_en || upg.slug}` : `/gpu-upgrade/${upg.slug}`} className="silo-link-card">
+                                <span style={{ fontWeight: '900', textTransform: 'uppercase' }}>{isEn && upg.title_en ? upg.title_en : upg.title_cs}</span>
+                                <ArrowRight size={16} className="silo-arrow" />
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </section>
+
         {/* 🚀 GLOBÁLNÍ CTA TLAČÍTKA */}
         <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
           <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
@@ -290,10 +370,27 @@ export default async function GpuUpgradePage(props) {
         .table-wrapper { background: rgba(15, 17, 21, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .spec-row-style { display: flex; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .table-label { width: 180px; text-align: center; font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; }
+        
+        /* 🚀 GURU SILOING STYLY */
+        .related-card-style { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; text-decoration: none; transition: 0.3s; display: block; }
+        .related-card-style:hover { transform: translateY(-5px); border-color: #a855f7; }
+        .related-img-box { height: 160px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .related-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .related-content-box { padding: 20px; }
+        .related-tag { color: #a855f7; font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 10px; }
+        .related-title-text { color: #fff; font-size: 1.1rem; font-weight: 950; margin: 0; line-height: 1.3; }
+
+        .silo-link-card { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 18px 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #d1d5db; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-left: 3px solid #66fcf1; }
+        .silo-link-card:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); color: #fff; transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+        .silo-link-card .silo-arrow { color: #66fcf1; transition: 0.3s; }
+        .silo-link-card:hover .silo-arrow { transform: translateX(3px); }
+
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
         .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
+
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
         .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
+
         @media (max-width: 768px) { .guru-grid-ring { grid-template-columns: 1fr !important; } .vs-badge { margin: 10px auto; transform: rotate(90deg); } .table-label { width: 100px; } .spec-row-style { padding: 15px 10px; } }
       `}} />
     </div>
