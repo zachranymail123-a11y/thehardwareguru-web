@@ -1,15 +1,16 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { ChevronLeft, Info, Calendar, Flame, Heart, Share2, CheckCircle2, ShoppingCart } from 'lucide-react';
+import { ChevronLeft, Info, Calendar, Flame, Heart, Share2, CheckCircle2, ShoppingCart, Swords, Gauge, ArrowRight } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU ARTICLE ENGINE V4.0 (GOLDEN RICH RESULTS FIX)
+ * GURU ARTICLE ENGINE V4.1 (GOLDEN RICH RESULTS + SEO SILOING)
  * Cesta: src/app/clanky/[slug]/page.js
- * 🚀 CÍL: 100% zelená v GSC a blesková indexace do Google Discover.
+ * 🚀 CÍL: 100% zelená v GSC, blesková indexace a maximální udržení uživatele (Bounce Rate).
  * 🛡️ FIX 1: Implementována kompletní "Golden Rich" sada (TechArticle, Product, FAQ, Breadcrumbs).
  * 🛡️ FIX 2: Ošetření fake shippingu a vratek pro odstranění žlutých varování u redakčního obsahu.
  * 🛡️ FIX 3: Striktní Next.js 15 compliance (await params).
+ * 🛡️ FIX 4: Přidáno masivní SEO prolinkování (Siloing) - Odkazy na Duely, Bottleneck a Sdílení.
  */
 
 export const runtime = "nodejs";
@@ -175,6 +176,7 @@ export default async function ArticleDetailPage(props) {
     };
 
     const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
+    const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}clanky/${post.slug}`;
 
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -210,11 +212,55 @@ export default async function ArticleDetailPage(props) {
                     )}
 
                     <div className="guru-article-content" dangerouslySetInnerHTML={{ __html: content }} />
+                    
+                    {/* 🚀 GURU SILOING: Odkaz na Bottleneck Kalkulačku uvnitř článku */}
+                    <div style={{ marginTop: '50px', background: 'linear-gradient(135deg, rgba(102, 252, 241, 0.1) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(102, 252, 241, 0.3)', padding: '30px', borderRadius: '20px', textAlign: 'center' }}>
+                        <Gauge size={32} color="#66fcf1" style={{ marginBottom: '15px' }} />
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase' }}>
+                            {isEn ? 'IS YOUR PC READY?' : 'ZVLÁDNE TO TVŮJ PC?'}
+                        </h3>
+                        <p style={{ color: '#9ca3af', marginBottom: '20px', fontSize: '1.1rem' }}>
+                            {isEn ? 'Check if your CPU is holding back your GPU in our unique Bottleneck Calculator.' : 'Zkontroluj, jestli tě nebrzdí procesor, v naší unikátní kalkulačce bottlenecku.'}
+                        </p>
+                        <a href={isEn ? "/en/bottleneck" : "/bottleneck"} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#66fcf1', color: '#000', padding: '12px 25px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', transition: '0.3s' }}>
+                            {isEn ? 'TEST YOUR PC NOW' : 'OTESTOVAT BOTTLENECK'} <ArrowRight size={16} />
+                        </a>
+                    </div>
                 </article>
+
+                {/* 🚀 SOCIAL SHARE BOX */}
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginTop: '40px' }}>
+                    <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`} target="_blank" rel="nofollow noopener" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#1da1f220', color: '#1da1f2', border: '1px solid #1da1f250', padding: '10px 20px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', transition: '0.3s' }}>
+                        <Share2 size={16} /> TWITTER / X
+                    </a>
+                    <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="nofollow noopener" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#1877f220', color: '#1877f2', border: '1px solid #1877f250', padding: '10px 20px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', transition: '0.3s' }}>
+                        <Share2 size={16} /> FACEBOOK
+                    </a>
+                </div>
+
+                {/* 🚀 GURU SILOING: Banner na VS Duely */}
+                <div style={{ marginTop: '60px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+                    <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="silo-banner-card" style={{ borderLeftColor: '#66fcf1' }}>
+                        <div className="silo-banner-icon" style={{ color: '#66fcf1', background: '#66fcf120' }}><Swords size={28} /></div>
+                        <div className="silo-banner-text">
+                            <h4>{isEn ? 'CPU BATTLES' : 'SROVNÁNÍ PROCESORŮ'}</h4>
+                            <p>{isEn ? 'Compare processors and find the best.' : 'Porovnejte procesory a najděte ten nejlepší.'}</p>
+                        </div>
+                        <ChevronLeft size={24} className="silo-banner-arrow" style={{ transform: 'rotate(180deg)', color: '#66fcf1' }} />
+                    </a>
+                    <a href={isEn ? "/en/gpuvs" : "/gpuvs"} className="silo-banner-card" style={{ borderLeftColor: '#ff0055' }}>
+                        <div className="silo-banner-icon" style={{ color: '#ff0055', background: '#ff005520' }}><Swords size={28} /></div>
+                        <div className="silo-banner-text">
+                            <h4>{isEn ? 'GPU BATTLES' : 'SROVNÁNÍ GRAFIK'}</h4>
+                            <p>{isEn ? 'Find the ultimate gaming graphics card.' : 'Najděte tu nejlepší grafiku pro hraní.'}</p>
+                        </div>
+                        <ChevronLeft size={24} className="silo-banner-arrow" style={{ transform: 'rotate(180deg)', color: '#ff0055' }} />
+                    </a>
+                </div>
 
                 {/* 🚀 DYNAMICKÁ SEKCE RECIRKULACE */}
                 {latestPosts.length > 0 && (
-                    <section style={{ marginTop: '80px' }}>
+                    <section style={{ marginTop: '60px' }}>
                         <h2 className="section-h2" style={{ color: '#fff', fontSize: '1.8rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #a855f7', paddingLeft: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <Info size={28} color="#a855f7" /> {isEn ? 'READ MORE' : 'DALŠÍ ČTENÍ'}
                         </h2>
@@ -264,6 +310,14 @@ export default async function ArticleDetailPage(props) {
                 .guru-article-content a { color: #a855f7; text-decoration: underline; font-weight: bold; }
                 .guru-article-content img { border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); margin: 20px 0; }
                 
+                /* 🚀 GURU SILOING STYLY */
+                .silo-banner-card { flex: 1; min-width: 300px; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; align-items: center; gap: 20px; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border-left-width: 5px; }
+                .silo-banner-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.02); }
+                .silo-banner-icon { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+                .silo-banner-text h4 { margin: 0 0 5px 0; color: #fff; font-size: 1.2rem; font-weight: 950; }
+                .silo-banner-text p { margin: 0; color: #9ca3af; font-size: 0.9rem; }
+                .silo-banner-card:hover .silo-banner-arrow { transform: rotate(180deg) translateX(-5px) !important; }
+
                 .related-article-card { display: flex; flex-direction: column; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
                 .related-article-card:hover { transform: translateY(-5px); border-color: rgba(168, 85, 247, 0.4); box-shadow: 0 15px 40px rgba(168, 85, 247, 0.2); }
                 .related-img-wrapper { height: 160px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -278,6 +332,8 @@ export default async function ArticleDetailPage(props) {
                 @media (max-width: 768px) {
                     .guru-deals-btn, .guru-support-btn { width: 100%; font-size: 15px; padding: 18px 30px; }
                     .content-box-style { padding: 25px; }
+                    .silo-banner-card { flex-direction: column; text-align: center; }
+                    .silo-banner-arrow { display: none; }
                 }
             `}} />
         </div>
