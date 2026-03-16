@@ -3,17 +3,12 @@ import { Gamepad2, Monitor, Cpu, Info, ArrowRight } from 'lucide-react';
 import FpsCalculatorClient from './FpsCalculatorClient';
 import { createClient } from '@supabase/supabase-js';
 
-/**
- * GURU FPS ENGINE - V2.7 (STRICT SYNTAX VALIDATION)
- * 🛡️ FIX: Absolutně prověřená syntaxe objektu style. Všechny hodnoty jsou stringy.
- * 🛡️ DB: Načítá procesory ze sloupce 'name' bez jakýchkoli filtrů.
- */
-
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 export const revalidate = 0;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+// Na serveru použijeme Service Role Key (God Mode), pokud ho máš v env
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const baseUrl = "https://thehardwareguru.cz";
 
@@ -32,7 +27,7 @@ export default async function FpsKalkulackaPage(props) {
   const isEn = props?.params?.lang === 'en' || props?.searchParams?.lang === 'en' || false;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // GURU: Čistý fetch dat pro naplnění selectů
+  // Načtení dat přímo ze sloupců ID a NAME (ověřeno z CSV)
   const [gpuRes, cpuRes, gameRes] = await Promise.all([
     supabase.from('gpus').select('id,name,vendor,slug').order('name'),
     supabase.from('cpus').select('id,name,vendor,slug').order('name'),
@@ -58,7 +53,7 @@ export default async function FpsKalkulackaPage(props) {
 
         <FpsCalculatorClient gpus={gpus} cpus={cpus} games={games} isEn={isEn} />
 
-        {/* 🛡️ TADY BYLA CHYBA - NYNÍ OPRAVENO: display: 'grid' */}
+        {/* FIX: display: 'grid' v uvozovkách */}
         <div style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
             <a href={isEn ? "/en/cpu-index" : "/cpu-index"} className="silo-mini-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
