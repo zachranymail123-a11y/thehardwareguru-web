@@ -5,13 +5,14 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK ENGINE V22.0 (UNIQUE CONTENT & FPS EDITION)
+ * GURU BOTTLENECK ENGINE V22.1 (REALISTIC SCALING & FPS EDITION)
  * Cesta: src/app/bottleneck/[slug]/page.js
  * 🚀 CÍL: Fix masivního "Duplicate Content" v Bingu.
  * 🛡️ FIX 1: Jméno hry a rozlišení z URL propisujeme přímo do SEO Metadat (Title, Desc).
  * 🛡️ FIX 2: Dynamická matematika! Bottleneck skóre se mění dle rozlišení (1080p = CPU stress, 4K = GPU stress).
  * 🛡️ FIX 3: Extrahování a zobrazení odhadovaných FPS pro konkrétní hru přímo v Hero sekci.
  * 🛡️ FIX 4: Opraven routing pro "Lepší CPU/GPU", aby neskládal invalidní 'en-' URL adresy.
+ * 🛡️ FIX 5: Zásadní úprava matematiky výpočtu bottlenecku (realistické škálování, 7800X3D + 5090 = rozumných ~20-25% @ 1080p).
  */
 
 export const runtime = "nodejs";
@@ -140,17 +141,30 @@ export default async function BottleneckPage(props) {
   const effCpuPower = cpuPower * resModifierCpu;
   const effGpuPower = gpuPower * resModifierGpu;
 
-  // Guru Bottleneck Formula
-  let bottleneckScore = effCpuPower < effGpuPower * 0.75 
-    ? Math.min(Math.round(((effGpuPower / effCpuPower) - 1) * 20), 100) 
-    : (effGpuPower < effCpuPower * 0.6 ? Math.min(Math.round(((effCpuPower / effGpuPower) - 1) * 12), 100) : 0);
+  // 🚀 GURU BOTTLENECK FORMULA V2.1 (REALISTICKÉ ŠKÁLOVÁNÍ)
+  // Grafiky mají v DB obvykle ~2.9x vyšší index než procesory. Normalizujeme to.
+  const normalizedCpu = effCpuPower * 2.9; 
+  const normalizedGpu = effGpuPower;
   
-  const isCpuBottleneck = effCpuPower < effGpuPower * 0.75;
-  let bottleneckType = '';
-  if (bottleneckScore > 15) {
-      bottleneckType = isCpuBottleneck ? 'CPU' : 'GPU';
+  let bottleneckScore = 0;
+  let isCpuBottleneck = false;
+
+  if (normalizedGpu > normalizedCpu) {
+      // GPU je silnější než CPU -> CPU Bottleneck
+      isCpuBottleneck = true;
+      const diff = (normalizedGpu / normalizedCpu) - 1; 
+      bottleneckScore = Math.min(Math.round(diff * 45), 100); 
+  } else {
+      // CPU je silnější než GPU -> GPU Bottleneck
+      isCpuBottleneck = false;
+      const diff = (normalizedCpu / normalizedGpu) - 1;
+      bottleneckScore = Math.min(Math.round(diff * 45), 100);
   }
 
+  // Tolerance pro perfektní combo (pod 5% bereme jako ideální)
+  if (bottleneckScore < 5) bottleneckScore = 0;
+
+  let bottleneckType = isCpuBottleneck ? 'CPU' : 'GPU';
   const statusColor = bottleneckScore < 15 ? '#10b981' : (bottleneckScore < 30 ? '#f59e0b' : '#ef4444');
 
   // 🚀 GURU FPS ESTIMATION ENGINE
