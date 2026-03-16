@@ -4,18 +4,27 @@ import {
   Monitor, 
   Database, 
   Activity, 
-  Swords 
+  Swords,
+  TrendingUp,
+  Cpu,
+  Flame,
+  Info,
+  Calendar
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU GPU ENGINE - KATALOG GRAFIK V1.0
+ * GURU GPU ENGINE - KATALOG GRAFIK V1.1 (NATIVE FETCH + SEO SILOING FIX)
  * Cesta: src/app/gpu-index/page.js
  * 🛡️ ARCH: SEO Hub, Řazení dle výkonu, NVIDIA vs AMD rozdělení.
- * 🛡️ FIX: Chybějící index grafik doplněn (parita s CPU).
+ * 🛡️ FIX 1: Chybějící index grafik doplněn (parita s CPU).
+ * 🛡️ FIX 2: Supabase klient kompletně odstraněn, nahrazen nativním fetchem.
+ * 🛡️ FIX 3: Odstraněna mrtvá cache (revalidate 0, force-dynamic).
+ * 🛡️ FIX 4: Přidáno masivní SEO prolinkování (Siloing) - Quick Links, Nejnovější články a odkaz na CPU Katalog.
  */
 
-export const revalidate = 3600; // Cache na 1 hodinu pro rychlost a šetření DB
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+export const revalidate = 0; 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -23,7 +32,8 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon |Intel /gi, '');
 const slugify = (text) => text ? text.toLowerCase().replace(/graphics|gpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
-export async function generateMetadata({ isEn = false }) {
+export async function generateMetadata(props) {
+  const isEn = props?.isEn === true;
   return {
     title: isEn 
       ? 'GPU Database & Performance Index | The Hardware Guru' 
@@ -35,23 +45,69 @@ export async function generateMetadata({ isEn = false }) {
       canonical: 'https://thehardwareguru.cz/gpu-index',
       languages: {
         'en': 'https://thehardwareguru.cz/en/gpu-index',
-        'cs': 'https://thehardwareguru.cz/gpu-index'
+        'cs': 'https://thehardwareguru.cz/gpu-index',
+        'x-default': 'https://thehardwareguru.cz/gpu-index'
       }
     }
   };
 }
 
-export default async function GpuIndexPage({ isEn = false }) {
-  const supabase = createClient(supabaseUrl, supabaseKey);
+// 🚀 GURU: Nativní fetch vytáhne 100% fresh data ze Supabase a ignoruje neexistující sloupce
+const fetchIndexData = async () => {
+    if (!supabaseUrl) return null;
+    
+    try {
+        const url = `${supabaseUrl}/rest/v1/gpus?select=name,slug,vendor,vram_gb,memory_bus,performance_index&order=performance_index.desc.nullslast,name.asc`;
+        
+        const res = await fetch(url, {
+            headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Content-Type': 'application/json'
+            },
+            cache: 'no-store'
+        });
 
-  // 1. Fetch všech GPU seřazených podle hrubého výkonu
-  const { data: gpus, error } = await supabase
-    .from('gpus')
-    .select('name, slug, vendor, vram_gb, memory_bus, performance_index')
-    .order('performance_index', { ascending: false });
+        if (!res.ok) {
+            console.error("DB Fetch Error:", await res.text());
+            return null;
+        }
+        return await res.json();
+    } catch (e) {
+        console.error("Fetch Exception:", e);
+        return null;
+    }
+};
 
-  if (error || !gpus) {
-    return <div style={{ color: '#f00', padding: '100px', textAlign: 'center' }}>CHYBA NAČÍTÁNÍ DATABÁZE GRAFIK</div>;
+// 🚀 GURU SEO SILOING: Získání sémanticky souvisejících článků (recenze grafik)
+const getRelatedGpuArticles = async () => {
+    if (!supabaseUrl) return [];
+    try {
+        // Hledáme články, které obsahují slovo 'geforce' nebo 'radeon' v titulku, popř. jsou z kategorie hardware
+        const url = `${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.%geforce%,title.ilike.%radeon%,type.eq.hardware)&order=created_at.desc&limit=3`;
+        const res = await fetch(url, {
+            headers: {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Content-Type': 'application/json'
+            },
+            cache: 'no-store'
+        });
+        
+        if (res.ok) return await res.json();
+        return [];
+    } catch (e) { 
+        return []; 
+    }
+};
+
+export default async function GpuIndexPage(props) {
+  const isEn = props?.isEn === true;
+  const gpus = await fetchIndexData();
+  const relatedArticles = await getRelatedGpuArticles();
+
+  if (!gpus || gpus.length === 0) {
+    return <div style={{ color: '#ef4444', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh', fontWeight: '950', fontSize: '20px' }}>CHYBA NAČÍTÁNÍ DATABÁZE GRAFIK</div>;
   }
 
   // 2. Rozdělení na vendory pro vizuální bloky
@@ -61,7 +117,7 @@ export default async function GpuIndexPage({ isEn = false }) {
   // Helper pro renderování karet
   const renderGpuCards = (gpuList, vendorColor) => {
     return gpuList.map((gpu, index) => {
-      const isTopTier = index < 3; // Zvýraznění TOP 3 grafik v dané kategorii
+      const isTopTier = index < 3 && gpu.performance_index > 0; // Zvýraznění TOP 3 grafik v dané kategorii
       const safeSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
       
       return (
@@ -87,7 +143,9 @@ export default async function GpuIndexPage({ isEn = false }) {
             </div>
             <div className="spec-item">
                <span className="spec-label">INDEX</span>
-               <span className="spec-val" style={{ color: vendorColor }}>{gpu.performance_index || '-'}</span>
+               <span className="spec-val" style={{ color: gpu.performance_index ? vendorColor : '#6b7280' }}>
+                 {gpu.performance_index || '-'}
+               </span>
             </div>
           </div>
           
@@ -125,6 +183,16 @@ export default async function GpuIndexPage({ isEn = false }) {
               ? 'Complete hierarchy of all graphics cards. Sorted by raw gaming performance index.' 
               : 'Kompletní hierarchie všech grafických karet. Seřazeno od nejvýkonnějších po nejslabší.'}
           </div>
+
+          {/* 🚀 GURU QUICK LINKS (Siloing) */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginTop: '30px' }}>
+            <a href={isEn ? "/en/gpuvs/ranking" : "/gpuvs/ranking"} className="quick-link-pill" style={{ borderColor: '#ff0055', color: '#ff0055' }}>
+              <TrendingUp size={14} /> {isEn ? 'TIER LIST & RANKING' : 'ŽEBŘÍČEK GRAFIK'}
+            </a>
+            <a href={isEn ? "/en/bottleneck" : "/bottleneck"} className="quick-link-pill" style={{ borderColor: '#a855f7', color: '#a855f7' }}>
+              <Activity size={14} /> {isEn ? 'BOTTLENECK CALCULATOR' : 'KALKULAČKA BOTTLENECKU'}
+            </a>
+          </div>
         </header>
 
         {/* 🚀 NVIDIA SECTION */}
@@ -151,6 +219,54 @@ export default async function GpuIndexPage({ isEn = false }) {
           </section>
         )}
 
+        {/* 🚀 GURU SILOING: RECENZE A SOUVISEJÍCÍ ČLÁNKY */}
+        {relatedArticles.length > 0 && (
+            <section style={{ marginBottom: '80px', marginTop: '40px', background: 'rgba(15, 17, 21, 0.95)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                <h2 style={{ color: '#fff', fontSize: '1.8rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #66fcf1', paddingLeft: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Info size={28} color="#66fcf1" /> {isEn ? 'LATEST HARDWARE REVIEWS' : 'NEJNOVĚJŠÍ HW RECENZE'}
+                </h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+                    {relatedArticles.map((art) => {
+                        const artTitle = isEn && art.title_en ? art.title_en : art.title;
+                        const artSlug = isEn && art.slug_en ? art.slug_en : art.slug;
+                        const artUrl = isEn ? `/en/clanky/${artSlug}` : `/clanky/${artSlug}`;
+                        const fallbackImg = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000';
+                        const artDate = new Intl.DateTimeFormat(isEn ? 'en-US' : 'cs-CZ', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(art.created_at || Date.now()));
+                        
+                        return (
+                            <a key={art.slug} href={artUrl} className="related-article-card">
+                                <div className="related-img-wrapper">
+                                    <img src={art.image_url || fallbackImg} alt={artTitle} loading="lazy" />
+                                </div>
+                                <div className="related-content">
+                                    <div className="related-date"><Calendar size={12} /> {artDate}</div>
+                                    <h3 className="related-title">{artTitle}</h3>
+                                </div>
+                            </a>
+                        );
+                    })}
+                </div>
+            </section>
+        )}
+
+        {/* 🚀 GURU SILOING: ODKAZY NA DALŠÍ ROZCESTNÍKY */}
+        <div style={{ marginTop: '80px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+            <a href={isEn ? "/en/cpu-index" : "/cpu-index"} className="silo-banner-card" style={{ borderLeftColor: '#f59e0b' }}>
+                <div className="silo-banner-icon" style={{ color: '#f59e0b', background: '#f59e0b20' }}><Cpu size={28} /></div>
+                <div className="silo-banner-text">
+                    <h4>{isEn ? 'CPU DATABASE' : 'KATALOG PROCESORŮ'}</h4>
+                    <p>{isEn ? 'Browse all processors, specs and benchmarks.' : 'Prohlédni si všechny procesory, parametry a výkon.'}</p>
+                </div>
+            </a>
+            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="silo-banner-card" style={{ borderLeftColor: '#f97316' }}>
+                <div className="silo-banner-icon" style={{ color: '#f97316', background: '#f9731620' }}><Flame size={28} /></div>
+                <div className="silo-banner-text">
+                    <h4>{isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}</h4>
+                    <p>{isEn ? 'Check out the hottest gaming sales right now.' : 'Omrkni ty nejlepší slevy na herní tituly.'}</p>
+                </div>
+            </a>
+        </div>
+
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
@@ -160,7 +276,7 @@ export default async function GpuIndexPage({ isEn = false }) {
         .gpu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         
         .gpu-card { display: flex; flex-direction: column; background: rgba(15, 17, 21, 0.95); border-radius: 16px; border-left: 1px solid rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; padding: 25px; transition: 0.3s; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .gpu-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.6); background: rgba(25, 27, 31, 0.95); }
+        .gpu-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.6); background: rgba(25, 27, 31, 0.95); border-color: rgba(255,255,255,0.1); }
         
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; min-height: 50px; }
         .card-header h3 { margin: 0; font-size: 1.3rem; font-weight: 950; text-transform: uppercase; line-height: 1.2; }
@@ -174,6 +290,29 @@ export default async function GpuIndexPage({ isEn = false }) {
         .card-actions { display: flex; justify-content: space-between; gap: 10px; }
         .action-btn { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: bold; color: #6b7280; text-transform: uppercase; transition: 0.2s; }
         .gpu-card:hover .action-btn { color: #d1d5db; }
+
+        /* 🚀 GURU SILOING STYLY */
+        .quick-link-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 50px; font-weight: 950; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; text-decoration: none; border: 1px solid; background: rgba(255,255,255,0.02); transition: 0.3s; }
+        .quick-link-pill:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
+
+        .silo-banner-card { flex: 1; min-width: 300px; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; align-items: center; gap: 20px; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border-left-width: 5px; }
+        .silo-banner-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.02); }
+        .silo-banner-icon { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .silo-banner-text h4 { margin: 0 0 5px 0; color: #fff; font-size: 1.2rem; font-weight: 950; }
+        .silo-banner-text p { margin: 0; color: #9ca3af; font-size: 0.9rem; }
+
+        .related-article-card { display: flex; flex-direction: column; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; overflow: hidden; text-decoration: none; transition: 0.3s; }
+        .related-article-card:hover { transform: translateY(-5px); border-color: rgba(102, 252, 241, 0.4); }
+        .related-img-wrapper { height: 140px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .related-img-wrapper img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
+        .related-content { padding: 20px; display: flex; flex-direction: column; gap: 5px; }
+        .related-date { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 950; color: #6b7280; text-transform: uppercase; margin-bottom: 5px; }
+        .related-title { margin: 0; font-size: 1.1rem; font-weight: 950; color: #fff; line-height: 1.3; }
+
+        @media (max-width: 768px) {
+            .silo-banner-card { flex-direction: column; text-align: center; }
+            .content-box-style { padding: 25px; }
+        }
       `}} />
     </div>
   );
