@@ -13,12 +13,13 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V4.7 (TECHPOWERUP STRICT RULE & NO HALLUCINATION FIX)
+ * GURU ULTIMATE COMMAND CENTER V5.0 (MANUAL JSON + AUTO DUEL GENERATOR)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
- * 🛡️ FIX 1: Prompty pro AI agresivně vyžadují data VÝHRADNĚ z TechPowerUp (cpu-specs / gpu-specs).
- * 🛡️ FIX 2: Přísný zákaz halucinování u nových komponent. AI musí vrátit 'Unknown', což okamžitě vyvolá dotaz.
- * 🛡️ PRAVIDLO: Zákaz úprav čehokoliv jiného striktně dodržen.
+ * 🛡️ FIX 1: Extrémně nespolehlivá AI u zápisu HW kompletně odstraněna.
+ * 🛡️ FIX 2: Uživatel vkládá data přes čistý JSON (šablona je předvyplněná).
+ * 🛡️ FIX 3: Při vložení CPU nebo GPU administrace BLESKOVĚ vygeneruje všechny duely proti zbytku databáze.
+ * 🛡️ FIX 4: Okamžitý ověřovací odkaz zobrazen po úspěšném zápisu pro test plné funkčnosti.
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -63,6 +64,10 @@ const SidebarItemUI = ({ id, activeTab, setActiveTab, icon, label, color, href }
   return <button onClick={() => setActiveTab(id)} className={`sidebar-btn ${active ? 'active' : ''}`} style={{ borderLeftColor: active ? color : 'transparent' }}>{content}</button>;
 };
 
+// 🚀 Šablony pro okamžitý zápis hardwaru bez AI
+const exampleCpuJson = `{\n  "vendor": "AMD",\n  "architecture": "Zen 4",\n  "cores": 8,\n  "threads": 16,\n  "base_clock_mhz": 4200,\n  "boost_clock_mhz": 5200,\n  "tdp_w": 120,\n  "l3_cache_mb": 96,\n  "release_price_usd": 699,\n  "release_date": "2026-03-15",\n  "performance_index": 125\n}`;
+const exampleGpuJson = `{\n  "vendor": "NVIDIA",\n  "architecture": "Blackwell",\n  "vram_gb": 16,\n  "memory_bus": "256-bit",\n  "base_clock_mhz": 2200,\n  "boost_clock_mhz": 2600,\n  "tdp_w": 400,\n  "release_price_usd": 999,\n  "release_date": "2026-03-15",\n  "performance_index": 290\n}`;
+
 export default function AdminApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
@@ -87,8 +92,8 @@ export default function AdminApp() {
 
   const [dbTab, setDbTab] = useState('games');
   const [dbLoading, setDbLoading] = useState(false);
-  const [dbMessage, setDbMessage] = useState({ type: '', text: '' });
-  const [dbFormData, setDbFormData] = useState({ name: '', slug: '', vendor: '', performance_index: '' });
+  const [dbMessage, setDbMessage] = useState({ type: '', text: '', link: '' });
+  const [dbFormData, setDbFormData] = useState({ name: '', slug: '', rawData: '' });
 
   // --- SEZNAM INDEXER STATE ---
   const [seznamLoading, setSeznamLoading] = useState(false);
@@ -230,6 +235,14 @@ export default function AdminApp() {
     }
   }, [isAuthenticated]);
 
+  // Nastavení JSON šablon při přepnutí záložky pro Database
+  useEffect(() => {
+    if (dbTab === 'cpu') setDbFormData(prev => ({...prev, rawData: exampleCpuJson, name: '', slug: ''}));
+    else if (dbTab === 'gpu') setDbFormData(prev => ({...prev, rawData: exampleGpuJson, name: '', slug: ''}));
+    else setDbFormData(prev => ({...prev, rawData: '', name: '', slug: ''}));
+    setDbMessage({ type: '', text: '', link: '' });
+  }, [dbTab]);
+
   const handleLogin = (e) => {
     e.preventDefault();
     if (password === 'Wifik500') {
@@ -238,9 +251,12 @@ export default function AdminApp() {
     }
   };
 
+  // 🚀 GURU FIX: 100% spolehlivé a automatizované uložení DB (bez AI)
   const handleDbSubmit = async (e) => {
     e.preventDefault();
     setDbLoading(true);
+    setDbMessage({ type: '', text: '', link: '' });
+    
     const table = dbTab === 'games' ? 'games' : (dbTab === 'gpu' ? 'gpus' : 'cpus');
     
     let payload = {
@@ -251,135 +267,100 @@ export default function AdminApp() {
         payload.slug = slugify(dbFormData.slug || dbFormData.name);
     }
 
-    const openAiKey = getEnv('OPENAI_API_KEY');
-    if (!openAiKey) {
-        setDbMessage({ type: 'error', text: 'CHYBÍ OPENAI KLÍČ PRO AI DOPLNĚNÍ DAT.' });
-        addLog('Chybí OpenAI klíč!', 'error');
-        setDbLoading(false);
-        return;
+    if (dbTab !== 'games') {
+        try {
+            const parsedData = JSON.parse(dbFormData.rawData);
+            payload = { ...payload, ...parsedData };
+        } catch (err) {
+            setDbMessage({ type: 'error', text: 'CHYBA: Neplatný formát JSON! Zkontrolujte uvozovky a čárky.' });
+            addLog('JSON Parse Error! HW neuložen.', 'error');
+            setDbLoading(false);
+            return;
+        }
     }
 
-    addLog(`AI Guru (GPT-4o) prohledává internet na absolutně přesné specifikace pro ${dbTab.toUpperCase()}: ${payload.name}...`, 'warning');
+    addLog(`Ukládám ${dbTab.toUpperCase()}: ${payload.name} do databáze...`, 'warning');
 
-    try {
-        let sysPrompt = "";
-        
-        // 🚀 GURU FIX: Zcela agresivní pravidla proti halucinacím. Zdroje explicitně definovány.
-        if (dbTab === 'cpu') {
-            sysPrompt = `Jsi striktní HW databázový analyzátor. ZDROJ DAT MUSÍ BÝT: https://www.techpowerup.com/cpu-specs/ . PŘÍSNÝ ZÁKAZ VYMÝŠLENÍ (HALUCINACÍ)! Pokud procesor není vydaný, neznáš jeho přesné parametry nebo si nejsi na 100% jistý (např. Ryzen 9850X3D), MUSÍŠ VRÁTIT 'Unknown' u všech číselných hodnot. Vrať čistý JSON: 
-            'vendor' (AMD nebo Intel), 
-            'architecture', 
-            'cores' (číslo, jinak 'Unknown'), 
-            'threads' (číslo, jinak 'Unknown'), 
-            'base_clock_mhz' (číslo, jinak 'Unknown'), 
-            'boost_clock_mhz' (číslo, jinak 'Unknown'), 
-            'tdp_w' (číslo, jinak 'Unknown'), 
-            'l3_cache_mb' (číslo, jinak 'Unknown'. POZOR: X3D procesory mají 96MB, 104MB nebo 128MB, NIKDY 32MB!), 
-            'release_price_usd' (číslo zaváděcí MSRP, jinak 'Unknown'), 
-            'release_date' (YYYY-MM-DD, jinak 'Unknown'), 
-            'performance_index' (číslo od 50 do 150, jinak 'Unknown').`;
-        } else if (dbTab === 'gpu') {
-            sysPrompt = `Jsi striktní HW databázový analyzátor. ZDROJ DAT MUSÍ BÝT: https://www.techpowerup.com/gpu-specs/ . PŘÍSNÝ ZÁKAZ VYMÝŠLENÍ! Pokud grafiku neznáš nebo si nejsi 100% jistý, MUSÍŠ VRÁTIT 'Unknown' u všech parametrů. Vrať čistý JSON: 
-            'vendor' (NVIDIA, AMD nebo Intel), 
-            'architecture', 
-            'vram_gb' (číslo, jinak 'Unknown'), 
-            'memory_bus' (text, např. '256-bit', jinak 'Unknown'), 
-            'base_clock_mhz' (číslo, jinak 'Unknown'), 
-            'boost_clock_mhz' (číslo, jinak 'Unknown'), 
-            'tdp_w' (číslo, jinak 'Unknown'), 
-            'release_price_usd' (číslo MSRP, jinak 'Unknown'), 
-            'release_date' (YYYY-MM-DD, jinak 'Unknown'), 
-            'performance_index' (číslo od 50 do 400, jinak 'Unknown').`;
-        } else if (dbTab === 'games') {
-            sysPrompt = "Jsi herní expert. Vrať POUZE čistý JSON bez markdownu. Klíče: 'name' (oficiální název hry se správnými velkými písmeny, např. 'Grand Theft Auto VI'). Zbytek zařídí databáze.";
-        }
-
-        const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openAiKey}` },
-            body: JSON.stringify({
-                model: "gpt-4o",
-                messages: [
-                    { role: "system", content: sysPrompt },
-                    { role: "user", content: `Najdi a vyplň absolutně přesné oficiální technické parametry PŘÍMO z TechPowerUp pro: ${payload.name}` }
-                ],
-                response_format: { type: "json_object" }
-            })
-        });
-
-        if (!aiRes.ok) throw new Error('OpenAI API selhalo.');
-        const r = await aiRes.json();
-        const aiData = JSON.parse(r.choices[0].message.content);
-        
-        // 🚀 GURU FIX: FALLBACK PROMPT - Pokud to AI neví, zeptej se rovnou uživatele!
-        if (dbTab !== 'games') {
-            const requiredKeys = dbTab === 'cpu' 
-                ? ['vendor', 'architecture', 'cores', 'threads', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'l3_cache_mb', 'release_price_usd', 'release_date', 'performance_index']
-                : ['vendor', 'architecture', 'vram_gb', 'memory_bus', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'release_price_usd', 'release_date', 'performance_index'];
-
-            for (const key of requiredKeys) {
-                const val = aiData[key];
-                const isMissing = val === undefined || val === null || val === '' || 
-                                  String(val).toUpperCase() === 'N/A' || 
-                                  String(val).toUpperCase() === 'UNKNOWN' ||
-                                  String(val).toUpperCase() === 'NULL' ||
-                                  (typeof val === 'number' && isNaN(val));
-
-                if (isMissing) {
-                    await new Promise(resolve => setTimeout(resolve, 50)); 
-                    
-                    const tpuLink = dbTab === 'cpu' ? 'https://www.techpowerup.com/cpu-specs/' : 'https://www.techpowerup.com/gpu-specs/';
-                    const userInput = window.prompt(`🚨 GURU AI nenašlo ověřenou hodnotu na TechPowerUp pro:\n\n👉 [ ${key.toUpperCase()} ] u modelu ${payload.name}\n\nOtevři si prosím ${tpuLink} a zadej hodnotu ručně (nebo nech prázdné a přeskoč):`);
-                    
-                    if (userInput !== null && userInput.trim() !== '') {
-                        const isNumeric = ['cores', 'threads', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'l3_cache_mb', 'release_price_usd', 'performance_index', 'vram_gb'].includes(key);
-                        aiData[key] = isNumeric ? Number(userInput.trim()) : userInput.trim();
-                    } else {
-                        delete aiData[key]; // Odstraní klíč z payloadu, aby databáze nespadla na neplatném zápisu
-                    }
-                }
-            }
-        }
-
-        // Vyčištění všech zbylých neplatných hodnot z AI
-        Object.keys(aiData).forEach(k => {
-            const val = aiData[k];
-            if (val === null || val === '' || String(val).toUpperCase() === 'N/A' || String(val).toUpperCase() === 'UNKNOWN' || (typeof val === 'number' && isNaN(val))) {
-                delete aiData[k];
-            }
-        });
-
-        payload = { ...payload, ...aiData };
-        
-        if (dbTab === 'cpu') {
-            addLog(`Doplněno (TechPowerUp): Jádra: ${aiData.cores || 'N/A'}, L3 Cache: ${aiData.l3_cache_mb || 'N/A'}MB`, 'success');
-        } else if (dbTab === 'gpu') {
-            addLog(`Doplněno (TechPowerUp): VRAM: ${aiData.vram_gb || 'N/A'}GB, Architektura: ${aiData.architecture || 'N/A'}`, 'success');
-        } else {
-            addLog(`AI úspěšně naformátovalo název hry: ${aiData.name}`, 'success');
-        }
-        
-    } catch (err) {
-        setDbMessage({ type: 'error', text: `AI Auto-Fill selhal: ${err.message}` });
-        addLog(`AI Auto-Fill Error: ${err.message}`, 'error');
-        setDbLoading(false);
-        return;
-    }
-
-    if (dbTab === 'games') {
-        addLog(`Aktivuji novou hru a dopočítávám FPS matici přes DB Trigger pro: ${payload.name}...`, 'warning');
-    }
-
-    const { error } = await supabase.from(table).insert([payload]);
+    // 1. ULOŽENÍ ENTITY .select() zajistí vrácení vloženého ID pro tvorbu duelů
+    const { data: insertedData, error } = await supabase.from(table).insert([payload]).select();
     
-    if (error) {
-      setDbMessage({ type: 'error', text: `Chyba DB: ${error.message}` });
-      addLog(`DB Error: ${error.message}`, 'error');
-    } else {
-      setDbMessage({ type: 'success', text: `Úspěšně přidáno: ${payload.name}!` });
-      addLog(`${dbTab.toUpperCase()}: ${payload.name} uloženo do DB a zaktivováno na webu!`, 'success');
-      setDbFormData({ name: '', slug: '', vendor: '', performance_index: '' });
+    if (error || !insertedData || insertedData.length === 0) {
+      setDbMessage({ type: 'error', text: `Chyba DB: ${error?.message || 'Záznam nevložen'}` });
+      addLog(`DB Error: ${error?.message}`, 'error');
+      setDbLoading(false);
+      return;
     }
+
+    const insertedItem = insertedData[0];
+    let successText = `Úspěšně přidáno: ${payload.name}! `;
+    let verificationLink = '';
+
+    // 2. AUTOMATICKÉ GENEROVÁNÍ VŠECH DUELŮ
+    try {
+        if (dbTab === 'cpu') {
+            const safeSlug = slugify(payload.name); 
+            verificationLink = `/cpu/${safeSlug}`;
+            
+            addLog(`Generuji všechny možné duely pro procesor ${payload.name}...`, 'warning');
+            const { data: allCpus } = await supabase.from('cpus').select('id, name, slug').neq('id', insertedItem.id);
+            
+            if (allCpus && allCpus.length > 0) {
+                const duelsToInsert = allCpus.map(c => {
+                    const cSlug = c.slug || slugify(c.name);
+                    const dSlug = `${safeSlug}-vs-${cSlug}`;
+                    return {
+                        slug: dSlug,
+                        slug_en: `en-${dSlug}`,
+                        cpu_a_id: insertedItem.id,
+                        cpu_b_id: c.id,
+                        title_cs: `Srovnání procesorů: ${payload.name} vs ${c.name}`,
+                        title_en: `Processors comparison: ${payload.name} vs ${c.name}`,
+                        seo_description_cs: `Detailní srovnání výkonu a parametrů mezi ${payload.name} a ${c.name}.`,
+                        seo_description_en: `Detailed performance and specs comparison between ${payload.name} and ${c.name}.`,
+                        created_at: new Date().toISOString()
+                    };
+                });
+                await supabase.from('cpu_duels').insert(duelsToInsert);
+                successText += `Vygenerováno a uloženo ${duelsToInsert.length} nových duelů.`;
+                addLog(`Vytvořeno ${duelsToInsert.length} duelů!`, 'success');
+            }
+        } else if (dbTab === 'gpu') {
+            verificationLink = `/gpu/${payload.slug}`;
+            
+            addLog(`Generuji všechny možné duely pro grafiku ${payload.name}...`, 'warning');
+            const { data: allGpus } = await supabase.from('gpus').select('id, name, slug').neq('id', insertedItem.id);
+            
+            if (allGpus && allGpus.length > 0) {
+                const duelsToInsert = allGpus.map(g => {
+                    const gSlug = g.slug || slugify(g.name);
+                    const dSlug = `${payload.slug}-vs-${gSlug}`;
+                    return {
+                        slug: dSlug,
+                        slug_en: `en-${dSlug}`,
+                        gpu_a_id: insertedItem.id,
+                        gpu_b_id: g.id,
+                        title_cs: `Srovnání grafik: ${payload.name} vs ${g.name}`,
+                        title_en: `Graphics cards comparison: ${payload.name} vs ${g.name}`,
+                        seo_description_cs: `Detailní srovnání herního výkonu a parametrů mezi ${payload.name} a ${g.name}.`,
+                        seo_description_en: `Detailed gaming performance and specs comparison between ${payload.name} and ${g.name}.`,
+                        created_at: new Date().toISOString()
+                    };
+                });
+                await supabase.from('gpu_duels').insert(duelsToInsert);
+                successText += `Vygenerováno a uloženo ${duelsToInsert.length} nových duelů.`;
+                addLog(`Vytvořeno ${duelsToInsert.length} duelů!`, 'success');
+            }
+        } else if (dbTab === 'games') {
+            verificationLink = `/gpu-fps/geforce-rtx-5090/${payload.slug}`;
+            successText += `Hra přidána. Databázový trigger automaticky dopočítává všechny FPS metriky k existujícímu HW na pozadí.`;
+            addLog(`Hra zapsána a auto_game_engine počítá FPS matici na pozadí!`, 'success');
+        }
+    } catch (e) {
+        addLog(`Chyba při generování dodatečných dat (duely atd.): ${e.message}`, 'error');
+    }
+
+    setDbMessage({ type: 'success', text: successText, link: verificationLink });
+    setDbFormData(prev => ({ ...prev, name: '', slug: '' }));
     setDbLoading(false);
   };
 
@@ -473,7 +454,7 @@ export default function AdminApp() {
         <nav style={{ flex: 1 }}>
           <SidebarItemUI id="predictor" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Brain />} label="HYPE RADAR" color="#eab308" />
           <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="INTEL HUB" color="#a855f7" />
-          <SidebarItemUI id="database" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Database />} label="DATABÁZE" color="#66fcf1" />
+          <SidebarItemUI id="database" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Database />} label="DATABÁZE (NEW)" color="#66fcf1" />
           <SidebarItemUI id="seznam-indexer" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Search />} label="SEZNAM INDEXER" color="#ef4444" />
         </nav>
       </aside>
@@ -500,7 +481,7 @@ export default function AdminApp() {
                             <span>Steam: {Math.round(item.steam_players)}</span>
                             <span>Reddit: {item.reddit_mentions}</span>
                         </div>
-                        <button onClick={() => { setDbFormData({ name: item.game, slug: slugify(item.game) }); setDbTab('games'); setActiveTab('database'); }} style={{ width: '100%', marginTop: '10px', padding: '12px', background: '#eab30811', border: '1px solid #eab30833', color: '#eab308', fontWeight: '950', borderRadius: '12px', cursor: 'pointer', fontSize: '10px' }}>PŘEDVYPLNIT DATABÁZI</button>
+                        <button onClick={() => { setDbFormData({ name: item.game, slug: slugify(item.game), rawData: '' }); setDbTab('games'); setActiveTab('database'); }} style={{ width: '100%', marginTop: '10px', padding: '12px', background: '#eab30811', border: '1px solid #eab30833', color: '#eab308', fontWeight: '950', borderRadius: '12px', cursor: 'pointer', fontSize: '10px' }}>PŘEDVYPLNIT DATABÁZI</button>
                     </div>
                 ))}
             </div>
@@ -564,6 +545,7 @@ export default function AdminApp() {
           </div>
         )}
 
+        {/* 🚀 GURU FIX: NOVÁ, BEZPEČNÁ DATABÁZE S TEXTOVÝM JSON INPUTEM A AUTOMATIZACÍ DUELŮ */}
         {activeTab === 'database' && (
             <div className="fade-in">
                 <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
@@ -574,26 +556,50 @@ export default function AdminApp() {
                 </header>
                 
                 <div style={{ display: 'flex', gap: '10px', margin: '25px 0' }}>
-                    <button onClick={() => setDbTab('games')} className={`db-tab-btn ${dbTab === 'games' ? 'active' : ''}`} style={{flex: 1, padding: '15px', borderRadius: '12px', border: 'none', background: dbTab === 'games' ? '#66fcf1' : '#111', color: dbTab === 'games' ? '#000' : '#666', fontWeight: '900', cursor: 'pointer'}}>HRY</button>
-                    <button onClick={() => setDbTab('gpu')} className={`db-tab-btn ${dbTab === 'gpu' ? 'active' : ''}`} style={{flex: 1, padding: '15px', borderRadius: '12px', border: 'none', background: dbTab === 'gpu' ? '#66fcf1' : '#111', color: dbTab === 'gpu' ? '#000' : '#666', fontWeight: '900', cursor: 'pointer'}}>GRAFIKY</button>
-                    <button onClick={() => setDbTab('cpu')} className={`db-tab-btn ${dbTab === 'cpu' ? 'active' : ''}`} style={{flex: 1, padding: '15px', borderRadius: '12px', border: 'none', background: dbTab === 'cpu' ? '#66fcf1' : '#111', color: dbTab === 'cpu' ? '#000' : '#666', fontWeight: '900', cursor: 'pointer'}}>PROCESORY</button>
+                    <button onClick={() => setDbTab('games')} className={`db-tab-btn ${dbTab === 'games' ? 'active' : ''}`} style={{flex: 1, padding: '15px', borderRadius: '12px', border: 'none', background: dbTab === 'games' ? '#66fcf1' : '#111', color: dbTab === 'games' ? '#000' : '#666', fontWeight: '900', cursor: 'pointer'}}>1. HRY</button>
+                    <button onClick={() => setDbTab('gpu')} className={`db-tab-btn ${dbTab === 'gpu' ? 'active' : ''}`} style={{flex: 1, padding: '15px', borderRadius: '12px', border: 'none', background: dbTab === 'gpu' ? '#66fcf1' : '#111', color: dbTab === 'gpu' ? '#000' : '#666', fontWeight: '900', cursor: 'pointer'}}>2. GRAFIKY</button>
+                    <button onClick={() => setDbTab('cpu')} className={`db-tab-btn ${dbTab === 'cpu' ? 'active' : ''}`} style={{flex: 1, padding: '15px', borderRadius: '12px', border: 'none', background: dbTab === 'cpu' ? '#66fcf1' : '#111', color: dbTab === 'cpu' ? '#000' : '#666', fontWeight: '900', cursor: 'pointer'}}>3. PROCESORY</button>
                 </div>
 
                 <form onSubmit={handleDbSubmit} style={{ background: '#111318', padding: '40px', borderRadius: '24px', border: '1px solid #333' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                         <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
                             <label style={{fontSize: '10px', fontWeight: '900', color: '#4b5563'}}>NÁZEV</label>
-                            <input type="text" value={dbFormData.name} onChange={(e) => setDbFormData({...dbFormData, name: e.target.value})} placeholder={dbTab === 'games' ? "Např. GTA 6" : "Např. RTX 5090"} style={{ padding: '15px', borderRadius: '12px', background: '#000', border: '1px solid #333', color: '#fff' }} required />
+                            <input type="text" value={dbFormData.name} onChange={(e) => setDbFormData({...dbFormData, name: e.target.value})} placeholder={dbTab === 'games' ? "Např. GTA 6" : "Např. AMD Ryzen 9 9950X"} style={{ padding: '15px', borderRadius: '12px', background: '#000', border: '1px solid #333', color: '#fff' }} required />
                         </div>
                         <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
                             <label style={{fontSize: '10px', fontWeight: '900', color: '#4b5563'}}>SLUG (SEO)</label>
                             <input type="text" value={dbFormData.slug} onChange={(e) => setDbFormData({...dbFormData, slug: e.target.value})} placeholder="Ponech prázdné pro auto-generaci" style={{ padding: '15px', borderRadius: '12px', background: '#000', border: '1px solid #222', color: '#666' }} />
                         </div>
                     </div>
+
+                    {dbTab !== 'games' && (
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                            <label style={{fontSize: '10px', fontWeight: '900', color: '#66fcf1'}}>SPECIFIKACE (ČISTÝ JSON) - POUZE PŘEPIŠTE HODNOTY, NEMĚŇTE NÁZVY KLÍČŮ</label>
+                            <textarea 
+                                rows={12} 
+                                value={dbFormData.rawData} 
+                                onChange={(e) => setDbFormData({...dbFormData, rawData: e.target.value})} 
+                                style={{ padding: '15px', borderRadius: '12px', background: '#000', border: '1px dashed #66fcf1', color: '#eab308', fontFamily: 'monospace', fontSize: '13px' }} 
+                                required 
+                            />
+                        </div>
+                    )}
+
                     <button type="submit" disabled={dbLoading} style={{ width: '100%', padding: '20px', background: '#66fcf1', color: '#000', borderRadius: '15px', border: 'none', fontWeight: '950', cursor: 'pointer', marginTop: '30px' }}>
-                        {dbLoading ? 'AI ZPRACUJE A UKLÁDÁ DATABÁZI...' : `VLOŽIT A AUTOMATICKY DOPLNIT DATA PRO ${dbTab.toUpperCase()}`}
+                        {dbLoading ? 'ZPRACOVÁVÁM A GENERUJI DUELY...' : `VLOŽIT ${dbTab.toUpperCase()} A VYGENEROVAT VŠECHNY DUELY`}
                     </button>
-                    {dbMessage.text && <p style={{ color: dbMessage.type === 'success' ? '#10b981' : '#ef4444', marginTop: '20px', textAlign: 'center', fontWeight: 'bold' }}>{dbMessage.text}</p>}
+
+                    {dbMessage.text && (
+                        <div style={{ marginTop: '20px', padding: '20px', borderRadius: '12px', background: dbMessage.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', border: `1px solid ${dbMessage.type === 'success' ? '#10b981' : '#ef4444'}`, textAlign: 'center' }}>
+                            <p style={{ color: dbMessage.type === 'success' ? '#10b981' : '#ef4444', fontWeight: 'bold', margin: '0 0 10px 0' }}>{dbMessage.text}</p>
+                            {dbMessage.link && (
+                                <a href={dbMessage.link} target="_blank" rel="noreferrer" style={{ color: '#fff', fontWeight: '950', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                                    👉 KLIKNĚTE ZDE PRO OVĚŘENÍ FUNKČNOSTI
+                                </a>
+                            )}
+                        </div>
+                    )}
                 </form>
             </div>
         )}
@@ -679,7 +685,7 @@ export default function AdminApp() {
         
       </main>
 
-      {/* 🚀 GURU FIX: MODAL PRO NÁHLED A PUBLIKACI */}
+      {/* 🚀 GURU FIX: MODAL PRO NÁHLED A PUBLIKACI Z INTEL HUB (BEZ ZMĚN) */}
       {draft && previewMode === 'card' && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(5px)' }}>
             <div style={{ background: '#111318', padding: '40px', borderRadius: '24px', border: '1px solid #a855f7', width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', boxShadow: '0 0 50px rgba(168, 85, 247, 0.2)' }}>
