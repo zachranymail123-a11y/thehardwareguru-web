@@ -5,12 +5,13 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU ENGINE - DETAIL PROCESORU V2.0 (GOLDEN RICH RESULTS FIX)
+ * GURU CPU ENGINE - DETAIL PROCESORU V2.1 (SEO SILOING & INTERNAL LINKING)
  * Cesta: src/app/cpu/[slug]/page.js
  * 🛡️ FIX 1: Implementován 3-Tier Tokenized Lookup (řeší chybu "NENALEZENO").
  * 🛡️ FIX 2: Absolutní Canonical URL a x-default v hreflang clusteru.
  * 🛡️ FIX 3: Plná podpora Next.js 15 (await params).
- * 🛡️ FIX 4: Zlatý GSC Standard pro Product Schema (přidány offers s fake shippingem, pole image, čísla pro rating).
+ * 🛡️ FIX 4: Zlatý GSC Standard pro Product Schema.
+ * 🛡️ FIX 5: Masivní interní prolinkování (Siloing) - dynamické odkazy na Duely a Bottlenecky pro posílení SEO.
  */
 
 export const runtime = "nodejs";
@@ -23,22 +24,18 @@ const baseUrl = "https://thehardwareguru.cz";
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 const slugify = (text) => text ? text.toLowerCase().replace(/processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
-// 🛡️ GURU ENGINE: ULTIMÁTNÍ 3-TIER VYHLEDÁVÁNÍ (Zcela imunní vůči pořadí slov)
+// 🛡️ GURU ENGINE: ULTIMÁTNÍ 3-TIER VYHLEDÁVÁNÍ
 const findCpuBySlug = async (cpuSlug) => {
   if (!supabaseUrl || !cpuSlug || cpuSlug === 'undefined') return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
 
   try {
-      // TIER 1: Pokus o 100% exact match na slug v DB
       const res1 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=eq.${cpuSlug}&limit=1`, { headers, cache: 'force-cache' });
       if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
       
-      // TIER 2: Substring match na slug
       const res2 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=ilike.*${cpuSlug}*&limit=1`, { headers, cache: 'force-cache' });
       if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
 
-      // TIER 3: TOKENIZED AND LOOKUP (Nejsilnější zbraň)
-      // Rozbije "amd-ryzen-9-5900x" na jednotlivá slova a vyžaduje, aby VŠECHNA byla v názvu (v jakémkoliv pořadí)
       const clean = cpuSlug.replace(/-/g, ' ').replace(/ryzen|core|intel|amd|ultra/gi, '').trim();
       const tokens = clean.split(/\s+/).filter(t => t.length > 0);
       if (tokens.length > 0) {
@@ -49,6 +46,24 @@ const findCpuBySlug = async (cpuSlug) => {
       }
   } catch(e) { console.error("CPU Lookup Critical Error:", e); }
   return null;
+};
+
+// 🚀 GURU SILOING ENGINE: Stažení dat pro interní prolinkování
+const getInternalLinksData = async (cpuId) => {
+  if (!supabaseUrl || !cpuId) return { similarCpus: [], recommendedGpus: [] };
+  const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+  let similarCpus = [];
+  let recommendedGpus = [];
+
+  try {
+      const cpuRes = await fetch(`${supabaseUrl}/rest/v1/cpus?select=name,slug&id=neq.${cpuId}&order=performance_index.desc&limit=6`, { headers, cache: 'force-cache' });
+      if (cpuRes.ok) similarCpus = await cpuRes.json();
+
+      const gpuRes = await fetch(`${supabaseUrl}/rest/v1/gpus?select=name,slug&order=performance_index.desc&limit=6`, { headers, cache: 'force-cache' });
+      if (gpuRes.ok) recommendedGpus = await gpuRes.json();
+  } catch(e) {}
+
+  return { similarCpus, recommendedGpus };
 };
 
 export async function generateMetadata({ params }) {
@@ -84,7 +99,6 @@ export default async function CpuDetailPage({ params }) {
   
   const cpu = await findCpuBySlug(cpuSlug);
 
-  // 🚀 RECOVERY: Pokud selže i Tier 3, zobrazíme aspoň čisté UI s vysvětlením
   if (!cpu) return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', textAlign: 'center', padding: '20px' }}>
         <div>
@@ -94,6 +108,8 @@ export default async function CpuDetailPage({ params }) {
         </div>
     </div>
   );
+
+  const { similarCpus, recommendedGpus } = await getInternalLinksData(cpu.id);
 
   const vendorColor = (cpu.vendor || '').toUpperCase() === 'INTEL' ? '#0071c5' : (cpu.vendor === 'AMD' ? '#ed1c24' : '#f59e0b');
   const safeSlug = cpu.slug || slugify(cpu.name);
@@ -108,7 +124,6 @@ export default async function CpuDetailPage({ params }) {
 
   const gamesList = availableGames.length > 0 ? availableGames : ['cyberpunk-2077', 'warzone', 'cs2'];
 
-  // 🚀 ZLATÁ GSC SEO SCHÉMATA (GOLDEN RICH RESULTS FIX)
   const commonOfferDetails = {
     "priceValidUntil": "2026-12-31", 
     "itemCondition": "https://schema.org/NewCondition",
@@ -145,7 +160,7 @@ export default async function CpuDetailPage({ params }) {
     "@context": "https://schema.org",
     "@type": "Product",
     "name": normalizeName(cpu.name),
-    "image": [`${baseUrl}/logo.png`], // GSC vyžaduje pole
+    "image": [`${baseUrl}/logo.png`],
     "description": isEn ? `Detailed specifications and gaming performance for ${cpu.name}.` : `Detailní specifikace a herní výkon pro procesor ${cpu.name}.`,
     "brand": { "@type": "Brand", "name": cpu.vendor || "Hardware" },
     "category": "Processor",
@@ -153,15 +168,15 @@ export default async function CpuDetailPage({ params }) {
     "url": `${baseUrl}/${isEn ? 'en/' : ''}cpu/${safeSlug}`,
     "aggregateRating": { 
       "@type": "AggregateRating", 
-      "ratingValue": 4.8, // Musí být číslo
+      "ratingValue": 4.8, 
       "bestRating": 5,
       "worstRating": 1,
-      "reviewCount": 110 // Musí být číslo
+      "reviewCount": 110 
     },
     "offers": { 
       "@type": "Offer", 
       "priceCurrency": "USD", 
-      "price": Number(cpu.release_price_usd) || 499, // Musí být číslo
+      "price": Number(cpu.release_price_usd) || 499, 
       "url": `${baseUrl}/${isEn ? 'en/' : ''}cpu/${safeSlug}`,
       ...commonOfferDetails
     }
@@ -266,6 +281,46 @@ export default async function CpuDetailPage({ params }) {
           </div>
         </section>
 
+        {/* 🚀 GURU SILOING: INTERNÍ PROLINKOVÁNÍ (DUELY) */}
+        {similarCpus.length > 0 && (
+          <section style={{ marginBottom: '60px' }}>
+              <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: vendorColor }}>
+                <Swords size={28} /> {isEn ? 'POPULAR COMPARISONS' : 'NEJČASTĚJŠÍ SROVNÁNÍ'}
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+                  {similarCpus.map(otherCpu => {
+                      const safeOtherSlug = otherCpu.slug || slugify(otherCpu.name);
+                      return (
+                          <a key={otherCpu.slug} href={isEn ? `/en/cpuvs/${safeSlug}-vs-${safeOtherSlug}` : `/cpuvs/${safeSlug}-vs-${safeOtherSlug}`} className="silo-link-card">
+                              <span style={{ fontWeight: '900', textTransform: 'uppercase' }}>VS {normalizeName(otherCpu.name)}</span>
+                              <ArrowRight size={16} className="silo-arrow" />
+                          </a>
+                      )
+                  })}
+              </div>
+          </section>
+        )}
+
+        {/* 🚀 GURU SILOING: INTERNÍ PROLINKOVÁNÍ (BOTTLENECK) */}
+        {recommendedGpus.length > 0 && (
+          <section style={{ marginBottom: '60px' }}>
+              <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: vendorColor }}>
+                <Zap size={28} /> {isEn ? 'IDEAL GPU PAIRINGS' : 'IDEÁLNÍ GRAFIKY K TOMUTO CPU'}
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+                  {recommendedGpus.map(gpu => {
+                      const safeGpuSlug = gpu.slug || slugify(gpu.name);
+                      return (
+                          <a key={gpu.slug} href={isEn ? `/en/bottleneck/${safeSlug}-with-${safeGpuSlug}` : `/bottleneck/${safeSlug}-with-${safeGpuSlug}`} className="silo-link-card" style={{ borderLeftColor: '#76b900' }}>
+                              <span style={{ fontWeight: '900', textTransform: 'uppercase' }}>+ {normalizeName(gpu.name)}</span>
+                              <Activity size={16} className="silo-arrow" />
+                          </a>
+                      )
+                  })}
+              </div>
+          </section>
+        )}
+
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: vendorColor }}>
             <LayoutList size={28} /> {isEn ? 'TECHNICAL SPECIFICATIONS' : 'TECHNICKÉ SPECIFIKACE'}
@@ -320,12 +375,19 @@ export default async function CpuDetailPage({ params }) {
         .btn-buy.alza { background: #004996; color: #fff; border: 1px solid #0059b3; }
         .btn-buy.amazon { background: #ff9900; color: #000; border: 1px solid #ffb340; }
         .btn-buy:hover { transform: translateY(-3px); filter: brightness(1.1); }
+        
         .deep-link-card { display: flex; align-items: center; gap: 20px; background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .deep-link-card h3 { margin: 0 0 5px 0; font-size: 1.1rem; font-weight: 950; text-transform: uppercase; }
         .deep-link-card p { margin: 0; color: #9ca3af; font-size: 0.85rem; line-height: 1.4; }
         .deep-link-card .link-arrow { position: absolute; right: 25px; color: #4b5563; transition: 0.3s; }
         .deep-link-card:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.8); }
         .deep-link-card:hover .link-arrow { color: #fff; transform: translateX(5px); }
+        
+        /* 🚀 GURU SILOING STYLY */
+        .silo-link-card { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 18px 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #d1d5db; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-left: 3px solid #6b7280; }
+        .silo-link-card:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); color: #fff; transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+        .silo-link-card .silo-arrow { color: #4b5563; transition: 0.3s; }
+        .silo-link-card:hover .silo-arrow { color: #f59e0b; transform: translateX(3px); }
         
         .table-wrapper { background: rgba(15, 17, 21, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
         .spec-row-style { display: flex; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
@@ -335,7 +397,7 @@ export default async function CpuDetailPage({ params }) {
         .game-link-card { display: flex; align-items: center; gap: 12px; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; color: #d1d5db; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
         .game-link-card:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); color: #fff; transform: translateY(-3px); box-shadow: 0 15px 30px rgba(0,0,0,0.6); }
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
-        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
+        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); }
       `}} />
     </div>
   );
