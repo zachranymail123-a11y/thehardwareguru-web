@@ -15,7 +15,7 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V5.6 (HYPE RADAR FIX)
+ * GURU ULTIMATE COMMAND CENTER V5.7 (HYPE RADAR, IMAGES & TYPE FIX)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
  * 🛡️ FIX 1: Opraven Vercel prerender error (přidáno force-dynamic a ošetřen přístup k document v getEnv).
@@ -24,7 +24,9 @@ export const dynamic = 'force-dynamic';
  * 🛡️ FIX 4: Upraveny verifikační URL odkazy tak, aby exaktně seděly na reálnou strukturu (cpuvs, cpu-upgrade).
  * 🛡️ FIX 5: Zaveden plně automatický Vercel Rebuild ihned po zápisu do DB.
  * 🛡️ FIX 6: Aplikováno pravidlo Google Golden Rich.
- * 🛡️ FIX 7: Hype Radar - opraveno načítání a parsování dat z /api/predictor, zabráněno "undefined".
+ * 🛡️ FIX 7: Hype Radar - opraveno načítání a parsování dat z /api/predictor (podpora game, name, title), zabráněno "undefined".
+ * 🛡️ FIX 8: Intel Hub - do Modalu přidáno viditelné pole pro IMAGE URL + opraveno mapování obrázků z feedu.
+ * 🛡️ FIX 9: Intel Hub - Přesné rozlišení typu příspěvku do databáze (game / leak / article).
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -136,10 +138,13 @@ export default function AdminApp() {
             const dataToSet = Array.isArray(json) ? json : (json.data || []);
             setPredictorData(dataToSet);
             
-            if (dataToSet.length > 0 && dataToSet[0].game) {
-                addLog(`Skenování dokončeno. Top trend: ${dataToSet[0].game}`, "success");
-            } else {
-                addLog(`Skenování dokončeno, ale pole s názvem hry chybí (zkontroluj výstup API).`, "warning");
+            if (dataToSet.length > 0) {
+                const topName = dataToSet[0].game || dataToSet[0].name || dataToSet[0].title;
+                if (topName) {
+                    addLog(`Skenování dokončeno. Top trend: ${topName}`, "success");
+                } else {
+                    addLog(`Skenování dokončeno, ale pole s názvem hry chybí (zkontroluj výstup API).`, "warning");
+                }
             }
         } else {
              addLog(`Predictor API nevrátilo platná data.`, "error");
@@ -187,7 +192,17 @@ export default function AdminApp() {
       });
       const r = await response.json();
       const aiData = JSON.parse(r.choices[0].message.content);
-      const newDraft = { ...aiData, image_url: item.image_url, created_at: new Date().toISOString(), original_item: item };
+      
+      // 🚀 GURU FIX: Záchyt a přiřazení obrázku z více možných klíčů, aby nezanikl
+      const imageUrl = aiData.image_url || item.image_url || item.image || item.thumbnail || item.urlToImage || '';
+      
+      const newDraft = { 
+          ...aiData, 
+          image_url: imageUrl, 
+          created_at: new Date().toISOString(), 
+          original_item: item 
+      };
+      
       setSavedDrafts(prev => ({ ...prev, [item.title]: newDraft }));
       setDraft(newDraft);
       setPreviewMode('card');
@@ -202,6 +217,12 @@ export default function AdminApp() {
     addLog(`Publikuji článek: ${draft.title_cs}...`, 'warning');
     try {
         const finalSlug = draft.slug_cs || slugify(draft.title_cs);
+        
+        // 🚀 GURU FIX: Přesné určení typu článku pro databázi a webhook (hw novinka / game / leak)
+        let postType = 'article'; // Default = HW Novinka
+        if (draft.original_item?.intelType === 'game') postType = 'game';
+        if (draft.original_item?.intelType === 'leaks') postType = 'leak';
+        
         const { error } = await supabase.from('posts').insert([{
             title: draft.title_cs,
             title_en: draft.title_en,
@@ -215,12 +236,12 @@ export default function AdminApp() {
             content_cs: draft.content_cs,
             content_en: draft.content_en,
             image_url: draft.image_url,
-            type: draft.original_item?.intelType === 'game' ? 'game' : 'article',
+            type: postType,
             created_at: new Date().toISOString()
         }]);
 
         if (error) throw error;
-        addLog('Článek úspěšně publikován do databáze!', 'success');
+        addLog(`Článek úspěšně publikován do DB pod štítkem: ${postType.toUpperCase()}`, 'success');
 
         const webhookUrl = process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL || getEnv('NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL');
         if (webhookUrl) {
@@ -236,7 +257,7 @@ export default function AdminApp() {
                     url: articleUrl,
                     description: draft.seo_description_cs || draft.description_cs,
                     image_url: draft.image_url,
-                    type: draft.original_item?.intelType === 'game' ? 'game' : 'article'
+                    type: postType
                 })
             }).catch(err => console.error("Webhook trigger failed:", err));
             addLog('Webhook úspěšně odeslán.', 'success');
@@ -599,12 +620,12 @@ export default function AdminApp() {
                     <div key={i} className="trend-card">
                         <div className="score-badge">{item.trend_score || 'N/A'}</div>
                         <Gamepad2 color="#eab308" size={32} />
-                        <h3 style={{ fontSize: '18px', fontWeight: 950, margin: '15px 0' }}>{item.game || item.name || 'Neznámá Hra'}</h3>
+                        <h3 style={{ fontSize: '18px', fontWeight: 950, margin: '15px 0' }}>{item.game || item.name || item.title || 'Neznámá Hra'}</h3>
                         <div style={{ fontSize: '11px', color: '#4b5563', textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                             <span>Steam: {item.steam_players ? Math.round(item.steam_players) : 'N/A'}</span>
                             <span>Reddit: {item.reddit_mentions || 'N/A'}</span>
                         </div>
-                        <button onClick={() => { setDbFormData({ name: item.game || item.name || '', slug: slugify(item.game || item.name || ''), rawData: '' }); setDbTab('games'); setActiveTab('database'); }} style={{ width: '100%', marginTop: '10px', padding: '12px', background: '#eab30811', border: '1px solid #eab30833', color: '#eab308', fontWeight: '950', borderRadius: '12px', cursor: 'pointer', fontSize: '10px' }}>PŘEDVYPLNIT DATABÁZI</button>
+                        <button onClick={() => { setDbFormData({ name: item.game || item.name || item.title || '', slug: slugify(item.game || item.name || item.title || ''), rawData: '' }); setDbTab('games'); setActiveTab('database'); }} style={{ width: '100%', marginTop: '10px', padding: '12px', background: '#eab30811', border: '1px solid #eab30833', color: '#eab308', fontWeight: '950', borderRadius: '12px', cursor: 'pointer', fontSize: '10px' }}>PŘEDVYPLNIT DATABÁZI</button>
                     </div>
                 ))}
             </div>
@@ -833,6 +854,12 @@ export default function AdminApp() {
                         </div>
                     </div>
                     
+                    {/* 🚀 GURU FIX: Viditelné a upravitelné pole pro IMAGE URL */}
+                    <div style={{ marginBottom: '15px' }}>
+                        <label style={{ fontSize: '10px', fontWeight: '900', color: '#a855f7', marginBottom: '5px', display: 'block' }}>IMAGE URL (NÁHLEDOVÝ OBRÁZEK)</label>
+                        <input value={draft.image_url || ''} onChange={e => setDraft({...draft, image_url: e.target.value})} placeholder="https://..." style={{ width: '100%', padding: '12px', background: '#000', border: '1px dashed #a855f7', color: '#fff', borderRadius: '8px' }} />
+                    </div>
+
                     <div>
                         <label style={{ fontSize: '10px', fontWeight: '900', color: '#9ca3af', marginBottom: '5px', display: 'block' }}>OBSAH (CZ - HTML)</label>
                         <textarea value={draft.content_cs || ''} onChange={e => setDraft({...draft, content_cs: e.target.value})} rows={6} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: '#fff', borderRadius: '8px', fontFamily: 'monospace', fontSize: '13px' }} />
