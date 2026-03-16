@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Monitor, Cpu, Gamepad2, Zap, Loader2 } from 'lucide-react';
+import { Monitor, Cpu, Gamepad2, Zap, Loader2, CheckCircle2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -23,6 +23,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         setResult(null);
 
         try {
+            // GURU: Dotahujeme FPS data. Tabulka cpu_game_fps používá sloupec cpu_id (ověřeno z CSV).
             const [gpuFpsRes, cpuFpsRes] = await Promise.all([
                 supabase.from('game_fps').select('*').eq('gpu_id', selectedGpuId).maybeSingle(),
                 supabase.from('cpu_game_fps').select('*').eq('cpu_id', selectedCpuId).maybeSingle()
@@ -60,9 +61,9 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 <div className="input-field">
                     <label><Monitor size={14} /> {isEn ? 'RESOLUTION' : 'ROZLIŠENÍ'}</label>
                     <select value={selectedRes} onChange={(e) => setSelectedRes(e.target.value)} className="guru-select">
-                        <option value="1080p">1080p</option>
-                        <option value="1440p">1440p</option>
-                        <option value="2160p">4K</option>
+                        <option value="1080p">1080p Full HD</option>
+                        <option value="1440p">1440p Quad HD</option>
+                        <option value="2160p">4K Ultra HD</option>
                     </select>
                 </div>
                 <div className="input-field">
@@ -99,7 +100,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 .guru-calc-box { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
                 .guru-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
                 .input-field label { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 11px; font-weight: 950; color: #9ca3af; text-transform: uppercase; }
-                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; appearance: none; }
+                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; appearance: none; cursor: pointer; }
                 .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; }
                 .animate-spin { animation: spin 1s linear infinite; }
                 @keyframes spin { 100% { transform: rotate(360deg); } }
