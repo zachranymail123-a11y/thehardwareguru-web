@@ -15,13 +15,15 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V5.4 (FINAL ROUTES FIX)
+ * GURU ULTIMATE COMMAND CENTER V5.5 (AUTO-REBUILD & GOLDEN RICH)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
  * 🛡️ FIX 1: Opraven Vercel prerender error (přidáno force-dynamic a ošetřen přístup k document v getEnv).
  * 🛡️ FIX 2: Uživatel vkládá data přes čistý JSON.
  * 🛡️ FIX 3: Při vložení CPU nebo GPU administrace vygeneruje duely (opraven slug fetch error).
  * 🛡️ FIX 4: Upraveny verifikační URL odkazy tak, aby exaktně seděly na reálnou strukturu (cpuvs, cpu-upgrade).
+ * 🛡️ FIX 5: Zaveden plně automatický Vercel Rebuild ihned po zápisu do DB.
+ * 🛡️ FIX 6: Aplikováno pravidlo Google Golden Rich.
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -29,14 +31,14 @@ const BASE_URL = "thehardwareguru.cz";
 
 // --- 🚀 GURU ENV ENGINE ---
 const getEnv = (key, fallback = '') => {
-  // Ochrana před přístupem k DOMu během server-side buildu na Vercelu
   if (typeof window === 'undefined' || typeof document === 'undefined') {
       const envMap = {
         'OPENAI_API_KEY': process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
         'NEXT_PUBLIC_ADMIN_PASSWORD': 'Wifik500',
         'NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL': process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL || '',
         'NEXT_PUBLIC_SUPABASE_URL': process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-        'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+        'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+        'NEXT_PUBLIC_VERCEL_DEPLOY_WEBHOOK_URL': process.env.NEXT_PUBLIC_VERCEL_DEPLOY_WEBHOOK_URL || ''
       };
       return envMap[key] || fallback;
   }
@@ -46,13 +48,15 @@ const getEnv = (key, fallback = '') => {
     'NEXT_PUBLIC_SUPABASE_URL': bridge?.getAttribute('data-url'),
     'NEXT_PUBLIC_SUPABASE_ANON_KEY': bridge?.getAttribute('data-key'),
     'NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL': bridge?.getAttribute('data-webhook-article'),
+    'NEXT_PUBLIC_VERCEL_DEPLOY_WEBHOOK_URL': bridge?.getAttribute('data-webhook-vercel')
   };
   const envMap = {
     'OPENAI_API_KEY': process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
     'NEXT_PUBLIC_ADMIN_PASSWORD': 'Wifik500',
     'NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL': process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL || '',
     'NEXT_PUBLIC_SUPABASE_URL': process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+    'NEXT_PUBLIC_VERCEL_DEPLOY_WEBHOOK_URL': process.env.NEXT_PUBLIC_VERCEL_DEPLOY_WEBHOOK_URL || ''
   };
   return bridgeMap[key] || envMap[key] || fallback;
 };
@@ -77,7 +81,6 @@ const SidebarItemUI = ({ id, activeTab, setActiveTab, icon, label, color, href }
   return <button onClick={() => setActiveTab(id)} className={`sidebar-btn ${active ? 'active' : ''}`} style={{ borderLeftColor: active ? color : 'transparent' }}>{content}</button>;
 };
 
-// 🚀 Šablony pro okamžitý zápis hardwaru bez AI
 const exampleCpuJson = `{\n  "vendor": "AMD",\n  "architecture": "Zen 4",\n  "cores": 8,\n  "threads": 16,\n  "base_clock_mhz": 4200,\n  "boost_clock_mhz": 5200,\n  "tdp_w": 120,\n  "l3_cache_mb": 96,\n  "release_price_usd": 699,\n  "release_date": "2026-03-15",\n  "performance_index": 125\n}`;
 const exampleGpuJson = `{\n  "vendor": "NVIDIA",\n  "architecture": "Blackwell",\n  "vram_gb": 16,\n  "memory_bus": "256-bit",\n  "base_clock_mhz": 2200,\n  "boost_clock_mhz": 2600,\n  "tdp_w": 400,\n  "release_price_usd": 999,\n  "release_date": "2026-03-15",\n  "performance_index": 290\n}`;
 
@@ -108,7 +111,6 @@ export default function AdminApp() {
   const [dbMessage, setDbMessage] = useState({ type: '', text: '', links: [] });
   const [dbFormData, setDbFormData] = useState({ name: '', slug: '', rawData: '' });
 
-  // --- SEZNAM INDEXER STATE ---
   const [seznamLoading, setSeznamLoading] = useState(false);
   const [seznamResults, setSeznamResults] = useState([]);
   const [seznamSitemap, setSeznamSitemap] = useState('pages');
@@ -194,7 +196,7 @@ export default function AdminApp() {
             description_en: draft.description_en,
             seo_description: draft.seo_description_cs,
             seo_description_en: draft.seo_description_en,
-            content: draft.content_cs || draft.content, // Fallback
+            content: draft.content_cs || draft.content,
             content_cs: draft.content_cs,
             content_en: draft.content_en,
             image_url: draft.image_url,
@@ -248,7 +250,6 @@ export default function AdminApp() {
     }
   }, [isAuthenticated]);
 
-  // Nastavení JSON šablon při přepnutí záložky pro Database
   useEffect(() => {
     if (dbTab === 'cpu') setDbFormData(prev => ({...prev, rawData: exampleCpuJson, name: '', slug: ''}));
     else if (dbTab === 'gpu') setDbFormData(prev => ({...prev, rawData: exampleGpuJson, name: '', slug: ''}));
@@ -264,7 +265,6 @@ export default function AdminApp() {
     }
   };
 
-  // 🚀 GURU FIX: 100% spolehlivé a plně automatizované uložení všech kombinací duelů
   const handleDbSubmit = async (e) => {
     e.preventDefault();
     setDbLoading(true);
@@ -272,7 +272,6 @@ export default function AdminApp() {
     
     const table = dbTab === 'games' ? 'games' : (dbTab === 'gpu' ? 'gpus' : 'cpus');
     
-    // Sloupec slug se pro CPU NEUKLÁDÁ (protože v DB neexistuje), ale v kódu s ním pracujeme pro URL!
     const safeSlug = slugify(dbFormData.slug || dbFormData.name);
 
     let payload = {
@@ -297,7 +296,6 @@ export default function AdminApp() {
 
     addLog(`Ukládám ${dbTab.toUpperCase()}: ${payload.name} do databáze...`, 'warning');
 
-    // 1. ULOŽENÍ ENTITY .select() zajistí vrácení vloženého ID pro masivní tvorbu duelů
     const { data: insertedData, error } = await supabase.from(table).insert([payload]).select();
     
     if (error || !insertedData || insertedData.length === 0) {
@@ -311,7 +309,6 @@ export default function AdminApp() {
     let successText = `Úspěšně přidáno: ${payload.name}! `;
     let verificationLinks = [];
 
-    // 2. AUTOMATICKÉ GENEROVÁNÍ VŠECH MOŽNÝCH DUELŮ
     try {
         if (dbTab === 'cpu') {
             addLog(`Generuji všechny možné duely a upgrady pro procesor ${payload.name}...`, 'warning');
@@ -356,13 +353,12 @@ export default function AdminApp() {
                 const { error: uErr } = await supabase.from('cpu_upgrades').insert(upgradesToInsert);
                 if (uErr) addLog(`CHYBA zápisu upgradů: ${uErr.message}`, 'error');
 
-                successText += `Vygenerováno a uloženo ${duelsToInsert.length} duelů a ${upgradesToInsert.length} upgradů.`;
+                successText += `Vygenerováno a uloženo ${duelsToInsert.length} duelů a ${upgradesToInsert.length} upgradů. `;
                 addLog(`Vytvořeno ${duelsToInsert.length} duelů a ${upgradesToInsert.length} upgradů!`, 'success');
 
                 const randomOtherCpu = allCpus[0];
                 const rSlug = slugify(randomOtherCpu.name);
                 
-                // GURU FIX: Zpět na přesnou strukturu složek /cpuvs/ a /cpu-upgrade/
                 verificationLinks = [
                     { label: '🔥 PROFIL', url: `/cpu/${safeSlug}` },
                     { label: '⚔️ CPU vs CPU', url: `/cpuvs/${safeSlug}-vs-${rSlug}` },
@@ -414,13 +410,12 @@ export default function AdminApp() {
                 const { error: uErr } = await supabase.from('gpu_upgrades').insert(upgradesToInsert);
                 if (uErr) addLog(`CHYBA zápisu upgradů: ${uErr.message}`, 'error');
 
-                successText += `Vygenerováno a uloženo ${duelsToInsert.length} duelů a ${upgradesToInsert.length} upgradů.`;
+                successText += `Vygenerováno a uloženo ${duelsToInsert.length} duelů a ${upgradesToInsert.length} upgradů. `;
                 addLog(`Vytvořeno ${duelsToInsert.length} duelů a ${upgradesToInsert.length} upgradů!`, 'success');
 
                 const randomOtherGpu = allGpus[0];
                 const rSlug = slugify(randomOtherGpu.name);
                 
-                // Přizpůsobení i pro GPU, pokud bys to měl podobně
                 verificationLinks = [
                     { label: '🔥 PROFIL', url: `/gpu/${safeSlug}` },
                     { label: '⚔️ GPU vs GPU', url: `/gpuvs/${safeSlug}-vs-${rSlug}` },
@@ -430,7 +425,7 @@ export default function AdminApp() {
                 ];
             }
         } else if (dbTab === 'games') {
-            successText += `Hra přidána. Databázový trigger automaticky dopočítává všechny FPS metriky.`;
+            successText += `Hra přidána. Databázový trigger automaticky dopočítává všechny FPS metriky. `;
             addLog(`Hra zapsána a auto_game_engine počítá FPS matici na pozadí!`, 'success');
 
             verificationLinks = [
@@ -441,6 +436,26 @@ export default function AdminApp() {
         }
     } catch (e) {
         addLog(`Chyba při generování dodatečných dat (duely atd.): ${e.message}`, 'error');
+    }
+
+    // 🚀 AUTOMATICKÝ VERCEL DEPLOY (SSG REBUILD)
+    const vercelWebhook = getEnv('NEXT_PUBLIC_VERCEL_DEPLOY_WEBHOOK_URL');
+    if (vercelWebhook) {
+        addLog('Odesílám signál do Vercelu pro automatický rebuild SSG stránek...', 'warning');
+        fetch(vercelWebhook, { method: 'POST' })
+            .then(res => {
+                if(res.ok) {
+                    addLog('Vercel Build úspěšně spuštěn! Za cca 1-2 minuty budou nové stránky staticky vygenerovány a funkční.', 'success');
+                } else {
+                    addLog('Vercel Build selhal (chyba webhooku).', 'error');
+                }
+            })
+            .catch(err => addLog(`Chyba připojení k Vercelu: ${err.message}`, 'error'));
+        
+        successText += 'Byl spuštěn Vercel Rebuild. Odkazy budou funkční za cca 2 minuty.';
+    } else {
+        addLog('CHYBA: Vercel Webhook URL chybí v .env! Rebuild se nespustil, stránky hodí 404 dokud nespustíš build ručně.', 'error');
+        successText += 'POZOR: Automatický rebuild nenastaven. Stránky zatím neexistují (404).';
     }
 
     setDbMessage({ type: 'success', text: successText, links: verificationLinks });
@@ -504,8 +519,17 @@ export default function AdminApp() {
     </div>
   );
 
+  const googleGoldenRichSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Guru Command Center",
+    "description": "Administrace platformy The Hardware Guru",
+    "url": `https://${BASE_URL}/admin`
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: '#0a0b0d', display: 'flex', color: '#fff', fontFamily: 'sans-serif' }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(googleGoldenRichSchema) }} />
       <style dangerouslySetInnerHTML={{ __html: `
         .admin-sidebar { width: 280px; background: #0d0e12; border-right: 1px solid #ffffff0d; position: fixed; height: 100vh; z-index: 100; display: flex; flex-direction: column; }
         .admin-main { flex: 1; margin-left: 280px; padding: 40px 60px; height: 100vh; overflow-y: auto; }
