@@ -2,21 +2,32 @@ import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart, Info, BookOpen } from 'lucide-react';
+import { ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart, Info, BookOpen, Share2, Cpu, Monitor } from 'lucide-react';
 
 /**
- * GURU GUIDE ENGINE - DETAIL V2.0 (GOLDEN RICH RESULTS FIX)
+ * GURU GUIDE ENGINE - DETAIL V2.1 (GOLDEN RICH RESULTS + SEO SILOING)
  * Cesta: src/app/rady/[slug]/page.js
  * 🚀 CÍL: 100% zelená v GSC a ovládnutí technických návodů v Google SERP.
  * 🛡️ FIX 1: Implementována kompletní "Golden Rich" sada (Article, Product, FAQ, Breadcrumbs).
  * 🛡️ FIX 2: Ošetření fake shippingu a vratek pro odstranění žlutých varování.
  * 🛡️ FIX 3: Striktní Next.js 15 compliance (await params).
+ * 🛡️ FIX 4: Přidáno masivní SEO prolinkování (Siloing) - Odkazy na Databázi HW, Další Návody a Sdílení.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
 const supabase = createClient(supabaseUrl, supabaseKey);
 const baseUrl = "https://thehardwareguru.cz";
+
+const getLatestRady = async (excludeSlug) => {
+    const { data } = await supabase
+        .from('rady')
+        .select('title, title_en, slug, slug_en, created_at, image_url')
+        .neq('slug', excludeSlug)
+        .order('created_at', { ascending: false })
+        .limit(3);
+    return data || [];
+}
 
 // 🚀 GURU SEO: Dynamické Meta Tagy (Zlatý standard)
 export async function generateMetadata({ params }) {
@@ -50,6 +61,7 @@ export async function generateMetadata({ params }) {
       title,
       description: desc,
       images: radaItem.image_url ? [radaItem.image_url] : [`${baseUrl}/logo.png`],
+      type: 'article',
     }
   };
 }
@@ -68,6 +80,8 @@ export default async function RadaDetail({ params }) {
     notFound();
   }
 
+  const latestRady = await getLatestRady(radaItem.slug);
+
   // 2. GURU JAZYKOVÁ LOGIKA
   const isEn = radaItem.slug_en === slug && radaItem.slug_en !== radaItem.slug;
   const title = isEn && radaItem.title_en ? radaItem.title_en : (radaItem.title || 'Neznámá rada');
@@ -81,6 +95,7 @@ export default async function RadaDetail({ params }) {
     ? `BUY FOR BEST PRICE ${priceDisplay ? `(${priceDisplay})` : ''}` 
     : `KOUPIT ZA NEJLEPŠÍ CENU ${priceDisplay ? `(${priceDisplay})` : ''}`;
   const backLink = isEn ? '/en/rady' : '/rady';
+  const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}rady/${slug}`;
   const dateObj = radaItem.created_at ? new Date(radaItem.created_at) : new Date();
 
   // 🚀 ZLATÁ GSC SEO SCHÉMATA (GOLDEN RICH RESULTS FIX)
@@ -252,6 +267,65 @@ export default async function RadaDetail({ params }) {
             </div>
           )}
 
+          {/* 🚀 SOCIAL SHARE BOX */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginTop: '50px' }}>
+              <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`} target="_blank" rel="nofollow noopener" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#1da1f220', color: '#1da1f2', border: '1px solid #1da1f250', padding: '10px 20px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', transition: '0.3s' }}>
+                  <Share2 size={16} /> TWITTER / X
+              </a>
+              <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="nofollow noopener" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#1877f220', color: '#1877f2', border: '1px solid #1877f250', padding: '10px 20px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', transition: '0.3s' }}>
+                  <Share2 size={16} /> FACEBOOK
+              </a>
+          </div>
+
+          {/* 🚀 GURU SILOING: Banner do Katalogu HW */}
+          <div style={{ marginTop: '60px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+              <a href={isEn ? "/en/cpu-index" : "/cpu-index"} className="silo-banner-card" style={{ borderLeftColor: '#66fcf1' }}>
+                  <div className="silo-banner-icon" style={{ color: '#66fcf1', background: '#66fcf120' }}><Cpu size={28} /></div>
+                  <div className="silo-banner-text">
+                      <h4>{isEn ? 'CPU DATABASE' : 'KATALOG PROCESORŮ'}</h4>
+                      <p>{isEn ? 'Compare specs and find the best processor.' : 'Porovnejte specifikace a najděte ten nejlepší procesor.'}</p>
+                  </div>
+                  <ChevronLeft size={24} className="silo-banner-arrow" style={{ transform: 'rotate(180deg)', color: '#66fcf1' }} />
+              </a>
+              <a href={isEn ? "/en/gpu-index" : "/gpu-index"} className="silo-banner-card" style={{ borderLeftColor: '#a855f7' }}>
+                  <div className="silo-banner-icon" style={{ color: '#a855f7', background: '#a855f720' }}><Monitor size={28} /></div>
+                  <div className="silo-banner-text">
+                      <h4>{isEn ? 'GPU DATABASE' : 'KATALOG GRAFIK'}</h4>
+                      <p>{isEn ? 'Discover the ultimate gaming graphics cards.' : 'Objevte ty nejlepší grafiky pro hraní.'}</p>
+                  </div>
+                  <ChevronLeft size={24} className="silo-banner-arrow" style={{ transform: 'rotate(180deg)', color: '#a855f7' }} />
+              </a>
+          </div>
+
+          {/* 🚀 DYNAMICKÁ SEKCE RECIRKULACE (DALŠÍ RADY) */}
+          {latestRady.length > 0 && (
+              <section style={{ marginTop: '60px' }}>
+                  <h2 style={{ color: '#fff', fontSize: '1.8rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #66fcf1', paddingLeft: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <Info size={28} color="#66fcf1" /> {isEn ? 'MORE GUIDES & TIPS' : 'DALŠÍ NÁVODY A RADY'}
+                  </h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+                      {latestRady.map((lr) => {
+                          const lrTitle = isEn && lr.title_en ? lr.title_en : lr.title;
+                          const lrSlug = isEn && lr.slug_en ? lr.slug_en : lr.slug;
+                          const lrUrl = isEn ? `/en/rady/${lrSlug}` : `/rady/${lrSlug}`;
+                          const fallbackImg = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000';
+                          
+                          return (
+                              <a key={lr.slug} href={lrUrl} className="related-article-card">
+                                  <div className="related-img-wrapper">
+                                      <img src={lr.image_url || fallbackImg} alt={lrTitle} loading="lazy" />
+                                  </div>
+                                  <div className="related-content">
+                                      <div className="related-tag">{isEn ? 'GUIDE' : 'NÁVOD'}</div>
+                                      <h3 className="related-title">{lrTitle}</h3>
+                                  </div>
+                              </a>
+                          );
+                      })}
+                  </div>
+              </section>
+          )}
+
           {/* --- 🚀 GURU GLOBÁLNÍ CTA --- */}
           <div style={{ marginTop: '70px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
             <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
@@ -273,12 +347,16 @@ export default async function RadaDetail({ params }) {
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; backdrop-filter: blur(5px); border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.2); }
+        
         .guru-affiliate-cta { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 22px 45px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 18px; text-transform: uppercase; border-radius: 18px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 35px rgba(234, 88, 12, 0.4); border: 1px solid rgba(255,255,255,0.1); }
         .guru-affiliate-cta:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 20px 50px rgba(234, 88, 12, 0.6); filter: brightness(1.1); }
+        
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
         .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
+        
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
         .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
+        
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; }
         .guru-prose h2 { color: #66fcf1; font-size: 2.2rem; font-weight: 950; margin-top: 2.5em; margin-bottom: 1em; text-transform: uppercase; letter-spacing: 1px; }
         .guru-prose h3 { color: #fff; font-size: 1.6rem; font-weight: 900; margin-top: 2em; margin-bottom: 1em; }
@@ -290,7 +368,30 @@ export default async function RadaDetail({ params }) {
         .guru-prose li { margin-bottom: 0.8em; }
         .guru-prose strong { color: #fff; font-weight: 900; }
         .guru-prose blockquote { border-left: 5px solid #66fcf1; padding: 25px 30px; font-style: italic; color: #e5e7eb; background: rgba(102, 252, 241, 0.05); border-radius: 0 16px 16px 0; margin: 2.5em 0; font-size: 1.25rem; }
-        @media (max-width: 768px) { .guru-prose { font-size: 1.05rem; } .guru-prose h2 { font-size: 1.8rem; } .guru-affiliate-cta { font-size: 15px; padding: 18px 30px; width: 100%; } }
+        
+        /* 🚀 GURU SILOING STYLY */
+        .silo-banner-card { flex: 1; min-width: 300px; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; align-items: center; gap: 20px; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border-left-width: 5px; }
+        .silo-banner-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.02); }
+        .silo-banner-icon { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .silo-banner-text h4 { margin: 0 0 5px 0; color: #fff; font-size: 1.2rem; font-weight: 950; }
+        .silo-banner-text p { margin: 0; color: #9ca3af; font-size: 0.9rem; }
+        .silo-banner-card:hover .silo-banner-arrow { transform: rotate(180deg) translateX(-5px) !important; }
+
+        .related-article-card { display: flex; flex-direction: column; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .related-article-card:hover { transform: translateY(-5px); border-color: rgba(102, 252, 241, 0.4); box-shadow: 0 15px 40px rgba(102, 252, 241, 0.2); }
+        .related-img-wrapper { height: 140px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .related-img-wrapper img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
+        .related-content { padding: 20px; display: flex; flex-direction: column; gap: 5px; }
+        .related-tag { color: #66fcf1; font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .related-title { margin: 0; font-size: 1.1rem; font-weight: 950; color: #fff; line-height: 1.3; }
+
+        @media (max-width: 768px) { 
+          .guru-prose { font-size: 1.05rem; } 
+          .guru-prose h2 { font-size: 1.8rem; } 
+          .guru-affiliate-cta { font-size: 15px; padding: 18px 30px; width: 100%; } 
+          .silo-banner-card { flex-direction: column; text-align: center; }
+          .silo-banner-arrow { display: none; }
+        }
       `}} />
     </div>
   );
