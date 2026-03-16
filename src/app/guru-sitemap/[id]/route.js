@@ -1,15 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - CHUNK GENERATOR V39.2 (404 PREVENTION + E-E-A-T)
+ * GURU SEO ENGINE - CHUNK GENERATOR V39.3 (FPS CALCULATOR + SEO SILOING)
  * Cesta: src/app/guru-sitemap/[id]/route.js
- * 🛡️ FIX 1: Přidána generateStaticParams(). Next.js nyní předem zná URL pro podsitemapy, což řeší 404 Errory!
- * 🛡️ FIX 2: Do statických cest (pages) byly přidány kritické E-E-A-T stránky (about, contact, privacy-policy, terms-of-service).
- * 🛡️ FIX 3: Opraveno chybějící generování /en/ variant pro FPS a Bottleneck matici!
+ * 🛡️ FIX 1: Přidána FPS Kalkulačka (/fps-kalkulacka) do pages.xml.
+ * 🛡️ FIX 2: Přidána EN varianta (/en/fps-calculator) do pages.xml.
+ * 🛡️ FIX 3: Zachována generateStaticParams pro eliminaci 404 errorů sitemap.
  */
 
 export const revalidate = 3600; 
-export const dynamicParams = true; // Povolí vykreslení dalších chunků za běhu
+export const dynamicParams = true; 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -19,10 +19,9 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
 });
 
-// 🚀 GURU 404 FIX: Tímto řekneme Vercelu, jaké cesty bezpečně existují
 export async function generateStaticParams() {
     const types = ['pages.xml', 'posts.xml', 'cpu.xml', 'gpu.xml', 'duels.xml', 'upgrades.xml'];
-    // Předgenerujeme prvních 20 numerických chunků
+    // Předgenerujeme prvních 20 numerických chunků pro matici
     for(let i=1; i<=20; i++) types.push(`${i}.xml`);
     return types.map(t => ({ id: t }));
 }
@@ -49,16 +48,25 @@ export async function GET(req, props) {
 
     try {
         if (type === 'pages') {
-            // 🚀 GURU E-E-A-T FIX: Přidány statické cesty pro O nás, Kontakt, Zásady a Podmínky (CZ i EN)
+            // 🚀 GURU: Přidána FPS Kalkulačka a EN ekvivalent
             const staticPaths = [
                 '/', '/clanky', '/gpuvs', '/cpuvs', '/gpuvs/ranking', '/cpuvs/ranking', 
                 '/gpu-index', '/cpu-index', '/deals', '/support', '/tipy', '/tweaky', 
-                '/rady', '/slovnik', '/about', '/contact', '/privacy-policy', '/terms-of-service'
+                '/rady', '/slovnik', '/about', '/contact', '/privacy-policy', '/terms-of-service',
+                '/fps-kalkulacka' // <-- CZ verze
             ];
+            
             staticPaths.forEach(p => {
                 routes.push({ url: `${baseUrl}${p}`, priority: '1.0', changefreq: 'daily' });
-                routes.push({ url: `${baseUrl}/en${p}`, priority: '0.9', changefreq: 'daily' });
+                
+                // Speciální handling pro EN slug FPS kalkulačky, zbytek jde přes /en prefix
+                if (p === '/fps-kalkulacka') {
+                    routes.push({ url: `${baseUrl}/en/fps-calculator`, priority: '0.9', changefreq: 'daily' });
+                } else {
+                    routes.push({ url: `${baseUrl}/en${p}`, priority: '0.9', changefreq: 'daily' });
+                }
             });
+
         } else if (type === 'posts') {
             const [pRes, tRes, twRes, rRes, sRes] = await Promise.all([
                 supabase.from('posts').select('slug, created_at'),
@@ -74,6 +82,7 @@ export async function GET(req, props) {
                 }
             });
             add(pRes.data, 'clanky'); add(tRes.data, 'tipy'); add(twRes.data, 'tweaky'); add(rRes.data, 'rady'); add(sRes.data, 'slovnik');
+
         } else if (type === 'cpu') {
             const { data: cpus } = await supabase.from('cpus').select('name, created_at'); 
             const { data: gamesData } = await supabase.from('games').select('slug');
@@ -86,9 +95,10 @@ export async function GET(req, props) {
                 routes.push({ url: `${baseUrl}/en/cpu/${s}`, lastmod: d, priority: '0.8' });
                 games.forEach(g => {
                     routes.push({ url: `${baseUrl}/cpu-fps/${s}/${g}`, lastmod: d, priority: '0.7' });
-                    routes.push({ url: `${baseUrl}/en/cpu-fps/${s}/${g}`, lastmod: d, priority: '0.6' }); // 🚀 EN FIX
+                    routes.push({ url: `${baseUrl}/en/cpu-fps/${s}/${g}`, lastmod: d, priority: '0.6' });
                 });
             });
+
         } else if (type === 'gpu') {
             const { data: gpus } = await supabase.from('gpus').select('name, slug, created_at');
             const { data: gamesData } = await supabase.from('games').select('slug');
@@ -100,9 +110,10 @@ export async function GET(req, props) {
                 routes.push({ url: `${baseUrl}/en/gpu/${s}`, lastmod: d, priority: '0.8' });
                 games.forEach(gm => {
                     routes.push({ url: `${baseUrl}/gpu-fps/${s}/${gm}`, lastmod: d, priority: '0.7' });
-                    routes.push({ url: `${baseUrl}/en/gpu-fps/${s}/${gm}`, lastmod: d, priority: '0.6' }); // 🚀 EN FIX
+                    routes.push({ url: `${baseUrl}/en/gpu-fps/${s}/${gm}`, lastmod: d, priority: '0.6' });
                 });
             });
+
         } else if (type === 'duels' || type === 'upgrades') {
             const isUpg = type === 'upgrades';
             const [cpuRes, gpuRes] = await Promise.all([
@@ -122,6 +133,7 @@ export async function GET(req, props) {
                 if (d.slug) routes.push({ url: `${baseUrl}/${pathGpu}/${d.slug}`, lastmod: dt, priority: '0.7', changefreq: 'monthly' });
                 if (d.slug_en) routes.push({ url: `${baseUrl}/en/${pathGpu}/${d.slug_en}`, lastmod: dt, priority: '0.6' });
             });
+
         } else if (!isNaN(parseInt(type, 10))) {
             const chunkId = parseInt(type, 10);
             const limit = 5; 
@@ -147,10 +159,10 @@ export async function GET(req, props) {
                     routes.push({ url: `${baseUrl}/en${pairPath}`, priority: '0.5' });
                     games.forEach(game => {
                         routes.push({ url: `${baseUrl}${pairPath}-in-${game}`, priority: '0.5' });
-                        routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}`, priority: '0.4' }); // 🚀 EN FIX
+                        routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}`, priority: '0.4' });
                         resolutions.forEach(res => {
                             routes.push({ url: `${baseUrl}${pairPath}-in-${game}-at-${res}`, priority: '0.4' });
-                            routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}-at-${res}`, priority: '0.3' }); // 🚀 EN FIX
+                            routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}-at-${res}`, priority: '0.3' });
                         });
                     });
                 });
