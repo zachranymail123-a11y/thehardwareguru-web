@@ -21,11 +21,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V74.0 (GOLDEN RICH RESULTS FIX + SHIPPING)
+ * GURU CPU DUELS ENGINE - DETAIL V74.1 (GOLDEN RICH RESULTS + SEO SILOING FIX)
  * Cesta: src/app/cpuvs/[slug]/page.js
- * 🚀 CÍL: 100% čistý štít v Google Search Console (bez žlutých varování).
- * 🛡️ FIX: Přidáno shippingDetails a hasMerchantReturnPolicy do schématu Product,
- * aby Google přestal hlásit chybějící volitelná pole u nabídek (offers).
+ * 🚀 CÍL: 100% čistý štít v Google Search Console a dokonalé prolinkování webu.
+ * 🛡️ FIX 1: Přidáno shippingDetails a hasMerchantReturnPolicy do schématu Product.
+ * 🛡️ FIX 2: Vloženo masivní SEO Siloing - Doporučení podobných duelů, Analýza Upgradu a Související články.
  */
 
 export const runtime = "nodejs";
@@ -66,24 +66,6 @@ const slugify = (text) => {
 
 const normalizeName = (name = '') => name.replace(/Intel |AMD |Ryzen |Core /gi, '');
 
-// 🛡️ GURU ENGINE: Vyhledávání CPU z DB
-const findCpu = async (slugPart) => {
-  if (!supabaseUrl || !slugPart) return null;
-  const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
-  const clean = slugPart.replace(/-/g, " ").replace(/ryzen|core|intel|amd|ultra/gi, "").trim();
-  const chunks = clean.match(/\d+|[a-zA-Z]+/g);
-  if (!chunks || chunks.length === 0) return null;
-  const searchPattern = `%${chunks.join('%')}%`;
-  try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&name=ilike.${encodeURIComponent(searchPattern)}&limit=1`, {
-          headers, cache: 'force-cache'
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data[0] || null;
-  } catch (e) { return null; }
-};
-
 // 🛡️ GURU ENGINE: Sémantické články (Thematic Clustering)
 const getRelatedArticles = async (cpuA, cpuB) => {
     if (!supabaseUrl) return [];
@@ -98,7 +80,7 @@ const getRelatedArticles = async (cpuA, cpuB) => {
         const data = await res.json();
 
         if (!data || data.length === 0) {
-            const resLatest = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&order=created_at.desc&limit=3`, {
+            const resLatest = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&type=eq.hardware&order=created_at.desc&limit=3`, {
                 headers, cache: 'force-cache'
             });
             return await resLatest.json();
@@ -207,9 +189,9 @@ export default async function CpuDuelDetail({ params }) {
     }
   }
 
+  // 🚀 GURU SILOING: Logika pro odkaz na upgrade
   const upgradeUrl = perfWinner && perfLoser ? `/${isEn ? 'en/' : ''}cpu-upgrade/${slugify(perfLoser.name)}-to-${slugify(perfWinner.name)}` : null;
   const similar = await (cpuA?.id ? getSimilarDuels(cpuA.id, duel.slug) : Promise.resolve([]));
-  
   const relatedArticles = await getRelatedArticles(cpuA.name, cpuB.name);
 
   const safeSlugA = cpuA.slug || slugify(cpuA.name);
@@ -381,7 +363,15 @@ export default async function CpuDuelDetail({ params }) {
             {cpuA.name} <span style={{ color: '#ff0055' }}>vs</span> {cpuB.name}
           </h1>
           {perfWinner && <div className="guru-verdict">{perfWinner.name} {isEn ? 'is about' : 'je přibližně'} <strong>{perfDiff}%</strong> {isEn ? 'faster in games' : 'výkonnější ve hrách'}</div>}
-          {upgradeUrl && <a href={upgradeUrl} className="guru-upgrade-pill"><Zap size={14} fill="currentColor" /> {isEn ? `Upgrade Analysis` : `Analýza upgradu`} <ArrowRight size={14} /></a>}
+          
+          {/* 🚀 GURU SILOING: Odkaz na Upgrade analýzu */}
+          {upgradeUrl && (
+            <div style={{ marginTop: '25px' }}>
+              <a href={upgradeUrl} className="guru-upgrade-pill">
+                  <Zap size={14} fill="currentColor" /> {isEn ? `WORTH UPGRADING TO ${perfWinner.name}?` : `VYPLATÍ SE UPGRADE NA ${perfWinner.name}?`} <ArrowRight size={14} />
+              </a>
+            </div>
+          )}
         </header>
 
         <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '60px' }}>
@@ -414,6 +404,7 @@ export default async function CpuDuelDetail({ params }) {
           </div>
         </section>
 
+        {/* 🚀 GURU SILOING: RECENZE A SOUVISEJÍCÍ ČLÁNKY */}
         {relatedArticles.length > 0 && (
             <section style={{ marginBottom: '60px' }}>
                 <h2 className="section-h2" style={{ borderLeftColor: '#a855f7' }}>
@@ -436,6 +427,7 @@ export default async function CpuDuelDetail({ params }) {
             </section>
         )}
 
+        {/* 🚀 GURU SILOING: HLUBOKÁ NAVIGAČNÍ MATICE */}
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: '#66fcf1' }}><Activity size={36} /> {isEn ? 'DEEP DIVE ANALYSIS' : 'DETAILNÍ ANALÝZA'}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px' }}>
@@ -455,6 +447,7 @@ export default async function CpuDuelDetail({ params }) {
           </div>
         </section>
 
+        {/* 🚀 GURU SILOING: DALŠÍ CPU DUELY */}
         {similar.length > 0 && (
           <section style={{ marginBottom: '60px' }}>
             <h2 className="section-h2"><LayoutList size={28} /> {isEn ? `COMPARE ${normalizeName(cpuA?.name || "")} WITH` : `SROVNEJTE ${normalizeName(cpuA?.name || "")} S...`}</h2>
@@ -466,6 +459,7 @@ export default async function CpuDuelDetail({ params }) {
           </section>
         )}
 
+        {/* 🚀 GLOBÁLNÍ CTA TLAČÍTKA */}
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%', marginTop: '50px' }}>
           <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn" style={{ flex: '1 1 280px' }}>
              <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
@@ -481,7 +475,8 @@ export default async function CpuDuelDetail({ params }) {
         .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); }
         .guru-ranking-link { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
         .guru-verdict { margin-top: 25px; color: #66fcf1; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 10px 25px; background: rgba(102, 252, 241, 0.05); border: 1px solid rgba(102, 252, 241, 0.2); border-radius: 50px; display: inline-block; }
-        .guru-upgrade-pill { display: inline-flex; align-items: center; gap: 10px; padding: 10px 25px; background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; margin-top: 25px; transition: 0.3s; }
+        .guru-upgrade-pill { display: inline-flex; align-items: center; gap: 10px; padding: 12px 30px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 50px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: 0.3s; box-shadow: 0 5px 15px rgba(168, 85, 247, 0.2); }
+        .guru-upgrade-pill:hover { background: #a855f7; color: #fff; transform: translateY(-3px); box-shadow: 0 10px 25px rgba(168, 85, 247, 0.4); }
         
         .cpu-box { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 40px 20px; text-align: center; flex: 1; }
         .vendor-label { font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 15px; display: block; }
@@ -493,6 +488,7 @@ export default async function CpuDuelDetail({ params }) {
         .spec-row-style { display: flex; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .table-label { width: 180px; text-align: center; font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; }
         
+        /* 🚀 GURU SILOING STYLY */
         .related-card-style { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; text-decoration: none; transition: 0.3s; }
         .related-card-style:hover { transform: translateY(-5px); border-color: #a855f7; }
         .related-img-box { height: 160px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -500,6 +496,9 @@ export default async function CpuDuelDetail({ params }) {
         .related-content-box { padding: 20px; }
         .related-tag { color: #a855f7; font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 10px; }
         .related-title-text { color: #fff; font-size: 1.1rem; font-weight: 950; margin: 0; line-height: 1.3; }
+
+        .similar-link-card { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.02); padding: 18px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #d1d5db; transition: 0.3s; font-weight: bold; font-size: 14px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .similar-link-card:hover { background: rgba(255,255,255,0.05); border-color: rgba(102, 252, 241, 0.4); color: #fff; transform: translateY(-3px); }
 
         .fps-matrix-card { background: rgba(15,17,21,0.9); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
         .matrix-gpu-title { font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;}
@@ -509,6 +508,7 @@ export default async function CpuDuelDetail({ params }) {
         
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
+        
         @media (max-width: 768px) { .guru-grid-ring { grid-template-columns: 1fr !important; } .vs-badge { margin: 10px auto; rotate: 0deg; } .spec-row-style { flex-direction: column !important; gap: 10px; padding: 15px 10px !important; } }
       `}} />
     </div>
