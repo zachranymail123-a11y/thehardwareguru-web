@@ -23,7 +23,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         setResult(null);
 
         try {
-            // GURU: Dotahujeme FPS data. Tabulka cpu_game_fps používá sloupec cpu_id (ověřeno z CSV).
             const [gpuFpsRes, cpuFpsRes] = await Promise.all([
                 supabase.from('game_fps').select('*').eq('gpu_id', selectedGpuId).maybeSingle(),
                 supabase.from('cpu_game_fps').select('*').eq('cpu_id', selectedCpuId).maybeSingle()
@@ -40,7 +39,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             const cpuFps = cpuData[columnKey] || 0;
 
             const finalFps = (gpuFps > 0 && cpuFps > 0) ? Math.min(gpuFps, cpuFps) : Math.max(gpuFps, cpuFps);
-
             setResult({ fps: Math.round(finalFps) });
         } catch (err) {
             setResult({ fps: 0 });
@@ -59,7 +57,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                         {games.map(g => <option key={g.id} value={g.slug}>{g.name}</option>)}
                     </select>
                 </div>
-
                 <div className="input-field">
                     <label><Monitor size={14} /> {isEn ? 'RESOLUTION' : 'ROZLIŠENÍ'}</label>
                     <select value={selectedRes} onChange={(e) => setSelectedRes(e.target.value)} className="guru-select">
@@ -68,7 +65,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                         <option value="2160p">4K</option>
                     </select>
                 </div>
-
                 <div className="input-field">
                     <label><Zap size={14} /> GPU</label>
                     <select value={selectedGpuId} onChange={(e) => setSelectedGpuId(e.target.value)} className="guru-select">
@@ -76,7 +72,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                         {gpus.map(g => <option key={g.id} value={g.id}>{g.vendor} {g.name}</option>)}
                     </select>
                 </div>
-
                 <div className="input-field">
                     <label><Cpu size={14} /> CPU</label>
                     <select value={selectedCpuId} onChange={(e) => setSelectedCpuId(e.target.value)} className="guru-select">
@@ -106,7 +101,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 .input-field label { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 11px; font-weight: 950; color: #9ca3af; text-transform: uppercase; }
                 .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; appearance: none; }
                 .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; }
-                .calc-btn:disabled { opacity: 0.3; }
                 .animate-spin { animation: spin 1s linear infinite; }
                 @keyframes spin { 100% { transform: rotate(360deg); } }
                 .result-area { margin-top: 40px; text-align: center; }
