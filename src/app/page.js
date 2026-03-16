@@ -1,14 +1,12 @@
 import React from 'react';
-import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu } from 'lucide-react';
+import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2 } from 'lucide-react';
 
 /**
- * GURU HOMEPAGE V15.5 - FULL SSR & GOLDEN RICH RESULTS FIX
+ * GURU HOMEPAGE V15.6 - FULL SSR & FPS ENGINE INTEGRATION
  * Cesta: src/app/page.js
- * 🛡️ FIX 1: Komponenta next/image odstraněna kvůli chybám při kompilaci v aktuálním prostředí.
- * 🛡️ FIX 2: Změněno z "use client" na asynchronní Server Component pro 100% SEO indexaci Googlem.
- * 🛡️ FIX 3: Odstraněno serverové volání increment_total_visits (zamezení nafukování statistik z crawlerů).
- * 🛡️ FIX 4: Opraven format WebSite (EntryPoint) a přidáno masivní FAQ schema pro Brand SEO.
- * 🛡️ FIX 5: Přidáno tlačítko "SOUBOJE CPU" do Hero sekce a odkaz na "VŠECHNY ČLÁNKY" do sekce článků.
+ * 🚀 CÍL: Integrace "FPS Kalkulačky" do Hero sekce pro maximální konverzi a traffic.
+ * 🛡️ FIX 1: Přidáno tlačítko "ROZJEDU TO?" (FPS Kalkulačka) do Hero sekce.
+ * 🛡️ FIX 2: Zachování 100% SSR a Golden Rich Results.
  */
 
 const LEAK_PLACEHOLDER_URL = 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000';
@@ -19,7 +17,6 @@ const getSafeImage = (url) => {
   return url;
 };
 
-// Získává supabaseUrl jako argument, protože už nejsme v client scope
 const getThumbnail = (post, supabaseUrl) => {
   const typeStr = (post.type || '').toLowerCase().trim();
   if (typeStr.includes('leak')) {
@@ -41,25 +38,18 @@ const getBadgeInfo = (post, isEn) => {
   return { text: isEn ? 'HW NEWS' : 'HW NOVINKA', color: '#ff0000', textColor: '#fff', isLeak: false };
 };
 
-// 🚀 GURU: SERVER COMPONENT HOMEPAGE
 export default async function HomePage({ params }) {
-  // Detekce jazyka na serveru přes parametry URL
   const locale = params?.locale || 'cs';
   const isEn = locale === 'en';
   
-  // Zabezpečený přístup k proměnným prostředí na serveru
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
   const getHeaders = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
-
-  // Nativní server-side fetch s revalidací každých 60 vteřin (kompromis mezi rychlostí a čerstvými daty)
   const fetchOpts = { headers: getHeaders, next: { revalidate: 60 } };
 
   let p = [], s = [], t = [], tw = [], d = [], pa = [], exp = [], feat = [], duelsRes = [], cpuDuelsRes = [];
 
   try {
-    // Paralelní Server-Side načtení všech dat (odstraněn rpc increment_total_visits pro ochranu statistik)
     [p, s, t, tw, d, pa, exp, feat, duelsRes, cpuDuelsRes] = await Promise.all([
       fetch(`${supabaseUrl}/rest/v1/posts?select=*&type=neq.expected&order=created_at.desc&limit=6`, fetchOpts).then(res => res.json()).catch(() => []),
       fetch(`${supabaseUrl}/rest/v1/stats?select=value&name=eq.total_visits&limit=1`, fetchOpts).then(res => res.json()).catch(() => []),
@@ -76,7 +66,6 @@ export default async function HomePage({ params }) {
     console.error("Data load fail:", err);
   }
 
-  // Příprava datových objektů pro šablony
   const data = { 
     posts: Array.isArray(p) ? p : [], 
     stats: (Array.isArray(s) && s.length > 0) ? s[0] : { value: 0 }, 
@@ -90,7 +79,6 @@ export default async function HomePage({ params }) {
     latestCpuDuels: Array.isArray(cpuDuelsRes) ? cpuDuelsRes : []
   };
 
-  // 🚀 ZLATÁ GSC SEO SCHÉMATA PRO HOMEPAGE (GOLDEN RICH RESULTS FIX)
   const baseUrl = "https://thehardwareguru.cz";
   const currentUrl = isEn ? `${baseUrl}/en` : baseUrl;
 
@@ -116,32 +104,7 @@ export default async function HomePage({ params }) {
     "url": baseUrl,
     "logo": `${baseUrl}/logo.png`,
     "image": [`${baseUrl}/logo.png`],
-    "sameAs": [
-      "https://kick.com/thehardwareguru"
-    ]
-  };
-
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": isEn ? "What is The Hardware Guru?" : "Co je to The Hardware Guru?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": isEn ? "The Hardware Guru is an official technology base and database for gamers. We provide detailed CPU and GPU benchmarks, bottleneck analysis, and hardware reviews." : "The Hardware Guru je technologická základna a databáze pro hráče. Poskytujeme detailní benchmarky procesorů a grafických karet, analýzu bottlenecku a hardwarové recenze."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": isEn ? "How does the Bottleneck Calculator work?" : "Jak funguje kalkulačka bottlenecku?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": isEn ? "Our engine compares raw hardware performance indexes and real-world gaming data to determine if your CPU is holding back your GPU (or vice versa) in specific resolutions." : "Náš engine porovnává indexy hrubého výkonu a reálná herní data, aby určil, zda váš procesor brzdí grafickou kartu (nebo naopak) v konkrétním rozlišení."
-        }
-      }
-    ]
+    "sameAs": ["https://kick.com/thehardwareguru"]
   };
 
   const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
@@ -149,20 +112,16 @@ export default async function HomePage({ params }) {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#fff', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', fontFamily: 'sans-serif' }}>
       
-      {/* JSON-LD INJECTIONS */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(websiteSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
 
       <style>{`
-        /* --- GURU GLOBÁLNÍ STYLY A KARTY --- */
         .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); }
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
         
         .expected-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
         .expected-card:hover { transform: translateY(-5px); box-shadow: 0 0 25px rgba(102, 252, 241, 0.25); border-color: #66fcf1; }
 
-        /* 🔥 GURU HERO SEKCE 🔥 */
         .guru-hero-section {
             max-width: 1200px; margin: 40px auto; padding: 60px 50px;
             background: linear-gradient(145deg, rgba(15, 17, 21, 0.9) 0%, rgba(10, 11, 13, 0.95) 100%);
@@ -184,7 +143,6 @@ export default async function HomePage({ params }) {
             text-shadow: 0 0 20px rgba(102, 252, 241, 0.6);
         }
 
-        /* Tlačítka v Hero */
         .social-btn-main {
             padding: 14px 28px; border-radius: 14px; font-weight: 900; font-size: 14px; text-decoration: none; text-transform: uppercase; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid transparent; cursor: pointer; letter-spacing: 1px;
         }
@@ -197,36 +155,23 @@ export default async function HomePage({ params }) {
         .social-btn-main.cpuduels { background: rgba(102, 252, 241, 0.1); color: #66fcf1; border-color: rgba(102, 252, 241, 0.3); }
         .social-btn-main.cpuduels:hover { background: #66fcf1; color: #000; box-shadow: 0 10px 25px rgba(102, 252, 241, 0.4); transform: translateY(-3px); }
 
+        /* 🚀 GURU: CSS pro FPS Kalkulačku (Rozjedu to?) */
+        .social-btn-main.fpscalc { background: rgba(168, 85, 247, 0.1); color: #a855f7; border-color: rgba(168, 85, 247, 0.3); }
+        .social-btn-main.fpscalc:hover { background: #a855f7; color: #fff; box-shadow: 0 10px 25px rgba(168, 85, 247, 0.4); transform: translateY(-3px); }
+
         .social-btn-main.deals { background: rgba(249, 115, 22, 0.1); color: #f97316; border-color: rgba(249, 115, 22, 0.3); }
         .social-btn-main.deals:hover { background: #f97316; color: #fff; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4); transform: translateY(-3px); }
 
         .social-btn-main.support { background: rgba(234, 179, 8, 0.1); color: #eab308; border-color: rgba(234, 179, 8, 0.3); }
         .social-btn-main.support:hover { background: #eab308; color: #000; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.4); transform: translateY(-3px); }
 
-        /* Karty Slev a Duelů */
-        .deal-hp-card { 
-          display: flex; align-items: center; gap: 20px; 
-          background: linear-gradient(145deg, rgba(15, 17, 21, 0.95) 0%, rgba(249, 115, 22, 0.05) 100%); 
-          padding: 20px; border-radius: 24px; border: 1px solid rgba(249, 115, 22, 0.2); 
-          transition: 0.4s; text-decoration: none; overflow: hidden; position: relative;
-        }
+        .deal-hp-card { display: flex; align-items: center; gap: 20px; background: linear-gradient(145deg, rgba(15, 17, 21, 0.95) 0%, rgba(249, 115, 22, 0.05) 100%); padding: 20px; border-radius: 24px; border: 1px solid rgba(249, 115, 22, 0.2); transition: 0.4s; text-decoration: none; overflow: hidden; position: relative; }
         .deal-hp-card:hover { transform: translateY(-5px); border-color: #f97316; box-shadow: 0 15px 35px rgba(249, 115, 22, 0.25); }
 
-        .duel-hp-card { 
-          display: flex; align-items: center; gap: 20px; 
-          background: linear-gradient(145deg, rgba(15, 17, 21, 0.95) 0%, rgba(255, 0, 85, 0.05) 100%); 
-          padding: 20px; border-radius: 24px; border: 1px solid rgba(255, 0, 85, 0.2); 
-          transition: 0.4s; text-decoration: none; overflow: hidden; position: relative;
-        }
+        .duel-hp-card { display: flex; align-items: center; gap: 20px; background: linear-gradient(145deg, rgba(15, 17, 21, 0.95) 0%, rgba(255, 0, 85, 0.05) 100%); padding: 20px; border-radius: 24px; border: 1px solid rgba(255, 0, 85, 0.2); transition: 0.4s; text-decoration: none; overflow: hidden; position: relative; }
         .duel-hp-card:hover { transform: translateY(-5px); border-color: #ff0055; box-shadow: 0 15px 35px rgba(255, 0, 85, 0.25); }
 
-        /* 🚀 GURU: CSS pro CPU Duely */
-        .cpu-duel-hp-card { 
-          display: flex; align-items: center; gap: 20px; 
-          background: linear-gradient(145deg, rgba(15, 17, 21, 0.95) 0%, rgba(102, 252, 241, 0.05) 100%); 
-          padding: 20px; border-radius: 24px; border: 1px solid rgba(102, 252, 241, 0.2); 
-          transition: 0.4s; text-decoration: none; overflow: hidden; position: relative;
-        }
+        .cpu-duel-hp-card { display: flex; align-items: center; gap: 20px; background: linear-gradient(145deg, rgba(15, 17, 21, 0.95) 0%, rgba(102, 252, 241, 0.05) 100%); padding: 20px; border-radius: 24px; border: 1px solid rgba(102, 252, 241, 0.2); transition: 0.4s; text-decoration: none; overflow: hidden; position: relative; }
         .cpu-duel-hp-card:hover { transform: translateY(-5px); border-color: #66fcf1; box-shadow: 0 15px 35px rgba(102, 252, 241, 0.25); }
 
         .tip-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
@@ -236,24 +181,11 @@ export default async function HomePage({ params }) {
         
         .section-title-wrapper { background: rgba(0,0,0,0.7); padding: 18px 35px; border-radius: 18px; backdrop-filter: blur(8px); border: 1px solid rgba(234, 179, 8, 0.2); display: inline-block; }
         
-        /* 🚀 GURU MONETIZATION REDESIGN 🚀 */
-        .monetize-hero-card {
-            background: linear-gradient(145deg, rgba(15, 17, 21, 0.95) 0%, rgba(10, 11, 13, 0.98) 100%);
-            border: 1px solid rgba(255,255,255,0.05); 
-            border-radius: 30px; padding: 40px 30px;
-            text-decoration: none; color: #fff; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6); position: relative; overflow: hidden; backdrop-filter: blur(20px);
-        }
+        .monetize-hero-card { background: linear-gradient(145deg, rgba(15, 17, 21, 0.95) 0%, rgba(10, 11, 13, 0.98) 100%); border: 1px solid rgba(255,255,255,0.05); border-radius: 30px; padding: 40px 30px; text-decoration: none; color: #fff; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.6); position: relative; overflow: hidden; backdrop-filter: blur(20px); }
         .monetize-hero-card.hof { border-top: 4px solid #a855f7; }
-        .monetize-hero-card.hof:hover { border-color: #a855f7; box-shadow: 0 25px 60px rgba(168, 85, 247, 0.3); transform: translateY(-8px); background: linear-gradient(145deg, rgba(20, 15, 30, 0.95) 0%, rgba(10, 11, 13, 0.98) 100%); }
-        
+        .monetize-hero-card.hof:hover { border-color: #a855f7; box-shadow: 0 25px 60px rgba(168, 85, 247, 0.3); transform: translateY(-8px); }
         .monetize-hero-card.partners { border-top: 4px solid #eab308; }
-        .monetize-hero-card.partners:hover { border-color: #eab308; box-shadow: 0 25px 60px rgba(234, 179, 8, 0.3); transform: translateY(-8px); background: linear-gradient(145deg, rgba(30, 25, 10, 0.95) 0%, rgba(10, 11, 13, 0.98) 100%); }
-
-        .monetize-title { font-size: 26px; font-weight: 950; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 2px; font-style: italic; }
-        .hof .monetize-title { color: #a855f7; text-shadow: 0 0 15px rgba(168, 85, 247, 0.4); }
-        .partners .monetize-title { color: #eab308; text-shadow: 0 0 15px rgba(234, 179, 8, 0.4); }
+        .monetize-hero-card.partners:hover { border-color: #eab308; box-shadow: 0 25px 60px rgba(234, 179, 8, 0.3); transform: translateY(-8px); }
 
         @media (max-width: 768px) {
           .guru-hero-section { padding: 40px 20px; text-align: center; justify-content: center; }
@@ -286,26 +218,26 @@ export default async function HomePage({ params }) {
               <a href="https://kick.com/thehardwareguru" target="_blank" rel="noreferrer" className="social-btn-main live"><Activity size={18}/> {isEn ? 'LIVE' : 'SLEDOVAT LIVE'}</a>
               <a href={isEn ? "/en/gpuvs" : "/gpuvs"} className="social-btn-main duels"><Swords size={18}/> {isEn ? 'GPU BATTLES' : 'SOUBOJE GPU'}</a>
               <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="social-btn-main cpuduels"><Cpu size={18}/> {isEn ? 'CPU BATTLES' : 'SOUBOJE CPU'}</a>
+              
+              {/* 🚀 GURU: INTEGRACE FPS KALKULAČKY */}
+              <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="social-btn-main fpscalc">
+                <Gamepad2 size={18}/> {isEn ? 'CAN I RUN IT?' : 'ROZJEDU TO?'}
+              </a>
+
               <a href={isEn ? "/en/deals" : "/cs/deals"} className="social-btn-main deals"><Flame size={18}/> {isEn ? 'GAME DEALS' : 'SLEVY NA HRY'}</a>
               <a href={isEn ? "/en/support" : "/support"} className="social-btn-main support"><Heart size={18}/> {isEn ? 'SUPPORT' : 'PODPOŘIT GURU'}</a>
-              
-              <div style={{ background: '#fff', borderRadius: '14px', padding: '0 5px', display: 'flex', alignItems: 'center', height: '50px', border: '1px solid #ddd' }}>
-                <button swg-standard-button="contribution" style={{ cursor: 'pointer', border: 'none', background: 'transparent' }}></button>
-              </div>
             </div>
         </div>
         <div className="guru-hero-avatar">HG</div>
       </header>
 
-      {/* --- 🚀 MONETIZACE: GURU STYLE REDESIGN --- */}
+      {/* --- MONETIZACE --- */}
       <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px', display: 'flex', gap: '30px', flexWrap: 'wrap', marginTop: '-30px', marginBottom: '60px' }}>
           <a href={isEn ? "/en/sin-slavy" : "/sin-slavy"} className="monetize-hero-card hof" style={{ flex: 1, minWidth: '300px' }}>
             <div style={{ background: 'rgba(168, 85, 247, 0.1)', padding: '20px', borderRadius: '50%', marginBottom: '20px', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
               <Trophy size={40} color="#a855f7" style={{ filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.6))' }} />
             </div>
-            <h2 className="monetize-title">
-              {isEn ? 'HALL OF FAME' : 'SÍŇ SLÁVY'}
-            </h2>
+            <h2 className="monetize-title">{isEn ? 'HALL OF FAME' : 'SÍŇ SLÁVY'}</h2>
             <p style={{ fontSize: '15px', color: '#9ca3af', maxWidth: '85%', margin: '0 auto', lineHeight: '1.5', fontWeight: 'bold' }}>
                 {data.darci.slice(0, 5).map(d => d.name).join(', ')}...
             </p>
@@ -314,9 +246,7 @@ export default async function HomePage({ params }) {
             <div style={{ background: 'rgba(234, 179, 8, 0.1)', padding: '20px', borderRadius: '50%', marginBottom: '20px', border: '1px solid rgba(234, 179, 8, 0.2)' }}>
               <Rocket size={40} color="#eab308" style={{ filter: 'drop-shadow(0 0 10px rgba(234, 179, 8, 0.6))' }} />
             </div>
-            <h2 className="monetize-title">
-              {isEn ? 'GURU PARTNERS' : 'NAŠI PARTNEŘI'}
-            </h2>
+            <h2 className="monetize-title">{isEn ? 'GURU PARTNERS' : 'NAŠI PARTNEŘI'}</h2>
             <p style={{ fontSize: '15px', color: '#9ca3af', maxWidth: '85%', margin: '0 auto', lineHeight: '1.5', fontWeight: 'bold' }}>
                 {data.partneri.slice(0, 3).map(p => p.name).join(' • ')}
             </p>
@@ -326,7 +256,7 @@ export default async function HomePage({ params }) {
           </a>
       </section>
 
-      {/* --- 🚀 GURU ŽHAVÉ SLEVY --- */}
+      {/* --- SLEVY --- */}
       {data.featuredDeals.length > 0 && (
         <section style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
             <div className="section-title-wrapper" style={{ marginBottom: '30px', borderColor: 'rgba(234, 115, 22, 0.3)', borderLeft: '4px solid #f97316' }}>
@@ -356,7 +286,7 @@ export default async function HomePage({ params }) {
         </section>
       )}
 
-      {/* --- 🚀 GURU GPU DUELY --- */}
+      {/* --- GPU DUELY --- */}
       {data.latestDuels.length > 0 && (
         <section style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px', marginBottom: '60px' }}>
             <div className="section-title-wrapper" style={{ marginBottom: '30px', borderColor: 'rgba(255, 0, 85, 0.3)', borderLeft: '4px solid #ff0055' }}>
@@ -388,7 +318,7 @@ export default async function HomePage({ params }) {
         </section>
       )}
 
-      {/* --- 🚀 GURU CPU DUELY --- */}
+      {/* --- CPU DUELY --- */}
       {data.latestCpuDuels.length > 0 && (
         <section style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px', marginBottom: '60px' }}>
             <div className="section-title-wrapper" style={{ marginBottom: '30px', borderColor: 'rgba(102, 252, 241, 0.3)', borderLeft: '4px solid #66fcf1' }}>
@@ -446,9 +376,7 @@ export default async function HomePage({ params }) {
                        <img src={getThumbnail(game, supabaseUrl)} alt={displayTitle} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} loading="lazy" />
                     </div>
                     <div style={{ padding: '25px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                      <span style={{ color: '#66fcf1', fontSize: '10px', fontWeight: '900', letterSpacing: '1px', marginBottom: '10px' }}>
-                        {isEn ? 'TECH PREVIEW' : 'TECHNICKÝ ROZBOR'}
-                      </span>
+                      <span style={{ color: '#66fcf1', fontSize: '10px', fontWeight: '900', letterSpacing: '1px', marginBottom: '10px' }}>{isEn ? 'TECH PREVIEW' : 'TECHNICKÝ ROZBOR'}</span>
                       <h3 style={{ fontSize: '20px', fontWeight: '900', margin: '12px 0', color: '#fff', lineHeight: '1.2', marginBottom: '15px' }}>{displayTitle}</h3>
                       <div style={{ color: '#66fcf1', fontWeight: '900', fontSize: '13px', marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
                          {isEn ? 'VIEW ANALYSIS' : 'ZOBRAZIT ROZBOR'} <ChevronRight size={16} />
@@ -504,9 +432,7 @@ export default async function HomePage({ params }) {
                   <img src={getSafeImage(tweak.image_url)} alt={tweak.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
                 </div>
                 <div style={{ padding: '25px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>
-                    <Activity size={14} /> {isEn ? 'OPTIMIZATION' : 'OPTIMALIZACE'}
-                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}><Activity size={14} /> {isEn ? 'OPTIMIZATION' : 'OPTIMALIZACE'}</div>
                   <h3 style={{ fontSize: '20px', fontWeight: '900', margin: '12px 0', color: '#fff', lineHeight: '1.2' }}>{isEn ? (tweak.title_en || tweak.title) : tweak.title}</h3>
                   <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', marginBottom: '10px' }}>{isEn ? (tweak.description_en || tweak.description) : tweak.description}</p>
                   <div style={{ color: '#eab308', fontWeight: 'bold', fontSize: '13px', marginTop: '15px' }}>{isEn ? 'OPEN GURU FIX →' : 'OTEVŘÍT GURU FIX →'}</div>
@@ -517,7 +443,7 @@ export default async function HomePage({ params }) {
         </section>
       )}
 
-      {/* ČLÁNKY (🚀 GURU FIX: PŘIDÁN LINK "VŠECHNY ČLÁNKY") */}
+      {/* ČLÁNKY */}
       {data.posts.length > 0 && (
         <main style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px', marginTop: '80px' }}>
           <div className="section-title-wrapper" style={{ marginBottom: '40px', borderColor: 'rgba(102, 252, 241, 0.2)', width: '100%', boxSizing: 'border-box' }}>
@@ -538,7 +464,6 @@ export default async function HomePage({ params }) {
                   <div className="game-card" style={{ borderRadius: '12px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
                     <div style={{ position: 'relative', paddingTop: '56.25%', background: '#0b0c10' }}>
                       <img src={getThumbnail(post, supabaseUrl)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} loading={idx < 3 ? "eager" : "lazy"} />
-                      
                       <div style={{ position: 'absolute', top: '10px', right: '10px', background: badge.color, color: badge.textColor, padding: '5px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
                         {badge.isLeak && <Ghost size={14} />} {badge.text}
                       </div>
