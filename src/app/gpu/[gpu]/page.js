@@ -1,20 +1,21 @@
 import React from 'react';
 import { 
   ChevronLeft, Monitor, Database, Gamepad2, ArrowRight, ExternalLink, 
-  Activity, CheckCircle2, Swords, LayoutList, ShoppingCart, Flame, Heart, Info
+  Activity, CheckCircle2, Swords, LayoutList, ShoppingCart, Flame, Heart, Info, Cpu, Zap
 } from 'lucide-react';
 
 /**
- * GURU GPU ENGINE - DETAIL GRAFIKY V2.2 (GOLDEN RICH RESULTS FIX)
+ * GURU GPU ENGINE - DETAIL GRAFIKY V2.3 (SEO SILOING & INTERNAL LINKING)
  * Cesta: src/app/gpu/[gpu]/page.js
  * 🚀 CÍL: 100% funkční sémantické propojení a perfektní GSC indexace.
- * 🛡️ FIX 1: Aplikován Zlatý GSC Standard pro Product Schema (offers + fake shipping + numeric values).
- * 🛡️ FIX 2: Přidáno BreadcrumbList schéma pro správnou strukturu v Google vyhledávání.
+ * 🛡️ FIX 1: Aplikován Zlatý GSC Standard pro Product Schema.
+ * 🛡️ FIX 2: Přidáno BreadcrumbList schéma pro správnou strukturu.
  * 🛡️ FIX 3: Striktní Next.js 15 compliance (await props.params).
+ * 🛡️ FIX 4: Masivní interní prolinkování (Siloing) - dynamické odkazy na Duely (VS) a Bottleneck s nejčastějšími CPU.
  */
 
 export const runtime = "nodejs";
-export const revalidate = 0; // 🚀 GURU: Dočasně nastaveno na 0 pro okamžitý test
+export const revalidate = 0; 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -30,7 +31,6 @@ const getRelatedArticles = async (gpuName) => {
     const name = normalizeName(gpuName || '');
 
     try {
-        // 1. POKUS: Najít články obsahující název karty (např. 5090)
         const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.%${encodeURIComponent(name)}%,title_en.ilike.%${encodeURIComponent(name)}%)&order=created_at.desc&limit=3`, {
             headers, cache: 'no-store'
         });
@@ -38,7 +38,6 @@ const getRelatedArticles = async (gpuName) => {
         let data = [];
         if (res.ok) data = await res.json();
 
-        // 2. FALLBACK: Pokud nic tematického není, vezmeme prostě 3 nejnovější (aby tam nebylo prázdno)
         if (!data || data.length === 0) {
             const resLatest = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&order=created_at.desc&limit=3`, {
                 headers, cache: 'no-store'
@@ -69,6 +68,24 @@ const findGpuBySlug = async (gpuSlug) => {
       }
   } catch(e) {}
   return null;
+};
+
+// 🚀 GURU SILOING ENGINE: Stažení dat pro interní prolinkování (VS a Bottleneck)
+const getInternalLinksData = async (gpuId) => {
+  if (!supabaseUrl || !gpuId) return { similarGpus: [], recommendedCpus: [] };
+  const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+  let similarGpus = [];
+  let recommendedCpus = [];
+
+  try {
+      const gpuRes = await fetch(`${supabaseUrl}/rest/v1/gpus?select=name,slug&id=neq.${gpuId}&order=performance_index.desc&limit=6`, { headers, cache: 'no-store' });
+      if (gpuRes.ok) similarGpus = await gpuRes.json();
+
+      const cpuRes = await fetch(`${supabaseUrl}/rest/v1/cpus?select=name,slug&order=performance_index.desc&limit=6`, { headers, cache: 'no-store' });
+      if (cpuRes.ok) recommendedCpus = await cpuRes.json();
+  } catch(e) {}
+
+  return { similarGpus, recommendedCpus };
 };
 
 export async function generateMetadata(props) {
@@ -106,8 +123,8 @@ export default async function GpuDetailPage(props) {
   const vendorColor = (gpu.vendor || '').toUpperCase() === 'NVIDIA' ? '#76b900' : ((gpu.vendor || '').toUpperCase() === 'AMD' ? '#ed1c24' : '#66fcf1');
   const safeSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
 
-  // 🚀 GURU: Načtení sémantických článků
   const relatedArticles = await getRelatedArticles(gpu.name);
+  const { similarGpus, recommendedCpus } = await getInternalLinksData(gpu.id);
 
   // 🚀 ZLATÁ GSC SEO SCHÉMATA (GOLDEN RICH RESULTS FIX)
   const commonOfferDetails = {
@@ -223,29 +240,6 @@ export default async function GpuDetailPage(props) {
             <div className="stat-card"><div className="label">PERFORMANCE</div><div className="val">{gpu.performance_index || '-'} PTS</div></div>
         </section>
 
-        {/* 🚀 GURU: SÉMANTICKÉ PROPOJENÍ (ZDE TO BUDE!) */}
-        {relatedArticles && relatedArticles.length > 0 && (
-            <section style={{ marginBottom: '60px' }}>
-                <h2 className="section-h2" style={{ borderLeftColor: '#a855f7' }}>
-                    <Info size={28} color="#a855f7" style={{ display: 'inline', marginRight: '10px' }} /> 
-                    {isEn ? 'GURU INSIGHTS & NEWS' : 'GURU RÁDCE A NOVINKY'}
-                </h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-                    {relatedArticles.map((art) => (
-                        <a key={art.slug} href={isEn ? `/en/clanky/${art.slug_en || art.slug}` : `/clanky/${art.slug}`} className="related-card-style">
-                            <div className="related-img-box">
-                                <img src={art.image_url || 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000'} alt={art.title} loading="lazy" />
-                            </div>
-                            <div className="related-content-box">
-                                <span className="related-tag">{isEn ? 'TECH NEWS' : 'HW NOVINKA'}</span>
-                                <h3 className="related-title-text">{isEn && art.title_en ? art.title_en : art.title}</h3>
-                            </div>
-                        </a>
-                    ))}
-                </div>
-            </section>
-        )}
-
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: vendorColor }}><Database size={28} /> {isEn ? 'DEEP DIVE ANALYSIS' : 'DETAILNÍ ANALÝZA'}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
@@ -267,6 +261,69 @@ export default async function GpuDetailPage(props) {
               </a>
           </div>
         </section>
+
+        {/* 🚀 GURU SILOING: INTERNÍ PROLINKOVÁNÍ (DUELY) */}
+        {similarGpus.length > 0 && (
+          <section style={{ marginBottom: '60px' }}>
+              <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: vendorColor }}>
+                <Swords size={28} /> {isEn ? 'POPULAR COMPARISONS' : 'NEJČASTĚJŠÍ SROVNÁNÍ'}
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+                  {similarGpus.map(otherGpu => {
+                      const safeOtherSlug = otherGpu.slug || slugify(otherGpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
+                      return (
+                          <a key={otherGpu.slug} href={isEn ? `/en/gpuvs/${safeSlug}-vs-${safeOtherSlug}` : `/gpuvs/${safeSlug}-vs-${safeOtherSlug}`} className="silo-link-card">
+                              <span style={{ fontWeight: '900', textTransform: 'uppercase' }}>VS {normalizeName(otherGpu.name)}</span>
+                              <ArrowRight size={16} className="silo-arrow" />
+                          </a>
+                      )
+                  })}
+              </div>
+          </section>
+        )}
+
+        {/* 🚀 GURU SILOING: INTERNÍ PROLINKOVÁNÍ (BOTTLENECK S CPU) */}
+        {recommendedCpus.length > 0 && (
+          <section style={{ marginBottom: '60px' }}>
+              <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeftColor: vendorColor }}>
+                <Zap size={28} /> {isEn ? 'IDEAL CPU PAIRINGS' : 'IDEÁLNÍ PROCESORY K TÉTO GPU'}
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+                  {recommendedCpus.map(cpu => {
+                      const safeCpuSlug = cpu.slug || slugify(cpu.name);
+                      return (
+                          <a key={cpu.slug} href={isEn ? `/en/bottleneck/${safeCpuSlug}-with-${safeSlug}` : `/bottleneck/${safeCpuSlug}-with-${safeSlug}`} className="silo-link-card" style={{ borderLeftColor: '#a855f7' }}>
+                              <span style={{ fontWeight: '900', textTransform: 'uppercase' }}>+ {normalizeName(cpu.name)}</span>
+                              <Cpu size={16} className="silo-arrow" />
+                          </a>
+                      )
+                  })}
+              </div>
+          </section>
+        )}
+
+        {/* 🚀 GURU: SÉMANTICKÉ ČLÁNKY */}
+        {relatedArticles && relatedArticles.length > 0 && (
+            <section style={{ marginBottom: '60px' }}>
+                <h2 className="section-h2" style={{ borderLeftColor: '#a855f7' }}>
+                    <Info size={28} color="#a855f7" style={{ display: 'inline', marginRight: '10px' }} /> 
+                    {isEn ? 'GURU INSIGHTS & NEWS' : 'GURU RÁDCE A NOVINKY'}
+                </h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                    {relatedArticles.map((art) => (
+                        <a key={art.slug} href={isEn ? `/en/clanky/${art.slug_en || art.slug}` : `/clanky/${art.slug}`} className="related-card-style">
+                            <div className="related-img-box">
+                                <img src={art.image_url || 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000'} alt={art.title} loading="lazy" />
+                            </div>
+                            <div className="related-content-box">
+                                <span className="related-tag">{isEn ? 'TECH NEWS' : 'HW NOVINKA'}</span>
+                                <h3 className="related-title-text">{isEn && art.title_en ? art.title_en : art.title}</h3>
+                            </div>
+                        </a>
+                    ))}
+                </div>
+            </section>
+        )}
 
         <div style={{ marginTop: '80px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
           <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn"><Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}</a>
@@ -301,6 +358,12 @@ export default async function GpuDetailPage(props) {
         .deep-link-card p { margin: 0; color: #9ca3af; font-size: 0.85rem; line-height: 1.4; }
         .deep-link-card .link-arrow { position: absolute; right: 25px; color: #4b5563; }
         .deep-link-card:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-5px); }
+
+        /* 🚀 GURU SILOING STYLY */
+        .silo-link-card { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 18px 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #d1d5db; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-left: 3px solid #6b7280; }
+        .silo-link-card:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); color: #fff; transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+        .silo-link-card .silo-arrow { color: #4b5563; transition: 0.3s; }
+        .silo-link-card:hover .silo-arrow { color: #66fcf1; transform: translateX(3px); }
 
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
