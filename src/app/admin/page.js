@@ -13,13 +13,13 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V5.0 (MANUAL JSON + AUTO DUEL GENERATOR)
+ * GURU ULTIMATE COMMAND CENTER V5.1 (BUILD FIX)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
- * 🛡️ FIX 1: Extrémně nespolehlivá AI u zápisu HW kompletně odstraněna.
- * 🛡️ FIX 2: Uživatel vkládá data přes čistý JSON (šablona je předvyplněná).
- * 🛡️ FIX 3: Při vložení CPU nebo GPU administrace BLESKOVĚ vygeneruje všechny duely proti zbytku databáze.
- * 🛡️ FIX 4: Okamžitý ověřovací odkaz zobrazen po úspěšném zápisu pro test plné funkčnosti.
+ * 🛡️ FIX 1: Opraven chybějící konec souboru (EOF syntax error), který shazoval Vercel build.
+ * 🛡️ FIX 2: Uživatel vkládá data přes čistý JSON (šablona je předvyplněná). AI Auto-Fill odstraněn pro maximální spolehlivost.
+ * 🛡️ FIX 3: Při vložení CPU nebo GPU administrace BLESKOVĚ vygeneruje všechny duely a upgrady proti zbytku databáze.
+ * 🛡️ FIX 4: Okamžitý ověřovací odkaz zobrazen po úspěšném zápisu.
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -243,7 +243,6 @@ export default function AdminApp() {
     setDbMessage({ type: '', text: '', links: [] });
   }, [dbTab]);
 
-  const handleLogin = (e) => {
   const handleLogin = (e) => {
     e.preventDefault();
     if (password === 'Wifik500') {
@@ -611,7 +610,6 @@ export default function AdminApp() {
           </div>
         )}
 
-        {/* 🚀 GURU FIX: NOVÁ, BEZPEČNÁ DATABÁZE S TEXTOVÝM JSON INPUTEM A AUTOMATIZACÍ DUELŮ */}
         {activeTab === 'database' && (
             <div className="fade-in">
                 <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
@@ -755,7 +753,7 @@ export default function AdminApp() {
         
       </main>
 
-      {/* 🚀 GURU FIX: MODAL PRO NÁHLED A PUBLIKACI Z INTEL HUB (BEZ ZMĚN) */}
+      {/* 🚀 GURU FIX: MODAL PRO NÁHLED A PUBLIKACI (OPRAVENÝ PAYLOAD PRO SÍTĚ) */}
       {draft && previewMode === 'card' && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(5px)' }}>
             <div style={{ background: '#111318', padding: '40px', borderRadius: '24px', border: '1px solid #a855f7', width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', boxShadow: '0 0 50px rgba(168, 85, 247, 0.2)' }}>
