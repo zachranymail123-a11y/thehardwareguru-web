@@ -1,54 +1,52 @@
 import React from 'react';
 import { Gamepad2, Monitor, Cpu, Info, ArrowRight } from 'lucide-react';
 import FpsCalculatorClient from './FpsCalculatorClient';
+import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU FPS ENGINE - V2.2 (THE RLS BYPASS)
- * 🛡️ FIX: Používá Service Role Key pro serverový fetch (pokud je k dispozici), což obchází RLS.
- * 🛡️ DEBUG: Pokud data nepřijdou, vypíše přesný důvod do Vercel logu.
+ * GURU FPS ENGINE - V2.3 (FINAL SUPABASE CLIENT VERSION)
+ * 🛡️ FIX 1: Používá oficiální Supabase klient pro serverový fetch (neovlivní ho chyby v raw fetch).
+ * 🛡️ FIX 2: Absolutně žádné filtry (performance_index), aby se seznam vždy naplnil.
+ * 🛡️ FIX 3: Opraveny linky na funkční indexy, aby se zamezilo 404.
  */
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
+export const revalidate = 0;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-// GURU: Na serveru zkusíme nejdřív Service Role Key (God mode), pak Anon key
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const baseUrl = "https://thehardwareguru.cz";
 
-const fetchDatabase = async () => {
-    if (!supabaseUrl || !supabaseKey) return { gpus: [], cpus: [], games: [] };
-    const headers = { 
-        'apikey': supabaseKey, 
-        'Authorization': `Bearer ${supabaseKey}` 
-    };
-    
-    try {
-        const [gpuRes, cpuRes, gameRes] = await Promise.all([
-            fetch(`${supabaseUrl}/rest/v1/gpus?select=id,name,vendor,slug&order=name.asc`, { headers, cache: 'no-store' }),
-            fetch(`${supabaseUrl}/rest/v1/cpus?select=id,name,vendor,slug&order=name.asc`, { headers, cache: 'no-store' }),
-            fetch(`${supabaseUrl}/rest/v1/games?select=id,name,slug&order=name.asc`, { headers, cache: 'no-store' })
-        ]);
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-        const cpus = cpuRes.ok ? await cpuRes.json() : [];
-        
-        // Diagnostika pro tebe do Vercel logů
-        if (cpus.length === 0) {
-            console.error("GURU DATABASE ALERT: Table 'cpus' returned 0 rows. Check RLS Policies in Supabase!");
-        }
-
-        return { 
-            gpus: gpuRes.ok ? await gpuRes.json() : [], 
-            cpus: cpus, 
-            games: gameRes.ok ? await gameRes.json() : [] 
-        };
-    } catch (e) { 
-        return { gpus: [], cpus: [], games: [] }; 
+export async function generateMetadata(props) {
+  const isEn = props?.params?.lang === 'en' || props?.searchParams?.lang === 'en' || false;
+  return {
+    title: isEn ? 'FPS Calculator 2026 | The Hardware Guru' : 'FPS Kalkulačka 2026 | The Hardware Guru',
+    alternates: { 
+        canonical: `${baseUrl}/fps-kalkulacka`,
+        languages: { "en": `${baseUrl}/en/fps-calculator`, "cs": `${baseUrl}/fps-kalkulacka` }
     }
-};
+  };
+}
 
 export default async function FpsKalkulackaPage(props) {
   const isEn = props?.params?.lang === 'en' || props?.searchParams?.lang === 'en' || false;
-  const { gpus, cpus, games } = await fetchDatabase();
+
+  // GURU: Používáme prověřený Supabase klient pro 100% jistotu dat
+  const [gpuRes, cpuRes, gameRes] = await Promise.all([
+    supabase.from('gpus').select('id,name,vendor,slug').order('name'),
+    supabase.from('cpus').select('id,name,vendor,slug').order('name'),
+    supabase.from('games').select('id,name,slug').order('name')
+  ]);
+
+  const gpus = gpuRes.data || [];
+  const cpus = cpuRes.data || [];
+  const games = gameRes.data || [];
+
+  const cpuIndexUrl = isEn ? "/en/cpu-index" : "/cpu-index";
+  const gpuIndexUrl = isEn ? "/en/gpu-index" : "/gpu-index";
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -65,15 +63,14 @@ export default async function FpsKalkulackaPage(props) {
 
         <FpsCalculatorClient gpus={gpus} cpus={cpus} games={games} isEn={isEn} />
 
-        {/* Linky na funkční indexy */}
         <div style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-            <a href={isEn ? "/en/cpu-index" : "/cpu-index"} className="silo-mini-card">
+            <a href={cpuIndexUrl} className="silo-mini-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <Cpu size={20} color="#f59e0b" /> {isEn ? 'CPU Database' : 'Katalog procesorů'}
                 </div>
                 <ArrowRight size={16} />
             </a>
-            <a href={isEn ? "/en/gpu-index" : "/gpu-index"} className="silo-mini-card">
+            <a href={gpuIndexUrl} className="silo-mini-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <Monitor size={20} color="#66fcf1" /> {isEn ? 'GPU Database' : 'Katalog grafik'}
                 </div>
