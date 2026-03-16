@@ -2,15 +2,16 @@ import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart, Info } from 'lucide-react';
+import { ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart, Info, Share2, Cpu, Monitor } from 'lucide-react';
 
 /**
- * GURU TWEAK ENGINE - DETAIL V2.0 (GOLDEN RICH RESULTS FIX)
+ * GURU TWEAK ENGINE - DETAIL V2.1 (GOLDEN RICH RESULTS + SEO SILOING)
  * Cesta: src/app/tweaky/[slug]/page.js
- * 🚀 CÍL: 100% zelená v Google Search Console.
+ * 🚀 CÍL: 100% zelená v Google Search Console a maximální udržení uživatele.
  * 🛡️ FIX 1: Přidány TechArticle, Product a FAQ schémata.
  * 🛡️ FIX 2: Implementován Golden Rich standard (fake shipping, return policy, image arrays).
  * 🛡️ FIX 3: Plná podpora CZ/EN varianty dle slugu.
+ * 🛡️ FIX 4: Přidáno masivní SEO prolinkování (Siloing) - Odkazy na Databázi HW, Další Tweaky a Sdílení.
  */
 
 const supabase = createClient(
@@ -19,6 +20,16 @@ const supabase = createClient(
 );
 
 const baseUrl = "https://thehardwareguru.cz";
+
+const getLatestTweaks = async (excludeSlug) => {
+    const { data } = await supabase
+        .from('tweaky')
+        .select('title, title_en, slug, slug_en, created_at, image_url')
+        .neq('slug', excludeSlug)
+        .order('created_at', { ascending: false })
+        .limit(3);
+    return data || [];
+}
 
 // 🚀 GURU SEO: Dynamické Meta Tagy
 export async function generateMetadata({ params }) {
@@ -52,6 +63,7 @@ export async function generateMetadata({ params }) {
       title,
       description: desc,
       images: tweak.image_url ? [tweak.image_url] : [`${baseUrl}/logo.png`],
+      type: 'article',
     }
   };
 }
@@ -69,6 +81,7 @@ export default async function TweakDetail({ params }) {
     notFound();
   }
 
+  const latestTweaks = await getLatestTweaks(tweak.slug);
   const isEn = tweak.slug_en === slug && tweak.slug_en !== tweak.slug;
   const title = isEn && tweak.title_en ? tweak.title_en : tweak.title;
   const content = isEn && tweak.content_en ? tweak.content_en : tweak.content;
@@ -78,6 +91,7 @@ export default async function TweakDetail({ params }) {
     ? `BUY FOR BEST PRICE ${priceDisplay ? `(${priceDisplay})` : ''}` 
     : `KOUPIT ZA NEJLEPŠÍ CENU ${priceDisplay ? `(${priceDisplay})` : ''}`;
   const backLink = isEn ? '/en/tweaky' : '/tweaky';
+  const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}tweaky/${slug}`;
 
   // 🚀 ZLATÁ GSC SEO SCHÉMATA (GOLDEN RICH RESULTS FIX)
   const commonOfferDetails = {
@@ -198,12 +212,12 @@ export default async function TweakDetail({ params }) {
           {/* --- HLAVIČKA TWEAKU --- */}
           <header style={{ marginBottom: '50px', textAlign: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', color: '#9ca3af', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '25px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#66fcf1' }}><ShieldCheck size={16} /> GURU ENGINE</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#eab308' }}><ShieldCheck size={16} /> GURU ENGINE</span>
               <span>•</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={16} /> {new Date(tweak.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
             </div>
             
-            <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', lineHeight: '1.1', margin: '0', textShadow: '0 0 20px rgba(102, 252, 241, 0.2)' }}>
+            <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', lineHeight: '1.1', margin: '0', textShadow: '0 0 20px rgba(234, 179, 8, 0.2)' }}>
               {title}
             </h1>
           </header>
@@ -243,6 +257,65 @@ export default async function TweakDetail({ params }) {
             </div>
           )}
 
+          {/* 🚀 SOCIAL SHARE BOX */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginTop: '50px' }}>
+              <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`} target="_blank" rel="nofollow noopener" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#1da1f220', color: '#1da1f2', border: '1px solid #1da1f250', padding: '10px 20px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', transition: '0.3s' }}>
+                  <Share2 size={16} /> TWITTER / X
+              </a>
+              <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="nofollow noopener" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#1877f220', color: '#1877f2', border: '1px solid #1877f250', padding: '10px 20px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', transition: '0.3s' }}>
+                  <Share2 size={16} /> FACEBOOK
+              </a>
+          </div>
+
+          {/* 🚀 GURU SILOING: Banner do Katalogu HW */}
+          <div style={{ marginTop: '60px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+              <a href={isEn ? "/en/cpu-index" : "/cpu-index"} className="silo-banner-card" style={{ borderLeftColor: '#66fcf1' }}>
+                  <div className="silo-banner-icon" style={{ color: '#66fcf1', background: '#66fcf120' }}><Cpu size={28} /></div>
+                  <div className="silo-banner-text">
+                      <h4>{isEn ? 'CPU DATABASE' : 'KATALOG PROCESORŮ'}</h4>
+                      <p>{isEn ? 'Compare specs and find the best processor.' : 'Porovnejte specifikace a najděte ten nejlepší procesor.'}</p>
+                  </div>
+                  <ChevronLeft size={24} className="silo-banner-arrow" style={{ transform: 'rotate(180deg)', color: '#66fcf1' }} />
+              </a>
+              <a href={isEn ? "/en/gpu-index" : "/gpu-index"} className="silo-banner-card" style={{ borderLeftColor: '#a855f7' }}>
+                  <div className="silo-banner-icon" style={{ color: '#a855f7', background: '#a855f720' }}><Monitor size={28} /></div>
+                  <div className="silo-banner-text">
+                      <h4>{isEn ? 'GPU DATABASE' : 'KATALOG GRAFIK'}</h4>
+                      <p>{isEn ? 'Discover the ultimate gaming graphics cards.' : 'Objevte ty nejlepší grafiky pro hraní.'}</p>
+                  </div>
+                  <ChevronLeft size={24} className="silo-banner-arrow" style={{ transform: 'rotate(180deg)', color: '#a855f7' }} />
+              </a>
+          </div>
+
+          {/* 🚀 DYNAMICKÁ SEKCE RECIRKULACE (DALŠÍ TWEAKY) */}
+          {latestTweaks.length > 0 && (
+              <section style={{ marginTop: '60px' }}>
+                  <h2 style={{ color: '#fff', fontSize: '1.8rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #eab308', paddingLeft: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <Info size={28} color="#eab308" /> {isEn ? 'MORE OPTIMIZATION TWEAKS' : 'DALŠÍ GURU TWEAKY'}
+                  </h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+                      {latestTweaks.map((lt) => {
+                          const ltTitle = isEn && lt.title_en ? lt.title_en : lt.title;
+                          const ltSlug = isEn && lt.slug_en ? lt.slug_en : lt.slug;
+                          const ltUrl = isEn ? `/en/tweaky/${ltSlug}` : `/tweaky/${ltSlug}`;
+                          const fallbackImg = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000';
+                          
+                          return (
+                              <a key={lt.slug} href={ltUrl} className="related-article-card">
+                                  <div className="related-img-wrapper">
+                                      <img src={lt.image_url || fallbackImg} alt={ltTitle} loading="lazy" />
+                                  </div>
+                                  <div className="related-content">
+                                      <div className="related-tag" style={{ color: '#eab308' }}>{isEn ? 'OPTIMIZATION' : 'OPTIMALIZACE'}</div>
+                                      <h3 className="related-title">{ltTitle}</h3>
+                                  </div>
+                              </a>
+                          );
+                      })}
+                  </div>
+              </section>
+          )}
+
           {/* --- 🚀 GURU GLOBÁLNÍ CTA --- */}
           <div style={{ 
             marginTop: '70px', 
@@ -270,8 +343,8 @@ export default async function TweakDetail({ params }) {
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
-        .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; backdrop-filter: blur(5px); border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
-        .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.2); }
+        .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #eab308; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; backdrop-filter: blur(5px); border: 1px solid rgba(234, 179, 8, 0.3); transition: 0.3s; }
+        .guru-back-btn:hover { background: rgba(234, 179, 8, 0.1); transform: translateX(-5px); box-shadow: 0 0 20px rgba(234, 179, 8, 0.2); }
 
         .guru-affiliate-cta { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 22px 45px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 18px; text-transform: uppercase; border-radius: 18px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 35px rgba(234, 88, 12, 0.4); border: 1px solid rgba(255,255,255,0.1); }
         .guru-affiliate-cta:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 20px 50px rgba(234, 88, 12, 0.6); filter: brightness(1.1); }
@@ -283,7 +356,7 @@ export default async function TweakDetail({ params }) {
         .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
 
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; }
-        .guru-prose h2 { color: #66fcf1; font-size: 2.2rem; font-weight: 950; margin-top: 2.5em; margin-bottom: 1em; text-transform: uppercase; letter-spacing: 1px; }
+        .guru-prose h2 { color: #eab308; font-size: 2.2rem; font-weight: 950; margin-top: 2.5em; margin-bottom: 1em; text-transform: uppercase; letter-spacing: 1px; }
         .guru-prose h3 { color: #fff; font-size: 1.6rem; font-weight: 900; margin-top: 2em; margin-bottom: 1em; }
         .guru-prose p { margin-bottom: 1.5em; }
         .guru-prose a { color: #f97316; text-decoration: none; font-weight: bold; border-bottom: 2px dashed rgba(249, 115, 22, 0.5); transition: 0.3s; padding-bottom: 2px; }
@@ -292,12 +365,30 @@ export default async function TweakDetail({ params }) {
         .guru-prose ul, .guru-prose ol { padding-left: 1.5em; margin-bottom: 1.5em; }
         .guru-prose li { margin-bottom: 0.8em; }
         .guru-prose strong { color: #fff; font-weight: 900; }
-        .guru-prose blockquote { border-left: 5px solid #66fcf1; padding: 25px 30px; font-style: italic; color: #e5e7eb; background: rgba(102, 252, 241, 0.05); border-radius: 0 16px 16px 0; margin: 2.5em 0; font-size: 1.25rem; }
+        .guru-prose blockquote { border-left: 5px solid #eab308; padding: 25px 30px; font-style: italic; color: #e5e7eb; background: rgba(234, 179, 8, 0.05); border-radius: 0 16px 16px 0; margin: 2.5em 0; font-size: 1.25rem; }
+        
+        /* 🚀 GURU SILOING STYLY */
+        .silo-banner-card { flex: 1; min-width: 300px; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; align-items: center; gap: 20px; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border-left-width: 5px; }
+        .silo-banner-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.02); }
+        .silo-banner-icon { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .silo-banner-text h4 { margin: 0 0 5px 0; color: #fff; font-size: 1.2rem; font-weight: 950; }
+        .silo-banner-text p { margin: 0; color: #9ca3af; font-size: 0.9rem; }
+        .silo-banner-card:hover .silo-banner-arrow { transform: rotate(180deg) translateX(-5px) !important; }
+
+        .related-article-card { display: flex; flex-direction: column; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .related-article-card:hover { transform: translateY(-5px); border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 15px 40px rgba(234, 179, 8, 0.2); }
+        .related-img-wrapper { height: 140px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .related-img-wrapper img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
+        .related-content { padding: 20px; display: flex; flex-direction: column; gap: 5px; }
+        .related-tag { color: #eab308; font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .related-title { margin: 0; font-size: 1.1rem; font-weight: 950; color: #fff; line-height: 1.3; }
         
         @media (max-width: 768px) {
           .guru-prose { font-size: 1.05rem; }
           .guru-prose h2 { font-size: 1.8rem; }
           .guru-affiliate-cta { font-size: 15px; padding: 18px 30px; width: 100%; }
+          .silo-banner-card { flex-direction: column; text-align: center; }
+          .silo-banner-arrow { display: none; }
         }
       `}} />
     </div>
