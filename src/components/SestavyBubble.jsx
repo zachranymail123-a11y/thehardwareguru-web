@@ -3,13 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { Brain, ChevronRight, X, Activity, Target, Cpu, Gamepad2, Flame, Lightbulb, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 /**
- * GURU AI NAVIGATOR - ULTIMATE PERFECTION EDITION (Fix & Filter V2)
+ * GURU AI NAVIGATOR - ULTIMATE PERFECTION EDITION (Fix, Filter & Mobile UX)
  * * Změny:
  * 1. Expand to 5: Nyní nabízí 5 článků pro vyšší CTR.
  * 2. Syntax Fix: Opraven mismatch tagu span/h4, který shazoval build.
  * 3. Module Recovery: Robustní fallback pro next/link a supabase v Canvasu.
  * 4. Supreme Anti-Cron Filter: Totální filtrace streamů (🔴) a shorts.
  * 5. UX: Zachován osobní pozdrav GURU průvodce.
+ * 6. Mobile UX Fix: Panel je na mobilech (<768px) KOMPLETNĚ SKRYTÝ.
  */
 
 // --- 🛡️ GURU SAFE MODULE LOADER (Fix pro chyby resolve/build) ---
@@ -209,8 +210,9 @@ export default function SestavyBubble() {
         @keyframes scanBar { 0% { width: 0%; opacity: 1; } 90% { width: 100%; opacity: 1; } 100% { width: 100%; opacity: 0; } }
         @keyframes fadeInStagger { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 
+        /* 🚀 GURU MOBILE UX FIX: Zcela skryje celou lištu na mobilech */
         .guru-ai-container { position: fixed; bottom: 20px; left: 20px; z-index: 9998; animation: guruSlideUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; font-family: sans-serif; }
-        @media (max-width: 768px) { .guru-ai-container { bottom: 80px; left: 10px; } }
+        @media (max-width: 768px) { .guru-ai-container { display: none !important; } }
 
         .guru-ai-panel {
           background: rgba(12, 14, 18, 0.98); border: 1px solid rgba(168, 85, 247, 0.4);
@@ -299,7 +301,6 @@ export default function SestavyBubble() {
             </div>
           </div>
 
-          {/* 🚀 GURU FIX: Zvýšena minHeight pro 5 položek */}
           <div className="guru-ai-list" style={{ minHeight: '270px' }}>
             {isScanning ? (
               <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '12px', opacity: 0.5, paddingTop: '100px' }}>
