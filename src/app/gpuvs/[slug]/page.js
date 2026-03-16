@@ -7,12 +7,13 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - V5.3 (GOLDEN RICH RESULTS FIX)
+ * GURU GPU DUELS ENGINE - V5.4 (GOLDEN RICH RESULTS + SEO SILOING)
  * Cesta: src/app/gpuvs/[slug]/page.js
- * 🚀 CÍL: 100% zelená v Google Search Console.
+ * 🚀 CÍL: 100% zelená v Google Search Console a budování Topical Authority.
  * 🛡️ FIX 1: Přidány TechArticle a Product schémata s 'offers', 'shippingDetails' a 'hasMerchantReturnPolicy'.
  * 🛡️ FIX 2: Image pole převedeno na Array ['url'], jak to vyžaduje GSC.
  * 🛡️ FIX 3: Oprava syntax erroru (justifyContent) při buildu na Vercelu.
+ * 🛡️ FIX 4: Přidáno sémantické prolinkování - zobrazení souvisejících článků k daným grafikám a dalších duelů.
  */
 
 export const runtime = "nodejs";
@@ -72,6 +73,49 @@ const getDuelData = cache(async (rawSlug) => {
       return data[0];
   } catch (e) { return null; }
 });
+
+// 🚀 GURU SEO SILOING: Získání sémanticky souvisejících článků
+const getRelatedArticles = async (gpuA_Name, gpuB_Name) => {
+    if (!supabaseUrl) return [];
+    const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+    const nameA = normalizeName(gpuA_Name || '');
+    const nameB = normalizeName(gpuB_Name || '');
+
+    try {
+        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.%${encodeURIComponent(nameA)}%,title_en.ilike.%${encodeURIComponent(nameA)}%,title.ilike.%${encodeURIComponent(nameB)}%,title_en.ilike.%${encodeURIComponent(nameB)}%)&order=created_at.desc&limit=3`, {
+            headers, cache: 'no-store'
+        });
+        
+        let data = [];
+        if (res.ok) data = await res.json();
+
+        // Fallback: Pokud nenašel přesně k těmto kartám, dá 3 nejnovější HW články
+        if (!data || data.length === 0) {
+            const resLatest = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&type=eq.hardware&order=created_at.desc&limit=3`, {
+                headers, cache: 'no-store'
+            });
+            if (resLatest.ok) data = await resLatest.json();
+        }
+        
+        return Array.isArray(data) ? data : [];
+    } catch (e) { 
+        return []; 
+    }
+};
+
+// 🚀 GURU SEO SILOING: Získání dalších duelů
+const getMoreDuels = async (currentSlug) => {
+    if (!supabaseUrl) return [];
+    const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+    try {
+        const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=title_cs,title_en,slug,slug_en&slug=neq.${currentSlug}&order=created_at.desc&limit=3`, {
+            headers, cache: 'no-store'
+        });
+        if (res.ok) return await res.json();
+        return [];
+    } catch(e) { return []; }
+};
+
 
 export async function generateMetadata(props) {
   const params = await props.params;
@@ -293,6 +337,10 @@ export default async function GpuVsDetailPage(props) {
 
   const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
+  // 🚀 Fetching Siloing Data
+  const relatedArticles = await getRelatedArticles(gpuA.name, gpuB.name);
+  const moreDuels = await getMoreDuels(duel.slug);
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
@@ -432,6 +480,46 @@ export default async function GpuVsDetailPage(props) {
           </div>
         </section>
 
+        {/* 🚀 GURU SILOING: Sémantické Články & Další Duely */}
+        <section style={{ marginBottom: '60px' }}>
+            {relatedArticles.length > 0 && (
+                <div style={{ marginBottom: '40px' }}>
+                    <h2 className="section-h2" style={{ borderLeftColor: '#a855f7', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <Info size={28} color="#a855f7" /> {isEn ? 'RELATED ARTICLES' : 'SOUVISEJÍCÍ ČLÁNKY'}
+                    </h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                        {relatedArticles.map(art => (
+                            <a key={art.slug} href={isEn ? `/en/clanky/${art.slug_en || art.slug}` : `/clanky/${art.slug}`} className="related-card-style">
+                                <div className="related-img-box">
+                                    <img src={art.image_url || 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000'} alt={art.title} loading="lazy" />
+                                </div>
+                                <div className="related-content-box">
+                                    <span className="related-tag">{isEn ? 'TECH NEWS' : 'HW NOVINKA'}</span>
+                                    <h3 className="related-title-text">{isEn && art.title_en ? art.title_en : art.title}</h3>
+                                </div>
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {moreDuels.length > 0 && (
+                <div>
+                    <h2 className="section-h2" style={{ borderLeftColor: '#ff0055', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <Swords size={28} color="#ff0055" /> {isEn ? 'MORE GPU BATTLES' : 'DALŠÍ GPU DUELY'}
+                    </h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px' }}>
+                        {moreDuels.map(d => (
+                            <a key={d.slug} href={isEn ? `/en/gpuvs/${d.slug_en || d.slug}` : `/gpuvs/${d.slug}`} className="silo-link-card">
+                                <span style={{ fontWeight: '900', textTransform: 'uppercase' }}>{isEn && d.title_en ? d.title_en : d.title_cs}</span>
+                                <ArrowRight size={16} className="silo-arrow" />
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </section>
+
         {/* 🚀 GLOBÁLNÍ CTA TLAČÍTKA (Affiliate & Podpora) */}
         <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
           <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
@@ -464,6 +552,20 @@ export default async function GpuVsDetailPage(props) {
         .faq-card:hover { border-color: rgba(255, 0, 85, 0.3); background: rgba(255,255,255,0.04); }
         .faq-q { font-size: 1.15rem; font-weight: 950; color: #ff0055; margin: 0 0 10px 0; line-height: 1.4; }
         .faq-a { color: #9ca3af; line-height: 1.6; margin: 0; }
+
+        /* 🚀 GURU SILOING STYLY */
+        .related-card-style { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; text-decoration: none; transition: 0.3s; display: block; }
+        .related-card-style:hover { transform: translateY(-5px); border-color: #a855f7; }
+        .related-img-box { height: 160px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .related-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .related-content-box { padding: 20px; }
+        .related-tag { color: #a855f7; font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 10px; }
+        .related-title-text { color: #fff; font-size: 1.1rem; font-weight: 950; margin: 0; line-height: 1.3; }
+
+        .silo-link-card { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 18px 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #d1d5db; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-left: 3px solid #ff0055; }
+        .silo-link-card:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); color: #fff; transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+        .silo-link-card .silo-arrow { color: #ff0055; transition: 0.3s; }
+        .silo-link-card:hover .silo-arrow { transform: translateX(3px); }
 
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
         .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
