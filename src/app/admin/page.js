@@ -13,11 +13,11 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V4.6 (TECHPOWERUP STRICT RULE)
+ * GURU ULTIMATE COMMAND CENTER V4.7 (TECHPOWERUP STRICT RULE & NO HALLUCINATION FIX)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
  * 🛡️ FIX 1: Prompty pro AI agresivně vyžadují data VÝHRADNĚ z TechPowerUp (cpu-specs / gpu-specs).
- * 🛡️ FIX 2: Pokud AI data z TechPowerUp nemá, musí vrátit 'Unknown' (což vyvolá dotaz na uživatele).
+ * 🛡️ FIX 2: Přísný zákaz halucinování u nových komponent. AI musí vrátit 'Unknown', což okamžitě vyvolá dotaz.
  * 🛡️ PRAVIDLO: Zákaz úprav čehokoliv jiného striktně dodržen.
  */
 
@@ -259,39 +259,39 @@ export default function AdminApp() {
         return;
     }
 
-    addLog(`AI Guru (GPT-4o) prohledává internet (TechPowerUp) na absolutně přesné specifikace pro ${dbTab.toUpperCase()}: ${payload.name}...`, 'warning');
+    addLog(`AI Guru (GPT-4o) prohledává internet na absolutně přesné specifikace pro ${dbTab.toUpperCase()}: ${payload.name}...`, 'warning');
 
     try {
         let sysPrompt = "";
         
-        // 🚀 GURU FIX: Striktní vynucení dat z TechPowerUp (Při jakékoli nejistotě AI musí vrátit 'Unknown')
+        // 🚀 GURU FIX: Zcela agresivní pravidla proti halucinacím. Zdroje explicitně definovány.
         if (dbTab === 'cpu') {
-            sysPrompt = `Jsi nejlepší HW expert na světě. Tvá data MUSÍ pocházet VÝHRADNĚ z databáze TechPowerUp (https://www.techpowerup.com/cpu-specs/). Vrať POUZE čistý JSON bez markdownu. Vyplň VŠECHNY tyto klíče absolutně přesnými daty z TechPowerUp. Pokud si nejsi jistý, vrať 'Unknown': 
+            sysPrompt = `Jsi striktní HW databázový analyzátor. ZDROJ DAT MUSÍ BÝT: https://www.techpowerup.com/cpu-specs/ . PŘÍSNÝ ZÁKAZ VYMÝŠLENÍ (HALUCINACÍ)! Pokud procesor není vydaný, neznáš jeho přesné parametry nebo si nejsi na 100% jistý (např. Ryzen 9850X3D), MUSÍŠ VRÁTIT 'Unknown' u všech číselných hodnot. Vrať čistý JSON: 
             'vendor' (AMD nebo Intel), 
             'architecture', 
-            'cores' (číslo), 
-            'threads' (číslo), 
-            'base_clock_mhz' (číslo), 
-            'boost_clock_mhz' (číslo), 
-            'tdp_w' (číslo), 
-            'l3_cache_mb' (číslo, POZOR: X3D modely jako 9850X3D nebo 9800X3D mají VŽDY 96MB, 104MB nebo 128MB L3 cache, NIKDY 32MB!), 
-            'release_price_usd' (číslo zaváděcí MSRP ceny z TechPowerUp), 
-            'release_date' (datum ve formátu YYYY-MM-DD z TechPowerUp), 
-            'performance_index' (číslo od 50 do 150, kde např. 9800X3D=120, 9850X3D=125).`;
+            'cores' (číslo, jinak 'Unknown'), 
+            'threads' (číslo, jinak 'Unknown'), 
+            'base_clock_mhz' (číslo, jinak 'Unknown'), 
+            'boost_clock_mhz' (číslo, jinak 'Unknown'), 
+            'tdp_w' (číslo, jinak 'Unknown'), 
+            'l3_cache_mb' (číslo, jinak 'Unknown'. POZOR: X3D procesory mají 96MB, 104MB nebo 128MB, NIKDY 32MB!), 
+            'release_price_usd' (číslo zaváděcí MSRP, jinak 'Unknown'), 
+            'release_date' (YYYY-MM-DD, jinak 'Unknown'), 
+            'performance_index' (číslo od 50 do 150, jinak 'Unknown').`;
         } else if (dbTab === 'gpu') {
-            sysPrompt = `Jsi špičkový HW expert. Tvá data MUSÍ pocházet VÝHRADNĚ z databáze TechPowerUp (https://www.techpowerup.com/gpu-specs/). Vrať POUZE čistý JSON bez markdownu. Vyplň VŠECHNY tyto klíče absolutně přesnými daty z TechPowerUp. Pokud si nejsi jistý, vrať 'Unknown': 
+            sysPrompt = `Jsi striktní HW databázový analyzátor. ZDROJ DAT MUSÍ BÝT: https://www.techpowerup.com/gpu-specs/ . PŘÍSNÝ ZÁKAZ VYMÝŠLENÍ! Pokud grafiku neznáš nebo si nejsi 100% jistý, MUSÍŠ VRÁTIT 'Unknown' u všech parametrů. Vrať čistý JSON: 
             'vendor' (NVIDIA, AMD nebo Intel), 
             'architecture', 
-            'vram_gb' (číslo), 
-            'memory_bus' (text, např. '256-bit'), 
-            'base_clock_mhz' (číslo), 
-            'boost_clock_mhz' (číslo), 
-            'tdp_w' (číslo), 
-            'release_price_usd' (číslo zaváděcí MSRP ceny z TechPowerUp), 
-            'release_date' (datum ve formátu YYYY-MM-DD z TechPowerUp), 
-            'performance_index' (číslo od 50 do 400).`;
+            'vram_gb' (číslo, jinak 'Unknown'), 
+            'memory_bus' (text, např. '256-bit', jinak 'Unknown'), 
+            'base_clock_mhz' (číslo, jinak 'Unknown'), 
+            'boost_clock_mhz' (číslo, jinak 'Unknown'), 
+            'tdp_w' (číslo, jinak 'Unknown'), 
+            'release_price_usd' (číslo MSRP, jinak 'Unknown'), 
+            'release_date' (YYYY-MM-DD, jinak 'Unknown'), 
+            'performance_index' (číslo od 50 do 400, jinak 'Unknown').`;
         } else if (dbTab === 'games') {
-            sysPrompt = "Jsi herní expert. Vrať POUZE čistý JSON bez markdownu. Klíče: 'name' (oficiální název hry se správnými velkými písmeny, např. 'Grand Theft Auto VI'). Zbytek (FPS atd.) zařídí databáze.";
+            sysPrompt = "Jsi herní expert. Vrať POUZE čistý JSON bez markdownu. Klíče: 'name' (oficiální název hry se správnými velkými písmeny, např. 'Grand Theft Auto VI'). Zbytek zařídí databáze.";
         }
 
         const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -311,7 +311,7 @@ export default function AdminApp() {
         const r = await aiRes.json();
         const aiData = JSON.parse(r.choices[0].message.content);
         
-        // 🚀 GURU FIX: FALLBACK PROMPT - Agresivnější detekce chybějících dat a 'Unknown' halucinací
+        // 🚀 GURU FIX: FALLBACK PROMPT - Pokud to AI neví, zeptej se rovnou uživatele!
         if (dbTab !== 'games') {
             const requiredKeys = dbTab === 'cpu' 
                 ? ['vendor', 'architecture', 'cores', 'threads', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'l3_cache_mb', 'release_price_usd', 'release_date', 'performance_index']
@@ -328,19 +328,20 @@ export default function AdminApp() {
                 if (isMissing) {
                     await new Promise(resolve => setTimeout(resolve, 50)); 
                     
-                    const userInput = window.prompt(`🚨 GURU AI (TechPowerUp) NENAŠLO HODNOTU PRO:\n\n👉 [ ${key.toUpperCase()} ] u modelu ${payload.name}\n\nZadejte hodnotu ručně přesně podle webu (nebo nechte prázdné a přeskočte):`);
+                    const tpuLink = dbTab === 'cpu' ? 'https://www.techpowerup.com/cpu-specs/' : 'https://www.techpowerup.com/gpu-specs/';
+                    const userInput = window.prompt(`🚨 GURU AI nenašlo ověřenou hodnotu na TechPowerUp pro:\n\n👉 [ ${key.toUpperCase()} ] u modelu ${payload.name}\n\nOtevři si prosím ${tpuLink} a zadej hodnotu ručně (nebo nech prázdné a přeskoč):`);
                     
                     if (userInput !== null && userInput.trim() !== '') {
                         const isNumeric = ['cores', 'threads', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'l3_cache_mb', 'release_price_usd', 'performance_index', 'vram_gb'].includes(key);
                         aiData[key] = isNumeric ? Number(userInput.trim()) : userInput.trim();
                     } else {
-                        delete aiData[key]; 
+                        delete aiData[key]; // Odstraní klíč z payloadu, aby databáze nespadla na neplatném zápisu
                     }
                 }
             }
         }
 
-        // Vyčistíme všechny ostatní prázdné nebo neplatné klíče z AI odpovědi (ochrana DB)
+        // Vyčištění všech zbylých neplatných hodnot z AI
         Object.keys(aiData).forEach(k => {
             const val = aiData[k];
             if (val === null || val === '' || String(val).toUpperCase() === 'N/A' || String(val).toUpperCase() === 'UNKNOWN' || (typeof val === 'number' && isNaN(val))) {
@@ -369,7 +370,6 @@ export default function AdminApp() {
         addLog(`Aktivuji novou hru a dopočítávám FPS matici přes DB Trigger pro: ${payload.name}...`, 'warning');
     }
 
-    // Vložení finálního a 100% čistého JSONu do Supabase
     const { error } = await supabase.from(table).insert([payload]);
     
     if (error) {
