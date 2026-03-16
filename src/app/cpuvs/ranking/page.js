@@ -6,15 +6,20 @@ import {
   Swords, 
   Activity, 
   Cpu,
-  Medal
+  Medal,
+  Monitor,
+  Flame,
+  ArrowRight
 } from 'lucide-react';
 
 /**
- * GURU CPU ENGINE - TIER LIST & RANKING V1.2 (ULTIMATE FIX)
+ * GURU CPU ENGINE - TIER LIST & RANKING V1.3 (ULTIMATE FIX + SEO SILOING)
  * Cesta: src/app/cpuvs/ranking/page.js
- * 🛡️ FIX 1: Nativní fetch s 'no-store' = 100% bypass mrtvé Next.js cache (Supabase klient odstraněn).
- * 🛡️ FIX 2: Ošetřeno řazení nullslast - procesory bez skóre už nemizí, jen spadnou na konec tabulky!
+ * 🛡️ FIX 1: Nativní fetch s 'no-store' = 100% bypass mrtvé Next.js cache.
+ * 🛡️ FIX 2: Ošetřeno řazení nullslast - procesory bez skóre už nemizí.
  * 🛡️ FIX 3: Bezpečné čtení boost_clock_ghz vs mhz pro starší databázové záznamy.
+ * 🛡️ FIX 4: Celý řádek žebříčku převeden na klikací SEO odkaz.
+ * 🛡️ FIX 5: Přidán spodní Siloing rozcestník pro udržení uživatele na webu.
  */
 
 export const dynamic = 'force-dynamic';
@@ -43,27 +48,27 @@ export async function generateMetadata(props) {
   const isEn = props?.isEn === true;
   return {
     title: isEn 
-      ? 'CPU Tier List & Performance Ranking 2025 | The Hardware Guru' 
+      ? 'CPU Tier List & Performance Ranking 2026 | The Hardware Guru' 
       : 'Žebříček procesorů a absolutní srovnání výkonu | The Hardware Guru',
     description: isEn
       ? 'Ultimate CPU benchmark tier list. All modern processors ranked by raw gaming and productivity performance.'
       : 'Ultimátní žebříček procesorů. Všechny moderní procesory seřazené podle hrubého herního a pracovního výkonu.',
     alternates: {
-      canonical: 'https://www.thehardwareguru.cz/cpuvs/ranking',
+      canonical: 'https://thehardwareguru.cz/cpuvs/ranking',
       languages: {
-        'en': 'https://www.thehardwareguru.cz/en/cpuvs/ranking',
-        'cs': 'https://www.thehardwareguru.cz/cpuvs/ranking'
+        'en': 'https://thehardwareguru.cz/en/cpuvs/ranking',
+        'cs': 'https://thehardwareguru.cz/cpuvs/ranking',
+        'x-default': 'https://thehardwareguru.cz/cpuvs/ranking'
       }
     }
   };
 }
 
-// 🚀 GURU: Nativní fetch obejde veškerou otravnou cache v Next.js a vytáhne 100% fresh data
+// 🚀 GURU: Nativní fetch obejde cache a vytáhne fresh data
 const fetchRankingData = async () => {
     if (!supabaseUrl) return [];
     
     try {
-        // nullslast = klíčová věc. Procesory bez výkonu neskryjeme, ale dáme je na konec!
         const url = `${supabaseUrl}/rest/v1/cpus?select=*&order=performance_index.desc.nullslast,name.asc`;
         
         const res = await fetch(url, {
@@ -129,18 +134,17 @@ export default async function CpuRankingPage(props) {
           </div>
         </header>
 
-        {/* 🚀 LEADERBOARD LIST */}
+        {/* 🚀 LEADERBOARD LIST (Nyní kompletně klikací pro SEO) */}
         <section className="leaderboard-container">
           {cpus.map((cpu, index) => {
             const vendorColor = getVendorColor(cpu.vendor);
             const safeSlug = cpu.slug || slugify(cpu.name);
-            const isTop3 = index < 3 && cpu.performance_index > 0; // Top 3 jen pro ty, co mají reálné skóre
-
-            // Bezpečná čtení taktu pro starší CSV záznamy
+            const isTop3 = index < 3 && cpu.performance_index > 0;
             const boostMhz = cpu.boost_clock_mhz || (cpu.boost_clock_ghz ? cpu.boost_clock_ghz * 1000 : null);
+            const profileUrl = isEn ? `/en/cpu/${safeSlug}` : `/cpu/${safeSlug}`;
 
             return (
-              <div key={safeSlug} className={`ranking-row ${isTop3 ? `top-${index + 1}` : ''}`}>
+              <a key={safeSlug} href={profileUrl} className={`ranking-row ${isTop3 ? `top-${index + 1}` : ''}`}>
                  {/* Pozice */}
                  <div className="rank-badge">
                    {getRankIcon(index)}
@@ -168,18 +172,36 @@ export default async function CpuRankingPage(props) {
                     </div>
                  </div>
 
-                 {/* Actions */}
+                 {/* Fake Actions (jen pro vizuál) */}
                  <div className="action-buttons">
-                    <a href={`/${isEn ? 'en/' : ''}cpu/${safeSlug}`} className="btn-profile">
+                    <div className="btn-profile">
                       <Activity size={14} /> <span className="hide-mobile">{isEn ? 'Profile' : 'Profil'}</span>
-                    </a>
-                    <a href={`/${isEn ? 'en/' : ''}cpuvs`} className="btn-vs">
+                    </div>
+                    <div className="btn-vs" onClick={(e) => { e.preventDefault(); window.location.href = `/${isEn ? 'en/' : ''}cpuvs`; }}>
                       <Swords size={14} /> <span className="hide-mobile">{isEn ? 'Compare' : 'Srovnat'}</span>
-                    </a>
+                    </div>
                  </div>
-              </div>
+              </a>
             );
           })}
+        </section>
+
+        {/* 🚀 GURU SILOING: ODKAZY NA DALŠÍ ROZCESTNÍKY */}
+        <section style={{ marginTop: '80px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+            <a href={isEn ? "/en/gpuvs/ranking" : "/gpuvs/ranking"} className="silo-banner-card" style={{ borderLeftColor: '#66fcf1' }}>
+                <div className="silo-banner-icon" style={{ color: '#000', background: '#66fcf1' }}><Monitor size={28} /></div>
+                <div className="silo-banner-text">
+                    <h4>{isEn ? 'GPU TIER LIST' : 'ŽEBŘÍČEK GRAFIK'}</h4>
+                    <p>{isEn ? 'Check out the performance ranking of graphics cards.' : 'Podívejte se na výkonnostní žebříček grafických karet.'}</p>
+                </div>
+            </a>
+            <a href={isEn ? "/en/bottleneck" : "/bottleneck"} className="silo-banner-card" style={{ borderLeftColor: '#a855f7' }}>
+                <div className="silo-banner-icon" style={{ color: '#fff', background: '#a855f7' }}><Activity size={28} /></div>
+                <div className="silo-banner-text">
+                    <h4>{isEn ? 'BOTTLENECK CALCULATOR' : 'KALKULAČKA BOTTLENECKU'}</h4>
+                    <p>{isEn ? 'Find out if your CPU is holding back your GPU.' : 'Zjistěte, zda váš procesor zbytečně nebrzdí grafickou kartu.'}</p>
+                </div>
+            </a>
         </section>
 
       </main>
@@ -190,8 +212,9 @@ export default async function CpuRankingPage(props) {
 
         .leaderboard-container { display: flex; flex-direction: column; gap: 15px; }
 
-        .ranking-row { display: flex; align-items: center; background: rgba(15, 17, 21, 0.95); padding: 15px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .ranking-row { display: flex; align-items: center; background: rgba(15, 17, 21, 0.95); padding: 15px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.3); cursor: pointer; }
         .ranking-row:hover { transform: translateX(5px); background: rgba(25, 27, 31, 0.95); border-color: rgba(255,255,255,0.1); box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
+        .ranking-row:hover .cpu-name { color: #f59e0b; transition: 0.2s; }
         
         .top-1 { border: 1px solid rgba(245, 158, 11, 0.3); background: linear-gradient(90deg, rgba(245, 158, 11, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%); }
         .top-2 { border: 1px solid rgba(209, 213, 219, 0.3); background: linear-gradient(90deg, rgba(209, 213, 219, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%); }
@@ -211,11 +234,17 @@ export default async function CpuRankingPage(props) {
         .score-value { font-size: 22px; font-weight: 950; display: flex; align-items: center; gap: 6px; }
 
         .action-buttons { display: flex; gap: 10px; flex-shrink: 0; }
-        .btn-profile, .btn-vs { display: flex; align-items: center; gap: 6px; padding: 10px 15px; border-radius: 10px; font-size: 12px; font-weight: 900; text-transform: uppercase; text-decoration: none; transition: 0.2s; }
+        .btn-profile, .btn-vs { display: flex; align-items: center; gap: 6px; padding: 10px 15px; border-radius: 10px; font-size: 12px; font-weight: 900; text-transform: uppercase; transition: 0.2s; }
         .btn-profile { background: rgba(255,255,255,0.05); color: #d1d5db; }
-        .btn-profile:hover { background: rgba(255,255,255,0.1); color: #fff; }
-        .btn-vs { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+        .btn-vs { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); z-index: 10; }
         .btn-vs:hover { background: rgba(245, 158, 11, 0.2); transform: scale(1.05); }
+
+        /* 🚀 GURU SILOING STYLY */
+        .silo-banner-card { flex: 1; min-width: 300px; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; align-items: center; gap: 20px; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border-left-width: 5px; }
+        .silo-banner-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.02); }
+        .silo-banner-icon { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .silo-banner-text h4 { margin: 0 0 5px 0; color: #fff; font-size: 1.2rem; font-weight: 950; }
+        .silo-banner-text p { margin: 0; color: #9ca3af; font-size: 0.9rem; }
 
         @media (max-width: 768px) {
           .ranking-row { flex-wrap: wrap; padding: 15px; }
@@ -225,6 +254,7 @@ export default async function CpuRankingPage(props) {
           .score-container { border-right: none; padding-right: 0; margin-right: auto; flex-direction: row; gap: 10px; align-items: baseline; }
           .hide-mobile { display: none; }
           .btn-profile, .btn-vs { padding: 10px; }
+          .silo-banner-card { flex-direction: column; text-align: center; }
         }
       `}} />
     </div>
