@@ -3,9 +3,10 @@ import { Gamepad2, Monitor, Cpu, Info, ArrowRight } from 'lucide-react';
 import FpsCalculatorClient from './FpsCalculatorClient';
 
 /**
- * GURU FPS ENGINE - V1.9 (SYNTAX & BUILD FIX)
- * 🛡️ FIX: Opravena fatální syntaktická chyba v inline stylech (display: 'grid').
- * 🛡️ DB: Čistý fetch bez filtrů, aby se předešlo prázdným seznamům.
+ * GURU FPS ENGINE - V2.1 (DEBUG & RLS DIAGNOSTICS)
+ * 🛡️ FIX: Přidáno logování chyb pro diagnostiku prázdných seznamů (RLS).
+ * 🛡️ SYNTAX: Všechny inline styly jsou validní stringy (display: 'grid').
+ * 🛡️ CZ/EN: Plná lokalizace pro statické cesty i metadata.
  */
 
 export const dynamic = 'force-dynamic';
@@ -29,7 +30,10 @@ export async function generateMetadata(props) {
 
 const fetchDatabase = async () => {
     if (!supabaseUrl) return { gpus: [], cpus: [], games: [] };
-    const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+    const headers = { 
+        'apikey': supabaseKey, 
+        'Authorization': `Bearer ${supabaseKey}` 
+    };
     
     try {
         const [gpuRes, cpuRes, gameRes] = await Promise.all([
@@ -38,12 +42,24 @@ const fetchDatabase = async () => {
             fetch(`${supabaseUrl}/rest/v1/games?select=id,name,slug&order=name.asc`, { headers, cache: 'no-store' })
         ]);
 
-        return { 
-            gpus: gpuRes.ok ? await gpuRes.json() : [], 
-            cpus: cpuRes.ok ? await cpuRes.json() : [], 
-            games: gameRes.ok ? await gameRes.json() : [] 
-        };
+        // GURU DEBUG: Pokud jsou CPU prázdné, vypíšeme chybu do Vercel logu
+        if (!cpuRes.ok) {
+            const errorText = await cpuRes.text();
+            console.error("GURU DATABASE ERROR (CPUs):", errorText);
+        }
+
+        const gpus = gpuRes.ok ? await gpuRes.json() : [];
+        const cpus = cpuRes.ok ? await cpuRes.json() : [];
+        const games = gameRes.ok ? await gameRes.json() : [];
+
+        // Pokud je status OK (200), ale pole je prázdné, je to na 99% RLS policy
+        if (cpus.length === 0 && cpuRes.ok) {
+            console.warn("GURU WARNING: CPU fetch returned 200 OK but empty array. Check Supabase RLS policies!");
+        }
+
+        return { gpus, cpus, games };
     } catch (e) { 
+        console.error("GURU FETCH EXCEPTION:", e);
         return { gpus: [], cpus: [], games: [] }; 
     }
 };
@@ -63,13 +79,15 @@ export default async function FpsKalkulackaPage(props) {
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#a855f7', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '50px', background: 'rgba(168, 85, 247, 0.1)' }}>
             <Gamepad2 size={16} /> GURU FPS ENGINE
           </div>
-          <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0' }}>
+          <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
             {isEn ? 'FPS' : 'ROZJEDU'} <span style={{ color: '#a855f7', textShadow: '0 0 30px rgba(168, 85, 247, 0.5)' }}>{isEn ? 'CALCULATOR' : 'TO?'}</span>
           </h1>
         </header>
 
+        {/* Klientská komponenta pro interaktivní kalkulačku */}
         <FpsCalculatorClient gpus={gpus} cpus={cpus} games={games} isEn={isEn} />
 
+        {/* SEO Silo prolinkování na funkční katalogy */}
         <div style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
             <a href={cpuIndexUrl} className="silo-mini-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
