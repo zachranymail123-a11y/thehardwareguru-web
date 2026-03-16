@@ -15,12 +15,13 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V5.2 (BUILD FIX)
+ * GURU ULTIMATE COMMAND CENTER V5.4 (FINAL ROUTES FIX)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
  * 🛡️ FIX 1: Opraven Vercel prerender error (přidáno force-dynamic a ošetřen přístup k document v getEnv).
  * 🛡️ FIX 2: Uživatel vkládá data přes čistý JSON.
  * 🛡️ FIX 3: Při vložení CPU nebo GPU administrace vygeneruje duely (opraven slug fetch error).
+ * 🛡️ FIX 4: Upraveny verifikační URL odkazy tak, aby exaktně seděly na reálnou strukturu (cpuvs, cpu-upgrade).
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -314,7 +315,6 @@ export default function AdminApp() {
     try {
         if (dbTab === 'cpu') {
             addLog(`Generuji všechny možné duely a upgrady pro procesor ${payload.name}...`, 'warning');
-            // OPRAVA: Odstraněno selectování neexistujícího sloupce 'slug', přidáno logování chyby dotazu
             const { data: allCpus, error: cpuSelectErr } = await supabase.from('cpus').select('id, name').neq('id', insertedItem.id);
             
             if (cpuSelectErr) addLog(`CHYBA čtení existujících CPU: ${cpuSelectErr.message}`, 'error');
@@ -362,6 +362,7 @@ export default function AdminApp() {
                 const randomOtherCpu = allCpus[0];
                 const rSlug = slugify(randomOtherCpu.name);
                 
+                // GURU FIX: Zpět na přesnou strukturu složek /cpuvs/ a /cpu-upgrade/
                 verificationLinks = [
                     { label: '🔥 PROFIL', url: `/cpu/${safeSlug}` },
                     { label: '⚔️ CPU vs CPU', url: `/cpuvs/${safeSlug}-vs-${rSlug}` },
@@ -372,7 +373,6 @@ export default function AdminApp() {
             }
         } else if (dbTab === 'gpu') {
             addLog(`Generuji všechny možné duely a upgrady pro grafiku ${payload.name}...`, 'warning');
-            // OPRAVA: Pro maximální robustnost selectujeme jen to nejnutnější
             const { data: allGpus, error: gpuSelectErr } = await supabase.from('gpus').select('id, name').neq('id', insertedItem.id);
             
             if (gpuSelectErr) addLog(`CHYBA čtení existujících GPU: ${gpuSelectErr.message}`, 'error');
@@ -420,6 +420,7 @@ export default function AdminApp() {
                 const randomOtherGpu = allGpus[0];
                 const rSlug = slugify(randomOtherGpu.name);
                 
+                // Přizpůsobení i pro GPU, pokud bys to měl podobně
                 verificationLinks = [
                     { label: '🔥 PROFIL', url: `/gpu/${safeSlug}` },
                     { label: '⚔️ GPU vs GPU', url: `/gpuvs/${safeSlug}-vs-${rSlug}` },
