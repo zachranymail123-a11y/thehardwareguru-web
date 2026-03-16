@@ -92,7 +92,7 @@ export default function AdminApp() {
 
   const [dbTab, setDbTab] = useState('games');
   const [dbLoading, setDbLoading] = useState(false);
-  const [dbMessage, setDbMessage] = useState({ type: '', text: '', link: '' });
+  const [dbMessage, setDbMessage] = useState({ type: '', text: '', links: [] });
   const [dbFormData, setDbFormData] = useState({ name: '', slug: '', rawData: '' });
 
   // --- SEZNAM INDEXER STATE ---
@@ -240,9 +240,10 @@ export default function AdminApp() {
     if (dbTab === 'cpu') setDbFormData(prev => ({...prev, rawData: exampleCpuJson, name: '', slug: ''}));
     else if (dbTab === 'gpu') setDbFormData(prev => ({...prev, rawData: exampleGpuJson, name: '', slug: ''}));
     else setDbFormData(prev => ({...prev, rawData: '', name: '', slug: ''}));
-    setDbMessage({ type: '', text: '', link: '' });
+    setDbMessage({ type: '', text: '', links: [] });
   }, [dbTab]);
 
+  const handleLogin = (e) => {
   const handleLogin = (e) => {
     e.preventDefault();
     if (password === 'Wifik500') {
@@ -251,20 +252,23 @@ export default function AdminApp() {
     }
   };
 
-  // 🚀 GURU FIX: 100% spolehlivé a automatizované uložení DB (bez AI)
+  // 🚀 GURU FIX: 100% spolehlivé a plně automatizované uložení všech kombinací duelů
   const handleDbSubmit = async (e) => {
     e.preventDefault();
     setDbLoading(true);
-    setDbMessage({ type: '', text: '', link: '' });
+    setDbMessage({ type: '', text: '', links: [] });
     
     const table = dbTab === 'games' ? 'games' : (dbTab === 'gpu' ? 'gpus' : 'cpus');
     
+    // Sloupec slug se pro CPU NEUKLÁDÁ (protože v DB neexistuje), ale v kódu s ním pracujeme pro URL!
+    const safeSlug = slugify(dbFormData.slug || dbFormData.name);
+
     let payload = {
         name: dbFormData.name.trim()
     };
 
     if (dbTab === 'games' || dbTab === 'gpu') {
-        payload.slug = slugify(dbFormData.slug || dbFormData.name);
+        payload.slug = safeSlug;
     }
 
     if (dbTab !== 'games') {
@@ -281,7 +285,7 @@ export default function AdminApp() {
 
     addLog(`Ukládám ${dbTab.toUpperCase()}: ${payload.name} do databáze...`, 'warning');
 
-    // 1. ULOŽENÍ ENTITY .select() zajistí vrácení vloženého ID pro tvorbu duelů
+    // 1. ULOŽENÍ ENTITY .select() zajistí vrácení vloženého ID pro masivní tvorbu duelů
     const { data: insertedData, error } = await supabase.from(table).insert([payload]).select();
     
     if (error || !insertedData || insertedData.length === 0) {
@@ -293,15 +297,12 @@ export default function AdminApp() {
 
     const insertedItem = insertedData[0];
     let successText = `Úspěšně přidáno: ${payload.name}! `;
-    let verificationLink = '';
+    let verificationLinks = [];
 
-    // 2. AUTOMATICKÉ GENEROVÁNÍ VŠECH DUELŮ
+    // 2. AUTOMATICKÉ GENEROVÁNÍ VŠECH MOŽNÝCH DUELŮ
     try {
         if (dbTab === 'cpu') {
-            const safeSlug = slugify(payload.name); 
-            verificationLink = `/cpu/${safeSlug}`;
-            
-            addLog(`Generuji všechny možné duely pro procesor ${payload.name}...`, 'warning');
+            addLog(`Generuji všechny možné duely a upgrady pro procesor ${payload.name}...`, 'warning');
             const { data: allCpus } = await supabase.from('cpus').select('id, name, slug').neq('id', insertedItem.id);
             
             if (allCpus && allCpus.length > 0) {
@@ -320,20 +321,49 @@ export default function AdminApp() {
                         created_at: new Date().toISOString()
                     };
                 });
-                await supabase.from('cpu_duels').insert(duelsToInsert);
-                successText += `Vygenerováno a uloženo ${duelsToInsert.length} nových duelů.`;
-                addLog(`Vytvořeno ${duelsToInsert.length} duelů!`, 'success');
+                const { error: dErr } = await supabase.from('cpu_duels').insert(duelsToInsert);
+                if (dErr) addLog(`CHYBA zápisu duelů: ${dErr.message}`, 'error');
+
+                const upgradesToInsert = allCpus.map(c => {
+                    const cSlug = c.slug || slugify(c.name);
+                    const uSlug = `${cSlug}-to-${safeSlug}`;
+                    return {
+                        slug: uSlug,
+                        slug_en: `en-${uSlug}`,
+                        old_cpu_id: c.id,
+                        new_cpu_id: insertedItem.id,
+                        title_cs: `Upgrade z ${c.name} na ${payload.name}`,
+                        title_en: `Upgrade from ${c.name} to ${payload.name}`,
+                        seo_description_cs: `Vyplatí se přechod z procesoru ${c.name} na ${payload.name}? Podívejte se na reálné srovnání a benchmarky.`,
+                        seo_description_en: `Is it worth upgrading your processor from ${c.name} to ${payload.name}? See real benchmarks and specs comparison.`,
+                        created_at: new Date().toISOString()
+                    };
+                });
+                const { error: uErr } = await supabase.from('cpu_upgrades').insert(upgradesToInsert);
+                if (uErr) addLog(`CHYBA zápisu upgradů: ${uErr.message}`, 'error');
+
+                successText += `Vygenerováno a uloženo ${duelsToInsert.length} duelů a ${upgradesToInsert.length} upgradů.`;
+                addLog(`Vytvořeno ${duelsToInsert.length} duelů a ${upgradesToInsert.length} upgradů!`, 'success');
+
+                const randomOtherCpu = allCpus[0];
+                const rSlug = randomOtherCpu.slug || slugify(randomOtherCpu.name);
+                
+                verificationLinks = [
+                    { label: '🔥 PROFIL', url: `/cpu/${safeSlug}` },
+                    { label: '⚔️ CPU vs CPU', url: `/cpuvs/${safeSlug}-vs-${rSlug}` },
+                    { label: '🚀 UPGRADE', url: `/cpu-upgrade/${rSlug}-to-${safeSlug}` },
+                    { label: '🎮 CPU FPS', url: `/cpu-fps/${safeSlug}/cyberpunk-2077` },
+                    { label: '⚠️ BOTTLENECK', url: `/bottleneck/${safeSlug}-with-geforce-rtx-5090` }
+                ];
             }
         } else if (dbTab === 'gpu') {
-            verificationLink = `/gpu/${payload.slug}`;
-            
-            addLog(`Generuji všechny možné duely pro grafiku ${payload.name}...`, 'warning');
+            addLog(`Generuji všechny možné duely a upgrady pro grafiku ${payload.name}...`, 'warning');
             const { data: allGpus } = await supabase.from('gpus').select('id, name, slug').neq('id', insertedItem.id);
             
             if (allGpus && allGpus.length > 0) {
                 const duelsToInsert = allGpus.map(g => {
                     const gSlug = g.slug || slugify(g.name);
-                    const dSlug = `${payload.slug}-vs-${gSlug}`;
+                    const dSlug = `${safeSlug}-vs-${gSlug}`;
                     return {
                         slug: dSlug,
                         slug_en: `en-${dSlug}`,
@@ -346,20 +376,56 @@ export default function AdminApp() {
                         created_at: new Date().toISOString()
                     };
                 });
-                await supabase.from('gpu_duels').insert(duelsToInsert);
-                successText += `Vygenerováno a uloženo ${duelsToInsert.length} nových duelů.`;
-                addLog(`Vytvořeno ${duelsToInsert.length} duelů!`, 'success');
+                const { error: dErr } = await supabase.from('gpu_duels').insert(duelsToInsert);
+                if (dErr) addLog(`CHYBA zápisu duelů: ${dErr.message}`, 'error');
+
+                const upgradesToInsert = allGpus.map(g => {
+                    const gSlug = g.slug || slugify(g.name);
+                    const uSlug = `${gSlug}-to-${safeSlug}`;
+                    return {
+                        slug: uSlug,
+                        slug_en: `en-${uSlug}`,
+                        old_gpu_id: g.id,
+                        new_gpu_id: insertedItem.id,
+                        title_cs: `Upgrade z ${g.name} na ${payload.name}`,
+                        title_en: `Upgrade from ${g.name} to ${payload.name}`,
+                        seo_description_cs: `Detailní analýza přechodu z grafické karty ${g.name} na ${payload.name}.`,
+                        seo_description_en: `Detailed upgrade path analysis between ${g.name} and ${payload.name}.`,
+                        created_at: new Date().toISOString()
+                    };
+                });
+                const { error: uErr } = await supabase.from('gpu_upgrades').insert(upgradesToInsert);
+                if (uErr) addLog(`CHYBA zápisu upgradů: ${uErr.message}`, 'error');
+
+                successText += `Vygenerováno a uloženo ${duelsToInsert.length} duelů a ${upgradesToInsert.length} upgradů.`;
+                addLog(`Vytvořeno ${duelsToInsert.length} duelů a ${upgradesToInsert.length} upgradů!`, 'success');
+
+                const randomOtherGpu = allGpus[0];
+                const rSlug = randomOtherGpu.slug || slugify(randomOtherGpu.name);
+                
+                verificationLinks = [
+                    { label: '🔥 PROFIL', url: `/gpu/${safeSlug}` },
+                    { label: '⚔️ GPU vs GPU', url: `/gpuvs/${safeSlug}-vs-${rSlug}` },
+                    { label: '🚀 UPGRADE', url: `/gpu-upgrade/${rSlug}-to-${safeSlug}` },
+                    { label: '🎮 GPU FPS', url: `/gpu-fps/${safeSlug}/cyberpunk-2077` },
+                    { label: '⚠️ BOTTLENECK', url: `/bottleneck/amd-ryzen-7-7800x3d-with-${safeSlug}` }
+                ];
             }
         } else if (dbTab === 'games') {
-            verificationLink = `/gpu-fps/geforce-rtx-5090/${payload.slug}`;
-            successText += `Hra přidána. Databázový trigger automaticky dopočítává všechny FPS metriky k existujícímu HW na pozadí.`;
+            successText += `Hra přidána. Databázový trigger automaticky dopočítává všechny FPS metriky.`;
             addLog(`Hra zapsána a auto_game_engine počítá FPS matici na pozadí!`, 'success');
+
+            verificationLinks = [
+                { label: '🎮 GPU FPS TEST', url: `/gpu-fps/geforce-rtx-5090/${safeSlug}` },
+                { label: '⚡ CPU FPS TEST', url: `/cpu-fps/amd-ryzen-7-7800x3d/${safeSlug}` },
+                { label: '⚠️ BOTTLENECK + HRA', url: `/bottleneck/amd-ryzen-7-7800x3d-with-geforce-rtx-5090-in-${safeSlug}` }
+            ];
         }
     } catch (e) {
         addLog(`Chyba při generování dodatečných dat (duely atd.): ${e.message}`, 'error');
     }
 
-    setDbMessage({ type: 'success', text: successText, link: verificationLink });
+    setDbMessage({ type: 'success', text: successText, links: verificationLinks });
     setDbFormData(prev => ({ ...prev, name: '', slug: '' }));
     setDbLoading(false);
   };
@@ -592,11 +658,15 @@ export default function AdminApp() {
 
                     {dbMessage.text && (
                         <div style={{ marginTop: '20px', padding: '20px', borderRadius: '12px', background: dbMessage.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', border: `1px solid ${dbMessage.type === 'success' ? '#10b981' : '#ef4444'}`, textAlign: 'center' }}>
-                            <p style={{ color: dbMessage.type === 'success' ? '#10b981' : '#ef4444', fontWeight: 'bold', margin: '0 0 10px 0' }}>{dbMessage.text}</p>
-                            {dbMessage.link && (
-                                <a href={dbMessage.link} target="_blank" rel="noreferrer" style={{ color: '#fff', fontWeight: '950', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                                    👉 KLIKNĚTE ZDE PRO OVĚŘENÍ FUNKČNOSTI
-                                </a>
+                            <p style={{ color: dbMessage.type === 'success' ? '#10b981' : '#ef4444', fontWeight: 'bold', margin: '0 0 15px 0' }}>{dbMessage.text}</p>
+                            {dbMessage.links && dbMessage.links.length > 0 && (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+                                    {dbMessage.links.map((lnk, idx) => (
+                                        <a key={idx} href={lnk.url} target="_blank" rel="noreferrer" style={{ background: '#111', padding: '8px 15px', borderRadius: '8px', color: '#66fcf1', fontWeight: '950', textDecoration: 'none', border: '1px solid rgba(102, 252, 241, 0.3)', fontSize: '11px', textTransform: 'uppercase', transition: '0.2s' }}>
+                                            {lnk.label}
+                                        </a>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     )}
