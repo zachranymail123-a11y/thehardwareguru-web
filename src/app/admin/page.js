@@ -10,15 +10,17 @@ import {
   Download, Eye, Check, RotateCcw, Smartphone, Monitor, ArrowLeft, TrendingUp, Gamepad2, Star, Heart, Ghost, Brain,
   LineChart, ArrowUpRight, Info, BarChart3
 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+
+export const dynamic = 'force-dynamic';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V5.1 (BUILD FIX)
+ * GURU ULTIMATE COMMAND CENTER V5.2 (BUILD FIX)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
- * 🛡️ FIX 1: Opraven chybějící konec souboru (EOF syntax error), který shazoval Vercel build.
- * 🛡️ FIX 2: Uživatel vkládá data přes čistý JSON (šablona je předvyplněná). AI Auto-Fill odstraněn pro maximální spolehlivost.
- * 🛡️ FIX 3: Při vložení CPU nebo GPU administrace BLESKOVĚ vygeneruje všechny duely a upgrady proti zbytku databáze.
- * 🛡️ FIX 4: Okamžitý ověřovací odkaz zobrazen po úspěšném zápisu.
+ * 🛡️ FIX 1: Opraven Vercel prerender error (přidáno force-dynamic a ošetřen přístup k document v getEnv).
+ * 🛡️ FIX 2: Uživatel vkládá data přes čistý JSON.
+ * 🛡️ FIX 3: Při vložení CPU nebo GPU administrace vygeneruje duely (opraven slug fetch error).
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -26,7 +28,18 @@ const BASE_URL = "thehardwareguru.cz";
 
 // --- 🚀 GURU ENV ENGINE ---
 const getEnv = (key, fallback = '') => {
-  if (typeof window === 'undefined') return fallback;
+  // Ochrana před přístupem k DOMu během server-side buildu na Vercelu
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+      const envMap = {
+        'OPENAI_API_KEY': process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
+        'NEXT_PUBLIC_ADMIN_PASSWORD': 'Wifik500',
+        'NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL': process.env.NEXT_PUBLIC_MAKE_ARTICLE_WEBHOOK_URL || '',
+        'NEXT_PUBLIC_SUPABASE_URL': process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+        'NEXT_PUBLIC_SUPABASE_ANON_KEY': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+      };
+      return envMap[key] || fallback;
+  }
+
   const bridge = document.getElementById('guru-env-bridge');
   const bridgeMap = {
     'NEXT_PUBLIC_SUPABASE_URL': bridge?.getAttribute('data-url'),
