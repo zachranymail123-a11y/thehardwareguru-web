@@ -7,13 +7,14 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - V5.4 (GOLDEN RICH RESULTS + SEO SILOING)
+ * GURU GPU DUELS ENGINE - V5.5 (GOLDEN RICH RESULTS + UPGRADE SILOING)
  * Cesta: src/app/gpuvs/[slug]/page.js
  * 🚀 CÍL: 100% zelená v Google Search Console a budování Topical Authority.
  * 🛡️ FIX 1: Přidány TechArticle a Product schémata s 'offers', 'shippingDetails' a 'hasMerchantReturnPolicy'.
  * 🛡️ FIX 2: Image pole převedeno na Array ['url'], jak to vyžaduje GSC.
  * 🛡️ FIX 3: Oprava syntax erroru (justifyContent) při buildu na Vercelu.
- * 🛡️ FIX 4: Přidáno sémantické prolinkování - zobrazení souvisejících článků k daným grafikám a dalších duelů.
+ * 🛡️ FIX 4: Přidáno sémantické prolinkování (Related Articles a More Duels).
+ * 🛡️ FIX 5: Přidána masivní sekce "Analýza Upgradu" odkazující do /gpu-upgrade/.
  */
 
 export const runtime = "nodejs";
@@ -369,7 +370,7 @@ export default async function GpuVsDetailPage(props) {
         </header>
 
         {/* 🚀 UPGRADE RING */}
-        <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '60px' }}>
+        <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '50px' }}>
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid ${getVendorColor(gpuA.vendor)}`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
                 <span style={{ color: getVendorColor(gpuA.vendor), fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px' }}>{gpuA.vendor} GPU</span>
                 <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '15px 0 15px 0', lineHeight: '1.1' }}>{normalizeName(gpuA.name)}</h2>
@@ -390,6 +391,26 @@ export default async function GpuVsDetailPage(props) {
                 </a>
             </div>
         </div>
+
+        {/* 🚀 UPGRADE ANALYSIS BANNER */}
+        <section style={{ marginBottom: '60px' }}>
+            <div style={{ background: 'linear-gradient(135deg, rgba(102, 252, 241, 0.1) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(102, 252, 241, 0.3)', padding: '30px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', fontWeight: '950', textTransform: 'uppercase', fontSize: '12px', letterSpacing: '2px', marginBottom: '10px' }}>
+                        <ArrowUpCircle size={16} /> {isEn ? 'UPGRADE ANALYSIS' : 'ANALÝZA UPGRADU'}
+                    </div>
+                    <h3 style={{ fontSize: '1.8rem', fontWeight: '950', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase' }}>
+                        {isEn ? `WORTH UPGRADING TO ${normalizeName(winner.name)}?` : `VYPLATÍ SE UPGRADE NA ${normalizeName(winner.name)}?`}
+                    </h3>
+                    <p style={{ color: '#9ca3af', margin: 0, fontSize: '1.1rem', maxWidth: '600px' }}>
+                        {isEn ? `Find out if switching from ${normalizeName(loser.name)} makes sense for your setup and budget.` : `Zjisti, jestli dává přechod z ${normalizeName(loser.name)} smysl pro tvou sestavu a peněženku.`}
+                    </p>
+                </div>
+                <a href={isEn ? `/en/gpu-upgrade/${getSafeGpuSlug(loser)}-to-${getSafeGpuSlug(winner)}` : `/gpu-upgrade/${getSafeGpuSlug(loser)}-to-${getSafeGpuSlug(winner)}`} style={{ background: '#66fcf1', color: '#000', padding: '16px 30px', borderRadius: '16px', fontWeight: '950', textTransform: 'uppercase', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '10px', transition: '0.3s' }} className="guru-upgrade-btn">
+                    {isEn ? 'CALCULATE UPGRADE' : 'SPOČÍTAT UPGRADE'} <ArrowRight size={20} />
+                </a>
+            </div>
+        </section>
 
         {/* 🚀 DEEP LONG-FORM CONTENT */}
         <section style={{ marginBottom: '60px' }}>
@@ -552,6 +573,8 @@ export default async function GpuVsDetailPage(props) {
         .faq-card:hover { border-color: rgba(255, 0, 85, 0.3); background: rgba(255,255,255,0.04); }
         .faq-q { font-size: 1.15rem; font-weight: 950; color: #ff0055; margin: 0 0 10px 0; line-height: 1.4; }
         .faq-a { color: #9ca3af; line-height: 1.6; margin: 0; }
+
+        .guru-upgrade-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(102, 252, 241, 0.4); background: #fff !important; }
 
         /* 🚀 GURU SILOING STYLY */
         .related-card-style { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; text-decoration: none; transition: 0.3s; display: block; }
