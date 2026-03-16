@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Monitor, Cpu, Gamepad2, Zap, Loader2, CheckCircle2 } from 'lucide-react';
+import { Monitor, Cpu, Gamepad2, Zap, Loader2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -49,37 +49,33 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
     return (
         <div className="guru-calc-box">
-            <div className="guru-grid">
+            <div className="guru-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                 <div className="input-field">
-                    <label><Gamepad2 size={14} /> {isEn ? 'GAME' : 'HRA'}</label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '950', color: '#9ca3af', textTransform: 'uppercase' }}><Gamepad2 size={14} /> {isEn ? 'GAME' : 'HRA'}</label>
                     <select value={selectedGameSlug} onChange={(e) => setSelectedGameSlug(e.target.value)} className="guru-select">
                         <option value="">{isEn ? '-- Select --' : '-- Vyber hru --'}</option>
                         {games.map(g => <option key={g.id} value={g.slug}>{g.name}</option>)}
                     </select>
                 </div>
-
                 <div className="input-field">
-                    <label><Monitor size={14} /> {isEn ? 'RESOLUTION' : 'ROZLIŠENÍ'}</label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '950', color: '#9ca3af', textTransform: 'uppercase' }}><Monitor size={14} /> {isEn ? 'RES' : 'ROZLIŠENÍ'}</label>
                     <select value={selectedRes} onChange={(e) => setSelectedRes(e.target.value)} className="guru-select">
-                        <option value="1080p">1080p Full HD</option>
-                        <option value="1440p">1440p Quad HD</option>
-                        <option value="2160p">4K Ultra HD</option>
+                        <option value="1080p">1080p</option>
+                        <option value="1440p">1440p</option>
+                        <option value="2160p">4K</option>
                     </select>
                 </div>
-
                 <div className="input-field">
-                    <label><Zap size={14} /> GPU</label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '950', color: '#9ca3af', textTransform: 'uppercase' }}><Zap size={14} /> GPU</label>
                     <select value={selectedGpuId} onChange={(e) => setSelectedGpuId(e.target.value)} className="guru-select">
                         <option value="">{isEn ? '-- Select --' : '-- Vyber GPU --'}</option>
                         {gpus.map(g => <option key={g.id} value={g.id}>{g.vendor} {g.name}</option>)}
                     </select>
                 </div>
-
                 <div className="input-field">
-                    <label><Cpu size={14} /> CPU</label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '950', color: '#9ca3af', textTransform: 'uppercase' }}><Cpu size={14} /> CPU</label>
                     <select value={selectedCpuId} onChange={(e) => setSelectedCpuId(e.target.value)} className="guru-select">
                         <option value="">{isEn ? '-- Select --' : '-- Vyber CPU --'}</option>
-                        {/* GURU: TADY JE TO - POŽÍVÁME SLOUPCE VENDOR A NAME */}
                         {cpus.map(c => <option key={c.id} value={c.id}>{c.vendor} {c.name}</option>)}
                     </select>
                 </div>
@@ -93,21 +89,20 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             </div>
 
             {result && !isCalculating && (
-                <div className="result-area">
-                    <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase' }}>{isEn ? 'ESTIMATED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
+                <div style={{ marginTop: '40px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase' }}>{isEn ? 'EXPECTED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
                     <div style={{ fontSize: '6rem', fontWeight: '950', color: '#fff' }}>{result.fps > 0 ? `${result.fps} FPS` : 'N/A'}</div>
                 </div>
             )}
 
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-calc-box { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
-                .guru-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-                .input-field label { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 11px; font-weight: 950; color: #9ca3af; text-transform: uppercase; }
                 .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; appearance: none; cursor: pointer; }
-                .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; }
+                .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: 0.3s; }
+                .calc-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4); }
+                .calc-btn:disabled { opacity: 0.3; }
                 .animate-spin { animation: spin 1s linear infinite; }
                 @keyframes spin { 100% { transform: rotate(360deg); } }
-                .result-area { margin-top: 40px; text-align: center; }
             `}} />
         </div>
     );
