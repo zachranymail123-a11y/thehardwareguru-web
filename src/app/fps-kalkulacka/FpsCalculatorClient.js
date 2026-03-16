@@ -57,14 +57,16 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                         {games.map(g => <option key={g.id} value={g.slug}>{g.name}</option>)}
                     </select>
                 </div>
+
                 <div className="input-field">
-                    <label><Monitor size={14} /> {isEn ? 'RES' : 'ROZLIŠENÍ'}</label>
+                    <label><Monitor size={14} /> {isEn ? 'RESOLUTION' : 'ROZLIŠENÍ'}</label>
                     <select value={selectedRes} onChange={(e) => setSelectedRes(e.target.value)} className="guru-select">
-                        <option value="1080p">1080p</option>
-                        <option value="1440p">1440p</option>
-                        <option value="2160p">4K</option>
+                        <option value="1080p">1080p Full HD</option>
+                        <option value="1440p">1440p Quad HD</option>
+                        <option value="2160p">4K Ultra HD</option>
                     </select>
                 </div>
+
                 <div className="input-field">
                     <label><Zap size={14} /> GPU</label>
                     <select value={selectedGpuId} onChange={(e) => setSelectedGpuId(e.target.value)} className="guru-select">
@@ -72,10 +74,12 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                         {gpus.map(g => <option key={g.id} value={g.id}>{g.vendor} {g.name}</option>)}
                     </select>
                 </div>
+
                 <div className="input-field">
                     <label><Cpu size={14} /> CPU</label>
                     <select value={selectedCpuId} onChange={(e) => setSelectedCpuId(e.target.value)} className="guru-select">
                         <option value="">{isEn ? '-- Select --' : '-- Vyber CPU --'}</option>
+                        {/* GURU: TADY JE TO - POŽÍVÁME SLOUPCE VENDOR A NAME */}
                         {cpus.map(c => <option key={c.id} value={c.id}>{c.vendor} {c.name}</option>)}
                     </select>
                 </div>
@@ -90,6 +94,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
             {result && !isCalculating && (
                 <div className="result-area">
+                    <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase' }}>{isEn ? 'ESTIMATED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
                     <div style={{ fontSize: '6rem', fontWeight: '950', color: '#fff' }}>{result.fps > 0 ? `${result.fps} FPS` : 'N/A'}</div>
                 </div>
             )}
@@ -98,8 +103,8 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 .guru-calc-box { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
                 .guru-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
                 .input-field label { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 11px; font-weight: 950; color: #9ca3af; text-transform: uppercase; }
-                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; appearance: none; }
-                .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: 0.3s; }
+                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; appearance: none; cursor: pointer; }
+                .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; }
                 .animate-spin { animation: spin 1s linear infinite; }
                 @keyframes spin { 100% { transform: rotate(360deg); } }
                 .result-area { margin-top: 40px; text-align: center; }
