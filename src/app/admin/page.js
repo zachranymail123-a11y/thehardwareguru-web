@@ -15,7 +15,7 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V5.5 (AUTO-REBUILD & GOLDEN RICH)
+ * GURU ULTIMATE COMMAND CENTER V5.6 (HYPE RADAR FIX)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
  * 🛡️ FIX 1: Opraven Vercel prerender error (přidáno force-dynamic a ošetřen přístup k document v getEnv).
@@ -24,6 +24,7 @@ export const dynamic = 'force-dynamic';
  * 🛡️ FIX 4: Upraveny verifikační URL odkazy tak, aby exaktně seděly na reálnou strukturu (cpuvs, cpu-upgrade).
  * 🛡️ FIX 5: Zaveden plně automatický Vercel Rebuild ihned po zápisu do DB.
  * 🛡️ FIX 6: Aplikováno pravidlo Google Golden Rich.
+ * 🛡️ FIX 7: Hype Radar - opraveno načítání a parsování dat z /api/predictor, zabráněno "undefined".
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -129,11 +130,25 @@ export default function AdminApp() {
     try {
         const res = await fetch('/api/predictor');
         const json = await res.json();
-        if (json.success) {
-            setPredictorData(json.data);
-            addLog(`Skenování dokončeno. Top trend: ${json.data[0]?.game}`, "success");
+        
+        // 🚀 GURU FIX: Robustnější kontrola formátu vrácených dat
+        if (json && (json.success || Array.isArray(json))) {
+            const dataToSet = Array.isArray(json) ? json : (json.data || []);
+            setPredictorData(dataToSet);
+            
+            if (dataToSet.length > 0 && dataToSet[0].game) {
+                addLog(`Skenování dokončeno. Top trend: ${dataToSet[0].game}`, "success");
+            } else {
+                addLog(`Skenování dokončeno, ale pole s názvem hry chybí (zkontroluj výstup API).`, "warning");
+            }
+        } else {
+             addLog(`Predictor API nevrátilo platná data.`, "error");
+             setPredictorData([]);
         }
-    } catch (e) { addLog("Predictor selhal.", "error"); }
+    } catch (e) { 
+        addLog(`Predictor selhal: ${e.message}`, "error"); 
+        setPredictorData([]);
+    }
     finally { setPredictorLoading(false); }
   };
 
@@ -582,14 +597,14 @@ export default function AdminApp() {
             <div className="trend-grid">
                 {predictorData.map((item, i) => (
                     <div key={i} className="trend-card">
-                        <div className="score-badge">{item.trend_score}</div>
+                        <div className="score-badge">{item.trend_score || 'N/A'}</div>
                         <Gamepad2 color="#eab308" size={32} />
-                        <h3 style={{ fontSize: '18px', fontWeight: 950, margin: '15px 0' }}>{item.game}</h3>
+                        <h3 style={{ fontSize: '18px', fontWeight: 950, margin: '15px 0' }}>{item.game || item.name || 'Neznámá Hra'}</h3>
                         <div style={{ fontSize: '11px', color: '#4b5563', textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                            <span>Steam: {Math.round(item.steam_players)}</span>
-                            <span>Reddit: {item.reddit_mentions}</span>
+                            <span>Steam: {item.steam_players ? Math.round(item.steam_players) : 'N/A'}</span>
+                            <span>Reddit: {item.reddit_mentions || 'N/A'}</span>
                         </div>
-                        <button onClick={() => { setDbFormData({ name: item.game, slug: slugify(item.game), rawData: '' }); setDbTab('games'); setActiveTab('database'); }} style={{ width: '100%', marginTop: '10px', padding: '12px', background: '#eab30811', border: '1px solid #eab30833', color: '#eab308', fontWeight: '950', borderRadius: '12px', cursor: 'pointer', fontSize: '10px' }}>PŘEDVYPLNIT DATABÁZI</button>
+                        <button onClick={() => { setDbFormData({ name: item.game || item.name || '', slug: slugify(item.game || item.name || ''), rawData: '' }); setDbTab('games'); setActiveTab('database'); }} style={{ width: '100%', marginTop: '10px', padding: '12px', background: '#eab30811', border: '1px solid #eab30833', color: '#eab308', fontWeight: '950', borderRadius: '12px', cursor: 'pointer', fontSize: '10px' }}>PŘEDVYPLNIT DATABÁZI</button>
                     </div>
                 ))}
             </div>
