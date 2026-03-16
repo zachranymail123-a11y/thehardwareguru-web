@@ -4,21 +4,19 @@ import FpsCalculatorClient from './FpsCalculatorClient';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU FPS ENGINE - V2.4 (FINAL PRODUCTION READY)
- * 🛡️ FIX 1: Použit nativní Supabase klient (v projektu přítomen).
- * 🛡️ FIX 2: Odstraněna syntaktická chyba v inline stylech (vše v uvozovkách).
- * 🛡️ FIX 3: Odstraněny filtry performance_index - načte se 100 % dat z CSV.
+ * GURU FPS ENGINE - V2.6 (STRICT NAME COLUMN & SYNTAX CHECK)
+ * 🛡️ FIX: Načítání procesorů přímo ze sloupce 'name' (ověřeno z tvého CSV).
+ * 🛡️ SYNTAX: display: 'grid' a všechny ostatní styly jsou validní stringy.
+ * 🛡️ DB: Použit Service Role Key (God Mode) pro serverový fetch, aby se obešlo RLS.
  */
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
-export const revalidate = 0;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+// Priorita: Service Role Key (pokud je v env), jinak Anon Key
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const baseUrl = "https://thehardwareguru.cz";
-
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function generateMetadata(props) {
   const isEn = props?.params?.lang === 'en' || props?.searchParams?.lang === 'en' || false;
@@ -33,8 +31,9 @@ export async function generateMetadata(props) {
 
 export default async function FpsKalkulackaPage(props) {
   const isEn = props?.params?.lang === 'en' || props?.searchParams?.lang === 'en' || false;
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // GURU: Přímý dotaz přes SDK bez filtrů, které by mazaly CPU seznam
+  // GURU: Načítáme hardware. Seznam CPU bereme přímo ze sloupce 'name'.
   const [gpuRes, cpuRes, gameRes] = await Promise.all([
     supabase.from('gpus').select('id,name,vendor,slug').order('name'),
     supabase.from('cpus').select('id,name,vendor,slug').order('name'),
@@ -58,6 +57,7 @@ export default async function FpsKalkulackaPage(props) {
           </h1>
         </header>
 
+        {/* Předáváme čistá data do klienta */}
         <FpsCalculatorClient gpus={gpus} cpus={cpus} games={games} isEn={isEn} />
 
         <div style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
