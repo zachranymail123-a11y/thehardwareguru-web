@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU UPGRADE ENGINE - DETAIL V115.2 (STRICT STATIC SEO + SILOING FIX)
+ * GURU CPU UPGRADE ENGINE - DETAIL V115.3 (STRICT STATIC SEO + SILOING FIX)
  * Cesta: src/app/cpu-upgrade/[slug]/page.js
  * 🛡️ FIX 1: Absolutní Canonical URL a x-default v metadata.
  * 🛡️ FIX 2: Obohacené Product Schema pro obě CPU o 'offers' a 'aggregateRating'.
@@ -32,6 +32,7 @@ import {
  * 🛡️ FIX 4: Zákaz fallback renderingu (dynamicParams = false) a Build-time SSG.
  * 🛡️ FIX 5: Ochrana proti zobrazení 0 % u her, pokud chybí reálná FPS data v DB.
  * 🛡️ FIX 6: Přidáno masivní SEO prolinkování (Siloing) - Doporučení dalších upgradů a odkaz do Bottleneck Radaru.
+ * 🛡️ FIX 7: Oprava "ReferenceError: newCpu is not defined" při buildu.
  */
 
 export const runtime = "nodejs";
@@ -143,6 +144,7 @@ export default async function App({ params }) {
   if (!upgrade) notFound();
 
   const isEn = slug?.startsWith('en-');
+  // Zde opravujeme chybějící newCpu ponecháním originálních názvů bez aliasu (nebo s vhodným zástupcem)
   const { oldCpu: cpuA, newCpu: cpuB } = upgrade;
   const { diff: finalPerfDiff } = calculatePerf(cpuA, cpuB);
   const similarPromise = cpuA?.id ? getSimilarUpgrades(cpuA.id, upgrade.slug) : Promise.resolve([]);
@@ -299,7 +301,7 @@ export default async function App({ params }) {
                         <AlertTriangle size={16} /> {isEn ? 'BOTTLENECK WARNING' : 'POZOR NA BOTTLENECK'}
                     </div>
                     <h3 style={{ fontSize: '1.8rem', fontWeight: '950', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase' }}>
-                        {isEn ? `WILL YOUR GPU HANDLE THE ${normalizeName(newCpu.name)}?` : `ZVLÁDNE TVÁ GRAFIKA NOVÝ ${normalizeName(newCpu.name)}?`}
+                        {isEn ? `WILL YOUR GPU HANDLE THE ${normalizeName(cpuB.name)}?` : `ZVLÁDNE TVÁ GRAFIKA NOVÝ ${normalizeName(cpuB.name)}?`}
                     </h3>
                     <p style={{ color: '#9ca3af', margin: 0, fontSize: '1.1rem', maxWidth: '600px' }}>
                         {isEn ? `You are upgrading to a powerful processor. Make sure your current graphics card won't hold it back.` : `Kupuješ silný procesor. Zkontroluj si, jestli ho tvá současná grafická karta nebude zbytečně brzdit.`}
