@@ -22,12 +22,13 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU UPGRADE ENGINE - DETAIL V115.0 (STRICT STATIC SEO)
+ * GURU CPU UPGRADE ENGINE - DETAIL V115.1 (STRICT STATIC SEO & FPS FIX)
  * Cesta: src/app/cpu-upgrade/[slug]/page.js
- * 🛡️ FIX 1: Absolutní Canonical URL a x-default v metadata (dle ChatGPT).
+ * 🛡️ FIX 1: Absolutní Canonical URL a x-default v metadata.
  * 🛡️ FIX 2: Obohacené Product Schema pro obě CPU o 'offers' a 'aggregateRating'.
  * 🛡️ FIX 3: Revalidate 86400s a plná podpora Next.js 15 (await params).
  * 🛡️ FIX 4: Zákaz fallback renderingu (dynamicParams = false) a Build-time SSG.
+ * 🛡️ FIX 5: Ochrana proti zobrazení 0 % u her, pokud chybí reálná FPS data v DB.
  */
 
 export const runtime = "nodejs";
@@ -191,8 +192,16 @@ export default async function App({ params }) {
   const warzoneDiff = calcSafeDiff(fpsA?.warzone_1440p, fpsB?.warzone_1440p);
   const starfieldDiff = calcSafeDiff(fpsA?.starfield_1440p, fpsB?.starfield_1440p);
   
-  const diffs = [cyberpunkDiff, warzoneDiff, starfieldDiff].filter(v => Number.isFinite(v) && v !== 0);
-  const avgDiff = diffs.length ? Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length) : 0;
+  // Ochrana před zobrazením chybějících (0%) dat
+  const gameStats = [
+      { label: 'CYBERPUNK 2077', diff: cyberpunkDiff },
+      { label: 'WARZONE', diff: warzoneDiff },
+      { label: 'STARFIELD', diff: starfieldDiff }
+  ].filter(item => Number.isFinite(item.diff) && item.diff !== 0);
+
+  const avgDiff = gameStats.length ? Math.round(gameStats.reduce((acc, curr) => acc + curr.diff, 0) / gameStats.length) : 0;
+  const hasValidFpsData = gameStats.length > 0;
+  
   const isWorthIt = (cpuB?.performance_index || 0) > (cpuA?.performance_index || 0);
 
   // 🚀 ZLATÁ GSC SEO SCHÉMATA (Root Level)
@@ -266,14 +275,12 @@ export default async function App({ params }) {
             </div>
         </div>
 
-        {Object.keys(fpsA || {}).length > 0 && (
+        {hasValidFpsData && (
             <section style={{ marginBottom: '60px' }}>
                 <div className="content-box-style" style={{ borderLeft: '6px solid #f59e0b' }}>
                     <h2 className="section-h2" style={{ color: '#f59e0b', border: 'none', padding: 0 }}><BarChart3 size={28} style={{ display: 'inline', marginRight: '10px' }} /> {isEn ? 'GAMING PERFORMANCE GAIN' : 'NÁRŮST HERNÍHO VÝKONU'}</h2>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '30px' }}>
-                        {[
-                          { label: 'CYBERPUNK 2077', diff: cyberpunkDiff }, { label: 'WARZONE', diff: warzoneDiff }, { label: 'STARFIELD', diff: starfieldDiff }
-                        ].map((item, i) => (
+                        {gameStats.map((item, i) => (
                             <div key={i} className="summary-item">
                                 <span className="summary-label">{item.label}</span>
                                 <div className="summary-val" style={{ color: item.diff >= 0 ? '#f59e0b' : '#ef4444' }}>{item.diff > 0 ? `+${item.diff}` : item.diff} %</div>
