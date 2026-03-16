@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { 
   Rocket, Settings, Globe, Search, Database, CalendarClock, 
   ShoppingCart, Activity, ShieldCheck, Zap, AlertTriangle, 
@@ -302,11 +301,14 @@ export default function AdminApp() {
     try {
         if (dbTab === 'cpu') {
             addLog(`Generuji všechny možné duely a upgrady pro procesor ${payload.name}...`, 'warning');
-            const { data: allCpus } = await supabase.from('cpus').select('id, name, slug').neq('id', insertedItem.id);
+            // OPRAVA: Odstraněno selectování neexistujícího sloupce 'slug', přidáno logování chyby dotazu
+            const { data: allCpus, error: cpuSelectErr } = await supabase.from('cpus').select('id, name').neq('id', insertedItem.id);
             
+            if (cpuSelectErr) addLog(`CHYBA čtení existujících CPU: ${cpuSelectErr.message}`, 'error');
+
             if (allCpus && allCpus.length > 0) {
                 const duelsToInsert = allCpus.map(c => {
-                    const cSlug = c.slug || slugify(c.name);
+                    const cSlug = slugify(c.name);
                     const dSlug = `${safeSlug}-vs-${cSlug}`;
                     return {
                         slug: dSlug,
@@ -324,7 +326,7 @@ export default function AdminApp() {
                 if (dErr) addLog(`CHYBA zápisu duelů: ${dErr.message}`, 'error');
 
                 const upgradesToInsert = allCpus.map(c => {
-                    const cSlug = c.slug || slugify(c.name);
+                    const cSlug = slugify(c.name);
                     const uSlug = `${cSlug}-to-${safeSlug}`;
                     return {
                         slug: uSlug,
@@ -345,7 +347,7 @@ export default function AdminApp() {
                 addLog(`Vytvořeno ${duelsToInsert.length} duelů a ${upgradesToInsert.length} upgradů!`, 'success');
 
                 const randomOtherCpu = allCpus[0];
-                const rSlug = randomOtherCpu.slug || slugify(randomOtherCpu.name);
+                const rSlug = slugify(randomOtherCpu.name);
                 
                 verificationLinks = [
                     { label: '🔥 PROFIL', url: `/cpu/${safeSlug}` },
@@ -357,11 +359,14 @@ export default function AdminApp() {
             }
         } else if (dbTab === 'gpu') {
             addLog(`Generuji všechny možné duely a upgrady pro grafiku ${payload.name}...`, 'warning');
-            const { data: allGpus } = await supabase.from('gpus').select('id, name, slug').neq('id', insertedItem.id);
+            // OPRAVA: Pro maximální robustnost selectujeme jen to nejnutnější
+            const { data: allGpus, error: gpuSelectErr } = await supabase.from('gpus').select('id, name').neq('id', insertedItem.id);
             
+            if (gpuSelectErr) addLog(`CHYBA čtení existujících GPU: ${gpuSelectErr.message}`, 'error');
+
             if (allGpus && allGpus.length > 0) {
                 const duelsToInsert = allGpus.map(g => {
-                    const gSlug = g.slug || slugify(g.name);
+                    const gSlug = slugify(g.name);
                     const dSlug = `${safeSlug}-vs-${gSlug}`;
                     return {
                         slug: dSlug,
@@ -379,7 +384,7 @@ export default function AdminApp() {
                 if (dErr) addLog(`CHYBA zápisu duelů: ${dErr.message}`, 'error');
 
                 const upgradesToInsert = allGpus.map(g => {
-                    const gSlug = g.slug || slugify(g.name);
+                    const gSlug = slugify(g.name);
                     const uSlug = `${gSlug}-to-${safeSlug}`;
                     return {
                         slug: uSlug,
@@ -400,7 +405,7 @@ export default function AdminApp() {
                 addLog(`Vytvořeno ${duelsToInsert.length} duelů a ${upgradesToInsert.length} upgradů!`, 'success');
 
                 const randomOtherGpu = allGpus[0];
-                const rSlug = randomOtherGpu.slug || slugify(randomOtherGpu.name);
+                const rSlug = slugify(randomOtherGpu.name);
                 
                 verificationLinks = [
                     { label: '🔥 PROFIL', url: `/gpu/${safeSlug}` },
