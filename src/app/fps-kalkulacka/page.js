@@ -3,10 +3,10 @@ import { Gamepad2, Info, Activity, Monitor, Cpu, TrendingUp } from 'lucide-react
 import FpsCalculatorClient from './FpsCalculatorClient';
 
 /**
- * GURU FPS ENGINE - V1.0 (SEO MAGNET & CAN I RUN IT)
+ * GURU FPS ENGINE - V1.1 (SEO MAGNET + PROXY READY)
  * Cesta: src/app/fps-kalkulacka/page.js
  * 🚀 CÍL: Generovat obří traffic na dotazy "FPS Calculator" a "Rozjedu to".
- * 🛡️ ARCH: Server komponenta předvyplní data ze Supabase nativním fetchem (SEO) a předá je klientské kalkulačce.
+ * 🛡️ ARCH: Server komponenta s automatickou detekcí jazyka pro EN proxy.
  */
 
 export const dynamic = 'force-dynamic';
@@ -17,10 +17,17 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const baseUrl = "https://thehardwareguru.cz";
 
-export async function generateMetadata() {
+export async function generateMetadata(props) {
+  // Detekce jazyka pro metadata (funguje pro params i proxy export)
+  const isEn = props?.params?.lang === 'en' || false;
+
   return {
-    title: 'FPS Kalkulačka 2026: Rozjedu to? (Can I Run It) | The Hardware Guru',
-    description: 'Zjistěte přesně, na kolik FPS rozjedete hry jako Cyberpunk 2077 nebo Warzone. Náš GURU FPS Engine analyzuje výkon vaší grafické karty a procesoru.',
+    title: isEn 
+        ? 'FPS Calculator 2026: Can I Run It? | The Hardware Guru'
+        : 'FPS Kalkulačka 2026: Rozjedu to? (Can I Run It) | The Hardware Guru',
+    description: isEn
+        ? 'Find out exactly how many FPS you can get in modern games. Our GURU FPS Engine analyzes your GPU and CPU performance.'
+        : 'Zjistěte přesně, na kolik FPS rozjedete hry jako Cyberpunk 2077 nebo Warzone. Náš GURU FPS Engine analyzuje výkon vaší grafické karty a procesoru.',
     alternates: {
       canonical: `${baseUrl}/fps-kalkulacka`,
       languages: {
@@ -51,10 +58,11 @@ const fetchDatabase = async () => {
     }
 };
 
-const getRelatedArticles = async () => {
+const getRelatedArticles = async (isEn) => {
     if (!supabaseUrl) return [];
     try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,slug,created_at,image_url&or=(title.ilike.%fps%,title.ilike.%výkon%,type.eq.hardware)&order=created_at.desc&limit=3`, {
+        const query = isEn ? 'title_en.ilike.%fps%,title_en.ilike.%performance%' : 'title.ilike.%fps%,title.ilike.%výkon%';
+        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(${query},type.eq.hardware)&order=created_at.desc&limit=3`, {
             headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, cache: 'no-store'
         });
         if (res.ok) return await res.json();
@@ -62,36 +70,21 @@ const getRelatedArticles = async () => {
     } catch (e) { return []; }
 };
 
-export default async function FpsKalkulackaPage() {
+export default async function FpsKalkulackaPage(props) {
+  // GURU: Tato logika automaticky rozpozná, zda přicházíme z /en/ proxy
+  const isEn = props?.params?.lang === 'en' || false;
+  
   const { gpus, cpus } = await fetchDatabase();
-  const relatedArticles = await getRelatedArticles();
+  const relatedArticles = await getRelatedArticles(isEn);
 
-  // 🚀 ZLATÉ SCHÉMA PRO APLIKACE (Přitahuje Rich Snippets)
   const softwareSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "GURU FPS Engine",
     "operatingSystem": "WebBrowser",
     "applicationCategory": "UtilityApplication",
-    "description": "Zjišťuje herní výkon (FPS) pro libovolnou kombinaci procesoru a grafické karty.",
+    "description": isEn ? "Calculates gaming performance (FPS) for any combination of CPU and GPU." : "Zjišťuje herní výkon (FPS) pro libovolnou kombinaci procesoru a grafické karty.",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-  };
-
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "Jak funguje FPS Kalkulačka (Rozjedu to)?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Naše kalkulačka porovnává reálná testovací data vaší vybrané grafické karty a procesoru. Výsledné FPS je určeno tou komponentou, která je slabší (tzv. bottleneck)." }
-      },
-      {
-        "@type": "Question",
-        "name": "Je nástroj Can I Run It přesný?",
-        "acceptedAnswer": { "@type": "Answer", "text": "Ano, GURU FPS Engine čerpá ze stovek hodin reálných benchmarků. Výsledky odpovídají hraní na vysoké/ultra detaily v daném rozlišení." }
-      }
-    ]
   };
 
   const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
@@ -100,7 +93,6 @@ export default async function FpsKalkulackaPage() {
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(softwareSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
 
       <main style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
@@ -109,30 +101,32 @@ export default async function FpsKalkulackaPage() {
             <Gamepad2 size={16} /> GURU FPS ENGINE
           </div>
           <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
-            FPS <span style={{ color: '#a855f7', textShadow: '0 0 30px rgba(168, 85, 247, 0.5)' }}>KALKULAČKA</span>
+            FPS <span style={{ color: '#a855f7', textShadow: '0 0 30px rgba(168, 85, 247, 0.5)' }}>{isEn ? 'CALCULATOR' : 'KALKULAČKA'}</span>
           </h1>
           <p style={{ color: '#9ca3af', fontSize: '1.2rem', maxWidth: '700px', margin: '20px auto 0' }}>
-            Vyberte si hru, rozlišení a svůj hardware. Zjistěte okamžitě, jestli to rozjedete, nebo je čas na upgrade.
+            {isEn 
+                ? 'Select your game, resolution, and hardware. Find out instantly if you can run it or if it\'s time for an upgrade.' 
+                : 'Vyberte si hru, rozlišení a svůj hardware. Zjistěte okamžitě, jestli to rozjedete, nebo je čas na upgrade.'}
           </p>
         </header>
 
         {/* 🚀 KLIENTSKÁ INTERAKTIVNÍ ČÁST */}
-        <FpsCalculatorClient gpus={gpus} cpus={cpus} />
+        <FpsCalculatorClient gpus={gpus} cpus={cpus} isEn={isEn} />
 
         {/* 🚀 GURU SILOING: SOUVISEJÍCÍ ČLÁNKY */}
         {relatedArticles.length > 0 && (
             <section style={{ marginTop: '80px' }}>
                 <h2 style={{ color: '#fff', fontSize: '1.8rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #a855f7', paddingLeft: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Info size={28} color="#a855f7" /> JAK ZVÝŠIT FPS? (TIPY A TRIKY)
+                    <Info size={28} color="#a855f7" /> {isEn ? 'HOW TO INCREASE FPS?' : 'JAK ZVÝŠIT FPS? (TIPY A TRIKY)'}
                 </h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
                     {relatedArticles.map((art) => (
-                        <a key={art.slug} href={`/clanky/${art.slug}`} className="related-article-card">
+                        <a key={art.slug} href={isEn ? `/en/clanky/${art.slug_en || art.slug}` : `/clanky/${art.slug}`} className="related-article-card">
                             <div className="related-img-wrapper">
-                                <img src={art.image_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000'} alt={art.title} loading="lazy" />
+                                <img src={art.image_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000'} alt={isEn ? art.title_en : art.title} loading="lazy" />
                             </div>
                             <div className="related-content">
-                                <h3 className="related-title">{art.title}</h3>
+                                <h3 className="related-title">{isEn && art.title_en ? art.title_en : art.title}</h3>
                             </div>
                         </a>
                     ))}
@@ -142,18 +136,18 @@ export default async function FpsKalkulackaPage() {
 
         {/* 🚀 GURU SILOING: ROZCESTNÍK */}
         <div style={{ marginTop: '60px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
-            <a href="/gpu-index" className="silo-banner-card" style={{ borderLeftColor: '#66fcf1' }}>
+            <a href={isEn ? "/en/gpu-index" : "/gpu-index"} className="silo-banner-card" style={{ borderLeftColor: '#66fcf1' }}>
                 <div className="silo-banner-icon" style={{ color: '#66fcf1', background: '#66fcf120' }}><Monitor size={28} /></div>
                 <div className="silo-banner-text">
-                    <h4>KATALOG GRAFIK</h4>
-                    <p>Porovnejte výkon všech grafických karet na trhu.</p>
+                    <h4>{isEn ? 'GPU DATABASE' : 'KATALOG GRAFIK'}</h4>
+                    <p>{isEn ? 'Compare performance of all graphics cards.' : 'Porovnejte výkon všech grafických karet na trhu.'}</p>
                 </div>
             </a>
-            <a href="/cpu-index" className="silo-banner-card" style={{ borderLeftColor: '#f59e0b' }}>
+            <a href={isEn ? "/en/cpu-index" : "/cpu-index"} className="silo-banner-card" style={{ borderLeftColor: '#f59e0b' }}>
                 <div className="silo-banner-icon" style={{ color: '#f59e0b', background: '#f59e0b20' }}><Cpu size={28} /></div>
                 <div className="silo-banner-text">
-                    <h4>KATALOG PROCESORŮ</h4>
-                    <p>Najděte ten nejlepší procesor k vaší grafice.</p>
+                    <h4>{isEn ? 'CPU DATABASE' : 'KATALOG PROCESORŮ'}</h4>
+                    <p>{isEn ? 'Find the best processor for your rig.' : 'Najděte ten nejlepší procesor k vaší grafice.'}</p>
                 </div>
             </a>
         </div>
