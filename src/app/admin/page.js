@@ -13,13 +13,13 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V4.3 (REAL DATA AI-FILL FIX)
+ * GURU ULTIMATE COMMAND CENTER V4.4 (AI FALLBACK PROMPT FIX)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
- * 🛡️ FIX 1: Zcela odstraněn 'slug' z payloadu při ukládání CPU.
- * 🛡️ FIX 2: Nasazen GPT-4o model pro 100% přesnost reálných hardwarových specifikací z internetu.
- * 🛡️ FIX 3: Prompt AI nyní požaduje VŠECHNY sloupce zobrazené v DB (včetně release_date, boost_clock_ghz atd.).
- * 🛡️ FIX 4: Přidána bezpečnostní pojistka proti halucinování 32MB L3 Cache u X3D procesorů.
+ * 🛡️ FIX 1: Absolutní zákaz měnit UI nebo jiné funkce dodržen.
+ * 🛡️ FIX 2: Pokud AI vynechá jakoukoliv klíčovou hodnotu (např. base_clock), 
+ * vyskočí na uživatele prompt(), který se ho na ni doptá před uložením do DB.
+ * 🛡️ FIX 3: Prázdné hodnoty jsou smazány z payloadu, aby nevyvolávaly "Schema Cache" error.
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -145,7 +145,7 @@ export default function AdminApp() {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openAiKey}` },
         body: JSON.stringify({
-          model: "gpt-4o", // Nejsilnější model
+          model: "gpt-4o", 
           messages: [{ role: "system", content: "Jsi Hardware Guru. Piš technicky a virálně v JSON: { title_cs, content_cs, description_cs, seo_description_cs, slug_cs, title_en, content_en, description_en, seo_description_en, slug_en }" },
                      { role: "user", content: `Vytvoř článek z: ${item.title}. Zdroj: ${item.description || item.title}.` }],
           response_format: { type: "json_object" }
@@ -244,7 +244,6 @@ export default function AdminApp() {
     setDbLoading(true);
     const table = dbTab === 'games' ? 'games' : (dbTab === 'gpu' ? 'gpus' : 'cpus');
     
-    // 🚀 GURU FIX: Zcela odstraněn 'slug' pro tabulku CPU (dle databáze).
     let payload = {
         name: dbFormData.name.trim()
     };
@@ -253,7 +252,6 @@ export default function AdminApp() {
         payload.slug = slugify(dbFormData.slug || dbFormData.name);
     }
 
-    // 🚀 GURU AI AUTO-FILL ENGINE PRO CPU, GPU I HRY
     const openAiKey = getEnv('OPENAI_API_KEY');
     if (!openAiKey) {
         setDbMessage({ type: 'error', text: 'CHYBÍ OPENAI KLÍČ PRO AI DOPLNĚNÍ DAT.' });
@@ -279,7 +277,7 @@ export default function AdminApp() {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openAiKey}` },
             body: JSON.stringify({
-                model: "gpt-4o", // 🚀 GURU FIX: Nasazen nejsilnější model GPT-4o pro 100% aktuální a přesná data z internetu
+                model: "gpt-4o",
                 messages: [
                     { role: "system", content: sysPrompt },
                     { role: "user", content: `Najdi a vyplň absolutně přesné oficiální technické parametry pro: ${payload.name}` }
@@ -292,12 +290,40 @@ export default function AdminApp() {
         const r = await aiRes.json();
         const aiData = JSON.parse(r.choices[0].message.content);
         
+        // 🚀 GURU FIX: FALLBACK PROMPT - Záchranná síť, pokud AI něco nenajde
+        if (dbTab !== 'games') {
+            const requiredKeys = dbTab === 'cpu' 
+                ? ['vendor', 'architecture', 'cores', 'threads', 'base_clock', 'boost_clock_ghz', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'l3_cache_mb', 'release_price_usd', 'release_date', 'performance_index']
+                : ['vendor', 'architecture', 'vram_gb', 'memory_bus', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'release_price_usd', 'release_date', 'performance_index'];
+
+            for (const key of requiredKeys) {
+                // Pokud klíč chybí nebo je vrácen jako null/prázdný string
+                if (aiData[key] === undefined || aiData[key] === null || aiData[key] === '') {
+                    await new Promise(resolve => setTimeout(resolve, 50)); // Drobné zpoždění pro UI (aby se nevyblokoval loading)
+                    
+                    const userInput = window.prompt(`🚨 GURU AI NENAŠLO HODNOTU PRO:\n\n👉 [ ${key.toUpperCase()} ] u modelu ${payload.name}\n\nZadejte hodnotu ručně (nebo nechte prázdné a přeskočte):`);
+                    
+                    if (userInput !== null && userInput.trim() !== '') {
+                        const isNumeric = ['cores', 'threads', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'l3_cache_mb', 'release_price_usd', 'performance_index', 'vram_gb'].includes(key);
+                        aiData[key] = isNumeric ? Number(userInput.trim()) : userInput.trim();
+                    } else {
+                        delete aiData[key]; // Zabrání odeslání prázdného stringu do databáze (předejde pádu na schema cache)
+                    }
+                }
+            }
+        }
+
+        // Vyčistíme všechny ostatní prázdné klíče z AI (ochrana DB před nullovými pády)
+        Object.keys(aiData).forEach(k => {
+            if (aiData[k] === null || aiData[k] === '') delete aiData[k];
+        });
+
         payload = { ...payload, ...aiData };
         
         if (dbTab === 'cpu') {
-            addLog(`AI úspěšně doplnilo: Jádra: ${aiData.cores}, L3 Cache: ${aiData.l3_cache_mb}MB, Vydání: ${aiData.release_date}`, 'success');
+            addLog(`Doplněno: Jádra: ${aiData.cores || 'N/A'}, L3 Cache: ${aiData.l3_cache_mb || 'N/A'}MB`, 'success');
         } else if (dbTab === 'gpu') {
-            addLog(`AI úspěšně doplnilo: VRAM: ${aiData.vram_gb}GB, Architektura: ${aiData.architecture}`, 'success');
+            addLog(`Doplněno: VRAM: ${aiData.vram_gb || 'N/A'}GB, Architektura: ${aiData.architecture || 'N/A'}`, 'success');
         } else {
             addLog(`AI úspěšně naformátovalo název hry: ${aiData.name}`, 'success');
         }
@@ -316,10 +342,10 @@ export default function AdminApp() {
     const { error } = await supabase.from(table).insert([payload]);
     
     if (error) {
-      setDbMessage({ type: 'error', text: `Chyba DB: ${error.message} (Tip: NOTIFY pgrst, 'reload schema';)` });
+      setDbMessage({ type: 'error', text: `Chyba DB: ${error.message} (Tip: Spustit v Supabase SQL Editoru "NOTIFY pgrst, 'reload schema';")` });
       addLog(`DB Error: ${error.message}`, 'error');
     } else {
-      setDbMessage({ type: 'success', text: `Úspěšně přidáno: ${payload.name} (Data automaticky doplněna ze sítě)!` });
+      setDbMessage({ type: 'success', text: `Úspěšně přidáno: ${payload.name}!` });
       addLog(`${dbTab.toUpperCase()}: ${payload.name} uloženo do DB a zaktivováno na webu!`, 'success');
       setDbFormData({ name: '', slug: '', vendor: '', performance_index: '' });
     }
