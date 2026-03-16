@@ -2,12 +2,13 @@ import React from 'react';
 import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu } from 'lucide-react';
 
 /**
- * GURU HOMEPAGE V15.4 - FULL SSR & GOLDEN RICH RESULTS FIX
+ * GURU HOMEPAGE V15.5 - FULL SSR & GOLDEN RICH RESULTS FIX
  * Cesta: src/app/page.js
  * 🛡️ FIX 1: Komponenta next/image odstraněna kvůli chybám při kompilaci v aktuálním prostředí.
  * 🛡️ FIX 2: Změněno z "use client" na asynchronní Server Component pro 100% SEO indexaci Googlem.
  * 🛡️ FIX 3: Odstraněno serverové volání increment_total_visits (zamezení nafukování statistik z crawlerů).
  * 🛡️ FIX 4: Opraven format WebSite (EntryPoint) a přidáno masivní FAQ schema pro Brand SEO.
+ * 🛡️ FIX 5: Přidáno tlačítko "SOUBOJE CPU" do Hero sekce a odkaz na "VŠECHNY ČLÁNKY" do sekce článků.
  */
 
 const LEAK_PLACEHOLDER_URL = 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000';
@@ -193,6 +194,9 @@ export default async function HomePage({ params }) {
         .social-btn-main.duels { background: rgba(255, 0, 85, 0.1); color: #ff0055; border-color: rgba(255, 0, 85, 0.3); }
         .social-btn-main.duels:hover { background: #ff0055; color: #fff; box-shadow: 0 10px 25px rgba(255, 0, 85, 0.4); transform: translateY(-3px); }
 
+        .social-btn-main.cpuduels { background: rgba(102, 252, 241, 0.1); color: #66fcf1; border-color: rgba(102, 252, 241, 0.3); }
+        .social-btn-main.cpuduels:hover { background: #66fcf1; color: #000; box-shadow: 0 10px 25px rgba(102, 252, 241, 0.4); transform: translateY(-3px); }
+
         .social-btn-main.deals { background: rgba(249, 115, 22, 0.1); color: #f97316; border-color: rgba(249, 115, 22, 0.3); }
         .social-btn-main.deals:hover { background: #f97316; color: #fff; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4); transform: translateY(-3px); }
 
@@ -254,6 +258,7 @@ export default async function HomePage({ params }) {
         @media (max-width: 768px) {
           .guru-hero-section { padding: 40px 20px; text-align: center; justify-content: center; }
           .guru-hero-avatar { margin: 0 auto 30px; }
+          .social-btn-main { width: 100%; }
         }
       `}</style>
 
@@ -280,6 +285,7 @@ export default async function HomePage({ params }) {
             <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
               <a href="https://kick.com/thehardwareguru" target="_blank" rel="noreferrer" className="social-btn-main live"><Activity size={18}/> {isEn ? 'LIVE' : 'SLEDOVAT LIVE'}</a>
               <a href={isEn ? "/en/gpuvs" : "/gpuvs"} className="social-btn-main duels"><Swords size={18}/> {isEn ? 'GPU BATTLES' : 'SOUBOJE GPU'}</a>
+              <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="social-btn-main cpuduels"><Cpu size={18}/> {isEn ? 'CPU BATTLES' : 'SOUBOJE CPU'}</a>
               <a href={isEn ? "/en/deals" : "/cs/deals"} className="social-btn-main deals"><Flame size={18}/> {isEn ? 'GAME DEALS' : 'SLEVY NA HRY'}</a>
               <a href={isEn ? "/en/support" : "/support"} className="social-btn-main support"><Heart size={18}/> {isEn ? 'SUPPORT' : 'PODPOŘIT GURU'}</a>
               
@@ -511,11 +517,18 @@ export default async function HomePage({ params }) {
         </section>
       )}
 
-      {/* ČLÁNKY */}
+      {/* ČLÁNKY (🚀 GURU FIX: PŘIDÁN LINK "VŠECHNY ČLÁNKY") */}
       {data.posts.length > 0 && (
         <main style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px', marginTop: '80px' }}>
-          <div className="section-title-wrapper" style={{ margin: '0 auto 40px', display: 'block', textAlign: 'center', maxWidth: 'fit-content' }}>
-            <h2 style={{ color: '#fff', fontSize: '2.2rem', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>{isEn ? 'Latest Articles & Videos' : 'Nejnovější články & Videa'}</h2>
+          <div className="section-title-wrapper" style={{ marginBottom: '40px', borderColor: 'rgba(102, 252, 241, 0.2)', width: '100%', boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+              <h2 style={{ color: '#fff', fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>
+                {isEn ? 'Latest Articles & Videos' : 'Nejnovější články & Videa'}
+              </h2>
+              <a href={isEn ? "/en/clanky" : "/clanky"} style={{ color: '#66fcf1', fontWeight: 'bold', textDecoration: 'none', textTransform: 'uppercase', fontSize: '14px' }}>
+                {isEn ? 'ALL ARTICLES →' : 'VŠECHNY ČLÁNKY →'}
+              </a>
+            </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(320px, 1fr))`, gap: '30px' }}>
             {data.posts.map((post, idx) => {
