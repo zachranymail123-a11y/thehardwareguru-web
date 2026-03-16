@@ -76,6 +76,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '950', color: '#9ca3af', textTransform: 'uppercase' }}><Cpu size={14} /> CPU</label>
                     <select value={selectedCpuId} onChange={(e) => setSelectedCpuId(e.target.value)} className="guru-select">
                         <option value="">{isEn ? '-- Select --' : '-- Vyber CPU --'}</option>
+                        {/* Načítání procesorů ze sloupce name */}
                         {cpus.map(c => <option key={c.id} value={c.id}>{c.vendor} {c.name}</option>)}
                     </select>
                 </div>
@@ -90,17 +91,14 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
             {result && !isCalculating && (
                 <div style={{ marginTop: '40px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase' }}>{isEn ? 'EXPECTED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
                     <div style={{ fontSize: '6rem', fontWeight: '950', color: '#fff' }}>{result.fps > 0 ? `${result.fps} FPS` : 'N/A'}</div>
                 </div>
             )}
 
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-calc-box { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
-                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; appearance: none; cursor: pointer; }
-                .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: 0.3s; }
-                .calc-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4); }
-                .calc-btn:disabled { opacity: 0.3; }
+                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; appearance: none; }
+                .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; }
                 .animate-spin { animation: spin 1s linear infinite; }
                 @keyframes spin { 100% { transform: rotate(360deg); } }
             `}} />
