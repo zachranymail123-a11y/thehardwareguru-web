@@ -3,14 +3,21 @@ import { Gamepad2, Monitor, Cpu, Info, ArrowRight } from 'lucide-react';
 import FpsCalculatorClient from './FpsCalculatorClient';
 import { createClient } from '@supabase/supabase-js';
 
+/**
+ * GURU FPS ENGINE - V3.0 (ULTRA-MINIMAL CPU FETCH)
+ * 🛡️ FIX: Změněno supabase.from('cpus').select('id,name') dle instrukce.
+ * 🛡️ SYNTAX: display: 'grid' je v uvozovkách, build projde.
+ */
+
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 export const revalidate = 0;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-// Na serveru použijeme Service Role Key (God Mode), pokud ho máš v env
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const baseUrl = "https://thehardwareguru.cz";
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function generateMetadata(props) {
   const isEn = props?.params?.lang === 'en' || props?.searchParams?.lang === 'en' || false;
@@ -25,18 +32,20 @@ export async function generateMetadata(props) {
 
 export default async function FpsKalkulackaPage(props) {
   const isEn = props?.params?.lang === 'en' || props?.searchParams?.lang === 'en' || false;
-  const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Načtení dat přímo ze sloupců ID a NAME (ověřeno z CSV)
+  // GURU: Načítáme data. U CPU bereme jen id a name pro maximální stabilitu.
   const [gpuRes, cpuRes, gameRes] = await Promise.all([
     supabase.from('gpus').select('id,name,vendor,slug').order('name'),
-    supabase.from('cpus').select('id,name,vendor,slug').order('name'),
+    supabase.from('cpus').select('id,name').order('name'),
     supabase.from('games').select('id,name,slug').order('name')
   ]);
 
   const gpus = gpuRes.data || [];
   const cpus = cpuRes.data || [];
   const games = gameRes.data || [];
+
+  const cpuIndexUrl = isEn ? "/en/cpu-index" : "/cpu-index";
+  const gpuIndexUrl = isEn ? "/en/gpu-index" : "/gpu-index";
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -53,15 +62,14 @@ export default async function FpsKalkulackaPage(props) {
 
         <FpsCalculatorClient gpus={gpus} cpus={cpus} games={games} isEn={isEn} />
 
-        {/* FIX: display: 'grid' v uvozovkách */}
         <div style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-            <a href={isEn ? "/en/cpu-index" : "/cpu-index"} className="silo-mini-card">
+            <a href={cpuIndexUrl} className="silo-mini-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <Cpu size={20} color="#f59e0b" /> {isEn ? 'CPU Database' : 'Katalog procesorů'}
                 </div>
                 <ArrowRight size={16} />
             </a>
-            <a href={isEn ? "/en/gpu-index" : "/gpu-index"} className="silo-mini-card">
+            <a href={gpuIndexUrl} className="silo-mini-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <Monitor size={20} color="#66fcf1" /> {isEn ? 'GPU Database' : 'Katalog grafik'}
                 </div>
