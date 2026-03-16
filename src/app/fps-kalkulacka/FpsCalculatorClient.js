@@ -2,10 +2,20 @@
 
 import React, { useState } from 'react';
 import { Monitor, Cpu, Gamepad2, Zap, Loader2, CheckCircle2 } from 'lucide-react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@supabase/supabase-js';
+
+/**
+ * GURU FPS ENGINE CLIENT - V1.7 (BUILD FIX)
+ * 🛡️ FIX: Odstraněna neexistující knihovna @supabase/auth-helpers-nextjs.
+ * 🛡️ FIX: Použit standardní @supabase/supabase-js kompatibilní s tvým package.json.
+ */
+
+// Inicializace klienta přímo pro prohlížeč
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], isEn = false }) {
-    const supabase = createClientComponentClient();
     const [selectedGameSlug, setSelectedGameSlug] = useState('');
     const [selectedRes, setSelectedRes] = useState('1440p');
     const [selectedGpuId, setSelectedGpuId] = useState('');
@@ -20,7 +30,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         setResult(null);
 
         try {
-            // GURU: Načítáme FPS data přímo z tabulek na vyžádání
+            // GURU: Dotahujeme FPS data přímo přes standardní Supabase klient
             const [gpuFpsRes, cpuFpsRes] = await Promise.all([
                 supabase.from('game_fps').select('*').eq('gpu_id', selectedGpuId).maybeSingle(),
                 supabase.from('cpu_game_fps').select('*').eq('cpu_id', selectedCpuId).maybeSingle()
@@ -29,7 +39,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             const gpuData = gpuFpsRes.data || {};
             const cpuData = cpuFpsRes.data || {};
 
-            // Mapování slugů na sloupce (např. cyberpunk-2077 -> cyberpunk_2077_1440p)
             const dbBase = selectedGameSlug.replace(/-/g, '_');
             const resKey = selectedRes === '2160p' ? '4k' : selectedRes;
             const columnKey = `${dbBase}_${resKey}`;
@@ -37,7 +46,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             const gpuFps = gpuData[columnKey] || 0;
             const cpuFps = cpuData[columnKey] || 0;
 
-            // Výsledné FPS je limitováno slabším článkem
             const finalFps = (gpuFps > 0 && cpuFps > 0) ? Math.min(gpuFps, cpuFps) : Math.max(gpuFps, cpuFps);
 
             setResult({ fps: Math.round(finalFps) });
@@ -111,7 +119,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 .guru-calc-container { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
                 .guru-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
                 .input-field { display: flex; flex-direction: column; gap: 10px; }
-                .input-field label { display: flex; align-items: center; gap: 8px; font-size: 11px; fontWeight: 950; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; }
+                .input-field label { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 950; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; }
                 .input-field select { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; outline: none; transition: 0.3s; cursor: pointer; appearance: none; }
                 .input-field select:focus { border-color: #a855f7; }
                 .guru-calc-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #a855f7, #7e22ce); color: #fff; border: none; padding: 20px 40px; font-size: 16px; font-weight: 950; text-transform: uppercase; border-radius: 16px; cursor: pointer; transition: 0.3s; width: 100%; max-width: 400px; }
