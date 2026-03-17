@@ -28,8 +28,22 @@ export default async function FpsKalkulackaPage(props) {
     supabase.from('games').select('id,name,slug').order('name')
   ]);
 
+  // GOOGLE GOLDEN RICH DATA - WebApplication
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": isEn ? "Guru FPS Calculator" : "Guru FPS Kalkulačka",
+    "url": isEn ? `${baseUrl}/en/fps-calculator` : `${baseUrl}/fps-kalkulacka`,
+    "applicationCategory": "MultimediaApplication",
+    "operatingSystem": "All",
+    "description": "Profesionální nástroj pro výpočet herního výkonu a FPS na základě vaší konfigurace PC.",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  };
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff' }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      
       <main style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
         <div style={{ marginBottom: '30px' }}>
@@ -41,13 +55,12 @@ export default async function FpsKalkulackaPage(props) {
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div className="guru-badge"><Gamepad2 size={16} /> GURU FPS ENGINE</div>
           <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0' }}>
-            {isEn ? 'FPS' : 'ROZJEDU'} <span style={{ color: '#a855f7' }}>{isEn ? 'CALCULATOR' : 'TO?'}</span>
+            {isEn ? 'FPS' : 'ROZJEDU'} <span style={{ color: '#a855f7' }}>{isEn ? 'TO?'}</span>
           </h1>
         </header>
 
         <FpsCalculatorClient gpus={gpuRes.data || []} cpus={cpuRes.data || []} games={gameRes.data || []} isEn={isEn} />
 
-        {/* EXTRÉMNÍ PROLINKOVÁNÍ */}
         <div style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
             <a href="/cpu-index" className="silo-mini-card"><Cpu size={20} color="#f59e0b" /> KATALOG PROCESORŮ <ArrowRight size={16} /></a>
             <a href="/gpu-index" className="silo-mini-card"><Monitor size={20} color="#66fcf1" /> KATALOG GRAFIK <ArrowRight size={16} /></a>
@@ -56,15 +69,15 @@ export default async function FpsKalkulackaPage(props) {
 
         <div style={{ marginTop: '40px', padding: '40px', background: 'rgba(15, 17, 21, 0.95)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '950', marginBottom: '20px', color: '#a855f7' }}><Info size={24} /> Jak to funguje?</h2>
-            <p style={{ color: '#9ca3af', lineHeight: '1.6' }}>Náš engine porovnává reálná data ze stovek herních benchmarků. Počítáme výkon na základě konkrétní kombinace vašeho procesoru a grafiky.</p>
+            <p style={{ color: '#9ca3af', lineHeight: '1.6' }}>Náš engine porovnává reálná data ze stovek herních benchmarků. Počítáme výkon na základě konkrétní kombinace vašeho procesoru a grafiky pro maximálně přesný odhad.</p>
         </div>
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
-        .guru-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; fontSize: 11px; fontWeight: 950; textTransform: uppercase; letterSpacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(168, 85, 247, 0.3); borderRadius: 50px; background: rgba(168, 85, 247, 0.1); }
+        .guru-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #a855f7; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(168, 85, 247, 0.3); transition: 0.3s; }
         .silo-mini-card { display: flex; align-items: center; justify-content: space-between; background: rgba(15,17,21,0.9); padding: 25px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; font-weight: 950; font-size: 13px; transition: 0.3s; }
-        .silo-mini-card:hover { transform: translateY(-3px); border-color: #a855f7; }
+        .silo-mini-card:hover { transform: translateY(-3px); border-color: #a855f7; background: rgba(168, 85, 247, 0.05); }
         .silo-mini-card.highlight { border-color: rgba(168, 85, 247, 0.5); background: rgba(168, 85, 247, 0.05); }
       `}} />
     </div>
