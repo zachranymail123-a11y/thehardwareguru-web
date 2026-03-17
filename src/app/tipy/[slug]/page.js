@@ -2,16 +2,12 @@ import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart, Info, Share2, Cpu, Monitor } from 'lucide-react';
+import { ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart, Info, Share2, Cpu, Monitor, Sparkles, Gamepad2, Twitter, Swords, ArrowRight } from 'lucide-react';
 
 /**
- * GURU TIP ENGINE - DETAIL V2.1 (GOLDEN RICH RESULTS + SEO SILOING)
- * Cesta: src/app/tipy/[slug]/page.js
- * 🚀 CÍL: 100% zelená v Google Search Console (Rich Results) a maximální udržení uživatele.
- * 🛡️ FIX 1: Přidány TechArticle, Product a FAQ schémata.
- * 🛡️ FIX 2: Implementován Golden Rich standard (fake shipping, return policy, image arrays).
- * 🛡️ FIX 3: Plná podpora CZ/EN varianty dle slugu a parametrů.
- * 🛡️ FIX 4: Přidáno masivní SEO prolinkování (Siloing) - Odkazy na Databázi HW, Další Tipy a Sdílení.
+ * GURU TIP ENGINE V5.0 (THE GTA 6 & VIRAL HUB)
+ * 🚀 CÍL: Přeměnit čtenáře tipů na uživatele GTA VI kalkulačky.
+ * 🛡️ FIX: Implementace Reddit/X/FB share a srovnávacího rozcestníku.
  */
 
 const supabase = createClient(
@@ -20,6 +16,13 @@ const supabase = createClient(
 );
 
 const baseUrl = "https://thehardwareguru.cz";
+
+// Reddit Ikona (SVG)
+const RedditIcon = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-2.05-6.65c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm4.1 0c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm1.64-3.56c-.34 0-.64.16-.84.4-.58-.4-1.36-.67-2.24-.72l.47-2.18 1.5.32c.04.53.48.95 1.02.95.57 0 1.03-.46 1.03-1.03 0-.57-.46-1.03-1.03-1.03-.42 0-.78.26-.94.63l-1.64-.35c-.06-.01-.13 0-.17.05-.05.04-.07.1-.06.16l-.52 2.45c-.93.03-1.74.32-2.35.74-.2-.23-.5-.38-.83-.38-.6 0-1.08.48-1.08 1.08 0 .42.24.78.58.96-.02.12-.03.24-.03.37 0 1.88 2.05 3.4 4.58 3.4s4.58-1.52 4.58-3.4c0-.13-.01-.25-.03-.37.34-.18.58-.54.58-.96 0-.6-.48-1.08-1.08-1.08zm-4.14 3.12c-.93 0-1.66-.4-1.7-.44-.1-.1-.11-.27-.01-.38.1-.1.27-.11.38-.01.02.01.62.33 1.33.33.7 0 1.31-.32 1.33-.33.11-.1.28-.09.38.01.1.11.09.28-.01.38-.04.04-.77.44-1.7.44z" />
+  </svg>
+);
 
 const getLatestTips = async (excludeSlug) => {
     const { data } = await supabase
@@ -31,365 +34,173 @@ const getLatestTips = async (excludeSlug) => {
     return data || [];
 }
 
-// 🚀 GURU SEO: Dynamické Meta Tagy
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  
-  const { data: tip } = await supabase
-    .from('tipy')
-    .select('title, title_en, seo_description, seo_description_en, image_url, slug, slug_en')
-    .or(`slug.eq.${slug},slug_en.eq.${slug}`)
-    .single();
-
-  if (!tip) return { title: '404 | The Hardware Guru' };
-
+  const { data: tip } = await supabase.from('tipy').select('title, title_en, seo_description, seo_description_en, image_url, slug, slug_en').or(`slug.eq.${slug},slug_en.eq.${slug}`).single();
+  if (!tip) return { title: '404' };
   const isEn = tip.slug_en === slug && slug !== tip.slug;
-  const title = isEn && tip.title_en ? tip.title_en : tip.title;
-  const desc = isEn && tip.seo_description_en ? tip.seo_description_en : tip.seo_description;
-  const safeSlug = tip.slug;
-
-  return {
-    title: `${title} | The Hardware Guru`,
-    description: desc,
-    alternates: {
-      canonical: `${baseUrl}/tipy/${safeSlug}`,
-      languages: {
-        'en': `${baseUrl}/en/tipy/${tip.slug_en || safeSlug}`,
-        'cs': `${baseUrl}/tipy/${safeSlug}`,
-        'x-default': `${baseUrl}/tipy/${safeSlug}`
-      }
-    },
-    openGraph: {
-      title,
-      description: desc,
-      images: tip.image_url ? [tip.image_url] : [`${baseUrl}/logo.png`],
-      type: 'article',
-    }
-  };
+  return { title: `${isEn ? tip.title_en : tip.title} | The Hardware Guru`, description: isEn ? tip.seo_description_en : tip.seo_description };
 }
 
 export default async function TipDetail({ params }) {
   const { slug } = await params;
-
-  const { data: tip, error } = await supabase
-    .from('tipy')
-    .select('*')
-    .or(`slug.eq.${slug},slug_en.eq.${slug}`)
-    .single();
-
-  if (error || !tip) {
-    notFound();
-  }
+  const { data: tip } = await supabase.from('tipy').select('*').or(`slug.eq.${slug},slug_en.eq.${slug}`).single();
+  if (!tip) notFound();
 
   const latestTips = await getLatestTips(tip.slug);
   const isEn = tip.slug_en === slug && tip.slug_en !== tip.slug;
   const title = isEn && tip.title_en ? tip.title_en : tip.title;
   const content = isEn && tip.content_en ? tip.content_en : tip.content;
-  const desc = isEn && tip.seo_description_en ? tip.seo_description_en : tip.seo_description;
-  const priceDisplay = isEn ? (tip.price_en || '') : (tip.price_cs || '');
-  const buyBtnText = isEn 
-    ? `BUY FOR BEST PRICE ${priceDisplay ? `(${priceDisplay})` : ''}` 
-    : `KOUPIT ZA NEJLEPŠÍ CENU ${priceDisplay ? `(${priceDisplay})` : ''}`;
-  const backLink = isEn ? '/en/tipy' : '/tipy';
   const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}tipy/${slug}`;
-
-  // 🚀 ZLATÁ GSC SEO SCHÉMATA (GOLDEN RICH RESULTS FIX)
-  const commonOfferDetails = {
-    "priceValidUntil": "2026-12-31", 
-    "itemCondition": "https://schema.org/NewCondition",
-    "availability": "https://schema.org/InStock",
-    "seller": { "@type": "Organization", "name": "The Hardware Guru" },
-    "hasMerchantReturnPolicy": {
-      "@type": "MerchantReturnPolicy",
-      "applicableCountry": "CZ",
-      "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
-      "merchantReturnDays": 14,
-      "returnMethod": "https://schema.org/ReturnByMail",
-      "returnFees": "https://schema.org/FreeReturn"
-    },
-    "shippingDetails": {
-      "@type": "OfferShippingDetails",
-      "shippingRate": { "@type": "MonetaryAmount", "value": 0, "currency": "USD" },
-      "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "CZ" },
-      "deliveryTime": {
-        "@type": "ShippingDeliveryTime",
-        "handlingTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 1, "unitCode": "d" },
-        "transitTime": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 3, "unitCode": "d" }
-      }
-    }
-  };
-
-  const productSchema = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "name": title,
-    "image": [tip.image_url || `${baseUrl}/logo.png`],
-    "description": desc,
-    "brand": { "@type": "Brand", "name": "The Hardware Guru" },
-    "sku": tip.slug,
-    "offers": {
-      "@type": "Offer",
-      "priceCurrency": "USD",
-      "price": 1, // Symbolická cena pro digitální radu/tip
-      "url": `${baseUrl}/${isEn ? 'en/' : ''}tipy/${slug}`,
-      ...commonOfferDetails
-    },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": 4.8,
-      "reviewCount": 65
-    }
-  };
-
-  const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "TechArticle",
-    "headline": title,
-    "description": desc,
-    "image": [tip.image_url || `${baseUrl}/logo.png`],
-    "datePublished": tip.created_at || new Date().toISOString(),
-    "dateModified": tip.created_at || new Date().toISOString(),
-    "author": { "@type": "Organization", "name": "The Hardware Guru", "url": baseUrl },
-    "publisher": { "@type": "Organization", "name": "The Hardware Guru", "logo": { "@type": "ImageObject", "url": `${baseUrl}/logo.png` } }
-  };
-
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": isEn ? `Is this tip for ${title} useful?` : `Je tento tip pro ${title} užitečný?`,
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": isEn ? `Our Hardware Guru experts confirmed this method provides optimal results.` : `Naši experti z Hardware Guru potvrdili, že tato metoda poskytuje optimální výsledky.`
-        }
-      }
-    ]
-  };
 
   const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
   return (
-    <div style={{ 
-        minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', 
-        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px' 
-    }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px' }}>
       
-      {/* JSON-LD INJECTIONS */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(productSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(articleSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
-
-      <main style={{ 
-          maxWidth: '900px', margin: '0 auto', background: 'rgba(15, 17, 21, 0.95)', 
-          borderRadius: '30px', border: '1px solid rgba(102, 252, 241, 0.2)', 
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)', overflow: 'hidden', backdropFilter: 'blur(15px)' 
-      }}>
+      <main style={{ maxWidth: '900px', margin: '0 auto', background: 'rgba(15, 17, 21, 0.95)', borderRadius: '30px', border: '1px solid rgba(102, 252, 241, 0.2)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)', overflow: 'hidden', backdropFilter: 'blur(15px)' }}>
         
-        {/* --- 🚀 HRDINSKÝ OBRÁZEK TIPU --- */}
         {tip.image_url && (
-          <div style={{ width: '100%', height: '450px', position: 'relative', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ width: '100%', height: '450px', position: 'relative' }}>
             <img src={tip.image_url} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15, 17, 21, 1) 0%, transparent 100%)' }}></div>
-            
             <div style={{ position: 'absolute', top: '30px', left: '30px' }}>
-              <Link href={backLink} className="guru-back-btn">
+              <Link href={isEn ? '/en/tipy' : '/tipy'} className="guru-back-btn">
                 <ChevronLeft size={16} /> {isEn ? 'BACK TO TIPS' : 'ZPĚT NA TIPY'}
               </Link>
             </div>
-
-            {tip.affiliate_link && (
-              <div style={{ position: 'absolute', top: '30px', right: '30px', background: '#f97316', color: '#fff', padding: '8px 16px', borderRadius: '12px', fontWeight: '950', fontSize: '12px', textTransform: 'uppercase', boxShadow: '0 4px 15px rgba(249, 115, 22, 0.5)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Flame size={14} fill="currentColor" /> {isEn ? 'HOT DEAL INSIDE' : 'OBSAHUJE SLEVU'}
-              </div>
-            )}
           </div>
         )}
 
         <div style={{ padding: '40px 50px 60px 50px' }}>
-          
-          {/* --- HLAVIČKA TIPU --- */}
           <header style={{ marginBottom: '50px', textAlign: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', color: '#9ca3af', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '25px' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#66fcf1' }}><ShieldCheck size={16} /> GURU ENGINE</span>
+            <div className="guru-header-meta">
+              <span className="guru-badge"><ShieldCheck size={16} /> GURU ENGINE</span>
               <span>•</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={16} /> {new Date(tip.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
+              <span className="date-span"><Calendar size={16} /> {new Date(tip.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
             </div>
-            
-            <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', lineHeight: '1.1', margin: '0', textShadow: '0 0 20px rgba(102, 252, 241, 0.2)' }}>
-              {title}
-            </h1>
+            <h1 className="tip-h1">{title}</h1>
           </header>
 
-          {/* --- OBSAH TIPU --- */}
           <div className="guru-prose" dangerouslySetInnerHTML={{ __html: content }} />
 
-          {/* --- 🚀 GURU AFFILIATE NÁKUPNÍ BOX --- */}
-          {tip.affiliate_link && (
-            <div style={{ 
-              marginTop: '70px', padding: '50px 40px', background: 'linear-gradient(145deg, rgba(31, 40, 51, 0.9) 0%, rgba(15, 17, 21, 0.95) 100%)', 
-              border: '2px solid rgba(249, 115, 22, 0.5)', borderRadius: '24px', 
-              textAlign: 'center', boxShadow: '0 20px 50px rgba(249, 115, 22, 0.15)',
-              position: 'relative', overflow: 'hidden'
-            }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '5px', background: 'linear-gradient(90deg, transparent, #f97316, transparent)' }}></div>
-              
-              <h3 style={{ fontSize: '32px', fontWeight: '950', color: '#fff', textTransform: 'uppercase', marginBottom: '15px', letterSpacing: '1px' }}>
-                {isEn ? "Don't miss this hit!" : "Nenech si tuhle pecku ujít!"}
-              </h3>
-              
-              <p style={{ color: '#9ca3af', marginBottom: '35px', fontSize: '17px', maxWidth: '600px', margin: '0 auto 35px auto', lineHeight: '1.6' }}>
-                {isEn 
-                  ? "We found the best deal for you. Instant key delivery and Guru-verified store." 
-                  : "Našli jsme pro tebe tu nejlepší cenu na trhu. Okamžité doručení klíče a Guru-ověřený obchod."}
+          {/* 🚀 GTA 6 CONVERSION BANNER (Přímo v těle tipu) */}
+          <div className="gta6-bait-box">
+              <div className="gta6-badge"><Sparkles size={16} /> AI NEXT-GEN PREDIKCE</div>
+              <h3 className="gta6-title">{isEn ? 'WILL YOUR PC RUN GTA VI?' : 'ZVLÁDNE TO TVŮJ PC?'}</h3>
+              <p className="gta6-p">
+                  {isEn ? 'Get an exclusive FPS prediction for Grand Theft Auto VI based on your current hardware.' : 'Získej exkluzivní odhad FPS pro Grand Theft Auto VI na tvém hardwaru.'}
               </p>
-
-              <a 
-                href={tip.affiliate_link} 
-                target="_blank" 
-                rel="nofollow sponsored" 
-                className="guru-affiliate-cta"
-              >
-                <ShoppingCart size={26} />
-                {buyBtnText}
-              </a>
-            </div>
-          )}
-
-          {/* 🚀 SOCIAL SHARE BOX */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginTop: '50px' }}>
-              <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`} target="_blank" rel="nofollow noopener" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#1da1f220', color: '#1da1f2', border: '1px solid #1da1f250', padding: '10px 20px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', transition: '0.3s' }}>
-                  <Share2 size={16} /> TWITTER / X
-              </a>
-              <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="nofollow noopener" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#1877f220', color: '#1877f2', border: '1px solid #1877f250', padding: '10px 20px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', transition: '0.3s' }}>
-                  <Share2 size={16} /> FACEBOOK
+              <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="gta6-link">
+                  <Gamepad2 size={20} /> {isEn ? 'TEST GTA VI PERFORMANCE' : 'ZJISTIT FPS V GTA VI'} <ArrowRight size={18} />
               </a>
           </div>
 
-          {/* 🚀 GURU SILOING: Banner do Katalogu HW */}
-          <div style={{ marginTop: '60px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
-              <a href={isEn ? "/en/cpu-index" : "/cpu-index"} className="silo-banner-card" style={{ borderLeftColor: '#66fcf1' }}>
-                  <div className="silo-banner-icon" style={{ color: '#66fcf1', background: '#66fcf120' }}><Cpu size={28} /></div>
-                  <div className="silo-banner-text">
-                      <h4>{isEn ? 'CPU DATABASE' : 'KATALOG PROCESORŮ'}</h4>
-                      <p>{isEn ? 'Compare specs and find the best processor.' : 'Porovnejte specifikace a najděte ten nejlepší procesor.'}</p>
-                  </div>
-                  <ChevronLeft size={24} className="silo-banner-arrow" style={{ transform: 'rotate(180deg)', color: '#66fcf1' }} />
+          {/* 🚀 VIRAL SHARE HUB (X, FB, REDDIT) */}
+          <div className="share-grid">
+              <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`} target="_blank" className="share-card x-bg">
+                  <Twitter size={18} /> TWITTER / X
               </a>
-              <a href={isEn ? "/en/gpu-index" : "/gpu-index"} className="silo-banner-card" style={{ borderLeftColor: '#a855f7' }}>
-                  <div className="silo-banner-icon" style={{ color: '#a855f7', background: '#a855f720' }}><Monitor size={28} /></div>
-                  <div className="silo-banner-text">
-                      <h4>{isEn ? 'GPU DATABASE' : 'KATALOG GRAFIK'}</h4>
-                      <p>{isEn ? 'Discover the ultimate gaming graphics cards.' : 'Objevte ty nejlepší grafiky pro hraní.'}</p>
-                  </div>
-                  <ChevronLeft size={24} className="silo-banner-arrow" style={{ transform: 'rotate(180deg)', color: '#a855f7' }} />
+              <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" className="share-card fb-bg">
+                  <Share2 size={18} /> FACEBOOK
+              </a>
+              <a href={`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(title)}`} target="_blank" className="share-card reddit-bg">
+                  <RedditIcon size={18} /> REDDIT
               </a>
           </div>
 
-          {/* 🚀 DYNAMICKÁ SEKCE RECIRKULACE (DALŠÍ TIPY) */}
+          {/* 🚀 SROVNÁVACÍ ROZCESTNÍK (CPU & GPU) */}
+          <div className="duel-grid">
+              <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="silo-card cpu-border">
+                  <div className="silo-icon cpu-bg"><Swords size={24} /></div>
+                  <div className="silo-text">
+                      <h4>{isEn ? 'CPU BATTLES' : 'SROVNÁNÍ PROCESORŮ'}</h4>
+                      <p>{isEn ? 'Find the best CPU.' : 'Najděte nejlepší procesor.'}</p>
+                  </div>
+              </a>
+              <a href={isEn ? "/en/gpuvs" : "/gpuvs"} className="silo-card gpu-border">
+                  <div className="silo-icon gpu-bg"><Swords size={24} /></div>
+                  <div className="silo-text">
+                      <h4>{isEn ? 'GPU BATTLES' : 'SROVNÁNÍ GRAFIK'}</h4>
+                      <p>{isEn ? 'Find the best GPU.' : 'Najděte nejlepší grafiku.'}</p>
+                  </div>
+              </a>
+          </div>
+
+          {/* RECIRKULACE */}
           {latestTips.length > 0 && (
-              <section style={{ marginTop: '60px' }}>
-                  <h2 style={{ color: '#fff', fontSize: '1.8rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #66fcf1', paddingLeft: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <Info size={28} color="#66fcf1" /> {isEn ? 'MORE TIPS & TRICKS' : 'DALŠÍ TIPY A TRIKY'}
-                  </h2>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-                      {latestTips.map((lt) => {
-                          const ltTitle = isEn && lt.title_en ? lt.title_en : lt.title;
-                          const ltSlug = isEn && lt.slug_en ? lt.slug_en : lt.slug;
-                          const ltCat = isEn && lt.category_en ? lt.category_en : lt.category;
-                          const ltUrl = isEn ? `/en/tipy/${ltSlug}` : `/tipy/${ltSlug}`;
-                          const fallbackImg = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000';
-                          
-                          return (
-                              <a key={lt.slug} href={ltUrl} className="related-article-card">
-                                  <div className="related-img-wrapper">
-                                      <img src={lt.image_url || fallbackImg} alt={ltTitle} loading="lazy" />
-                                  </div>
-                                  <div className="related-content">
-                                      <div className="related-tag">{ltCat || 'HARDWARE'}</div>
-                                      <h3 className="related-title">{ltTitle}</h3>
-                                  </div>
-                              </a>
-                          );
-                      })}
-                  </div>
-              </section>
+            <section style={{ marginTop: '60px' }}>
+              <h2 className="section-title">{isEn ? 'READ MORE' : 'DALŠÍ ČTENÍ'}</h2>
+              <div className="related-grid">
+                {latestTips.map((lt) => (
+                  <a key={lt.slug} href={isEn ? `/en/tipy/${lt.slug_en || lt.slug}` : `/tipy/${lt.slug}`} className="related-card">
+                    <img src={lt.image_url} alt={lt.title} />
+                    <div className="related-info">
+                      <h3>{isEn ? lt.title_en : lt.title}</h3>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </section>
           )}
 
-          {/* --- 🚀 GURU GLOBÁLNÍ CTA --- */}
-          <div style={{ 
-            marginTop: '70px', 
-            paddingTop: '50px', 
-            borderTop: '1px solid rgba(255,255,255,0.05)', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            gap: '25px' 
-          }}>
-            <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
-              {isEn ? "Did this tip help you? Support us either by buying games at the best prices or directly." : "Líbil se ti tento tip? Podpoř nás buď nákupem her za ty nejlepší ceny, nebo přímo."}
-            </h4>
-            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
-              <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn" style={{ flex: '1 1 280px' }}>
-                <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
-              </a>
-              <Link href={isEn ? "/en/support" : "/support"} className="guru-support-btn" style={{ flex: '1 1 280px' }}>
-                <Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
-              </Link>
-            </div>
+          <div className="global-cta">
+              <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" className="deals-btn"><Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}</a>
+              <Link href={isEn ? "/en/support" : "/support"} className="support-btn"><Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}</Link>
           </div>
-
         </div>
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
-        .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; backdrop-filter: blur(5px); border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
-        .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.2); }
-
-        .guru-affiliate-cta { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 22px 45px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 18px; text-transform: uppercase; border-radius: 18px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 35px rgba(234, 88, 12, 0.4); border: 1px solid rgba(255,255,255,0.1); }
-        .guru-affiliate-cta:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 20px 50px rgba(234, 88, 12, 0.6); filter: brightness(1.1); }
-
-        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
-        .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
-
-        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
-        .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
-
-        .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; }
-        .guru-prose h2 { color: #66fcf1; font-size: 2.2rem; font-weight: 950; margin-top: 2.5em; margin-bottom: 1em; text-transform: uppercase; letter-spacing: 1px; }
-        .guru-prose h3 { color: #fff; font-size: 1.6rem; font-weight: 900; margin-top: 2em; margin-bottom: 1em; }
-        .guru-prose p { margin-bottom: 1.5em; }
-        .guru-prose a { color: #f97316; text-decoration: none; font-weight: bold; border-bottom: 2px dashed rgba(249, 115, 22, 0.5); transition: 0.3s; padding-bottom: 2px; }
-        .guru-prose a:hover { color: #ea580c; border-bottom-style: solid; border-bottom-color: #ea580c; }
-        .guru-prose img { width: 100%; border-radius: 20px; margin: 2.5em 0; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .guru-prose ul, .guru-prose ol { padding-left: 1.5em; margin-bottom: 1.5em; }
-        .guru-prose li { margin-bottom: 0.8em; }
-        .guru-prose strong { color: #fff; font-weight: 900; }
-        .guru-prose blockquote { border-left: 5px solid #66fcf1; padding: 25px 30px; font-style: italic; color: #e5e7eb; background: rgba(102, 252, 241, 0.05); border-radius: 0 16px 16px 0; margin: 2.5em 0; font-size: 1.25rem; }
+        .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
+        .guru-header-meta { display: flex; align-items: center; justify-content: center; gap: 15px; color: #9ca3af; font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 25px; }
+        .guru-badge { color: #66fcf1; display: flex; align-items: center; gap: 6px; }
+        .tip-h1 { fontSize: clamp(2.2rem, 5vw, 3.5rem); fontWeight: 950; color: #fff; text-transform: uppercase; line-height: 1.1; margin: 0; }
         
-        /* 🚀 GURU SILOING STYLY */
-        .silo-banner-card { flex: 1; min-width: 300px; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; align-items: center; gap: 20px; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border-left-width: 5px; }
-        .silo-banner-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.02); }
-        .silo-banner-icon { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .silo-banner-text h4 { margin: 0 0 5px 0; color: #fff; font-size: 1.2rem; font-weight: 950; }
-        .silo-banner-text p { margin: 0; color: #9ca3af; font-size: 0.9rem; }
-        .silo-banner-card:hover .silo-banner-arrow { transform: rotate(180deg) translateX(-5px) !important; }
+        .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; margin-bottom: 40px; }
+        .guru-prose h2 { color: #66fcf1; font-size: 1.8rem; font-weight: 950; margin-top: 2em; text-transform: uppercase; }
 
-        .related-article-card { display: flex; flex-direction: column; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .related-article-card:hover { transform: translateY(-5px); border-color: rgba(102, 252, 241, 0.4); box-shadow: 0 15px 40px rgba(102, 252, 241, 0.2); }
-        .related-img-wrapper { height: 140px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .related-img-wrapper img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
-        .related-content { padding: 20px; display: flex; flex-direction: column; gap: 5px; }
-        .related-tag { color: #66fcf1; font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
-        .related-title { margin: 0; font-size: 1.1rem; font-weight: 950; color: #fff; line-height: 1.3; }
-        
+        .gta6-bait-box { background: linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(15, 17, 21, 0.98) 100%); border: 1px solid rgba(244, 63, 94, 0.4); padding: 40px; border-radius: 24px; text-align: center; margin: 40px 0; }
+        .gta6-badge { display: inline-flex; align-items: center; gap: 8px; background: #f43f5e; color: #fff; padding: 6px 15px; border-radius: 8px; font-size: 10px; font-weight: 950; margin-bottom: 15px; text-transform: uppercase; }
+        .gta6-title { font-size: 1.8rem; font-weight: 950; color: #fff; margin: 0 0 10px 0; text-transform: uppercase; }
+        .gta6-p { color: #9ca3af; margin-bottom: 25px; }
+        .gta6-link { display: inline-flex; align-items: center; gap: 12px; background: #f43f5e; color: #fff; padding: 16px 30px; border-radius: 12px; font-weight: 950; text-decoration: none; text-transform: uppercase; transition: 0.3s; }
+        .gta6-link:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(244, 63, 94, 0.4); }
+
+        .share-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+        .share-card { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 12px; font-weight: 950; font-size: 11px; text-decoration: none; color: #fff; transition: 0.3s; }
+        .x-bg { background: #000; border: 1px solid #333; }
+        .fb-bg { background: #1877f2; }
+        .reddit-bg { background: #ff4500; }
+        .share-card:hover { transform: translateY(-3px); filter: brightness(1.2); }
+
+        .duel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .silo-card { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; padding: 15px; display: flex; align-items: center; gap: 15px; text-decoration: none; border-left: 4px solid transparent; transition: 0.3s; }
+        .cpu-border { border-left-color: #66fcf1; }
+        .gpu-border { border-left-color: #ff0055; }
+        .silo-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .cpu-bg { color: #66fcf1; background: rgba(102, 252, 241, 0.1); }
+        .gpu-bg { color: #ff0055; background: rgba(255, 0, 85, 0.1); }
+        .silo-text h4 { margin: 0; color: #fff; font-size: 0.9rem; font-weight: 950; text-transform: uppercase; }
+        .silo-text p { margin: 0; color: #9ca3af; font-size: 0.75rem; }
+        .silo-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.05); }
+
+        .section-title { color: #fff; font-size: 1.5rem; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; border-left: 4px solid #66fcf1; padding-left: 15px; }
+        .related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .related-card { background: #000; border-radius: 12px; overflow: hidden; text-decoration: none; border: 1px solid #222; transition: 0.3s; }
+        .related-card img { width: 100%; height: 110px; object-fit: cover; }
+        .related-info { padding: 12px; }
+        .related-info h3 { margin: 0; color: #fff; font-size: 0.85rem; font-weight: 900; line-height: 1.3; }
+        .related-card:hover { border-color: #66fcf1; transform: translateY(-5px); }
+
+        .global-cta { margin-top: 50px; display: flex; gap: 15px; }
+        .deals-btn, .support-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px; border-radius: 12px; font-weight: 950; text-decoration: none; text-transform: uppercase; font-size: 13px; }
+        .deals-btn { background: #ea580c; color: #fff; }
+        .support-btn { background: #eab308; color: #000; }
+
         @media (max-width: 768px) {
-          .guru-prose { font-size: 1.05rem; }
-          .guru-prose h2 { font-size: 1.8rem; }
-          .guru-affiliate-cta { font-size: 15px; padding: 18px 30px; width: 100%; }
-          .silo-banner-card { flex-direction: column; text-align: center; }
-          .silo-banner-arrow { display: none; }
+            .share-grid, .duel-grid, .related-grid, .global-cta { grid-template-columns: 1fr; flex-direction: column; }
+            .gta6-bait-box { padding: 25px; }
         }
       `}} />
     </div>
