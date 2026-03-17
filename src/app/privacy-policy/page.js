@@ -2,8 +2,9 @@ import React from 'react';
 import { Lock } from 'lucide-react';
 
 /**
- * GURU PRIVACY ENGINE V3.0 (GOLDEN RICH RESULTS FIX)
+ * GURU PRIVACY ENGINE V3.1 (ADSENSE COMPLIANT)
  * Cesta: src/app/privacy-policy/page.js
+ * 🛡️ FIX: Obsahuje povinné pasáže pro Google AdSense a GDPR.
  */
 
 export const runtime = "nodejs";
@@ -62,34 +63,34 @@ export default function PrivacyPolicyPage(props) {
                 <p>Welcome to The Hardware Guru. We respect your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your information when you visit our website.</p>
                 
                 <h2>2. Data Collection & Analytics</h2>
-                <p>We use <strong>Google Analytics 4</strong> to monitor website traffic and user behavior. This tool uses cookies to collect anonymous data such as pages visited, time spent on the site, and general location (country/city). We do not collect personally identifiable information (PII) like your name or email unless you explicitly provide it.</p>
+                <p>We use <strong>Google Analytics 4</strong> to monitor website traffic and user behavior. This tool uses cookies to collect anonymous data such as pages visited, time spent on the site, and general location (country/city).</p>
                 
                 <h2>3. Advertising (Google AdSense)</h2>
                 <p>Our website uses <strong>Google AdSense</strong> to display advertisements. Third-party vendors, including Google, use cookies to serve ads based on your prior visits to our website or other websites. Google's use of advertising cookies enables it and its partners to serve ads to you based on your visit to our sites and/or other sites on the Internet.</p>
 
                 <h2>4. Affiliates and External Links</h2>
-                <p>Our site contains affiliate links to third-party stores (e.g., Alza, Amazon, HRK Game). If you click on an affiliate link and make a purchase, we may receive a commission at no extra cost to you. Please note that these external sites have their own privacy policies.</p>
+                <p>Our site contains affiliate links to third-party stores (e.g., Alza, Amazon, HRK Game). Ak kliknete na affiliate odkaz a nakúpite, môžeme získať províziu bez akýchkoľvek ďalších nákladov pre vás.</p>
 
                 <h2>5. Your Rights</h2>
-                <p>Under the GDPR, you have the right to access, rectify, or erase your personal data. To exercise these rights, please contact us at info@thehardwareguru.cz.</p>
+                <p>Under the GDPR, you have the right to access, rectify, or erase your personal data. Please contact us at info@thehardwareguru.cz.</p>
               </>
             ) : (
               <>
                 <p>Poslední aktualizace: {new Date().toLocaleDateString('cs-CZ')}</p>
                 <h2>1. Úvod</h2>
-                <p>Vítejte na webu The Hardware Guru. Respektujeme vaše soukromí a zavazujeme se chránit vaše osobní údaje. Tyto zásady vysvětlují, jak shromažďujeme, používáme a chráníme vaše informace při návštěvě našeho webu.</p>
+                <p>Vítejte na webu The Hardware Guru. Respektujeme vaše soukromí a zavazujeme se chránit vaše osobní údaje. Tyto zásady vysvětlují, jak shromažďujeme, používáme a chráníme vaše informace.</p>
                 
                 <h2>2. Analytika a sběr dat</h2>
-                <p>K monitorování návštěvnosti využíváme <strong>Google Analytics 4</strong>. Tento nástroj využívá soubory cookies pro sběr anonymních dat, jako jsou navštívené stránky, čas strávený na webu a přibližná lokace. Neshromažďujeme žádné osobní údaje, pokud nám je sami výslovně neposkytnete.</p>
+                <p>K monitorování návštěvnosti využíváme <strong>Google Analytics 4</strong>. Tento nástroj využívá soubory cookies pro sběr anonymních dat, jako jsou navštívené stránky a čas strávený na webu.</p>
                 
                 <h2>3. Reklamy (Google AdSense)</h2>
-                <p>Náš web využívá <strong>Google AdSense</strong> pro zobrazování reklam. Dodavatelé třetích stran, včetně společnosti Google, používají soubory cookie k zobrazování reklam na základě vašich předchozích návštěv. Používání inzertních souborů cookie umožňuje společnosti Google a jejím partnerům zobrazovat personalizované reklamy.</p>
+                <p>Náš web využívá <strong>Google AdSense</strong> pro zobrazování reklam. Dodavatelé třetích stran, včetně společnosti Google, používají soubory cookie k zobrazování reklam na základě vašich předchozích návštěv. Používání inzertních souborů cookie umožňuje společnosti Google a jejím partnerům zobrazovat personalizované reklamy uživatelům na základě jejich návštěv na vašich stránkách a dalších stránkách na internetu.</p>
 
                 <h2>4. Affiliate odkazy a externí weby</h2>
-                <p>Náš web obsahuje affiliate odkazy na obchody třetích stran (např. Alza, Amazon, HRK Game). Pokud přes náš odkaz nakoupíte, můžeme získat drobnou provizi, aniž by se tím zvýšila vaše cena. Upozorňujeme, že tyto externí weby mají své vlastní zásady ochrany soukromí.</p>
+                <p>Náš web obsahuje affiliate odkazy na obchody třetích stran. Pokud přes náš odkaz nakoupíte, můžeme získat drobnou provizi, aniž by se tím zvýšila vaše cena.</p>
 
                 <h2>5. Vaše práva (GDPR)</h2>
-                <p>Podle nařízení GDPR máte právo na přístup ke svým údajům, jejich opravu nebo výmaz. Pokud máte jakékoli dotazy, kontaktujte nás na info@thehardwareguru.cz.</p>
+                <p>Podle nařízení GDPR máte právo na přístup ke svým údajům, jejich opravu nebo výmaz. Kontaktujte nás na info@thehardwareguru.cz.</p>
               </>
             )}
           </div>
