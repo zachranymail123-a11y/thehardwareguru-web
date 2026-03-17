@@ -1,189 +1,222 @@
-import React from 'react';
-import { Gamepad2, Monitor, Cpu, Info, ArrowRight, ChevronLeft, Wrench, BookOpen, Zap } from 'lucide-react';
-import FpsCalculatorClient from './FpsCalculatorClient';
+'use client';
+
+import React, { useState } from 'react';
+import { Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Check, Award, Twitter } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-/**
- * GURU FPS ENGINE - V4.0 (MAXIMUM SEO SILOING)
- * 🛡️ PROLINKOVÁNÍ: Extrémní rozšíření interních odkazů na nástroje, katalogy a články.
- * 🛡️ SEO: Google Golden Rich + CZ/EN alternates.
- */
-
-export const dynamic = 'force-dynamic';
-export const fetchCache = 'force-no-store';
-export const revalidate = 0;
-
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const baseUrl = "https://thehardwareguru.cz";
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-export async function generateMetadata(props) {
-  const isEn = props?.params?.lang === 'en' || props?.searchParams?.lang === 'en' || false;
-  return {
-    title: isEn ? 'FPS Calculator 2026 | The Hardware Guru' : 'FPS Kalkulačka 2026 | The Hardware Guru',
-    description: isEn 
-      ? 'Calculate your gaming FPS in seconds. Accurate hardware benchmarks for AMD, Intel and NVIDIA.' 
-      : 'Vypočítej si herní FPS během sekundy. Přesné benchmarky pro AMD, Intel a NVIDIA.',
-    alternates: { 
-        canonical: `${baseUrl}/fps-kalkulacka`,
-        languages: { "en": `${baseUrl}/en/fps-calculator`, "cs": `${baseUrl}/fps-kalkulacka` }
-    }
-  };
-}
+// Bezpečná SVG ikona Redditu
+const RedditIcon = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-2.05-6.65c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm4.1 0c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm1.64-3.56c-.34 0-.64.16-.84.4-.58-.4-1.36-.67-2.24-.72l.47-2.18 1.5.32c.04.53.48.95 1.02.95.57 0 1.03-.46 1.03-1.03 0-.57-.46-1.03-1.03-1.03-.42 0-.78.26-.94.63l-1.64-.35c-.06-.01-.13 0-.17.05-.05.04-.07.1-.06.16l-.52 2.45c-.93.03-1.74.32-2.35.74-.2-.23-.5-.38-.83-.38-.6 0-1.08.48-1.08 1.08 0 .42.24.78.58.96-.02.12-.03.24-.03.37 0 1.88 2.05 3.4 4.58 3.4s4.58-1.52 4.58-3.4c0-.13-.01-.25-.03-.37.34-.18.58-.54.58-.96 0-.6-.48-1.08-1.08-1.08zm-4.14 3.12c-.93 0-1.66-.4-1.7-.44-.1-.1-.11-.27-.01-.38.1-.1.27-.11.38-.01.02.01.62.33 1.33.33.7 0 1.31-.32 1.33-.33.11-.1.28-.09.38.01.1.11.09.28-.01.38-.04.04-.77.44-1.7.44z" />
+  </svg>
+);
 
-export default async function FpsKalkulackaPage(props) {
-  const isEn = props?.params?.lang === 'en' || props?.searchParams?.lang === 'en' || false;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], isEn = false }) {
+    const [selectedGameSlug, setSelectedGameSlug] = useState('');
+    const [selectedRes, setSelectedRes] = useState('1440p');
+    const [selectedGpuId, setSelectedGpuId] = useState('');
+    const [selectedCpuId, setSelectedCpuId] = useState('');
+    
+    const [isCalculating, setIsCalculating] = useState(false);
+    const [result, setResult] = useState(null);
+    const [copied, setCopied] = useState(false);
 
-  // Načítání HW
-  const [gpuRes, cpuRes, gameRes] = await Promise.all([
-    supabase.from('gpus').select('id,name,vendor,slug').order('name'),
-    supabase.from('cpus').select('id,name').order('name'),
-    supabase.from('games').select('id,name,slug').order('name')
-  ]);
+    const handleCalculate = async () => {
+        if (!selectedGpuId || !selectedCpuId || !selectedGameSlug) return;
+        setIsCalculating(true);
+        setResult(null);
+        setCopied(false);
 
-  const gpus = gpuRes.data || [];
-  const cpus = cpuRes.data || [];
-  const games = gameRes.data || [];
+        try {
+            const [gpuFpsRes, cpuFpsRes] = await Promise.all([
+                supabase.from('game_fps').select('*').eq('gpu_id', selectedGpuId).maybeSingle(),
+                supabase.from('cpu_game_fps').select('*').eq('cpu_id', selectedCpuId).maybeSingle()
+            ]);
 
-  // Google Golden Rich Data
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": isEn ? "Guru FPS Calculator" : "Guru FPS Kalkulačka",
-    "url": isEn ? `${baseUrl}/en/fps-calculator` : `${baseUrl}/fps-kalkulacka`,
-    "applicationCategory": "MultimediaApplication",
-    "operatingSystem": "All",
-    "description": "Professional tool for estimating gaming performance and frames per second."
-  };
+            const gpuData = gpuFpsRes.data || {};
+            const cpuData = cpuFpsRes.data || {};
 
-  return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      
-      <main style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
-        
-        {/* Zpětný odkaz */}
-        <div style={{ marginBottom: '30px' }}>
-          <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="guru-back-btn">
-            <ChevronLeft size={16} /> {isEn ? 'BACK TO HARDWARE HUB' : 'ZPĚT NA HW ROZCESTNÍK'}
-          </a>
-        </div>
+            const dbBase = selectedGameSlug.replace(/-/g, '_');
+            const resKey = selectedRes === '2160p' ? '4k' : selectedRes;
+            const columnKey = `${dbBase}_${resKey}`;
 
-        <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#a855f7', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '50px', background: 'rgba(168, 85, 247, 0.1)' }}>
-            <Gamepad2 size={16} /> GURU FPS ENGINE
-          </div>
-          <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
-            {isEn ? 'FPS' : 'ROZJEDU'} <span style={{ color: '#a855f7', textShadow: '0 0 30px rgba(168, 85, 247, 0.5)' }}>{isEn ? 'CALCULATOR' : 'TO?'}</span>
-          </h1>
-        </header>
+            const gpuFps = gpuData[columnKey] || 0;
+            const cpuFps = cpuData[columnKey] || 0;
 
-        {/* Kalkulačka */}
-        <FpsCalculatorClient gpus={gpus} cpus={cpus} games={games} isEn={isEn} />
+            const finalFps = (gpuFps > 0 && cpuFps > 0) ? Math.min(gpuFps, cpuFps) : Math.max(gpuFps, cpuFps);
+            setResult({ fps: Math.round(finalFps) });
+        } catch (err) {
+            setResult({ fps: 0 });
+        } finally {
+            setIsCalculating(false);
+        }
+    };
 
-        {/* Info Box */}
-        <div style={{ marginTop: '50px', padding: '30px', background: 'rgba(15, 17, 21, 0.95)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: '950', marginBottom: '15px', color: '#a855f7', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Info size={20} /> {isEn ? 'How it works?' : 'Jak to funguje?'}
-            </h2>
-            <p style={{ color: '#9ca3af', lineHeight: '1.6', margin: '0', fontSize: '14px' }}>
-                {isEn 
-                    ? 'Our engine compares real-world gaming data from hundreds of benchmarks. We calculate the performance based on the specific combination of your CPU and GPU to give you the most accurate FPS estimation.' 
-                    : 'Náš engine porovnává reálná data ze stovek herních benchmarků. Počítáme výkon na základě konkrétní kombinace vašeho procesoru a grafiky, abychom vám poskytli co nejpřesnější odhad FPS.'}
-            </p>
-        </div>
+    const getShareDetails = () => {
+        const gameName = games.find(g => g.slug === selectedGameSlug)?.name || 'hře';
+        const cpuName = cpus.find(c => c.id === selectedCpuId)?.name || 'můj CPU';
+        const gpuName = gpus.find(g => g.id === selectedGpuId)?.name || 'moje GPU';
+        const url = isEn ? 'https://thehardwareguru.cz/en/fps-calculator' : 'https://thehardwareguru.cz/fps-kalkulacka';
+        return { gameName, cpuName, gpuName, url };
+    };
 
-        {/* 🚀 EXTRÉMNÍ SEO SILOING: NÁSTROJE & KATALOGY */}
-        <div style={{ marginTop: '60px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '15px' }}>
-                <Wrench size={20} color="#a855f7" />
-                <h2 style={{ fontSize: '1.2rem', fontWeight: '950', textTransform: 'uppercase', margin: 0 }}>
-                    {isEn ? 'Explore Guru Tools & Databases' : 'Prozkoumej Guru Nástroje a Katalogy'}
-                </h2>
-            </div>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                <a href={isEn ? "/en/cpu-index" : "/cpu-index"} className="silo-mega-card">
-                    <div className="icon-wrapper cpu-bg"><Cpu size={24} color="#f59e0b" /></div>
-                    <div className="text-content">
-                        <h3>{isEn ? 'CPU Database' : 'Katalog Procesorů'}</h3>
-                        <p>{isEn ? 'Full specs and benchmarks.' : 'Kompletní specifikace a testy.'}</p>
-                    </div>
-                    <ArrowRight size={18} className="arrow" />
-                </a>
+    const handleCopyShare = () => {
+        if (!result) return;
+        const { gameName, cpuName, gpuName, url } = getShareDetails();
+        const textEn = `🔥 My rig hits ${result.fps} FPS in ${gameName} on ${selectedRes}! 🚀\n💻 Build: ${cpuName} + ${gpuName}\n👉 Check your performance at: ${url}`;
+        const textCs = `🔥 Moje sestava dává v ${gameName} na ${selectedRes} brutálních ${result.fps} FPS! 🚀\n💻 Železo: ${cpuName} + ${gpuName}\n👉 Změř si to taky na: ${url}`;
 
-                <a href={isEn ? "/en/gpu-index" : "/gpu-index"} className="silo-mega-card">
-                    <div className="icon-wrapper gpu-bg"><Monitor size={24} color="#66fcf1" /></div>
-                    <div className="text-content">
-                        <h3>{isEn ? 'GPU Database' : 'Katalog Grafik'}</h3>
-                        <p>{isEn ? 'Compare the latest GPUs.' : 'Srovnání nejnovějších grafik.'}</p>
-                    </div>
-                    <ArrowRight size={18} className="arrow" />
-                </a>
+        navigator.clipboard.writeText(isEn ? textEn : textCs).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 3000);
+        });
+    };
 
-                <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="silo-mega-card highlight-border">
-                    <div className="icon-wrapper vs-bg"><Zap size={24} color="#a855f7" /></div>
-                    <div className="text-content">
-                        <h3>{isEn ? 'Bottleneck Calculator' : 'Bottleneck Kalkulačka'}</h3>
-                        <p>{isEn ? 'Find your PC weak spot.' : 'Najdi slabé místo svého PC.'}</p>
-                    </div>
-                    <ArrowRight size={18} className="arrow" />
-                </a>
-            </div>
-        </div>
+    const handleXShare = () => {
+        if (!result) return;
+        const { gameName, cpuName, gpuName, url } = getShareDetails();
+        const textEn = `🔥 My rig hits ${result.fps} FPS in ${gameName} on ${selectedRes}!\n💻 Build: ${cpuName} + ${gpuName}\n\nCheck your PC performance at:`;
+        const textCs = `🔥 Moje sestava dává v ${gameName} na ${selectedRes} brutálních ${result.fps} FPS!\n💻 Železo: ${cpuName} + ${gpuName}\n\nZměř si to taky na:`;
+        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(isEn ? textEn : textCs)}&url=${encodeURIComponent(url)}`;
+        window.open(twitterUrl, '_blank', 'noopener,noreferrer');
+    };
 
-        {/* 🚀 SEO SILOING: ČLÁNKY & NÁVODY */}
-        <div style={{ marginTop: '50px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '15px' }}>
-                <BookOpen size={20} color="#f43f5e" />
-                <h2 style={{ fontSize: '1.2rem', fontWeight: '950', textTransform: 'uppercase', margin: 0 }}>
-                    {isEn ? 'Hardware Guides & Articles' : 'Hardwarové Návody a Články'}
-                </h2>
+    const handleRedditShare = () => {
+        if (!result) return;
+        const { gameName, cpuName, gpuName, url } = getShareDetails();
+        const titleEn = `My rig hits ${result.fps} FPS in ${gameName} (${selectedRes}). Build: ${cpuName} + ${gpuName}. What's yours?`;
+        const titleCs = `Moje sestava dává v ${gameName} na ${selectedRes} přesně ${result.fps} FPS! (Železo: ${cpuName} + ${gpuName})`;
+        const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(isEn ? titleEn : titleCs)}`;
+        window.open(redditUrl, '_blank', 'noopener,noreferrer');
+    };
+
+    return (
+        <div className="guru-calc-box">
+            <div className="guru-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+                <div className="input-field">
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '950', color: '#9ca3af', textTransform: 'uppercase' }}><Gamepad2 size={14} /> {isEn ? 'GAME' : 'HRA'}</label>
+                    <select value={selectedGameSlug} onChange={(e) => setSelectedGameSlug(e.target.value)} className="guru-select">
+                        <option value="">{isEn ? '-- Select --' : '-- Vyber hru --'}</option>
+                        {games.map(g => <option key={g.id} value={g.slug}>{g.name}</option>)}
+                    </select>
+                </div>
+                <div className="input-field">
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '950', color: '#9ca3af', textTransform: 'uppercase' }}><Monitor size={14} /> {isEn ? 'RESOLUTION' : 'ROZLIŠENÍ'}</label>
+                    <select value={selectedRes} onChange={(e) => setSelectedRes(e.target.value)} className="guru-select">
+                        <option value="1080p">1080p Full HD</option>
+                        <option value="1440p">1440p Quad HD</option>
+                        <option value="2160p">4K Ultra HD</option>
+                    </select>
+                </div>
+                <div className="input-field">
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '950', color: '#9ca3af', textTransform: 'uppercase' }}><Zap size={14} /> GPU</label>
+                    <select value={selectedGpuId} onChange={(e) => setSelectedGpuId(e.target.value)} className="guru-select">
+                        <option value="">{isEn ? '-- Select --' : '-- Vyber GPU --'}</option>
+                        {gpus.map(g => <option key={g.id} value={g.id}>{g.vendor} {g.name}</option>)}
+                    </select>
+                </div>
+                <div className="input-field">
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '950', color: '#9ca3af', textTransform: 'uppercase' }}><Cpu size={14} /> CPU</label>
+                    <select value={selectedCpuId} onChange={(e) => setSelectedCpuId(e.target.value)} className="guru-select">
+                        <option value="">{isEn ? '-- Select --' : '-- Vyber CPU --'}</option>
+                        {cpus.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px' }}>
-                <a href={isEn ? "/en/clanky/jak-vyresit-bottleneck-navod" : "/clanky/jak-vyresit-bottleneck-navod"} className="silo-article-card">
-                    <span className="tag">{isEn ? 'Guide' : 'Návod'}</span>
-                    <span className="title">{isEn ? 'How to fix PC bottleneck step by step' : 'Jak vyřešit Bottleneck v PC krok za krokem'}</span>
-                </a>
-                <a href={isEn ? "/en/clanky/nejlepsi-cpu-pro-rtx-5090-5080" : "/clanky/nejlepsi-cpu-pro-rtx-5090-5080"} className="silo-article-card">
-                    <span className="tag tag-hot">Hot</span>
-                    <span className="title">{isEn ? 'Best CPUs for RTX 5090 & 5080' : 'Nejlepší procesory pro RTX 5090 a 5080'}</span>
-                </a>
+            <div style={{ textAlign: 'center', marginTop: '30px' }}>
+                <button onClick={handleCalculate} disabled={!selectedGpuId || !selectedCpuId || !selectedGameSlug || isCalculating} className="calc-btn">
+                    {isCalculating ? <Loader2 className="animate-spin" /> : <Zap size={18} />}
+                    {isEn ? 'CALCULATE' : 'SPOČÍTAT VÝKON'}
+                </button>
             </div>
+
+            {result && !isCalculating && (
+                <div className="result-area" style={{ marginTop: '40px', textAlign: 'center', animation: 'fadeIn 0.7s ease-out' }}>
+                    <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px' }}>{isEn ? 'EXPECTED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
+                    <div style={{ fontSize: '6rem', fontWeight: '950', color: '#fff', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)', margin: '10px 0' }}>{result.fps > 0 ? `${result.fps} FPS` : 'N/A'}</div>
+                    
+                    {result.fps > 0 && (
+                        <div className="viral-flex-card">
+                            <div className="award-icon"><Award size={32} color="#fff" /></div>
+                            <div className="viral-text-box">
+                                <div style={{ fontSize: '15px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                    {isEn ? 'ACHIEVEMENT LOCKED' : 'ÚSPĚCH ODEMČEN'}
+                                </div>
+                                <div style={{ fontSize: '11px', color: '#a855f7', fontWeight: 'bold' }}>
+                                    {isEn ? 'Share your result online' : 'Pochlub se výsledkem online'}
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                <button onClick={handleCopyShare} className="premium-share-btn btn-copy" title={isEn ? "Copy to clipboard" : "Kopírovat do schránky"}>
+                                    {copied ? <Check className="check-anim" size={20} /> : <Share2 size={20} />}
+                                </button>
+                                <button onClick={handleXShare} className="premium-share-btn btn-x" title={isEn ? "Share on X" : "Sdílet na X"}>
+                                    <Twitter size={20} />
+                                </button>
+                                <button onClick={handleRedditShare} className="premium-share-btn btn-reddit" title={isEn ? "Share on Reddit" : "Sdílet na Reddit"}>
+                                    <RedditIcon size={20} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            <style dangerouslySetInnerHTML={{__html: `
+                .guru-calc-box { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
+                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; appearance: none; cursor: pointer; }
+                .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: 0.3s; }
+                .calc-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4); }
+                .calc-btn:disabled { opacity: 0.3; }
+
+                .viral-flex-card { 
+                    display: flex; align-items: center; gap: 20px;
+                    max-width: 520px; margin: 40px auto 0; padding: 25px; 
+                    background: rgba(10, 11, 13, 0.8); 
+                    border: 1px solid rgba(168, 85, 247, 0.4); 
+                    border-radius: 20px; 
+                    box-shadow: 0 0 20px rgba(168, 85, 247, 0.1);
+                    text-align: left;
+                    transition: 0.3s;
+                }
+                .viral-flex-card:hover { transform: translateY(-3px); box-shadow: 0 0 30px rgba(168, 85, 247, 0.2); }
+                .award-icon { display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; background: rgba(168, 85, 247, 0.2); border-radius: 15px; flex-shrink: 0; }
+                .viral-text-box { flex: 1; }
+                
+                .premium-share-btn { 
+                    width: 48px; height: 48px; border-radius: 12px; 
+                    cursor: pointer; display: inline-flex; align-items: center; justify-content: center; 
+                    transition: 0.3s; border: none; color: #fff;
+                }
+                
+                .btn-copy { background: linear-gradient(45deg, #a855f7, #c084fc); }
+                .btn-copy:hover { transform: scale(1.08); box-shadow: 0 0 15px rgba(168, 85, 247, 0.5); }
+                
+                .btn-x { background: #000; border: 1px solid rgba(255,255,255,0.2); }
+                .btn-x:hover { transform: scale(1.08); background: #111; box-shadow: 0 0 15px rgba(255, 255, 255, 0.2); }
+
+                .btn-reddit { background: #ff4500; }
+                .btn-reddit:hover { transform: scale(1.08); box-shadow: 0 0 15px rgba(255, 69, 0, 0.5); }
+
+                .check-anim { animation: checkPop 0.3s ease-out; }
+                .animate-spin { animation: spin 1s linear infinite; }
+                
+                @keyframes spin { 100% { transform: rotate(360deg); } }
+                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes checkPop { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+                
+                @media (max-width: 500px) {
+                    .viral-flex-card { flex-direction: column; text-align: center; }
+                    .viral-text-box { margin-bottom: 10px; }
+                    .award-icon { margin: 0 auto; }
+                    .premium-share-btn { width: 100%; max-width: 200px; height: 45px; margin-bottom: 5px; }
+                }
+            `}} />
         </div>
-
-      </main>
-
-      <style dangerouslySetInnerHTML={{__html: `
-        .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #a855f7; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(168, 85, 247, 0.3); transition: 0.3s; }
-        .guru-back-btn:hover { background: rgba(168, 85, 247, 0.1); transform: translateX(-5px); }
-        
-        /* MEGA CARDS PRO NÁSTROJE */
-        .silo-mega-card { display: flex; align-items: center; gap: 20px; background: rgba(15,17,21,0.9); padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; position: relative; overflow: hidden; }
-        .silo-mega-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.1); }
-        .highlight-border { border-color: rgba(168, 85, 247, 0.3); background: rgba(168, 85, 247, 0.03); }
-        .highlight-border:hover { border-color: #a855f7; box-shadow: 0 10px 30px rgba(168, 85, 247, 0.15); }
-        
-        .icon-wrapper { width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .cpu-bg { background: rgba(245, 158, 11, 0.1); }
-        .gpu-bg { background: rgba(102, 252, 241, 0.1); }
-        .vs-bg { background: rgba(168, 85, 247, 0.1); }
-        
-        .text-content h3 { margin: 0 0 5px 0; font-size: 15px; font-weight: 950; text-transform: uppercase; letter-spacing: 0.5px; }
-        .text-content p { margin: 0; font-size: 12px; color: #9ca3af; font-weight: 600; }
-        .arrow { margin-left: auto; color: #6b7280; transition: 0.3s; }
-        .silo-mega-card:hover .arrow { color: #fff; transform: translateX(3px); }
-
-        /* ČLÁNKY CARDS */
-        .silo-article-card { display: flex; align-items: center; gap: 15px; background: rgba(15,17,21,0.6); padding: 15px 20px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.03); text-decoration: none; transition: 0.3s; }
-        .silo-article-card:hover { background: rgba(15,17,21,1); border-color: rgba(255,255,255,0.1); transform: translateX(5px); }
-        .silo-article-card .tag { background: rgba(255,255,255,0.1); color: #d1d5db; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; }
-        .silo-article-card .tag-hot { background: rgba(244, 63, 94, 0.15); color: #f43f5e; }
-        .silo-article-card .title { color: #fff; font-size: 13px; font-weight: bold; line-height: 1.4; }
-        .silo-article-card:hover .title { color: #a855f7; }
-      `}} />
-    </div>
-  );
+    );
 }
