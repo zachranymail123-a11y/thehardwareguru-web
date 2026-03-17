@@ -1,13 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU RSS ENGINE V23.4 - PROGRAMMATIC SEO FEED (DUELS & UPGRADES)
+ * GURU RSS ENGINE V24.0 - PROGRAMMATIC SEO FEED (DUELS, UPGRADES & GTA 6)
  * Cesta: src/app/rss-comparisons.xml/route.js
- * 🛡️ FIX: Změněno Content-Type na 'application/xml' proti automatickému stahování v prohlížeči.
+ * 🛡️ UPDATE: Přidáno automatické krmení RSS z uživatelských GTA 6 predikcí.
  */
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 3600; 
+export const revalidate = 1800; // Zrychleno na 30 minut pro bleskovou indexaci hitů
 
 const baseUrl = 'https://thehardwareguru.cz';
 
@@ -31,15 +31,17 @@ const safeCDATA = (str = '') =>
 
 export async function GET() {
   try {
-    const [gpuDuelsRes, cpuDuelsRes, gpuUpgRes, cpuUpgRes] = await Promise.all([
-      supabase.from('gpu_duels').select('slug, title_cs, seo_description_cs, created_at').order('created_at', { ascending: false }).limit(25),
-      supabase.from('cpu_duels').select('slug, title_cs, seo_description_cs, created_at').order('created_at', { ascending: false }).limit(25),
-      supabase.from('gpu_upgrades').select('slug, title_cs, seo_description_cs, created_at').order('created_at', { ascending: false }).limit(25),
-      supabase.from('cpu_upgrades').select('slug, title_cs, seo_description_cs, created_at').order('created_at', { ascending: false }).limit(25)
+    const [gpuDuelsRes, cpuDuelsRes, gpuUpgRes, cpuUpgRes, gtaHitsRes] = await Promise.all([
+      supabase.from('gpu_duels').select('slug, title_cs, seo_description_cs, created_at').order('created_at', { ascending: false }).limit(20),
+      supabase.from('cpu_duels').select('slug, title_cs, seo_description_cs, created_at').order('created_at', { ascending: false }).limit(20),
+      supabase.from('gpu_upgrades').select('slug, title_cs, seo_description_cs, created_at').order('created_at', { ascending: false }).limit(20),
+      supabase.from('cpu_upgrades').select('slug, title_cs, seo_description_cs, created_at').order('created_at', { ascending: false }).limit(20),
+      supabase.from('generated_predictions').select('slug_base, full_url, last_requested').order('last_requested', { ascending: false }).limit(40)
     ]);
 
     const items = [];
 
+    // 1. GPU DUELY
     gpuDuelsRes.data?.forEach(d => {
         items.push({
             title: d.title_cs || `Srovnání grafik: ${d.slug.replace(/-/g, ' ')}`,
@@ -49,6 +51,7 @@ export async function GET() {
         });
     });
 
+    // 2. CPU DUELY
     cpuDuelsRes.data?.forEach(d => {
         items.push({
             title: d.title_cs || `Srovnání procesorů: ${d.slug.replace(/-/g, ' ')}`,
@@ -58,20 +61,22 @@ export async function GET() {
         });
     });
 
+    // 3. GTA VI PREDIKCE (Hity od uživatelů)
+    gtaHitsRes.data?.forEach(h => {
+        items.push({
+            title: `GTA VI VÝKON: ${h.slug_base.toUpperCase().replace(/-/g, ' ')}`,
+            link: h.full_url,
+            desc: `Nová predikce herního výkonu v GTA VI pro konfiguraci ${h.slug_base.replace(/-/g, ' ')}. Zjisti, kolik FPS vytáhne tvoje PC!`,
+            date: h.last_requested
+        });
+    });
+
+    // 4. UPGRADY
     gpuUpgRes.data?.forEach(u => {
         items.push({
             title: u.title_cs || `Upgrade analýza: ${u.slug.replace(/-/g, ' ')}`,
             link: `${baseUrl}/gpu-upgrade/${u.slug}`,
             desc: u.seo_description_cs || `Analýza přechodu a nárůstu herního výkonu pro ${u.slug.replace(/-/g, ' ')}.`,
-            date: u.created_at
-        });
-    });
-
-    cpuUpgRes.data?.forEach(u => {
-        items.push({
-            title: u.title_cs || `Upgrade analýza: ${u.slug.replace(/-/g, ' ')}`,
-            link: `${baseUrl}/cpu-upgrade/${u.slug}`,
-            desc: u.seo_description_cs || `Analýza přechodu a nárůstu výkonu procesoru pro ${u.slug.replace(/-/g, ' ')}.`,
             date: u.created_at
         });
     });
@@ -84,35 +89,26 @@ export async function GET() {
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
     xml += `<rss version="2.0"
       xmlns:atom="http://www.w3.org/2005/Atom"
-      xmlns:media="http://search.yahoo.com/mrss/"
-      xmlns:content="http://purl.org/rss/1.0/modules/content/"
-      xmlns:dc="http://purl.org/dc/elements/1.1/">\n`;
+      xmlns:dc="http://purl.org/dc/elements/1.1/"
+      xmlns:content="http://purl.org/rss/1.0/modules/content/">\n`;
 
     xml += `<channel>\n`;
-    xml += `  <title><![CDATA[${safeCDATA('The Hardware Guru - Comparisons & Upgrades Feed')}]]></title>\n`;
+    xml += `  <title><![CDATA[${safeCDATA('The Hardware Guru - Comparisons & Live Predictions')}]]></title>\n`;
     xml += `  <link>${baseUrl}/</link>\n`;
-    xml += `  <description><![CDATA[${safeCDATA('Nejnovější GPU/CPU duely a hardwarové upgrady z Hardware Guru základny.')}]]></description>\n`;
+    xml += `  <description><![CDATA[${safeCDATA('Nejnovější GPU/CPU duely, upgrady a live predikce výkonu GTA VI.')}]]></description>\n`;
     xml += `  <language>cs</language>\n`;
-    xml += `  <generator>The Hardware Guru RSS Engine</generator>\n`;
-    xml += `  <ttl>60</ttl>\n`; 
     xml += `  <lastBuildDate>${now}</lastBuildDate>\n`;
-    
     xml += `  <atom:link href="${xmlEscape(`${baseUrl}/rss-comparisons.xml`)}" rel="self" type="application/rss+xml" />\n`;
 
     finalItems.forEach(item => {
-      const link = item.link;
-      const title = safeCDATA(item.title);
-      const desc = safeCDATA(item.desc);
-      const pubDate = new Date(item.date).toUTCString();
-
       xml += `  <item>\n`;
-      xml += `    <title><![CDATA[${title}]]></title>\n`;
-      xml += `    <link>${xmlEscape(link)}</link>\n`;
-      xml += `    <guid isPermaLink="true">${xmlEscape(link)}</guid>\n`;
-      xml += `    <pubDate>${pubDate}</pubDate>\n`;
-      xml += `    <dc:creator><![CDATA[Guru Team]]></dc:creator>\n`;
-      xml += `    <description><![CDATA[${desc}]]></description>\n`;
-      xml += `    <content:encoded><![CDATA[${desc}]]></content:encoded>\n`;
+      xml += `    <title><![CDATA[${safeCDATA(item.title)}]]></title>\n`;
+      xml += `    <link>${xmlEscape(item.link)}</link>\n`;
+      xml += `    <guid isPermaLink="true">${xmlEscape(item.link)}</guid>\n`;
+      xml += `    <pubDate>${new Date(item.date).toUTCString()}</pubDate>\n`;
+      xml += `    <dc:creator><![CDATA[Guru Engine]]></dc:creator>\n`;
+      xml += `    <description><![CDATA[${safeCDATA(item.desc)}]]></description>\n`;
+      xml += `    <content:encoded><![CDATA[${safeCDATA(item.desc)}]]></content:encoded>\n`;
       xml += `  </item>\n`;
     });
 
@@ -120,16 +116,15 @@ export async function GET() {
 
     return new Response(xml, {
       headers: {
-        // 🚀 GURU FIX: Změněno na application/xml (Google to čte, prohlížeč to zobrazí a nestáhne)
         'Content-Type': 'application/xml; charset=utf-8',
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600'
+        'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=600'
       }
     });
 
   } catch (error) {
     console.error('RSS COMPARISONS ENGINE ERROR:', error);
     return new Response(
-      `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Error</title><description>${xmlEscape(error.message)}</description></channel></rss>`,
+      `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Error</title></channel></rss>`,
       { status: 500, headers: { 'Content-Type': 'application/xml; charset=utf-8' } }
     );
   }
