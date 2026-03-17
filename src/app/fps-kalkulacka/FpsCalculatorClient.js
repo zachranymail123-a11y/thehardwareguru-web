@@ -5,8 +5,9 @@ import { Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Check, Award, Twitter, Sp
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU FPS ENGINE CLIENT - V5.1 (SEO MULTIPLIER)
- * 🛡️ SEO GENERÁTOR: AI Predikce nabízí tři tlačítka pro tři rozlišení = 3x více SEO stránek z jednoho uživatele.
+ * GURU FPS ENGINE CLIENT - V6.0 (SITEMAP FEEDER & SEO MULTIPLIER)
+ * 🛡️ AUTO-SITEMAP: Při každém výpočtu uložíme 3 unikátní GTA 6 URL do DB pro sitemapu.
+ * 🛡️ SEO GENERÁTOR: 3 rozlišení = 3x více stránek v indexu z jednoho uživatele.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -28,6 +29,16 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
     const [isCalculating, setIsCalculating] = useState(false);
     const [result, setResult] = useState(null);
     const [copied, setCopied] = useState(false);
+
+    // Funkce pro sestavení čisté URL pro GTA 6
+    const getGtaUrl = (res) => {
+        const cpuName = cpus.find(c => c.id === selectedCpuId)?.name || 'cpu';
+        const gpuName = gpus.find(g => g.id === selectedGpuId)?.name || 'gpu';
+        const cleanCpu = cpuName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const cleanGpu = gpuName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const basePath = isEn ? '/en/fps-calculator/gta-6-prediction' : '/fps-kalkulacka/gta-6-predikce';
+        return `https://thehardwareguru.cz${basePath}/${cleanCpu}-vs-${cleanGpu}-${res}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
+    };
 
     const handleCalculate = async () => {
         if (!selectedGpuId || !selectedCpuId || !selectedGameSlug) return;
@@ -53,7 +64,19 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
             const finalFps = (gpuFps > 0 && cpuFps > 0) ? Math.min(gpuFps, cpuFps) : Math.max(gpuFps, cpuFps);
             setResult({ fps: Math.round(finalFps) });
+
+            // 🔥 LOGOVÁNÍ PRO SITEMAPU: Uložíme všechny 3 varianty rozlišení pro Google
+            const resolutions = ['1080p', '1440p', '2160p'];
+            const logPromises = resolutions.map(res => 
+                supabase.from('generated_predictions').upsert({
+                    full_url: getGtaUrl(res),
+                    last_requested: new Date().toISOString()
+                }, { onConflict: 'full_url' })
+            );
+            await Promise.all(logPromises);
+
         } catch (err) {
+            console.error("Calculation/Logging error:", err);
             setResult({ fps: 0 });
         } finally {
             setIsCalculating(false);
@@ -98,16 +121,10 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         window.open(redditUrl, '_blank', 'noopener,noreferrer');
     };
 
-    // 🚀 Generátor 3 unikátních SEO URL pro GTA 6
-    const getGtaPredictionUrl = (targetRes) => {
-        const cpuName = cpus.find(c => c.id === selectedCpuId)?.name || 'cpu';
-        const gpuName = gpus.find(g => g.id === selectedGpuId)?.name || 'gpu';
-        
-        const cleanCpu = cpuName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const cleanGpu = gpuName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        
-        const basePath = isEn ? '/en/fps-calculator/gta-6-prediction' : '/fps-kalkulacka/gta-6-predikce';
-        return `${basePath}/${cleanCpu}-vs-${cleanGpu}-${targetRes}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
+    // Helper pro čisté linky v UI (relativní cesta)
+    const getGtaPredictionPath = (targetRes) => {
+        const url = getGtaUrl(targetRes);
+        return url.replace('https://thehardwareguru.cz', '');
     };
 
     return (
@@ -183,7 +200,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                                 </div>
                             </div>
 
-                            {/* 2. AI PREDICTION UPSELL BOX PRO 3 ROZLIŠENÍ (SEO MULTIPLIER) */}
+                            {/* 2. AI PREDICTION UPSELL BOX */}
                             <div className="gta-hype-box" style={{ marginTop: '30px', animation: 'fadeIn 1s ease-out' }}>
                                 <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e', padding: '6px 15px', borderRadius: '50px', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '1px' }}>
@@ -198,15 +215,15 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                                 </div>
                                 
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
-                                    <a href={getGtaPredictionUrl('1080p')} className="gta-res-btn">
+                                    <a href={getGtaPredictionPath('1080p')} className="gta-res-btn">
                                         <span className="res-big">1080p</span>
                                         <span className="res-small">Full HD</span>
                                     </a>
-                                    <a href={getGtaPredictionUrl('1440p')} className="gta-res-btn">
+                                    <a href={getGtaPredictionPath('1440p')} className="gta-res-btn">
                                         <span className="res-big">1440p</span>
                                         <span className="res-small">Quad HD</span>
                                     </a>
-                                    <a href={getGtaPredictionUrl('2160p')} className="gta-res-btn">
+                                    <a href={getGtaPredictionPath('2160p')} className="gta-res-btn">
                                         <span className="res-big">4K</span>
                                         <span className="res-small">Ultra HD</span>
                                     </a>
@@ -219,12 +236,12 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-calc-box { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
-                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; appearance: none; cursor: pointer; }
+                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; appearance: none; cursor: pointer; transition: 0.3s; }
+                .guru-select:focus { border-color: #a855f7; background: rgba(168, 85, 247, 0.05); }
                 .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: 0.3s; }
                 .calc-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4); }
-                .calc-btn:disabled { opacity: 0.3; }
+                .calc-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-                /* Flex Card */
                 .viral-flex-card { 
                     display: flex; align-items: center; gap: 20px;
                     max-width: 520px; margin: 40px auto 0; padding: 25px; 
@@ -244,7 +261,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 .btn-reddit { background: #ff4500; }
                 .btn-reddit:hover { transform: scale(1.08); box-shadow: 0 0 15px rgba(255, 69, 0, 0.5); }
 
-                /* GTA 6 Hype Box a Tlačítka */
                 .gta-hype-box {
                     max-width: 520px; margin: 0 auto;
                     background: linear-gradient(135deg, rgba(15, 17, 21, 0.9), rgba(159, 18, 57, 0.15));
@@ -260,7 +276,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 }
                 .gta-res-btn .res-big { font-size: 18px; font-weight: 950; }
                 .gta-res-btn .res-small { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.7); text-transform: uppercase; margin-top: 3px; }
-                .gta-res-btn:hover .res-small { color: rgba(255,255,255,0.9); }
 
                 .check-anim { animation: checkPop 0.3s ease-out; }
                 .animate-spin { animation: spin 1s linear infinite; }
