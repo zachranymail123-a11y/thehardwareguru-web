@@ -1,12 +1,12 @@
 import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
-import { Sparkles, Award, ArrowRight, Zap, Monitor, Cpu, Share2, Twitter, Gamepad2, Swords } from 'lucide-react';
+import { Sparkles, Zap, Monitor, Cpu } from 'lucide-react';
 import ShareButtonsClient from './ShareButtonsClient';
 
 /**
- * GURU GTA 6 PREDICTOR - V9.0 (AUTO-LOGGING VERSION)
- * 🛡️ FIX: Logování do sitemapy probíhá přímo při načtení stránky na serveru.
+ * GURU GTA 6 PREDICTOR - V10.0 (ANTI-DUPE & FIXED LOGGING)
+ * 🛡️ LOGIKA: Prvně ověří existenci, pak zapíše nebo aktualizuje.
  */
 
 export const dynamic = 'force-dynamic';
@@ -16,27 +16,39 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
     const { cpuId, gpuId } = await searchParams;
     const { slug } = await params;
 
-    if (!cpuId || !gpuId) return notFound();
+    if (!cpuId || !gpuId || !slug) return notFound();
 
-    // Inicializace Supabase s Service Role (pro zápis)
+    // Inicializace Supabase s Service Role pro zápis bez omezení
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
         process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 🚀 KROK 1: OKAMŽITÉ LOGOVÁNÍ DO SITEMAPY
-    // Zapíšeme tuhle URL do DB hned teď, aby o ní sitemapa věděla.
+    // --- 🚀 GURU ANTI-DUPLIKACE & ZÁPIS ---
     try {
         const fullUrl = `${baseUrl}/fps-kalkulacka/gta-6-predikce/${slug}?cpuId=${cpuId}&gpuId=${gpuId}`;
-        await supabase.from('generated_predictions').upsert({
-            full_url: fullUrl,
-            last_requested: new Date().toISOString()
-        }, { onConflict: 'full_url' });
-    } catch (logErr) {
-        console.error("Sitemap logging failed:", logErr);
+        
+        // UPSERT (Update or Insert) - Pokud slug_base existuje, přepíše se last_requested
+        const { error: upsertError } = await supabase
+            .from('generated_predictions')
+            .upsert({
+                slug_base: slug,          // Toto je tvůj PRIMARY KEY
+                cpu_id: cpuId,
+                gpu_id: gpuId,
+                full_url: fullUrl,        // Přidáme i celou URL pro sitemapu
+                last_requested: new Date().toISOString()
+            }, { 
+                onConflict: 'slug_base'   // Klíčové pro antiduplikaci
+            });
+
+        if (upsertError) console.error("❌ DB Write Error:", upsertError.message);
+        else console.log("✅ GTA 6 Prediction Logged/Updated:", slug);
+        
+    } catch (err) {
+        console.error("❌ Critical Logging Failure:", err);
     }
 
-    // KROK 2: FETCH HW DAT PRO VÝPOČET
+    // --- FETCH DATA PRO ZOBRAZENÍ ---
     const [gpuRes, cpuRes, gpus, cpus] = await Promise.all([
         supabase.from('game_fps').select('*').eq('gpu_id', gpuId).maybeSingle(),
         supabase.from('cpu_game_fps').select('*').eq('cpu_id', cpuId).maybeSingle(),
@@ -50,9 +62,9 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
     const cpuName = cpus.data?.find(c => c.id === cpuId)?.name || 'CPU';
     const hwComboName = `${cpuName} + ${gpuName}`;
 
-    // Rozlišení a výpočet
     const resolution = slug.endsWith('2160p') ? '4k' : slug.endsWith('1440p') ? '1440p' : '1080p';
     const resKey = resolution === '4k' ? 'alan_wake_2_4k' : `alan_wake_2_${resolution}`;
+    
     const gpuFps = gpuData[resKey] || 0;
     const cpuFps = cpuData[resKey] || 0;
     const baseFps = (gpuFps > 0 && cpuFps > 0) ? Math.min(gpuFps, cpuFps) : Math.max(gpuFps, cpuFps);
@@ -65,7 +77,7 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
         <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff' }}>
             <main style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 20px' }}>
                 <header style={{ textAlign: 'center', marginBottom: '50px' }}>
-                    <div className="pred-badge"><Sparkles size={16} /> AI NEXT-GEN PREDIKCE</div>
+                    <div className="pred-badge"><Sparkles size={16} /> AI PREDIKCE ZÁPIS AKTIVNÍ</div>
                     <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', lineHeight: 1.1, margin: 0 }}>
                         GTA VI <span style={{ color: '#f43f5e' }}>VÝKON</span>
                     </h1>
@@ -85,7 +97,6 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
 
                 <ShareButtonsClient shareText={shareText} shareUrl={shareUrl} />
 
-                {/* Navigace rozlišení */}
                 <div className="res-switch-grid">
                     {['1080p', '1440p', '2160p'].map(res => {
                         const parts = slug.split('-vs-');
