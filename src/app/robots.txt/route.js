@@ -1,8 +1,8 @@
 /**
- * GURU ROBOTS ENGINE V4.1 (API ROUTE VERSION)
- * Ścieżka: src/app/robots.txt/route.js
- * 🛡️ CEL: Tekstowy wariant robots.txt w 100% zgodny z zasadami SEO i ochroną.
- * 🛡️ POPRAWKA: Usunięto starą mapę bing-sitemap.xml.
+ * GURU ROBOTS ENGINE V4.2 (LIVE SITEMAP UPDATE)
+ * Cesta: src/app/robots.txt/route.js
+ * 🛡️ CEL: Přidána dynamická sitemapa pro lidmi vygenerované GTA VI predikce.
+ * 🛡️ FIX: Propojení sitemap-hity.xml pro maximální indexaci.
  */
 
 export const revalidate = 86400;
@@ -13,15 +13,16 @@ User-agent: *
 Allow: /
 Crawl-delay: 1
 
-# Administracja i API
+# Administrace a API
 Disallow: /api/
 Disallow: /admin/
 
-# Mapy witryny (zgodnie ze standardami tylko XML)
+# Mapy webu (Včetně dynamických hitů)
 Sitemap: https://thehardwareguru.cz/guru-sitemap.xml
 Sitemap: https://thehardwareguru.cz/latest.xml
+Sitemap: https://thehardwareguru.cz/sitemap-hity.xml
 
-# Ochrona przed AI
+# Ochrana před AI (Zákaz vykrádání obsahu bez trafficu)
 User-agent: GPTBot
 Disallow: /
 
@@ -46,7 +47,7 @@ Disallow: /
 User-agent: Bytespider
 Disallow: /
 
-# Roboty SEO
+# Roboty SEO (Zákaz pro nástroje, které zbytečně vytěžují DB)
 User-agent: AhrefsBot
 Disallow: /
 
