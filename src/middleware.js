@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
 
 /**
- * 🚀 GURU MASTER MIDDLEWARE 2.7 - GOOGLE & BING BOT FIRST (ZLATÉ PRAVIDLO)
+ * 🚀 GURU MASTER MIDDLEWARE V2.8 (ADSENSE & ANTI-404 PROTECTION)
  * Cesta: src/middleware.js
- * 🛡️ FIX 1: Návrat Bot Bypassu. Boti (US IP) nesmí dostat redirect ani na rootu! 
- * Jinak Bing Live Test hlásí cloaking a sitemapa se neindexuje.
- * 🛡️ FIX 2: Geo-IP redirect pro reálné lidi na / pouze na rootu (SEO Safe).
- * 🛡️ FIX 3: x-url hlavička pro dynamické hreflang tagy v layoutu.
+ * 🛡️ FIX 1: Návrat Bot Bypassu. Boti (US IP) nesmí dostat redirect!
+ * 🛡️ FIX 2: Geo-IP redirect pro reálné lidi pouze na rootu (SEO Safe).
+ * 🛡️ FIX 3: GURU ANTI-404 SHIELD: Odchytáváme mrtvé cesty, co kazí AdSense skóre.
  */
 export function middleware(request) {
   const { pathname, search, origin } = request.nextUrl;
@@ -21,6 +20,13 @@ export function middleware(request) {
     request: { headers: requestHeaders },
   });
 
+  // 🛡️ GURU ANTI-404 SHIELD: Záchranná síť pro AdSense
+  // Pokud někdo/něco hledá staré skripty nebo neexistující cesty, co vidíme v Analytics
+  const forbiddenSuffixes = ['.php', '.asp', '.aspx', '.jsp', '.cgi', 'wp-admin', 'wp-login'];
+  if (forbiddenSuffixes.some(suffix => pathname.toLowerCase().includes(suffix))) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
   // 🛡️ GURU SHIELD: Absolutní priorita pro systémové soubory a API
   if (
     pathname.startsWith('/api') || 
@@ -33,7 +39,6 @@ export function middleware(request) {
   }
 
   // 🤖 ZLATÉ PRAVIDLO: Crawler z USA musí vidět CZ verzi bez redirectu!
-  // To vyřeší chybu "Blocked" v Bing Webmaster Tools.
   const isBot = /bot|crawler|spider|crawling|googlebot|bingbot|seznam|yandex|baiduspider|facebookexternalhit|twitterbot/i.test(userAgent);
   if (isBot) {
       return nextWithHeaders(); 
@@ -45,7 +50,6 @@ export function middleware(request) {
   const isForeigner = !hasLocalIP;
 
   // 1. AUTO-REDIRECT PRO CIZINCE POUZE NA ROOTU (/) -> (/en)
-  // Toto je jediný povolený způsob IP redirectu dle Google/Bing Guidelines.
   if (pathname === '/' && isForeigner) {
     return NextResponse.redirect(new URL('/en', request.url));
   }
@@ -58,7 +62,7 @@ export function middleware(request) {
     }
   }
 
-  // 🏁 GURU FINAL: Vše ostatní (včetně všech sitemap a hlubokých linků) propustíme čistě.
+  // 🏁 GURU FINAL: Vše ostatní propustíme čistě.
   return nextWithHeaders();
 }
 
