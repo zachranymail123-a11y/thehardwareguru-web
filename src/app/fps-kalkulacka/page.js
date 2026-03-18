@@ -4,12 +4,17 @@ import FpsCalculatorClient from './FpsCalculatorClient';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU FPS ENGINE - V6.2 (DARK UI & SEO GOLDEN)
+ * GURU FPS ENGINE - V6.4 (REAL-TIME DATABASE FETCH)
+ * 🛡️ FIX: Vynucení nulové cache pro okamžité zobrazení nových her.
  * 🛡️ FIX: Dark Mode pro HTML Selecty (konec bílých roletek).
  * 🛡️ SEO: Google Golden Rich + Maximální prolinkování.
  */
 
+// 🚀 GURU RULE: Totální bypass cache pro real-time data
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+
 const baseUrl = "https://thehardwareguru.cz";
 
 export async function generateMetadata(props) {
@@ -27,8 +32,14 @@ export async function generateMetadata(props) {
 
 export default async function FpsKalkulackaPage(props) {
   const isEn = props?.params?.lang === 'en' || props?.searchParams?.lang === 'en' || false;
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  
+  // Inicializace klienta přímo ve funkci pro server-side fetch
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL, 
+    process.env.SUPABASE_SERVICE_ROLE_KEY // Používáme SR key pro stabilní fetch
+  );
 
+  // 🚀 GURU DATA FETCH: Vynucujeme čerstvá data bez mezipaměti
   const [gpuRes, cpuRes, gameRes] = await Promise.all([
     supabase.from('gpus').select('id,name,vendor,slug').order('name'),
     supabase.from('cpus').select('id,name').order('name'),
@@ -60,11 +71,17 @@ export default async function FpsKalkulackaPage(props) {
           <div className="main-bait-panel">
             <div className="bait-tag"><Sparkles size={14} /> EXKLUZIVNÍ AI MODUL</div>
             <h2 className="bait-title">CHCETE VĚDĚT, JAK VÁM POJEDE <span style={{color: '#f43f5e'}}>GTA VI?</span></h2>
-            <p className="bait-desc">Stačí níže zadat vaši sestavu. Po výpočtu se vám odemkne <strong>přesný odhad pro GTA VI</strong>!</p>
+            <p className="bait-desc">Databáze her je nyní LIVE. Každá nově přidaná hra se zobrazí okamžitě po refreshi.</p>
           </div>
         </header>
 
-        <FpsCalculatorClient gpus={gpuRes.data || []} cpus={cpuRes.data || []} games={gameRes.data || []} isEn={isEn} />
+        {/* 🚀 KLIENTSKÁ KOMPONENTA S ROLETKAMI */}
+        <FpsCalculatorClient 
+          gpus={gpuRes.data || []} 
+          cpus={cpuRes.data || []} 
+          games={gameRes.data || []} 
+          isEn={isEn} 
+        />
 
         <div style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
             <a href="/cpu-index" className="silo-mini-card"><Cpu size={20} color="#f59e0b" /> KATALOG PROCESORŮ <ArrowRight size={16} /></a>
@@ -76,11 +93,12 @@ export default async function FpsKalkulackaPage(props) {
       <style dangerouslySetInnerHTML={{__html: `
         .guru-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
         
-        /* 🔥 DARK SELECT FIX: Tady se léčí ty bílé roletky */
+        /* 🔥 DARK SELECT FIX: Koniec bielych roletiek */
         select {
           background-color: #0f1115 !important;
           color: #ffffff !important;
           border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          outline: none;
         }
         select option {
           background-color: #1a1d23 !important;
