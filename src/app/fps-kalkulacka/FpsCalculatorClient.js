@@ -23,11 +23,10 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
     const [result, setResult] = useState(null);
     const [copied, setCopied] = useState(false);
 
-    // 🔥 GURU REFERENCE ENGINE V8.0 - KALIBRACE PROTI RTX 4090
+    // 🔥 GURU REFERENCE ENGINE V8.2 - PŘESNÁ KALIBRACE DLE GURU MĚŘENÍ
     const calculateFps = (gpuPerfIndex, cpuPerfIndex, resolution, gameSlug) => {
         const slug = gameSlug.toLowerCase();
         
-        // 1. URČENÍ KATEGORIE A REFERENČNÍCH DAT (DATA PRO RTX 4090)
         let category = 'medium';
         if (slug.includes('callisto') || slug.includes('valorant') || slug.includes('counter-strike')) {
             category = 'light';
@@ -35,7 +34,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             category = 'extreme';
         }
 
-        // Baseline hodnoty pro RTX 4090 (Perf Index 100)
         const baselines4090 = {
             'light': { '1080p': 325, '1440p': 318, '2160p': 242 },
             'medium': { '1080p': 239, '1440p': 183, '2160p': 110 },
@@ -44,14 +42,12 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
         const baseFps4090 = baselines4090[category][resolution] || baselines4090[category]['1440p'];
 
-        // 2. VÝPOČET POMĚRU VÝKONU (GPU PERF INDEX VŮČI 100 U 4090)
-        // Pokud má karta index 50, dává 50% FPS co 4090
-        const gpuRatio = gpuPerfIndex / 100;
-        let finalFps = baseFps4090 * gpuRatio;
+        // Upravený koeficient - narovnání výkonu pro karty jako RTX 3070
+        // Místo lineárního propadu používáme mírnou nelineární korekci pro lepší odhad reálného chování
+        const gpuRatio = Math.pow(gpuPerfIndex / 100, 0.85); 
+        let finalFps = baseFps4090 * gpuRatio * 1.6; // Korekce pro dosažení ~57 FPS u RTX 3070 v extreme
 
-        // 3. VLIV PROCESORU (DOPLŇKOVÝ)
-        // Pokud je CPU slabé, strhne výkon o dalších max 15-20%
-        const cpuWeight = category === 'extreme' ? 0.05 : 0.15;
+        const cpuWeight = category === 'extreme' ? 0.08 : 0.20;
         const cpuRatio = cpuPerfIndex / 100;
         finalFps = (finalFps * (1 - cpuWeight)) + (finalFps * cpuWeight * cpuRatio);
 
@@ -67,14 +63,12 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             const gpu = gpus.find(g => g.id === selectedGpuId);
             const cpu = cpus.find(c => c.id === selectedCpuId);
             
-            // Extrakce indexů (pokud chybí, dáváme 50 jako střed)
             const gpuPerf = gpu?.performance_index || 50; 
             const cpuPerf = cpu?.performance_index || 50;
 
             const finalFps = calculateFps(gpuPerf, cpuPerf, selectedRes, selectedGameSlug);
             setResult({ fps: finalFps });
 
-            // LOGOVÁNÍ PRO SITEMAPU (NEMĚNÍME)
             const getGtaUrl = (res) => {
                 const basePath = isEn ? '/en/fps-calculator/gta-6-prediction' : '/fps-kalkulacka/gta-6-predikce';
                 const cpuSlug = cpu?.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'cpu';
@@ -93,7 +87,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         } catch (err) { console.error(err); setResult({ fps: 0 }); } finally { setIsCalculating(false); }
     };
 
-    // UI pomocníci
     const getGtaPredictionPath = (res) => {
         const gpu = gpus.find(g => g.id === selectedGpuId);
         const cpu = cpus.find(c => c.id === selectedCpuId);
@@ -165,6 +158,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 .guru-select { width: 100%; background: #000; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; }
                 .calc-btn { background: #a855f7; color: #fff; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; }
                 .viral-flex-card { display: flex; align-items: center; gap: 20px; max-width: 520px; margin: 40px auto 0; padding: 25px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 20px; text-align: left; }
+                .award-icon { width: 60px; height: 60px; background: rgba(168, 85, 247, 0.2); border-radius: 15px; display: flex; align-items: center; justify-content: center; }
                 .premium-share-btn { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; border: none; color: #fff; display: flex; align-items: center; justify-content: center; }
                 .btn-copy { background: #a855f7; } .btn-x { background: #000; border: 1px solid #333; } .btn-reddit { background: #ff4500; }
                 .gta-hype-box { max-width: 520px; margin: 0 auto; background: linear-gradient(135deg, rgba(15, 17, 21, 0.9), rgba(159, 18, 57, 0.15)); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 20px; padding: 30px 25px; }
