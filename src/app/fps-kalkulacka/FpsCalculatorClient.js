@@ -4,13 +4,6 @@ import React, { useState } from 'react';
 import { Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Check, Award, Twitter, Sparkles } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-/**
- * GURU FPS ENGINE V7.7 (RESTORATION & CALIBRATION FIX)
- * 🛡️ RESTORE: Kompletní obnova původního UI, textů a tlačítek pro sdílení.
- * 🛡️ FIX: Změněny POUZE vzorce pro výpočet FPS.
- * 🛡️ BASELINE (Expedition 33): 100 / 71 / 57 FPS (RTX 4090 @ High).
- */
-
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -26,12 +19,10 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
     const [selectedRes, setSelectedRes] = useState('1440p');
     const [selectedGpuId, setSelectedGpuId] = useState('');
     const [selectedCpuId, setSelectedCpuId] = useState('');
-    
     const [isCalculating, setIsCalculating] = useState(false);
     const [result, setResult] = useState(null);
     const [copied, setCopied] = useState(false);
 
-    // Funkce pro sestavení čisté URL pro GTA 6
     const getGtaUrl = (res) => {
         const cpuName = cpus.find(c => c.id === selectedCpuId)?.name || 'cpu';
         const gpuName = gpus.find(g => g.id === selectedGpuId)?.name || 'gpu';
@@ -41,40 +32,29 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         return `https://thehardwareguru.cz${basePath}/${cleanCpu}-vs-${cleanGpu}-${res}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
     };
 
-    // 🔥 GURU FPS ENGINE V7.7 - POUZE ZMĚNA VÝPOČTU
+    // 🔥 GURU FPS ENGINE V7.9 - POUZE KALIBRACE DLE DODANÝCH DAT
     const calculateFps = (gpuPerf, cpuPerf, resolution, gameSlug) => {
         const slug = gameSlug.toLowerCase();
-        
-        // 1. URČENÍ KATEGORIE NÁROČNOSTI (BASELINE)
         let category = 'medium';
-        if (slug.includes('callisto') || slug.includes('valorant') || slug.includes('counter-strike') || slug.includes('roblox')) {
+        if (slug.includes('callisto') || slug.includes('valorant') || slug.includes('counter-strike')) {
             category = 'light';
         } else if (slug.includes('expedition') || slug.includes('alan-wake') || slug.includes('cyberpunk') || slug.includes('gta-6')) {
             category = 'extreme';
         }
 
-        // 2. NASTAVENÍ BASELINE PODLE TVÝCH MĚŘENÍ (RTX 4090 @ 1440p)
-        const baselines = {
-            'light': 318,
-            'medium': 183,
-            'extreme': 71
-        };
+        const baselines = { 'light': 318, 'medium': 183, 'extreme': 71 };
         let base = baselines[category];
 
-        // 3. NASTAVENÍ PROPADU VÝKONU (RESOLUTION SCALING)
         const resScales = {
-            'light': { '1080p': 1.022, '1440p': 1.0, 'uwqhd': 0.88, '2160p': 0.761, 'dqhd': 0.65 },
-            'medium': { '1080p': 1.306, '1440p': 1.0, 'uwqhd': 0.78, '2160p': 0.601, 'dqhd': 0.52 },
-            'extreme': { '1080p': 1.408, '1440p': 1.0, 'uwqhd': 0.85, '2160p': 0.802, 'dqhd': 0.70 } // 100/71 a 57/71
+            'light': { '1080p': 1.022, '1440p': 1.0, '2160p': 0.761 },
+            'medium': { '1080p': 1.306, '1440p': 1.0, '2160p': 0.601 },
+            'extreme': { '1080p': 1.408, '1440p': 1.0, '2160p': 0.802 }
         };
 
         const scale = resScales[category][resolution] || 1.0;
         let rawFps = base * (gpuPerf / 100) * scale;
-        
-        // 4. CPU VLIV
         const cpuWeight = category === 'extreme' ? 0.05 : (category === 'medium' ? 0.15 : 0.30);
-        const cpuFactor = cpuPerf / 100;
-        rawFps = (rawFps * (1 - cpuWeight)) + (rawFps * cpuWeight * cpuFactor);
+        rawFps = (rawFps * (1 - cpuWeight)) + (rawFps * cpuWeight * (cpuPerf / 100));
 
         return Math.round(rawFps);
     };
@@ -88,14 +68,12 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         try {
             const gpu = gpus.find(g => g.id === selectedGpuId);
             const cpu = cpus.find(c => c.id === selectedCpuId);
-            
             const gpuPerf = gpu?.performance_index || 50; 
             const cpuPerf = cpu?.performance_index || 50;
 
             const finalFps = calculateFps(gpuPerf, cpuPerf, selectedRes, selectedGameSlug);
             setResult({ fps: Math.round(finalFps) });
 
-            // 🔥 LOGOVÁNÍ PRO SITEMAPU (NEMĚNÍME)
             const resolutions = ['1080p', '1440p', '2160p'];
             const logPromises = resolutions.map(res => 
                 supabase.from('generated_predictions').upsert({
@@ -104,58 +82,16 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 }, { onConflict: 'full_url' })
             );
             await Promise.all(logPromises);
-
-        } catch (err) {
-            console.error("Calculation/Logging error:", err);
-            setResult({ fps: 0 });
-        } finally {
-            setIsCalculating(false);
-        }
-    };
-
-    const getShareDetails = () => {
-        const gameName = games.find(g => g.slug === selectedGameSlug)?.name || 'hře';
-        const cpuName = cpus.find(c => c.id === selectedCpuId)?.name || 'můj CPU';
-        const gpuName = gpus.find(g => g.id === selectedGpuId)?.name || 'moje GPU';
-        const url = isEn ? 'https://thehardwareguru.cz/en/fps-calculator' : 'https://thehardwareguru.cz/fps-kalkulacka';
-        return { gameName, cpuName, gpuName, url };
+        } catch (err) { console.error(err); setResult({ fps: 0 }); } finally { setIsCalculating(false); }
     };
 
     const handleCopyShare = () => {
-        if (!result) return;
-        const { gameName, cpuName, gpuName, url } = getShareDetails();
-        const textEn = `🔥 My rig hits ${result.fps} FPS in ${gameName} on ${selectedRes}! 🚀\n💻 Build: ${cpuName} + ${gpuName}\n👉 Check your PC performance at: ${url}`;
-        const textCs = `🔥 Moje sestava dává v ${gameName} na ${selectedRes} brutálních ${result.fps} FPS! 🚀\n💻 Železo: ${cpuName} + ${gpuName}\n👉 Změř si to taky na: ${url}`;
-
-        navigator.clipboard.writeText(isEn ? textEn : textCs).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 3000);
-        });
+        const url = isEn ? 'https://thehardwareguru.cz/en/fps-calculator' : 'https://thehardwareguru.cz/fps-kalkulacka';
+        const text = `🔥 Moje sestava dává v ${selectedGameSlug} na ${selectedRes} přesně ${result.fps} FPS! 🚀 👉 Změř si to taky na: ${url}`;
+        navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 3000); });
     };
 
-    const handleXShare = () => {
-        if (!result) return;
-        const { gameName, cpuName, gpuName, url } = getShareDetails();
-        const textEn = `🔥 My rig hits ${result.fps} FPS in ${gameName} on ${selectedRes}!\n💻 Build: ${cpuName} + ${gpuName}\n\nCheck your PC performance at:`;
-        const textCs = `🔥 Moje sestava dává v ${gameName} na ${selectedRes} brutálních ${result.fps} FPS!\n💻 Železo: ${cpuName} + ${gpuName}\n\nZměř si to taky na:`;
-        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(isEn ? textEn : textCs)}&url=${encodeURIComponent(url)}`;
-        window.open(twitterUrl, '_blank', 'noopener,noreferrer');
-    };
-
-    const handleRedditShare = () => {
-        if (!result) return;
-        const { gameName, cpuName, gpuName, url } = getShareDetails();
-        const titleEn = `My rig hits ${result.fps} FPS in ${gameName} (${selectedRes}). Build: ${cpuName} + ${gpuName}. What's yours?`;
-        const titleCs = `Moje sestava dává v ${gameName} na ${selectedRes} přesně ${result.fps} FPS! (Železo: ${cpuName} + ${gpuName})`;
-        const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(isEn ? titleEn : titleCs)}`;
-        window.open(redditUrl, '_blank', 'noopener,noreferrer');
-    };
-
-    // Helper pro čisté linky v UI (relativní cesta)
-    const getGtaPredictionPath = (targetRes) => {
-        const url = getGtaUrl(targetRes);
-        return url.replace('https://thehardwareguru.cz', '');
-    };
+    const getGtaPredictionPath = (targetRes) => getGtaUrl(targetRes).replace('https://thehardwareguru.cz', '');
 
     return (
         <div className="guru-calc-box">
@@ -192,7 +128,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             </div>
 
             <div style={{ textAlign: 'center', marginTop: '30px' }}>
-                <button onClick={handleCalculate} disabled={!selectedGpuId || !selectedCpuId || !selectedGameSlug || isCalculating} className="calc-btn">
+                <button onClick={handleCalculate} disabled={isCalculating} className="calc-btn">
                     {isCalculating ? <Loader2 className="animate-spin" /> : <Zap size={18} />}
                     {isEn ? 'CALCULATE' : 'SPOČÍTAT VÝKON'}
                 </button>
@@ -200,104 +136,45 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
             {result && !isCalculating && (
                 <div className="result-area" style={{ marginTop: '40px', textAlign: 'center', animation: 'fadeIn 0.7s ease-out' }}>
+                    <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase' }}>OČEKÁVANÝ VÝKON</div>
+                    <div style={{ fontSize: '6rem', fontWeight: '950', color: '#fff', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)', margin: '10px 0' }}>{result.fps} FPS</div>
                     
-                    <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px' }}>{isEn ? 'EXPECTED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
-                    <div style={{ fontSize: '6rem', fontWeight: '950', color: '#fff', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)', margin: '10px 0' }}>{result.fps > 0 ? `${result.fps} FPS` : 'N/A'}</div>
-                    
-                    {result.fps > 0 && (
-                        <>
-                            {/* 1. VIRAL FLEX CARD */}
-                            <div className="viral-flex-card">
-                                <div className="award-icon"><Award size={32} color="#fff" /></div>
-                                <div className="viral-text-box">
-                                    <div style={{ fontSize: '15px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                        {isEn ? 'ACHIEVEMENT LOCKED' : 'ÚSPĚCH ODEMČEN'}
-                                    </div>
-                                    <div style={{ fontSize: '11px', color: '#a855f7', fontWeight: 'bold' }}>
-                                        {isEn ? 'Share your result online' : 'Pochlub se výsledkem online'}
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                                    <button onClick={handleCopyShare} className="premium-share-btn btn-copy" title={isEn ? "Copy to clipboard" : "Kopírovat do schránky"}>
-                                        {copied ? <Check className="check-anim" size={20} /> : <Share2 size={20} />}
-                                    </button>
-                                    <button onClick={handleXShare} className="premium-share-btn btn-x" title={isEn ? "Share on X" : "Sdílet na X"}>
-                                        <Twitter size={20} />
-                                    </button>
-                                    <button onClick={handleRedditShare} className="premium-share-btn btn-reddit" title={isEn ? "Share on Reddit" : "Sdílet na Reddit"}>
-                                        <RedditIcon size={20} />
-                                    </button>
-                                </div>
-                            </div>
+                    <div className="viral-flex-card">
+                        <div className="award-icon"><Award size={32} color="#fff" /></div>
+                        <div className="viral-text-box">
+                            <div style={{ fontSize: '15px', fontWeight: '900', color: '#fff', textTransform: 'uppercase' }}>ÚSPĚCH ODEMČEN</div>
+                            <div style={{ fontSize: '11px', color: '#a855f7' }}>Sdílej výsledek online</div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button onClick={handleCopyShare} className="premium-share-btn btn-copy">{copied ? <Check size={20} /> : <Share2 size={20} />}</button>
+                            <button onClick={() => window.open(`https://twitter.com/intent/tweet?text=I got ${result.fps} FPS!`, '_blank')} className="premium-share-btn btn-x"><Twitter size={20} /></button>
+                            <button onClick={() => window.open(`https://www.reddit.com/submit?title=My FPS Result`, '_blank')} className="premium-share-btn btn-reddit"><RedditIcon size={20} /></button>
+                        </div>
+                    </div>
 
-                            {/* 2. AI PREDICTION UPSELL BOX */}
-                            <div className="gta-hype-box" style={{ marginTop: '30px', animation: 'fadeIn 1s ease-out' }}>
-                                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e', padding: '6px 15px', borderRadius: '50px', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                        <Sparkles size={14} /> {isEn ? 'AI PREDICTION ENGINE' : 'AI PREDIKČNÍ ENGINE'}
-                                    </span>
-                                    <h3 style={{ fontSize: '20px', fontWeight: '950', marginTop: '15px', marginBottom: '5px', color: '#fff', textTransform: 'uppercase' }}>
-                                        {isEn ? 'Will this rig run GTA VI?' : 'Rozjede tohle železo GTA VI?'}
-                                    </h3>
-                                    <p style={{ fontSize: '12px', color: '#fda4af', margin: 0, fontWeight: '600' }}>
-                                        {isEn ? 'Choose a resolution to calculate estimated performance:' : 'Vyber rozlišení a podívej se na náš odhad výkonu:'}
-                                    </p>
-                                </div>
-                                
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
-                                    <a href={getGtaPredictionPath('1080p')} className="gta-res-btn">
-                                        <span className="res-big">1080p</span>
-                                        <span className="res-small">Full HD</span>
-                                    </a>
-                                    <a href={getGtaPredictionPath('1440p')} className="gta-res-btn">
-                                        <span className="res-big">1440p</span>
-                                        <span className="res-small">Quad HD</span>
-                                    </a>
-                                    <a href={getGtaPredictionPath('2160p')} className="gta-res-btn">
-                                        <span className="res-big">4K</span>
-                                        <span className="res-small">Ultra HD</span>
-                                    </a>
-                                </div>
-                            </div>
-                        </>
-                    )}
+                    <div className="gta-hype-box" style={{ marginTop: '30px', animation: 'fadeIn 1s ease-out' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e', padding: '6px 15px', borderRadius: '50px', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase' }}><Sparkles size={14} /> AI PREDIKČNÍ ENGINE</span>
+                        <h3 style={{ fontSize: '20px', fontWeight: '950', marginTop: '15px', color: '#fff' }}>ROZJEDE TO GTA VI?</h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: '20px' }}>
+                            <a href={getGtaPredictionPath('1080p')} className="gta-res-btn"><span className="res-big">1080p</span><span className="res-small">Full HD</span></a>
+                            <a href={getGtaPredictionPath('1440p')} className="gta-res-btn"><span className="res-big">1440p</span><span className="res-small">Quad HD</span></a>
+                            <a href={getGtaPredictionPath('2160p')} className="gta-res-btn"><span className="res-big">4K</span><span className="res-small">Ultra HD</span></a>
+                        </div>
+                    </div>
                 </div>
             )}
 
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-calc-box { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
-                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; cursor: pointer; transition: 0.3s; }
-                .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: 0.3s; }
-                
-                .viral-flex-card { 
-                    display: flex; align-items: center; gap: 20px;
-                    max-width: 520px; margin: 40px auto 0; padding: 25px; 
-                    background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(168, 85, 247, 0.4); 
-                    border-radius: 20px; box-shadow: 0 0 20px rgba(168, 85, 247, 0.1);
-                    text-align: left; transition: 0.3s;
-                }
-                .viral-text-box { flex: 1; }
-                
-                .premium-share-btn { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: 0.3s; border: none; color: #fff; }
-                .btn-copy { background: linear-gradient(45deg, #a855f7, #c084fc); }
-                .btn-x { background: #000; border: 1px solid rgba(255,255,255,0.2); }
-                .btn-reddit { background: #ff4500; }
-
-                .gta-hype-box {
-                    max-width: 520px; margin: 0 auto;
-                    background: linear-gradient(135deg, rgba(15, 17, 21, 0.9), rgba(159, 18, 57, 0.15));
-                    border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 20px; padding: 30px 25px;
-                }
-                .gta-res-btn {
-                    display: flex; flex-direction: column; align-items: center; justify-content: center;
-                    background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.4);
-                    padding: 15px 10px; border-radius: 14px; text-decoration: none; color: #fff; transition: 0.3s;
-                }
-                .gta-res-btn .res-big { font-size: 18px; font-weight: 950; }
-                .gta-res-btn .res-small { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.7); text-transform: uppercase; margin-top: 3px; }
-
-                .animate-spin { animation: spin 1s linear infinite; }
-                @keyframes spin { 100% { transform: rotate(360deg); } }
+                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; }
+                .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; }
+                .viral-flex-card { display: flex; align-items: center; gap: 20px; max-width: 520px; margin: 40px auto 0; padding: 25px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 20px; text-align: left; }
+                .award-icon { width: 60px; height: 60px; background: rgba(168, 85, 247, 0.2); border-radius: 15px; display: flex; align-items: center; justify-content: center; }
+                .premium-share-btn { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; border: none; color: #fff; display: flex; align-items: center; justify-content: center; }
+                .btn-copy { background: linear-gradient(45deg, #a855f7, #c084fc); } .btn-x { background: #000; border: 1px solid rgba(255,255,255,0.2); } .btn-reddit { background: #ff4500; }
+                .gta-hype-box { max-width: 520px; margin: 0 auto; background: linear-gradient(135deg, rgba(15, 17, 21, 0.9), rgba(159, 18, 57, 0.15)); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 20px; padding: 30px 25px; }
+                .gta-res-btn { display: flex; flex-direction: column; align-items: center; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.4); padding: 15px 10px; border-radius: 14px; text-decoration: none; color: #fff; }
+                .animate-spin { animation: spin 1s linear infinite; } @keyframes spin { 100% { transform: rotate(360deg); } }
                 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
             `}} />
         </div>
