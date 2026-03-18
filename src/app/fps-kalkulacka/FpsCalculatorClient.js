@@ -4,6 +4,12 @@ import React, { useState } from 'react';
 import { Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Check, Award, Twitter, Sparkles } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
+/**
+ * GURU FPS ENGINE CLIENT - V6.0 (SITEMAP FEEDER & SEO MULTIPLIER)
+ * 🛡️ AUTO-SITEMAP: Při každém výpočtu uložíme 3 unikátní GTA 6 URL do DB pro sitemapu.
+ * 🛡️ SEO GENERÁTOR: 3 rozlišení = 3x více stránek v indexu z jednoho uživatele.
+ */
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -47,7 +53,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
             const gpuData = gpuFpsRes.data || {};
             const cpuData = cpuFpsRes.data || {};
-
             const dbBase = selectedGameSlug.replace(/-/g, '_');
             const resKey = selectedRes === '2160p' ? '4k' : selectedRes;
             const columnKey = `${dbBase}_${resKey}`;
@@ -58,70 +63,129 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             const gpu = gpus.find(g => g.id === selectedGpuId);
             const gpuName = gpu?.name || '';
             const gpuPerfIndex = gpu?.performance_index || 100;
-            
-            // PŘESNÁ DATA Z TVÉHO GRAFU (RTX 4090 = 129.4 FPS = 1.0)
+            const cpu = cpus.find(c => c.id === selectedCpuId);
+            const cpuPerfIndex = cpu?.performance_index || 100;
+
+            // ---------------------------------------------------------
+            // 🚀 CHATGPT ALGORITHM IMPLEMENTATION (DYNAMICKÝ TIER LIST)
+            // ---------------------------------------------------------
+
+            const base_FPS = 167; // Baseline Cyberpunk 2077 na RTX 4090 při 1080p
+
             const getGpuTier = (name) => {
                 const n = name.toLowerCase();
-                
-                if (n.includes('4090')) return 1.0;
-                if (n.includes('4080')) return 0.798;
-                if (n.includes('7900 xtx')) return 0.757;
-                if (n.includes('3090 ti')) return 0.701;
-                if (n.includes('7900 xt')) return 0.665;
-                if (n.includes('4070 ti')) return 0.648;
-                if (n.includes('3090')) return 0.616;
-                if (n.includes('7800 xt')) return 0.568;
-                if (n.includes('3080')) return 0.548;
-                if (n.includes('6900 xt')) return 0.545;
-                if (n.includes('4070')) return 0.513;
-                if (n.includes('6800 xt')) return 0.512;
-                if (n.includes('7700 xt')) return 0.481;
-                if (n.includes('3070 ti')) return 0.445; 
-                if (n.includes('3070')) return 0.421;
-                if (n.includes('2080 ti')) return 0.413;
-                if (n.includes('4060 ti 16')) return 0.389;
-                if (n.includes('4060 ti')) return 0.401;
-                if (n.includes('3060 ti')) return 0.359;
-                
-                return null; 
+                const is1080 = (selectedRes === '1080p');
+
+                // DYNAMICKÉ ŠKÁLOVÁNÍ DLE TVÝCH OBRÁZKŮ
+                // Pokud je zvoleno 1080p, vracíme přesná reálná data z 1080p obrázku (kde RTX 4090 = 140.4 FPS)
+                // Pokud je zvoleno 1440p/4k, vracíme data z 1440p obrázku
+
+                if (n.includes('5090')) return is1080 ? 1.100 : 1.280; // 154.5 / 140.4
+                if (n.includes('5080')) return is1080 ? 1.048 : 1.150; // 147.2 / 140.4
+                if (n.includes('4090')) return 1.000;
+
+                if (n.includes('4080 super')) return is1080 ? 0.900 : 0.827;
+                if (n.includes('4080')) return is1080 ? 0.890 : 0.798; // 124.9 / 140.4
+                if (n.includes('7900 xtx')) return is1080 ? 0.895 : 0.757; // 125.7 / 140.4
+
+                if (n.includes('5070 ti')) return is1080 ? 0.853 : 0.880; // 119.8 / 140.4
+                if (n.includes('4070 ti super')) return is1080 ? 0.797 : 0.712; // 111.9 / 140.4
+                if (n.includes('7900 xt')) return is1080 ? 0.789 : 0.665; // 110.8 / 140.4
+                if (n.includes('3090 ti')) return is1080 ? 0.747 : 0.701; // 104.9 / 140.4
+                if (n.includes('4070 ti')) return is1080 ? 0.718 : 0.648; // 100.8 / 140.4
+                if (n.includes('5070')) return is1080 ? 0.716 : 0.730; // 100.5 / 140.4
+
+                if (n.includes('4070 super')) return is1080 ? 0.694 : 0.615; // 97.4 / 140.4
+                if (n.includes('7900 gre')) return is1080 ? 0.682 : 0.635; // 95.8 / 140.4
+                if (n.includes('3090')) return is1080 ? 0.674 : 0.616; // 94.6 / 140.4
+                if (n.includes('7800 xt')) return is1080 ? 0.667 : 0.568; // 93.6 / 140.4
+                if (n.includes('6950 xt')) return is1080 ? 0.665 : 0.596; // 93.3 / 140.4
+
+                if (n.includes('3080 ti')) return is1080 ? 0.635 : 0.551; // 89.2 / 140.4
+                if (n.includes('3080')) return is1080 ? 0.621 : 0.548; // 87.2 / 140.4
+                if (n.includes('6900 xt')) return is1080 ? 0.618 : 0.545; // 86.8 / 140.4
+                if (n.includes('4070')) return is1080 ? 0.603 : 0.513; // 84.7 / 140.4
+                if (n.includes('6800 xt')) return is1080 ? 0.580 : 0.512;
+
+                if (n.includes('6800')) return is1080 ? 0.530 : 0.487;
+                if (n.includes('7700 xt')) return is1080 ? 0.550 : 0.481;
+                if (n.includes('3070 ti')) return is1080 ? 0.520 : 0.445;
+                if (n.includes('6750 xt')) return is1080 ? 0.480 : 0.432;
+                if (n.includes('3070')) return is1080 ? 0.490 : 0.421;
+
+                if (n.includes('6700 xt')) return is1080 ? 0.450 : 0.403;
+                if (n.includes('4060 ti 16')) return is1080 ? 0.480 : 0.389;
+                if (n.includes('4060 ti')) return is1080 ? 0.490 : 0.401;
+                if (n.includes('3060 ti')) return is1080 ? 0.430 : 0.359;
+                if (n.includes('6650 xt')) return is1080 ? 0.380 : 0.322;
+
+                if (n.includes('7600 xt')) return is1080 ? 0.350 : 0.275;
+                if (n.includes('7600')) return is1080 ? 0.320 : 0.288;
+                if (n.includes('4060')) return is1080 ? 0.380 : 0.297;
+                if (n.includes('3060')) return is1080 ? 0.350 : 0.280;
+                if (n.includes('6600 xt')) return is1080 ? 0.350 : 0.254;
+                if (n.includes('6600')) return is1080 ? 0.320 : 0.231;
+
+                if (n.includes('9070 xt')) return is1080 ? 0.860 : 0.820;
+                if (n.includes('9070')) return is1080 ? 0.780 : 0.710;
+                if (n.includes('5060 ti 16')) return is1080 ? 0.630 : 0.572;
+                if (n.includes('5060 ti')) return is1080 ? 0.650 : 0.614;
+                if (n.includes('5060')) return is1080 ? 0.550 : 0.487;
+                if (n.includes('5050')) return is1080 ? 0.490 : 0.466;
+
+                return null;
             };
 
-            const tierFromList = getGpuTier(gpuName);
-            // Výpočet použije tvůj graf, nebo dynamicky vezme data z tvé Supabase
-            const activeTier = tierFromList !== null ? tierFromList : (gpuPerfIndex / 100);
+            const GPU_ratio = getGpuTier(gpuName) || (gpuPerfIndex / 100);
 
-            const ref4090 = {
-                'the-callisto-protocol': { '1080p': 325, '1440p': 318, '2160p': 242 },
-                'battlefield-6': { '1080p': 167, '1440p': 122, '2160p': 70 },
-                'cyberpunk-2077': { '1080p': 167, '1440p': 129, '2160p': 69 }
-            };
+            let resolution_scaling = 1.0;
+            let game_multiplier = 1.0;
 
-            let base4090Fps = 0;
-            let refSlug = Object.keys(ref4090).find(slug => selectedGameSlug.includes(slug));
-
-            if (refSlug && ref4090[refSlug][selectedRes]) {
-                base4090Fps = ref4090[refSlug][selectedRes];
-            } else {
-                let rawBase = (gpuFps > 0 && cpuFps > 0) ? Math.min(gpuFps, cpuFps) : Math.max(gpuFps, cpuFps);
+            if (selectedGameSlug.includes('cyberpunk-2077')) {
+                game_multiplier = 1.0; 
+                if (selectedRes === '1080p') resolution_scaling = 1.0; 
+                if (selectedRes === '1440p') resolution_scaling = 129 / 167; // 0.772
+                if (selectedRes === '2160p' || selectedRes === '4k') resolution_scaling = 69 / 167; // 0.413
+            } 
+            else if (selectedGameSlug.includes('battlefield-6')) {
+                game_multiplier = 167 / 167; 
+                if (selectedRes === '1080p') resolution_scaling = 1.0; 
+                if (selectedRes === '1440p') resolution_scaling = 122 / 167; 
+                if (selectedRes === '2160p' || selectedRes === '4k') resolution_scaling = 70 / 167; 
+            }
+            else if (selectedGameSlug.includes('the-callisto-protocol')) {
+                game_multiplier = 325 / 167; 
+                if (selectedRes === '1080p') resolution_scaling = 1.0; 
+                if (selectedRes === '1440p') resolution_scaling = 318 / 325; 
+                if (selectedRes === '2160p' || selectedRes === '4k') resolution_scaling = 242 / 325; 
+            }
+            else {
+                let rawDbFps = (gpuFps > 0 && cpuFps > 0) ? Math.min(gpuFps, cpuFps) : Math.max(gpuFps, cpuFps);
+                if (rawDbFps === 0) rawDbFps = 45; 
                 
-                if (rawBase > 0) {
-                    let oldDbMultiplier = gpuPerfIndex / 100;
-                    if (oldDbMultiplier <= 0) oldDbMultiplier = activeTier;
-                    base4090Fps = rawBase / oldDbMultiplier;
-                }
+                let oldDbMultiplier = gpuPerfIndex / 100;
+                if (oldDbMultiplier <= 0) oldDbMultiplier = GPU_ratio;
+                
+                let est4090Fps = (rawDbFps / oldDbMultiplier) * 2.84;
+                game_multiplier = est4090Fps / base_FPS;
+                resolution_scaling = 1.0; 
             }
 
-            let finalFps = base4090Fps * activeTier;
+            if (selectedRes === 'uwqhd') resolution_scaling *= 0.88;
+            if (selectedRes === 'dqhd') resolution_scaling *= 0.62;
 
-            const cpu = cpus.find(c => c.id === selectedCpuId);
-            const cpuPerf = cpu?.performance_index || 100;
-            const gpuPerfEst = activeTier * 100;
-            if (cpuPerf < gpuPerfEst) {
-                finalFps = finalFps * (0.85 + 0.15 * (cpuPerf / gpuPerfEst));
+            let CPU_factor = 1.0;
+            const cpuPerfEst = GPU_ratio * 100;
+            if (cpuPerfIndex < cpuPerfEst) {
+                CPU_factor = 0.85 + 0.15 * (cpuPerfIndex / cpuPerfEst);
             }
+
+            // 🎯 FINÁLNÍ VÝPOČET KOMBINACE VŠEHO DLE CHATGPT
+            let finalFps = base_FPS * GPU_ratio * resolution_scaling * game_multiplier * CPU_factor;
 
             setResult({ fps: Math.round(finalFps) });
 
+            // 🔥 LOGOVÁNÍ PRO SITEMAPU
             const resolutions = ['1080p', '1440p', '2160p'];
             const logPromises = resolutions.map(res => 
                 supabase.from('generated_predictions').upsert({
