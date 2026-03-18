@@ -1,8 +1,8 @@
 /**
- * GURU ROBOTS ENGINE V4.2 (LIVE SITEMAP UPDATE)
+ * GURU ROBOTS ENGINE V4.3 (ADSENSE APPROVAL MODE)
  * Cesta: src/app/robots.txt/route.js
- * 🛡️ CEL: Přidána dynamická sitemapa pro lidmi vygenerované GTA VI predikce.
- * 🛡️ FIX: Propojení sitemap-hity.xml pro maximální indexaci.
+ * 🛡️ STRATEGIE: Skrýt automatický balast před manuální kontrolou AdSense.
+ * 🛡️ AKCE: Dočasně zakomentovány dynamické sitemapy pro hladké schválení.
  */
 
 export const revalidate = 86400;
@@ -17,12 +17,15 @@ Crawl-delay: 1
 Disallow: /api/
 Disallow: /admin/
 
-# Mapy webu (Včetně dynamických hitů)
+# Mapy webu (Hlavní mapy pro schválení)
 Sitemap: https://thehardwareguru.cz/guru-sitemap.xml
 Sitemap: https://thehardwareguru.cz/latest.xml
-Sitemap: https://thehardwareguru.cz/sitemap-hity.xml
 
-# Ochrana před AI (Zákaz vykrádání obsahu bez trafficu)
+# Dynamické mapy (AKTIVOVAT AŽ PO SCHVÁLENÍ ADSENSE)
+# Sitemap: https://thehardwareguru.cz/sitemap-hity.xml
+# Sitemap: https://thehardwareguru.cz/rss-comparisons.xml
+
+# Ochrana před AI (Zákaz vykrádání obsahu)
 User-agent: GPTBot
 Disallow: /
 
@@ -47,7 +50,7 @@ Disallow: /
 User-agent: Bytespider
 Disallow: /
 
-# Roboty SEO (Zákaz pro nástroje, které zbytečně vytěžují DB)
+# Roboty SEO
 User-agent: AhrefsBot
 Disallow: /
 
