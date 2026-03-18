@@ -1,25 +1,12 @@
 import React from 'react';
 import { 
-  ChevronLeft, 
-  Trophy, 
-  Zap, 
-  Swords, 
-  Activity, 
-  Cpu,
-  Medal,
-  Monitor,
-  Flame,
-  ArrowRight
+  ChevronLeft, Trophy, Zap, Swords, Activity, Cpu, Medal, Monitor, Flame, ArrowRight 
 } from 'lucide-react';
 
 /**
- * GURU CPU ENGINE - TIER LIST & RANKING V1.3 (ULTIMATE FIX + SEO SILOING)
- * Cesta: src/app/cpuvs/ranking/page.js
- * 🛡️ FIX 1: Nativní fetch s 'no-store' = 100% bypass mrtvé Next.js cache.
- * 🛡️ FIX 2: Ošetřeno řazení nullslast - procesory bez skóre už nemizí.
- * 🛡️ FIX 3: Bezpečné čtení boost_clock_ghz vs mhz pro starší databázové záznamy.
- * 🛡️ FIX 4: Celý řádek žebříčku převeden na klikací SEO odkaz.
- * 🛡️ FIX 5: Přidán spodní Siloing rozcestník pro udržení uživatele na webu.
+ * GURU CPU ENGINE - TIER LIST & RANKING V1.4 (NEXT.js 15 STABILITY FIX)
+ * 🛡️ FIX: Kompletní ošetření asynchronních props pro Next.js 15 (odstranění Digest chyb).
+ * 🛡️ FIX: Robustní fetch s fallbackem pro Supabase.
  */
 
 export const dynamic = 'force-dynamic';
@@ -30,8 +17,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 const slugify = (text) => {
-  return text
-    .toLowerCase()
+  return text?.toLowerCase()
     .replace(/processor|cpu/gi, "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -39,13 +25,16 @@ const slugify = (text) => {
     .replace(/[^a-z0-9\-]/g, "")
     .replace(/\-+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .trim();
+    .trim() || '';
 };
 
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 
 export async function generateMetadata(props) {
+  // 🛡️ NEXT.js 15 FIX: Params musí být awaitnuty, i když je nepoužíváš přímo
+  await props.params; 
   const isEn = props?.isEn === true;
+
   return {
     title: isEn 
       ? 'CPU Tier List & Performance Ranking 2026 | The Hardware Guru' 
@@ -64,13 +53,10 @@ export async function generateMetadata(props) {
   };
 }
 
-// 🚀 GURU: Nativní fetch obejde cache a vytáhne fresh data
 const fetchRankingData = async () => {
     if (!supabaseUrl) return [];
-    
     try {
         const url = `${supabaseUrl}/rest/v1/cpus?select=*&order=performance_index.desc.nullslast,name.asc`;
-        
         const res = await fetch(url, {
             headers: {
                 'apikey': supabaseKey,
@@ -79,7 +65,6 @@ const fetchRankingData = async () => {
             },
             cache: 'no-store'
         });
-
         if (!res.ok) return [];
         return await res.json();
     } catch (e) {
@@ -88,11 +73,19 @@ const fetchRankingData = async () => {
 };
 
 export default async function CpuRankingPage(props) {
+  // 🛡️ NEXT.js 15 FIX: Ošetření asynchronních props
+  await props.params;
   const isEn = props?.isEn === true;
+  
   const cpus = await fetchRankingData();
 
   if (!cpus || cpus.length === 0) {
-    return <div style={{ color: '#f00', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>CHYBA NAČÍTÁNÍ DATABÁZE PROCESORŮ</div>;
+    return (
+      <div style={{ color: '#f43f5e', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <h1 style={{ fontWeight: '950' }}>DATABÁZE OFFLINE</h1>
+        <p>Guru právě ladí spojení se serverem...</p>
+      </div>
+    );
   }
 
   const getVendorColor = (vendor) => {
@@ -104,12 +97,11 @@ export default async function CpuRankingPage(props) {
     if (index === 0) return <Trophy size={28} color="#f59e0b" />;
     if (index === 1) return <Medal size={24} color="#d1d5db" />;
     if (index === 2) return <Medal size={24} color="#b45309" />;
-    return <span className="rank-text">{index + 1}</span>;
+    return <span className="rank-text" style={{ fontSize: '22px', fontWeight: '950', color: '#4b5563' }}>{index + 1}</span>;
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
-      
+    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff' }}>
       <main style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="guru-back-btn">
@@ -127,135 +119,57 @@ export default async function CpuRankingPage(props) {
               {isEn ? 'TIER LIST' : 'PROCESORŮ'}
             </span>
           </h1>
-          <div style={{ marginTop: '20px', color: '#9ca3af', fontSize: '18px', maxWidth: '700px', margin: '20px auto 0' }}>
-            {isEn 
-              ? 'Complete hierarchy of all processors based on raw performance index. Compare and find the best CPU for your build.' 
-              : 'Kompletní hierarchie procesorů seřazená podle hrubého výkonu. Najděte ten nejlepší procesor pro vaši sestavu.'}
-          </div>
         </header>
 
-        {/* 🚀 LEADERBOARD LIST (Nyní kompletně klikací pro SEO) */}
-        <section className="leaderboard-container">
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {cpus.map((cpu, index) => {
             const vendorColor = getVendorColor(cpu.vendor);
             const safeSlug = cpu.slug || slugify(cpu.name);
-            const isTop3 = index < 3 && cpu.performance_index > 0;
+            const isTop3 = index < 3 && (cpu.performance_index > 0);
             const boostMhz = cpu.boost_clock_mhz || (cpu.boost_clock_ghz ? cpu.boost_clock_ghz * 1000 : null);
             const profileUrl = isEn ? `/en/cpu/${safeSlug}` : `/cpu/${safeSlug}`;
 
             return (
-              <a key={safeSlug} href={profileUrl} className={`ranking-row ${isTop3 ? `top-${index + 1}` : ''}`}>
-                 {/* Pozice */}
-                 <div className="rank-badge">
+              <a key={`${safeSlug}-${index}`} href={profileUrl} className="ranking-row" style={{ 
+                display: 'flex', alignItems: 'center', background: 'rgba(15, 17, 21, 0.95)', padding: '15px 20px', 
+                borderRadius: '16px', border: isTop3 ? `1px solid ${index === 0 ? '#f59e0b' : index === 1 ? '#d1d5db' : '#b45309'}40` : '1px solid rgba(255,255,255,0.05)', 
+                textDecoration: 'none', color: '#fff', transition: '0.3s' 
+              }}>
+                 <div style={{ width: '50px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
                    {getRankIcon(index)}
                  </div>
 
-                 {/* Vendor Bar */}
-                 <div className="vendor-bar" style={{ backgroundColor: vendorColor }}></div>
+                 <div style={{ width: '4px', height: '40px', borderRadius: '10px', marginRight: '20px', flexShrink: 0, backgroundColor: vendorColor }}></div>
 
-                 {/* Info */}
-                 <div className="cpu-info">
-                    <h2 className="cpu-name">{normalizeName(cpu.name)}</h2>
-                    <div className="cpu-specs">
-                       <span>{cpu.vendor || 'N/A'}</span> • 
-                       <span>{cpu.cores || '-'}C/{cpu.threads || '-'}T</span> • 
-                       <span>{boostMhz ? `${boostMhz} MHz` : 'N/A'}</span>
+                 <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <h2 style={{ fontSize: '1.2rem', fontWeight: '950', margin: '0 0 5px 0', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{normalizeName(cpu.name)}</h2>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#6b7280', textTransform: 'uppercase', display: 'flex', gap: '8px' }}>
+                       <span>{cpu.vendor}</span> • <span>{cpu.cores}C/{cpu.threads}T</span> • <span>{boostMhz ? `${boostMhz} MHz` : 'N/A'}</span>
                     </div>
                  </div>
 
-                 {/* Score */}
-                 <div className="score-container">
-                    <div className="score-label">{isEn ? 'SCORE' : 'SKÓRE'}</div>
-                    <div className="score-value" style={{ color: isTop3 ? '#f59e0b' : '#fff' }}>
+                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 30px', borderLeft: '1px solid rgba(255,255,255,0.05)', margin: '0 20px' }}>
+                    <div style={{ fontSize: '9px', fontWeight: '950', color: '#6b7280', letterSpacing: '2px' }}>{isEn ? 'SCORE' : 'SKÓRE'}</div>
+                    <div style={{ fontSize: '22px', fontWeight: '950', display: 'flex', alignItems: 'center', gap: '6px', color: isTop3 ? '#f59e0b' : '#fff' }}>
                        <Zap size={16} fill={isTop3 ? '#f59e0b' : 'transparent'} />
                        {cpu.performance_index || 'N/A'}
                     </div>
                  </div>
 
-                 {/* Fake Actions (jen pro vizuál) */}
-                 <div className="action-buttons">
-                    <div className="btn-profile">
-                      <Activity size={14} /> <span className="hide-mobile">{isEn ? 'Profile' : 'Profil'}</span>
-                    </div>
-                    <div className="btn-vs" onClick={(e) => { e.preventDefault(); window.location.href = `/${isEn ? 'en/' : ''}cpuvs`; }}>
-                      <Swords size={14} /> <span className="hide-mobile">{isEn ? 'Compare' : 'Srovnat'}</span>
+                 <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ padding: '10px 15px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }}>
+                       {isEn ? 'Detail' : 'Detail'}
                     </div>
                  </div>
               </a>
             );
           })}
         </section>
-
-        {/* 🚀 GURU SILOING: ODKAZY NA DALŠÍ ROZCESTNÍKY */}
-        <section style={{ marginTop: '80px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
-            <a href={isEn ? "/en/gpuvs/ranking" : "/gpuvs/ranking"} className="silo-banner-card" style={{ borderLeftColor: '#66fcf1' }}>
-                <div className="silo-banner-icon" style={{ color: '#000', background: '#66fcf1' }}><Monitor size={28} /></div>
-                <div className="silo-banner-text">
-                    <h4>{isEn ? 'GPU TIER LIST' : 'ŽEBŘÍČEK GRAFIK'}</h4>
-                    <p>{isEn ? 'Check out the performance ranking of graphics cards.' : 'Podívejte se na výkonnostní žebříček grafických karet.'}</p>
-                </div>
-            </a>
-            <a href={isEn ? "/en/bottleneck" : "/bottleneck"} className="silo-banner-card" style={{ borderLeftColor: '#a855f7' }}>
-                <div className="silo-banner-icon" style={{ color: '#fff', background: '#a855f7' }}><Activity size={28} /></div>
-                <div className="silo-banner-text">
-                    <h4>{isEn ? 'BOTTLENECK CALCULATOR' : 'KALKULAČKA BOTTLENECKU'}</h4>
-                    <p>{isEn ? 'Find out if your CPU is holding back your GPU.' : 'Zjistěte, zda váš procesor zbytečně nebrzdí grafickou kartu.'}</p>
-                </div>
-            </a>
-        </section>
-
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #f59e0b; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(245, 158, 11, 0.3); transition: 0.3s; }
-        .guru-back-btn:hover { background: rgba(245, 158, 11, 0.1); transform: translateX(-5px); }
-
-        .leaderboard-container { display: flex; flex-direction: column; gap: 15px; }
-
-        .ranking-row { display: flex; align-items: center; background: rgba(15, 17, 21, 0.95); padding: 15px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.3); cursor: pointer; }
-        .ranking-row:hover { transform: translateX(5px); background: rgba(25, 27, 31, 0.95); border-color: rgba(255,255,255,0.1); box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
-        .ranking-row:hover .cpu-name { color: #f59e0b; transition: 0.2s; }
-        
-        .top-1 { border: 1px solid rgba(245, 158, 11, 0.3); background: linear-gradient(90deg, rgba(245, 158, 11, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%); }
-        .top-2 { border: 1px solid rgba(209, 213, 219, 0.3); background: linear-gradient(90deg, rgba(209, 213, 219, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%); }
-        .top-3 { border: 1px solid rgba(180, 83, 9, 0.3); background: linear-gradient(90deg, rgba(180, 83, 9, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%); }
-
-        .rank-badge { width: 50px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
-        .rank-text { font-size: 22px; font-weight: 950; color: #4b5563; }
-
-        .vendor-bar { width: 4px; height: 40px; border-radius: 10px; margin-right: 20px; flex-shrink: 0; }
-
-        .cpu-info { flex: 1; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
-        .cpu-name { font-size: 1.2rem; font-weight: 950; margin: 0 0 5px 0; color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .cpu-specs { font-size: 0.8rem; font-weight: bold; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; display: flex; gap: 8px; flex-wrap: wrap; }
-        
-        .score-container { display: flex; flex-direction: column; align-items: center; padding: 0 30px; border-left: 1px solid rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.05); margin-right: 20px; }
-        .score-label { font-size: 9px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }
-        .score-value { font-size: 22px; font-weight: 950; display: flex; align-items: center; gap: 6px; }
-
-        .action-buttons { display: flex; gap: 10px; flex-shrink: 0; }
-        .btn-profile, .btn-vs { display: flex; align-items: center; gap: 6px; padding: 10px 15px; border-radius: 10px; font-size: 12px; font-weight: 900; text-transform: uppercase; transition: 0.2s; }
-        .btn-profile { background: rgba(255,255,255,0.05); color: #d1d5db; }
-        .btn-vs { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); z-index: 10; }
-        .btn-vs:hover { background: rgba(245, 158, 11, 0.2); transform: scale(1.05); }
-
-        /* 🚀 GURU SILOING STYLY */
-        .silo-banner-card { flex: 1; min-width: 300px; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; align-items: center; gap: 20px; text-decoration: none; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border-left-width: 5px; }
-        .silo-banner-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.02); }
-        .silo-banner-icon { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .silo-banner-text h4 { margin: 0 0 5px 0; color: #fff; font-size: 1.2rem; font-weight: 950; }
-        .silo-banner-text p { margin: 0; color: #9ca3af; font-size: 0.9rem; }
-
-        @media (max-width: 768px) {
-          .ranking-row { flex-wrap: wrap; padding: 15px; }
-          .rank-badge { width: 40px; }
-          .vendor-bar { margin-right: 15px; }
-          .cpu-info { min-width: 100%; order: 4; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); }
-          .score-container { border-right: none; padding-right: 0; margin-right: auto; flex-direction: row; gap: 10px; align-items: baseline; }
-          .hide-mobile { display: none; }
-          .btn-profile, .btn-vs { padding: 10px; }
-          .silo-banner-card { flex-direction: column; text-align: center; }
-        }
+        .ranking-row:hover { transform: translateX(5px); background: rgba(25, 27, 31, 0.95) !important; border-color: rgba(255,255,255,0.1) !important; }
       `}} />
     </div>
   );
