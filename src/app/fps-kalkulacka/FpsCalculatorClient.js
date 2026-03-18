@@ -8,9 +8,10 @@ import {
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU FPS ENGINE V7.3 (FIX 404 BUTTONS)
- * 🛡️ FIX: GTA VI tlačítka už nevedou na 404, ale spouští přepočet v kalkulačce.
+ * GURU FPS ENGINE V7.2 (THE VIRAL UPDATE)
  * 🛡️ BASELINE: RTX 4090 + 9850X3D = 325 (1080p) / 318 (1440p) / 242 (4K).
+ * 🛡️ FEAT: Guru Viral Hub (X, Facebook, Reddit, Copy Link).
+ * 🛡️ FIX: Dark Mode pro SELECTY a OPTIONY.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -42,22 +43,11 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         return Math.round(rawFps);
     };
 
-    // Nová funkce pro okamžitý přepočet z GTA VI tlačítek
-    const handleGtaQuickCalc = (res) => {
-        setSelectedRes(res);
-        // Vyvoláme výpočet s novým rozlišením
-        const gpu = gpus.find(g => g.id === selectedGpuId);
-        const cpu = cpus.find(c => c.id === selectedCpuId);
-        const gpuPerf = gpu?.performance_index || 100;
-        const cpuPerf = cpu?.performance_index || 100;
-        const finalFps = calculateFps(gpuPerf, cpuPerf, res);
-        
-        setIsCalculating(true);
-        setTimeout(() => {
-            setResult({ fps: finalFps });
-            setIsCalculating(false);
-            window.scrollTo({ top: 400, behavior: 'smooth' });
-        }, 600);
+    const getGtaPath = (res) => {
+        const cpu = cpus.find(c => c.id === selectedCpuId)?.name || 'cpu';
+        const gpu = gpus.find(g => g.id === selectedGpuId)?.name || 'gpu';
+        const slug = `${cpu}-vs-${gpu}-${res}`.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        return isEn ? `/en/fps-calculator/gta-6-prediction/${slug}` : `/fps-kalkulacka/gta-6-predikce/${slug}`;
     };
 
     const handleCalculate = async () => {
@@ -78,6 +68,12 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         return isEn 
             ? `🔥 My rig hits ${result?.fps} FPS in ${game} at ${selectedRes}! Check yours at: ${url}` 
             : `🔥 Moje sestava dává v ${game} na ${selectedRes} přesně ${result?.fps} FPS! Změř si to taky na: ${url}`;
+    };
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(getShareText());
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
     return (
@@ -129,10 +125,12 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                     <div className="fps-val">{result.fps} FPS</div>
                     
                     <div className="viral-share-hub">
+                        <div style={{fontSize: '11px', fontWeight: '950', marginBottom: '15px', color: '#6b7280', textTransform: 'uppercase'}}>{isEn ? 'Share your build' : 'Pochlub se sestavou'}</div>
                         <div className="share-buttons">
-                            <button onClick={() => {navigator.clipboard.writeText(getShareText()); setCopied(true); setTimeout(()=>setCopied(false),2000);}} className="s-btn copy">{copied ? <Check size={20}/> : <Share2 size={20}/>}</button>
+                            <button onClick={handleCopy} className="s-btn copy">{copied ? <Check size={20}/> : <Share2 size={20}/>}</button>
                             <button onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(getShareText())}`, '_blank')} className="s-btn x"><Twitter size={20}/></button>
                             <button onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://thehardwareguru.cz/fps-kalkulacka')}`, '_blank')} className="s-btn fb"><Facebook size={20}/></button>
+                            <button onClick={() => window.open(`https://www.reddit.com/submit?title=${encodeURIComponent(getShareText())}`, '_blank')} className="s-btn reddit"><RedditIcon size={20}/></button>
                         </div>
                     </div>
 
@@ -140,9 +138,9 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                         <div className="gta-tag"><Sparkles size={14} /> NEXT-GEN AI</div>
                         <h3>{isEn ? 'RUN GTA VI ON THIS RIG?' : 'POJEDE TI NA TOM GTA VI?'}</h3>
                         <div className="gta-links">
-                            <button onClick={() => handleGtaQuickCalc('1080p')} className="gta-res-link">1080p <ArrowRight size={14}/></button>
-                            <button onClick={() => handleGtaQuickCalc('1440p')} className="gta-res-link">1440p <ArrowRight size={14}/></button>
-                            <button onClick={() => handleGtaQuickCalc('2160p')} className="gta-res-link">4K <ArrowRight size={14}/></button>
+                            <a href={getGtaPath('1080p')}>1080p <ArrowRight size={14}/></a>
+                            <a href={getGtaPath('1440p')}>1440p <ArrowRight size={14}/></a>
+                            <a href={getGtaPath('2160p')}>4K <ArrowRight size={14}/></a>
                         </div>
                     </div>
                 </div>
@@ -153,7 +151,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 .guru-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
                 .input-field label { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 950; color: #9ca3af; text-transform: uppercase; margin-bottom: 10px; }
                 .guru-select { width: 100%; background: #0a0b0d !important; color: #fff !important; border: 1px solid #1f2937; padding: 15px; border-radius: 12px; font-weight: 950; }
-                .calc-btn { background: #f43f5e; color: #fff; border: none; padding: 20px 60px; font-size: 16px; font-weight: 950; border-radius: 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: 0.3s; }
+                .calc-btn { background: #f43f5e; color: #fff; border: none; padding: 20px 60px; font-size: 16px; font-weight: 950; border-radius: 16px; cursor: pointer; transition: 0.3s; display: inline-flex; align-items: center; gap: 10px; }
                 .calc-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(244, 63, 94, 0.4); }
                 .result-area { margin-top: 40px; animation: fadeIn 0.5s ease-out; }
                 .res-label { font-size: 12px; color: #f43f5e; font-weight: 950; letter-spacing: 2px; }
@@ -165,13 +163,14 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 .copy { background: #4b5563; }
                 .x { background: #000; border: 1px solid #333; }
                 .fb { background: #1877f2; }
+                .reddit { background: #ff4500; }
                 .s-btn:hover { transform: translateY(-5px); filter: brightness(1.2); }
 
                 .gta-bait-box { background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(0,0,0,0.5)); border: 1px solid rgba(244, 63, 94, 0.3); padding: 30px; border-radius: 24px; margin-top: 40px; }
                 .gta-tag { display: inline-flex; align-items: center; gap: 6px; background: #f43f5e; color: #fff; padding: 4px 12px; border-radius: 6px; font-size: 10px; font-weight: 950; margin-bottom: 15px; }
                 .gta-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
-                .gta-res-link { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; cursor: pointer; color: #fff; font-weight: 950; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s; }
-                .gta-res-link:hover { background: #f43f5e; border-color: #f43f5e; transform: scale(1.05); }
+                .gta-links a { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; text-decoration: none; color: #fff; font-weight: 950; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s; }
+                .gta-links a:hover { background: #f43f5e; border-color: #f43f5e; }
                 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
                 .animate-spin { animation: spin 1s linear infinite; }
                 @keyframes spin { 100% { transform: rotate(360deg); } }
