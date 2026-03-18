@@ -32,9 +32,11 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         return `https://thehardwareguru.cz${basePath}/${cleanCpu}-vs-${cleanGpu}-${res}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
     };
 
-    // 🔥 GURU FPS ENGINE - NELINEÁRNÍ KALIBRACE (3070 = ~57 FPS)
+    // 🔥 GURU FPS ENGINE V8.3 - REALISTIC BOTTLENECK MATH
     const calculateFps = (gpuPerfIndex, cpuPerfIndex, resolution, gameSlug) => {
         const slug = gameSlug.toLowerCase();
+        
+        // 1. URČENÍ KATEGORIE HRY
         let category = 'medium';
         if (slug.includes('callisto') || slug.includes('valorant') || slug.includes('counter-strike')) {
             category = 'light';
@@ -42,28 +44,43 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             category = 'extreme';
         }
 
+        // 2. BASELINE RTX 4090 (Index 100)
         const baselines4090 = { 
-            'light': { '1080p': 325, '1440p': 318, '2160p': 242 },
-            'medium': { '1080p': 239, '1440p': 183, '2160p': 110 },
-            'extreme': { '1080p': 100, '1440p': 71, '2160p': 57 }
+            'light': { '1080p': 325, '1440p': 318, 'uwqhd': 280, '2160p': 242, 'dqhd': 200 },
+            'medium': { '1080p': 239, '1440p': 183, 'uwqhd': 142, '2160p': 110, 'dqhd': 90 },
+            'extreme': { '1080p': 100, '1440p': 71, 'uwqhd': 60, '2160p': 57, 'dqhd': 45 }
         };
         
         let baseFps4090 = baselines4090[category][resolution] || baselines4090[category]['1440p'];
 
-        // Nelineární křivka výkonu pro změkčení propadu slabších karet
-        let gpuRatio = gpuPerfIndex / 100;
-        if (category === 'extreme') {
-            gpuRatio = Math.pow(gpuRatio, 0.32); // RTX 3070 (0.48^0.32 = ~0.79 -> 71 * 0.79 = ~56 FPS)
-        } else {
-            gpuRatio = Math.pow(gpuRatio, 0.6);
-        }
-
+        // 3. RESOLUTION BOTTLENECK SCALING (GPU)
+        // 1080p = Flatter curve (karty jsou si rovnější). 4K = Steep curve (čistý GPU bottleneck)
+        const resExponents = {
+            '1080p': 0.25,
+            '1440p': 0.40,
+            'uwqhd': 0.55,
+            '2160p': 0.85,
+            'dqhd':  0.85
+        };
+        const exponent = resExponents[resolution] || 0.4;
+        let gpuRatio = Math.pow(gpuPerfIndex / 100, exponent);
         let rawFps = baseFps4090 * gpuRatio;
-        
-        const cpuWeight = category === 'extreme' ? 0.05 : 0.15;
+
+        // 4. RESOLUTION BOTTLENECK SCALING (CPU)
+        // V 1080p má procesor zásadní vliv na propad FPS, ve 4K ho omezujeme na minimum
+        const cpuWeights = {
+            '1080p': 0.45,
+            '1440p': 0.25,
+            'uwqhd': 0.15,
+            '2160p': 0.05,
+            'dqhd':  0.05
+        };
+        const cpuWeight = cpuWeights[resolution] || 0.2;
         rawFps = (rawFps * (1 - cpuWeight)) + (rawFps * cpuWeight * (cpuPerfIndex / 100));
 
-        return Math.round(rawFps);
+        // Drobná přirozená variace výkonu +/- 2%
+        const variation = 0.98 + Math.random() * 0.04;
+        return Math.round(rawFps * variation);
     };
 
     const handleCalculate = async () => {
@@ -115,7 +132,9 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                     <select value={selectedRes} onChange={(e) => setSelectedRes(e.target.value)} className="guru-select">
                         <option value="1080p">1080p Full HD</option>
                         <option value="1440p">1440p Quad HD</option>
+                        <option value="uwqhd">3440x1440px Ultrawide</option>
                         <option value="2160p">4K Ultra HD</option>
+                        <option value="dqhd">5120x1440px Super UW</option>
                     </select>
                 </div>
                 <div className="input-field">
@@ -173,12 +192,12 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-calc-box { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
-                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; }
+                .guru-select { width: 100%; background: #000; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; }
                 .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; }
                 .viral-flex-card { display: flex; align-items: center; gap: 20px; max-width: 520px; margin: 40px auto 0; padding: 25px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 20px; text-align: left; }
                 .award-icon { width: 60px; height: 60px; background: rgba(168, 85, 247, 0.2); border-radius: 15px; display: flex; align-items: center; justify-content: center; }
                 .premium-share-btn { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; border: none; color: #fff; display: flex; align-items: center; justify-content: center; }
-                .btn-copy { background: linear-gradient(45deg, #a855f7, #c084fc); } .btn-x { background: #000; border: 1px solid rgba(255,255,255,0.2); } .btn-reddit { background: #ff4500; }
+                .btn-copy { background: #a855f7; } .btn-x { background: #000; border: 1px solid #333; } .btn-reddit { background: #ff4500; }
                 .gta-hype-box { max-width: 520px; margin: 0 auto; background: linear-gradient(135deg, rgba(15, 17, 21, 0.9), rgba(159, 18, 57, 0.15)); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 20px; padding: 30px 25px; }
                 .gta-res-btn { display: flex; flex-direction: column; align-items: center; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.4); padding: 15px 10px; border-radius: 14px; text-decoration: none; color: #fff; }
                 .animate-spin { animation: spin 1s linear infinite; } @keyframes spin { 100% { transform: rotate(360deg); } }
