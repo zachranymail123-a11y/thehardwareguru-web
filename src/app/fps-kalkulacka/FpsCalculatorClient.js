@@ -5,9 +5,9 @@ import { Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Check, Award, Twitter, Sp
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU FPS ENGINE CLIENT - V9.0 (ULTIMATE ENTERPRISE MODEL)
+ * GURU FPS ENGINE CLIENT - V11.0 (THE ENDGAME MODEL)
  * 🛡️ AUTO-SITEMAP: Při každém výpočtu uložíme 3 unikátní GTA 6 URL do DB.
- * 🛡️ AI MODEL: CPU x GPU Interaction, CPU Hard Floor, Intelligent DB Fallback, Res-Aware GPU Scaling.
+ * 🛡️ AI MODEL: DB Scaling Override, Data Confidence Layer, 3-Tier Empirical Model.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -46,6 +46,8 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         setCopied(false);
 
         try {
+            let confidence = 1.0;
+
             const [gpuFpsRes, cpuFpsRes] = await Promise.all([
                 supabase.from('game_fps').select('*').eq('gpu_id', selectedGpuId).maybeSingle(),
                 supabase.from('cpu_game_fps').select('*').eq('cpu_id', selectedCpuId).maybeSingle()
@@ -54,6 +56,8 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             const gpuFps = gpuFpsRes.data ? gpuFpsRes.data[`${selectedGameSlug.replace(/-/g, '_')}_${selectedRes === '2160p' ? '4k' : selectedRes}`] || 0 : 0;
             const cpuFps = cpuFpsRes.data ? cpuFpsRes.data[`${selectedGameSlug.replace(/-/g, '_')}_${selectedRes === '2160p' ? '4k' : selectedRes}`] || 0 : 0;
 
+            if (gpuFps === 0 && cpuFps === 0) confidence -= 0.3; // Data absent in DB
+
             const gpu = gpus.find(g => g.id === selectedGpuId);
             const gpuName = gpu?.name || '';
             const gpuPerfIndex = gpu?.performance_index || 100;
@@ -61,16 +65,15 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             const cpuPerfIndex = cpu?.performance_index || 100;
 
             // ---------------------------------------------------------
-            // 🚀 ENTERPRISE FPS ENGINE (ULTIMATE 5-FACTOR MODEL)
+            // 🚀 THE ENDGAME FPS ENGINE (SYNTHETIC BENCHMARK MODEL)
             // ---------------------------------------------------------
 
-            // 1. GPU RATIO (Tier Override + Logarithmic Fallback + Resolution Awareness)
+            // 1. GPU RATIO (DB Override -> Hardcoded Tier -> Logarithmic Fallback)
             const getGpuTier = (name) => {
-                if (!name) return null; // Bezpečnostní check
+                if (!name) return null;
                 const n = name.toLowerCase();
-                const is1080 = (selectedRes === '1080p');
 
-                if (is1080) {
+                if (selectedRes === '1080p') {
                     if (n.includes('5090')) return 1.100; 
                     if (n.includes('5080')) return 1.048; 
                     if (n.includes('4090')) return 1.000; 
@@ -101,7 +104,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                     if (n.includes('3060 ti')) return 0.430;
                     if (n.includes('4060')) return 0.380;
                     if (n.includes('3060')) return 0.350;
-                } else {
+                } else if (selectedRes === '1440p' || selectedRes === 'uwqhd') {
                     if (n.includes('5090')) return 1.280; 
                     if (n.includes('5080')) return 1.150; 
                     if (n.includes('4090')) return 1.000;
@@ -132,49 +135,72 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                     if (n.includes('3060 ti')) return 0.359;
                     if (n.includes('4060')) return 0.297;
                     if (n.includes('3060')) return 0.280;
+                } else {
+                    if (n.includes('5090')) return 1.426; 
+                    if (n.includes('5080')) return 1.199; 
+                    if (n.includes('4090')) return 1.000; 
+                    if (n.includes('7900 xtx')) return 0.763; 
+                    if (n.includes('4080 super')) return 0.754; 
+                    if (n.includes('4080')) return 0.739; 
+                    if (n.includes('5070 ti')) return 0.734; 
+                    if (n.includes('7900 xt')) return 0.656; 
+                    if (n.includes('4070 ti super')) return 0.648; 
+                    if (n.includes('3090 ti')) return 0.624; 
+                    if (n.includes('5070')) return 0.612; 
+                    if (n.includes('4070 ti')) return 0.559; 
+                    if (n.includes('7900 gre')) return 0.551; 
+                    if (n.includes('3090')) return 0.532; 
+                    if (n.includes('4070 super')) return 0.526; 
+                    if (n.includes('7800 xt')) return 0.501; 
+                    if (n.includes('6950 xt')) return 0.496; 
+                    if (n.includes('3080 ti')) return 0.478; 
+                    if (n.includes('3080')) return 0.442; 
+                    if (n.includes('6900 xt')) return 0.427; 
+                    if (n.includes('4070')) return 0.421; 
+                    if (n.includes('6800 xt')) return 0.406; 
+                    if (n.includes('7700 xt')) return 0.380;
+                    if (n.includes('3070 ti')) return 0.350;
+                    if (n.includes('3070')) return 0.320;
+                    if (n.includes('4060 ti 16')) return 0.300;
+                    if (n.includes('4060 ti')) return 0.290;
+                    if (n.includes('3060 ti')) return 0.250;
+                    if (n.includes('4060')) return 0.220;
+                    if (n.includes('3060')) return 0.180;
                 }
                 return null;
             };
 
-            const tierFromList = getGpuTier(gpuName);
+            // DB Priority Scaling Injection
+            const resKeyFormat = selectedRes === '2160p' ? '4k' : selectedRes;
+            const dbScalingRatio = gpu?.scaling ? gpu.scaling[resKeyFormat] : null;
+            
+            const tierFromList = dbScalingRatio !== null ? dbScalingRatio : getGpuTier(gpuName);
+            if (tierFromList === null) confidence -= 0.1; // Fallback used
+
             const fallbackRatio = Math.pow(gpuPerfIndex / 260, 0.9);
-            const baseGpuRatio = tierFromList !== null ? tierFromList : fallbackRatio;
+            const GPU_ratio = tierFromList !== null ? tierFromList : fallbackRatio;
 
-            // Resolution-aware GPU Boost (High-end GPUs škálují mnohem lépe ve 4K)
-            const resGpuBoost = {
-                '1080p': 1.0,
-                '1440p': 1.05,
-                'uwqhd': 1.05,
-                '2160p': 1.12,
-                'dqhd': 1.12
-            };
-            const GPU_ratio = baseGpuRatio * (resGpuBoost[selectedRes] || 1.0);
-
-            // 2. INTELLIGENT DB FALLBACK & BASELINE NORMALIZATION
+            // 2. BASELINE NORMALIZATION
             let base4090Fps = 0;
             const ref4090 = {
                 'the-callisto-protocol': { '1080p': 325, '1440p': 318, '2160p': 242 },
                 'battlefield-6': { '1080p': 167, '1440p': 122, '2160p': 70 },
-                'cyberpunk-2077': { '1080p': 140, '1440p': 129, '2160p': 69 }
+                'cyberpunk-2077': { '1080p': 140, '1440p': 129, '2160p': 74 }
             };
 
             let refSlug = Object.keys(ref4090).find(slug => selectedGameSlug.includes(slug));
+            if (!refSlug) confidence -= 0.2; // Non-reference game
 
             if (refSlug && ref4090[refSlug][selectedRes]) {
                 base4090Fps = ref4090[refSlug][selectedRes];
             } else {
-                let rawDbFps = 45; // Default safety net
+                let rawDbFps = 45; 
                 
-                // Inteligentní detekce úzkého hrdla z databáze (zabrání podstřelení GPU kvůli špatnému CPU testu)
                 if (gpuFps > 0 && cpuFps > 0) {
                     const ratio = gpuFps / cpuFps;
-                    if (ratio > 1.2) {
-                        rawDbFps = cpuFps; // Extrémní CPU limit
-                    } else if (ratio < 0.8) {
-                        rawDbFps = gpuFps; // Extrémní GPU limit
-                    } else {
-                        rawDbFps = (gpuFps + cpuFps) / 2; // Balanced stav
-                    }
+                    if (ratio > 1.2) rawDbFps = cpuFps; 
+                    else if (ratio < 0.8) rawDbFps = gpuFps; 
+                    else rawDbFps = (gpuFps + cpuFps) / 2; 
                 } else if (gpuFps > 0 || cpuFps > 0) {
                     rawDbFps = Math.max(gpuFps, cpuFps);
                 }
@@ -182,7 +208,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 const safeGpuIndex = gpuPerfIndex > 0 ? gpuPerfIndex : 100;
                 base4090Fps = rawDbFps * (260 / safeGpuIndex);
 
-                // Dynamic Game Multiplier (Škáluje engine podle síly GPU)
                 const gameMultiplier = {
                     'counter-strike-2': 1.4,
                     'valorant': 1.4,
@@ -192,7 +217,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                     'ark-survival-ascended': 0.65
                 };
                 const gameBase = gameMultiplier[selectedGameSlug] || 1.0;
-                const gameScaling = 1 - (0.15 * (1 - GPU_ratio)); // Slabší GPU → větší penalizace u těžkých her
+                const gameScaling = 1 - (0.15 * (1 - GPU_ratio)); 
                 
                 base4090Fps *= gameBase * gameScaling;
             }
@@ -202,7 +227,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             if (selectedRes === 'uwqhd') resolution_scaling = 0.88;
             if (selectedRes === 'dqhd') resolution_scaling = 0.62;
 
-            // 4. CPU BOTTLENECK (Resolution Aware + Hard Floor)
+            // 4. CPU BOTTLENECK SIMULATOR
             const cpuWeight = {
                 '1080p': 1.0,
                 '1440p': 0.7,
@@ -219,10 +244,9 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             if (adjustedCpuLimit < 1) {
                 CPU_factor = Math.pow(adjustedCpuLimit, 0.6);
             }
-            // Hard Floor pro procesor (nikdy neškrtí hru pod úroveň naprosté katastrofy)
-            CPU_factor = Math.max(0.65, CPU_factor);
+            CPU_factor = Math.max(0.65, CPU_factor); // Hard Floor
 
-            // 5. ADVANCED VRAM PENALTY MODEL
+            // 5. VRAM PENALTY RULESET
             const vramCriticalGames = ['alan-wake-2', 'hogwarts-legacy', 'the-last-of-us-part-1', 'cyberpunk-2077', 'starfield'];
             let vramPenalty = 1.0;
             
@@ -230,17 +254,17 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 vramPenalty = vramCriticalGames.includes(selectedGameSlug) ? 0.65 : 0.80;
             }
 
-            // 6. ORGANIC VARIANCE (Stable pseudo-randomness)
+            // 6. ORGANIC VARIANCE (UX Realism)
             const hashStr = selectedGpuId + selectedCpuId + selectedGameSlug + selectedRes;
             let hash = 0;
             for (let i = 0; i < hashStr.length; i++) hash = Math.imul(31, hash) + hashStr.charCodeAt(i) | 0;
             const pseudoRandom = Math.abs(hash) / 2147483647; 
             const variance = 0.94 + (pseudoRandom * 0.12); 
 
-            // 🎯 FINAL COMPUTATION
+            // 🎯 FINAL ENGINE COMPUTATION
             let finalFps = base4090Fps * GPU_ratio * resolution_scaling * CPU_factor * vramPenalty * variance;
 
-            // 7. ENGINE SOFT-CAPS & REALITY CLAMP
+            // 7. ENGINE SOFT-CAPS & CLAMPS
             const fpsCap = {
                 'counter-strike-2': 400,
                 'valorant': 500,
@@ -250,9 +274,12 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             };
             
             finalFps = Math.min(finalFps, fpsCap[selectedGameSlug] || 999);
-            finalFps = Math.max(20, finalFps); // Méně než 20 je nehratelné UX
+            finalFps = Math.max(20, finalFps);
 
-            setResult({ fps: Math.round(finalFps) });
+            // Zajištění mezí pro Data Confidence
+            confidence = Math.max(0.5, confidence);
+
+            setResult({ fps: Math.round(finalFps), confidence });
 
             // 🔥 LOGOVÁNÍ PRO SITEMAPU
             const resolutions = ['1080p', '1440p', '2160p'];
@@ -266,7 +293,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
         } catch (err) {
             console.error("Calculation/Logging error:", err);
-            setResult({ fps: 0 });
+            setResult({ fps: 0, confidence: 0.5 });
         } finally {
             setIsCalculating(false);
         }
@@ -315,6 +342,18 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         return url.replace('https://thehardwareguru.cz', '');
     };
 
+    // Určení designu Confidence Badge
+    let confidenceConfig = null;
+    if (result) {
+        if (result.confidence >= 0.9) {
+            confidenceConfig = { color: '#22c55e', text: isEn ? 'High Accuracy' : 'Vysoká přesnost', bg: 'rgba(34, 197, 94, 0.15)', icon: '🟢' };
+        } else if (result.confidence >= 0.7) {
+            confidenceConfig = { color: '#eab308', text: isEn ? 'Estimated' : 'Kalkulovaný odhad', bg: 'rgba(234, 179, 8, 0.15)', icon: '🟡' };
+        } else {
+            confidenceConfig = { color: '#ef4444', text: isEn ? 'Rough Estimate' : 'Hrubý odhad', bg: 'rgba(239, 68, 68, 0.15)', icon: '🔴' };
+        }
+    }
+
     return (
         <div className="guru-calc-box">
             <div className="guru-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
@@ -359,8 +398,17 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             {result && !isCalculating && (
                 <div className="result-area" style={{ marginTop: '40px', textAlign: 'center', animation: 'fadeIn 0.7s ease-out' }}>
                     
-                    <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px' }}>{isEn ? 'EXPECTED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
-                    <div style={{ fontSize: '6rem', fontWeight: '950', color: '#fff', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)', margin: '10px 0' }}>{result.fps > 0 ? `${result.fps} FPS` : 'N/A'}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px' }}>{isEn ? 'EXPECTED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
+                        
+                        {confidenceConfig && (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: confidenceConfig.bg, color: confidenceConfig.color, padding: '4px 12px', borderRadius: '20px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                {confidenceConfig.icon} {confidenceConfig.text}
+                            </div>
+                        )}
+                    </div>
+
+                    <div style={{ fontSize: '6rem', fontWeight: '950', color: '#fff', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)', margin: '15px 0' }}>{result.fps > 0 ? `${result.fps} FPS` : 'N/A'}</div>
                     
                     {result.fps > 0 && (
                         <>
