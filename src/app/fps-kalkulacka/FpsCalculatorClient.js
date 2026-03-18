@@ -32,48 +32,44 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         return `https://thehardwareguru.cz${basePath}/${cleanCpu}-vs-${cleanGpu}-${res}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
     };
 
-    // 🔥 GURU FPS ENGINE V7.9 - POUZE KALIBRACE DLE DODANÝCH DAT
-    const calculateFps = (gpuPerf, cpuPerf, resolution, gameSlug) => {
-        const slug = gameSlug.toLowerCase();
-        let category = 'medium';
-        if (slug.includes('callisto') || slug.includes('valorant') || slug.includes('counter-strike')) {
-            category = 'light';
-        } else if (slug.includes('expedition') || slug.includes('alan-wake') || slug.includes('cyberpunk') || slug.includes('gta-6')) {
-            category = 'extreme';
-        }
-
-        const baselines = { 'light': 318, 'medium': 183, 'extreme': 71 };
-        let base = baselines[category];
-
-        const resScales = {
-            'light': { '1080p': 1.022, '1440p': 1.0, '2160p': 0.761 },
-            'medium': { '1080p': 1.306, '1440p': 1.0, '2160p': 0.601 },
-            'extreme': { '1080p': 1.408, '1440p': 1.0, '2160p': 0.802 }
-        };
-
-        const scale = resScales[category][resolution] || 1.0;
-        let rawFps = base * (gpuPerf / 100) * scale;
-        const cpuWeight = category === 'extreme' ? 0.05 : (category === 'medium' ? 0.15 : 0.30);
-        rawFps = (rawFps * (1 - cpuWeight)) + (rawFps * cpuWeight * (cpuPerf / 100));
-
-        return Math.round(rawFps);
-    };
-
     const handleCalculate = async () => {
         if (!selectedGpuId || !selectedCpuId || !selectedGameSlug) return;
         setIsCalculating(true);
         setResult(null);
-        setCopied(false);
 
         try {
-            const gpu = gpus.find(g => g.id === selectedGpuId);
-            const cpu = cpus.find(c => c.id === selectedCpuId);
-            const gpuPerf = gpu?.performance_index || 50; 
-            const cpuPerf = cpu?.performance_index || 50;
+            const [gpuFpsRes, cpuFpsRes] = await Promise.all([
+                supabase.from('game_fps').select('*').eq('gpu_id', selectedGpuId).maybeSingle(),
+                supabase.from('cpu_game_fps').select('*').eq('cpu_id', selectedCpuId).maybeSingle()
+            ]);
 
-            const finalFps = calculateFps(gpuPerf, cpuPerf, selectedRes, selectedGameSlug);
+            const gpuData = gpuFpsRes.data || {};
+            const cpuData = cpuFpsRes.data || {};
+            const dbBase = selectedGameSlug.replace(/-/g, '_');
+            const resKey = selectedRes === '2160p' ? '4k' : selectedRes;
+            const columnKey = `${dbBase}_${resKey}`;
+
+            const gpuFps = gpuData[columnKey] || 0;
+            const cpuFps = cpuData[columnKey] || 0;
+
+            // 🔥 GURU SMART ENGINE V7.5 - DYNAMICKÁ KALIBRACE
+            const rawBase = (gpuFps > 0 && cpuFps > 0) ? Math.min(gpuFps, cpuFps) : Math.max(gpuFps, cpuFps);
+            
+            // Koeficienty pro narovnání výkonu na RTX 4090 + 9850X3D
+            // Callisto baseline (112 -> 318 FPS) = 2.84x
+            // Cyberpunk/BF6 baseline (cca 45 -> 122 FPS) = 2.71x
+            let guruMultiplier = 2.78; // Průměrný Guru koeficient pro moderní tituly
+            
+            // Pokud je hra extrémně náročná (jako Cyberpunk/BF6), použijeme agresivnější scaling
+            if (rawBase < 60) guruMultiplier = 2.71; 
+            // Pokud je hra lehčí (jako Callisto), použijeme vyšší baseline
+            if (rawBase > 100) guruMultiplier = 2.84;
+
+            const finalFps = rawBase * guruMultiplier;
+
             setResult({ fps: Math.round(finalFps) });
 
+            // Logování pro sitemapu
             const resolutions = ['1080p', '1440p', '2160p'];
             const logPromises = resolutions.map(res => 
                 supabase.from('generated_predictions').upsert({
@@ -82,16 +78,20 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 }, { onConflict: 'full_url' })
             );
             await Promise.all(logPromises);
-        } catch (err) { console.error(err); setResult({ fps: 0 }); } finally { setIsCalculating(false); }
+
+        } catch (err) {
+            setResult({ fps: 0 });
+        } finally {
+            setIsCalculating(false);
+        }
     };
 
     const handleCopyShare = () => {
+        const gameName = games.find(g => g.slug === selectedGameSlug)?.name || 'hře';
         const url = isEn ? 'https://thehardwareguru.cz/en/fps-calculator' : 'https://thehardwareguru.cz/fps-kalkulacka';
-        const text = `🔥 Moje sestava dává v ${selectedGameSlug} na ${selectedRes} přesně ${result.fps} FPS! 🚀 👉 Změř si to taky na: ${url}`;
+        const text = isEn ? `🔥 My rig hits ${result?.fps} FPS in ${gameName}! Check: ${url}` : `🔥 Moje sestava dává v ${gameName} přesně ${result?.fps} FPS! Změř si to taky na: ${url}`;
         navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 3000); });
     };
-
-    const getGtaPredictionPath = (targetRes) => getGtaUrl(targetRes).replace('https://thehardwareguru.cz', '');
 
     return (
         <div className="guru-calc-box">
@@ -128,7 +128,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             </div>
 
             <div style={{ textAlign: 'center', marginTop: '30px' }}>
-                <button onClick={handleCalculate} disabled={isCalculating} className="calc-btn">
+                <button onClick={handleCalculate} disabled={!selectedGpuId || !selectedCpuId || !selectedGameSlug || isCalculating} className="calc-btn">
                     {isCalculating ? <Loader2 className="animate-spin" /> : <Zap size={18} />}
                     {isEn ? 'CALCULATE' : 'SPOČÍTAT VÝKON'}
                 </button>
@@ -136,46 +136,29 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
             {result && !isCalculating && (
                 <div className="result-area" style={{ marginTop: '40px', textAlign: 'center', animation: 'fadeIn 0.7s ease-out' }}>
-                    <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase' }}>OČEKÁVANÝ VÝKON</div>
+                    <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px' }}>{isEn ? 'EXPECTED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
                     <div style={{ fontSize: '6rem', fontWeight: '950', color: '#fff', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)', margin: '10px 0' }}>{result.fps} FPS</div>
-                    
                     <div className="viral-flex-card">
                         <div className="award-icon"><Award size={32} color="#fff" /></div>
                         <div className="viral-text-box">
-                            <div style={{ fontSize: '15px', fontWeight: '900', color: '#fff', textTransform: 'uppercase' }}>ÚSPĚCH ODEMČEN</div>
-                            <div style={{ fontSize: '11px', color: '#a855f7' }}>Sdílej výsledek online</div>
+                            <div style={{ fontSize: '15px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '1px' }}>{isEn ? 'ACHIEVEMENT LOCKED' : 'ÚSPĚCH ODEMČEN'}</div>
+                            <div style={{ fontSize: '11px', color: '#a855f7', fontWeight: 'bold' }}>{isEn ? 'Share your result online' : 'Pochlub se výsledkem online'}</div>
                         </div>
                         <div style={{ display: 'flex', gap: '10px' }}>
                             <button onClick={handleCopyShare} className="premium-share-btn btn-copy">{copied ? <Check size={20} /> : <Share2 size={20} />}</button>
-                            <button onClick={() => window.open(`https://twitter.com/intent/tweet?text=I got ${result.fps} FPS!`, '_blank')} className="premium-share-btn btn-x"><Twitter size={20} /></button>
-                            <button onClick={() => window.open(`https://www.reddit.com/submit?title=My FPS Result`, '_blank')} className="premium-share-btn btn-reddit"><RedditIcon size={20} /></button>
-                        </div>
-                    </div>
-
-                    <div className="gta-hype-box" style={{ marginTop: '30px', animation: 'fadeIn 1s ease-out' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e', padding: '6px 15px', borderRadius: '50px', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase' }}><Sparkles size={14} /> AI PREDIKČNÍ ENGINE</span>
-                        <h3 style={{ fontSize: '20px', fontWeight: '950', marginTop: '15px', color: '#fff' }}>ROZJEDE TO GTA VI?</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: '20px' }}>
-                            <a href={getGtaPredictionPath('1080p')} className="gta-res-btn"><span className="res-big">1080p</span><span className="res-small">Full HD</span></a>
-                            <a href={getGtaPredictionPath('1440p')} className="gta-res-btn"><span className="res-big">1440p</span><span className="res-small">Quad HD</span></a>
-                            <a href={getGtaPredictionPath('2160p')} className="gta-res-btn"><span className="res-big">4K</span><span className="res-small">Ultra HD</span></a>
+                            <button onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(getShareText())}`, '_blank')} className="premium-share-btn btn-x"><Twitter size={20} /></button>
                         </div>
                     </div>
                 </div>
             )}
-
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-calc-box { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
-                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; }
+                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; appearance: none; }
                 .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; }
                 .viral-flex-card { display: flex; align-items: center; gap: 20px; max-width: 520px; margin: 40px auto 0; padding: 25px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 20px; text-align: left; }
-                .award-icon { width: 60px; height: 60px; background: rgba(168, 85, 247, 0.2); border-radius: 15px; display: flex; align-items: center; justify-content: center; }
                 .premium-share-btn { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; border: none; color: #fff; display: flex; align-items: center; justify-content: center; }
-                .btn-copy { background: linear-gradient(45deg, #a855f7, #c084fc); } .btn-x { background: #000; border: 1px solid rgba(255,255,255,0.2); } .btn-reddit { background: #ff4500; }
-                .gta-hype-box { max-width: 520px; margin: 0 auto; background: linear-gradient(135deg, rgba(15, 17, 21, 0.9), rgba(159, 18, 57, 0.15)); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 20px; padding: 30px 25px; }
-                .gta-res-btn { display: flex; flex-direction: column; align-items: center; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.4); padding: 15px 10px; border-radius: 14px; text-decoration: none; color: #fff; }
+                .btn-copy { background: #a855f7; } .btn-x { background: #000; border: 1px solid #333; }
                 .animate-spin { animation: spin 1s linear infinite; } @keyframes spin { 100% { transform: rotate(360deg); } }
-                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
             `}} />
         </div>
     );
