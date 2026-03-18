@@ -54,6 +54,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
             const gpuData = gpuFpsRes.data || {};
             const cpuData = cpuFpsRes.data || {};
+
             const dbBase = selectedGameSlug.replace(/-/g, '_');
             const resKey = selectedRes === '2160p' ? '4k' : selectedRes;
             const columnKey = `${dbBase}_${resKey}`;
@@ -61,13 +62,23 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             const gpuFps = gpuData[columnKey] || 0;
             const cpuFps = cpuData[columnKey] || 0;
 
-            // --- GURU EXACT TIER ENGINE ---
+            // --- GURU EXACT TIER ENGINE (SCALING UP FIX) ---
             const gpu = gpus.find(g => g.id === selectedGpuId);
             const gpuName = gpu?.name || '';
             
-            // Hardcoded přesné poměry z tvého dodaného grafu
+            // Extrahováno přesně z tvého grafu (RTX 4090 = 129.4 FPS)
             const getGpuTier = (name) => {
                 const n = name.toLowerCase();
+                
+                // 1. SCALING UP (Nové High-End karty nad 4090)
+                if (n.includes('5090')) return 1.35; // cca +35%
+                if (n.includes('5080')) return 1.12;
+                if (n.includes('5070 ti')) return 0.90;
+                if (n.includes('5070')) return 0.80;
+                if (n.includes('rx 8900')) return 1.15;
+                if (n.includes('rx 8800')) return 0.85;
+
+                // 2. SCALING DOWN (Přesně tvá data z grafu)
                 if (n.includes('4090')) return 1.0;
                 if (n.includes('4080')) return 0.798;
                 if (n.includes('7900 xtx')) return 0.757;
@@ -81,12 +92,13 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 if (n.includes('4070')) return 0.513;
                 if (n.includes('6800 xt')) return 0.512;
                 if (n.includes('7700 xt')) return 0.481;
-                if (n.includes('3070 ti')) return 0.45;  // Přesně doladěno pro 58 FPS
+                if (n.includes('3070 ti')) return 0.445; // Generuje tvých 58 FPS
                 if (n.includes('3070')) return 0.421;
                 if (n.includes('2080 ti')) return 0.413;
-                if (n.includes('4060 ti')) return 0.395;
+                if (n.includes('4060 ti')) return 0.401;
                 if (n.includes('3060 ti')) return 0.359;
-                // Bezpečné aproximace pro karty mimo graf
+                
+                // 3. Doplněk pro běžné slabší modely
                 if (n.includes('4060')) return 0.30;
                 if (n.includes('3060')) return 0.28;
                 if (n.includes('rx 7600')) return 0.30;
@@ -98,46 +110,42 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 if (n.includes('2080')) return 0.32;
                 if (n.includes('2070')) return 0.28;
                 if (n.includes('2060')) return 0.22;
-                return 0.40; // Default fallback
+                
+                return null; // Fallback pro zcela neznámou kartu
             };
 
             const gpuTier = getGpuTier(gpuName);
-            
-            // Tvé 3 definované referenční body (baseline pro RTX 4090)
+            let finalFps = 0;
+
             const ref4090 = {
                 'the-callisto-protocol': { '1080p': 325, '1440p': 318, '2160p': 242 },
                 'battlefield-6': { '1080p': 167, '1440p': 122, '2160p': 70 },
                 'cyberpunk-2077': { '1080p': 167, '1440p': 129, '2160p': 69 }
             };
 
-            let base4090Fps = 0;
             let refSlug = Object.keys(ref4090).find(slug => selectedGameSlug.includes(slug));
 
-            if (refSlug && ref4090[refSlug][selectedRes]) {
-                // Přímé dosazení pokud jde o referenční hru
-                base4090Fps = ref4090[refSlug][selectedRes];
+            if (gpuTier !== null) {
+                let base4090Fps = 0;
+                if (refSlug && ref4090[refSlug][selectedRes]) {
+                    // Je to hra, kterou jsi měřil
+                    base4090Fps = ref4090[refSlug][selectedRes];
+                } else {
+                    // Ostatní hry (dopočet z databáze)
+                    let rawBase = (gpuFps > 0 && cpuFps > 0) ? Math.min(gpuFps, cpuFps) : Math.max(gpuFps, cpuFps);
+                    if (rawBase === 0) rawBase = 45; 
+                    base4090Fps = rawBase * 2.84; 
+                }
+                // Škálování podle karty (5090 jde nahoru, 3070 Ti dolů)
+                finalFps = base4090Fps * gpuTier;
             } else {
-                // Dopočítání ostatních her z jejich základu
+                // Dynamický záchranný výpočet pro úplně neznámou kartu z DB
                 let rawBase = (gpuFps > 0 && cpuFps > 0) ? Math.min(gpuFps, cpuFps) : Math.max(gpuFps, cpuFps);
                 if (rawBase === 0) rawBase = 45; 
-                let oldGpuTier = Math.sqrt(gpuTier); // Odstranění staré databázové komprese
-                let equivalent4090Db = rawBase / oldGpuTier;
-                base4090Fps = equivalent4090Db * 2.85; 
-            }
-
-            // Finální výpočet
-            let finalFps = base4090Fps * gpuTier;
-
-            // Lehké omezení pokud je procesor výrazně slabší než karta
-            const cpu = cpus.find(c => c.id === selectedCpuId);
-            const cpuPerf = cpu?.performance_index || 100;
-            const gpuPerfEst = gpuTier * 100;
-            if (cpuPerf < gpuPerfEst) {
-                finalFps = finalFps * (0.9 + 0.1 * (cpuPerf / gpuPerfEst));
+                finalFps = rawBase * 2.84;
             }
 
             setResult({ fps: Math.round(finalFps) });
-            // --- GURU EXACT TIER ENGINE END ---
 
             // 🔥 LOGOVÁNÍ PRO SITEMAPU: Uložíme všechny 3 varianty rozlišení pro Google
             const resolutions = ['1080p', '1440p', '2160p'];
