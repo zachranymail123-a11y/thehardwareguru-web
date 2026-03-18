@@ -62,42 +62,20 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             const gpuFps = gpuData[columnKey] || 0;
             const cpuFps = cpuData[columnKey] || 0;
 
-            // --- GURU FPS ENGINE CALIBRATION START ---
+            // --- GURU FPS ENGINE CALIBRATION ---
+            // Strategie: Dbáme na poměry výkonu už uložené v databázi (takže 3070 Ti zůstane úměrně slabší)
+            // a pouze aplikujeme tvůj "Guru Koeficient" pro dorovnání reálné zátěže.
+            let rawBase = (gpuFps > 0 && cpuFps > 0) ? Math.min(gpuFps, cpuFps) : Math.max(gpuFps, cpuFps);
+            if (rawBase === 0) rawBase = 45; // Bezpečnostní fallback
             
-            const referenceData = {
-                'the-callisto-protocol': { '1080p': 325, '1440p': 318, '2160p': 242 },
-                'battlefield-6': { '1080p': 167, '1440p': 122, '2160p': 70 },
-                'cyberpunk-2077': { '1080p': 167, '1440p': 129, '2160p': 69 }
-            };
+            // Výchozí kalibrace z Callisto Protocol (318 / 112 = 2.84)
+            let guruMultiplier = 2.84;
+            
+            // Jemné doladění pro referenční hry
+            if (selectedGameSlug.includes('cyberpunk-2077')) guruMultiplier = 2.86;
+            if (selectedGameSlug.includes('battlefield-6')) guruMultiplier = 2.74;
 
-            const gpu = gpus.find(g => g.id === selectedGpuId);
-            const cpu = cpus.find(c => c.id === selectedCpuId);
-            const gpuPerf = gpu?.performance_index || 100;
-            const cpuPerf = cpu?.performance_index || 100;
-
-            let finalFps = 0;
-            let refSlug = Object.keys(referenceData).find(slug => selectedGameSlug.includes(slug));
-
-            if (refSlug) {
-                // A. Pokud je to jedna ze 3 referenčních her, použijeme přesná data
-                let baseGuruFps = referenceData[refSlug][selectedRes];
-                finalFps = baseGuruFps * (gpuPerf / 100);
-            } else {
-                // B. Pokud je to jiná hra, odvodíme to z DB hodnot a referenčního koeficientu
-                let rawBase = (gpuFps > 0 && cpuFps > 0) ? Math.min(gpuFps, cpuFps) : Math.max(gpuFps, cpuFps);
-                if (rawBase === 0) rawBase = 112; 
-                
-                let guruMultiplier = 2.84; 
-                finalFps = rawBase * guruMultiplier * (gpuPerf / 100);
-            }
-
-            // C. Aplikace vlivu procesoru (Bottleneck)
-            if (cpuPerf < gpuPerf) {
-                finalFps = finalFps * (cpuPerf / gpuPerf);
-            }
-
-            // --- GURU FPS ENGINE CALIBRATION END ---
-
+            const finalFps = rawBase * guruMultiplier;
             setResult({ fps: Math.round(finalFps) });
 
             // 🔥 LOGOVÁNÍ PRO SITEMAPU: Uložíme všechny 3 varianty rozlišení pro Google
