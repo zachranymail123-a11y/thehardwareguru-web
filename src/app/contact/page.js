@@ -1,9 +1,10 @@
 import React from 'react';
-import { Mail, MessageSquare, Share2, Youtube, Activity } from 'lucide-react';
+import { Mail, MessageSquare, Youtube, Activity } from 'lucide-react';
 
 /**
- * GURU CONTACT ENGINE V3.0 (GOLDEN RICH RESULTS FIX)
+ * GURU CONTACT ENGINE V3.1 (E-E-A-T & ADSENSE COMPLIANT)
  * Cesta: src/app/contact/page.js
+ * 🚀 CÍL: Poskytnout Googlu a uživatelům jasné kontaktní údaje pro důvěryhodnost.
  */
 
 export const runtime = "nodejs";
@@ -33,7 +34,6 @@ export async function generateMetadata(props) {
 export default function ContactPage(props) {
   const isEn = props?.isEn === true;
 
-  // 🚀 ZLATÁ GSC SEO SCHÉMATA
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -66,7 +66,7 @@ export default function ContactPage(props) {
 
       <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <header style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.1)' }}>
+          <div className="contact-badge">
             <Mail size={16} /> {isEn ? 'GET IN TOUCH' : 'OZVĚTE SE NÁM'}
           </div>
           <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
@@ -86,7 +86,7 @@ export default function ContactPage(props) {
                 <div className="contact-card">
                     <Mail size={32} color="#66fcf1" style={{ marginBottom: '15px' }} />
                     <h3 style={{ margin: '0 0 5px 0', fontSize: '1.2rem', color: '#fff' }}>E-mail</h3>
-                    <p style={{ margin: 0, color: '#9ca3af' }}>thehardwareguru@seznam.cz</p>
+                    <p style={{ margin: 0, color: '#9ca3af', fontWeight: 'bold' }}>thehardwareguru@seznam.cz</p>
                 </div>
                 <div className="contact-card">
                     <MessageSquare size={32} color="#5865F2" style={{ marginBottom: '15px' }} />
@@ -105,6 +105,7 @@ export default function ContactPage(props) {
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
+        .contact-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.1); margin-bottom: 20px; }
         .content-box-style { background: rgba(15, 17, 21, 0.95); padding: 50px 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 20px 50px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; }
         .guru-prose h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin: 1.5em 0 0.8em; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; }
