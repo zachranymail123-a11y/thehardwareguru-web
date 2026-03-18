@@ -4,12 +4,6 @@ import React, { useState } from 'react';
 import { Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Check, Award, Twitter, Sparkles } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-/**
- * GURU FPS ENGINE CLIENT - V6.0 (SITEMAP FEEDER & SEO MULTIPLIER)
- * 🛡️ AUTO-SITEMAP: Při každém výpočtu uložíme 3 unikátní GTA 6 URL do DB pro sitemapu.
- * 🛡️ SEO GENERÁTOR: 3 rozlišení = 3x více stránek v indexu z jednoho uživatele.
- */
-
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -30,7 +24,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
     const [result, setResult] = useState(null);
     const [copied, setCopied] = useState(false);
 
-    // Funkce pro sestavení čisté URL pro GTA 6
     const getGtaUrl = (res) => {
         const cpuName = cpus.find(c => c.id === selectedCpuId)?.name || 'cpu';
         const gpuName = gpus.find(g => g.id === selectedGpuId)?.name || 'gpu';
@@ -62,23 +55,14 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             const gpuFps = gpuData[columnKey] || 0;
             const cpuFps = cpuData[columnKey] || 0;
 
-            // --- GURU EXACT TIER ENGINE (SCALING UP FIX) ---
             const gpu = gpus.find(g => g.id === selectedGpuId);
             const gpuName = gpu?.name || '';
+            const gpuPerfIndex = gpu?.performance_index || 100;
             
-            // Extrahováno přesně z tvého grafu (RTX 4090 = 129.4 FPS)
+            // PŘESNÁ DATA Z TVÉHO GRAFU (RTX 4090 = 129.4 FPS = 1.0)
             const getGpuTier = (name) => {
                 const n = name.toLowerCase();
                 
-                // 1. SCALING UP (Nové High-End karty nad 4090)
-                if (n.includes('5090')) return 1.35; // cca +35%
-                if (n.includes('5080')) return 1.12;
-                if (n.includes('5070 ti')) return 0.90;
-                if (n.includes('5070')) return 0.80;
-                if (n.includes('rx 8900')) return 1.15;
-                if (n.includes('rx 8800')) return 0.85;
-
-                // 2. SCALING DOWN (Přesně tvá data z grafu)
                 if (n.includes('4090')) return 1.0;
                 if (n.includes('4080')) return 0.798;
                 if (n.includes('7900 xtx')) return 0.757;
@@ -92,30 +76,19 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 if (n.includes('4070')) return 0.513;
                 if (n.includes('6800 xt')) return 0.512;
                 if (n.includes('7700 xt')) return 0.481;
-                if (n.includes('3070 ti')) return 0.445; // Generuje tvých 58 FPS
+                if (n.includes('3070 ti')) return 0.445; 
                 if (n.includes('3070')) return 0.421;
                 if (n.includes('2080 ti')) return 0.413;
+                if (n.includes('4060 ti 16')) return 0.389;
                 if (n.includes('4060 ti')) return 0.401;
                 if (n.includes('3060 ti')) return 0.359;
                 
-                // 3. Doplněk pro běžné slabší modely
-                if (n.includes('4060')) return 0.30;
-                if (n.includes('3060')) return 0.28;
-                if (n.includes('rx 7600')) return 0.30;
-                if (n.includes('6700 xt')) return 0.38;
-                if (n.includes('6700')) return 0.34;
-                if (n.includes('6600')) return 0.25;
-                if (n.includes('1080 ti')) return 0.35;
-                if (n.includes('1080')) return 0.25;
-                if (n.includes('2080')) return 0.32;
-                if (n.includes('2070')) return 0.28;
-                if (n.includes('2060')) return 0.22;
-                
-                return null; // Fallback pro zcela neznámou kartu
+                return null; 
             };
 
-            const gpuTier = getGpuTier(gpuName);
-            let finalFps = 0;
+            const tierFromList = getGpuTier(gpuName);
+            // Výpočet použije tvůj graf, nebo dynamicky vezme data z tvé Supabase
+            const activeTier = tierFromList !== null ? tierFromList : (gpuPerfIndex / 100);
 
             const ref4090 = {
                 'the-callisto-protocol': { '1080p': 325, '1440p': 318, '2160p': 242 },
@@ -123,31 +96,32 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 'cyberpunk-2077': { '1080p': 167, '1440p': 129, '2160p': 69 }
             };
 
+            let base4090Fps = 0;
             let refSlug = Object.keys(ref4090).find(slug => selectedGameSlug.includes(slug));
 
-            if (gpuTier !== null) {
-                let base4090Fps = 0;
-                if (refSlug && ref4090[refSlug][selectedRes]) {
-                    // Je to hra, kterou jsi měřil
-                    base4090Fps = ref4090[refSlug][selectedRes];
-                } else {
-                    // Ostatní hry (dopočet z databáze)
-                    let rawBase = (gpuFps > 0 && cpuFps > 0) ? Math.min(gpuFps, cpuFps) : Math.max(gpuFps, cpuFps);
-                    if (rawBase === 0) rawBase = 45; 
-                    base4090Fps = rawBase * 2.84; 
-                }
-                // Škálování podle karty (5090 jde nahoru, 3070 Ti dolů)
-                finalFps = base4090Fps * gpuTier;
+            if (refSlug && ref4090[refSlug][selectedRes]) {
+                base4090Fps = ref4090[refSlug][selectedRes];
             } else {
-                // Dynamický záchranný výpočet pro úplně neznámou kartu z DB
                 let rawBase = (gpuFps > 0 && cpuFps > 0) ? Math.min(gpuFps, cpuFps) : Math.max(gpuFps, cpuFps);
-                if (rawBase === 0) rawBase = 45; 
-                finalFps = rawBase * 2.84;
+                
+                if (rawBase > 0) {
+                    let oldDbMultiplier = gpuPerfIndex / 100;
+                    if (oldDbMultiplier <= 0) oldDbMultiplier = activeTier;
+                    base4090Fps = rawBase / oldDbMultiplier;
+                }
+            }
+
+            let finalFps = base4090Fps * activeTier;
+
+            const cpu = cpus.find(c => c.id === selectedCpuId);
+            const cpuPerf = cpu?.performance_index || 100;
+            const gpuPerfEst = activeTier * 100;
+            if (cpuPerf < gpuPerfEst) {
+                finalFps = finalFps * (0.85 + 0.15 * (cpuPerf / gpuPerfEst));
             }
 
             setResult({ fps: Math.round(finalFps) });
 
-            // 🔥 LOGOVÁNÍ PRO SITEMAPU: Uložíme všechny 3 varianty rozlišení pro Google
             const resolutions = ['1080p', '1440p', '2160p'];
             const logPromises = resolutions.map(res => 
                 supabase.from('generated_predictions').upsert({
@@ -203,7 +177,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         window.open(redditUrl, '_blank', 'noopener,noreferrer');
     };
 
-    // Helper pro čisté linky v UI (relativní cesta)
     const getGtaPredictionPath = (targetRes) => {
         const url = getGtaUrl(targetRes);
         return url.replace('https://thehardwareguru.cz', '');
