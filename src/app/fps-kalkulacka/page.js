@@ -4,15 +4,16 @@ import FpsCalculatorClient from './FpsCalculatorClient';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU FPS ENGINE - V6.1 (HYPER-BAIT VERSION)
- * 🛡️ PSYCHOLOGIE: GTA 6 bait je teď hned na začátku stránky, aby uživatel věděl, proč měřit.
- * 🛡️ SEO: Google Golden Rich + Extrémní prolinkování.
+ * GURU FPS ENGINE - V6.2 (DARK UI & SEO GOLDEN)
+ * 🛡️ FIX: Dark Mode pro HTML Selecty (konec bílých roletek).
+ * 🛡️ SEO: Google Golden Rich + Maximální prolinkování.
  */
 
 export const dynamic = 'force-dynamic';
 const baseUrl = "https://thehardwareguru.cz";
 
 export async function generateMetadata(props) {
+  // NEXT.js 15 Fix: Ošetření params
   const isEn = props?.params?.lang === 'en' || props?.searchParams?.lang === 'en' || false;
   return {
     title: isEn ? 'GTA VI FPS Predictor & Calculator | The Hardware Guru' : 'GTA VI FPS Predikce & Kalkulačka | The Hardware Guru',
@@ -56,18 +57,15 @@ export default async function FpsKalkulackaPage(props) {
             {isEn ? 'FPS' : 'ROZJEDU'} <span style={{ color: '#a855f7' }}>TO?</span>
           </h1>
 
-          {/* 🔥 HLAVNÍ NABEJTĚNÍ - Hned pod nadpisem, aby to nikdo neminul */}
           <div className="main-bait-panel">
             <div className="bait-tag"><Sparkles size={14} /> EXKLUZIVNÍ AI MODUL</div>
             <h2 className="bait-title">CHCETE VĚDĚT, JAK VÁM POJEDE <span style={{color: '#f43f5e'}}>GTA VI?</span></h2>
-            <p className="bait-desc">Stačí níže zadat vaši sestavu. Po výpočtu se vám odemkne <strong>přesný odhad pro GTA VI</strong> ve všech rozlišeních!</p>
+            <p className="bait-desc">Stačí níže zadat vaši sestavu. Po výpočtu se vám odemkne <strong>přesný odhad pro GTA VI</strong>!</p>
           </div>
         </header>
 
-        {/* KALKULAČKA (Teď uživatel ví, proč ji vyplňuje) */}
         <FpsCalculatorClient gpus={gpuRes.data || []} cpus={cpuRes.data || []} games={gameRes.data || []} isEn={isEn} />
 
-        {/* SEO SILOING */}
         <div style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
             <a href="/cpu-index" className="silo-mini-card"><Cpu size={20} color="#f59e0b" /> KATALOG PROCESORŮ <ArrowRight size={16} /></a>
             <a href="/gpu-index" className="silo-mini-card"><Monitor size={20} color="#66fcf1" /> KATALOG GRAFIK <ArrowRight size={16} /></a>
@@ -78,7 +76,17 @@ export default async function FpsKalkulackaPage(props) {
       <style dangerouslySetInnerHTML={{__html: `
         .guru-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
         
-        /* Bait Panel Style */
+        /* 🔥 DARK SELECT FIX: Tady se léčí ty bílé roletky */
+        select {
+          background-color: #0f1115 !important;
+          color: #ffffff !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        select option {
+          background-color: #1a1d23 !important;
+          color: #ffffff !important;
+        }
+
         .main-bait-panel { background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(168, 85, 247, 0.1)); border: 1px solid rgba(255,255,255,0.05); padding: 30px; border-radius: 24px; margin-top: 30px; border-bottom: 2px solid #f43f5e; box-shadow: 0 15px 30px rgba(0,0,0,0.4); }
         .bait-tag { display: inline-flex; align-items: center; gap: 6px; background: #f43f5e; color: #fff; padding: 4px 12px; border-radius: 6px; font-size: 10px; font-weight: 950; margin-bottom: 15px; }
         .bait-title { font-size: 22px; font-weight: 950; margin: 0; text-transform: uppercase; }
