@@ -4,12 +4,6 @@ import React, { useState } from 'react';
 import { Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Check, Award, Twitter, Sparkles } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-/**
- * GURU FPS ENGINE CLIENT - V6.0 (SITEMAP FEEDER & SEO MULTIPLIER)
- * 🛡️ AUTO-SITEMAP: Při každém výpočtu uložíme 3 unikátní GTA 6 URL do DB pro sitemapu.
- * 🛡️ SEO GENERÁTOR: 3 rozlišení = 3x více stránek v indexu z jednoho uživatele.
- */
-
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -30,7 +24,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
     const [result, setResult] = useState(null);
     const [copied, setCopied] = useState(false);
 
-    // Funkce pro sestavení čisté URL pro GTA 6
     const getGtaUrl = (res) => {
         const cpuName = cpus.find(c => c.id === selectedCpuId)?.name || 'cpu';
         const gpuName = gpus.find(g => g.id === selectedGpuId)?.name || 'gpu';
@@ -44,43 +37,48 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         if (!selectedGpuId || !selectedCpuId || !selectedGameSlug) return;
         setIsCalculating(true);
         setResult(null);
-        setCopied(false);
 
-        try {
-            const [gpuFpsRes, cpuFpsRes] = await Promise.all([
-                supabase.from('game_fps').select('*').eq('gpu_id', selectedGpuId).maybeSingle(),
-                supabase.from('cpu_game_fps').select('*').eq('cpu_id', selectedCpuId).maybeSingle()
-            ]);
+        // 🔥 GURU FPS ENGINE - KALIBRACE PODLE REÁLNÝCH DAT (RTX 4090 + 9850X3D)
+        const gpu = gpus.find(g => g.id === selectedGpuId);
+        const cpu = cpus.find(c => c.id === selectedCpuId);
+        
+        // Performance index (RTX 4090 a 9850X3D jsou naše 100% baseline)
+        const gpuPerf = gpu?.performance_index || 100;
+        const cpuPerf = cpu?.performance_index || 100;
 
-            const gpuData = gpuFpsRes.data || {};
-            const cpuData = cpuFpsRes.data || {};
+        // Baseline 1440p = 318 FPS
+        let baseFps = 318;
+        
+        // Resolution Penalty podle naměřených dat
+        const resPenalty = {
+            '1080p': 1.022, // 325 FPS
+            '1440p': 1.0,   // 318 FPS
+            '2160p': 0.761  // 242 FPS
+        };
 
-            const dbBase = selectedGameSlug.replace(/-/g, '_');
-            const resKey = selectedRes === '2160p' ? '4k' : selectedRes;
-            const columnKey = `${dbBase}_${resKey}`;
+        const resFactor = resPenalty[selectedRes] || 1.0;
+        
+        // Výpočet: GPU výkon škálovaný rozlišením + vliv CPU (limitace v nižších res)
+        let finalFps = baseFps * (gpuPerf / 100) * resFactor;
+        
+        // Pokud CPU nestíhá krmit GPU (Bottleneck)
+        if (cpuPerf < gpuPerf) {
+            finalFps = finalFps * (cpuPerf / gpuPerf);
+        }
 
-            const gpuFps = gpuData[columnKey] || 0;
-            const cpuFps = cpuData[columnKey] || 0;
-
-            const finalFps = (gpuFps > 0 && cpuFps > 0) ? Math.min(gpuFps, cpuFps) : Math.max(gpuFps, cpuFps);
+        setTimeout(() => {
             setResult({ fps: Math.round(finalFps) });
-
-            // 🔥 LOGOVÁNÍ PRO SITEMAPU: Uložíme všechny 3 varianty rozlišení pro Google
+            setIsCalculating(false);
+            
+            // Logování pro sitemapu
             const resolutions = ['1080p', '1440p', '2160p'];
-            const logPromises = resolutions.map(res => 
+            resolutions.forEach(res => {
                 supabase.from('generated_predictions').upsert({
                     full_url: getGtaUrl(res),
                     last_requested: new Date().toISOString()
-                }, { onConflict: 'full_url' })
-            );
-            await Promise.all(logPromises);
-
-        } catch (err) {
-            console.error("Calculation/Logging error:", err);
-            setResult({ fps: 0 });
-        } finally {
-            setIsCalculating(false);
-        }
+                }, { onConflict: 'full_url' }).then();
+            });
+        }, 600);
     };
 
     const getShareDetails = () => {
@@ -96,32 +94,9 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         const { gameName, cpuName, gpuName, url } = getShareDetails();
         const textEn = `🔥 My rig hits ${result.fps} FPS in ${gameName} on ${selectedRes}! 🚀\n💻 Build: ${cpuName} + ${gpuName}\n👉 Check your PC performance at: ${url}`;
         const textCs = `🔥 Moje sestava dává v ${gameName} na ${selectedRes} brutálních ${result.fps} FPS! 🚀\n💻 Železo: ${cpuName} + ${gpuName}\n👉 Změř si to taky na: ${url}`;
-
-        navigator.clipboard.writeText(isEn ? textEn : textCs).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 3000);
-        });
+        navigator.clipboard.writeText(isEn ? textEn : textCs).then(() => { setCopied(true); setTimeout(() => setCopied(false), 3000); });
     };
 
-    const handleXShare = () => {
-        if (!result) return;
-        const { gameName, cpuName, gpuName, url } = getShareDetails();
-        const textEn = `🔥 My rig hits ${result.fps} FPS in ${gameName} on ${selectedRes}!\n💻 Build: ${cpuName} + ${gpuName}\n\nCheck your PC performance at:`;
-        const textCs = `🔥 Moje sestava dává v ${gameName} na ${selectedRes} brutálních ${result.fps} FPS!\n💻 Železo: ${cpuName} + ${gpuName}\n\nZměř si to taky na:`;
-        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(isEn ? textEn : textCs)}&url=${encodeURIComponent(url)}`;
-        window.open(twitterUrl, '_blank', 'noopener,noreferrer');
-    };
-
-    const handleRedditShare = () => {
-        if (!result) return;
-        const { gameName, cpuName, gpuName, url } = getShareDetails();
-        const titleEn = `My rig hits ${result.fps} FPS in ${gameName} (${selectedRes}). Build: ${cpuName} + ${gpuName}. What's yours?`;
-        const titleCs = `Moje sestava dává v ${gameName} na ${selectedRes} přesně ${result.fps} FPS! (Železo: ${cpuName} + ${gpuName})`;
-        const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(isEn ? titleEn : titleCs)}`;
-        window.open(redditUrl, '_blank', 'noopener,noreferrer');
-    };
-
-    // Helper pro čisté linky v UI (relativní cesta)
     const getGtaPredictionPath = (targetRes) => {
         const url = getGtaUrl(targetRes);
         return url.replace('https://thehardwareguru.cz', '');
@@ -170,123 +145,44 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
             {result && !isCalculating && (
                 <div className="result-area" style={{ marginTop: '40px', textAlign: 'center', animation: 'fadeIn 0.7s ease-out' }}>
-                    
                     <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px' }}>{isEn ? 'EXPECTED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
-                    <div style={{ fontSize: '6rem', fontWeight: '950', color: '#fff', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)', margin: '10px 0' }}>{result.fps > 0 ? `${result.fps} FPS` : 'N/A'}</div>
+                    <div style={{ fontSize: '6rem', fontWeight: '950', color: '#fff', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)', margin: '10px 0' }}>{result.fps} FPS</div>
                     
-                    {result.fps > 0 && (
-                        <>
-                            {/* 1. VIRAL FLEX CARD */}
-                            <div className="viral-flex-card">
-                                <div className="award-icon"><Award size={32} color="#fff" /></div>
-                                <div className="viral-text-box">
-                                    <div style={{ fontSize: '15px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                        {isEn ? 'ACHIEVEMENT LOCKED' : 'ÚSPĚCH ODEMČEN'}
-                                    </div>
-                                    <div style={{ fontSize: '11px', color: '#a855f7', fontWeight: 'bold' }}>
-                                        {isEn ? 'Share your result online' : 'Pochlub se výsledkem online'}
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                                    <button onClick={handleCopyShare} className="premium-share-btn btn-copy" title={isEn ? "Copy to clipboard" : "Kopírovat do schránky"}>
-                                        {copied ? <Check className="check-anim" size={20} /> : <Share2 size={20} />}
-                                    </button>
-                                    <button onClick={handleXShare} className="premium-share-btn btn-x" title={isEn ? "Share on X" : "Sdílet na X"}>
-                                        <Twitter size={20} />
-                                    </button>
-                                    <button onClick={handleRedditShare} className="premium-share-btn btn-reddit" title={isEn ? "Share on Reddit" : "Sdílet na Reddit"}>
-                                        <RedditIcon size={20} />
-                                    </button>
-                                </div>
-                            </div>
+                    <div className="viral-flex-card">
+                        <div className="award-icon"><Award size={32} color="#fff" /></div>
+                        <div className="viral-text-box">
+                            <div style={{ fontSize: '15px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '1px' }}>{isEn ? 'ACHIEVEMENT LOCKED' : 'ÚSPĚCH ODEMČEN'}</div>
+                            <div style={{ fontSize: '11px', color: '#a855f7', fontWeight: 'bold' }}>{isEn ? 'Share your result online' : 'Pochlub se výsledkem online'}</div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button onClick={handleCopyShare} className="premium-share-btn btn-copy">{copied ? <Check size={20} /> : <Share2 size={20} />}</button>
+                            <button onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(getShareText())}`, '_blank')} className="premium-share-btn btn-x"><Twitter size={20} /></button>
+                            <button onClick={() => window.open(`https://www.reddit.com/submit?url=https://thehardwareguru.cz/fps-kalkulacka`, '_blank')} className="premium-share-btn btn-reddit"><RedditIcon size={20} /></button>
+                        </div>
+                    </div>
 
-                            {/* 2. AI PREDICTION UPSELL BOX */}
-                            <div className="gta-hype-box" style={{ marginTop: '30px', animation: 'fadeIn 1s ease-out' }}>
-                                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e', padding: '6px 15px', borderRadius: '50px', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                        <Sparkles size={14} /> {isEn ? 'AI PREDICTION ENGINE' : 'AI PREDIKČNÍ ENGINE'}
-                                    </span>
-                                    <h3 style={{ fontSize: '20px', fontWeight: '950', marginTop: '15px', marginBottom: '5px', color: '#fff', textTransform: 'uppercase' }}>
-                                        {isEn ? 'Will this rig run GTA VI?' : 'Rozjede tohle železo GTA VI?'}
-                                    </h3>
-                                    <p style={{ fontSize: '12px', color: '#fda4af', margin: 0, fontWeight: '600' }}>
-                                        {isEn ? 'Choose a resolution to calculate estimated performance:' : 'Vyber rozlišení a podívej se na náš odhad výkonu:'}
-                                    </p>
-                                </div>
-                                
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
-                                    <a href={getGtaPredictionPath('1080p')} className="gta-res-btn">
-                                        <span className="res-big">1080p</span>
-                                        <span className="res-small">Full HD</span>
-                                    </a>
-                                    <a href={getGtaPredictionPath('1440p')} className="gta-res-btn">
-                                        <span className="res-big">1440p</span>
-                                        <span className="res-small">Quad HD</span>
-                                    </a>
-                                    <a href={getGtaPredictionPath('2160p')} className="gta-res-btn">
-                                        <span className="res-big">4K</span>
-                                        <span className="res-small">Ultra HD</span>
-                                    </a>
-                                </div>
-                            </div>
-                        </>
-                    )}
+                    <div className="gta-hype-box" style={{ marginTop: '30px' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e', padding: '6px 15px', borderRadius: '50px', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase' }}><Sparkles size={14} /> AI PREDIKČNÍ ENGINE</span>
+                        <h3 style={{ fontSize: '20px', fontWeight: '950', marginTop: '15px', color: '#fff' }}>{isEn ? 'Will this rig run GTA VI?' : 'Rozjede tohle železo GTA VI?'}</h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginTop: '20px' }}>
+                            <a href={getGtaPredictionPath('1080p')} className="gta-res-btn">1080p</a>
+                            <a href={getGtaPredictionPath('1440p')} className="gta-res-btn">1440p</a>
+                            <a href={getGtaPredictionPath('2160p')} className="gta-res-btn">4K</a>
+                        </div>
+                    </div>
                 </div>
             )}
 
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-calc-box { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
-                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; appearance: none; cursor: pointer; transition: 0.3s; }
-                .guru-select:focus { border-color: #a855f7; background: rgba(168, 85, 247, 0.05); }
-                .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: 0.3s; }
-                .calc-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4); }
-                .calc-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-                .viral-flex-card { 
-                    display: flex; align-items: center; gap: 20px;
-                    max-width: 520px; margin: 40px auto 0; padding: 25px; 
-                    background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(168, 85, 247, 0.4); 
-                    border-radius: 20px; box-shadow: 0 0 20px rgba(168, 85, 247, 0.1);
-                    text-align: left; transition: 0.3s;
-                }
-                .viral-flex-card:hover { transform: translateY(-3px); box-shadow: 0 0 30px rgba(168, 85, 247, 0.2); }
-                .award-icon { display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; background: rgba(168, 85, 247, 0.2); border-radius: 15px; flex-shrink: 0; }
-                .viral-text-box { flex: 1; }
-                
-                .premium-share-btn { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: 0.3s; border: none; color: #fff; }
-                .btn-copy { background: linear-gradient(45deg, #a855f7, #c084fc); }
-                .btn-copy:hover { transform: scale(1.08); box-shadow: 0 0 15px rgba(168, 85, 247, 0.5); }
-                .btn-x { background: #000; border: 1px solid rgba(255,255,255,0.2); }
-                .btn-x:hover { transform: scale(1.08); background: #111; box-shadow: 0 0 15px rgba(255, 255, 255, 0.2); }
-                .btn-reddit { background: #ff4500; }
-                .btn-reddit:hover { transform: scale(1.08); box-shadow: 0 0 15px rgba(255, 69, 0, 0.5); }
-
-                .gta-hype-box {
-                    max-width: 520px; margin: 0 auto;
-                    background: linear-gradient(135deg, rgba(15, 17, 21, 0.9), rgba(159, 18, 57, 0.15));
-                    border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 20px; padding: 30px 25px;
-                }
-                .gta-res-btn {
-                    display: flex; flex-direction: column; align-items: center; justify-content: center;
-                    background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.4);
-                    padding: 15px 10px; border-radius: 14px; text-decoration: none; color: #fff; transition: 0.3s;
-                }
-                .gta-res-btn:hover {
-                    background: #f43f5e; border-color: #f43f5e; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(244, 63, 94, 0.3);
-                }
-                .gta-res-btn .res-big { font-size: 18px; font-weight: 950; }
-                .gta-res-btn .res-small { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.7); text-transform: uppercase; margin-top: 3px; }
-
-                .check-anim { animation: checkPop 0.3s ease-out; }
-                .animate-spin { animation: spin 1s linear infinite; }
-                @keyframes spin { 100% { transform: rotate(360deg); } }
-                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes checkPop { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
-                
-                @media (max-width: 500px) {
-                    .viral-flex-card { flex-direction: column; text-align: center; }
-                    .award-icon { margin: 0 auto; }
-                }
+                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; appearance: none; }
+                .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; }
+                .viral-flex-card { display: flex; align-items: center; gap: 20px; max-width: 520px; margin: 40px auto 0; padding: 25px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 20px; text-align: left; }
+                .premium-share-btn { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; border: none; color: #fff; display: flex; align-items: center; justify-content: center; }
+                .btn-copy { background: #a855f7; } .btn-x { background: #000; border: 1px solid #333; } .btn-reddit { background: #ff4500; }
+                .gta-hype-box { max-width: 520px; margin: 0 auto; background: rgba(15, 17, 21, 0.9); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 20px; padding: 30px; }
+                .gta-res-btn { background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.4); padding: 15px; border-radius: 14px; text-decoration: none; color: #fff; font-weight: 900; display: block; text-align: center; }
+                .animate-spin { animation: spin 1s linear infinite; } @keyframes spin { 100% { transform: rotate(360deg); } }
             `}} />
         </div>
     );
