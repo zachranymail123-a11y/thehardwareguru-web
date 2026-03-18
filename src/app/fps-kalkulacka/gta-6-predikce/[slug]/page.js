@@ -5,8 +5,8 @@ import { Sparkles, Zap, Monitor, Cpu } from 'lucide-react';
 import ShareButtonsClient from './ShareButtonsClient';
 
 /**
- * GURU GTA 6 PREDICTOR - V10.0 (ANTI-DUPE & FIXED LOGGING)
- * 🛡️ LOGIKA: Prvně ověří existenci, pak zapíše nebo aktualizuje.
+ * GURU GTA 6 PREDICTOR - V11.0 (ADSENSE READY)
+ * 🛡️ UPDATE: Přidán Google AdSense slot pro monetizaci hitů.
  */
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +18,6 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
 
     if (!cpuId || !gpuId || !slug) return notFound();
 
-    // Inicializace Supabase s Service Role pro zápis bez omezení
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
         process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -28,21 +27,19 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
     try {
         const fullUrl = `${baseUrl}/fps-kalkulacka/gta-6-predikce/${slug}?cpuId=${cpuId}&gpuId=${gpuId}`;
         
-        // UPSERT (Update or Insert) - Pokud slug_base existuje, přepíše se last_requested
         const { error: upsertError } = await supabase
             .from('generated_predictions')
             .upsert({
-                slug_base: slug,          // Toto je tvůj PRIMARY KEY
+                slug_base: slug,
                 cpu_id: cpuId,
                 gpu_id: gpuId,
-                full_url: fullUrl,        // Přidáme i celou URL pro sitemapu
+                full_url: fullUrl,
                 last_requested: new Date().toISOString()
             }, { 
-                onConflict: 'slug_base'   // Klíčové pro antiduplikaci
+                onConflict: 'slug_base'
             });
 
         if (upsertError) console.error("❌ DB Write Error:", upsertError.message);
-        else console.log("✅ GTA 6 Prediction Logged/Updated:", slug);
         
     } catch (err) {
         console.error("❌ Critical Logging Failure:", err);
@@ -95,6 +92,18 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                     </div>
                 </div>
 
+                {/* 💰 ADSENSE SLOT - GURU MONETIZATION ENGINE */}
+                <div style={{ margin: '40px 0', minHeight: '120px', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px dashed rgba(244, 63, 94, 0.2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '10px', color: '#4b5563', marginBottom: '10px', fontWeight: 'bold', letterSpacing: '2px' }}>SPONZOROVANÝ OBSAH</span>
+                    <ins className="adsbygoogle"
+                         style={{ display: 'block', width: '100%' }}
+                         data-ad-client="ca-pub-5468223287024993"
+                         data-ad-slot="1234567890" // Sem vložíš ID po schválení
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                    <script dangerouslySetInnerHTML={{ __html: '(window.adsbygoogle = window.adsbygoogle || []).push({});' }} />
+                </div>
+
                 <ShareButtonsClient shareText={shareText} shareUrl={shareUrl} />
 
                 <div className="res-switch-grid">
@@ -112,7 +121,7 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
 
             <style dangerouslySetInnerHTML={{__html: `
                 .pred-badge { display: inline-flex; align-items: center; gap: 8px; color: #f43f5e; font-weight: 950; padding: 6px 20px; border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 50px; background: rgba(244, 63, 94, 0.1); margin-bottom: 25px; text-transform: uppercase; font-size: 11px; }
-                .result-card { background: linear-gradient(135deg, #0f1115 0%, #1a050a 100%); padding: 60px 40px; border-radius: 32px; border: 2px solid #f43f5e; text-align: center; box-shadow: 0 0 60px rgba(244, 63, 94, 0.15); }
+                .result-card { background: linear-gradient(135deg, #0f1115 0%, #1a050a 100%); padding: 60px 40px; border-radius: 32px; border: 2px solid #f43f5e; text-align: center; box-shadow: 0 0 60px rgba(244, 63, 94, 0.15); position: relative; overflow: hidden; }
                 .fps-main { font-size: 8rem; font-weight: 950; line-height: 0.9; margin-bottom: 15px; color: #fff; }
                 .fps-label { font-size: 14px; font-weight: 900; color: #fda4af; text-transform: uppercase; letter-spacing: 2px; }
                 .stats-row { display: flex; justify-content: center; gap: 20px; margin-top: 40px; padding-top: 30px; border-top: 1px solid rgba(244, 63, 94, 0.2); }
@@ -120,6 +129,7 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                 .res-switch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 30px; }
                 .res-nav { padding: 18px; background: rgba(15,17,21,0.8); border-radius: 16px; text-align: center; text-decoration: none; color: #6b7280; font-weight: 950; border: 1px solid #222; transition: 0.3s; }
                 .res-nav.active { border-color: #f43f5e; background: rgba(244, 63, 94, 0.1); color: #f43f5e; }
+                @media (max-width: 768px) { .fps-main { font-size: 5rem; } .stats-row { flex-direction: column; align-items: center; } }
             `}} />
         </div>
     );
