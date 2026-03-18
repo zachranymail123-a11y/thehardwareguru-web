@@ -1,18 +1,23 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Check, Award, Twitter, Sparkles } from 'lucide-react';
+import { 
+  Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Check, Award, 
+  Twitter, Sparkles, ArrowRight, Facebook 
+} from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+
+/**
+ * GURU FPS ENGINE V7.6 (THE EXPEDITION 33 CALIBRATION)
+ * 🛡️ BASELINE 1 (Callisto): 325 / 318 / 242 (Light/CPU Bound)
+ * 🛡️ BASELINE 2 (RE Requiem): 239 / 183 / 110 (Medium)
+ * 🛡️ BASELINE 3 (Expedition 33): 100 / 71 / 57 (Extreme/Next-Gen)
+ * 🛡️ FIX: Dynamické koeficienty pro 3 stupně náročnosti her.
+ */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
-
-const RedditIcon = ({ size = 20 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-2.05-6.65c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm4.1 0c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm1.64-3.56c-.34 0-.64.16-.84.4-.58-.4-1.36-.67-2.24-.72l.47-2.18 1.5.32c.04.53.48.95 1.02.95.57 0 1.03-.46 1.03-1.03 0-.57-.46-1.03-1.03-1.03-.42 0-.78.26-.94.63l-1.64-.35c-.06-.01-.13 0-.17.05-.05.04-.07.1-.06.16l-.52 2.45c-.93.03-1.74.32-2.35.74-.2-.23-.5-.38-.83-.38-.6 0-1.08.48-1.08 1.08 0 .42.24.78.58.96-.02.12-.03.24-.03.37 0 1.88 2.05 3.4 4.58 3.4s4.58-1.52 4.58-3.4c0-.13-.01-.25-.03-.37.34-.18.58-.54.58-.96 0-.6-.48-1.08-1.08-1.08zm-4.14 3.12c-.93 0-1.66-.4-1.7-.44-.1-.1-.11-.27-.01-.38.1-.1.27-.11.38-.01.02.01.62.33 1.33.33.7 0 1.31-.32 1.33-.33.11-.1.28-.09.38.01.1.11.09.28-.01.38-.04.04-.77.44-1.7.44z" />
-  </svg>
-);
 
 export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], isEn = false }) {
     const [selectedGameSlug, setSelectedGameSlug] = useState('');
@@ -23,13 +28,50 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
     const [result, setResult] = useState(null);
     const [copied, setCopied] = useState(false);
 
+    // 🔥 GURU DYNAMIC ENGINE V7.6
+    const calculateFps = (gpuPerf, cpuPerf, resolution, gameSlug) => {
+        const slug = gameSlug.toLowerCase();
+        
+        // 1. URČENÍ KATEGORIE NÁROČNOSTI (BASELINE)
+        let category = 'medium';
+        if (slug.includes('callisto') || slug.includes('valorant') || slug.includes('counter-strike') || slug.includes('roblox')) {
+            category = 'light';
+        } else if (slug.includes('expedition') || slug.includes('alan-wake') || slug.includes('cyberpunk') || slug.includes('gta-6')) {
+            category = 'extreme';
+        }
+
+        // 2. NASTAVENÍ BASELINE PODLE TVÝCH MĚŘENÍ (RTX 4090 @ 1440p)
+        const baselines = {
+            'light': 318,
+            'medium': 183,
+            'extreme': 71
+        };
+        let base = baselines[category];
+
+        // 3. NASTAVENÍ PROPADU VÝKONU (RESOLUTION SCALING)
+        const resScales = {
+            'light': { '1080p': 1.022, '1440p': 1.0, 'uwqhd': 0.88, '2160p': 0.761, 'dqhd': 0.65 },
+            'medium': { '1080p': 1.306, '1440p': 1.0, 'uwqhd': 0.78, '2160p': 0.601, 'dqhd': 0.52 },
+            'extreme': { '1080p': 1.408, '1440p': 1.0, 'uwqhd': 0.85, '2160p': 0.802, 'dqhd': 0.70 } // 100/71 a 57/71
+        };
+
+        const scale = resScales[category][resolution] || 1.0;
+        let rawFps = base * (gpuPerf / 100) * scale;
+        
+        // 4. CPU VLIV (U extreme her je karta tak udušená, že procesor skoro nic neřeší)
+        const cpuWeight = category === 'extreme' ? 0.05 : (category === 'medium' ? 0.15 : 0.30);
+        const cpuFactor = cpuPerf / 100;
+        rawFps = (rawFps * (1 - cpuWeight)) + (rawFps * cpuWeight * cpuFactor);
+
+        return Math.round(rawFps);
+    };
+
     const getGtaUrl = (res) => {
-        const cpuName = cpus.find(c => c.id === selectedCpuId)?.name || 'cpu';
-        const gpuName = gpus.find(g => g.id === selectedGpuId)?.name || 'gpu';
-        const cleanCpu = cpuName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const cleanGpu = gpuName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const cpu = cpus.find(c => c.id === selectedCpuId)?.name || 'cpu';
+        const gpu = gpus.find(g => g.id === selectedGpuId)?.name || 'gpu';
+        const slug = `${cpu}-vs-${gpu}-${res}`.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         const basePath = isEn ? '/en/fps-calculator/gta-6-prediction' : '/fps-kalkulacka/gta-6-predikce';
-        return `https://thehardwareguru.cz${basePath}/${cleanCpu}-vs-${cleanGpu}-${res}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
+        return `${basePath}/${slug}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
     };
 
     const handleCalculate = async () => {
@@ -37,116 +79,117 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         setIsCalculating(true);
         setResult(null);
 
-        try {
-            const [gpuFpsRes, cpuFpsRes] = await Promise.all([
-                supabase.from('game_fps').select('*').eq('gpu_id', selectedGpuId).maybeSingle(),
-                supabase.from('cpu_game_fps').select('*').eq('cpu_id', selectedCpuId).maybeSingle()
-            ]);
+        const gpu = gpus.find(g => g.id === selectedGpuId);
+        const cpu = cpus.find(c => c.id === selectedCpuId);
+        const gpuPerf = gpu?.performance_index || 100;
+        const cpuPerf = cpu?.performance_index || 100;
 
-            const gpuData = gpuFpsRes.data || {};
-            const cpuData = cpuFpsRes.data || {};
-            const dbBase = selectedGameSlug.replace(/-/g, '_');
-            const resKey = selectedRes === '2160p' ? '4k' : selectedRes;
-            const columnKey = `${dbBase}_${resKey}`;
+        const mainFps = calculateFps(gpuPerf, cpuPerf, selectedRes, selectedGameSlug);
+        const gtaPrediction = calculateFps(gpuPerf, cpuPerf, '1440p', 'gta-6') * 0.55; // GTA 6 náročnost
 
-            const gpuFps = gpuData[columnKey] || 0;
-            const cpuFps = cpuData[columnKey] || 0;
+        // Zápis pro SEO Sitemapu
+        const resolutions = ['1080p', '1440p', '2160p'];
+        const logPromises = resolutions.map(res => 
+            supabase.from('generated_predictions').upsert({
+                full_url: `https://thehardwareguru.cz${getGtaUrl(res)}`,
+                last_requested: new Date().toISOString()
+            }, { onConflict: 'full_url' })
+        );
+        await Promise.all(logPromises);
 
-            // 🔥 GURU GLOBAL CALIBRATION FIX (Vynásobení reálným koeficientem 2.84)
-            const baseResult = (gpuFps > 0 && cpuFps > 0) ? Math.min(gpuFps, cpuFps) : Math.max(gpuFps, cpuFps);
-            const finalFps = baseResult * 2.84;
-
-            setResult({ fps: Math.round(finalFps) });
-
-            const resolutions = ['1080p', '1440p', '2160p'];
-            const logPromises = resolutions.map(res => 
-                supabase.from('generated_predictions').upsert({
-                    full_url: getGtaUrl(res),
-                    last_requested: new Date().toISOString()
-                }, { onConflict: 'full_url' })
-            );
-            await Promise.all(logPromises);
-
-        } catch (err) {
-            setResult({ fps: 0 });
-        } finally {
+        setTimeout(() => {
+            setResult({ fps: mainFps, gta: Math.round(gtaPrediction) });
             setIsCalculating(false);
-        }
-    };
-
-    const handleCopyShare = () => {
-        const gameName = games.find(g => g.slug === selectedGameSlug)?.name || 'hře';
-        const url = isEn ? 'https://thehardwareguru.cz/en/fps-calculator' : 'https://thehardwareguru.cz/fps-kalkulacka';
-        const text = isEn ? `🔥 My rig hits ${result?.fps} FPS in ${gameName}! Check: ${url}` : `🔥 Moje sestava dává v ${gameName} přesně ${result?.fps} FPS! Změř si to taky na: ${url}`;
-        navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 3000); });
+        }, 800);
     };
 
     return (
         <div className="guru-calc-box">
-            <div className="guru-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+            <div className="guru-grid">
                 <div className="input-field">
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '950', color: '#9ca3af', textTransform: 'uppercase' }}><Gamepad2 size={14} /> {isEn ? 'GAME' : 'HRA'}</label>
+                    <label><Gamepad2 size={14} /> {isEn ? 'GAME' : 'HRA'}</label>
                     <select value={selectedGameSlug} onChange={(e) => setSelectedGameSlug(e.target.value)} className="guru-select">
                         <option value="">{isEn ? '-- Select --' : '-- Vyber hru --'}</option>
-                        {games.map(g => <option key={g.id} value={g.slug}>{g.name}</option>)}
+                        {games.map(g => <option key={g.id} value={g.slug} style={{background: '#0a0b0d'}}>{g.name}</option>)}
                     </select>
                 </div>
                 <div className="input-field">
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '950', color: '#9ca3af', textTransform: 'uppercase' }}><Monitor size={14} /> {isEn ? 'RESOLUTION' : 'ROZLIŠENÍ'}</label>
+                    <label><Monitor size={14} /> {isEn ? 'RESOLUTION' : 'ROZLIŠENÍ'}</label>
                     <select value={selectedRes} onChange={(e) => setSelectedRes(e.target.value)} className="guru-select">
-                        <option value="1080p">1080p Full HD</option>
-                        <option value="1440p">1440p Quad HD</option>
-                        <option value="2160p">4K Ultra HD</option>
+                        <option value="1080p">1920x1080 (Full HD)</option>
+                        <option value="1440p">2560x1440 (QHD)</option>
+                        <option value="uwqhd">3440x1440px (Ultrawide)</option>
+                        <option value="2160p">3840x2160 (4K Ultra)</option>
+                        <option value="dqhd">5120x1440px (Super UW)</option>
                     </select>
                 </div>
                 <div className="input-field">
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '950', color: '#9ca3af', textTransform: 'uppercase' }}><Zap size={14} /> GPU</label>
+                    <label><Zap size={14} /> GPU</label>
                     <select value={selectedGpuId} onChange={(e) => setSelectedGpuId(e.target.value)} className="guru-select">
                         <option value="">{isEn ? '-- Select --' : '-- Vyber GPU --'}</option>
-                        {gpus.map(g => <option key={g.id} value={g.id}>{g.vendor} {g.name}</option>)}
+                        {gpus.map(g => <option key={g.id} value={g.id} style={{background: '#0a0b0d'}}>{g.vendor} {g.name}</option>)}
                     </select>
                 </div>
                 <div className="input-field">
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '950', color: '#9ca3af', textTransform: 'uppercase' }}><Cpu size={14} /> CPU</label>
+                    <label><Cpu size={14} /> CPU</label>
                     <select value={selectedCpuId} onChange={(e) => setSelectedCpuId(e.target.value)} className="guru-select">
                         <option value="">{isEn ? '-- Select --' : '-- Vyber CPU --'}</option>
-                        {cpus.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        {cpus.map(c => <option key={c.id} value={c.id} style={{background: '#0a0b0d'}}>{c.name}</option>)}
                     </select>
                 </div>
             </div>
 
             <div style={{ textAlign: 'center', marginTop: '30px' }}>
-                <button onClick={handleCalculate} disabled={!selectedGpuId || !selectedCpuId || !selectedGameSlug || isCalculating} className="calc-btn">
+                <button onClick={handleCalculate} disabled={isCalculating} className="calc-btn">
                     {isCalculating ? <Loader2 className="animate-spin" /> : <Zap size={18} />}
                     {isEn ? 'CALCULATE' : 'SPOČÍTAT VÝKON'}
                 </button>
             </div>
 
-            {result && !isCalculating && (
-                <div className="result-area" style={{ marginTop: '40px', textAlign: 'center', animation: 'fadeIn 0.7s ease-out' }}>
-                    <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px' }}>{isEn ? 'EXPECTED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
-                    <div style={{ fontSize: '6rem', fontWeight: '950', color: '#fff', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)', margin: '10px 0' }}>{result.fps} FPS</div>
-                    <div className="viral-flex-card">
-                        <div className="award-icon"><Award size={32} color="#fff" /></div>
-                        <div className="viral-text-box">
-                            <div style={{ fontSize: '15px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '1px' }}>{isEn ? 'ACHIEVEMENT LOCKED' : 'ÚSPĚCH ODEMČEN'}</div>
-                            <div style={{ fontSize: '11px', color: '#a855f7', fontWeight: 'bold' }}>{isEn ? 'Share your result online' : 'Pochlub se výsledkem online'}</div>
+            {result && (
+                <div className="result-area">
+                    <div className="res-label">{isEn ? 'GURU FPS PREDICTION' : 'GURU ODHAD VÝKONU'}</div>
+                    <div className="fps-val">{result.fps} FPS</div>
+                    
+                    <div className="share-buttons">
+                        <button onClick={() => {navigator.clipboard.writeText(`Dávám ${result.fps} FPS v ${selectedGameSlug}!`); setCopied(true); setTimeout(()=>setCopied(false),2000);}} className="s-btn copy">{copied ? <Check size={20}/> : <Share2 size={20}/>}</button>
+                    </div>
+
+                    <div className="gta-bait-box">
+                        <div className="gta-tag"><Sparkles size={14} /> AI EXCLUSIVE</div>
+                        <h3>{isEn ? 'GTA VI ESTIMATED PERFORMANCE' : 'ODHAD VÝKONU V GTA VI'}</h3>
+                        <div className="gta-fps-preview">
+                            <span style={{fontSize: '3.5rem', fontWeight: '950', color: '#f43f5e'}}>{result.gta} FPS</span>
+                            <span style={{fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase'}}>(1440p High Preset)</span>
                         </div>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                            <button onClick={handleCopyShare} className="premium-share-btn btn-copy">{copied ? <Check size={20} /> : <Share2 size={20} />}</button>
-                            <button onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(getShareText())}`, '_blank')} className="premium-share-btn btn-x"><Twitter size={20} /></button>
+                        <div className="gta-links-header">{isEn ? 'DETAILED PREDICTIONS:' : 'DETAILNÍ PREDIKCE:'}</div>
+                        <div className="gta-links">
+                            <a href={getGtaUrl('1080p')}>1080p <ArrowRight size={14}/></a>
+                            <a href={getGtaUrl('1440p')}>1440p <ArrowRight size={14}/></a>
+                            <a href={getGtaUrl('2160p')}>4K <ArrowRight size={14}/></a>
                         </div>
                     </div>
                 </div>
             )}
+
             <style dangerouslySetInnerHTML={{__html: `
-                .guru-calc-box { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
-                .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; appearance: none; }
-                .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; }
-                .viral-flex-card { display: flex; align-items: center; gap: 20px; max-width: 520px; margin: 40px auto 0; padding: 25px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 20px; text-align: left; }
-                .premium-share-btn { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; border: none; color: #fff; display: flex; align-items: center; justify-content: center; }
-                .btn-copy { background: #a855f7; } .btn-x { background: #000; border: 1px solid #333; }
-                .animate-spin { animation: spin 1s linear infinite; } @keyframes spin { 100% { transform: rotate(360deg); } }
+                .guru-calc-box { background: rgba(15, 17, 21, 0.98); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); }
+                .guru-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+                .input-field label { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 950; color: #9ca3af; text-transform: uppercase; margin-bottom: 10px; }
+                .guru-select { width: 100%; background: #0a0b0d !important; color: #fff !important; border: 1px solid #1f2937; padding: 15px; border-radius: 12px; font-weight: 950; }
+                .calc-btn { background: #f43f5e; color: #fff; border: none; padding: 20px 60px; font-size: 16px; font-weight: 950; border-radius: 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; }
+                .result-area { margin-top: 40px; text-align: center; }
+                .fps-val { font-size: 7rem; font-weight: 950; color: #fff; text-shadow: 0 0 40px rgba(244, 63, 94, 0.3); }
+                .gta-bait-box { background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(0,0,0,0.8)); border: 1px solid rgba(244, 63, 94, 0.3); padding: 35px; border-radius: 24px; margin-top: 40px; }
+                .gta-fps-preview { margin: 20px 0; display: flex; flex-direction: column; align-items: center; }
+                .gta-links-header { font-size: 10px; font-weight: 950; color: #6b7280; margin-top: 25px; margin-bottom: 10px; text-transform: uppercase; }
+                .gta-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+                .gta-links a { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; text-decoration: none; color: #fff; font-weight: 950; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; }
+                .gta-links a:hover { background: #f43f5e; }
+                .share-buttons { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+                .s-btn { width: 50px; height: 50px; border-radius: 14px; border: none; cursor: pointer; color: #fff; background: #333; display: flex; align-items: center; justify-content: center; }
+                .animate-spin { animation: spin 1s linear infinite; }
+                @keyframes spin { 100% { transform: rotate(360deg); } }
             `}} />
         </div>
     );
