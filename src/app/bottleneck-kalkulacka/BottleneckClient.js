@@ -43,18 +43,19 @@ export default function BottleneckClient({
 
     const [copied, setCopied] = useState(false);
 
-    // 🚀 ENGINE ANALÝZA
+    // 🚀 BEZPEČNÁ ENGINE ANALÝZA
     const analysis = useMemo(() => {
         if ((!selectedCpuId && !isCustomCpu) || (!selectedGpuId && !isCustomGpu) || !selectedGameSlug) return null;
 
         const cpu = isCustomCpu ? { name: 'Custom CPU', performance_index: customCpuScore } : cpus.find(c => String(c.id) === String(selectedCpuId));
         const gpu = isCustomGpu ? { name: 'Custom GPU', performance_index: customGpuScore, vram_gb: customVram } : gpus.find(g => String(g.id) === String(selectedGpuId));
-        const baseGame = games.find(g => g.slug === selectedGameSlug) || { name: 'Obecná hra', slug: 'generic' };
+        const baseGame = games.find(g => String(g.slug) === String(selectedGameSlug)) || { name: 'Obecná hra', slug: 'generic' };
 
         if (!cpu || !gpu) return null;
 
-        const cpuName = cpu.name.toLowerCase();
-        const gpuName = gpu.name.toLowerCase();
+        // OCHRANA PROTI PÁDU APLIKACE PŘI PRÁZDNÉM NÁZVU V DB
+        const cpuName = (cpu.name || '').toLowerCase();
+        const gpuName = (gpu.name || '').toLowerCase();
 
         const gameDataMap = {
             'cyberpunk-2077': { thread_scaling: 0.85, api: 'dx12', cpu_weight: 1.2, gpu_weight: 1.5, vram_1440p: 10, is_rt_heavy: true, fps_scale: 1.2 },
@@ -165,7 +166,7 @@ export default function BottleneckClient({
 
     }, [selectedCpuId, selectedGpuId, selectedGameSlug, resolution, targetFps, enableRt, enableUpscaling, isStreaming, isCompSettings, isCustomCpu, isCustomGpu, customCpuScore, customGpuScore, customVram, cpus, gpus, games]);
 
-    // ODKAZY
+    // ODKAZY A SDÍLENÍ
     let generatedShareUrl = `https://thehardwareguru.cz/${isEn ? 'en/bottleneck-calculator' : 'bottleneck-kalkulacka'}`;
     let gta6DynamicLink = '';
     
@@ -174,8 +175,8 @@ export default function BottleneckClient({
         const gpu = gpus.find(g => String(g.id) === String(selectedGpuId));
         
         if (cpu && gpu) {
-            const cleanCpu = cpu.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-            const cleanGpu = gpu.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const cleanCpu = (cpu.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const cleanGpu = (gpu.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
             const slugBase = `${cleanCpu}-vs-${cleanGpu}-${selectedGameSlug}-${resolution}`;
             generatedShareUrl = `https://thehardwareguru.cz/${isEn ? 'en/bottleneck-calculator' : 'bottleneck-kalkulacka'}/${slugBase}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
             
@@ -189,8 +190,8 @@ export default function BottleneckClient({
             const cpu = cpus.find(c => String(c.id) === String(selectedCpuId));
             const gpu = gpus.find(g => String(g.id) === String(selectedGpuId));
             if (cpu && gpu) {
-                const cleanCpu = cpu.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                const cleanGpu = gpu.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                const cleanCpu = (cpu.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                const cleanGpu = (gpu.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
                 const slugBase = `${cleanCpu}-vs-${cleanGpu}-${selectedGameSlug}-${resolution}`;
                 const fullUrl = `https://thehardwareguru.cz/${isEn ? 'en/bottleneck-calculator' : 'bottleneck-kalkulacka'}/${slugBase}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
 
@@ -456,9 +457,9 @@ export default function BottleneckClient({
                     <div className="hub-column">
                         <div className="hub-col-header"><Swords size={16} color="#f43f5e" /> {isEn ? 'Top HW Duels' : 'Nejžádanější HW Duely'}</div>
                         <ul className="hub-links-list">
+                            <li><a href={isEn ? "/en/gpuvs" : "/gpuvs"}><ChevronRight size={14} /> {isEn ? 'GPU Battles Engine' : 'Souboje Grafických Karet'}</a></li>
+                            <li><a href={isEn ? "/en/cpuvs" : "/cpuvs"}><ChevronRight size={14} /> {isEn ? 'CPU Battles Engine' : 'Souboje Procesorů'}</a></li>
                             <li><a href={isEn ? "/en/bottleneck-calculator/ryzen-7-7800x3d-vs-rtx-4070-super-cyberpunk-2077-1440p" : "/bottleneck-kalkulacka/ryzen-7-7800x3d-vs-rtx-4070-super-cyberpunk-2077-1440p"}><ChevronRight size={14} /> Ryzen 7 7800X3D vs RTX 4070 SUPER</a></li>
-                            <li><a href={isEn ? "/en/bottleneck-calculator/core-i5-13600k-vs-rx-7800-xt-cs2-1080p" : "/bottleneck-kalkulacka/core-i5-13600k-vs-rx-7800-xt-cs2-1080p"}><ChevronRight size={14} /> Core i5 13600K vs RX 7800 XT</a></li>
-                            <li><a href={isEn ? "/en/bottleneck-calculator/ryzen-5-5600-vs-rtx-4060-valorant-1080p" : "/bottleneck-kalkulacka/ryzen-5-5600-vs-rtx-4060-valorant-1080p"}><ChevronRight size={14} /> Ryzen 5 5600 vs RTX 4060</a></li>
                         </ul>
                     </div>
 
@@ -467,18 +468,18 @@ export default function BottleneckClient({
                         <div className="hub-col-header"><Gamepad2 size={16} color="#a855f7" /> {isEn ? 'Anticipated Games' : 'Očekávané Herní Pecky'}</div>
                         <ul className="hub-links-list">
                             <li><a href={isEn ? "/en/fps-calculator/gta-6-prediction" : "/fps-kalkulacka/gta-6-predikce"}><ChevronRight size={14} /> GTA VI - {isEn ? 'HW Requirements' : 'Hardwarové Nároky'}</a></li>
-                            <li><a href="/clanky"><ChevronRight size={14} /> Mafia: The Old Country - {isEn ? 'Analysis' : 'Rozbor Výkonu'}</a></li>
-                            <li><a href="/clanky"><ChevronRight size={14} /> Kingdom Come: Deliverance II</a></li>
+                            <li><a href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"}><ChevronRight size={14} /> {isEn ? 'Upcoming Games Archive' : 'Archiv Očekávaných Her'}</a></li>
+                            <li><a href={isEn ? "/en/deals" : "/cs/deals"}><ChevronRight size={14} /> {isEn ? 'Best Game Deals' : 'Žhavé Slevy na Hry'}</a></li>
                         </ul>
                     </div>
 
                     {/* HUB 3: Tipy */}
                     <div className="hub-column">
-                        <div className="hub-col-header"><Lightbulb size={16} color="#fbbf24" /> {isEn ? 'Guru Tips' : 'GURU Tipy a Rady'}</div>
+                        <div className="hub-col-header"><Lightbulb size={16} color="#fbbf24" /> {isEn ? 'Guru Tips & Tweaks' : 'GURU Tipy a Tweaky'}</div>
                         <ul className="hub-links-list">
-                            <li><a href="/tipy"><ChevronRight size={14} /> {isEn ? 'Why VRAM is crucial in 2026' : 'Proč nepodceňovat VRAM u nových her?'}</a></li>
-                            <li><a href="/tipy"><ChevronRight size={14} /> {isEn ? 'DLSS vs FSR - Which is better?' : 'DLSS vs FSR - Co zvedne FPS více?'}</a></li>
-                            <li><a href="/tipy"><ChevronRight size={14} /> {isEn ? 'How to fix 1% Lows stuttering' : 'Jak opravit stuttering a špatné 1% Lows'}</a></li>
+                            <li><a href={isEn ? "/en/tipy" : "/tipy"}><ChevronRight size={14} /> {isEn ? 'PC Build Tips & Tricks' : 'Tipy pro stavbu a údržbu PC'}</a></li>
+                            <li><a href={isEn ? "/en/tweaky" : "/tweaky"}><ChevronRight size={14} /> {isEn ? 'Windows & Game Optimization' : 'Windows & Herní Optimalizace'}</a></li>
+                            <li><a href={isEn ? "/en/tipy/vram-v-roce-2026" : "/tipy/vram-v-roce-2026"}><ChevronRight size={14} /> {isEn ? 'Why VRAM is crucial' : 'Proč nepodceňovat VRAM?'}</a></li>
                         </ul>
                     </div>
 
@@ -486,16 +487,16 @@ export default function BottleneckClient({
                     <div className="hub-column">
                         <div className="hub-col-header"><Newspaper size={16} color="#38bdf8" /> {isEn ? 'Latest Articles' : 'Nejnovější Články'}</div>
                         <ul className="hub-links-list">
-                            <li><a href="/clanky"><ChevronRight size={14} /> {isEn ? 'Best GPUs for 1440p gaming' : 'Nejlepší grafické karty pro hraní ve 1440p'}</a></li>
-                            <li><a href="/clanky"><ChevronRight size={14} /> {isEn ? 'AMD X3D vs Intel Core Ultra' : 'Souboj titánů: AMD X3D vs Intel Core Ultra'}</a></li>
+                            <li><a href={isEn ? "/en/clanky" : "/clanky"}><ChevronRight size={14} /> {isEn ? 'Hardware News & Reviews' : 'HW Novinky a Recenze'}</a></li>
                             <li><a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"}><ChevronRight size={14} /> {isEn ? 'FPS Calculator Database' : 'Velká databáze FPS výsledků'}</a></li>
+                            <li><a href={isEn ? "/en/support" : "/support"}><ChevronRight size={14} /> {isEn ? 'Support The Hardware Guru' : 'Podpořte The Hardware Guru'}</a></li>
                         </ul>
                     </div>
                 </div>
 
-                {/* Dynamická nabídka na GTA 6 kalkulaci (Zobrazí se až po analýze aktuálního HW) */}
+                {/* Dynamická nabídka na GTA 6 kalkulaci (Zobrazí se až po analýze aktuálního HW NA ÚPLNÉM KONCI) */}
                 {analysis && dynamicGta6Link && (
-                    <div className="dynamic-cta-box">
+                    <div className="dynamic-cta-box" style={{ marginTop: '40px' }}>
                         <Sparkles size={24} color="#f43f5e" className="pulse-icon" />
                         <div>
                             <h4>{isEn ? 'Will this exact PC run GTA VI?' : 'Zajímá tě, jestli tahle sestava rozjede GTA VI?'}</h4>
@@ -609,7 +610,7 @@ export default function BottleneckClient({
                 .hub-links-list a svg { flex-shrink: 0; margin-top: 2px; }
 
                 /* DYNAMIC CTA BOX */
-                .dynamic-cta-box { display: flex; align-items: center; justify-content: space-between; gap: 20px; background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(0,0,0,0.5)); border: 1px solid rgba(244, 63, 94, 0.3); padding: 30px; border-radius: 20px; text-align: left; margin-top: 40px; }
+                .dynamic-cta-box { display: flex; align-items: center; justify-content: space-between; gap: 20px; background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(0,0,0,0.5)); border: 1px solid rgba(244, 63, 94, 0.3); padding: 30px; border-radius: 20px; text-align: left; }
                 .dynamic-cta-box h4 { margin: 0 0 5px 0; font-size: 18px; font-weight: 950; color: #fff; text-transform: uppercase; }
                 .dynamic-cta-box p { margin: 0; font-size: 14px; color: #d1d5db; font-weight: 500; }
                 .action-btn { display: inline-flex; align-items: center; gap: 10px; padding: 15px 30px; border-radius: 14px; font-weight: 950; font-size: 13px; text-decoration: none; transition: 0.3s; color: #fff; text-transform: uppercase; flex-shrink: 0; }
