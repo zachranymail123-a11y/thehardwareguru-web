@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { 
   Cpu, Monitor, Zap, AlertTriangle, Crosshair, Settings2, Sparkles, 
   TrendingUp, TrendingDown, Layers, Target, Video, Share2, Check, 
-  Twitter, Award, Swords, Newspaper, Lightbulb, Gamepad2, ChevronRight, Play 
+  Twitter, Award, Swords, Gamepad2, ChevronRight, Play 
 } from 'lucide-react';
 
 const RedditIcon = ({ size = 20 }) => (
@@ -15,21 +15,13 @@ const RedditIcon = ({ size = 20 }) => (
 );
 
 export default function BottleneckClient({ 
-    gpus = [], 
-    cpus = [], 
-    games = [], 
-    isEn = false, 
-    initialCpuId = '', 
-    initialGpuId = '', 
-    initialGameSlug = '', 
-    initialResolution = '1440p' 
+    gpus = [], cpus = [], games = [], isEn = false, initialCpuId = '', initialGpuId = '', initialGameSlug = '', initialResolution = '1440p' 
 }) {
     const [selectedCpuId, setSelectedCpuId] = useState(initialCpuId);
     const [selectedGpuId, setSelectedGpuId] = useState(initialGpuId);
     const [selectedGameSlug, setSelectedGameSlug] = useState(initialGameSlug);
     const [resolution, setResolution] = useState(initialResolution);
     
-    // START BUTTON STATE
     const [isCalculating, setIsCalculating] = useState(false);
     const [showResult, setShowResult] = useState(!!initialCpuId);
 
@@ -39,7 +31,7 @@ export default function BottleneckClient({
     const [copied, setCopied] = useState(false);
     const [shareUrl, setShareUrl] = useState('');
 
-    // 🚀 ENGINE ANALÝZA (MATEMATIKA NEDOTČENA)
+    // 🚀 ENGINE ANALÝZA
     const analysis = useMemo(() => {
         if (!showResult || !selectedCpuId || !selectedGpuId || !selectedGameSlug) return null;
 
@@ -64,8 +56,7 @@ export default function BottleneckClient({
         let ipcBase = 100; 
         let archEfficiency = 1.0;
         if (cpuName.includes('x3d')) archEfficiency *= (1 + (1 - game.thread_scaling) * 0.45);
-        if (cpuName.includes('9800x3d') || cpuName.includes('9950x3d')) ipcBase = 135;
-        else if (cpuName.includes('ryzen 9000')) ipcBase = 125;
+        if (cpuName.includes('9800x3d')) ipcBase = 135;
         else if (cpuName.includes('7800x3d')) ipcBase = 115;
 
         let cpuEffective = (ipcBase * (1 - game.thread_scaling) + (cpu.performance_index || 100) * game.thread_scaling) * archEfficiency;
@@ -111,35 +102,25 @@ export default function BottleneckClient({
         }
     }, [analysis, selectedCpuId, selectedGpuId, selectedGameSlug, resolution, isEn, initialCpuId]);
 
-    // --- 🛠️ FUNKCE OBSLUHY (VŠECHNY DEFINOVÁNY) ---
+    // --- 🛠️ HANDLERS ---
     const handleStart = () => {
         setIsCalculating(true);
-        setTimeout(() => { 
-            setShowResult(true); 
-            setIsCalculating(false); 
-        }, 800);
-    };
-
-    const getShareText = () => {
-        if (!analysis) return isEn ? "Check out the PC Bottleneck Simulator! 🚀" : "Otestuj svůj PC v GURU Bottleneck Simulátoru! 🚀";
-        return isEn 
-            ? `🔥 My rig has a ${analysis.bottleneckPercent}% ${analysis.boundType.replace('_', ' ')} in ${analysis.gameName}! 🚀`
-            : `🔥 Moje sestava má v ${analysis.gameName} přesně ${analysis.bottleneckPercent}% ${analysis.limitedBy} Bottleneck! 🚀`;
+        setTimeout(() => { setShowResult(true); setIsCalculating(false); }, 800);
     };
 
     const handleCopyShare = () => {
-        navigator.clipboard.writeText(`${getShareText()}\n👉 ${shareUrl}`).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 3000);
-        });
+        const text = isEn ? `🔥 My rig bottleneck result: ${shareUrl}` : `🔥 Moje sestava má v ${analysis?.gameName} přesně ${analysis?.bottleneckPercent}% Bottleneck! 👉 ${shareUrl}`;
+        navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 3000); });
     };
 
     const handleXShare = () => {
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(getShareText())}&url=${encodeURIComponent(shareUrl)}`, '_blank');
+        const text = isEn ? `🔥 My rig bottleneck result: ${shareUrl}` : `🔥 Moje sestava má přesně ${analysis?.bottleneckPercent}% Bottleneck!`;
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
     };
 
     const handleRedditShare = () => {
-        window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(getShareText())}`, '_blank');
+        const title = isEn ? `My PC Bottleneck Analysis` : `Analýza bottlenecku mé sestavy`;
+        window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(title)}`, '_blank');
     };
 
     const gta6DynamicLink = analysis ? `/${isEn ? 'en/fps-calculator/gta-6-prediction' : 'fps-kalkulacka/gta-6-predikce'}/${(analysis.cpuName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-vs-${(analysis.gpuName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${resolution}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}` : '';
@@ -148,7 +129,7 @@ export default function BottleneckClient({
         <div className="bn-wrapper">
             <div className="bn-header">
                 <div className="pred-badge"><Layers size={16} /> PROFESSIONAL SIMULATOR</div>
-                <h1 style={{ fontSize: '3rem', fontWeight: '950', textTransform: 'uppercase', margin: '10px 0' }}>
+                <h1 style={{ fontSize: '3rem', fontWeight: '950', textTransform: 'uppercase', margin: '10px 0', textShadow: '0 0 20px rgba(102, 252, 241, 0.3)' }}>
                     {isEn ? 'System Bottleneck' : 'Bottleneck Kalkulačka'}
                 </h1>
                 <p style={{ color: '#9ca3af', fontSize: '1.1rem' }}>Odhal pravdu o výkonu svého počítače.</p>
@@ -223,10 +204,6 @@ export default function BottleneckClient({
                                 <div className="metric-box"><div className="m-label">AVG FPS</div><div className="m-val">{analysis.estFps}</div></div>
                                 <div className="metric-box"><div className="m-label">1% LOWS</div><div className="m-val">{analysis.low1Fps}</div></div>
                                 <div className="metric-box"><div className="m-label">LATENCY</div><div className="m-val">{analysis.frameTimeMs}ms</div></div>
-                            </div>
-                            <div className="recommendation">
-                                <h4 style={{ color: '#fff', textTransform: 'uppercase', marginBottom: '10px' }}>💡 Guru Verdikt</h4>
-                                <p style={{ color: '#9ca3af', lineHeight: '1.6' }}>{analysis.boundType === 'CPU_BOUND' ? 'Tvoje grafika se nudí. Potřebuješ silnější procesor pro maximální plynulost.' : 'Sestava je limitována grafikou. Obraz bude plynulý, ale pro víc FPS budeš muset snížit detaily.'}</p>
                             </div>
                             {gta6DynamicLink && (
                                 <a href={gta6DynamicLink} className="gta-cta">
