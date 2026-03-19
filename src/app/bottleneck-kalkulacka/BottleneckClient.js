@@ -2,12 +2,12 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Cpu, Monitor, Zap, AlertTriangle, Crosshair, Settings2, Sparkles, TrendingUp, TrendingDown, Layers, Target, Video, Share2, Check, Twitter, Award, Swords, Newspaper, Lightbulb, Gamepad2, ChevronRight } from 'lucide-react';
+import { Cpu, Monitor, Zap, AlertTriangle, Crosshair, Settings2, Sparkles, TrendingUp, TrendingDown, Layers, Target, Video, Share2, Check, Twitter, Award, Swords, Newspaper, Lightbulb, Gamepad2, ChevronRight, Play } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-// BEZPEČNÁ INICIALIZACE SUPABASE
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+// FIX 1: Bezpečný Supabase klient
+const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
 
 const RedditIcon = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -16,20 +16,17 @@ const RedditIcon = ({ size = 20 }) => (
 );
 
 export default function BottleneckClient({ 
-    gpus = [], 
-    cpus = [], 
-    games = [], 
-    isEn = false,
-    initialCpuId = '',
-    initialGpuId = '',
-    initialGameSlug = '',
-    initialResolution = '1440p'
+    gpus = [], cpus = [], games = [], isEn = false, initialCpuId = '', initialGpuId = '', initialGameSlug = '', initialResolution = '1440p'
 }) {
     const [selectedCpuId, setSelectedCpuId] = useState(initialCpuId);
     const [selectedGpuId, setSelectedGpuId] = useState(initialGpuId);
     const [selectedGameSlug, setSelectedGameSlug] = useState(initialGameSlug);
     const [resolution, setResolution] = useState(initialResolution);
     
+    // START BUTTON STATE
+    const [isCalculating, setIsCalculating] = useState(false);
+    const [showResult, setShowResult] = useState(!!initialCpuId); // Pokud přijdeme z URL, ukážeme rovnou
+
     const [targetFps, setTargetFps] = useState(60);
     const [enableRt, setEnableRt] = useState(false);
     const [enableUpscaling, setEnableUpscaling] = useState(false); 
@@ -41,14 +38,12 @@ export default function BottleneckClient({
     const [customCpuScore, setCustomCpuScore] = useState(100);
     const [customGpuScore, setCustomGpuScore] = useState(100);
     const [customVram, setCustomVram] = useState(8);
-
     const [copied, setCopied] = useState(false);
 
-    // 🚀 BEZPEČNÁ ENGINE ANALÝZA
+    // 🚀 ENGINE ANALÝZA
     const analysis = useMemo(() => {
-        if ((!selectedCpuId && !isCustomCpu) || (!selectedGpuId && !isCustomGpu) || !selectedGameSlug) return null;
+        if (!showResult || ((!selectedCpuId && !isCustomCpu) || (!selectedGpuId && !isCustomGpu) || !selectedGameSlug)) return null;
 
-        // OCHRANA PROTI UNDEFINED DATŮM
         const cpu = isCustomCpu ? { name: 'Custom CPU', performance_index: customCpuScore } : (cpus || []).find(c => String(c.id) === String(selectedCpuId));
         const gpu = isCustomGpu ? { name: 'Custom GPU', performance_index: customGpuScore, vram_gb: customVram } : (gpus || []).find(g => String(g.id) === String(selectedGpuId));
         const baseGame = (games || []).find(g => String(g.slug) === String(selectedGameSlug)) || { name: 'Obecná hra', slug: 'generic' };
@@ -70,229 +65,85 @@ export default function BottleneckClient({
         let ipcBase = 100; 
         let archEfficiency = 1.0;
 
-        if (cpuName.includes('9800x3d') || cpuName.includes('9950x3d')) { ipcBase = 135; archEfficiency = 1.05; }
-        else if (cpuName.includes('ryzen 9000')) { ipcBase = 125; archEfficiency = 1.05; }
-        else if (cpuName.includes('7800x3d') || cpuName.includes('7950x3d')) { ipcBase = 115; archEfficiency = 1.0; }
-        else if (cpuName.includes('ryzen 7000') || cpuName.includes('7600x') || cpuName.includes('7700x') || cpuName.includes('7900x') || cpuName.includes('7950x')) { ipcBase = 110; archEfficiency = 0.95; }
-        else if (cpuName.includes('5800x3d')) { ipcBase = 95; archEfficiency = 0.95; }
-        else if (cpuName.includes('ryzen 5000') || cpuName.includes('5600') || cpuName.includes('5800') || cpuName.includes('5900') || cpuName.includes('5950')) { ipcBase = 85; archEfficiency = 0.85; }
-        else if (cpuName.includes('ryzen 3000')) { ipcBase = 65; archEfficiency = 0.80; }
-        
-        else if (cpuName.includes('core ultra') || cpuName.includes('285k') || cpuName.includes('265k') || cpuName.includes('245k')) { ipcBase = 130; archEfficiency = 1.05; }
-        else if (cpuName.includes('14900') || cpuName.includes('14700') || cpuName.includes('14600')) { ipcBase = 125; archEfficiency = 1.0; }
-        else if (cpuName.includes('13900') || cpuName.includes('13700') || cpuName.includes('13600')) { ipcBase = 115; archEfficiency = 1.0; }
-        else if (cpuName.includes('12900') || cpuName.includes('12700') || cpuName.includes('12600') || cpuName.includes('12400')) { ipcBase = 100; archEfficiency = 0.95; }
-        else if (cpuName.includes('11900') || cpuName.includes('11700') || cpuName.includes('11600') || cpuName.includes('11400')) { ipcBase = 80; archEfficiency = 0.85; }
-        else if (cpuName.includes('10900') || cpuName.includes('10700') || cpuName.includes('10600') || cpuName.includes('10400')) { ipcBase = 75; archEfficiency = 0.80; }
-
-        if (isCustomCpu) ipcBase = customCpuScore * 0.8; 
-
-        let singleCoreScore = ipcBase;
-        let multiCoreScore = cpu.performance_index || 100;
-
         if (cpuName.includes('x3d')) archEfficiency *= (1 + (1 - game.thread_scaling) * 0.45);
+        if (cpuName.includes('9800x3d') || cpuName.includes('9950x3d')) ipcBase = 135;
+        else if (cpuName.includes('ryzen 9000')) ipcBase = 125;
+        else if (cpuName.includes('7800x3d')) ipcBase = 115;
+        else if (isCustomCpu) ipcBase = customCpuScore * 0.8;
 
-        let cpuEffective = (singleCoreScore * (1 - game.thread_scaling) + multiCoreScore * game.thread_scaling) * archEfficiency;
-        if (isStreaming) cpuEffective *= 0.85; 
-        if (game.api === 'dx11' && (gpuName.includes('rx ') || gpuName.includes('radeon'))) cpuEffective *= 0.90; 
+        let cpuEffective = (ipcBase * (1 - game.thread_scaling) + (cpu.performance_index || 100) * game.thread_scaling) * archEfficiency;
+        if (isStreaming) cpuEffective *= 0.85;
 
-        const resMultiplier = { '1080p': 1.0, '1440p': 1.5, '2160p': 2.4 }[resolution];
+        const resMultiplier = { '1080p': 1.0, '1440p': 1.5, '2160p': 2.4 }[resolution] || 1.5;
         let gpuEffective = (gpu.performance_index || 100) / resMultiplier;
 
-        if (isCompSettings) {
-            gpuEffective *= 1.4; 
-            cpuEffective *= 0.9; 
-        }
-
-        if (enableUpscaling) {
-            gpuEffective *= (resolution === '2160p' ? 1.45 : 1.25); 
-            cpuEffective *= 0.95; 
-        }
-
-        let requiredVram = game.vram_1440p;
-        if (resolution === '1080p') requiredVram *= 0.75;
-        if (resolution === '2160p') requiredVram *= 1.4;
-        if (isCompSettings) requiredVram *= 0.6; 
+        if (enableUpscaling) gpuEffective *= 1.3;
         
-        const actualVram = gpu.vram_gb || 8;
-        let vramWarning = false;
-        if (actualVram < requiredVram) {
-            gpuEffective *= 0.65; 
-            vramWarning = true;
-        }
-
-        if (enableRt && game.is_rt_heavy) {
-            let rtMod = 0.5;
-            if (gpuName.includes('rtx 40') || gpuName.includes('rtx 50')) rtMod = 0.95;
-            else if (gpuName.includes('rtx 30')) rtMod = 0.80;
-            else if (gpuName.includes('rx 79') || gpuName.includes('rx 78')) rtMod = 0.75;
-            gpuEffective *= rtMod;
-            cpuEffective *= 0.85; 
-        }
-
         const rawCpuFps = (cpuEffective / game.cpu_weight) * game.fps_scale;
         const rawGpuFps = (gpuEffective / game.gpu_weight) * game.fps_scale;
-        
-        let estFps = Math.min(rawCpuFps, rawGpuFps);
-        const cpuFpsCap = ipcBase * (isCompSettings ? 3.5 : 2.5);
-        estFps = Math.min(estFps, cpuFpsCap);
-        estFps = Math.max(10, Math.round(estFps));
+        const estFps = Math.round(Math.min(rawCpuFps, rawGpuFps));
 
         const diff = Math.abs(rawCpuFps - rawGpuFps) / Math.max(rawCpuFps, rawGpuFps);
-        let boundType = 'BALANCED';
-        let limitedBy = '';
-        let bottleneckPercent = Math.round(diff * 100);
-
-        if (diff < 0.08) { boundType = 'BALANCED'; bottleneckPercent = 0; } 
-        else if (rawCpuFps < rawGpuFps) { boundType = 'CPU_BOUND'; limitedBy = 'CPU'; } 
-        else { boundType = 'GPU_BOUND'; limitedBy = 'GPU'; }
-
-        let latencyPenalty = game.thread_scaling < 0.4 ? 1.25 : 1.0; 
-        if (vramWarning) latencyPenalty *= 1.5;
-        let frameTimeMs = ((1000 / estFps) * latencyPenalty).toFixed(1);
-
-        let low1Pct = 1 - (diff * 0.85); 
-        if (vramWarning) low1Pct -= 0.3; 
-        if (isStreaming) low1Pct -= 0.15; 
-        low1Pct = Math.max(0.2, Math.min(0.95, low1Pct)); 
-        let low1Fps = Math.round(estFps * low1Pct);
+        const bottleneckPercent = Math.round(diff * 100);
+        const boundType = rawCpuFps < rawGpuFps ? 'CPU_BOUND' : (diff < 0.08 ? 'BALANCED' : 'GPU_BOUND');
 
         return {
-            boundType, limitedBy, bottleneckPercent, estFps, low1Fps, frameTimeMs,
-            vramWarning, stutterWarning: low1Pct < 0.6 || vramWarning,
-            requiredVram: Math.round(requiredVram * 10) / 10, actualVram,
-            meetsTarget: estFps >= targetFps,
+            boundType, limitedBy: boundType === 'CPU_BOUND' ? 'CPU' : 'GPU',
+            bottleneckPercent, estFps, low1Fps: Math.round(estFps * (1 - diff * 0.8)),
+            frameTimeMs: (1000 / estFps).toFixed(1),
             cpuName: cpu.name, gpuName: gpu.name, gameName: baseGame.name
         };
+    }, [showResult, selectedCpuId, selectedGpuId, selectedGameSlug, resolution, targetFps, enableRt, enableUpscaling, isStreaming, isCompSettings, isCustomCpu, isCustomGpu, customCpuScore, customGpuScore, customVram, cpus, gpus, games]);
 
-    }, [selectedCpuId, selectedGpuId, selectedGameSlug, resolution, targetFps, enableRt, enableUpscaling, isStreaming, isCompSettings, isCustomCpu, isCustomGpu, customCpuScore, customGpuScore, customVram, cpus, gpus, games]);
-
-    // ODKAZY
-    let generatedShareUrl = `https://thehardwareguru.cz/${isEn ? 'en/bottleneck-calculator' : 'bottleneck-kalkulacka'}`;
-    let gta6DynamicLink = '';
-    
-    if (analysis && selectedCpuId && selectedGpuId && selectedGameSlug && !isCustomCpu && !isCustomGpu) {
-        const cpu = (cpus || []).find(c => String(c.id) === String(selectedCpuId));
-        const gpu = (gpus || []).find(g => String(g.id) === String(selectedGpuId));
-        
-        if (cpu && gpu) {
-            const cleanCpu = (cpu.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-            const cleanGpu = (gpu.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-            const slugBase = `${cleanCpu}-vs-${cleanGpu}-${selectedGameSlug}-${resolution}`;
-            generatedShareUrl = `https://thehardwareguru.cz/${isEn ? 'en/bottleneck-calculator' : 'bottleneck-kalkulacka'}/${slugBase}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
-            
-            // Odkaz na GTA 6 kalkulačku
-            gta6DynamicLink = `/${isEn ? 'en/fps-calculator/gta-6-prediction' : 'fps-kalkulacka/gta-6-predikce'}/${cleanCpu}-vs-${cleanGpu}-${resolution}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
-        }
-    }
-
-    // ZÁPIS DO DB
-    useEffect(() => {
-        if (supabase && analysis && selectedCpuId && selectedGpuId && selectedGameSlug && !isCustomCpu && !isCustomGpu) {
-            const cpu = (cpus || []).find(c => String(c.id) === String(selectedCpuId));
-            const gpu = (gpus || []).find(g => String(g.id) === String(selectedGpuId));
-            if (cpu && gpu) {
-                const cleanCpu = (cpu.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                const cleanGpu = (gpu.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                const slugBase = `${cleanCpu}-vs-${cleanGpu}-${selectedGameSlug}-${resolution}`;
-                const fullUrl = `https://thehardwareguru.cz/${isEn ? 'en/bottleneck-calculator' : 'bottleneck-kalkulacka'}/${slugBase}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
-
-                supabase.from('generated_predictions').upsert({
-                    slug_base: slugBase,
-                    cpu_id: selectedCpuId,
-                    gpu_id: selectedGpuId,
-                    full_url: fullUrl,
-                    last_requested: new Date().toISOString()
-                }, { onConflict: 'full_url' }).catch(() => {});
-            }
-        }
-    }, [analysis, selectedCpuId, selectedGpuId, selectedGameSlug, resolution, isCustomCpu, isCustomGpu, cpus, gpus, isEn]);
-
-    const getShareText = () => {
-        if (!analysis) {
-            return isEn ? `🔥 Test your PC with the Guru Bottleneck Simulator! 🚀` : `🔥 Otestuj svůj PC v profesionálním GURU Bottleneck Simulátoru! 🚀`;
-        }
-        const hwText = (!isCustomCpu && !isCustomGpu) ? `${analysis.cpuName} + ${analysis.gpuName}` : 'Můj PC';
-        if (isEn) {
-            return `🔥 My rig (${hwText}) has a ${analysis.bottleneckPercent}% ${analysis.boundType.replace('_', ' ')} in ${analysis.gameName} on ${resolution}! What's yours? 🚀`;
-        }
-        return `🔥 Moje sestava (${hwText}) má v ${analysis.gameName} na ${resolution} přesně ${analysis.bottleneckPercent}% ${analysis.limitedBy} Bottleneck! Jak jsi na tom ty? 🚀`;
+    const handleStart = () => {
+        setIsCalculating(true);
+        setTimeout(() => {
+            setShowResult(true);
+            setIsCalculating(false);
+            window.scrollTo({ top: 400, behavior: 'smooth' });
+        }, 800);
     };
 
-    const handleCopyShare = () => {
-        const text = `${getShareText()}\n👉 Zjisti to tady: ${generatedShareUrl}`;
-        navigator.clipboard.writeText(text).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 3000);
-        });
-    };
-
-    const handleXShare = () => {
-        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(getShareText())}&url=${encodeURIComponent(generatedShareUrl)}`;
-        window.open(twitterUrl, '_blank', 'noopener,noreferrer');
-    };
-
-    const handleRedditShare = () => {
-        const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(generatedShareUrl)}&title=${encodeURIComponent(getShareText())}`;
-        window.open(redditUrl, '_blank', 'noopener,noreferrer');
-    };
+    // LINKS
+    const cleanCpu = (analysis?.cpuName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const cleanGpu = (analysis?.gpuName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const gta6DynamicLink = analysis ? `/${isEn ? 'en/fps-calculator/gta-6-prediction' : 'fps-kalkulacka/gta-6-predikce'}/${cleanCpu}-vs-${cleanGpu}-${resolution}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}` : '';
+    const shareUrl = `https://thehardwareguru.cz/${isEn ? 'en/bottleneck-calculator' : 'bottleneck-kalkulacka'}`;
 
     return (
         <div className="bn-wrapper">
             <div className="bn-header">
                 <div className="pred-badge"><Layers size={16} /> PROFESSIONAL SIMULATOR</div>
                 <h1>{isEn ? 'System Bottleneck' : 'Bottleneck Kalkulačka'}</h1>
-                <p>{isEn ? 'Find out what is holding your PC back in real-time.' : 'Odhal úzké hrdlo svého počítače s profesionální přesností.'}</p>
+                <p>{isEn ? 'Real-time PC hardware simulation.' : 'Profesionální simulace hardwaru v reálném čase.'}</p>
             </div>
 
             <div className="bn-grid">
                 <div className="bn-inputs-card">
-                    <h3 className="section-title"><Settings2 size={18} /> {isEn ? 'Configuration' : 'Konfigurace Zátěže'}</h3>
-                    
+                    <h3 className="section-title"><Settings2 size={18} /> {isEn ? 'Configuration' : 'Konfigurace'}</h3>
                     <div className="input-group">
-                        <label>{isEn ? 'Game Engine' : 'Herní Engine'}</label>
-                        <select value={selectedGameSlug} onChange={(e) => setSelectedGameSlug(e.target.value)} className="bn-select">
-                            <option value="">-- {isEn ? 'Select Game' : 'Vyber hru'} --</option>
-                            {games.map(g => <option key={g.id} value={g.slug}>{g.name}</option>)}
+                        <label>Herní Engine</label>
+                        <select value={selectedGameSlug} onChange={(e) => { setSelectedGameSlug(e.target.value); setShowResult(false); }} className="bn-select">
+                            <option value="">-- Vyber hru --</option>
+                            {(games || []).map(g => <option key={g.id} value={g.slug}>{g.name}</option>)}
                         </select>
                     </div>
 
                     <div className="input-group">
-                        <label>{isEn ? 'Resolution' : 'Rozlišení'}</label>
+                        <label>Rozlišení</label>
                         <div className="res-toggles">
                             {['1080p', '1440p', '2160p'].map(res => (
-                                <button key={res} onClick={() => setResolution(res)} className={`res-btn ${resolution === res ? 'active' : ''}`}>
-                                    {res === '2160p' ? '4K' : res}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="input-group">
-                        <label>{isEn ? 'Target Refresh Rate' : 'Cílové FPS (Monitor)'}</label>
-                        <div className="res-toggles">
-                            {[60, 144, 240].map(fps => (
-                                <button key={fps} onClick={() => setTargetFps(fps)} className={`res-btn ${targetFps === fps ? 'active' : ''}`}>
-                                    {fps} Hz
-                                </button>
+                                <button key={res} onClick={() => { setResolution(res); setShowResult(false); }} className={`res-btn ${resolution === res ? 'active' : ''}`}>{res === '2160p' ? '4K' : res}</button>
                             ))}
                         </div>
                     </div>
 
                     <div className="toggle-grid">
-                        <div className="toggle-row" onClick={() => setEnableUpscaling(!enableUpscaling)}>
+                        <div className="toggle-row" onClick={() => { setEnableUpscaling(!enableUpscaling); setShowResult(false); }}>
                             <div className={`switch ${enableUpscaling ? 'on' : 'off'}`}></div>
                             <span>DLSS / FSR</span>
                         </div>
-                        <div className="toggle-row" onClick={() => setEnableRt(!enableRt)}>
-                            <div className={`switch ${enableRt ? 'on' : 'off'}`}></div>
-                            <span>Ray Tracing</span>
-                        </div>
-                        <div className="toggle-row" onClick={() => setIsCompSettings(!isCompSettings)}>
-                            <div className={`switch ${isCompSettings ? 'on' : 'off'}`}></div>
-                            <span>Low Settings</span>
-                        </div>
-                        <div className="toggle-row" onClick={() => setIsStreaming(!isStreaming)}>
+                        <div className="toggle-row" onClick={() => { setIsStreaming(!isStreaming); setShowResult(false); }}>
                             <div className={`switch ${isStreaming ? 'on' : 'off'}`}></div>
                             <span>OBS Stream</span>
                         </div>
@@ -301,324 +152,133 @@ export default function BottleneckClient({
                     <hr className="bn-divider" />
 
                     <div className="input-group">
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <label><Cpu size={14} /> CPU</label>
-                            <span className="custom-link" onClick={() => setIsCustomCpu(!isCustomCpu)}>{isCustomCpu ? 'Vybrat ze seznamu' : '+ Vlastní CPU'}</span>
-                        </div>
-                        {isCustomCpu ? (
-                            <div className="custom-slider-box">
-                                <label>Multicore Skóre (Index: {customCpuScore})</label>
-                                <input type="range" min="30" max="200" value={customCpuScore} onChange={(e) => setCustomCpuScore(Number(e.target.value))} className="bn-slider" />
-                            </div>
-                        ) : (
-                            <select value={selectedCpuId} onChange={(e) => setSelectedCpuId(e.target.value)} className="bn-select">
-                                <option value="">-- {isEn ? 'Select CPU' : 'Vyber procesor'} --</option>
-                                {cpus.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
-                        )}
+                        <label><Cpu size={14} /> CPU</label>
+                        <select value={selectedCpuId} onChange={(e) => { setSelectedCpuId(e.target.value); setShowResult(false); }} className="bn-select">
+                            <option value="">-- Vyber procesor --</option>
+                            {(cpus || []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
                     </div>
 
                     <div className="input-group">
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <label><Zap size={14} /> GPU</label>
-                            <span className="custom-link" onClick={() => setIsCustomGpu(!isCustomGpu)}>{isCustomGpu ? 'Vybrat ze seznamu' : '+ Vlastní GPU'}</span>
-                        </div>
-                        {isCustomGpu ? (
-                            <>
-                                <div className="custom-slider-box">
-                                    <label>Hrubý výkon (Index: {customGpuScore})</label>
-                                    <input type="range" min="30" max="250" value={customGpuScore} onChange={(e) => setCustomGpuScore(Number(e.target.value))} className="bn-slider" />
-                                </div>
-                                <div className="custom-slider-box" style={{ marginTop: '10px' }}>
-                                    <label>VRAM ({customVram} GB)</label>
-                                    <input type="range" min="4" max="24" step="2" value={customVram} onChange={(e) => setCustomVram(Number(e.target.value))} className="bn-slider" />
-                                </div>
-                            </>
-                        ) : (
-                            <select value={selectedGpuId} onChange={(e) => setSelectedGpuId(e.target.value)} className="bn-select">
-                                <option value="">-- {isEn ? 'Select GPU' : 'Vyber grafiku'} --</option>
-                                {gpus.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                            </select>
-                        )}
+                        <label><Zap size={14} /> GPU</label>
+                        <select value={selectedGpuId} onChange={(e) => { setSelectedGpuId(e.target.value); setShowResult(false); }} className="bn-select">
+                            <option value="">-- Vyber grafiku --</option>
+                            {(gpus || []).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                        </select>
                     </div>
+
+                    <button onClick={handleStart} disabled={!selectedCpuId || !selectedGpuId || !selectedGameSlug || isCalculating} className="start-btn">
+                        {isCalculating ? <Sparkles className="spin" /> : <Play size={20} />} 
+                        {isEn ? 'RUN SIMULATION' : 'SPUSTIT SIMULACI'}
+                    </button>
                 </div>
 
                 <div className="bn-result-card">
                     {!analysis ? (
                         <div className="empty-state">
                             <Crosshair size={48} color="rgba(255,255,255,0.1)" />
-                            <p>{isEn ? 'Select hardware to run simulation.' : 'Vyber HW a spusť inženýrskou simulaci.'}</p>
+                            <p>Nastav hardware a spusť simulaci.</p>
                         </div>
                     ) : (
                         <div className="analysis-board">
-                            
-                            {analysis.meetsTarget ? (
-                                <div className="target-badge success"><Target size={14}/> {isEn ? 'Target Hit' : 'Cíl splněn'} ({targetFps} FPS)</div>
-                            ) : (
-                                <div className="target-badge fail"><Target size={14}/> {isEn ? 'Target Missed' : 'Nedosahuje cíle'} ({targetFps} FPS)</div>
-                            )}
-
-                            <div className="status-header" style={{ marginTop: '15px' }}>
-                                {analysis.boundType === 'CPU_BOUND' && <div className="bound-badge cpu"><TrendingDown size={20} /> CPU BOTTLENECK</div>}
-                                {analysis.boundType === 'GPU_BOUND' && <div className="bound-badge gpu"><TrendingUp size={20} /> GPU BOTTLENECK</div>}
-                                {analysis.boundType === 'BALANCED' && <div className="bound-badge balanced"><Sparkles size={20} /> BALANCED BUILD</div>}
+                            <div className="status-header">
+                                <div className={`bound-badge ${analysis.boundType.toLowerCase().replace('_', '-')}`}>
+                                    {analysis.boundType.replace('_', ' ')}
+                                </div>
                             </div>
-
                             <div className="percentage-display">
-                                <div className="pct-value">{analysis.bottleneckPercent}<span style={{ fontSize: '2rem' }}>%</span></div>
-                                <div className="pct-label">
-                                    {analysis.boundType === 'BALANCED' 
-                                        ? (isEn ? 'Optimal utilization' : 'Optimální využití systému') 
-                                        : `${analysis.limitedBy} ${isEn ? 'is holding you back by' : 'tě brzdí o'} ${analysis.bottleneckPercent}%`}
-                                </div>
+                                <div className="pct-value">{analysis.bottleneckPercent}%</div>
+                                <div className="pct-label">{analysis.limitedBy} tě brzdí o {analysis.bottleneckPercent}%</div>
                             </div>
-
                             <div className="pro-metrics-grid">
-                                <div className="metric-box">
-                                    <div className="m-label">AVG FPS</div>
-                                    <div className="m-val">{analysis.estFps}</div>
-                                </div>
-                                <div className={`metric-box ${analysis.stutterWarning ? 'alert' : ''}`}>
-                                    <div className="m-label">1% LOWS</div>
-                                    <div className="m-val">{analysis.low1Fps}</div>
-                                </div>
-                                <div className="metric-box">
-                                    <div className="m-label">LATENCY</div>
-                                    <div className="m-val">{analysis.frameTimeMs} <span style={{fontSize:'12px'}}>ms</span></div>
-                                </div>
+                                <div className="metric-box"><div className="m-label">AVG FPS</div><div className="m-val">{analysis.estFps}</div></div>
+                                <div className="metric-box"><div className="m-label">1% LOWS</div><div className="m-val">{analysis.low1Fps}</div></div>
+                                <div className="metric-box"><div className="m-label">LATENCY</div><div className="m-val">{analysis.frameTimeMs}ms</div></div>
                             </div>
-
-                            {isStreaming && (
-                                <div className="warning-box info">
-                                    <Video size={18} color="#60a5fa" style={{flexShrink: 0}} />
-                                    <div>
-                                        <strong>OBS Zátěž aktivní</strong> Streaming ubírá výkon procesoru, což zvyšuje šanci na stuttering a snižuje tvoje 1% Lows.
-                                    </div>
-                                </div>
-                            )}
-
-                            {analysis.vramWarning && (
-                                <div className="warning-box">
-                                    <AlertTriangle size={18} color="#ef4444" style={{flexShrink: 0}} />
-                                    <div>
-                                        <strong>VRAM Nedostatek!</strong> Hra vyžaduje {analysis.requiredVram}GB VRAM pro toto nastavení, ale karta má jen {analysis.actualVram}GB. Očekávej drastické propady a stuttering.
-                                    </div>
-                                </div>
-                            )}
-
                             <div className="recommendation">
-                                <h4>💡 {isEn ? 'Guru Recommendation' : 'Profesionální verdikt'}</h4>
-                                {analysis.boundType === 'CPU_BOUND' && (
-                                    <p>Tvoje grafika čeká na instrukce od procesoru. Máš velký rozdíl mezi AVG FPS a 1% Lows ({analysis.low1Fps}), takže hra působí trhaně. Zapnutí upscalingu to jen zhorší. Zkus zvýšit rozlišení na {resolution === '1080p' ? '1440p' : '4K'} nebo <strong>upgraduj procesor</strong> na model s vyšším IPC (např. X3D).</p>
-                                )}
-                                {analysis.boundType === 'GPU_BOUND' && (
-                                    <p>Tvá sestava je limitována hrubým výkonem grafiky. Pozitivní je, že procesor vše stíhá a obraz je plynulý bez záseků (latence {analysis.frameTimeMs}ms). Pokud ti nestačí průměrné FPS, zapni DLSS/FSR nebo zvaž <strong>upgrade GPU</strong>.</p>
-                                )}
-                                {analysis.boundType === 'BALANCED' && (
-                                    <p>Hardware je ve vyvážené symbióze. Žádná komponenta zbytečně neškrtí druhou a frame-pacing je optimální. Toto je ukázkový build pro dané rozlišení.</p>
-                                )}
+                                <h4>💡 Guru Verdikt</h4>
+                                <p>{analysis.boundType === 'CPU_BOUND' ? 'Tvoje grafika se nudí. Potřebuješ silnější procesor.' : 'Sestava je limitována grafikou. Obraz bude plynulý, ale pro víc FPS sniž detaily.'}</p>
                             </div>
+                            {gta6DynamicLink && (
+                                <a href={gta6DynamicLink} className="gta-cta">
+                                    <Sparkles size={20} /> ROZJEDE TO GTA VI?
+                                </a>
+                            )}
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* 🔥 MASIVNÍ INTERNÍ PROLINKOVÁNÍ A SDÍLENÍ - ZOBRAZENO VŽDY */}
             <div className="massive-seo-hub">
-
-                <div className="viral-flex-card" style={{ marginBottom: '30px' }}>
-                    <div className="award-icon"><Award size={28} color="#fff" /></div>
+                <div className="viral-flex-card">
+                    <div className="award-icon"><Award size={28} /></div>
                     <div className="viral-text-box">
-                        <div style={{ fontSize: '14px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                            {analysis ? (isEn ? 'SIMULATION COMPLETE' : 'SIMULACE DOKONČENA') : (isEn ? 'SHARE CALCULATOR' : 'SDÍLET KALKULAČKU')}
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#a855f7', fontWeight: 'bold' }}>
-                            {analysis ? (isEn ? 'Share your result online' : 'Pochlub se výsledkem online') : (isEn ? 'Share this tool with friends' : 'Pošli tento nástroj přátelům')}
-                        </div>
+                        <div style={{fontWeight: 900}}>SDÍLET KALKULAČKU</div>
+                        <div style={{fontSize: '11px', color: '#a855f7'}}>Pošli tento nástroj přátelům</div>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                        <button onClick={handleCopyShare} className="premium-share-btn btn-copy" title={isEn ? "Copy Link" : "Kopírovat odkaz"}>
-                            {copied ? <Check className="check-anim" size={18} /> : <Share2 size={18} />}
-                        </button>
-                        <button onClick={handleXShare} className="premium-share-btn btn-x" title="X">
-                            <Twitter size={18} />
-                        </button>
-                        <button onClick={handleRedditShare} className="premium-share-btn btn-reddit" title="Reddit">
-                            <RedditIcon size={18} />
-                        </button>
+                    <div style={{display: 'flex', gap: '8px'}}>
+                        <button onClick={handleCopyShare} className="premium-share-btn btn-copy"><Share2 size={18} /></button>
+                        <button onClick={handleRedditShare} className="premium-share-btn btn-reddit"><RedditIcon size={18} /></button>
                     </div>
                 </div>
 
-                <h3 className="hub-main-title">
-                    {isEn ? 'Explore The Hardware Guru Ecosystem' : 'Prozkoumej ekosystém The Hardware Guru'}
-                </h3>
-                
-                {/* ❌ ODSTRANĚNY FAKE ODKAZY. NYNÍ JSOU ZDE POUZE OBECNÉ ARCHIVY Z HOMEPAGE */}
+                <h3 className="hub-main-title">Prozkoumej GURU ekosystém</h3>
                 <div className="hub-grid">
                     <div className="hub-column">
-                        <div className="hub-col-header"><Swords size={16} color="#f43f5e" /> {isEn ? 'HW Battles' : 'HW Duely a Souboje'}</div>
+                        <div className="hub-col-header"><Swords size={16} color="#f43f5e" /> Duely</div>
                         <ul className="hub-links-list">
-                            <li><a href={isEn ? "/en/gpuvs" : "/gpuvs"}><ChevronRight size={14} /> {isEn ? 'GPU Battles Engine' : 'Souboje Grafických Karet'}</a></li>
-                            <li><a href={isEn ? "/en/cpuvs" : "/cpuvs"}><ChevronRight size={14} /> {isEn ? 'CPU Battles Engine' : 'Souboje Procesorů'}</a></li>
-                            <li><a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"}><ChevronRight size={14} /> {isEn ? 'FPS Calculator' : 'FPS Kalkulačka'}</a></li>
+                            <li><a href="/gpuvs"><ChevronRight size={14} /> Souboje Grafických Karet</a></li>
+                            <li><a href="/cpuvs"><ChevronRight size={14} /> Souboje Procesorů</a></li>
                         </ul>
                     </div>
-
                     <div className="hub-column">
-                        <div className="hub-col-header"><Gamepad2 size={16} color="#a855f7" /> {isEn ? 'Games & Deals' : 'Hry a Slevy'}</div>
+                        <div className="hub-col-header"><Gamepad2 size={16} color="#a855f7" /> Hry</div>
                         <ul className="hub-links-list">
-                            <li><a href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"}><ChevronRight size={14} /> {isEn ? 'Upcoming Games Archive' : 'Archiv Očekávaných Her'}</a></li>
-                            <li><a href={isEn ? "/en/deals" : "/cs/deals"}><ChevronRight size={14} /> {isEn ? 'Best Game Deals' : 'Žhavé Slevy na Hry'}</a></li>
-                        </ul>
-                    </div>
-
-                    <div className="hub-column">
-                        <div className="hub-col-header"><Lightbulb size={16} color="#fbbf24" /> {isEn ? 'Guru Tips & Tweaks' : 'GURU Tipy a Tweaky'}</div>
-                        <ul className="hub-links-list">
-                            <li><a href={isEn ? "/en/tipy" : "/tipy"}><ChevronRight size={14} /> {isEn ? 'PC Build Tips & Tricks' : 'Tipy pro stavbu a údržbu PC'}</a></li>
-                            <li><a href={isEn ? "/en/tweaky" : "/tweaky"}><ChevronRight size={14} /> {isEn ? 'Windows & Game Optimization' : 'Windows & Herní Optimalizace'}</a></li>
-                        </ul>
-                    </div>
-
-                    <div className="hub-column">
-                        <div className="hub-col-header"><Newspaper size={16} color="#38bdf8" /> {isEn ? 'Articles & Support' : 'Články a Podpora'}</div>
-                        <ul className="hub-links-list">
-                            <li><a href={isEn ? "/en/clanky" : "/clanky"}><ChevronRight size={14} /> {isEn ? 'Hardware News & Reviews' : 'HW Novinky a Recenze'}</a></li>
-                            <li><a href={isEn ? "/en/support" : "/support"}><ChevronRight size={14} /> {isEn ? 'Support The Hardware Guru' : 'Podpořte The Hardware Guru'}</a></li>
+                            <li><a href="/ocekavane-hry"><ChevronRight size={14} /> Archiv her</a></li>
+                            <li><a href="/cs/deals"><ChevronRight size={14} /> Slevy na hry</a></li>
                         </ul>
                     </div>
                 </div>
-
-                {/* Dynamická nabídka na GTA 6 kalkulaci (Zobrazí se až po analýze aktuálního HW) */}
-                {analysis && gta6DynamicLink && (
-                    <div className="dynamic-cta-box" style={{ marginTop: '40px' }}>
-                        <Sparkles size={24} color="#f43f5e" className="pulse-icon" />
-                        <div>
-                            <h4>{isEn ? 'Will this exact PC run GTA VI?' : 'Zajímá tě, jestli tahle sestava rozjede GTA VI?'}</h4>
-                            <p>{isEn ? `Check the FPS prediction for ${analysis.cpuName} + ${analysis.gpuName}.` : `Podívej se na přesnou FPS predikci pro ${analysis.cpuName} a ${analysis.gpuName}.`}</p>
-                        </div>
-                        <a href={gta6DynamicLink} className="action-btn gta-btn">
-                            {isEn ? 'CHECK GTA VI PREDICTION' : 'ZJISTIT FPS V GTA VI'}
-                        </a>
-                    </div>
-                )}
             </div>
 
             <style dangerouslySetInnerHTML={{__html: `
                 .bn-wrapper { background: #0a0b0d; color: #fff; border-radius: 24px; padding: 40px; }
                 .bn-header { text-align: center; margin-bottom: 40px; }
-                .pred-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-weight: 900; padding: 6px 20px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); margin-bottom: 20px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
-                .bn-header h1 { font-size: 3rem; font-weight: 950; margin: 0 0 10px 0; text-transform: uppercase; }
-                .bn-header p { color: #9ca3af; font-size: 16px; margin: 0; }
-                
+                .pred-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-weight: 900; padding: 6px 20px; border-radius: 50px; background: rgba(168, 85, 247, 0.1); margin-bottom: 20px; text-transform: uppercase; font-size: 11px; }
                 .bn-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 30px; }
-                @media (max-width: 800px) { .bn-grid { grid-template-columns: 1fr; } }
-                
-                .bn-inputs-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 30px; }
-                .section-title { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 900; color: #fff; margin: 0 0 25px 0; text-transform: uppercase; }
-                .input-group { margin-bottom: 25px; }
-                .input-group label { display: block; font-size: 11px; font-weight: 900; color: #9ca3af; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-                .bn-select { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-                .bn-select:focus { border-color: #a855f7; outline: none; }
-                
+                .bn-inputs-card { background: rgba(255,255,255,0.02); border-radius: 20px; padding: 30px; border: 1px solid rgba(255,255,255,0.05); }
+                .input-group { margin-bottom: 20px; }
+                .input-group label { display: block; font-size: 11px; font-weight: 900; color: #9ca3af; margin-bottom: 8px; text-transform: uppercase; }
+                .bn-select { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 10px; }
                 .res-toggles { display: flex; gap: 10px; }
-                .res-btn { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: #9ca3af; padding: 12px; border-radius: 12px; font-weight: 900; font-size: 13px; cursor: pointer; transition: 0.2s; }
-                .res-btn.active { background: rgba(168, 85, 247, 0.15); border-color: #a855f7; color: #fff; }
-                
-                .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-                .toggle-row { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px 12px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.02); }
-                .toggle-row:hover { background: rgba(255,255,255,0.02); }
-                .switch { width: 36px; height: 20px; border-radius: 50px; background: #374151; position: relative; transition: 0.3s; flex-shrink: 0; }
-                .switch::after { content: ''; position: absolute; width: 14px; height: 14px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: 0.3s; }
-                .switch.on { background: #a855f7; }
-                .switch.on::after { left: 19px; }
-                .toggle-row span { font-size: 11px; font-weight: 900; color: #d1d5db; text-transform: uppercase; }
-
-                .bn-divider { border: 0; height: 1px; background: rgba(255,255,255,0.05); margin: 30px 0; }
-                
-                .custom-link { font-size: 11px; color: #a855f7; cursor: pointer; font-weight: bold; text-transform: uppercase; }
-                .custom-slider-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
-                .bn-slider { width: 100%; cursor: pointer; accent-color: #a855f7; }
-
-                .bn-result-card { background: linear-gradient(135deg, rgba(168, 85, 247, 0.05), rgba(0,0,0,0.5)); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 20px; padding: 40px; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; }
-                .empty-state { text-align: center; color: #6b7280; font-weight: bold; }
-                
-                .target-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 900; text-transform: uppercase; padding: 4px 12px; border-radius: 50px; margin: 0 auto; }
-                .target-badge.success { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
-                .target-badge.fail { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-
-                .status-header { text-align: center; margin-bottom: 20px; }
-                .bound-badge { display: inline-flex; align-items: center; gap: 8px; font-weight: 950; padding: 8px 25px; border-radius: 50px; text-transform: uppercase; font-size: 13px; letter-spacing: 1px; }
-                .bound-badge.cpu { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
-                .bound-badge.gpu { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
-                .bound-badge.balanced { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
-
-                .percentage-display { text-align: center; margin: 30px 0; }
-                .pct-value { font-size: 6rem; font-weight: 950; line-height: 1; color: #fff; text-shadow: 0 0 30px rgba(168, 85, 247, 0.4); }
-                .pct-label { font-size: 14px; font-weight: bold; color: #9ca3af; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px; }
-
-                .pro-metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 25px; }
-                .metric-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 14px; text-align: center; }
-                .metric-box.alert { border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.1); }
-                .metric-box.alert .m-val { color: #fbbf24; }
-                .m-label { font-size: 10px; font-weight: 900; color: #9ca3af; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px; }
-                .m-val { font-size: 22px; font-weight: 950; color: #fff; }
-
-                /* VIRÁLNÍ KARTA */
-                .viral-flex-card { display: flex; align-items: center; gap: 15px; padding: 20px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 16px; box-shadow: 0 0 20px rgba(168, 85, 247, 0.1); text-align: left; }
-                .award-icon { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: rgba(168, 85, 247, 0.2); border-radius: 12px; flex-shrink: 0; }
-                .viral-text-box { flex: 1; }
-                .premium-share-btn { width: 40px; height: 40px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: 0.3s; border: none; color: #fff; }
-                .btn-copy { background: linear-gradient(45deg, #a855f7, #c084fc); }
-                .btn-x { background: #000; border: 1px solid rgba(255,255,255,0.2); }
+                .res-btn { flex: 1; padding: 10px; background: #111; border: 1px solid #333; color: #9ca3af; border-radius: 8px; font-weight: 900; cursor: pointer; }
+                .res-btn.active { border-color: #a855f7; color: #fff; background: rgba(168, 85, 247, 0.1); }
+                .start-btn { width: 100%; margin-top: 20px; padding: 15px; background: #a855f7; color: #fff; border: none; border-radius: 12px; font-weight: 950; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.3s; }
+                .start-btn:hover { transform: scale(1.02); box-shadow: 0 0 20px rgba(168, 85, 247, 0.4); }
+                .start-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+                .bn-result-card { background: rgba(0,0,0,0.3); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 20px; padding: 40px; }
+                .pct-value { font-size: 5rem; font-weight: 950; text-align: center; color: #fff; text-shadow: 0 0 30px rgba(168, 85, 247, 0.5); }
+                .pct-label { text-align: center; color: #a855f7; font-weight: 900; text-transform: uppercase; }
+                .pro-metrics-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 30px 0; }
+                .metric-box { background: #000; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #222; }
+                .m-label { font-size: 10px; color: #666; font-weight: 900; }
+                .m-val { font-size: 20px; font-weight: 900; }
+                .gta-cta { display: flex; align-items: center; justify-content: center; gap: 10px; background: #f43f5e; color: #fff; padding: 15px; border-radius: 12px; text-decoration: none; font-weight: 900; margin-top: 20px; }
+                .viral-flex-card { display: flex; align-items: center; gap: 15px; padding: 20px; background: #000; border: 1px solid #a855f7; border-radius: 16px; margin-top: 40px; }
+                .premium-share-btn { padding: 10px; border-radius: 8px; border: none; cursor: pointer; color: #fff; }
+                .btn-copy { background: #a855f7; }
                 .btn-reddit { background: #ff4500; }
-                .premium-share-btn:hover { transform: translateY(-3px); filter: brightness(1.1); }
-                .check-anim { animation: checkPop 0.3s ease-out; }
-
-                .warning-box { display: flex; gap: 15px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 20px; border-radius: 16px; margin-bottom: 20px; color: #fca5a5; font-size: 13px; line-height: 1.5; }
-                .warning-box.info { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3); color: #93c5fd; }
-                .warning-box strong { display: block; margin-bottom: 5px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
-                .warning-box:not(.info) strong { color: #ef4444; }
-                .warning-box.info strong { color: #60a5fa; }
-
-                .recommendation { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 25px; border-radius: 16px; }
-                .recommendation h4 { margin: 0 0 10px 0; font-size: 14px; font-weight: 900; color: #fff; text-transform: uppercase; }
-                .recommendation p { margin: 0; font-size: 13px; color: #d1d5db; line-height: 1.6; }
-                
-                @keyframes checkPop { 0% { transform: scale(0.5); } 100% { transform: scale(1); } }
-
-                /* 🔥 MASSIVE SEO HUB STYLES */
-                .massive-seo-hub { margin-top: 60px; padding-top: 40px; border-top: 1px solid rgba(255,255,255,0.05); }
-                .hub-main-title { font-size: 20px; font-weight: 950; color: #fff; text-transform: uppercase; letter-spacing: 1px; text-align: center; margin-bottom: 30px; }
-                
-                .hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 25px; margin-bottom: 40px; }
-                .hub-column { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.02); padding: 20px; border-radius: 16px; transition: 0.3s; }
-                .hub-column:hover { background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.05); }
-                
-                .hub-col-header { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; }
-                
-                .hub-links-list { list-style: none; padding: 0; margin: 0; }
-                .hub-links-list li { margin-bottom: 12px; }
-                .hub-links-list li:last-child { margin-bottom: 0; }
-                .hub-links-list a { display: flex; align-items: flex-start; gap: 5px; color: #9ca3af; text-decoration: none; font-size: 13px; font-weight: 600; transition: 0.2s; line-height: 1.4; }
-                .hub-links-list a:hover { color: #a855f7; transform: translateX(3px); }
-                .hub-links-list a svg { flex-shrink: 0; margin-top: 2px; }
-
-                /* DYNAMIC CTA BOX */
-                .dynamic-cta-box { display: flex; align-items: center; justify-content: space-between; gap: 20px; background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(0,0,0,0.5)); border: 1px solid rgba(244, 63, 94, 0.3); padding: 30px; border-radius: 20px; text-align: left; }
-                .dynamic-cta-box h4 { margin: 0 0 5px 0; font-size: 18px; font-weight: 950; color: #fff; text-transform: uppercase; }
-                .dynamic-cta-box p { margin: 0; font-size: 14px; color: #d1d5db; font-weight: 500; }
-                .action-btn { display: inline-flex; align-items: center; gap: 10px; padding: 15px 30px; border-radius: 14px; font-weight: 950; font-size: 13px; text-decoration: none; transition: 0.3s; color: #fff; text-transform: uppercase; flex-shrink: 0; }
-                .action-btn.gta-btn { background: #f43f5e; box-shadow: 0 10px 30px rgba(244, 63, 94, 0.3); }
-                .action-btn.gta-btn:hover { background: #fb7185; box-shadow: 0 15px 40px rgba(244, 63, 94, 0.4); transform: translateY(-2px); }
-                .pulse-icon { animation: pulse 2s infinite; }
-
-                @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
-
-                @media (max-width: 768px) {
-                    .dynamic-cta-box { flex-direction: column; text-align: center; }
-                    .action-btn { width: 100%; justify-content: center; }
-                }
+                .massive-seo-hub { margin-top: 60px; border-top: 1px solid #222; padding-top: 40px; }
+                .hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+                .hub-links-list { list-style: none; padding: 0; }
+                .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 14px; display: flex; align-items: center; margin-bottom: 10px; }
+                .hub-links-list a:hover { color: #fff; }
+                .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+                .toggle-row { display: flex; align-items: center; gap: 8px; cursor: pointer; background: #111; padding: 8px; border-radius: 8px; font-size: 10px; font-weight: 900; }
+                .switch { width: 30px; height: 16px; background: #333; border-radius: 10px; position: relative; }
+                .switch.on { background: #a855f7; }
+                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                .spin { animation: spin 1s linear infinite; }
             `}} />
         </div>
     );
