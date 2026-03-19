@@ -4,25 +4,20 @@ import { notFound } from 'next/navigation';
 import BottleneckClient from '../BottleneckClient';
 
 export const dynamic = 'force-dynamic';
-const baseUrl = "https://thehardwareguru.cz";
 
 export async function generateMetadata({ params }) {
-    // V Next.js App Routeru musí být params asynchronně zpracovány
     const resolvedParams = await params;
     const { slug } = resolvedParams;
     const cleanSlug = slug.replace(/-/g, ' ').toUpperCase();
     
     return {
         title: `Bottleneck: ${cleanSlug} | The Hardware Guru`,
-        description: `Detailní analýza úzkého hrdla. Zjisti, jestli tento procesor brzdí grafiku v ${cleanSlug}. Včetně 1% Lows a latence.`,
-        alternates: {
-            canonical: `${baseUrl}/bottleneck-kalkulacka/${slug}`
-        }
+        description: `Detailní analýza úzkého hrdla pro sestavu ${cleanSlug}.`,
     };
 }
 
 export default async function BottleneckResultPage({ params, searchParams }) {
-    // V Next.js App Routeru musí být obojí asynchronně zpracováno! Tohle byla ta chyba.
+    // FIX: Next.js 14/15 vyžaduje await pro params a searchParams
     const resolvedParams = await params;
     const resolvedSearchParams = await searchParams;
     
@@ -31,27 +26,20 @@ export default async function BottleneckResultPage({ params, searchParams }) {
 
     if (!cpuId || !gpuId || !slug) return notFound();
 
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY 
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+        return <div style={{ color: '#fff', textAlign: 'center', padding: '100px' }}>Konfigurace DB nenalezena.</div>;
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     const [gpusRes, cpusRes, gamesRes] = await Promise.all([
         supabase.from('gpus').select('id, name, vendor, performance_index, vram_gb').order('performance_index', { ascending: false }),
         supabase.from('cpus').select('id, name, vendor, performance_index').order('performance_index', { ascending: false }),
         supabase.from('games').select('id, name, slug').order('name', { ascending: true })
     ]);
-
-    const gpus = gpusRes.data || [];
-    const cpus = cpusRes.data || [];
-    
-    const games = gamesRes.data?.length > 0 ? gamesRes.data : [
-        { id: 1, name: 'Cyberpunk 2077', slug: 'cyberpunk-2077' },
-        { id: 2, name: 'Counter-Strike 2', slug: 'cs2' },
-        { id: 3, name: 'Alan Wake 2', slug: 'alan-wake-2' },
-        { id: 4, name: 'Valorant', slug: 'valorant' },
-        { id: 5, name: 'Obecná / Průměrná hra', slug: 'generic' }
-    ];
 
     const resolutionStr = slug.includes('2160p') ? '2160p' : slug.includes('1440p') ? '1440p' : '1080p';
     let selectedGameSlug = 'generic';
@@ -64,9 +52,9 @@ export default async function BottleneckResultPage({ params, searchParams }) {
         <div style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', paddingTop: '100px', paddingBottom: '100px' }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
                 <BottleneckClient 
-                    gpus={gpus} 
-                    cpus={cpus} 
-                    games={games} 
+                    gpus={gpusRes.data || []} 
+                    cpus={cpusRes.data || []} 
+                    games={gamesRes.data || []} 
                     isEn={false} 
                     initialCpuId={cpuId}
                     initialGpuId={gpuId}
@@ -74,21 +62,6 @@ export default async function BottleneckResultPage({ params, searchParams }) {
                     initialResolution={resolutionStr}
                 />
             </div>
-
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify({
-                        "@context": "https://schema.org",
-                        "@type": "SoftwareApplication",
-                        "name": `Bottleneck Result: ${slug.replace(/-/g, ' ')}`,
-                        "applicationCategory": "UtilitiesApplication",
-                        "operatingSystem": "All",
-                        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CZK" },
-                        "description": `Simulace bottlenecku pro ${slug.replace(/-/g, ' ')} v profesionálním GURU Enginu.`
-                    })
-                }}
-            />
         </div>
     );
 }
