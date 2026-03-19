@@ -2,53 +2,32 @@ import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import BottleneckClient from './BottleneckClient';
 
-export const revalidate = 3600; // Cache na 1 hodinu pro super rychlý load
+// FIX: Vynucení dynamického renderingu, aby se předešlo chybám v cache/SSR
+export const dynamic = 'force-dynamic';
 
-// SEO Metadata (Google Golden Rich Rule)
 export const metadata = {
-    title: 'Bottleneck Kalkulačka 2026 | The Hardware Guru',
-    description: 'Nejpřesnější AI bottleneck simulátor. Zjisti, jestli tvůj procesor brzdí grafickou kartu ve hrách jako CS2, Cyberpunk 2077 a dalších. Včetně 1% Lows a latence.',
-    alternates: {
-        canonical: 'https://thehardwareguru.cz/bottleneck-kalkulacka',
-        languages: {
-            'cs-CZ': 'https://thehardwareguru.cz/bottleneck-kalkulacka',
-            'en-US': 'https://thehardwareguru.cz/en/bottleneck-calculator',
-        },
-    },
-    openGraph: {
-        title: 'Bottleneck Kalkulačka 2026 | Změř si výkon PC',
-        description: 'Odhal úzké hrdlo svého PC. Brzdí tě procesor nebo grafika?',
-        url: 'https://thehardwareguru.cz/bottleneck-kalkulacka',
-        siteName: 'The Hardware Guru',
-        images: [
-            {
-                url: 'https://thehardwareguru.cz/og-bottleneck.png', // Připrav si nějaký cool obrázek
-                width: 1200,
-                height: 630,
-            },
-        ],
-        type: 'website',
-    },
+    title: 'PC Bottleneck Kalkulačka 2026 | The Hardware Guru',
+    description: 'Nejpřesnější AI simulátor bottlenecku. Zjisti, jestli tvůj procesor brzdí grafiku v CS2, Cyberpunk 2077 a dalších hrách.',
 };
 
 export default async function BottleneckPage() {
-    // SERVER Supabase client
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY // Tady stačí ANON key pro čtení listů
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    // Paralelní fetch dat pro maximální rychlost
+    // FIX podle ChatGPT: Pokud chybí ENV, vyhodíme chybu dřív, než to shodí celou aplikaci
+    if (!supabaseUrl || !supabaseKey) {
+        console.error("KRITICKÁ CHYBA: Chybí Supabase Environment Variables!");
+        return <div style={{ color: '#fff', textAlign: 'center', padding: '50px' }}>Chyba konfigurace databáze.</div>;
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     const [gpusRes, cpusRes, gamesRes] = await Promise.all([
         supabase.from('gpus').select('id, name, vendor, performance_index, vram_gb').order('performance_index', { ascending: false }),
         supabase.from('cpus').select('id, name, vendor, performance_index').order('performance_index', { ascending: false }),
         supabase.from('games').select('id, name, slug').order('name', { ascending: true })
     ]);
 
-    const gpus = gpusRes.data || [];
-    const cpus = cpusRes.data || [];
-    
-    // Fallback hry, pokud v DB zatím nemáš tabulku 'games' čistě pro bottleneck
     const games = gamesRes.data?.length > 0 ? gamesRes.data : [
         { id: 1, name: 'Cyberpunk 2077', slug: 'cyberpunk-2077' },
         { id: 2, name: 'Counter-Strike 2', slug: 'cs2' },
@@ -61,33 +40,12 @@ export default async function BottleneckPage() {
         <div style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', paddingTop: '100px', paddingBottom: '100px' }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
                 <BottleneckClient 
-                    gpus={gpus} 
-                    cpus={cpus} 
+                    gpus={gpusRes.data || []} 
+                    cpus={cpusRes.data || []} 
                     games={games} 
                     isEn={false} 
                 />
             </div>
-
-            {/* Google Golden Rich Snippets pro celou aplikaci */}
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify({
-                        "@context": "https://schema.org",
-                        "@type": "WebApplication",
-                        "name": "Guru Bottleneck Calculator",
-                        "url": "https://thehardwareguru.cz/bottleneck-kalkulacka",
-                        "description": "Profesionální simulátor úzkého hrdla PC (Bottleneck). Vypočítá CPU a GPU limity, 1% Low FPS a frame time latenci v reálném čase.",
-                        "applicationCategory": "UtilitiesApplication",
-                        "operatingSystem": "All",
-                        "author": {
-                            "@type": "Organization",
-                            "name": "The Hardware Guru",
-                            "url": "https://thehardwareguru.cz"
-                        }
-                    })
-                }}
-            />
         </div>
     );
 }
