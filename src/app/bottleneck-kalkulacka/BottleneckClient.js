@@ -8,6 +8,10 @@ import {
   Twitter, Award, Swords, Gamepad2, ChevronRight, Play, Newspaper, Lightbulb
 } from 'lucide-react';
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
+
 const RedditIcon = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-2.05-6.65c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm4.1 0c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm1.64-3.56c-.34 0-.64.16-.84.4-.58-.4-1.36-.67-2.24-.72l.47-2.18 1.5.32c.04.53.48.95 1.02.95.57 0 1.03-.46 1.03-1.03 0-.57-.46-1.03-1.03-1.03-.42 0-.78.26-.94.63l-1.64-.35c-.06-.01-.13 0-.17.05-.05.04-.07.1-.06.16l-.52 2.45c-.93.03-1.74.32-2.35.74-.2-.23-.5-.38-.83-.38-.6 0-1.08.48-1.08 1.08 0 .42.24.78.58.96-.02.12-.03.24-.03.37 0 1.88 2.05 3.4 4.58 3.4s4.58-1.52 4.58-3.4c0-.13-.01-.25-.03-.37.34-.18.58-.54.58-.96 0-.6-.48-1.08-1.08-1.08zm-4.14 3.12c-.93 0-1.66-.4-1.7-.44-.1-.1-.11-.27-.01-.38.1-.1.27-.11.38-.01.02.01.62.33 1.33.33.7 0 1.31-.32 1.33-.33.11-.1.28-.09.38.01.1.11.09.28-.01.38-.04.04-.77.44-1.7.44z" />
@@ -17,11 +21,11 @@ const RedditIcon = ({ size = 20 }) => (
 export default function BottleneckClient({ 
     gpus = [], cpus = [], games = [], isEn = false, initialCpuId = '', initialGpuId = '', initialGameSlug = '', initialResolution = '1440p' 
 }) {
-    // --- STAV ---
     const [selectedCpuId, setSelectedCpuId] = useState(initialCpuId);
     const [selectedGpuId, setSelectedGpuId] = useState(initialGpuId);
     const [selectedGameSlug, setSelectedGameSlug] = useState(initialGameSlug);
     const [resolution, setResolution] = useState(initialResolution);
+    
     const [isCalculating, setIsCalculating] = useState(false);
     const [showResult, setShowResult] = useState(!!initialCpuId);
     const [enableUpscaling, setEnableUpscaling] = useState(false); 
@@ -29,7 +33,7 @@ export default function BottleneckClient({
     const [copied, setCopied] = useState(false);
     const [shareUrl, setShareUrl] = useState('');
 
-    // 🚀 ENGINE ANALÝZA
+    // 🚀 ENGINE ANALÝZA S KRITICKÝM FIXEM PROTI NaN
     const analysis = useMemo(() => {
         if (!showResult || !selectedCpuId || !selectedGpuId || !selectedGameSlug) return null;
 
@@ -66,25 +70,29 @@ export default function BottleneckClient({
         
         const rawCpuFps = (cpuEffective / game.cpu_weight) * game.fps_scale;
         const rawGpuFps = (gpuEffective / game.gpu_weight) * game.fps_scale;
-        const estFps = Math.round(Math.min(rawCpuFps, rawGpuFps));
-        const diff = Math.abs(rawCpuFps - rawGpuFps) / Math.max(rawCpuFps, rawGpuFps);
+
+        // ✅ KRITICKÝ PATCH PROTI PÁDU (NaN / Infinity protection)
+        const safeCpuFps = isFinite(rawCpuFps) ? rawCpuFps : 0;
+        const safeGpuFps = isFinite(rawGpuFps) ? rawGpuFps : 0;
+
+        const estFps = Math.max(1, Math.round(Math.min(safeCpuFps, safeGpuFps)));
+        const maxFps = Math.max(safeCpuFps, safeGpuFps, 1);
+        const diff = Math.abs(safeCpuFps - safeGpuFps) / maxFps;
+
+        const frameTimeMs = (1000 / estFps).toFixed(1);
+        const low1Fps = Math.round(estFps * (1 - diff * 0.8));
 
         return {
-            boundType: rawCpuFps < rawGpuFps ? 'CPU_BOUND' : (diff < 0.08 ? 'BALANCED' : 'GPU_BOUND'),
-            limitedBy: rawCpuFps < rawGpuFps ? 'CPU' : 'GPU',
-            bottleneckPercent: Math.round(diff * 100), estFps, low1Fps: Math.round(estFps * (1 - diff * 0.8)),
-            frameTimeMs: (1000 / estFps).toFixed(1), cpuName: cpu.name, gpuName: gpu.name, gameName: baseGame.name
+            boundType: safeCpuFps < safeGpuFps ? 'CPU_BOUND' : (diff < 0.08 ? 'BALANCED' : 'GPU_BOUND'),
+            limitedBy: safeCpuFps < safeGpuFps ? 'CPU' : 'GPU',
+            bottleneckPercent: Math.round(diff * 100), 
+            estFps, low1Fps, frameTimeMs,
+            cpuName: cpu.name, gpuName: gpu.name, gameName: baseGame.name
         };
     }, [showResult, selectedCpuId, selectedGpuId, selectedGameSlug, resolution, enableUpscaling, isStreaming, cpus, gpus, games]);
 
-    // 🛠️ ASYNCHRONNÍ KLIENTSKÉ OPERACE
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-        const sb = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
-
         if (analysis) {
             const cleanCpu = (analysis.cpuName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
             const cleanGpu = (analysis.gpuName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -92,8 +100,8 @@ export default function BottleneckClient({
             const fullUrl = `https://thehardwareguru.cz/${isEn ? 'en/bottleneck-calculator' : 'bottleneck-kalkulacka'}/${slugBase}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
             setShareUrl(fullUrl);
 
-            if (sb && !initialCpuId) {
-                sb.from('generated_predictions').upsert({
+            if (supabase && !initialCpuId) {
+                supabase.from('generated_predictions').upsert({
                     slug_base: slugBase, cpu_id: selectedCpuId, gpu_id: selectedGpuId, full_url: fullUrl, last_requested: new Date().toISOString()
                 }, { onConflict: 'full_url' }).catch(() => {});
             }
@@ -102,7 +110,6 @@ export default function BottleneckClient({
         }
     }, [analysis, selectedCpuId, selectedGpuId, selectedGameSlug, resolution, isEn, initialCpuId]);
 
-    // --- 🛠️ FUNKCE (FIX: DEFINOVÁNY UVNITŘ KOMPONENTY) ---
     const handleStart = () => {
         setIsCalculating(true);
         setTimeout(() => { setShowResult(true); setIsCalculating(false); }, 800);
@@ -112,13 +119,8 @@ export default function BottleneckClient({
         navigator.clipboard.writeText(shareUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 3000); });
     };
 
-    const handleXShare = () => {
-        window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`, '_blank');
-    };
-
-    const handleRedditShare = () => {
-        window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}`, '_blank');
-    };
+    const handleXShare = () => { window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`, '_blank'); };
+    const handleRedditShare = () => { window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}`, '_blank'); };
 
     const gta6DynamicLink = analysis ? `/${isEn ? 'en/fps-calculator/gta-6-prediction' : 'fps-kalkulacka/gta-6-predikce'}/${(analysis.cpuName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-vs-${(analysis.gpuName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${resolution}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}` : '';
 
@@ -129,7 +131,7 @@ export default function BottleneckClient({
                 <h1 style={{ fontSize: '3.5rem', fontWeight: '950', textTransform: 'uppercase', margin: '10px 0', textShadow: '0 0 30px rgba(102, 252, 241, 0.4)' }}>
                     {isEn ? 'System Bottleneck' : 'Bottleneck Kalkulačka'}
                 </h1>
-                <p style={{ color: '#9ca3af', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '2px' }}>Všechny stroje mají své slabé místo.</p>
+                <p style={{ color: '#9ca3af', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '2px' }}>Najdi slabý článek svého stroje.</p>
             </div>
 
             <div className="bn-grid">
@@ -182,16 +184,11 @@ export default function BottleneckClient({
 
                 <div className="bn-result-card">
                     {!analysis ? (
-                        <div className="empty-state">
-                            <Crosshair size={64} color="rgba(255,255,255,0.05)" />
-                            <p style={{ marginTop: '20px', fontWeight: '900', color: '#4b5563' }}>Čekám na instrukce...</p>
-                        </div>
+                        <div className="empty-state"><Crosshair size={64} color="rgba(255,255,255,0.05)" /><p>Nastav hardware a spusť simulaci.</p></div>
                     ) : (
                         <div className="analysis-board">
                             <div style={{ textAlign: 'center' }}>
-                                <div className={`bound-badge ${analysis.boundType.toLowerCase().replace('_', '-')}`}>
-                                    {analysis.boundType.replace('_', ' ')}
-                                </div>
+                                <div className={`bound-badge ${analysis.boundType.toLowerCase().replace('_', '-')}`}>{analysis.boundType.replace('_', ' ')}</div>
                             </div>
                             <div className="percentage-display">
                                 <div className="pct-value">{analysis.bottleneckPercent}%</div>
@@ -204,12 +201,10 @@ export default function BottleneckClient({
                             </div>
                             <div className="recommendation">
                                 <h4>💡 Guru Verdikt</h4>
-                                <p>{analysis.boundType === 'CPU_BOUND' ? 'Tvoje grafika čeká na procesor. Potřebuješ silnější CPU pro vyrovnaný výkon.' : 'Sestava je limitována hrubým výkonem grafiky. Obraz bude plynulý, ale pro víc FPS sniž detaily.'}</p>
+                                <p>{analysis.boundType === 'CPU_BOUND' ? 'Grafika čeká na procesor. Potřebuješ silnější CPU pro vyrovnaný výkon.' : 'Sestava je limitována grafikou. Obraz bude plynulý, ale pro víc FPS sniž detaily.'}</p>
                             </div>
                             {gta6DynamicLink && (
-                                <a href={gta6DynamicLink} className="gta-cta">
-                                    <Sparkles size={20} /> ROZJEDE TO GTA VI?
-                                </a>
+                                <a href={gta6DynamicLink} className="gta-cta"><Sparkles size={20} /> ROZJEDE TO GTA VI?</a>
                             )}
                         </div>
                     )}
@@ -220,8 +215,8 @@ export default function BottleneckClient({
                 <div className="viral-flex-card">
                     <div className="award-icon"><Award size={32} color="#a855f7" /></div>
                     <div className="viral-text-box">
-                        <div style={{ fontWeight: '950', fontSize: '18px' }}>SDÍLET TENTO NÁSTROJ</div>
-                        <div style={{ color: '#a855f7', fontWeight: 'bold' }}>Pomoz ostatním geekům najít pravdu</div>
+                        <div style={{ fontWeight: '950', fontSize: '18px' }}>SDÍLET KALKULAČKU</div>
+                        <div style={{ color: '#a855f7', fontWeight: 'bold' }}>Pošli tento nástroj přátelům</div>
                     </div>
                     <div style={{ display: 'flex', gap: '12px' }}>
                         <button onClick={handleCopyShare} className="premium-share-btn btn-copy">{copied ? <Check size={20} /> : <Share2 size={20} />}</button>
@@ -239,7 +234,7 @@ export default function BottleneckClient({
                         </ul>
                     </div>
                     <div className="hub-column">
-                        <div className="hub-col-header"><Gamepad2 size={20} color="#66fcf1" /> Guru Ekosystém</div>
+                        <div className="hub-col-header"><Gamepad2 size={20} color="#66fcf1" /> Guru Hub</div>
                         <ul className="hub-links-list">
                             <li><a href="/ocekavane-hry"><ChevronRight size={16} /> Archiv Očekávaných Her</a></li>
                             <li><a href="/clanky"><ChevronRight size={16} /> Novinky a HW Články</a></li>
@@ -250,63 +245,51 @@ export default function BottleneckClient({
             </div>
 
             <style dangerouslySetInnerHTML={{__html: `
-                .bn-wrapper { background: rgba(10, 11, 13, 0.9); color: #fff; border-radius: 40px; padding: 60px; border: 1px solid rgba(102, 252, 241, 0.1); backdrop-filter: blur(20px); box-shadow: 0 50px 100px rgba(0,0,0,0.5); }
+                .bn-wrapper { background: rgba(10, 11, 13, 0.9); color: #fff; border-radius: 40px; padding: 60px; border: 1px solid rgba(102, 252, 241, 0.1); backdrop-filter: blur(20px); }
                 .bn-header { text-align: center; margin-bottom: 60px; }
                 .pred-badge { display: inline-flex; align-items: center; gap: 10px; color: #a855f7; font-weight: 950; padding: 10px 30px; border-radius: 50px; background: rgba(168, 85, 247, 0.1); margin-bottom: 30px; text-transform: uppercase; font-size: 13px; border: 1px solid rgba(168, 85, 247, 0.2); }
                 .bn-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 50px; }
                 @media (max-width: 1000px) { .bn-grid { grid-template-columns: 1fr; } }
                 .bn-inputs-card { background: rgba(255, 255, 255, 0.02); border-radius: 30px; padding: 40px; border: 1px solid rgba(255, 255, 255, 0.05); }
                 .section-title { display: flex; align-items: center; gap: 15px; font-size: 20px; font-weight: 950; color: #fff; margin-bottom: 40px; text-transform: uppercase; border-left: 4px solid #a855f7; padding-left: 15px; }
-                .input-group { margin-bottom: 30px; }
-                .input-group label { display: block; font-size: 13px; font-weight: 950; color: #9ca3af; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 2px; }
-                .bn-select { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; outline: none; transition: 0.3s; font-size: 16px; }
-                .bn-select:focus { border-color: #a855f7; box-shadow: 0 0 20px rgba(168, 85, 247, 0.2); }
-                .res-toggles { display: flex; gap: 15px; }
-                .res-btn { flex: 1; padding: 15px; background: #000; border: 1px solid #222; color: #9ca3af; border-radius: 12px; font-weight: 950; cursor: pointer; transition: 0.3s; font-size: 14px; }
-                .res-btn.active { border-color: #a855f7; color: #fff; background: rgba(168, 85, 247, 0.15); box-shadow: 0 0 20px rgba(168, 85, 247, 0.1); }
-                .start-btn { width: 100%; margin-top: 30px; padding: 22px; background: #a855f7; color: #fff; border: none; border-radius: 18px; font-weight: 950; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 15px; transition: 0.4s; text-transform: uppercase; font-size: 18px; box-shadow: 0 20px 40px rgba(168, 85, 247, 0.2); }
-                .start-btn:hover:not(:disabled) { transform: translateY(-5px); box-shadow: 0 25px 50px rgba(168, 85, 247, 0.4); background: #c084fc; }
-                .start-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-                .bn-result-card { background: linear-gradient(145deg, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0.6) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 30px; padding: 50px; display: flex; align-items: center; justify-content: center; min-height: 600px; box-shadow: inset 0 0 50px rgba(0,0,0,0.5); }
+                .bn-select { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; outline: none; transition: 0.3s; font-size: 16px; margin-bottom: 20px; }
+                .res-toggles { display: flex; gap: 15px; margin-bottom: 20px; }
+                .res-btn { flex: 1; padding: 15px; background: #000; border: 1px solid #222; color: #9ca3af; border-radius: 12px; font-weight: 950; cursor: pointer; transition: 0.3s; }
+                .res-btn.active { border-color: #a855f7; color: #fff; background: rgba(168, 85, 247, 0.15); }
+                .start-btn { width: 100%; margin-top: 30px; padding: 22px; background: #a855f7; color: #fff; border: none; border-radius: 18px; font-weight: 950; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 15px; transition: 0.4s; text-transform: uppercase; font-size: 18px; }
+                .start-btn:disabled { opacity: 0.3; }
+                .bn-result-card { background: linear-gradient(145deg, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0.6) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 30px; padding: 50px; display: flex; align-items: center; justify-content: center; min-height: 600px; }
                 .pct-value { font-size: 9rem; font-weight: 950; text-align: center; color: #fff; text-shadow: 0 0 60px rgba(168, 85, 247, 0.8); line-height: 0.9; }
                 .pct-label { text-align: center; color: #a855f7; font-weight: 950; text-transform: uppercase; letter-spacing: 4px; margin-top: 20px; font-size: 18px; }
                 .pro-metrics-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin: 50px 0; }
-                .metric-box { background: rgba(0,0,0,0.8); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
-                .metric-box:hover { border-color: rgba(168, 85, 247, 0.4); transform: translateY(-5px); }
-                .m-label { font-size: 12px; color: #666; font-weight: 950; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+                .metric-box { background: rgba(0,0,0,0.8); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+                .m-label { font-size: 12px; color: #666; font-weight: 950; text-transform: uppercase; margin-bottom: 8px; }
                 .m-val { font-size: 32px; font-weight: 950; color: #fff; }
-                .gta-cta { display: flex; align-items: center; justify-content: center; gap: 15px; background: #f43f5e; color: #fff; padding: 22px; border-radius: 18px; text-decoration: none; font-weight: 950; margin-top: 40px; transition: 0.4s; box-shadow: 0 20px 40px rgba(244, 63, 94, 0.3); font-size: 16px; text-transform: uppercase; }
-                .gta-cta:hover { transform: translateY(-5px); box-shadow: 0 30px 60px rgba(244, 63, 94, 0.5); background: #fb7185; }
-                .viral-flex-card { display: flex; align-items: center; gap: 30px; padding: 40px; background: rgba(0,0,0,0.5); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 30px; margin-top: 80px; backdrop-filter: blur(10px); }
-                @media (max-width: 768px) { .viral-flex-card { flex-direction: column; text-align: center; } }
+                .gta-cta { display: flex; align-items: center; justify-content: center; gap: 15px; background: #f43f5e; color: #fff; padding: 22px; border-radius: 18px; text-decoration: none; font-weight: 950; margin-top: 40px; transition: 0.4s; box-shadow: 0 20px 40px rgba(244, 63, 94, 0.3); }
+                .viral-flex-card { display: flex; align-items: center; gap: 30px; padding: 40px; background: rgba(0,0,0,0.5); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 30px; margin-top: 80px; }
                 .premium-share-btn { width: 60px; height: 60px; border-radius: 18px; border: none; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-                .btn-copy { background: #a855f7; box-shadow: 0 10px 20px rgba(168, 85, 247, 0.2); }
+                .btn-copy { background: #a855f7; }
                 .btn-x { background: #000; border: 1px solid #333; }
-                .btn-reddit { background: #ff4500; box-shadow: 0 10px 20px rgba(255, 69, 0, 0.2); }
-                .premium-share-btn:hover { transform: translateY(-5px) scale(1.1); filter: brightness(1.2); }
+                .btn-reddit { background: #ff4500; }
                 .massive-seo-hub { margin-top: 100px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 70px; }
-                .hub-main-title { text-align: center; text-transform: uppercase; font-weight: 950; letter-spacing: 5px; margin-bottom: 60px; font-size: 24px; color: #fff; }
+                .hub-main-title { text-align: center; text-transform: uppercase; font-weight: 950; letter-spacing: 5px; margin-bottom: 60px; font-size: 24px; }
                 .hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-                @media (max-width: 768px) { .hub-grid { grid-template-columns: 1fr; } }
-                .hub-column { background: rgba(255,255,255,0.02); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
-                .hub-column:hover { background: rgba(255,255,255,0.04); border-color: rgba(102, 252, 241, 0.2); }
+                .hub-column { background: rgba(255,255,255,0.02); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); }
                 .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 30px; font-size: 18px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
                 .hub-links-list { list-style: none; padding: 0; }
                 .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 16px; display: flex; align-items: center; margin-bottom: 18px; font-weight: bold; transition: 0.3s; }
                 .hub-links-list a:hover { color: #66fcf1; transform: translateX(10px); }
                 .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-                .toggle-row { display: flex; align-items: center; gap: 15px; cursor: pointer; background: #000; padding: 18px; border-radius: 15px; font-size: 13px; font-weight: 950; border: 1px solid #222; transition: 0.3s; }
-                .toggle-row:hover { border-color: #a855f7; }
+                .toggle-row { display: flex; align-items: center; gap: 15px; cursor: pointer; background: #000; padding: 18px; border-radius: 15px; font-size: 13px; font-weight: 950; border: 1px solid #222; }
                 .switch { width: 44px; height: 24px; background: #333; border-radius: 20px; position: relative; transition: 0.3s; }
                 .switch::after { content: ''; position: absolute; width: 18px; height: 18px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: 0.3s; }
                 .switch.on { background: #a855f7; }
                 .switch.on::after { left: 23px; }
                 .spin { animation: spin 1s linear infinite; }
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .bound-badge { display: inline-block; padding: 12px 40px; border-radius: 50px; background: rgba(168, 85, 247, 0.1); border: 2px solid #a855f7; font-weight: 950; text-transform: uppercase; font-size: 15px; letter-spacing: 3px; color: #fff; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(168, 85, 247, 0.3); }
+                .bound-badge { display: inline-block; padding: 12px 40px; border-radius: 50px; background: rgba(168, 85, 247, 0.1); border: 2px solid #a855f7; font-weight: 950; text-transform: uppercase; font-size: 15px; letter-spacing: 3px; color: #fff; margin-bottom: 30px; }
                 .bn-divider { border: 0; height: 1px; background: rgba(255,255,255,0.05); margin: 40px 0; }
-                .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-                .recommendation { background: rgba(0,0,0,0.4); padding: 35px; border-radius: 25px; border-top: 4px solid #a855f7; }
+                .input-group label { display: block; font-size: 13px; font-weight: 950; color: #9ca3af; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 2px; }
                 .recommendation h4 { font-size: 18px; font-weight: 950; text-transform: uppercase; margin-bottom: 15px; color: #fff; }
                 .recommendation p { font-size: 15px; color: #9ca3af; lineHeight: 1.6; }
             `}} />
