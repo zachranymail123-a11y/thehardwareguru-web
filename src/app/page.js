@@ -1,12 +1,11 @@
 import React from 'react';
-import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2 } from 'lucide-react';
+import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers } from 'lucide-react';
 
 /**
- * GURU HOMEPAGE V15.6 - FULL SSR & FPS ENGINE INTEGRATION
+ * GURU HOMEPAGE V15.7 - FULL SSR & BOTTLENECK INTEGRATION
  * Cesta: src/app/page.js
- * 🚀 CÍL: Integrace "FPS Kalkulačky" do Hero sekce pro maximální konverzi a traffic.
- * 🛡️ FIX 1: Přidáno tlačítko "ROZJEDU TO?" (FPS Kalkulačka) do Hero sekce.
- * 🛡️ FIX 2: Zachování 100% SSR a Golden Rich Results.
+ * 🚀 CÍL: Integrace "Bottleneck Kalkulačky" do Hero sekce k ostatním GURU nástrojům.
+ * 🛡️ FIX: Přidáno tlačítko "BOTTLENECK" s unikátním stylem.
  */
 
 const LEAK_PLACEHOLDER_URL = 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000';
@@ -130,19 +129,6 @@ export default async function HomePage({ params }) {
             box-shadow: 0 30px 60px rgba(0,0,0,0.8), inset 0 0 30px rgba(102, 252, 241, 0.05);
             position: relative; overflow: hidden; backdrop-filter: blur(15px);
         }
-        .guru-hero-section::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-            background: linear-gradient(90deg, #66fcf1, #a855f7, #ff0055, #f97316);
-        }
-
-        .guru-hero-avatar {
-            width: 180px; height: 180px; background: linear-gradient(135deg, #0b0c10 0%, #1a1c23 100%);
-            border-radius: 50%; border: 4px solid #66fcf1; display: flex; align-items: center; justify-content: center;
-            color: #66fcf1; font-size: 4rem; font-weight: 950; flex-shrink: 0;
-            box-shadow: 0 0 40px rgba(102, 252, 241, 0.4), inset 0 0 20px rgba(102, 252, 241, 0.2);
-            text-shadow: 0 0 20px rgba(102, 252, 241, 0.6);
-        }
-
         .social-btn-main {
             padding: 14px 28px; border-radius: 14px; font-weight: 900; font-size: 14px; text-decoration: none; text-transform: uppercase; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid transparent; cursor: pointer; letter-spacing: 1px;
         }
@@ -155,9 +141,12 @@ export default async function HomePage({ params }) {
         .social-btn-main.cpuduels { background: rgba(102, 252, 241, 0.1); color: #66fcf1; border-color: rgba(102, 252, 241, 0.3); }
         .social-btn-main.cpuduels:hover { background: #66fcf1; color: #000; box-shadow: 0 10px 25px rgba(102, 252, 241, 0.4); transform: translateY(-3px); }
 
-        /* 🚀 GURU: CSS pro FPS Kalkulačku (Rozjedu to?) */
         .social-btn-main.fpscalc { background: rgba(168, 85, 247, 0.1); color: #a855f7; border-color: rgba(168, 85, 247, 0.3); }
         .social-btn-main.fpscalc:hover { background: #a855f7; color: #fff; box-shadow: 0 10px 25px rgba(168, 85, 247, 0.4); transform: translateY(-3px); }
+
+        /* 🚀 GURU: CSS pro Bottleneck Kalkulačku */
+        .social-btn-main.bottleneck { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); }
+        .social-btn-main.bottleneck:hover { background: #38bdf8; color: #000; box-shadow: 0 10px 25px rgba(56, 189, 248, 0.4); transform: translateY(-3px); }
 
         .social-btn-main.deals { background: rgba(249, 115, 22, 0.1); color: #f97316; border-color: rgba(249, 115, 22, 0.3); }
         .social-btn-main.deals:hover { background: #f97316; color: #fff; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4); transform: translateY(-3px); }
@@ -189,7 +178,6 @@ export default async function HomePage({ params }) {
 
         @media (max-width: 768px) {
           .guru-hero-section { padding: 40px 20px; text-align: center; justify-content: center; }
-          .guru-hero-avatar { margin: 0 auto 30px; }
           .social-btn-main { width: 100%; }
         }
       `}</style>
@@ -219,16 +207,26 @@ export default async function HomePage({ params }) {
               <a href={isEn ? "/en/gpuvs" : "/gpuvs"} className="social-btn-main duels"><Swords size={18}/> {isEn ? 'GPU BATTLES' : 'SOUBOJE GPU'}</a>
               <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="social-btn-main cpuduels"><Cpu size={18}/> {isEn ? 'CPU BATTLES' : 'SOUBOJE CPU'}</a>
               
-              {/* 🚀 GURU: INTEGRACE FPS KALKULAČKY */}
               <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="social-btn-main fpscalc">
                 <Gamepad2 size={18}/> {isEn ? 'CAN I RUN IT?' : 'ROZJEDU TO?'}
+              </a>
+
+              {/* 🚀 GURU: INTEGRACE BOTTLENECK KALKULAČKY */}
+              <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} className="social-btn-main bottleneck">
+                <Layers size={18}/> {isEn ? 'BOTTLENECK' : 'BOTTLENECK'}
               </a>
 
               <a href={isEn ? "/en/deals" : "/cs/deals"} className="social-btn-main deals"><Flame size={18}/> {isEn ? 'GAME DEALS' : 'SLEVY NA HRY'}</a>
               <a href={isEn ? "/en/support" : "/support"} className="social-btn-main support"><Heart size={18}/> {isEn ? 'SUPPORT' : 'PODPOŘIT GURU'}</a>
             </div>
         </div>
-        <div className="guru-hero-avatar">HG</div>
+        <div style={{
+            width: '180px', height: '180px', background: 'linear-gradient(135deg, #0b0c10 0%, #1a1c23 100%)',
+            borderRadius: '50%', border: '4px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#66fcf1', fontSize: '4rem', fontWeight: '950', flexShrink: 0,
+            boxShadow: '0 0 40px rgba(102, 252, 241, 0.4), inset 0 0 20px rgba(102, 252, 241, 0.2)',
+            textShadow: '0 0 20px rgba(102, 252, 241, 0.6)'
+        }}>HG</div>
       </header>
 
       {/* --- MONETIZACE --- */}
