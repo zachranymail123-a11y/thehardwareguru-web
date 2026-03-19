@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { 
   Cpu, Monitor, Zap, AlertTriangle, Crosshair, Settings2, Sparkles, 
   TrendingUp, TrendingDown, Layers, Target, Video, Share2, Check, 
-  Twitter, Award, Swords, Gamepad2, ChevronRight, Play 
+  Twitter, Award, Swords, Gamepad2, ChevronRight, Play, Newspaper, Lightbulb
 } from 'lucide-react';
 
 const RedditIcon = ({ size = 20 }) => (
@@ -17,17 +17,15 @@ const RedditIcon = ({ size = 20 }) => (
 export default function BottleneckClient({ 
     gpus = [], cpus = [], games = [], isEn = false, initialCpuId = '', initialGpuId = '', initialGameSlug = '', initialResolution = '1440p' 
 }) {
+    // --- STAV ---
     const [selectedCpuId, setSelectedCpuId] = useState(initialCpuId);
     const [selectedGpuId, setSelectedGpuId] = useState(initialGpuId);
     const [selectedGameSlug, setSelectedGameSlug] = useState(initialGameSlug);
     const [resolution, setResolution] = useState(initialResolution);
-    
     const [isCalculating, setIsCalculating] = useState(false);
     const [showResult, setShowResult] = useState(!!initialCpuId);
-
     const [enableUpscaling, setEnableUpscaling] = useState(false); 
     const [isStreaming, setIsStreaming] = useState(false); 
-
     const [copied, setCopied] = useState(false);
     const [shareUrl, setShareUrl] = useState('');
 
@@ -55,7 +53,7 @@ export default function BottleneckClient({
 
         let ipcBase = 100; 
         let archEfficiency = 1.0;
-        if (cpuName.includes('x3d')) archEfficiency *= (1 + (1 - game.thread_scaling) * 0.45);
+        if (cpuName.includes('x3d')) archEfficiency *= 1.4;
         if (cpuName.includes('9800x3d')) ipcBase = 135;
         else if (cpuName.includes('7800x3d')) ipcBase = 115;
 
@@ -81,6 +79,8 @@ export default function BottleneckClient({
 
     // 🛠️ ASYNCHRONNÍ KLIENTSKÉ OPERACE
     useEffect(() => {
+        if (typeof window === 'undefined') return;
+        
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
         const sb = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
@@ -102,25 +102,22 @@ export default function BottleneckClient({
         }
     }, [analysis, selectedCpuId, selectedGpuId, selectedGameSlug, resolution, isEn, initialCpuId]);
 
-    // --- 🛠️ HANDLERS ---
+    // --- 🛠️ FUNKCE (FIX: DEFINOVÁNY UVNITŘ KOMPONENTY) ---
     const handleStart = () => {
         setIsCalculating(true);
         setTimeout(() => { setShowResult(true); setIsCalculating(false); }, 800);
     };
 
     const handleCopyShare = () => {
-        const text = isEn ? `🔥 My rig bottleneck result: ${shareUrl}` : `🔥 Moje sestava má v ${analysis?.gameName} přesně ${analysis?.bottleneckPercent}% Bottleneck! 👉 ${shareUrl}`;
-        navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 3000); });
+        navigator.clipboard.writeText(shareUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 3000); });
     };
 
     const handleXShare = () => {
-        const text = isEn ? `🔥 My rig bottleneck result: ${shareUrl}` : `🔥 Moje sestava má přesně ${analysis?.bottleneckPercent}% Bottleneck!`;
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
+        window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`, '_blank');
     };
 
     const handleRedditShare = () => {
-        const title = isEn ? `My PC Bottleneck Analysis` : `Analýza bottlenecku mé sestavy`;
-        window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(title)}`, '_blank');
+        window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}`, '_blank');
     };
 
     const gta6DynamicLink = analysis ? `/${isEn ? 'en/fps-calculator/gta-6-prediction' : 'fps-kalkulacka/gta-6-predikce'}/${(analysis.cpuName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-vs-${(analysis.gpuName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${resolution}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}` : '';
@@ -129,10 +126,10 @@ export default function BottleneckClient({
         <div className="bn-wrapper">
             <div className="bn-header">
                 <div className="pred-badge"><Layers size={16} /> PROFESSIONAL SIMULATOR</div>
-                <h1 style={{ fontSize: '3rem', fontWeight: '950', textTransform: 'uppercase', margin: '10px 0', textShadow: '0 0 20px rgba(102, 252, 241, 0.3)' }}>
+                <h1 style={{ fontSize: '3.5rem', fontWeight: '950', textTransform: 'uppercase', margin: '10px 0', textShadow: '0 0 30px rgba(102, 252, 241, 0.4)' }}>
                     {isEn ? 'System Bottleneck' : 'Bottleneck Kalkulačka'}
                 </h1>
-                <p style={{ color: '#9ca3af', fontSize: '1.1rem' }}>Odhal pravdu o výkonu svého počítače.</p>
+                <p style={{ color: '#9ca3af', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '2px' }}>Všechny stroje mají své slabé místo.</p>
             </div>
 
             <div className="bn-grid">
@@ -186,12 +183,12 @@ export default function BottleneckClient({
                 <div className="bn-result-card">
                     {!analysis ? (
                         <div className="empty-state">
-                            <Crosshair size={48} color="rgba(255,255,255,0.1)" />
-                            <p>Nastav hardware a spusť simulaci.</p>
+                            <Crosshair size={64} color="rgba(255,255,255,0.05)" />
+                            <p style={{ marginTop: '20px', fontWeight: '900', color: '#4b5563' }}>Čekám na instrukce...</p>
                         </div>
                     ) : (
                         <div className="analysis-board">
-                            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                            <div style={{ textAlign: 'center' }}>
                                 <div className={`bound-badge ${analysis.boundType.toLowerCase().replace('_', '-')}`}>
                                     {analysis.boundType.replace('_', ' ')}
                                 </div>
@@ -205,6 +202,10 @@ export default function BottleneckClient({
                                 <div className="metric-box"><div className="m-label">1% LOWS</div><div className="m-val">{analysis.low1Fps}</div></div>
                                 <div className="metric-box"><div className="m-label">LATENCY</div><div className="m-val">{analysis.frameTimeMs}ms</div></div>
                             </div>
+                            <div className="recommendation">
+                                <h4>💡 Guru Verdikt</h4>
+                                <p>{analysis.boundType === 'CPU_BOUND' ? 'Tvoje grafika čeká na procesor. Potřebuješ silnější CPU pro vyrovnaný výkon.' : 'Sestava je limitována hrubým výkonem grafiky. Obraz bude plynulý, ale pro víc FPS sniž detaily.'}</p>
+                            </div>
                             {gta6DynamicLink && (
                                 <a href={gta6DynamicLink} className="gta-cta">
                                     <Sparkles size={20} /> ROZJEDE TO GTA VI?
@@ -217,93 +218,97 @@ export default function BottleneckClient({
 
             <div className="massive-seo-hub">
                 <div className="viral-flex-card">
-                    <div className="award-icon"><Award size={28} color="#a855f7" /></div>
+                    <div className="award-icon"><Award size={32} color="#a855f7" /></div>
                     <div className="viral-text-box">
-                        <div style={{ fontWeight: '950', color: '#fff' }}>SDÍLET KALKULAČKU</div>
-                        <div style={{ fontSize: '11px', color: '#a855f7', fontWeight: 'bold' }}>Pošli tento nástroj přátelům</div>
+                        <div style={{ fontWeight: '950', fontSize: '18px' }}>SDÍLET TENTO NÁSTROJ</div>
+                        <div style={{ color: '#a855f7', fontWeight: 'bold' }}>Pomoz ostatním geekům najít pravdu</div>
                     </div>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                        <button onClick={handleCopyShare} className="premium-share-btn btn-copy" title="Kopírovat">
-                            {copied ? <Check size={18} /> : <Share2 size={18} />}
-                        </button>
-                        <button onClick={handleXShare} className="premium-share-btn btn-x" title="Sdílet na X">
-                            <Twitter size={18} />
-                        </button>
-                        <button onClick={handleRedditShare} className="premium-share-btn btn-reddit" title="Sdílet na Reddit">
-                            <RedditIcon size={18} />
-                        </button>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                        <button onClick={handleCopyShare} className="premium-share-btn btn-copy">{copied ? <Check size={20} /> : <Share2 size={20} />}</button>
+                        <button onClick={handleXShare} className="premium-share-btn btn-x"><Twitter size={20} /></button>
+                        <button onClick={handleRedditShare} className="premium-share-btn btn-reddit"><RedditIcon size={20} /></button>
                     </div>
                 </div>
 
-                <div className="hub-grid" style={{ marginTop: '50px' }}>
+                <div className="hub-grid">
                     <div className="hub-column">
-                        <div className="hub-col-header"><Swords size={16} color="#ff0055" /> Souboje</div>
+                        <div className="hub-col-header"><Swords size={20} color="#ff0055" /> HW Souboje</div>
                         <ul className="hub-links-list">
-                            <li><a href="/gpuvs"><ChevronRight size={14} /> Grafické karty</a></li>
-                            <li><a href="/cpuvs"><ChevronRight size={14} /> Procesory</a></li>
+                            <li><a href="/gpuvs"><ChevronRight size={16} /> Souboje Grafických Karet</a></li>
+                            <li><a href="/cpuvs"><ChevronRight size={16} /> Souboje Procesorů</a></li>
                         </ul>
                     </div>
                     <div className="hub-column">
-                        <div className="hub-col-header"><Gamepad2 size={16} color="#66fcf1" /> Guru Hub</div>
+                        <div className="hub-col-header"><Gamepad2 size={20} color="#66fcf1" /> Guru Ekosystém</div>
                         <ul className="hub-links-list">
-                            <li><a href="/ocekavane-hry"><ChevronRight size={14} /> Archiv her</a></li>
-                            <li><a href="/cs/deals"><ChevronRight size={14} /> Slevy na hry</a></li>
+                            <li><a href="/ocekavane-hry"><ChevronRight size={16} /> Archiv Očekávaných Her</a></li>
+                            <li><a href="/clanky"><ChevronRight size={16} /> Novinky a HW Články</a></li>
+                            <li><a href="/tipy"><ChevronRight size={16} /> GURU Tipy a Rady</a></li>
                         </ul>
                     </div>
                 </div>
             </div>
 
             <style dangerouslySetInnerHTML={{__html: `
-                .bn-wrapper { background: rgba(10, 11, 13, 0.95); color: #fff; border-radius: 30px; padding: 50px; border: 1px solid rgba(102, 252, 241, 0.1); backdrop-filter: blur(10px); }
-                .bn-header { text-align: center; margin-bottom: 50px; }
-                .pred-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-weight: 950; padding: 8px 25px; border-radius: 50px; background: rgba(168, 85, 247, 0.1); margin-bottom: 25px; text-transform: uppercase; font-size: 12px; border: 1px solid rgba(168, 85, 247, 0.2); }
-                .bn-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 40px; }
-                @media (max-width: 900px) { .bn-grid { grid-template-columns: 1fr; } }
-                .bn-inputs-card { background: rgba(255, 255, 255, 0.02); border-radius: 24px; padding: 35px; border: 1px solid rgba(255, 255, 255, 0.05); }
-                .section-title { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 950; color: #fff; margin-bottom: 30px; text-transform: uppercase; }
-                .input-group { margin-bottom: 25px; }
-                .input-group label { display: block; font-size: 12px; font-weight: 950; color: #9ca3af; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
-                .bn-select { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; outline: none; transition: 0.3s; }
-                .bn-select:focus { border-color: #a855f7; }
-                .res-toggles { display: flex; gap: 10px; }
-                .res-btn { flex: 1; padding: 12px; background: #000; border: 1px solid #333; color: #9ca3af; border-radius: 10px; font-weight: 950; cursor: pointer; transition: 0.3s; }
-                .res-btn.active { border-color: #a855f7; color: #fff; background: rgba(168, 85, 247, 0.15); }
-                .start-btn { width: 100%; margin-top: 20px; padding: 18px; background: #a855f7; color: #fff; border: none; border-radius: 14px; font-weight: 950; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; transition: 0.4s; text-transform: uppercase; font-size: 15px; }
-                .start-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4); }
-                .start-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-                .bn-result-card { background: linear-gradient(145deg, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0.4) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 24px; padding: 40px; display: flex; align-items: center; justify-content: center; min-height: 500px; }
-                .pct-value { font-size: 7rem; font-weight: 950; text-align: center; color: #fff; text-shadow: 0 0 40px rgba(168, 85, 247, 0.6); line-height: 1; }
-                .pct-label { text-align: center; color: #a855f7; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; margin-top: 10px; }
-                .pro-metrics-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin: 40px 0; }
-                .metric-box { background: rgba(0,0,0,0.5); padding: 20px; border-radius: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.03); }
-                .m-label { font-size: 11px; color: #666; font-weight: 950; text-transform: uppercase; margin-bottom: 5px; }
-                .m-val { font-size: 24px; font-weight: 950; color: #fff; }
-                .gta-cta { display: flex; align-items: center; justify-content: center; gap: 12px; background: #f43f5e; color: #fff; padding: 18px; border-radius: 14px; text-decoration: none; font-weight: 950; margin-top: 30px; transition: 0.3s; box-shadow: 0 10px 25px rgba(244, 63, 94, 0.3); }
-                .gta-cta:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(244, 63, 94, 0.4); }
-                .viral-flex-card { display: flex; align-items: center; gap: 20px; padding: 25px; background: #000; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 20px; margin-top: 60px; }
-                .premium-share-btn { width: 44px; height: 44px; border-radius: 12px; border: none; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-                .btn-copy { background: #a855f7; }
-                .btn-x { background: #111; border: 1px solid #333; }
-                .btn-reddit { background: #ff4500; }
-                .premium-share-btn:hover { transform: translateY(-3px); filter: brightness(1.2); }
-                .massive-seo-hub { margin-top: 80px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 50px; }
-                .hub-main-title { text-align: center; text-transform: uppercase; font-weight: 950; letter-spacing: 2px; margin-bottom: 40px; }
-                .hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-                .hub-column { background: rgba(255,255,255,0.02); padding: 25px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.03); }
-                .hub-col-header { display: flex; align-items: center; gap: 10px; font-weight: 950; text-transform: uppercase; margin-bottom: 20px; font-size: 14px; }
+                .bn-wrapper { background: rgba(10, 11, 13, 0.9); color: #fff; border-radius: 40px; padding: 60px; border: 1px solid rgba(102, 252, 241, 0.1); backdrop-filter: blur(20px); box-shadow: 0 50px 100px rgba(0,0,0,0.5); }
+                .bn-header { text-align: center; margin-bottom: 60px; }
+                .pred-badge { display: inline-flex; align-items: center; gap: 10px; color: #a855f7; font-weight: 950; padding: 10px 30px; border-radius: 50px; background: rgba(168, 85, 247, 0.1); margin-bottom: 30px; text-transform: uppercase; font-size: 13px; border: 1px solid rgba(168, 85, 247, 0.2); }
+                .bn-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 50px; }
+                @media (max-width: 1000px) { .bn-grid { grid-template-columns: 1fr; } }
+                .bn-inputs-card { background: rgba(255, 255, 255, 0.02); border-radius: 30px; padding: 40px; border: 1px solid rgba(255, 255, 255, 0.05); }
+                .section-title { display: flex; align-items: center; gap: 15px; font-size: 20px; font-weight: 950; color: #fff; margin-bottom: 40px; text-transform: uppercase; border-left: 4px solid #a855f7; padding-left: 15px; }
+                .input-group { margin-bottom: 30px; }
+                .input-group label { display: block; font-size: 13px; font-weight: 950; color: #9ca3af; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 2px; }
+                .bn-select { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; outline: none; transition: 0.3s; font-size: 16px; }
+                .bn-select:focus { border-color: #a855f7; box-shadow: 0 0 20px rgba(168, 85, 247, 0.2); }
+                .res-toggles { display: flex; gap: 15px; }
+                .res-btn { flex: 1; padding: 15px; background: #000; border: 1px solid #222; color: #9ca3af; border-radius: 12px; font-weight: 950; cursor: pointer; transition: 0.3s; font-size: 14px; }
+                .res-btn.active { border-color: #a855f7; color: #fff; background: rgba(168, 85, 247, 0.15); box-shadow: 0 0 20px rgba(168, 85, 247, 0.1); }
+                .start-btn { width: 100%; margin-top: 30px; padding: 22px; background: #a855f7; color: #fff; border: none; border-radius: 18px; font-weight: 950; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 15px; transition: 0.4s; text-transform: uppercase; font-size: 18px; box-shadow: 0 20px 40px rgba(168, 85, 247, 0.2); }
+                .start-btn:hover:not(:disabled) { transform: translateY(-5px); box-shadow: 0 25px 50px rgba(168, 85, 247, 0.4); background: #c084fc; }
+                .start-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+                .bn-result-card { background: linear-gradient(145deg, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0.6) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 30px; padding: 50px; display: flex; align-items: center; justify-content: center; min-height: 600px; box-shadow: inset 0 0 50px rgba(0,0,0,0.5); }
+                .pct-value { font-size: 9rem; font-weight: 950; text-align: center; color: #fff; text-shadow: 0 0 60px rgba(168, 85, 247, 0.8); line-height: 0.9; }
+                .pct-label { text-align: center; color: #a855f7; font-weight: 950; text-transform: uppercase; letter-spacing: 4px; margin-top: 20px; font-size: 18px; }
+                .pro-metrics-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin: 50px 0; }
+                .metric-box { background: rgba(0,0,0,0.8); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
+                .metric-box:hover { border-color: rgba(168, 85, 247, 0.4); transform: translateY(-5px); }
+                .m-label { font-size: 12px; color: #666; font-weight: 950; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+                .m-val { font-size: 32px; font-weight: 950; color: #fff; }
+                .gta-cta { display: flex; align-items: center; justify-content: center; gap: 15px; background: #f43f5e; color: #fff; padding: 22px; border-radius: 18px; text-decoration: none; font-weight: 950; margin-top: 40px; transition: 0.4s; box-shadow: 0 20px 40px rgba(244, 63, 94, 0.3); font-size: 16px; text-transform: uppercase; }
+                .gta-cta:hover { transform: translateY(-5px); box-shadow: 0 30px 60px rgba(244, 63, 94, 0.5); background: #fb7185; }
+                .viral-flex-card { display: flex; align-items: center; gap: 30px; padding: 40px; background: rgba(0,0,0,0.5); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 30px; margin-top: 80px; backdrop-filter: blur(10px); }
+                @media (max-width: 768px) { .viral-flex-card { flex-direction: column; text-align: center; } }
+                .premium-share-btn { width: 60px; height: 60px; border-radius: 18px; border: none; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+                .btn-copy { background: #a855f7; box-shadow: 0 10px 20px rgba(168, 85, 247, 0.2); }
+                .btn-x { background: #000; border: 1px solid #333; }
+                .btn-reddit { background: #ff4500; box-shadow: 0 10px 20px rgba(255, 69, 0, 0.2); }
+                .premium-share-btn:hover { transform: translateY(-5px) scale(1.1); filter: brightness(1.2); }
+                .massive-seo-hub { margin-top: 100px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 70px; }
+                .hub-main-title { text-align: center; text-transform: uppercase; font-weight: 950; letter-spacing: 5px; margin-bottom: 60px; font-size: 24px; color: #fff; }
+                .hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+                @media (max-width: 768px) { .hub-grid { grid-template-columns: 1fr; } }
+                .hub-column { background: rgba(255,255,255,0.02); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
+                .hub-column:hover { background: rgba(255,255,255,0.04); border-color: rgba(102, 252, 241, 0.2); }
+                .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 30px; font-size: 18px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
                 .hub-links-list { list-style: none; padding: 0; }
-                .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 14px; display: flex; align-items: center; margin-bottom: 12px; font-weight: bold; transition: 0.2s; }
-                .hub-links-list a:hover { color: #fff; transform: translateX(5px); }
-                .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
-                .toggle-row { display: flex; align-items: center; gap: 10px; cursor: pointer; background: #000; padding: 12px; border-radius: 12px; font-size: 11px; font-weight: 950; border: 1px solid #222; }
-                .switch { width: 34px; height: 18px; background: #333; border-radius: 10px; position: relative; transition: 0.3s; }
-                .switch::after { content: ''; position: absolute; width: 14px; height: 14px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: 0.3s; }
+                .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 16px; display: flex; align-items: center; margin-bottom: 18px; font-weight: bold; transition: 0.3s; }
+                .hub-links-list a:hover { color: #66fcf1; transform: translateX(10px); }
+                .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+                .toggle-row { display: flex; align-items: center; gap: 15px; cursor: pointer; background: #000; padding: 18px; border-radius: 15px; font-size: 13px; font-weight: 950; border: 1px solid #222; transition: 0.3s; }
+                .toggle-row:hover { border-color: #a855f7; }
+                .switch { width: 44px; height: 24px; background: #333; border-radius: 20px; position: relative; transition: 0.3s; }
+                .switch::after { content: ''; position: absolute; width: 18px; height: 18px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: 0.3s; }
                 .switch.on { background: #a855f7; }
-                .switch.on::after { left: 18px; }
+                .switch.on::after { left: 23px; }
                 .spin { animation: spin 1s linear infinite; }
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .bound-badge { display: inline-block; padding: 8px 25px; border-radius: 50px; background: rgba(168, 85, 247, 0.1); border: 1px solid #a855f7; font-weight: 950; text-transform: uppercase; font-size: 13px; letter-spacing: 1px; color: #fff; }
-                .bn-divider { border: 0; height: 1px; background: rgba(255,255,255,0.05); margin: 30px 0; }
+                .bound-badge { display: inline-block; padding: 12px 40px; border-radius: 50px; background: rgba(168, 85, 247, 0.1); border: 2px solid #a855f7; font-weight: 950; text-transform: uppercase; font-size: 15px; letter-spacing: 3px; color: #fff; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(168, 85, 247, 0.3); }
+                .bn-divider { border: 0; height: 1px; background: rgba(255,255,255,0.05); margin: 40px 0; }
+                .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+                .recommendation { background: rgba(0,0,0,0.4); padding: 35px; border-radius: 25px; border-top: 4px solid #a855f7; }
+                .recommendation h4 { font-size: 18px; font-weight: 950; text-transform: uppercase; margin-bottom: 15px; color: #fff; }
+                .recommendation p { font-size: 15px; color: #9ca3af; lineHeight: 1.6; }
             `}} />
         </div>
     );
