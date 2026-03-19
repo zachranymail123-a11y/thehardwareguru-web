@@ -43,11 +43,12 @@ export default function BottleneckClient({
 
     const [copied, setCopied] = useState(false);
 
+    // 🚀 ENGINE ANALÝZA
     const analysis = useMemo(() => {
         if ((!selectedCpuId && !isCustomCpu) || (!selectedGpuId && !isCustomGpu) || !selectedGameSlug) return null;
 
-        const cpu = isCustomCpu ? { name: 'Custom CPU', performance_index: customCpuScore } : cpus.find(c => c.id === selectedCpuId);
-        const gpu = isCustomGpu ? { name: 'Custom GPU', performance_index: customGpuScore, vram_gb: customVram } : gpus.find(g => g.id === selectedGpuId);
+        const cpu = isCustomCpu ? { name: 'Custom CPU', performance_index: customCpuScore } : cpus.find(c => String(c.id) === String(selectedCpuId));
+        const gpu = isCustomGpu ? { name: 'Custom GPU', performance_index: customGpuScore, vram_gb: customVram } : gpus.find(g => String(g.id) === String(selectedGpuId));
         const baseGame = games.find(g => g.slug === selectedGameSlug) || { name: 'Obecná hra', slug: 'generic' };
 
         if (!cpu || !gpu) return null;
@@ -85,7 +86,7 @@ export default function BottleneckClient({
         if (isCustomCpu) ipcBase = customCpuScore * 0.8; 
 
         let singleCoreScore = ipcBase;
-        let multiCoreScore = cpu.performance_index;
+        let multiCoreScore = cpu.performance_index || 100;
 
         if (cpuName.includes('x3d')) archEfficiency *= (1 + (1 - game.thread_scaling) * 0.45);
 
@@ -94,7 +95,7 @@ export default function BottleneckClient({
         if (game.api === 'dx11' && (gpuName.includes('rx ') || gpuName.includes('radeon'))) cpuEffective *= 0.90; 
 
         const resMultiplier = { '1080p': 1.0, '1440p': 1.5, '2160p': 2.4 }[resolution];
-        let gpuEffective = gpu.performance_index / resMultiplier;
+        let gpuEffective = (gpu.performance_index || 100) / resMultiplier;
 
         if (isCompSettings) {
             gpuEffective *= 1.4; 
@@ -164,13 +165,13 @@ export default function BottleneckClient({
 
     }, [selectedCpuId, selectedGpuId, selectedGameSlug, resolution, targetFps, enableRt, enableUpscaling, isStreaming, isCompSettings, isCustomCpu, isCustomGpu, customCpuScore, customGpuScore, customVram, cpus, gpus, games]);
 
-    // Generování share linků dynamicky při renderu (aby karta nezmizela)
+    // ODKAZY
     let generatedShareUrl = `https://thehardwareguru.cz/${isEn ? 'en/bottleneck-calculator' : 'bottleneck-kalkulacka'}`;
     let gta6DynamicLink = '';
     
     if (analysis && selectedCpuId && selectedGpuId && selectedGameSlug && !isCustomCpu && !isCustomGpu) {
-        const cpu = cpus.find(c => c.id === selectedCpuId);
-        const gpu = gpus.find(g => g.id === selectedGpuId);
+        const cpu = cpus.find(c => String(c.id) === String(selectedCpuId));
+        const gpu = gpus.find(g => String(g.id) === String(selectedGpuId));
         
         if (cpu && gpu) {
             const cleanCpu = cpu.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -182,11 +183,11 @@ export default function BottleneckClient({
         }
     }
 
-    // SEO zápis do DB (běží na pozadí)
+    // ZÁPIS DO DB
     useEffect(() => {
         if (analysis && selectedCpuId && selectedGpuId && selectedGameSlug && !isCustomCpu && !isCustomGpu) {
-            const cpu = cpus.find(c => c.id === selectedCpuId);
-            const gpu = gpus.find(g => g.id === selectedGpuId);
+            const cpu = cpus.find(c => String(c.id) === String(selectedCpuId));
+            const gpu = gpus.find(g => String(g.id) === String(selectedGpuId));
             if (cpu && gpu) {
                 const cleanCpu = cpu.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
                 const cleanGpu = gpu.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -205,7 +206,9 @@ export default function BottleneckClient({
     }, [analysis, selectedCpuId, selectedGpuId, selectedGameSlug, resolution, isCustomCpu, isCustomGpu, cpus, gpus, isEn]);
 
     const getShareText = () => {
-        if (!analysis) return '';
+        if (!analysis) {
+            return isEn ? `🔥 Test your PC with the Guru Bottleneck Simulator! 🚀` : `🔥 Otestuj svůj PC v profesionálním GURU Bottleneck Simulátoru! 🚀`;
+        }
         const hwText = (!isCustomCpu && !isCustomGpu) ? `${analysis.cpuName} + ${analysis.gpuName}` : 'Můj PC';
         if (isEn) {
             return `🔥 My rig (${hwText}) has a ${analysis.bottleneckPercent}% ${analysis.boundType.replace('_', ' ')} in ${analysis.gameName} on ${resolution}! What's yours? 🚀`;
@@ -382,30 +385,6 @@ export default function BottleneckClient({
                                 </div>
                             </div>
 
-                            {/* VIRÁLNÍ KARTA - VŽDY VIDITELNÁ POKUD MÁME VÝSLEDEK */}
-                            <div className="viral-flex-card" style={{ marginTop: '30px', marginBottom: '30px' }}>
-                                <div className="award-icon"><Award size={28} color="#fff" /></div>
-                                <div className="viral-text-box">
-                                    <div style={{ fontSize: '14px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                        {isEn ? 'SIMULATION COMPLETE' : 'SIMULACE DOKONČENA'}
-                                    </div>
-                                    <div style={{ fontSize: '11px', color: '#a855f7', fontWeight: 'bold' }}>
-                                        {isEn ? 'Share your result online' : 'Pochlub se výsledkem online'}
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                                    <button onClick={handleCopyShare} className="premium-share-btn btn-copy" title={isEn ? "Copy Link" : "Kopírovat odkaz"}>
-                                        {copied ? <Check className="check-anim" size={18} /> : <Share2 size={18} />}
-                                    </button>
-                                    <button onClick={handleXShare} className="premium-share-btn btn-x" title="X">
-                                        <Twitter size={18} />
-                                    </button>
-                                    <button onClick={handleRedditShare} className="premium-share-btn btn-reddit" title="Reddit">
-                                        <RedditIcon size={18} />
-                                    </button>
-                                </div>
-                            </div>
-
                             {isStreaming && (
                                 <div className="warning-box info">
                                     <Video size={18} color="#60a5fa" style={{flexShrink: 0}} />
@@ -441,77 +420,93 @@ export default function BottleneckClient({
                 </div>
             </div>
 
-            {/* 🔥 MASIVNÍ INTERNÍ PROLINKOVÁNÍ (Zobrazí se až po výsledku) */}
-            {analysis && (
-                <div className="massive-seo-hub">
-                    
-                    {/* 💰 ADSENSE SLOT ROVNOU U KLIENTA */}
-                    <div style={{ margin: '0 0 40px 0', minHeight: '120px', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px dashed rgba(168, 85, 247, 0.3)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontSize: '10px', color: '#4b5563', margin: '15px 0', fontWeight: 'bold', letterSpacing: '2px' }}>SPONZOROVANÝ OBSAH</span>
-                        <ins className="adsbygoogle"
-                             style={{ display: 'block', width: '100%' }}
-                             data-ad-client="ca-pub-5468223287024993"
-                             data-ad-slot="1234567890" 
-                             data-ad-format="auto"
-                             data-full-width-responsive="true"></ins>
-                    </div>
+            {/* 🔥 MASIVNÍ INTERNÍ PROLINKOVÁNÍ A SDÍLENÍ - ZOBRAZENO VŽDY POD KALKULAČKOU */}
+            <div className="massive-seo-hub">
 
-                    <h3 className="hub-main-title">
-                        {isEn ? 'Explore The Hardware Guru Ecosystem' : 'Prozkoumej ekosystém The Hardware Guru'}
-                    </h3>
-                    
-                    <div className="hub-grid">
-                        <div className="hub-column">
-                            <div className="hub-col-header"><Swords size={16} color="#f43f5e" /> {isEn ? 'Top HW Duels' : 'Nejžádanější HW Duely'}</div>
-                            <ul className="hub-links-list">
-                                <li><a href={isEn ? "/en/bottleneck-calculator/ryzen-7-7800x3d-vs-rtx-4070-super-cyberpunk-2077-1440p" : "/bottleneck-kalkulacka/ryzen-7-7800x3d-vs-rtx-4070-super-cyberpunk-2077-1440p"}><ChevronRight size={14} /> Ryzen 7 7800X3D vs RTX 4070 SUPER</a></li>
-                                <li><a href={isEn ? "/en/bottleneck-calculator/core-i5-13600k-vs-rx-7800-xt-cs2-1080p" : "/bottleneck-kalkulacka/core-i5-13600k-vs-rx-7800-xt-cs2-1080p"}><ChevronRight size={14} /> Core i5 13600K vs RX 7800 XT</a></li>
-                                <li><a href={isEn ? "/en/bottleneck-calculator/ryzen-5-5600-vs-rtx-4060-valorant-1080p" : "/bottleneck-kalkulacka/ryzen-5-5600-vs-rtx-4060-valorant-1080p"}><ChevronRight size={14} /> Ryzen 5 5600 vs RTX 4060</a></li>
-                            </ul>
+                {/* VIRÁLNÍ KARTA - VŽDY VIDITELNÁ PRO SDÍLENÍ WEBU */}
+                <div className="viral-flex-card" style={{ marginBottom: '30px' }}>
+                    <div className="award-icon"><Award size={28} color="#fff" /></div>
+                    <div className="viral-text-box">
+                        <div style={{ fontSize: '14px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                            {analysis ? (isEn ? 'SIMULATION COMPLETE' : 'SIMULACE DOKONČENA') : (isEn ? 'SHARE CALCULATOR' : 'SDÍLET KALKULAČKU')}
                         </div>
-
-                        <div className="hub-column">
-                            <div className="hub-col-header"><Gamepad2 size={16} color="#a855f7" /> {isEn ? 'Anticipated Games' : 'Očekávané Herní Pecky'}</div>
-                            <ul className="hub-links-list">
-                                <li><a href={isEn ? "/en/fps-calculator/gta-6-prediction" : "/fps-kalkulacka/gta-6-predikce"}><ChevronRight size={14} /> GTA VI - {isEn ? 'HW Requirements' : 'Hardwarové Nároky'}</a></li>
-                                <li><a href="/clanky"><ChevronRight size={14} /> Mafia: The Old Country - {isEn ? 'Analysis' : 'Rozbor Výkonu'}</a></li>
-                                <li><a href="/clanky"><ChevronRight size={14} /> Kingdom Come: Deliverance II</a></li>
-                            </ul>
-                        </div>
-
-                        <div className="hub-column">
-                            <div className="hub-col-header"><Lightbulb size={16} color="#fbbf24" /> {isEn ? 'Guru Tips' : 'GURU Tipy a Rady'}</div>
-                            <ul className="hub-links-list">
-                                <li><a href="/tipy"><ChevronRight size={14} /> {isEn ? 'Why VRAM is crucial in 2026' : 'Proč nepodceňovat VRAM u nových her?'}</a></li>
-                                <li><a href="/tipy"><ChevronRight size={14} /> {isEn ? 'DLSS vs FSR - Which is better?' : 'DLSS vs FSR - Co zvedne FPS více?'}</a></li>
-                                <li><a href="/tipy"><ChevronRight size={14} /> {isEn ? 'How to fix 1% Lows stuttering' : 'Jak opravit stuttering a špatné 1% Lows'}</a></li>
-                            </ul>
-                        </div>
-
-                        <div className="hub-column">
-                            <div className="hub-col-header"><Newspaper size={16} color="#38bdf8" /> {isEn ? 'Latest Articles' : 'Nejnovější Články'}</div>
-                            <ul className="hub-links-list">
-                                <li><a href="/clanky"><ChevronRight size={14} /> {isEn ? 'Best GPUs for 1440p gaming' : 'Nejlepší grafické karty pro hraní ve 1440p'}</a></li>
-                                <li><a href="/clanky"><ChevronRight size={14} /> {isEn ? 'AMD X3D vs Intel Core Ultra' : 'Souboj titánů: AMD X3D vs Intel Core Ultra'}</a></li>
-                                <li><a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"}><ChevronRight size={14} /> {isEn ? 'FPS Calculator Database' : 'Velká databáze FPS výsledků'}</a></li>
-                            </ul>
+                        <div style={{ fontSize: '11px', color: '#a855f7', fontWeight: 'bold' }}>
+                            {analysis ? (isEn ? 'Share your result online' : 'Pochlub se výsledkem online') : (isEn ? 'Share this tool with friends' : 'Pošli tento nástroj přátelům')}
                         </div>
                     </div>
-
-                    {dynamicGta6Link && (
-                        <div className="dynamic-cta-box">
-                            <Sparkles size={24} color="#f43f5e" className="pulse-icon" />
-                            <div>
-                                <h4>{isEn ? 'Will this exact PC run GTA VI?' : 'Zajímá tě, jestli tahle sestava rozjede GTA VI?'}</h4>
-                                <p>{isEn ? `Check the FPS prediction for ${analysis.cpuName} + ${analysis.gpuName}.` : `Podívej se na přesnou FPS predikci pro ${analysis.cpuName} a ${analysis.gpuName}.`}</p>
-                            </div>
-                            <a href={dynamicGta6Link} className="action-btn gta-btn">
-                                {isEn ? 'CHECK GTA VI PREDICTION' : 'ZJISTIT FPS V GTA VI'}
-                            </a>
-                        </div>
-                    )}
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        <button onClick={handleCopyShare} className="premium-share-btn btn-copy" title={isEn ? "Copy Link" : "Kopírovat odkaz"}>
+                            {copied ? <Check className="check-anim" size={18} /> : <Share2 size={18} />}
+                        </button>
+                        <button onClick={handleXShare} className="premium-share-btn btn-x" title="X">
+                            <Twitter size={18} />
+                        </button>
+                        <button onClick={handleRedditShare} className="premium-share-btn btn-reddit" title="Reddit">
+                            <RedditIcon size={18} />
+                        </button>
+                    </div>
                 </div>
-            )}
+
+                <h3 className="hub-main-title">
+                    {isEn ? 'Explore The Hardware Guru Ecosystem' : 'Prozkoumej ekosystém The Hardware Guru'}
+                </h3>
+                
+                <div className="hub-grid">
+                    {/* HUB 1: Duely */}
+                    <div className="hub-column">
+                        <div className="hub-col-header"><Swords size={16} color="#f43f5e" /> {isEn ? 'Top HW Duels' : 'Nejžádanější HW Duely'}</div>
+                        <ul className="hub-links-list">
+                            <li><a href={isEn ? "/en/bottleneck-calculator/ryzen-7-7800x3d-vs-rtx-4070-super-cyberpunk-2077-1440p" : "/bottleneck-kalkulacka/ryzen-7-7800x3d-vs-rtx-4070-super-cyberpunk-2077-1440p"}><ChevronRight size={14} /> Ryzen 7 7800X3D vs RTX 4070 SUPER</a></li>
+                            <li><a href={isEn ? "/en/bottleneck-calculator/core-i5-13600k-vs-rx-7800-xt-cs2-1080p" : "/bottleneck-kalkulacka/core-i5-13600k-vs-rx-7800-xt-cs2-1080p"}><ChevronRight size={14} /> Core i5 13600K vs RX 7800 XT</a></li>
+                            <li><a href={isEn ? "/en/bottleneck-calculator/ryzen-5-5600-vs-rtx-4060-valorant-1080p" : "/bottleneck-kalkulacka/ryzen-5-5600-vs-rtx-4060-valorant-1080p"}><ChevronRight size={14} /> Ryzen 5 5600 vs RTX 4060</a></li>
+                        </ul>
+                    </div>
+
+                    {/* HUB 2: Hry */}
+                    <div className="hub-column">
+                        <div className="hub-col-header"><Gamepad2 size={16} color="#a855f7" /> {isEn ? 'Anticipated Games' : 'Očekávané Herní Pecky'}</div>
+                        <ul className="hub-links-list">
+                            <li><a href={isEn ? "/en/fps-calculator/gta-6-prediction" : "/fps-kalkulacka/gta-6-predikce"}><ChevronRight size={14} /> GTA VI - {isEn ? 'HW Requirements' : 'Hardwarové Nároky'}</a></li>
+                            <li><a href="/clanky"><ChevronRight size={14} /> Mafia: The Old Country - {isEn ? 'Analysis' : 'Rozbor Výkonu'}</a></li>
+                            <li><a href="/clanky"><ChevronRight size={14} /> Kingdom Come: Deliverance II</a></li>
+                        </ul>
+                    </div>
+
+                    {/* HUB 3: Tipy */}
+                    <div className="hub-column">
+                        <div className="hub-col-header"><Lightbulb size={16} color="#fbbf24" /> {isEn ? 'Guru Tips' : 'GURU Tipy a Rady'}</div>
+                        <ul className="hub-links-list">
+                            <li><a href="/tipy"><ChevronRight size={14} /> {isEn ? 'Why VRAM is crucial in 2026' : 'Proč nepodceňovat VRAM u nových her?'}</a></li>
+                            <li><a href="/tipy"><ChevronRight size={14} /> {isEn ? 'DLSS vs FSR - Which is better?' : 'DLSS vs FSR - Co zvedne FPS více?'}</a></li>
+                            <li><a href="/tipy"><ChevronRight size={14} /> {isEn ? 'How to fix 1% Lows stuttering' : 'Jak opravit stuttering a špatné 1% Lows'}</a></li>
+                        </ul>
+                    </div>
+
+                    {/* HUB 4: Články */}
+                    <div className="hub-column">
+                        <div className="hub-col-header"><Newspaper size={16} color="#38bdf8" /> {isEn ? 'Latest Articles' : 'Nejnovější Články'}</div>
+                        <ul className="hub-links-list">
+                            <li><a href="/clanky"><ChevronRight size={14} /> {isEn ? 'Best GPUs for 1440p gaming' : 'Nejlepší grafické karty pro hraní ve 1440p'}</a></li>
+                            <li><a href="/clanky"><ChevronRight size={14} /> {isEn ? 'AMD X3D vs Intel Core Ultra' : 'Souboj titánů: AMD X3D vs Intel Core Ultra'}</a></li>
+                            <li><a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"}><ChevronRight size={14} /> {isEn ? 'FPS Calculator Database' : 'Velká databáze FPS výsledků'}</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                {/* Dynamická nabídka na GTA 6 kalkulaci (Zobrazí se až po analýze aktuálního HW) */}
+                {analysis && dynamicGta6Link && (
+                    <div className="dynamic-cta-box">
+                        <Sparkles size={24} color="#f43f5e" className="pulse-icon" />
+                        <div>
+                            <h4>{isEn ? 'Will this exact PC run GTA VI?' : 'Zajímá tě, jestli tahle sestava rozjede GTA VI?'}</h4>
+                            <p>{isEn ? `Check the FPS prediction for ${analysis.cpuName} + ${analysis.gpuName}.` : `Podívej se na přesnou FPS predikci pro ${analysis.cpuName} a ${analysis.gpuName}.`}</p>
+                        </div>
+                        <a href={dynamicGta6Link} className="action-btn gta-btn">
+                            {isEn ? 'CHECK GTA VI PREDICTION' : 'ZJISTIT FPS V GTA VI'}
+                        </a>
+                    </div>
+                )}
+            </div>
 
             <style dangerouslySetInnerHTML={{__html: `
                 .bn-wrapper { background: #0a0b0d; color: #fff; border-radius: 24px; padding: 40px; }
@@ -614,7 +609,7 @@ export default function BottleneckClient({
                 .hub-links-list a svg { flex-shrink: 0; margin-top: 2px; }
 
                 /* DYNAMIC CTA BOX */
-                .dynamic-cta-box { display: flex; align-items: center; justify-content: space-between; gap: 20px; background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(0,0,0,0.5)); border: 1px solid rgba(244, 63, 94, 0.3); padding: 30px; border-radius: 20px; text-align: left; }
+                .dynamic-cta-box { display: flex; align-items: center; justify-content: space-between; gap: 20px; background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(0,0,0,0.5)); border: 1px solid rgba(244, 63, 94, 0.3); padding: 30px; border-radius: 20px; text-align: left; margin-top: 40px; }
                 .dynamic-cta-box h4 { margin: 0 0 5px 0; font-size: 18px; font-weight: 950; color: #fff; text-transform: uppercase; }
                 .dynamic-cta-box p { margin: 0; font-size: 14px; color: #d1d5db; font-weight: 500; }
                 .action-btn { display: inline-flex; align-items: center; gap: 10px; padding: 15px 30px; border-radius: 14px; font-weight: 950; font-size: 13px; text-decoration: none; transition: 0.3s; color: #fff; text-transform: uppercase; flex-shrink: 0; }
