@@ -53,7 +53,6 @@ export default function BottleneckClient({
 
         if (!cpu || !gpu) return null;
 
-        // OCHRANA PROTI PÁDU APLIKACE PŘI PRÁZDNÉM NÁZVU V DB
         const cpuName = (cpu.name || '').toLowerCase();
         const gpuName = (gpu.name || '').toLowerCase();
 
@@ -166,7 +165,7 @@ export default function BottleneckClient({
 
     }, [selectedCpuId, selectedGpuId, selectedGameSlug, resolution, targetFps, enableRt, enableUpscaling, isStreaming, isCompSettings, isCustomCpu, isCustomGpu, customCpuScore, customGpuScore, customVram, cpus, gpus, games]);
 
-    // ODKAZY A SDÍLENÍ
+    // ODKAZY
     let generatedShareUrl = `https://thehardwareguru.cz/${isEn ? 'en/bottleneck-calculator' : 'bottleneck-kalkulacka'}`;
     let gta6DynamicLink = '';
     
@@ -421,10 +420,9 @@ export default function BottleneckClient({
                 </div>
             </div>
 
-            {/* 🔥 MASIVNÍ INTERNÍ PROLINKOVÁNÍ A SDÍLENÍ - ZOBRAZENO VŽDY POD KALKULAČKOU */}
+            {/* 🔥 MASIVNÍ INTERNÍ PROLINKOVÁNÍ A SDÍLENÍ - ZOBRAZENO VŽDY */}
             <div className="massive-seo-hub">
 
-                {/* VIRÁLNÍ KARTA - VŽDY VIDITELNÁ PRO SDÍLENÍ WEBU */}
                 <div className="viral-flex-card" style={{ marginBottom: '30px' }}>
                     <div className="award-icon"><Award size={28} color="#fff" /></div>
                     <div className="viral-text-box">
@@ -448,22 +446,31 @@ export default function BottleneckClient({
                     </div>
                 </div>
 
+                {/* 💰 ADSENSE SLOT */}
+                <div style={{ margin: '0 0 40px 0', minHeight: '120px', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px dashed rgba(168, 85, 247, 0.3)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '10px', color: '#4b5563', margin: '15px 0', fontWeight: 'bold', letterSpacing: '2px' }}>SPONZOROVANÝ OBSAH</span>
+                    <ins className="adsbygoogle"
+                         style={{ display: 'block', width: '100%' }}
+                         data-ad-client="ca-pub-5468223287024993"
+                         data-ad-slot="1234567890" 
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                </div>
+
                 <h3 className="hub-main-title">
                     {isEn ? 'Explore The Hardware Guru Ecosystem' : 'Prozkoumej ekosystém The Hardware Guru'}
                 </h3>
                 
                 <div className="hub-grid">
-                    {/* HUB 1: Duely */}
                     <div className="hub-column">
-                        <div className="hub-col-header"><Swords size={16} color="#f43f5e" /> {isEn ? 'Top HW Duels' : 'Nejžádanější HW Duely'}</div>
+                        <div className="hub-col-header"><Swords size={16} color="#f43f5e" /> {isEn ? 'HW Duels' : 'HW Duely a Souboje'}</div>
                         <ul className="hub-links-list">
                             <li><a href={isEn ? "/en/gpuvs" : "/gpuvs"}><ChevronRight size={14} /> {isEn ? 'GPU Battles Engine' : 'Souboje Grafických Karet'}</a></li>
                             <li><a href={isEn ? "/en/cpuvs" : "/cpuvs"}><ChevronRight size={14} /> {isEn ? 'CPU Battles Engine' : 'Souboje Procesorů'}</a></li>
-                            <li><a href={isEn ? "/en/bottleneck-calculator/ryzen-7-7800x3d-vs-rtx-4070-super-cyberpunk-2077-1440p" : "/bottleneck-kalkulacka/ryzen-7-7800x3d-vs-rtx-4070-super-cyberpunk-2077-1440p"}><ChevronRight size={14} /> Ryzen 7 7800X3D vs RTX 4070 SUPER</a></li>
+                            <li><a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"}><ChevronRight size={14} /> {isEn ? 'FPS Calculator Database' : 'Velká databáze FPS výsledků'}</a></li>
                         </ul>
                     </div>
 
-                    {/* HUB 2: Hry */}
                     <div className="hub-column">
                         <div className="hub-col-header"><Gamepad2 size={16} color="#a855f7" /> {isEn ? 'Anticipated Games' : 'Očekávané Herní Pecky'}</div>
                         <ul className="hub-links-list">
@@ -473,28 +480,24 @@ export default function BottleneckClient({
                         </ul>
                     </div>
 
-                    {/* HUB 3: Tipy */}
                     <div className="hub-column">
                         <div className="hub-col-header"><Lightbulb size={16} color="#fbbf24" /> {isEn ? 'Guru Tips & Tweaks' : 'GURU Tipy a Tweaky'}</div>
                         <ul className="hub-links-list">
                             <li><a href={isEn ? "/en/tipy" : "/tipy"}><ChevronRight size={14} /> {isEn ? 'PC Build Tips & Tricks' : 'Tipy pro stavbu a údržbu PC'}</a></li>
                             <li><a href={isEn ? "/en/tweaky" : "/tweaky"}><ChevronRight size={14} /> {isEn ? 'Windows & Game Optimization' : 'Windows & Herní Optimalizace'}</a></li>
-                            <li><a href={isEn ? "/en/tipy/vram-v-roce-2026" : "/tipy/vram-v-roce-2026"}><ChevronRight size={14} /> {isEn ? 'Why VRAM is crucial' : 'Proč nepodceňovat VRAM?'}</a></li>
                         </ul>
                     </div>
 
-                    {/* HUB 4: Články */}
                     <div className="hub-column">
                         <div className="hub-col-header"><Newspaper size={16} color="#38bdf8" /> {isEn ? 'Latest Articles' : 'Nejnovější Články'}</div>
                         <ul className="hub-links-list">
                             <li><a href={isEn ? "/en/clanky" : "/clanky"}><ChevronRight size={14} /> {isEn ? 'Hardware News & Reviews' : 'HW Novinky a Recenze'}</a></li>
-                            <li><a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"}><ChevronRight size={14} /> {isEn ? 'FPS Calculator Database' : 'Velká databáze FPS výsledků'}</a></li>
                             <li><a href={isEn ? "/en/support" : "/support"}><ChevronRight size={14} /> {isEn ? 'Support The Hardware Guru' : 'Podpořte The Hardware Guru'}</a></li>
                         </ul>
                     </div>
                 </div>
 
-                {/* Dynamická nabídka na GTA 6 kalkulaci (Zobrazí se až po analýze aktuálního HW NA ÚPLNÉM KONCI) */}
+                {/* Dynamická nabídka na GTA 6 kalkulaci (Zobrazí se až po analýze aktuálního HW) */}
                 {analysis && dynamicGta6Link && (
                     <div className="dynamic-cta-box" style={{ marginTop: '40px' }}>
                         <Sparkles size={24} color="#f43f5e" className="pulse-icon" />
