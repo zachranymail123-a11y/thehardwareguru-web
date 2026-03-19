@@ -2,42 +2,46 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Cpu, Monitor, Zap, AlertTriangle, Crosshair, Settings2, Sparkles, TrendingUp, TrendingDown, Layers, Target, Video } from 'lucide-react';
+import { Cpu, Monitor, Zap, AlertTriangle, Crosshair, Settings2, Sparkles, TrendingUp, TrendingDown, Layers, Target, Video, Share2, Check, Twitter, Award } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK ENGINE - V4.0 (THE PROFESSIONAL SIMULATOR)
- * 🛡️ UPDATE: Dynamic X3D scaling, DLSS CPU penalty, Per-game FPS scaling.
- * 🛡️ UPDATE: Engine latency model, Streaming penalty, Mathematical 1% Lows.
+ * GURU BOTTLENECK ENGINE - V4.1 (VIRAL & SEO LOOP EDITION)
+ * 🛡️ UPDATE: Kompletní virální loop (X, Reddit, Copy).
+ * 🛡️ UPDATE: Masivní interní prolinkování na další Guru nástroje.
  * 🛡️ SEO: Automatický zápis unikátních kombinací do DB na pozadí.
  */
 
-// BROWSER Supabase client pro klientskou komponentu
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+const RedditIcon = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-2.05-6.65c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm4.1 0c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm1.64-3.56c-.34 0-.64.16-.84.4-.58-.4-1.36-.67-2.24-.72l.47-2.18 1.5.32c.04.53.48.95 1.02.95.57 0 1.03-.46 1.03-1.03 0-.57-.46-1.03-1.03-1.03-.42 0-.78.26-.94.63l-1.64-.35c-.06-.01-.13 0-.17.05-.05.04-.07.1-.06.16l-.52 2.45c-.93.03-1.74.32-2.35.74-.2-.23-.5-.38-.83-.38-.6 0-1.08.48-1.08 1.08 0 .42.24.78.58.96-.02.12-.03.24-.03.37 0 1.88 2.05 3.4 4.58 3.4s4.58-1.52 4.58-3.4c0-.13-.01-.25-.03-.37.34-.18.58-.54.58-.96 0-.6-.48-1.08-1.08-1.08zm-4.14 3.12c-.93 0-1.66-.4-1.7-.44-.1-.1-.11-.27-.01-.38.1-.1.27-.11.38-.01.02.01.62.33 1.33.33.7 0 1.31-.32 1.33-.33.11-.1.28-.09.38.01.1.11.09.28-.01.38-.04.04-.77.44-1.7.44z" />
+  </svg>
+);
+
 export default function BottleneckClient({ gpus = [], cpus = [], games = [], isEn = false }) {
-    // --- STAV Aplikace ---
     const [selectedCpuId, setSelectedCpuId] = useState('');
     const [selectedGpuId, setSelectedGpuId] = useState('');
     const [selectedGameSlug, setSelectedGameSlug] = useState('');
     
-    // Konfigurace zátěže
     const [resolution, setResolution] = useState('1440p');
     const [targetFps, setTargetFps] = useState(60);
     const [enableRt, setEnableRt] = useState(false);
     const [enableUpscaling, setEnableUpscaling] = useState(false); 
-    const [isStreaming, setIsStreaming] = useState(false); // OBS zátěž
-    const [isCompSettings, setIsCompSettings] = useState(false); // Low details pro e-sports
+    const [isStreaming, setIsStreaming] = useState(false); 
+    const [isCompSettings, setIsCompSettings] = useState(false); 
 
-    // Custom HW
     const [isCustomCpu, setIsCustomCpu] = useState(false);
     const [isCustomGpu, setIsCustomGpu] = useState(false);
     const [customCpuScore, setCustomCpuScore] = useState(100);
     const [customGpuScore, setCustomGpuScore] = useState(100);
     const [customVram, setCustomVram] = useState(8);
 
-    // --- JÁDRO SIMULÁTORU (Memoized pro instant reaction) ---
+    const [copied, setCopied] = useState(false);
+    const [shareUrlObj, setShareUrlObj] = useState(null);
+
     const analysis = useMemo(() => {
         if ((!selectedCpuId && !isCustomCpu) || (!selectedGpuId && !isCustomGpu) || !selectedGameSlug) return null;
 
@@ -50,7 +54,6 @@ export default function BottleneckClient({ gpus = [], cpus = [], games = [], isE
         const cpuName = cpu.name.toLowerCase();
         const gpuName = gpu.name.toLowerCase();
 
-        // 1. ADVANCED GAME ENGINE PROFILES
         const gameDataMap = {
             'cyberpunk-2077': { thread_scaling: 0.85, api: 'dx12', cpu_weight: 1.2, gpu_weight: 1.5, vram_1440p: 10, is_rt_heavy: true, fps_scale: 1.2 },
             'cs2': { thread_scaling: 0.3, api: 'dx11', cpu_weight: 0.5, gpu_weight: 0.4, vram_1440p: 4, is_rt_heavy: false, fps_scale: 3.5 },
@@ -60,7 +63,6 @@ export default function BottleneckClient({ gpus = [], cpus = [], games = [], isE
         };
         const game = gameDataMap[baseGame.slug] || gameDataMap['generic'];
 
-        // 2. CPU IPC MODEL & BACKGROUND LOAD
         let ipcBase = 100; 
         let archEfficiency = 1.0;
 
@@ -84,51 +86,34 @@ export default function BottleneckClient({ gpus = [], cpus = [], games = [], isE
         let singleCoreScore = ipcBase;
         let multiCoreScore = cpu.performance_index;
 
-        // X3D DYNAMIC CACHE SCALING
-        if (cpuName.includes('x3d')) {
-            // Obrovský boost v hrách náročných na jedno vlákno a paměť (CS2, Valorant)
-            archEfficiency *= (1 + (1 - game.thread_scaling) * 0.45);
-        }
+        if (cpuName.includes('x3d')) archEfficiency *= (1 + (1 - game.thread_scaling) * 0.45);
 
-        let cpuEffective = (
-            singleCoreScore * (1 - game.thread_scaling) + 
-            multiCoreScore * game.thread_scaling
-        ) * archEfficiency;
+        let cpuEffective = (singleCoreScore * (1 - game.thread_scaling) + multiCoreScore * game.thread_scaling) * archEfficiency;
+        if (isStreaming) cpuEffective *= 0.85; 
+        if (game.api === 'dx11' && (gpuName.includes('rx ') || gpuName.includes('radeon'))) cpuEffective *= 0.90; 
 
-        // Background penalty (Streaming / OBS)
-        if (isStreaming) {
-            cpuEffective *= 0.85; // OBS si ukousne vlákna
-        }
-
-        // DX11 Overhead penalty
-        if (game.api === 'dx11' && (gpuName.includes('rx ') || gpuName.includes('radeon'))) {
-            cpuEffective *= 0.90; 
-        }
-
-        // 3. GPU MODEL & UPSCALING TRADE-OFF
         const resMultiplier = { '1080p': 1.0, '1440p': 1.5, '2160p': 2.4 }[resolution];
         let gpuEffective = gpu.performance_index / resMultiplier;
 
         if (isCompSettings) {
-            gpuEffective *= 1.4; // Low details odlehčí grafice
-            cpuEffective *= 0.9; // Ale natlačí víc FPS do CPU = vyšší CPU bottleneck šance
+            gpuEffective *= 1.4; 
+            cpuEffective *= 0.9; 
         }
 
         if (enableUpscaling) {
-            gpuEffective *= (resolution === '2160p' ? 1.45 : 1.25); // DLSS pomáhá grafice
-            cpuEffective *= 0.95; // Ale mírně zvyšuje CPU overhead (příprava více frames)
+            gpuEffective *= (resolution === '2160p' ? 1.45 : 1.25); 
+            cpuEffective *= 0.95; 
         }
 
-        // 4. VRAM & RT PENALTIES
         let requiredVram = game.vram_1440p;
         if (resolution === '1080p') requiredVram *= 0.75;
         if (resolution === '2160p') requiredVram *= 1.4;
-        if (isCompSettings) requiredVram *= 0.6; // Low textures = low VRAM
+        if (isCompSettings) requiredVram *= 0.6; 
         
         const actualVram = gpu.vram_gb || 8;
         let vramWarning = false;
         if (actualVram < requiredVram) {
-            gpuEffective *= 0.65; // Agresivní drop
+            gpuEffective *= 0.65; 
             vramWarning = true;
         }
 
@@ -137,71 +122,48 @@ export default function BottleneckClient({ gpus = [], cpus = [], games = [], isE
             if (gpuName.includes('rtx 40') || gpuName.includes('rtx 50')) rtMod = 0.95;
             else if (gpuName.includes('rtx 30')) rtMod = 0.80;
             else if (gpuName.includes('rx 79') || gpuName.includes('rx 78')) rtMod = 0.75;
-            
             gpuEffective *= rtMod;
-            cpuEffective *= 0.85; // RT dusí i procesor (BVH updates)
+            cpuEffective *= 0.85; 
         }
 
-        // 5. FPS ESTIMATE (Per-game scale)
         const rawCpuFps = (cpuEffective / game.cpu_weight) * game.fps_scale;
         const rawGpuFps = (gpuEffective / game.gpu_weight) * game.fps_scale;
         
         let estFps = Math.min(rawCpuFps, rawGpuFps);
-        
-        // Hard CPU Limit (e-sports)
         const cpuFpsCap = ipcBase * (isCompSettings ? 3.5 : 2.5);
         estFps = Math.min(estFps, cpuFpsCap);
-        
         estFps = Math.max(10, Math.round(estFps));
 
-        // 6. BOTTLENECK MATH
         const diff = Math.abs(rawCpuFps - rawGpuFps) / Math.max(rawCpuFps, rawGpuFps);
         let boundType = 'BALANCED';
         let limitedBy = '';
         let bottleneckPercent = Math.round(diff * 100);
 
-        if (diff < 0.08) {
-            boundType = 'BALANCED';
-            bottleneckPercent = 0; 
-        } else if (rawCpuFps < rawGpuFps) {
-            boundType = 'CPU_BOUND';
-            limitedBy = 'CPU';
-        } else {
-            boundType = 'GPU_BOUND';
-            limitedBy = 'GPU';
-        }
+        if (diff < 0.08) { boundType = 'BALANCED'; bottleneckPercent = 0; } 
+        else if (rawCpuFps < rawGpuFps) { boundType = 'CPU_BOUND'; limitedBy = 'CPU'; } 
+        else { boundType = 'GPU_BOUND'; limitedBy = 'GPU'; }
 
-        // 7. PROFESSIONAL METRICS (Latency & Mathematical 1% Lows)
-        let latencyPenalty = game.thread_scaling < 0.4 ? 1.25 : 1.0; // Staré DX11 hry mají horší frame pacing
+        let latencyPenalty = game.thread_scaling < 0.4 ? 1.25 : 1.0; 
         if (vramWarning) latencyPenalty *= 1.5;
-        
         let frameTimeMs = ((1000 / estFps) * latencyPenalty).toFixed(1);
 
-        // Dynamické 1% Lows založené na míře bottlenecku
-        let low1Pct = 1 - (diff * 0.85); // Čím větší bottleneck, tím horší záseky
-        if (vramWarning) low1Pct -= 0.3; // VRAM stutters
-        if (isStreaming) low1Pct -= 0.15; // OBS frame drops
-        
-        low1Pct = Math.max(0.2, Math.min(0.95, low1Pct)); // Clamp between 20% and 95% of AVG FPS
+        let low1Pct = 1 - (diff * 0.85); 
+        if (vramWarning) low1Pct -= 0.3; 
+        if (isStreaming) low1Pct -= 0.15; 
+        low1Pct = Math.max(0.2, Math.min(0.95, low1Pct)); 
         let low1Fps = Math.round(estFps * low1Pct);
 
         return {
-            boundType,
-            limitedBy,
-            bottleneckPercent,
-            estFps,
-            low1Fps,
-            frameTimeMs,
-            vramWarning,
-            stutterWarning: low1Pct < 0.6 || vramWarning,
-            requiredVram: Math.round(requiredVram * 10) / 10,
-            actualVram,
-            meetsTarget: estFps >= targetFps
+            boundType, limitedBy, bottleneckPercent, estFps, low1Fps, frameTimeMs,
+            vramWarning, stutterWarning: low1Pct < 0.6 || vramWarning,
+            requiredVram: Math.round(requiredVram * 10) / 10, actualVram,
+            meetsTarget: estFps >= targetFps,
+            cpuName: cpu.name, gpuName: gpu.name, gameName: baseGame.name
         };
 
     }, [selectedCpuId, selectedGpuId, selectedGameSlug, resolution, targetFps, enableRt, enableUpscaling, isStreaming, isCompSettings, isCustomCpu, isCustomGpu, customCpuScore, customGpuScore, customVram, cpus, gpus, games]);
 
-    // --- SEO AUTOMATICKÝ ZÁPIS DO DB ---
+    // SEO AUTOMATICKÝ ZÁPIS DO DB A GENERACE ODKAZU PRO SDÍLENÍ
     useEffect(() => {
         if (analysis && selectedCpuId && selectedGpuId && selectedGameSlug && !isCustomCpu && !isCustomGpu) {
             const cpu = cpus.find(c => c.id === selectedCpuId);
@@ -211,9 +173,11 @@ export default function BottleneckClient({ gpus = [], cpus = [], games = [], isE
                 const cleanCpu = cpu.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
                 const cleanGpu = gpu.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
                 
-                // Unikátní SEO slug
                 const slugBase = `${cleanCpu}-vs-${cleanGpu}-${selectedGameSlug}-${resolution}`;
-                const fullUrl = `https://thehardwareguru.cz/bottleneck-kalkulacka/${slugBase}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
+                const basePath = isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka';
+                const fullUrl = `https://thehardwareguru.cz${basePath}/${slugBase}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
+
+                setShareUrlObj({ url: fullUrl, cpu: cpu.name, gpu: gpu.name, game: analysis.gameName });
 
                 supabase.from('generated_predictions').upsert({
                     slug_base: slugBase,
@@ -226,8 +190,41 @@ export default function BottleneckClient({ gpus = [], cpus = [], games = [], isE
                     if (error) console.error("SEO Sitemapa - chyba zápisu:", error.message);
                 });
             }
+        } else {
+            setShareUrlObj(null);
         }
-    }, [analysis, selectedCpuId, selectedGpuId, selectedGameSlug, resolution, isCustomCpu, isCustomGpu, cpus, gpus]);
+    }, [analysis, selectedCpuId, selectedGpuId, selectedGameSlug, resolution, isCustomCpu, isCustomGpu, cpus, gpus, isEn]);
+
+    // SDÍLECÍ FUNKCE
+    const getShareText = () => {
+        if (!analysis) return '';
+        const hwText = shareUrlObj ? `${shareUrlObj.cpu} + ${shareUrlObj.gpu}` : 'Můj PC';
+        if (isEn) {
+            return `🔥 My rig (${hwText}) has a ${analysis.bottleneckPercent}% ${analysis.boundType.replace('_', ' ')} in ${analysis.gameName} on ${resolution}! What's yours? 🚀`;
+        }
+        return `🔥 Moje sestava (${hwText}) má v ${analysis.gameName} na ${resolution} přesně ${analysis.bottleneckPercent}% ${analysis.limitedBy} Bottleneck! Jak jsi na tom ty? 🚀`;
+    };
+
+    const handleCopyShare = () => {
+        if (!shareUrlObj) return;
+        const text = `${getShareText()}\n👉 Zjisti to tady: ${shareUrlObj.url}`;
+        navigator.clipboard.writeText(text).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 3000);
+        });
+    };
+
+    const handleXShare = () => {
+        if (!shareUrlObj) return;
+        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(getShareText())}&url=${encodeURIComponent(shareUrlObj.url)}`;
+        window.open(twitterUrl, '_blank', 'noopener,noreferrer');
+    };
+
+    const handleRedditShare = () => {
+        if (!shareUrlObj) return;
+        const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(shareUrlObj.url)}&title=${encodeURIComponent(getShareText())}`;
+        window.open(redditUrl, '_blank', 'noopener,noreferrer');
+    };
 
     return (
         <div className="bn-wrapper">
@@ -238,7 +235,6 @@ export default function BottleneckClient({ gpus = [], cpus = [], games = [], isE
             </div>
 
             <div className="bn-grid">
-                {/* LÉVÝ PANEL - VSTUPY */}
                 <div className="bn-inputs-card">
                     <h3 className="section-title"><Settings2 size={18} /> {isEn ? 'Configuration' : 'Konfigurace Zátěže'}</h3>
                     
@@ -272,7 +268,6 @@ export default function BottleneckClient({ gpus = [], cpus = [], games = [], isE
                         </div>
                     </div>
 
-                    {/* Pro Toggles */}
                     <div className="toggle-grid">
                         <div className="toggle-row" onClick={() => setEnableUpscaling(!enableUpscaling)}>
                             <div className={`switch ${enableUpscaling ? 'on' : 'off'}`}></div>
@@ -337,7 +332,6 @@ export default function BottleneckClient({ gpus = [], cpus = [], games = [], isE
                     </div>
                 </div>
 
-                {/* PRAVÝ PANEL - VÝSLEDEK */}
                 <div className="bn-result-card">
                     {!analysis ? (
                         <div className="empty-state">
@@ -383,6 +377,32 @@ export default function BottleneckClient({ gpus = [], cpus = [], games = [], isE
                                 </div>
                             </div>
 
+                            {/* VIRÁLNÍ SDÍLECÍ KARTA */}
+                            {shareUrlObj && (
+                                <div className="viral-flex-card" style={{ marginTop: '30px', marginBottom: '30px' }}>
+                                    <div className="award-icon"><Award size={28} color="#fff" /></div>
+                                    <div className="viral-text-box">
+                                        <div style={{ fontSize: '14px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                            {isEn ? 'SIMULATION COMPLETE' : 'SIMULACE DOKONČENA'}
+                                        </div>
+                                        <div style={{ fontSize: '11px', color: '#a855f7', fontWeight: 'bold' }}>
+                                            {isEn ? 'Share your result online' : 'Pochlub se výsledkem online'}
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                        <button onClick={handleCopyShare} className="premium-share-btn btn-copy" title={isEn ? "Copy Link" : "Kopírovat odkaz"}>
+                                            {copied ? <Check className="check-anim" size={18} /> : <Share2 size={18} />}
+                                        </button>
+                                        <button onClick={handleXShare} className="premium-share-btn btn-x" title="X">
+                                            <Twitter size={18} />
+                                        </button>
+                                        <button onClick={handleRedditShare} className="premium-share-btn btn-reddit" title="Reddit">
+                                            <RedditIcon size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             {isStreaming && (
                                 <div className="warning-box info">
                                     <Video size={18} color="#60a5fa" style={{flexShrink: 0}} />
@@ -403,7 +423,6 @@ export default function BottleneckClient({ gpus = [], cpus = [], games = [], isE
 
                             <div className="recommendation">
                                 <h4>💡 {isEn ? 'Guru Recommendation' : 'Profesionální verdikt'}</h4>
-                                
                                 {analysis.boundType === 'CPU_BOUND' && (
                                     <p>Tvoje grafika čeká na instrukce od procesoru. Máš velký rozdíl mezi AVG FPS a 1% Lows ({analysis.low1Fps}), takže hra působí trhaně. Zapnutí upscalingu to jen zhorší. Zkus zvýšit rozlišení na {resolution === '1080p' ? '1440p' : '4K'} nebo <strong>upgraduj procesor</strong> na model s vyšším IPC (např. X3D).</p>
                                 )}
@@ -416,6 +435,21 @@ export default function BottleneckClient({ gpus = [], cpus = [], games = [], isE
                             </div>
                         </div>
                     )}
+                </div>
+            </div>
+
+            {/* INTERNÍ PROLINKOVÁNÍ - SEO HUB */}
+            <div className="guru-hub-links">
+                <h3 style={{ fontSize: '14px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center', marginBottom: '20px' }}>
+                    {isEn ? 'Explore More Tools' : 'Další GURU Nástroje'}
+                </h3>
+                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="hub-btn">
+                        <Monitor size={18} color="#66fcf1" /> {isEn ? 'FPS Calculator' : 'FPS Kalkulačka'}
+                    </a>
+                    <a href={isEn ? "/en/fps-calculator/gta-6-prediction/ryzen-7-7800x3d-vs-rtx-4070-super-1440p" : "/fps-kalkulacka/gta-6-predikce/ryzen-7-7800x3d-vs-rtx-4070-super-1440p"} className="hub-btn">
+                        <Sparkles size={18} color="#f43f5e" /> {isEn ? 'GTA VI Predictor' : 'GTA VI Predikce'}
+                    </a>
                 </div>
             </div>
 
@@ -479,6 +513,22 @@ export default function BottleneckClient({ gpus = [], cpus = [], games = [], isE
                 .m-label { font-size: 10px; font-weight: 900; color: #9ca3af; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px; }
                 .m-val { font-size: 22px; font-weight: 950; color: #fff; }
 
+                /* VIRÁLNÍ KARTA */
+                .viral-flex-card { display: flex; align-items: center; gap: 15px; padding: 20px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 16px; box-shadow: 0 0 20px rgba(168, 85, 247, 0.1); text-align: left; }
+                .award-icon { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: rgba(168, 85, 247, 0.2); border-radius: 12px; flex-shrink: 0; }
+                .viral-text-box { flex: 1; }
+                .premium-share-btn { width: 40px; height: 40px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: 0.3s; border: none; color: #fff; }
+                .btn-copy { background: linear-gradient(45deg, #a855f7, #c084fc); }
+                .btn-x { background: #000; border: 1px solid rgba(255,255,255,0.2); }
+                .btn-reddit { background: #ff4500; }
+                .premium-share-btn:hover { transform: translateY(-3px); filter: brightness(1.1); }
+                .check-anim { animation: checkPop 0.3s ease-out; }
+
+                /* GURU HUB ODKAZY */
+                .guru-hub-links { margin-top: 50px; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.05); }
+                .hub-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 12px 20px; border-radius: 12px; color: #d1d5db; font-weight: 900; font-size: 13px; text-decoration: none; transition: 0.3s; text-transform: uppercase; }
+                .hub-btn:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #fff; transform: translateY(-2px); }
+
                 .warning-box { display: flex; gap: 15px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 20px; border-radius: 16px; margin-bottom: 20px; color: #fca5a5; font-size: 13px; line-height: 1.5; }
                 .warning-box.info { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3); color: #93c5fd; }
                 .warning-box strong { display: block; margin-bottom: 5px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
@@ -488,6 +538,8 @@ export default function BottleneckClient({ gpus = [], cpus = [], games = [], isE
                 .recommendation { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 25px; border-radius: 16px; }
                 .recommendation h4 { margin: 0 0 10px 0; font-size: 14px; font-weight: 900; color: #fff; text-transform: uppercase; }
                 .recommendation p { margin: 0; font-size: 13px; color: #d1d5db; line-height: 1.6; }
+                
+                @keyframes checkPop { 0% { transform: scale(0.5); } 100% { transform: scale(1); } }
             `}} />
         </div>
     );
