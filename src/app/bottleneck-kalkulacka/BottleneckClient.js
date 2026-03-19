@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Cpu, Monitor, Zap, AlertTriangle, Crosshair, Settings2, Sparkles, TrendingUp, TrendingDown, Layers, Target, Video, Share2, Check, Twitter, Award } from 'lucide-react';
+import { Cpu, Monitor, Zap, AlertTriangle, Crosshair, Settings2, Sparkles, TrendingUp, TrendingDown, Layers, Target, Video, Share2, Check, Twitter, Award, Swords, Newspaper, Lightbulb, Gamepad2, ChevronRight } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -24,7 +24,6 @@ export default function BottleneckClient({
     initialGameSlug = '',
     initialResolution = '1440p'
 }) {
-    // Načtení výchozích hodnot, pokud přijdou z URL (díky serverové komponentě)
     const [selectedCpuId, setSelectedCpuId] = useState(initialCpuId);
     const [selectedGpuId, setSelectedGpuId] = useState(initialGpuId);
     const [selectedGameSlug, setSelectedGameSlug] = useState(initialGameSlug);
@@ -43,8 +42,6 @@ export default function BottleneckClient({
     const [customVram, setCustomVram] = useState(8);
 
     const [copied, setCopied] = useState(false);
-    const [shareUrlObj, setShareUrlObj] = useState(null);
-    const [dynamicGta6Link, setDynamicGta6Link] = useState('');
 
     const analysis = useMemo(() => {
         if ((!selectedCpuId && !isCustomCpu) || (!selectedGpuId && !isCustomGpu) || !selectedGameSlug) return null;
@@ -167,24 +164,34 @@ export default function BottleneckClient({
 
     }, [selectedCpuId, selectedGpuId, selectedGameSlug, resolution, targetFps, enableRt, enableUpscaling, isStreaming, isCompSettings, isCustomCpu, isCustomGpu, customCpuScore, customGpuScore, customVram, cpus, gpus, games]);
 
+    // Generování share linků dynamicky při renderu (aby karta nezmizela)
+    let generatedShareUrl = `https://thehardwareguru.cz/${isEn ? 'en/bottleneck-calculator' : 'bottleneck-kalkulacka'}`;
+    let gta6DynamicLink = '';
+    
+    if (analysis && selectedCpuId && selectedGpuId && selectedGameSlug && !isCustomCpu && !isCustomGpu) {
+        const cpu = cpus.find(c => c.id === selectedCpuId);
+        const gpu = gpus.find(g => g.id === selectedGpuId);
+        
+        if (cpu && gpu) {
+            const cleanCpu = cpu.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const cleanGpu = gpu.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const slugBase = `${cleanCpu}-vs-${cleanGpu}-${selectedGameSlug}-${resolution}`;
+            generatedShareUrl = `https://thehardwareguru.cz/${isEn ? 'en/bottleneck-calculator' : 'bottleneck-kalkulacka'}/${slugBase}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
+            
+            gta6DynamicLink = `/${isEn ? 'en/fps-calculator/gta-6-prediction' : 'fps-kalkulacka/gta-6-predikce'}/${cleanCpu}-vs-${cleanGpu}-${resolution}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
+        }
+    }
+
+    // SEO zápis do DB (běží na pozadí)
     useEffect(() => {
         if (analysis && selectedCpuId && selectedGpuId && selectedGameSlug && !isCustomCpu && !isCustomGpu) {
             const cpu = cpus.find(c => c.id === selectedCpuId);
             const gpu = gpus.find(g => g.id === selectedGpuId);
-            
             if (cpu && gpu) {
                 const cleanCpu = cpu.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
                 const cleanGpu = gpu.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                
                 const slugBase = `${cleanCpu}-vs-${cleanGpu}-${selectedGameSlug}-${resolution}`;
-                const basePath = isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka';
-                const fullUrl = `https://thehardwareguru.cz${basePath}/${slugBase}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
-
-                setShareUrlObj({ url: fullUrl, cpu: cpu.name, gpu: gpu.name, game: analysis.gameName });
-
-                const gta6BasePath = isEn ? '/en/fps-calculator/gta-6-prediction' : '/fps-kalkulacka/gta-6-predikce';
-                const gta6Slug = `${cleanCpu}-vs-${cleanGpu}-${resolution}`;
-                setDynamicGta6Link(`${gta6BasePath}/${gta6Slug}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`);
+                const fullUrl = `https://thehardwareguru.cz/${isEn ? 'en/bottleneck-calculator' : 'bottleneck-kalkulacka'}/${slugBase}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
 
                 supabase.from('generated_predictions').upsert({
                     slug_base: slugBase,
@@ -192,20 +199,14 @@ export default function BottleneckClient({
                     gpu_id: selectedGpuId,
                     full_url: fullUrl,
                     last_requested: new Date().toISOString()
-                }, { onConflict: 'full_url' })
-                .then(({ error }) => {
-                    if (error) console.error("SEO Sitemapa chyba:", error.message);
-                });
+                }, { onConflict: 'full_url' }).catch(() => {});
             }
-        } else {
-            setShareUrlObj(null);
-            setDynamicGta6Link('');
         }
     }, [analysis, selectedCpuId, selectedGpuId, selectedGameSlug, resolution, isCustomCpu, isCustomGpu, cpus, gpus, isEn]);
 
     const getShareText = () => {
         if (!analysis) return '';
-        const hwText = shareUrlObj ? `${shareUrlObj.cpu} + ${shareUrlObj.gpu}` : 'Můj PC';
+        const hwText = (!isCustomCpu && !isCustomGpu) ? `${analysis.cpuName} + ${analysis.gpuName}` : 'Můj PC';
         if (isEn) {
             return `🔥 My rig (${hwText}) has a ${analysis.bottleneckPercent}% ${analysis.boundType.replace('_', ' ')} in ${analysis.gameName} on ${resolution}! What's yours? 🚀`;
         }
@@ -213,8 +214,7 @@ export default function BottleneckClient({
     };
 
     const handleCopyShare = () => {
-        if (!shareUrlObj) return;
-        const text = `${getShareText()}\n👉 Zjisti to tady: ${shareUrlObj.url}`;
+        const text = `${getShareText()}\n👉 Zjisti to tady: ${generatedShareUrl}`;
         navigator.clipboard.writeText(text).then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 3000);
@@ -222,14 +222,12 @@ export default function BottleneckClient({
     };
 
     const handleXShare = () => {
-        if (!shareUrlObj) return;
-        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(getShareText())}&url=${encodeURIComponent(shareUrlObj.url)}`;
+        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(getShareText())}&url=${encodeURIComponent(generatedShareUrl)}`;
         window.open(twitterUrl, '_blank', 'noopener,noreferrer');
     };
 
     const handleRedditShare = () => {
-        if (!shareUrlObj) return;
-        const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(shareUrlObj.url)}&title=${encodeURIComponent(getShareText())}`;
+        const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(generatedShareUrl)}&title=${encodeURIComponent(getShareText())}`;
         window.open(redditUrl, '_blank', 'noopener,noreferrer');
     };
 
@@ -384,31 +382,29 @@ export default function BottleneckClient({
                                 </div>
                             </div>
 
-                            {/* VIRÁLNÍ SDÍLECÍ KARTA */}
-                            {shareUrlObj && (
-                                <div className="viral-flex-card" style={{ marginTop: '30px', marginBottom: '30px' }}>
-                                    <div className="award-icon"><Award size={28} color="#fff" /></div>
-                                    <div className="viral-text-box">
-                                        <div style={{ fontSize: '14px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                            {isEn ? 'SIMULATION COMPLETE' : 'SIMULACE DOKONČENA'}
-                                        </div>
-                                        <div style={{ fontSize: '11px', color: '#a855f7', fontWeight: 'bold' }}>
-                                            {isEn ? 'Share your result online' : 'Pochlub se výsledkem online'}
-                                        </div>
+                            {/* VIRÁLNÍ KARTA - VŽDY VIDITELNÁ POKUD MÁME VÝSLEDEK */}
+                            <div className="viral-flex-card" style={{ marginTop: '30px', marginBottom: '30px' }}>
+                                <div className="award-icon"><Award size={28} color="#fff" /></div>
+                                <div className="viral-text-box">
+                                    <div style={{ fontSize: '14px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                        {isEn ? 'SIMULATION COMPLETE' : 'SIMULACE DOKONČENA'}
                                     </div>
-                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                                        <button onClick={handleCopyShare} className="premium-share-btn btn-copy" title={isEn ? "Copy Link" : "Kopírovat odkaz"}>
-                                            {copied ? <Check className="check-anim" size={18} /> : <Share2 size={18} />}
-                                        </button>
-                                        <button onClick={handleXShare} className="premium-share-btn btn-x" title="X">
-                                            <Twitter size={18} />
-                                        </button>
-                                        <button onClick={handleRedditShare} className="premium-share-btn btn-reddit" title="Reddit">
-                                            <RedditIcon size={18} />
-                                        </button>
+                                    <div style={{ fontSize: '11px', color: '#a855f7', fontWeight: 'bold' }}>
+                                        {isEn ? 'Share your result online' : 'Pochlub se výsledkem online'}
                                     </div>
                                 </div>
-                            )}
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                    <button onClick={handleCopyShare} className="premium-share-btn btn-copy" title={isEn ? "Copy Link" : "Kopírovat odkaz"}>
+                                        {copied ? <Check className="check-anim" size={18} /> : <Share2 size={18} />}
+                                    </button>
+                                    <button onClick={handleXShare} className="premium-share-btn btn-x" title="X">
+                                        <Twitter size={18} />
+                                    </button>
+                                    <button onClick={handleRedditShare} className="premium-share-btn btn-reddit" title="Reddit">
+                                        <RedditIcon size={18} />
+                                    </button>
+                                </div>
+                            </div>
 
                             {isStreaming && (
                                 <div className="warning-box info">
@@ -445,11 +441,12 @@ export default function BottleneckClient({
                 </div>
             </div>
 
-            {/* 🔥 REÁLNÉ PROLINKOVÁNÍ (Zobrazí se po analýze) */}
+            {/* 🔥 MASIVNÍ INTERNÍ PROLINKOVÁNÍ (Zobrazí se až po výsledku) */}
             {analysis && (
-                <>
-                    {/* 💰 ADSENSE SLOT */}
-                    <div style={{ margin: '40px 0', minHeight: '120px', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px dashed rgba(168, 85, 247, 0.3)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="massive-seo-hub">
+                    
+                    {/* 💰 ADSENSE SLOT ROVNOU U KLIENTA */}
+                    <div style={{ margin: '0 0 40px 0', minHeight: '120px', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px dashed rgba(168, 85, 247, 0.3)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ fontSize: '10px', color: '#4b5563', margin: '15px 0', fontWeight: 'bold', letterSpacing: '2px' }}>SPONZOROVANÝ OBSAH</span>
                         <ins className="adsbygoogle"
                              style={{ display: 'block', width: '100%' }}
@@ -459,22 +456,61 @@ export default function BottleneckClient({
                              data-full-width-responsive="true"></ins>
                     </div>
 
-                    <div className="guru-hub-links">
-                        <h3 style={{ fontSize: '14px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center', marginBottom: '20px' }}>
-                            {isEn ? 'Explore More Tools' : 'Další GURU Nástroje a Kalkulačky'}
-                        </h3>
-                        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="hub-btn">
-                                <Monitor size={18} color="#66fcf1" /> {isEn ? 'FPS Calculator' : 'FPS Kalkulačka'}
-                            </a>
-                            {dynamicGta6Link && (
-                                <a href={dynamicGta6Link} className="hub-btn gta-btn">
-                                    <Sparkles size={18} color="#f43f5e" /> {isEn ? 'Will it run GTA VI?' : 'Rozjede to GTA VI?'}
-                                </a>
-                            )}
+                    <h3 className="hub-main-title">
+                        {isEn ? 'Explore The Hardware Guru Ecosystem' : 'Prozkoumej ekosystém The Hardware Guru'}
+                    </h3>
+                    
+                    <div className="hub-grid">
+                        <div className="hub-column">
+                            <div className="hub-col-header"><Swords size={16} color="#f43f5e" /> {isEn ? 'Top HW Duels' : 'Nejžádanější HW Duely'}</div>
+                            <ul className="hub-links-list">
+                                <li><a href={isEn ? "/en/bottleneck-calculator/ryzen-7-7800x3d-vs-rtx-4070-super-cyberpunk-2077-1440p" : "/bottleneck-kalkulacka/ryzen-7-7800x3d-vs-rtx-4070-super-cyberpunk-2077-1440p"}><ChevronRight size={14} /> Ryzen 7 7800X3D vs RTX 4070 SUPER</a></li>
+                                <li><a href={isEn ? "/en/bottleneck-calculator/core-i5-13600k-vs-rx-7800-xt-cs2-1080p" : "/bottleneck-kalkulacka/core-i5-13600k-vs-rx-7800-xt-cs2-1080p"}><ChevronRight size={14} /> Core i5 13600K vs RX 7800 XT</a></li>
+                                <li><a href={isEn ? "/en/bottleneck-calculator/ryzen-5-5600-vs-rtx-4060-valorant-1080p" : "/bottleneck-kalkulacka/ryzen-5-5600-vs-rtx-4060-valorant-1080p"}><ChevronRight size={14} /> Ryzen 5 5600 vs RTX 4060</a></li>
+                            </ul>
+                        </div>
+
+                        <div className="hub-column">
+                            <div className="hub-col-header"><Gamepad2 size={16} color="#a855f7" /> {isEn ? 'Anticipated Games' : 'Očekávané Herní Pecky'}</div>
+                            <ul className="hub-links-list">
+                                <li><a href={isEn ? "/en/fps-calculator/gta-6-prediction" : "/fps-kalkulacka/gta-6-predikce"}><ChevronRight size={14} /> GTA VI - {isEn ? 'HW Requirements' : 'Hardwarové Nároky'}</a></li>
+                                <li><a href="/clanky"><ChevronRight size={14} /> Mafia: The Old Country - {isEn ? 'Analysis' : 'Rozbor Výkonu'}</a></li>
+                                <li><a href="/clanky"><ChevronRight size={14} /> Kingdom Come: Deliverance II</a></li>
+                            </ul>
+                        </div>
+
+                        <div className="hub-column">
+                            <div className="hub-col-header"><Lightbulb size={16} color="#fbbf24" /> {isEn ? 'Guru Tips' : 'GURU Tipy a Rady'}</div>
+                            <ul className="hub-links-list">
+                                <li><a href="/tipy"><ChevronRight size={14} /> {isEn ? 'Why VRAM is crucial in 2026' : 'Proč nepodceňovat VRAM u nových her?'}</a></li>
+                                <li><a href="/tipy"><ChevronRight size={14} /> {isEn ? 'DLSS vs FSR - Which is better?' : 'DLSS vs FSR - Co zvedne FPS více?'}</a></li>
+                                <li><a href="/tipy"><ChevronRight size={14} /> {isEn ? 'How to fix 1% Lows stuttering' : 'Jak opravit stuttering a špatné 1% Lows'}</a></li>
+                            </ul>
+                        </div>
+
+                        <div className="hub-column">
+                            <div className="hub-col-header"><Newspaper size={16} color="#38bdf8" /> {isEn ? 'Latest Articles' : 'Nejnovější Články'}</div>
+                            <ul className="hub-links-list">
+                                <li><a href="/clanky"><ChevronRight size={14} /> {isEn ? 'Best GPUs for 1440p gaming' : 'Nejlepší grafické karty pro hraní ve 1440p'}</a></li>
+                                <li><a href="/clanky"><ChevronRight size={14} /> {isEn ? 'AMD X3D vs Intel Core Ultra' : 'Souboj titánů: AMD X3D vs Intel Core Ultra'}</a></li>
+                                <li><a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"}><ChevronRight size={14} /> {isEn ? 'FPS Calculator Database' : 'Velká databáze FPS výsledků'}</a></li>
+                            </ul>
                         </div>
                     </div>
-                </>
+
+                    {dynamicGta6Link && (
+                        <div className="dynamic-cta-box">
+                            <Sparkles size={24} color="#f43f5e" className="pulse-icon" />
+                            <div>
+                                <h4>{isEn ? 'Will this exact PC run GTA VI?' : 'Zajímá tě, jestli tahle sestava rozjede GTA VI?'}</h4>
+                                <p>{isEn ? `Check the FPS prediction for ${analysis.cpuName} + ${analysis.gpuName}.` : `Podívej se na přesnou FPS predikci pro ${analysis.cpuName} a ${analysis.gpuName}.`}</p>
+                            </div>
+                            <a href={dynamicGta6Link} className="action-btn gta-btn">
+                                {isEn ? 'CHECK GTA VI PREDICTION' : 'ZJISTIT FPS V GTA VI'}
+                            </a>
+                        </div>
+                    )}
+                </div>
             )}
 
             <style dangerouslySetInnerHTML={{__html: `
@@ -548,13 +584,6 @@ export default function BottleneckClient({
                 .premium-share-btn:hover { transform: translateY(-3px); filter: brightness(1.1); }
                 .check-anim { animation: checkPop 0.3s ease-out; }
 
-                /* GURU HUB ODKAZY */
-                .guru-hub-links { margin-top: 50px; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.05); }
-                .hub-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 12px 20px; border-radius: 12px; color: #d1d5db; font-weight: 900; font-size: 13px; text-decoration: none; transition: 0.3s; text-transform: uppercase; }
-                .hub-btn:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #fff; transform: translateY(-2px); }
-                .hub-btn.gta-btn { border-color: rgba(244, 63, 94, 0.3); background: rgba(244, 63, 94, 0.05); }
-                .hub-btn.gta-btn:hover { border-color: rgba(244, 63, 94, 0.6); background: rgba(244, 63, 94, 0.1); }
-
                 .warning-box { display: flex; gap: 15px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); padding: 20px; border-radius: 16px; margin-bottom: 20px; color: #fca5a5; font-size: 13px; line-height: 1.5; }
                 .warning-box.info { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3); color: #93c5fd; }
                 .warning-box strong { display: block; margin-bottom: 5px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
@@ -566,6 +595,39 @@ export default function BottleneckClient({
                 .recommendation p { margin: 0; font-size: 13px; color: #d1d5db; line-height: 1.6; }
                 
                 @keyframes checkPop { 0% { transform: scale(0.5); } 100% { transform: scale(1); } }
+
+                /* 🔥 MASSIVE SEO HUB STYLES */
+                .massive-seo-hub { margin-top: 60px; padding-top: 40px; border-top: 1px solid rgba(255,255,255,0.05); }
+                .hub-main-title { font-size: 20px; font-weight: 950; color: #fff; text-transform: uppercase; letter-spacing: 1px; text-align: center; margin-bottom: 30px; }
+                
+                .hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 25px; margin-bottom: 40px; }
+                .hub-column { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.02); padding: 20px; border-radius: 16px; transition: 0.3s; }
+                .hub-column:hover { background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.05); }
+                
+                .hub-col-header { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; }
+                
+                .hub-links-list { list-style: none; padding: 0; margin: 0; }
+                .hub-links-list li { margin-bottom: 12px; }
+                .hub-links-list li:last-child { margin-bottom: 0; }
+                .hub-links-list a { display: flex; align-items: flex-start; gap: 5px; color: #9ca3af; text-decoration: none; font-size: 13px; font-weight: 600; transition: 0.2s; line-height: 1.4; }
+                .hub-links-list a:hover { color: #a855f7; transform: translateX(3px); }
+                .hub-links-list a svg { flex-shrink: 0; margin-top: 2px; }
+
+                /* DYNAMIC CTA BOX */
+                .dynamic-cta-box { display: flex; align-items: center; justify-content: space-between; gap: 20px; background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(0,0,0,0.5)); border: 1px solid rgba(244, 63, 94, 0.3); padding: 30px; border-radius: 20px; text-align: left; }
+                .dynamic-cta-box h4 { margin: 0 0 5px 0; font-size: 18px; font-weight: 950; color: #fff; text-transform: uppercase; }
+                .dynamic-cta-box p { margin: 0; font-size: 14px; color: #d1d5db; font-weight: 500; }
+                .action-btn { display: inline-flex; align-items: center; gap: 10px; padding: 15px 30px; border-radius: 14px; font-weight: 950; font-size: 13px; text-decoration: none; transition: 0.3s; color: #fff; text-transform: uppercase; flex-shrink: 0; }
+                .action-btn.gta-btn { background: #f43f5e; box-shadow: 0 10px 30px rgba(244, 63, 94, 0.3); }
+                .action-btn.gta-btn:hover { background: #fb7185; box-shadow: 0 15px 40px rgba(244, 63, 94, 0.4); transform: translateY(-2px); }
+                .pulse-icon { animation: pulse 2s infinite; }
+
+                @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+
+                @media (max-width: 768px) {
+                    .dynamic-cta-box { flex-direction: column; text-align: center; }
+                    .action-btn { width: 100%; justify-content: center; }
+                }
             `}} />
         </div>
     );
