@@ -7,7 +7,9 @@ export const dynamic = 'force-dynamic';
 const baseUrl = "https://thehardwareguru.cz";
 
 export async function generateMetadata({ params }) {
-    const { slug } = await params;
+    // V Next.js App Routeru musí být params asynchronně zpracovány
+    const resolvedParams = await params;
+    const { slug } = resolvedParams;
     const cleanSlug = slug.replace(/-/g, ' ').toUpperCase();
     
     return {
@@ -20,8 +22,12 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function BottleneckResultPage({ params, searchParams }) {
-    const { cpuId, gpuId } = await searchParams;
-    const { slug } = await params;
+    // V Next.js App Routeru musí být obojí asynchronně zpracováno! Tohle byla ta chyba.
+    const resolvedParams = await params;
+    const resolvedSearchParams = await searchParams;
+    
+    const { cpuId, gpuId } = resolvedSearchParams;
+    const { slug } = resolvedParams;
 
     if (!cpuId || !gpuId || !slug) return notFound();
 
