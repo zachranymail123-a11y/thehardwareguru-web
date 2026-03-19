@@ -6,7 +6,8 @@ import { Cpu, Monitor, Zap, AlertTriangle, Crosshair, Settings2, Sparkles, Trend
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// BEZPEČNÁ INICIALIZACE SUPABASE
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 const RedditIcon = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -47,9 +48,10 @@ export default function BottleneckClient({
     const analysis = useMemo(() => {
         if ((!selectedCpuId && !isCustomCpu) || (!selectedGpuId && !isCustomGpu) || !selectedGameSlug) return null;
 
-        const cpu = isCustomCpu ? { name: 'Custom CPU', performance_index: customCpuScore } : cpus.find(c => String(c.id) === String(selectedCpuId));
-        const gpu = isCustomGpu ? { name: 'Custom GPU', performance_index: customGpuScore, vram_gb: customVram } : gpus.find(g => String(g.id) === String(selectedGpuId));
-        const baseGame = games.find(g => String(g.slug) === String(selectedGameSlug)) || { name: 'Obecná hra', slug: 'generic' };
+        // OCHRANA PROTI UNDEFINED DATŮM
+        const cpu = isCustomCpu ? { name: 'Custom CPU', performance_index: customCpuScore } : (cpus || []).find(c => String(c.id) === String(selectedCpuId));
+        const gpu = isCustomGpu ? { name: 'Custom GPU', performance_index: customGpuScore, vram_gb: customVram } : (gpus || []).find(g => String(g.id) === String(selectedGpuId));
+        const baseGame = (games || []).find(g => String(g.slug) === String(selectedGameSlug)) || { name: 'Obecná hra', slug: 'generic' };
 
         if (!cpu || !gpu) return null;
 
@@ -170,8 +172,8 @@ export default function BottleneckClient({
     let gta6DynamicLink = '';
     
     if (analysis && selectedCpuId && selectedGpuId && selectedGameSlug && !isCustomCpu && !isCustomGpu) {
-        const cpu = cpus.find(c => String(c.id) === String(selectedCpuId));
-        const gpu = gpus.find(g => String(g.id) === String(selectedGpuId));
+        const cpu = (cpus || []).find(c => String(c.id) === String(selectedCpuId));
+        const gpu = (gpus || []).find(g => String(g.id) === String(selectedGpuId));
         
         if (cpu && gpu) {
             const cleanCpu = (cpu.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -179,15 +181,16 @@ export default function BottleneckClient({
             const slugBase = `${cleanCpu}-vs-${cleanGpu}-${selectedGameSlug}-${resolution}`;
             generatedShareUrl = `https://thehardwareguru.cz/${isEn ? 'en/bottleneck-calculator' : 'bottleneck-kalkulacka'}/${slugBase}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
             
+            // Odkaz na GTA 6 kalkulačku
             gta6DynamicLink = `/${isEn ? 'en/fps-calculator/gta-6-prediction' : 'fps-kalkulacka/gta-6-predikce'}/${cleanCpu}-vs-${cleanGpu}-${resolution}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
         }
     }
 
     // ZÁPIS DO DB
     useEffect(() => {
-        if (analysis && selectedCpuId && selectedGpuId && selectedGameSlug && !isCustomCpu && !isCustomGpu) {
-            const cpu = cpus.find(c => String(c.id) === String(selectedCpuId));
-            const gpu = gpus.find(g => String(g.id) === String(selectedGpuId));
+        if (supabase && analysis && selectedCpuId && selectedGpuId && selectedGameSlug && !isCustomCpu && !isCustomGpu) {
+            const cpu = (cpus || []).find(c => String(c.id) === String(selectedCpuId));
+            const gpu = (gpus || []).find(g => String(g.id) === String(selectedGpuId));
             if (cpu && gpu) {
                 const cleanCpu = (cpu.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
                 const cleanGpu = (gpu.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -446,35 +449,24 @@ export default function BottleneckClient({
                     </div>
                 </div>
 
-                {/* 💰 ADSENSE SLOT */}
-                <div style={{ margin: '0 0 40px 0', minHeight: '120px', background: 'rgba(255,255,255,0.02)', borderRadius: '24px', border: '1px dashed rgba(168, 85, 247, 0.3)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '10px', color: '#4b5563', margin: '15px 0', fontWeight: 'bold', letterSpacing: '2px' }}>SPONZOROVANÝ OBSAH</span>
-                    <ins className="adsbygoogle"
-                         style={{ display: 'block', width: '100%' }}
-                         data-ad-client="ca-pub-5468223287024993"
-                         data-ad-slot="1234567890" 
-                         data-ad-format="auto"
-                         data-full-width-responsive="true"></ins>
-                </div>
-
                 <h3 className="hub-main-title">
                     {isEn ? 'Explore The Hardware Guru Ecosystem' : 'Prozkoumej ekosystém The Hardware Guru'}
                 </h3>
                 
+                {/* ❌ ODSTRANĚNY FAKE ODKAZY. NYNÍ JSOU ZDE POUZE OBECNÉ ARCHIVY Z HOMEPAGE */}
                 <div className="hub-grid">
                     <div className="hub-column">
-                        <div className="hub-col-header"><Swords size={16} color="#f43f5e" /> {isEn ? 'HW Duels' : 'HW Duely a Souboje'}</div>
+                        <div className="hub-col-header"><Swords size={16} color="#f43f5e" /> {isEn ? 'HW Battles' : 'HW Duely a Souboje'}</div>
                         <ul className="hub-links-list">
                             <li><a href={isEn ? "/en/gpuvs" : "/gpuvs"}><ChevronRight size={14} /> {isEn ? 'GPU Battles Engine' : 'Souboje Grafických Karet'}</a></li>
                             <li><a href={isEn ? "/en/cpuvs" : "/cpuvs"}><ChevronRight size={14} /> {isEn ? 'CPU Battles Engine' : 'Souboje Procesorů'}</a></li>
-                            <li><a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"}><ChevronRight size={14} /> {isEn ? 'FPS Calculator Database' : 'Velká databáze FPS výsledků'}</a></li>
+                            <li><a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"}><ChevronRight size={14} /> {isEn ? 'FPS Calculator' : 'FPS Kalkulačka'}</a></li>
                         </ul>
                     </div>
 
                     <div className="hub-column">
-                        <div className="hub-col-header"><Gamepad2 size={16} color="#a855f7" /> {isEn ? 'Anticipated Games' : 'Očekávané Herní Pecky'}</div>
+                        <div className="hub-col-header"><Gamepad2 size={16} color="#a855f7" /> {isEn ? 'Games & Deals' : 'Hry a Slevy'}</div>
                         <ul className="hub-links-list">
-                            <li><a href={isEn ? "/en/fps-calculator/gta-6-prediction" : "/fps-kalkulacka/gta-6-predikce"}><ChevronRight size={14} /> GTA VI - {isEn ? 'HW Requirements' : 'Hardwarové Nároky'}</a></li>
                             <li><a href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"}><ChevronRight size={14} /> {isEn ? 'Upcoming Games Archive' : 'Archiv Očekávaných Her'}</a></li>
                             <li><a href={isEn ? "/en/deals" : "/cs/deals"}><ChevronRight size={14} /> {isEn ? 'Best Game Deals' : 'Žhavé Slevy na Hry'}</a></li>
                         </ul>
@@ -489,7 +481,7 @@ export default function BottleneckClient({
                     </div>
 
                     <div className="hub-column">
-                        <div className="hub-col-header"><Newspaper size={16} color="#38bdf8" /> {isEn ? 'Latest Articles' : 'Nejnovější Články'}</div>
+                        <div className="hub-col-header"><Newspaper size={16} color="#38bdf8" /> {isEn ? 'Articles & Support' : 'Články a Podpora'}</div>
                         <ul className="hub-links-list">
                             <li><a href={isEn ? "/en/clanky" : "/clanky"}><ChevronRight size={14} /> {isEn ? 'Hardware News & Reviews' : 'HW Novinky a Recenze'}</a></li>
                             <li><a href={isEn ? "/en/support" : "/support"}><ChevronRight size={14} /> {isEn ? 'Support The Hardware Guru' : 'Podpořte The Hardware Guru'}</a></li>
@@ -498,14 +490,14 @@ export default function BottleneckClient({
                 </div>
 
                 {/* Dynamická nabídka na GTA 6 kalkulaci (Zobrazí se až po analýze aktuálního HW) */}
-                {analysis && dynamicGta6Link && (
+                {analysis && gta6DynamicLink && (
                     <div className="dynamic-cta-box" style={{ marginTop: '40px' }}>
                         <Sparkles size={24} color="#f43f5e" className="pulse-icon" />
                         <div>
                             <h4>{isEn ? 'Will this exact PC run GTA VI?' : 'Zajímá tě, jestli tahle sestava rozjede GTA VI?'}</h4>
                             <p>{isEn ? `Check the FPS prediction for ${analysis.cpuName} + ${analysis.gpuName}.` : `Podívej se na přesnou FPS predikci pro ${analysis.cpuName} a ${analysis.gpuName}.`}</p>
                         </div>
-                        <a href={dynamicGta6Link} className="action-btn gta-btn">
+                        <a href={gta6DynamicLink} className="action-btn gta-btn">
                             {isEn ? 'CHECK GTA VI PREDICTION' : 'ZJISTIT FPS V GTA VI'}
                         </a>
                     </div>
