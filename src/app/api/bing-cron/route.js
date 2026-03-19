@@ -2,23 +2,27 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU BING AUTO-FEEDER (CRON)
+ * GURU BING AUTO-FEEDER (CRON-JOB.ORG)
  * Cesta: src/app/api/seo/bing-cron/route.js
- * 🚀 CÍL: Odeslat batch až 500 nejnovějších URL do Bingu. Voláno přes Vercel CRON.
+ * 🚀 CÍL: Odeslat batch až 500 nejnovějších URL do Bingu.
  */
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
     try {
-        // 1. Zabezpečení (Vercel CRON posílá hlavičku Authorization s CRON_SECRET)
-        const authHeader = request.headers.get('authorization');
-        if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-            return NextResponse.json({ error: 'Unauthorized CRON trigger' }, { status: 401 });
+        // 1. Zabezpečení pro externí CRON (cron-job.org)
+        const { searchParams } = new URL(request.url);
+        const providedKey = searchParams.get('key');
+        const expectedKey = process.env.GURU_CRON_SECRET;
+
+        // Pokud klíč v adrese nesouhlasí s tím v .env, odmítneme přístup
+        if (!expectedKey || providedKey !== expectedKey) {
+            return NextResponse.json({ error: 'Neplatný nebo chybějící klíč (Unauthorized)' }, { status: 401 });
         }
 
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Service Key pro čtení bez omezení
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; 
         const bingApiKey = process.env.BING_API_KEY;
 
         if (!supabaseUrl || !supabaseKey || !bingApiKey) {
@@ -29,7 +33,7 @@ export async function GET(request) {
         const supabase = createClient(supabaseUrl, supabaseKey);
         const baseUrl = "https://thehardwareguru.cz";
 
-        // 2. Statické / Core URL adresy, které chceme osvěžovat často
+        // 2. Statické / Core URL adresy
         const staticUrls = [
             `${baseUrl}/`,
             `${baseUrl}/bottleneck-kalkulacka`,
@@ -48,7 +52,7 @@ export async function GET(request) {
             `${baseUrl}/cs/deals`
         ];
 
-        // 3. Vytáhneme dynamické URL z DB (vezmeme např. 480 nejnovějších, aby nám s těmi statickými nepraskl limit 500)
+        // 3. Vytáhneme dynamické URL z DB
         const { data: hits, error } = await supabase
             .from('generated_predictions')
             .select('full_url')
