@@ -4,12 +4,16 @@ import { createClient } from '@supabase/supabase-js';
 import { useParams, usePathname } from 'next/navigation';
 import { Monitor, ArrowLeft, Heart, Loader2, Zap, Activity, Calendar, Share2 } from 'lucide-react';
 import Link from 'next/link';
-import Head from 'next/head'; // 🚀 PŘIDÁNO PODLE CHATGPT
 
-// GURU CORE: Napojení na databázi
+// GURU CORE: Napojení na databázi (S VYPNUTOU CACHE PRO ČERSTVÁ DATA)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  {
+    global: {
+      fetch: (...args) => fetch(args[0], { ...args[1], cache: 'no-store' })
+    }
+  }
 );
 
 /**
@@ -35,11 +39,9 @@ export default function ExpectedGameDetail() {
           query = query.eq('slug', slug);
         }
 
-        // 🚀 FIX #1: maybeSingle() místo single() podle ChatGPT
         const { data, error } = await query.maybeSingle();
         if (error) throw error;
         
-        // 🚀 FIX #2: Debug log dat
         console.log("GURU DATA:", data);
         
         setItem(data);
@@ -64,24 +66,12 @@ export default function ExpectedGameDetail() {
   const description = (isEn && item.description_en) ? item.description_en : item.description;
   const content = (isEn && item.content_en) ? item.content_en : item.content;
 
-  // 🚀 FIX #2: Debug log obsahu
   console.log("CONTENT:", content);
   console.log("DESCRIPTION:", description);
 
   return (
     <div style={pageWrapper}>
-      {/* 🚀 BONUS FIX: Správné použití meta tagů přes Head podle ChatGPT */}
-      <Head>
-        <title>{`${title} | Guru Technical Preview`}</title>
-        <meta name="description" content={description || ''} />
-        <meta property="og:title" content={`${title} | Guru Technical Preview`} />
-        <meta property="og:description" content={description || ''} />
-        <meta property="og:image" content={item.image_url || ''} />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={`${title} | Guru Technical Preview`} />
-        <meta name="twitter:description" content={description || ''} />
-        <meta name="twitter:image" content={item.image_url || ''} />
-      </Head>
+      {/* ODSTRANĚNY SEO/META TAGY Z KLIENTSKÉ KOMPONENTY KVŮLI HYDRATAČNÍ CHYBĚ! */}
 
       <style>{`
         .article-body h2 { color: #66fcf1; margin: 40px 0 20px; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid rgba(102, 252, 241, 0.2); padding-bottom: 10px; }
@@ -127,7 +117,6 @@ export default function ExpectedGameDetail() {
           )}
 
           {/* 📝 HLAVNÍ TEXT ANALÝZY */}
-          {/* 🚀 BONUS #2: Zabezpečený fallback podle ChatGPT */}
           <div 
             className="article-body" 
             dangerouslySetInnerHTML={{ 
@@ -154,7 +143,6 @@ export default function ExpectedGameDetail() {
                 DARY / REVOLUT
               </Link>
               
-              {/* 📰 GOOGLE CONTRIBUTION BUTTON */}
               <div style={{ background: '#fff', borderRadius: '12px', padding: '0 5px', display: 'flex', alignItems: 'center', height: '48px' }}>
                 <button swg-standard-button="contribution" style={{ cursor: 'pointer' }}></button>
               </div>
@@ -182,7 +170,6 @@ export default function ExpectedGameDetail() {
   );
 }
 
-// --- MASTER STYLES ---
 const pageWrapper = { minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', padding: '120px 20px 40px' };
 const container = { maxWidth: '950px', margin: '0 auto' };
 const contentBoxStyle = { background: 'rgba(10, 11, 13, 0.97)', padding: '60px 50px', borderRadius: '45px', border: '1px solid rgba(102, 252, 241, 0.15)', boxShadow: '0 50px 120px rgba(0,0,0,0.8)', backdropFilter: 'blur(20px)' };
