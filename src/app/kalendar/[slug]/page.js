@@ -48,7 +48,32 @@ export default function ExpectedGameDetail() {
         
         if (data) {
           const pageTitle = (isEn && data.title_en) ? data.title_en : data.title;
+          const pageDesc = (isEn && data.description_en) ? data.description_en : (data.description || data.perex || data.excerpt || '');
+          const pageImg = data.image_url || '';
+
           document.title = `${pageTitle} | Guru Technical Preview`;
+
+          // 🚀 BEZPEČNÝ SEO & TWITTER META INJECTOR PRO CLIENT COMPONENT
+          const setMeta = (name, content, isProperty = false) => {
+            if (!content) return;
+            const attr = isProperty ? 'property' : 'name';
+            let tag = document.querySelector(`meta[${attr}="${name}"]`);
+            if (!tag) {
+              tag = document.createElement('meta');
+              tag.setAttribute(attr, name);
+              document.head.appendChild(tag);
+            }
+            tag.setAttribute('content', content);
+          };
+
+          setMeta('description', pageDesc);
+          setMeta('og:title', `${pageTitle} | Guru Technical Preview`, true);
+          setMeta('og:description', pageDesc, true);
+          setMeta('og:image', pageImg, true);
+          setMeta('twitter:card', 'summary_large_image');
+          setMeta('twitter:title', `${pageTitle} | Guru Technical Preview`);
+          setMeta('twitter:description', pageDesc);
+          setMeta('twitter:image', pageImg);
         }
       } catch (err) {
         console.error("GURU DB FAIL:", err);
@@ -63,7 +88,7 @@ export default function ExpectedGameDetail() {
   if (!item) return <div style={center}><h1>{isEn ? 'PREVIEW NOT FOUND' : 'PREVIEW NENALEZENO'}</h1></div>;
 
   const title = (isEn && item.title_en) ? item.title_en : item.title;
-  const description = (isEn && item.description_en) ? item.description_en : item.description;
+  const description = (isEn && item.description_en) ? item.description_en : (item.description || item.perex || item.excerpt || '');
   const content = (isEn && item.content_en) ? item.content_en : item.content;
 
   console.log("CONTENT:", content);
@@ -71,8 +96,6 @@ export default function ExpectedGameDetail() {
 
   return (
     <div style={pageWrapper}>
-      {/* ODSTRANĚNY SEO/META TAGY Z KLIENTSKÉ KOMPONENTY KVŮLI HYDRATAČNÍ CHYBĚ! */}
-
       <style>{`
         .article-body h2 { color: #66fcf1; margin: 40px 0 20px; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid rgba(102, 252, 241, 0.2); padding-bottom: 10px; }
         .article-body p { line-height: 1.8; margin-bottom: 25px; font-size: 1.15rem; color: #e5e7eb; }
