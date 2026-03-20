@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU INDEXNOW OMNI-FEEDER (BULLETPROOF 500 URLS)
- * Cesta: src/app/api/seo/bing-cron/route.js
+ * GURU INDEXNOW OMNI-FEEDER (S PAMĚTÍ V SUPABASE)
+ * 🚀 CÍL: Přečte záložku v DB, vezme přesně DALŠÍCH 500 URL v pořadí, odešle, a posune záložku.
  */
 
 export const dynamic = 'force-dynamic';
@@ -13,14 +14,11 @@ async function fetchSitemapData(url) {
         if (!res.ok) return { isIndex: false, urls: [] };
         const text = await res.text();
         
-        // Vytáhneme všechny <loc> a vyčistíme RSS bordel
         const locs = [...text.matchAll(/<loc>(.*?)<\/loc>/g)]
             .map(m => m[1])
             .filter(u => !u.endsWith('.rss') && !u.includes('/rss') && !u.includes('/feed'));
 
-        // Obsahuje to další XML rozcestníky?
         const isIndex = text.includes('<sitemapindex');
-        
         return { isIndex, urls: locs };
     } catch (e) {
         console.error(`[INDEXNOW] Chyba stahování ${url}:`, e);
@@ -30,7 +28,7 @@ async function fetchSitemapData(url) {
 
 export async function GET(request) {
     try {
-        // 1. Zabezpečení
+        // 1. Zabezpečení CRONU
         const { searchParams } = new URL(request.url);
         const providedKey = searchParams.get('key');
         const expectedKey = process.env.GURU_CRON_SECRET;
@@ -39,53 +37,87 @@ export async function GET(request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // 2. TVOJE 3 SITEMAPY
+        // Inicializace Supabase klienta
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        
+        if (!supabaseUrl || !supabaseKey) {
+            return NextResponse.json({ error: 'Chybí Supabase env proměnné' }, { status: 500 });
+        }
+        
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        // 2. NAČTEME ZÁLOŽKU Z DATABÁZE (kde jsme minule skončili)
+        let { data: stateData, error: stateError } = await supabase
+            .from('seo_cron_state')
+            .select('*')
+            .eq('id', 1)
+            .single();
+
+        if (stateError || !stateData) {
+            stateData = { current_sitemap_index: 0, current_url_index: 0 };
+        }
+
+        let { current_sitemap_index, current_url_index } = stateData;
+
+        // 3. SESTAVÍME PEVNOU STRUKTURU WEBU
         const mainSitemaps = [
             "https://thehardwareguru.cz/guru-sitemap.xml",
             "https://thehardwareguru.cz/latest.xml",
             "https://thehardwareguru.cz/sitemap-hity.xml"
         ];
 
-        let actualUrls = [];
-        let childSitemaps = [];
+        let leafSitemaps = [];
 
-        // 3. Stáhneme hlavní 3 soubory a roztřídíme
         for (const url of mainSitemaps) {
             const data = await fetchSitemapData(url);
             if (data.isIndex) {
-                childSitemaps.push(...data.urls); // Odkazy na další XML
+                leafSitemaps.push(...data.urls);
             } else {
-                actualUrls.push(...data.urls); // Rovnou reálné články
+                leafSitemaps.push(url);
             }
         }
 
-        // 4. Pokud nemáme plných 500 článků, začneme vybírat z rozcestníků
-        if (childSitemaps.length > 0 && actualUrls.length < 500) {
-            // Náhodně zamícháme podsitemapy, ať nečteme furt dokola ty samé
-            childSitemaps = childSitemaps.sort(() => 0.5 - Math.random());
+        // Zásadní krok: Seřadíme to abecedně, aby struktura byla navždy stejná a záložka se neztratila
+        leafSitemaps = [...new Set(leafSitemaps)].sort();
 
-            for (const childUrl of childSitemaps) {
-                // Jakmile nahrabeme aspoň 500, končíme čtení
-                if (actualUrls.length >= 500) break;
-                
-                console.log(`[INDEXNOW] Otevírám podsitemapu: ${childUrl}`);
-                const childData = await fetchSitemapData(childUrl);
-                actualUrls.push(...childData.urls);
-            }
+        if (leafSitemaps.length === 0) {
+             return NextResponse.json({ error: 'Nenalezeny žádné XML sitemapy' }, { status: 404 });
         }
 
-        // 5. Odstraníme duplicity
-        actualUrls = [...new Set(actualUrls)];
-
-        if (actualUrls.length === 0) {
-            return NextResponse.json({ error: 'Nenašly se žádné URL' }, { status: 404 });
+        // Pokud jsme už všechno odeslali a dostali se na konec webu, začneme zase od začátku
+        if (current_sitemap_index >= leafSitemaps.length) {
+            current_sitemap_index = 0;
+            current_url_index = 0;
         }
 
-        // 6. Odřízneme čistých 500 adres (před oříznutím je zamícháme)
-        const batchSize = Math.min(500, actualUrls.length);
-        const urlsToSend = actualUrls.sort(() => 0.5 - Math.random()).slice(0, batchSize);
+        // 4. OTEVŘEME KONKRÉTNÍ SITEMAPU PODLE ZÁLOŽKY
+        const targetSitemap = leafSitemaps[current_sitemap_index];
+        const sitemapData = await fetchSitemapData(targetSitemap);
+        const actualUrls = sitemapData.urls;
 
-        // 7. ODESLÁNÍ DO INDEXNOW (Bing, Seznam, Yandex)
+        // 5. ODŘÍZNEME PŘESNĚ DALŠÍCH 500 URL
+        const urlsToSend = actualUrls.slice(current_url_index, current_url_index + 500);
+
+        // 6. SPOČÍTÁME NOVOU ZÁLOŽKU PRO PŘÍŠTÍ SPUŠTĚNÍ
+        let next_sitemap_index = current_sitemap_index;
+        let next_url_index = current_url_index + 500;
+
+        // Pokud jsme dojeli na konec této sitemapy, příště začneme u další sitemapy od nuly
+        if (next_url_index >= actualUrls.length) {
+            next_sitemap_index++;
+            next_url_index = 0;
+        }
+
+        // Pokud náhodou byla sitemapa prázdná, jen posuneme záložku
+        if (urlsToSend.length === 0) {
+            await supabase.from('seo_cron_state').upsert({ 
+                id: 1, current_sitemap_index: next_sitemap_index, current_url_index: next_url_index, updated_at: new Date()
+            });
+            return NextResponse.json({ message: `Sitemapa ${targetSitemap} je prázdná, posouvám se dál.` }, { status: 200 });
+        }
+
+        // 7. ODESLÁNÍ DO INDEXNOW
         const payload = {
             host: "thehardwareguru.cz",
             key: "guru-indexnow-key-2026",
@@ -100,11 +132,19 @@ export async function GET(request) {
         });
 
         if (response.ok) {
+            // JAKMILE JE ODESLÁNO, ULOŽÍME NOVOU ZÁLOŽKU DO DATABÁZE
+            await supabase.from('seo_cron_state').upsert({ 
+                id: 1, 
+                current_sitemap_index: next_sitemap_index, 
+                current_url_index: next_url_index,
+                updated_at: new Date()
+            });
+
             return NextResponse.json({ 
                 success: true, 
-                collectedUrlsFromSitemaps: actualUrls.length,
-                submittedCount: urlsToSend.length,
-                message: "Úspěšně odesláno do IndexNow sítě (Bing, Seznam.cz, Yandex)."
+                sitemap_zpracovana: targetSitemap,
+                progress: `Odeslány indexy URL ${current_url_index} až ${current_url_index + urlsToSend.length} (Celkem v této sitemapě: ${actualUrls.length})`,
+                submittedCount: urlsToSend.length
             }, { status: 200 });
         } else {
             const errorText = await response.text();
