@@ -58,6 +58,17 @@ export default function ExpectedGameDetail() {
 
   return (
     <div style={pageWrapper}>
+      {/* 🚀 GURU SEO & TWITTER META TAGY */}
+      <title>{`${title} | Guru Technical Preview`}</title>
+      <meta name="description" content={description || ''} />
+      <meta property="og:title" content={`${title} | Guru Technical Preview`} />
+      <meta property="og:description" content={description || ''} />
+      <meta property="og:image" content={item.image_url || ''} />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={`${title} | Guru Technical Preview`} />
+      <meta name="twitter:description" content={description || ''} />
+      <meta name="twitter:image" content={item.image_url || ''} />
+
       <style>{`
         .article-body h2 { color: #66fcf1; margin: 40px 0 20px; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid rgba(102, 252, 241, 0.2); padding-bottom: 10px; }
         .article-body p { line-height: 1.8; margin-bottom: 25px; font-size: 1.15rem; color: #e5e7eb; }
