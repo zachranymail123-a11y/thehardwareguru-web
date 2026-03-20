@@ -2,12 +2,11 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
-// Vypnutí cache na úrovni souboru pro Vercel
 export const fetchCache = 'force-no-store';
 
 async function fetchSitemapData(url) {
     try {
-        const res = await fetch(url, { cache: 'no-store' }); // VYPNUTÍ CACHE
+        const res = await fetch(url, { cache: 'no-store' });
         if (!res.ok) return { isIndex: false, urls: [] };
         const text = await res.text();
         
@@ -40,7 +39,6 @@ export async function GET(request) {
             return NextResponse.json({ error: 'Chybí Supabase env proměnné' }, { status: 500 });
         }
         
-        // KRITICKÁ OPRAVA: Zákaz cachování pro Supabase (jinak to Vercel drží na 0,0)
         const supabase = createClient(supabaseUrl, supabaseKey, {
             auth: { persistSession: false },
             global: {
@@ -64,9 +62,10 @@ export async function GET(request) {
                 id: 1,
                 current_sitemap_index: 0,
                 current_url_index: 0,
+                total_submitted: 0, // Nové počítadlo
                 is_running: false
             });
-            lockRow = { current_sitemap_index: 0, current_url_index: 0, is_running: false };
+            lockRow = { current_sitemap_index: 0, current_url_index: 0, total_submitted: 0, is_running: false };
         }
 
         // 2. Kontrola zámku
@@ -80,10 +79,9 @@ export async function GET(request) {
             is_running: true
         });
 
-        console.log("START STATE:", lockRow);
-
         let iter_sitemap_index = lockRow.current_sitemap_index;
         let iter_url_index = lockRow.current_url_index;
+        let current_total = lockRow.total_submitted || 0; // Načtení dosavadního počtu
 
         const mainSitemaps = [
             "https://thehardwareguru.cz/guru-sitemap.xml",
@@ -164,14 +162,15 @@ export async function GET(request) {
             body: JSON.stringify(payload)
         });
 
-        console.log("END STATE:", iter_sitemap_index, iter_url_index);
-
         if (response.ok) {
-            // 4. UNLOCK A ULOŽENÍ NOVÉ POZICE
+            // 4. UNLOCK A ULOŽENÍ NOVÉ POZICE + PŘIČTENÍ DO CELKOVÉHO SKÓRE
+            const new_total = current_total + urlsToSend.length;
+            
             const { error: upsertError } = await supabase.from('seo_cron_state').upsert({
                 id: 1,
                 current_sitemap_index: iter_sitemap_index,
                 current_url_index: iter_url_index,
+                total_submitted: new_total, // Zápis nového součtu
                 is_running: false,
                 updated_at: new Date()
             });
@@ -188,6 +187,7 @@ export async function GET(request) {
                 success: true, 
                 zpracovane_sitemapy: processedSitemaps,
                 nova_pozice_v_db: `Sitemapa index ${iter_sitemap_index}, URL index ${iter_url_index}`,
+                celkem_odeslano_historicky: new_total, // Nový údaj ve výpisu
                 submittedCount: urlsToSend.length
             }, { status: 200 });
         } else {
