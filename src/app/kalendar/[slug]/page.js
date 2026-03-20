@@ -5,10 +5,15 @@ import { useParams, usePathname } from 'next/navigation';
 import { Monitor, ArrowLeft, Heart, Loader2, Zap, Activity, Calendar, Share2 } from 'lucide-react';
 import Link from 'next/link';
 
-// GURU CORE: Napojení na databázi
+// GURU CORE: Napojení na databázi s VYPNUTOU CACHÍ (jinak si to drží stará prázdná data!)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  {
+    global: {
+      fetch: (...args) => fetch(args[0], { ...args[1], cache: 'no-store' })
+    }
+  }
 );
 
 /**
