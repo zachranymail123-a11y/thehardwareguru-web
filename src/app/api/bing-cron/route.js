@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 /**
- * GURU INDEXNOW OMNI-FEEDER (S PODPOROU ROZCESTNÍKŮ)
+ * GURU INDEXNOW OMNI-FEEDER (BULLETPROOF 500 URLS)
  * Cesta: src/app/api/seo/bing-cron/route.js
  */
 
@@ -13,12 +13,12 @@ async function fetchSitemapData(url) {
         if (!res.ok) return { isIndex: false, urls: [] };
         const text = await res.text();
         
-        // Vytáhneme všechny <loc> a ignorujeme RSS
+        // Vytáhneme všechny <loc> a vyčistíme RSS bordel
         const locs = [...text.matchAll(/<loc>(.*?)<\/loc>/g)]
             .map(m => m[1])
             .filter(u => !u.endsWith('.rss') && !u.includes('/rss') && !u.includes('/feed'));
 
-        // Zjistíme, jestli to je rozcestník na další XML, nebo už reálné články
+        // Obsahuje to další XML rozcestníky?
         const isIndex = text.includes('<sitemapindex');
         
         return { isIndex, urls: locs };
@@ -39,47 +39,53 @@ export async function GET(request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // 2. TVOJE 3 HLAVNÍ SITEMAPY
+        // 2. TVOJE 3 SITEMAPY
         const mainSitemaps = [
             "https://thehardwareguru.cz/guru-sitemap.xml",
             "https://thehardwareguru.cz/latest.xml",
             "https://thehardwareguru.cz/sitemap-hity.xml"
         ];
 
-        let allActualUrls = [];
+        let actualUrls = [];
         let childSitemaps = [];
 
-        // 3. Projdeme je a roztřídíme na "články" a "další XML rozcestníky"
+        // 3. Stáhneme hlavní 3 soubory a roztřídíme
         for (const url of mainSitemaps) {
             const data = await fetchSitemapData(url);
             if (data.isIndex) {
-                childSitemaps.push(...data.urls);
+                childSitemaps.push(...data.urls); // Odkazy na další XML
             } else {
-                allActualUrls.push(...data.urls);
+                actualUrls.push(...data.urls); // Rovnou reálné články
             }
         }
 
-        // 4. Pokud jsme našli rozcestník, vybereme náhodně JEDNU podsitemapu a vycucneme ji 
-        // (Bereme jen jednu, abychom nestahovali 250k URL naráz a neshodili Vercel server)
-        if (childSitemaps.length > 0) {
-            const randomChild = childSitemaps[Math.floor(Math.random() * childSitemaps.length)];
-            console.log(`[INDEXNOW] Zanořuji se do podsitemapy: ${randomChild}`);
-            const childData = await fetchSitemapData(randomChild);
-            allActualUrls.push(...childData.urls);
+        // 4. Pokud nemáme plných 500 článků, začneme vybírat z rozcestníků
+        if (childSitemaps.length > 0 && actualUrls.length < 500) {
+            // Náhodně zamícháme podsitemapy, ať nečteme furt dokola ty samé
+            childSitemaps = childSitemaps.sort(() => 0.5 - Math.random());
+
+            for (const childUrl of childSitemaps) {
+                // Jakmile nahrabeme aspoň 500, končíme čtení
+                if (actualUrls.length >= 500) break;
+                
+                console.log(`[INDEXNOW] Otevírám podsitemapu: ${childUrl}`);
+                const childData = await fetchSitemapData(childUrl);
+                actualUrls.push(...childData.urls);
+            }
         }
 
-        // 5. Vyčistíme duplicity
-        allActualUrls = [...new Set(allActualUrls)];
+        // 5. Odstraníme duplicity
+        actualUrls = [...new Set(actualUrls)];
 
-        if (allActualUrls.length === 0) {
+        if (actualUrls.length === 0) {
             return NextResponse.json({ error: 'Nenašly se žádné URL' }, { status: 404 });
         }
 
-        // 6. ZAMÍCHÁME A VEZMEME MAX 500 URL (Limit API na jeden request)
-        const batchSize = Math.min(500, allActualUrls.length);
-        const urlsToSend = allActualUrls.sort(() => 0.5 - Math.random()).slice(0, batchSize);
+        // 6. Odřízneme čistých 500 adres (před oříznutím je zamícháme)
+        const batchSize = Math.min(500, actualUrls.length);
+        const urlsToSend = actualUrls.sort(() => 0.5 - Math.random()).slice(0, batchSize);
 
-        // 7. ODESLÁNÍ DO INDEXNOW
+        // 7. ODESLÁNÍ DO INDEXNOW (Bing, Seznam, Yandex)
         const payload = {
             host: "thehardwareguru.cz",
             key: "guru-indexnow-key-2026",
@@ -96,6 +102,7 @@ export async function GET(request) {
         if (response.ok) {
             return NextResponse.json({ 
                 success: true, 
+                collectedUrlsFromSitemaps: actualUrls.length,
                 submittedCount: urlsToSend.length,
                 message: "Úspěšně odesláno do IndexNow sítě (Bing, Seznam.cz, Yandex)."
             }, { status: 200 });
