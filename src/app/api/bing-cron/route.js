@@ -32,6 +32,7 @@ export async function GET(request) {
         }
 
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        // TADY JE MOŽNÁ ZAKOPANÝ PES - musíme vynutit použití Service Key, pokud je dostupný
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
         
         if (!supabaseUrl || !supabaseKey) {
@@ -90,7 +91,6 @@ export async function GET(request) {
             const actualUrls = sitemapData.urls;
 
             if (actualUrls.length === 0) {
-                 // Sitemapa je prázdná, jdeme hned na další
                  iter_sitemap_index++;
                  iter_url_index = 0;
                  continue;
@@ -99,18 +99,18 @@ export async function GET(request) {
             const needed = 500 - urlsToSend.length;
             const chunk = actualUrls.slice(iter_url_index, iter_url_index + needed);
 
-            urlsToSend.push(...chunk);
-            if (!processedSitemaps.includes(targetSitemap)) {
-                processedSitemaps.push(targetSitemap);
+            if (chunk.length > 0) {
+                urlsToSend.push(...chunk);
+                if (!processedSitemaps.includes(targetSitemap)) {
+                    processedSitemaps.push(targetSitemap);
+                }
             }
 
-            // Přičteme k aktuálnímu indexu v TÉTO sitemapě přesně tolik, kolik jsme odřízli
             iter_url_index += chunk.length;
 
-            // Zásadní kontrola: pokud jsme ukrojili všechno až do konce této sitemapy
             if (iter_url_index >= actualUrls.length) {
                 iter_sitemap_index++;
-                iter_url_index = 0; // Začneme od nuly v další sitemapě
+                iter_url_index = 0;
             }
         }
 
@@ -132,13 +132,22 @@ export async function GET(request) {
         });
 
         if (response.ok) {
-            // ULOŽÍME NOVOU POZICI (teď už s opravenou logikou!)
-            await supabase.from('seo_cron_state').upsert({ 
+            // TADY PŘIDÁVÁM KONTROLU CHYBY PŘI ZÁPISU DO DATABÁZE
+            const { error: upsertError } = await supabase.from('seo_cron_state').upsert({ 
                 id: 1, 
                 current_sitemap_index: iter_sitemap_index, 
                 current_url_index: iter_url_index,
                 updated_at: new Date()
             });
+
+            if (upsertError) {
+                // Pokud databáze odmítne zápis (RLS atd.), dozvíš se to!
+                return NextResponse.json({ 
+                    success: false, 
+                    error: "Nelze uložit novou pozici do Supabase. Zkontroluj RLS práva tabulky!", 
+                    details: upsertError 
+                }, { status: 500 });
+            }
 
             return NextResponse.json({ 
                 success: true, 
