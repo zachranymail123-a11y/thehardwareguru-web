@@ -50,9 +50,10 @@ export async function GET(request) {
             stateData = { current_sitemap_index: 0, current_url_index: 0 };
         }
 
-        let { current_sitemap_index, current_url_index } = stateData;
+        // Tyhle proměnné teď budeme v cyklu posouvat
+        let iter_sitemap_index = stateData.current_sitemap_index;
+        let iter_url_index = stateData.current_url_index;
 
-        // HLAVNÍ SITEMAPY V PŘESNÉM POŘADÍ
         const mainSitemaps = [
             "https://thehardwareguru.cz/guru-sitemap.xml",
             "https://thehardwareguru.cz/latest.xml",
@@ -61,7 +62,7 @@ export async function GET(request) {
 
         let leafSitemaps = [];
 
-        // Nasajeme všechno v PŘIROZENÉM pořadí bez jakéhokoliv míchání nebo řazení!
+        // Nasajeme strukturu bez řazení
         for (const url of mainSitemaps) {
             const data = await fetchSitemapData(url);
             if (data.isIndex) {
@@ -71,37 +72,46 @@ export async function GET(request) {
             }
         }
 
-        // Odstraníme případné duplicity, ale ZACHOVÁME pořadí
         leafSitemaps = [...new Set(leafSitemaps)];
 
         if (leafSitemaps.length === 0) {
              return NextResponse.json({ error: 'Nenalezeny žádné XML sitemapy' }, { status: 404 });
         }
 
-        if (current_sitemap_index >= leafSitemaps.length) {
-            current_sitemap_index = 0;
-            current_url_index = 0;
+        if (iter_sitemap_index >= leafSitemaps.length) {
+            iter_sitemap_index = 0;
+            iter_url_index = 0;
         }
 
-        const targetSitemap = leafSitemaps[current_sitemap_index];
-        const sitemapData = await fetchSitemapData(targetSitemap);
-        const actualUrls = sitemapData.urls;
+        let urlsToSend = [];
+        let processedSitemaps = [];
 
-        const urlsToSend = actualUrls.slice(current_url_index, current_url_index + 500);
+        // CYKLUS: Saje URLs tak dlouho, dokud nemá přesně 500, nebo nedojde na konec webu
+        while (urlsToSend.length < 500 && iter_sitemap_index < leafSitemaps.length) {
+            const targetSitemap = leafSitemaps[iter_sitemap_index];
+            const sitemapData = await fetchSitemapData(targetSitemap);
+            const actualUrls = sitemapData.urls;
 
-        let next_sitemap_index = current_sitemap_index;
-        let next_url_index = current_url_index + 500;
+            const needed = 500 - urlsToSend.length;
+            const availableUrls = actualUrls.slice(iter_url_index);
+            const chunk = availableUrls.slice(0, needed);
 
-        if (next_url_index >= actualUrls.length) {
-            next_sitemap_index++;
-            next_url_index = 0;
+            urlsToSend.push(...chunk);
+            if (!processedSitemaps.includes(targetSitemap)) {
+                processedSitemaps.push(targetSitemap);
+            }
+
+            iter_url_index += chunk.length;
+
+            // Pokud jsme dojeli na konec aktuální sitemapy, jdeme na další a nulujeme url index
+            if (iter_url_index >= actualUrls.length) {
+                iter_sitemap_index++;
+                iter_url_index = 0;
+            }
         }
 
         if (urlsToSend.length === 0) {
-            await supabase.from('seo_cron_state').upsert({ 
-                id: 1, current_sitemap_index: next_sitemap_index, current_url_index: next_url_index, updated_at: new Date()
-            });
-            return NextResponse.json({ message: `Sitemapa ${targetSitemap} je prázdná, posouvám se dál.` }, { status: 200 });
+            return NextResponse.json({ message: 'Žádné další URL k odeslání.' }, { status: 200 });
         }
 
         const payload = {
@@ -118,17 +128,18 @@ export async function GET(request) {
         });
 
         if (response.ok) {
+            // Uložíme přesnou pozici, kde se vysavač zastavil (i kdyby to bylo uprostřed 3. sitemapy)
             await supabase.from('seo_cron_state').upsert({ 
                 id: 1, 
-                current_sitemap_index: next_sitemap_index, 
-                current_url_index: next_url_index,
+                current_sitemap_index: iter_sitemap_index, 
+                current_url_index: iter_url_index,
                 updated_at: new Date()
             });
 
             return NextResponse.json({ 
                 success: true, 
-                sitemap_zpracovana: targetSitemap,
-                progress: `Odeslány indexy URL ${current_url_index} až ${current_url_index + urlsToSend.length} (Celkem v této sitemapě: ${actualUrls.length})`,
+                zpracovane_sitemapy: processedSitemaps,
+                nova_pozice_v_db: `Sitemapa index ${iter_sitemap_index}, URL index ${iter_url_index}`,
                 submittedCount: urlsToSend.length
             }, { status: 200 });
         } else {
