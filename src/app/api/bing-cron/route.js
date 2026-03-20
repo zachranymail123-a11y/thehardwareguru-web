@@ -50,7 +50,6 @@ export async function GET(request) {
             stateData = { current_sitemap_index: 0, current_url_index: 0 };
         }
 
-        // Tyhle proměnné teď budeme v cyklu posouvat
         let iter_sitemap_index = stateData.current_sitemap_index;
         let iter_url_index = stateData.current_url_index;
 
@@ -62,7 +61,6 @@ export async function GET(request) {
 
         let leafSitemaps = [];
 
-        // Nasajeme strukturu bez řazení
         for (const url of mainSitemaps) {
             const data = await fetchSitemapData(url);
             if (data.isIndex) {
@@ -86,27 +84,33 @@ export async function GET(request) {
         let urlsToSend = [];
         let processedSitemaps = [];
 
-        // CYKLUS: Saje URLs tak dlouho, dokud nemá přesně 500, nebo nedojde na konec webu
         while (urlsToSend.length < 500 && iter_sitemap_index < leafSitemaps.length) {
             const targetSitemap = leafSitemaps[iter_sitemap_index];
             const sitemapData = await fetchSitemapData(targetSitemap);
             const actualUrls = sitemapData.urls;
 
+            if (actualUrls.length === 0) {
+                 // Sitemapa je prázdná, jdeme hned na další
+                 iter_sitemap_index++;
+                 iter_url_index = 0;
+                 continue;
+            }
+
             const needed = 500 - urlsToSend.length;
-            const availableUrls = actualUrls.slice(iter_url_index);
-            const chunk = availableUrls.slice(0, needed);
+            const chunk = actualUrls.slice(iter_url_index, iter_url_index + needed);
 
             urlsToSend.push(...chunk);
             if (!processedSitemaps.includes(targetSitemap)) {
                 processedSitemaps.push(targetSitemap);
             }
 
+            // Přičteme k aktuálnímu indexu v TÉTO sitemapě přesně tolik, kolik jsme odřízli
             iter_url_index += chunk.length;
 
-            // Pokud jsme dojeli na konec aktuální sitemapy, jdeme na další a nulujeme url index
+            // Zásadní kontrola: pokud jsme ukrojili všechno až do konce této sitemapy
             if (iter_url_index >= actualUrls.length) {
                 iter_sitemap_index++;
-                iter_url_index = 0;
+                iter_url_index = 0; // Začneme od nuly v další sitemapě
             }
         }
 
@@ -128,7 +132,7 @@ export async function GET(request) {
         });
 
         if (response.ok) {
-            // Uložíme přesnou pozici, kde se vysavač zastavil (i kdyby to bylo uprostřed 3. sitemapy)
+            // ULOŽÍME NOVOU POZICI (teď už s opravenou logikou!)
             await supabase.from('seo_cron_state').upsert({ 
                 id: 1, 
                 current_sitemap_index: iter_sitemap_index, 
