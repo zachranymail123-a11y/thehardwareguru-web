@@ -2,10 +2,12 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
+// Vypnutí cache na úrovni souboru pro Vercel
+export const fetchCache = 'force-no-store';
 
 async function fetchSitemapData(url) {
     try {
-        const res = await fetch(url);
+        const res = await fetch(url, { cache: 'no-store' }); // VYPNUTÍ CACHE
         if (!res.ok) return { isIndex: false, urls: [] };
         const text = await res.text();
         
@@ -38,21 +40,25 @@ export async function GET(request) {
             return NextResponse.json({ error: 'Chybí Supabase env proměnné' }, { status: 500 });
         }
         
-        const supabase = createClient(supabaseUrl, supabaseKey);
+        // KRITICKÁ OPRAVA: Zákaz cachování pro Supabase (jinak to Vercel drží na 0,0)
+        const supabase = createClient(supabaseUrl, supabaseKey, {
+            auth: { persistSession: false },
+            global: {
+                fetch: (...args) => fetch(args[0], { ...args[1], cache: 'no-store' })
+            }
+        });
 
-        // 1. Načtení state + zjištění, jestli to nepadá na chybě (ChatGPT FIX)
+        // 1. Načtení state
         let { data: lockRow, error: stateError } = await supabase
             .from('seo_cron_state')
             .select('*')
             .eq('id', 1)
             .single();
 
-        // Ignorujeme pouze PGRST116 (což znamená, že tabulka je prázdná a vrací 0 řádků)
         if (stateError && stateError.code !== 'PGRST116') {
             return NextResponse.json({ error: stateError.message }, { status: 500 });
         }
 
-        // Pokud řádek neexistuje, vytvoříme ho JEDNOU (ChatGPT FIX)
         if (!lockRow) {
             await supabase.from('seo_cron_state').insert({
                 id: 1,
@@ -63,18 +69,17 @@ export async function GET(request) {
             lockRow = { current_sitemap_index: 0, current_url_index: 0, is_running: false };
         }
 
-        // 2. Kontrola zámku - běží to už? (ChatGPT FIX)
+        // 2. Kontrola zámku
         if (lockRow?.is_running) {
             return NextResponse.json({ message: 'Cron už běží' }, { status: 429 });
         }
 
-        // 3. ZAMKNI (ChatGPT FIX)
+        // 3. ZAMKNI
         await supabase.from('seo_cron_state').upsert({
             id: 1,
             is_running: true
         });
 
-        // Debug log podle návodu
         console.log("START STATE:", lockRow);
 
         let iter_sitemap_index = lockRow.current_sitemap_index;
@@ -100,7 +105,6 @@ export async function GET(request) {
         leafSitemaps = [...new Set(leafSitemaps)];
 
         if (leafSitemaps.length === 0) {
-            // Bezpečnostní unlock při chybě
             await supabase.from('seo_cron_state').upsert({ id: 1, is_running: false });
             return NextResponse.json({ error: 'Nenalezeny žádné XML sitemapy' }, { status: 404 });
         }
@@ -160,11 +164,10 @@ export async function GET(request) {
             body: JSON.stringify(payload)
         });
 
-        // Debug log podle návodu
         console.log("END STATE:", iter_sitemap_index, iter_url_index);
 
         if (response.ok) {
-            // 4. UNLOCK A ULOŽENÍ NOVÉ POZICE (ChatGPT FIX)
+            // 4. UNLOCK A ULOŽENÍ NOVÉ POZICE
             const { error: upsertError } = await supabase.from('seo_cron_state').upsert({
                 id: 1,
                 current_sitemap_index: iter_sitemap_index,
@@ -189,18 +192,16 @@ export async function GET(request) {
             }, { status: 200 });
         } else {
             const errorText = await response.text();
-            // Unlock při chybě IndexNow API
             await supabase.from('seo_cron_state').upsert({ id: 1, is_running: false });
             return NextResponse.json({ success: false, error: 'IndexNow Error', details: errorText }, { status: response.status });
         }
 
     } catch (error) {
         console.error("[INDEXNOW CRON] Kritická chyba:", error);
-        // Fallback unlock při úplném pádu
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
         if (supabaseUrl && supabaseKey) {
-            const supabase = createClient(supabaseUrl, supabaseKey);
+            const supabase = createClient(supabaseUrl, supabaseKey, { global: { fetch: (...args) => fetch(args[0], { ...args[1], cache: 'no-store' }) } });
             await supabase.from('seo_cron_state').upsert({ id: 1, is_running: false });
         }
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
