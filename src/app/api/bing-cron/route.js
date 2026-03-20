@@ -32,7 +32,6 @@ export async function GET(request) {
         }
 
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        // TADY JE MOŽNÁ ZAKOPANÝ PES - musíme vynutit použití Service Key, pokud je dostupný
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
         
         if (!supabaseUrl || !supabaseKey) {
@@ -41,18 +40,45 @@ export async function GET(request) {
         
         const supabase = createClient(supabaseUrl, supabaseKey);
 
-        let { data: stateData, error: stateError } = await supabase
+        // 1. Načtení state + zjištění, jestli to nepadá na chybě (ChatGPT FIX)
+        let { data: lockRow, error: stateError } = await supabase
             .from('seo_cron_state')
             .select('*')
             .eq('id', 1)
             .single();
 
-        if (stateError || !stateData) {
-            stateData = { current_sitemap_index: 0, current_url_index: 0 };
+        // Ignorujeme pouze PGRST116 (což znamená, že tabulka je prázdná a vrací 0 řádků)
+        if (stateError && stateError.code !== 'PGRST116') {
+            return NextResponse.json({ error: stateError.message }, { status: 500 });
         }
 
-        let iter_sitemap_index = stateData.current_sitemap_index;
-        let iter_url_index = stateData.current_url_index;
+        // Pokud řádek neexistuje, vytvoříme ho JEDNOU (ChatGPT FIX)
+        if (!lockRow) {
+            await supabase.from('seo_cron_state').insert({
+                id: 1,
+                current_sitemap_index: 0,
+                current_url_index: 0,
+                is_running: false
+            });
+            lockRow = { current_sitemap_index: 0, current_url_index: 0, is_running: false };
+        }
+
+        // 2. Kontrola zámku - běží to už? (ChatGPT FIX)
+        if (lockRow?.is_running) {
+            return NextResponse.json({ message: 'Cron už běží' }, { status: 429 });
+        }
+
+        // 3. ZAMKNI (ChatGPT FIX)
+        await supabase.from('seo_cron_state').upsert({
+            id: 1,
+            is_running: true
+        });
+
+        // Debug log podle návodu
+        console.log("START STATE:", lockRow);
+
+        let iter_sitemap_index = lockRow.current_sitemap_index;
+        let iter_url_index = lockRow.current_url_index;
 
         const mainSitemaps = [
             "https://thehardwareguru.cz/guru-sitemap.xml",
@@ -74,7 +100,9 @@ export async function GET(request) {
         leafSitemaps = [...new Set(leafSitemaps)];
 
         if (leafSitemaps.length === 0) {
-             return NextResponse.json({ error: 'Nenalezeny žádné XML sitemapy' }, { status: 404 });
+            // Bezpečnostní unlock při chybě
+            await supabase.from('seo_cron_state').upsert({ id: 1, is_running: false });
+            return NextResponse.json({ error: 'Nenalezeny žádné XML sitemapy' }, { status: 404 });
         }
 
         if (iter_sitemap_index >= leafSitemaps.length) {
@@ -115,6 +143,7 @@ export async function GET(request) {
         }
 
         if (urlsToSend.length === 0) {
+            await supabase.from('seo_cron_state').upsert({ id: 1, is_running: false });
             return NextResponse.json({ message: 'Žádné další URL k odeslání.' }, { status: 200 });
         }
 
@@ -131,20 +160,23 @@ export async function GET(request) {
             body: JSON.stringify(payload)
         });
 
+        // Debug log podle návodu
+        console.log("END STATE:", iter_sitemap_index, iter_url_index);
+
         if (response.ok) {
-            // TADY PŘIDÁVÁM KONTROLU CHYBY PŘI ZÁPISU DO DATABÁZE
-            const { error: upsertError } = await supabase.from('seo_cron_state').upsert({ 
-                id: 1, 
-                current_sitemap_index: iter_sitemap_index, 
+            // 4. UNLOCK A ULOŽENÍ NOVÉ POZICE (ChatGPT FIX)
+            const { error: upsertError } = await supabase.from('seo_cron_state').upsert({
+                id: 1,
+                current_sitemap_index: iter_sitemap_index,
                 current_url_index: iter_url_index,
+                is_running: false,
                 updated_at: new Date()
             });
 
             if (upsertError) {
-                // Pokud databáze odmítne zápis (RLS atd.), dozvíš se to!
                 return NextResponse.json({ 
                     success: false, 
-                    error: "Nelze uložit novou pozici do Supabase. Zkontroluj RLS práva tabulky!", 
+                    error: "Nelze uložit pozici. Zkontroluj RLS!", 
                     details: upsertError 
                 }, { status: 500 });
             }
@@ -157,11 +189,20 @@ export async function GET(request) {
             }, { status: 200 });
         } else {
             const errorText = await response.text();
+            // Unlock při chybě IndexNow API
+            await supabase.from('seo_cron_state').upsert({ id: 1, is_running: false });
             return NextResponse.json({ success: false, error: 'IndexNow Error', details: errorText }, { status: response.status });
         }
 
     } catch (error) {
         console.error("[INDEXNOW CRON] Kritická chyba:", error);
+        // Fallback unlock při úplném pádu
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        if (supabaseUrl && supabaseKey) {
+            const supabase = createClient(supabaseUrl, supabaseKey);
+            await supabase.from('seo_cron_state').upsert({ id: 1, is_running: false });
+        }
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
