@@ -4,16 +4,12 @@ import { createClient } from '@supabase/supabase-js';
 import { useParams, usePathname } from 'next/navigation';
 import { Monitor, ArrowLeft, Heart, Loader2, Zap, Activity, Calendar, Share2 } from 'lucide-react';
 import Link from 'next/link';
+import Head from 'next/head'; // 🚀 PŘIDÁNO PODLE CHATGPT
 
-// GURU CORE: Napojení na databázi s VYPNUTOU CACHÍ (jinak si to drží stará prázdná data!)
+// GURU CORE: Napojení na databázi
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  {
-    global: {
-      fetch: (...args) => fetch(args[0], { ...args[1], cache: 'no-store' })
-    }
-  }
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
 /**
@@ -39,12 +35,19 @@ export default function ExpectedGameDetail() {
           query = query.eq('slug', slug);
         }
 
-        const { data, error } = await query.single();
+        // 🚀 FIX #1: maybeSingle() místo single() podle ChatGPT
+        const { data, error } = await query.maybeSingle();
         if (error) throw error;
+        
+        // 🚀 FIX #2: Debug log dat
+        console.log("GURU DATA:", data);
+        
         setItem(data);
         
-        const pageTitle = (isEn && data.title_en) ? data.title_en : data.title;
-        document.title = `${pageTitle} | Guru Technical Preview`;
+        if (data) {
+          const pageTitle = (isEn && data.title_en) ? data.title_en : data.title;
+          document.title = `${pageTitle} | Guru Technical Preview`;
+        }
       } catch (err) {
         console.error("GURU DB FAIL:", err);
       } finally {
@@ -61,18 +64,24 @@ export default function ExpectedGameDetail() {
   const description = (isEn && item.description_en) ? item.description_en : item.description;
   const content = (isEn && item.content_en) ? item.content_en : item.content;
 
+  // 🚀 FIX #2: Debug log obsahu
+  console.log("CONTENT:", content);
+  console.log("DESCRIPTION:", description);
+
   return (
     <div style={pageWrapper}>
-      {/* 🚀 GURU SEO & TWITTER META TAGY */}
-      <title>{`${title} | Guru Technical Preview`}</title>
-      <meta name="description" content={description || ''} />
-      <meta property="og:title" content={`${title} | Guru Technical Preview`} />
-      <meta property="og:description" content={description || ''} />
-      <meta property="og:image" content={item.image_url || ''} />
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={`${title} | Guru Technical Preview`} />
-      <meta name="twitter:description" content={description || ''} />
-      <meta name="twitter:image" content={item.image_url || ''} />
+      {/* 🚀 BONUS FIX: Správné použití meta tagů přes Head podle ChatGPT */}
+      <Head>
+        <title>{`${title} | Guru Technical Preview`}</title>
+        <meta name="description" content={description || ''} />
+        <meta property="og:title" content={`${title} | Guru Technical Preview`} />
+        <meta property="og:description" content={description || ''} />
+        <meta property="og:image" content={item.image_url || ''} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${title} | Guru Technical Preview`} />
+        <meta name="twitter:description" content={description || ''} />
+        <meta name="twitter:image" content={item.image_url || ''} />
+      </Head>
 
       <style>{`
         .article-body h2 { color: #66fcf1; margin: 40px 0 20px; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid rgba(102, 252, 241, 0.2); padding-bottom: 10px; }
@@ -118,9 +127,14 @@ export default function ExpectedGameDetail() {
           )}
 
           {/* 📝 HLAVNÍ TEXT ANALÝZY */}
+          {/* 🚀 BONUS #2: Zabezpečený fallback podle ChatGPT */}
           <div 
             className="article-body" 
-            dangerouslySetInnerHTML={{ __html: content || '...' }} 
+            dangerouslySetInnerHTML={{ 
+              __html: content && content.trim() !== '' 
+                ? content 
+                : '<p>Content zatím není dostupný.</p>' 
+            }} 
           />
 
           {/* 🛡️ GURU SUPPORT SHIELD */}
