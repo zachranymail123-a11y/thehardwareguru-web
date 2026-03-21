@@ -1,4 +1,5 @@
 import React from 'react';
+import { notFound } from 'next/navigation';
 import { 
   ChevronLeft, 
   CheckCircle2,
@@ -9,17 +10,16 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU CPU RECOMMEND ENGINE V1.0
- * Cesta: src/app/cpu-recommend/[cpu]/page.js
- * 🛡️ ARCH: 3-Tier Slug Lookup, CZ/EN, Automatický generátor doporučení.
+ * GURU CPU RECOMMEND ENGINE V1.1 (ADS INJECTION UPDATE)
+ * 🚀 CÍL: Maximální monetizace CPU verdiktů skrze A-ADS.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const baseUrl = "https://thehardwareguru.cz";
 
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 
-// 🛡️ GURU ENGINE: 3-TIER SYSTEM PRO CPU
 const findCpuBySlug = async (cpuSlug) => {
   if (!supabaseUrl || !cpuSlug) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
@@ -53,23 +53,14 @@ export async function generateMetadata({ params }) {
   const { cpu: rawCpuSlug } = params;
   const isEn = rawCpuSlug.startsWith('en-');
   const cpuSlug = rawCpuSlug.replace(/^en-/, '');
-
   const cpu = await findCpuBySlug(cpuSlug);
   if (!cpu) return { title: '404 | Hardware Guru' };
 
   return {
-    title: isEn 
-      ? `Should I buy ${cpu.name}? Guru Verdict | The Hardware Guru`
-      : `Vyplatí se koupit ${cpu.name}? Verdikt Guru | The Hardware Guru`,
-    description: isEn
-      ? `Hardware Guru recommendation and value analysis for the ${cpu.name}. Is it worth the money in 2025?`
-      : `Doporučení a analýza poměru cena/výkon pro procesor ${cpu.name}. Vyplatí se do něj v roce 2025 investovat?`,
+    title: isEn ? `Should I buy ${cpu.name}? Guru Verdict | The Hardware Guru` : `Vyplatí se koupit ${cpu.name}? Verdikt Guru | The Hardware Guru`,
     alternates: {
-      canonical: `https://thehardwareguru.cz/cpu-recommend/${cpu.slug}`,
-      languages: {
-        'en': `https://thehardwareguru.cz/en/cpu-recommend/${cpu.slug}`,
-        'cs': `https://thehardwareguru.cz/cpu-recommend/${cpu.slug}`
-      }
+      canonical: `${baseUrl}/cpu-recommend/${cpu.slug}`,
+      languages: { 'en': `${baseUrl}/en/cpu-recommend/${cpu.slug}`, 'cs': `${baseUrl}/cpu-recommend/${cpu.slug}` }
     }
   };
 }
@@ -80,7 +71,7 @@ export default async function CpuRecommendPage({ params }) {
   const cpuSlug = rawCpuSlug.replace(/^en-/, '');
   
   const cpu = await findCpuBySlug(cpuSlug);
-  if (!cpu) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>CPU NENALEZENO</div>;
+  if (!cpu) notFound();
 
   const isHighEnd = (cpu.performance_index || 0) > 80;
   const isMidRange = (cpu.performance_index || 0) > 40 && (cpu.performance_index || 0) <= 80;
@@ -103,17 +94,24 @@ export default async function CpuRecommendPage({ params }) {
           </a>
         </div>
 
-        <header style={{ textAlign: 'center', marginBottom: '60px' }}>
+        <header style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '50px', background: 'rgba(245,158,11,0.05)' }}>
             <Cpu size={16} /> GURU RECOMMENDATION
           </div>
-          <h1 style={{ fontSize: 'clamp(2rem, 8vw, 4rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.2' }}>
+          <h1 style={{ fontSize: 'clamp(2.1rem, 8vw, 4rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.2' }}>
             {isEn ? 'SHOULD YOU BUY' : 'VYPLATÍ SE KOUPIT'} <br/>
             <span style={{ color: '#f59e0b' }}>{normalizeName(cpu.name)}?</span>
           </h1>
         </header>
 
-        <section style={{ marginBottom: '60px' }}>
+        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD NADPISEM */}
+        <div className="guru-rec-ad-slot">
+            <span className="ad-label">Advertisement</span>
+            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        </div>
+
+        <section style={{ marginBottom: '30px' }}>
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255, 255, 255, 0.05)', borderTop: `8px solid ${verdict.color}`, borderRadius: '24px', padding: '60px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center' }}>
                 <div style={{ color: verdict.color, display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
                     {verdict.icon}
@@ -121,7 +119,6 @@ export default async function CpuRecommendPage({ params }) {
                 <div style={{ fontSize: '40px', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0', textTransform: 'uppercase', letterSpacing: '2px' }}>
                     {isEn ? verdict.en : verdict.cz}
                 </div>
-                
                 <div style={{ color: '#d1d5db', fontSize: '1.1rem', maxWidth: '600px', margin: '30px auto 0', lineHeight: '1.8' }}>
                     {isEn ? (
                         <p>Based on current market data, specifications, and gaming benchmarks, the <strong>{cpu.name}</strong> is considered to be a <strong>{verdict.en.toLowerCase()}</strong> for your next PC build or upgrade.</p>
@@ -132,7 +129,14 @@ export default async function CpuRecommendPage({ params }) {
             </div>
         </section>
 
-        <section style={{ textAlign: 'center', marginTop: '80px' }}>
+        {/* 🔥 ADS SLOT #2: VERDICT AD (POD HLAVNÍM BOXEM) */}
+        <div className="guru-rec-ad-slot" style={{ marginBottom: '60px' }}>
+            <span className="ad-label">Sponsored Hardware Insight</span>
+            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        </div>
+
+        <section style={{ textAlign: 'center', marginTop: '40px' }}>
             <div style={{ color: '#9ca3af', marginBottom: '20px', fontWeight: 'bold', fontSize: '14px', textTransform: 'uppercase' }}>
               {isEn ? 'Compare this CPU with others' : 'Porovnejte tento procesor s ostatními'}
             </div>
@@ -145,6 +149,15 @@ export default async function CpuRecommendPage({ params }) {
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #f59e0b; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(245, 158, 11, 0.3); transition: 0.3s; }
+        
+        .guru-rec-ad-slot { margin: 30px 0; padding: 15px; background: rgba(245, 158, 11, 0.02); border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 20px; text-align: center; }
+        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+        .ad-desktop { display: block; } .ad-mobile { display: none; }
+
+        @media (max-width: 768px) {
+            .ad-desktop { display: none; } .ad-mobile { display: block; }
+            .guru-back-btn { padding: 10px 15px; font-size: 11px; }
+        }
       `}} />
     </div>
   );
