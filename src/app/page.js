@@ -2,11 +2,19 @@ import React from 'react';
 import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers } from 'lucide-react';
 
 /**
- * GURU HOMEPAGE V15.7 - FULL SSR & BOTTLENECK INTEGRATION
+ * GURU HOMEPAGE V15.8 - SEO & BING DUPLICITY FIX
  * Cesta: src/app/page.js
- * 🚀 CÍL: Integrace "Bottleneck Kalkulačky" do Hero sekce k ostatním GURU nástrojům.
- * 🛡️ FIX: Přidáno tlačítko "BOTTLENECK" s unikátním stylem.
+ * 🚀 CÍL: Unikátní metadata pro Bing a integrace všech GURU nástrojů.
  */
+
+// --- UNIKÁTNÍ METADATA PRO BING & GOOGLE ---
+export const metadata = {
+  title: 'Home Base for PC Gamers & Geeks', // Výsledný title: Home Base for PC Gamers & Geeks | Hardware Guru
+  description: 'Vaše technologická základna pro srovnání CPU, GPU, výpočet bottlenecku a nejnovější HW novinky.',
+  alternates: {
+    canonical: '/',
+  }
+};
 
 const LEAK_PLACEHOLDER_URL = 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000';
 
@@ -144,7 +152,6 @@ export default async function HomePage({ params }) {
         .social-btn-main.fpscalc { background: rgba(168, 85, 247, 0.1); color: #a855f7; border-color: rgba(168, 85, 247, 0.3); }
         .social-btn-main.fpscalc:hover { background: #a855f7; color: #fff; box-shadow: 0 10px 25px rgba(168, 85, 247, 0.4); transform: translateY(-3px); }
 
-        /* 🚀 GURU: CSS pro Bottleneck Kalkulačku */
         .social-btn-main.bottleneck { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); }
         .social-btn-main.bottleneck:hover { background: #38bdf8; color: #000; box-shadow: 0 10px 25px rgba(56, 189, 248, 0.4); transform: translateY(-3px); }
 
@@ -182,7 +189,7 @@ export default async function HomePage({ params }) {
         }
       `}</style>
 
-      {/* --- 🚀 PŘEDĚLANÁ HERO SEKCE --- */}
+      {/* --- 🚀 HERO SEKCE --- */}
       <header className="guru-hero-section">
         <div style={{ flex: '1', minWidth: '300px', position: 'relative', zIndex: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', marginBottom: '20px' }}>
@@ -211,7 +218,6 @@ export default async function HomePage({ params }) {
                 <Gamepad2 size={18}/> {isEn ? 'CAN I RUN IT?' : 'ROZJEDU TO?'}
               </a>
 
-              {/* 🚀 GURU: INTEGRACE BOTTLENECK KALKULAČKY */}
               <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} className="social-btn-main bottleneck">
                 <Layers size={18}/> {isEn ? 'BOTTLENECK' : 'BOTTLENECK'}
               </a>
