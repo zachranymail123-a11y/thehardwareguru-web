@@ -6,19 +6,16 @@ import {
   Activity, 
   Swords,
   TrendingUp,
-  Monitor,
-  Flame,
-  Info,
+  Monitor, 
+  Flame, 
+  Info, 
   Calendar,
   Gamepad2
 } from 'lucide-react';
 
 /**
- * GURU CPU ENGINE - KATALOG PROCESORŮ V1.5 (NATIVE FETCH + FPS CALCULATOR INTEGRATION)
- * Cesta: src/app/cpu-index/page.js
- * 🛡️ FIX 1: Integrace FPS Kalkulačky do Quick Links a Siloing bannerů.
- * 🛡️ FIX 2: Nativní fetch bez cache pro 100% fresh data ze Supabase.
- * 🛡️ FIX 3: Masivní SEO Siloing na recenze a GPU katalog.
+ * GURU CPU ENGINE - KATALOG PROCESORŮ V1.6 (ADS INJECTION UPDATE)
+ * 🚀 CÍL: Kompletní monetizace CPU katalogu skrze strategické A-ADS sloty.
  */
 
 export const dynamic = 'force-dynamic';
@@ -34,19 +31,10 @@ const slugify = (text) => text ? text.toLowerCase().replace(/processor|cpu/gi, "
 export async function generateMetadata(props) {
   const isEn = props?.isEn === true;
   return {
-    title: isEn 
-      ? 'CPU Database & Performance Index | The Hardware Guru' 
-      : 'Katalog Procesorů a Index Výkonu | The Hardware Guru',
-    description: isEn
-      ? 'Complete database of AMD and Intel processors. Detailed specs, benchmarks, and performance hierarchy.'
-      : 'Kompletní databáze procesorů AMD a Intel. Detailní specifikace, benchmarky a hierarchie výkonu.',
+    title: isEn ? 'CPU Database & Performance Index | The Hardware Guru' : 'Katalog Procesorů a Index Výkonu | The Hardware Guru',
     alternates: {
       canonical: 'https://thehardwareguru.cz/cpu-index',
-      languages: {
-        'en': 'https://thehardwareguru.cz/en/cpu-index',
-        'cs': 'https://thehardwareguru.cz/cpu-index',
-        'x-default': 'https://thehardwareguru.cz/cpu-index'
-      }
+      languages: { 'en': 'https://thehardwareguru.cz/en/cpu-index', 'cs': 'https://thehardwareguru.cz/cpu-index' }
     }
   };
 }
@@ -56,18 +44,11 @@ const fetchIndexData = async () => {
     try {
         const url = `${supabaseUrl}/rest/v1/cpus?select=*&order=performance_index.desc.nullslast,name.asc`;
         const res = await fetch(url, {
-            headers: {
-                'apikey': supabaseKey,
-                'Authorization': `Bearer ${supabaseKey}`,
-                'Content-Type': 'application/json'
-            },
+            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
             cache: 'no-store'
         });
-        if (!res.ok) return null;
-        return await res.json();
-    } catch (e) {
-        return null;
-    }
+        return res.ok ? await res.json() : null;
+    } catch (e) { return null; }
 };
 
 const getRelatedCpuArticles = async () => {
@@ -75,18 +56,11 @@ const getRelatedCpuArticles = async () => {
     try {
         const url = `${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.%ryzen%,title.ilike.%core%,type.eq.hardware)&order=created_at.desc&limit=3`;
         const res = await fetch(url, {
-            headers: {
-                'apikey': supabaseKey,
-                'Authorization': `Bearer ${supabaseKey}`,
-                'Content-Type': 'application/json'
-            },
+            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json' },
             cache: 'no-store'
         });
-        if (res.ok) return await res.json();
-        return [];
-    } catch (e) { 
-        return []; 
-    }
+        return res.ok ? await res.json() : [];
+    } catch (e) { return []; }
 };
 
 export default async function CpuIndexPage(props) {
@@ -95,7 +69,7 @@ export default async function CpuIndexPage(props) {
   const relatedArticles = await getRelatedCpuArticles();
 
   if (!cpus || cpus.length === 0) {
-    return <div style={{ color: '#ef4444', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh', fontWeight: '950' }}>CHYBA NAČÍTÁNÍ DATABÁZE</div>;
+    return <div style={{ color: '#ef4444', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>CHYBA DATABÁZE</div>;
   }
 
   const amdCpus = cpus.filter(c => (c.vendor || '').toUpperCase() === 'AMD');
@@ -108,7 +82,7 @@ export default async function CpuIndexPage(props) {
       return (
         <a key={safeSlug} href={isEn ? `/en/cpu/${safeSlug}` : `/cpu/${safeSlug}`} className="cpu-card" style={{ borderTop: `4px solid ${isTopTier ? vendorColor : '#374151'}` }}>
           <div className="card-header">
-            <h3 style={{ color: isTopTier ? '#fff' : '#d1d5db' }}>{normalizeName(cpu.name)}</h3>
+            <h3>{normalizeName(cpu.name)}</h3>
             {isTopTier && <span className="top-badge" style={{ color: vendorColor, borderColor: vendorColor }}>TOP TIER</span>}
           </div>
           <div className="card-specs">
@@ -118,7 +92,7 @@ export default async function CpuIndexPage(props) {
           </div>
           <div className="card-actions">
             <div className="action-btn"><Activity size={14}/> {isEn ? 'Specs' : 'Detaily'}</div>
-            <div className="action-btn" style={{ color: '#f59e0b' }}><Swords size={14}/> {isEn ? 'VS Engine' : 'Srovnat'}</div>
+            <div className="action-btn" style={{ color: '#f59e0b' }}><Swords size={14}/> {isEn ? 'VS' : 'Srovnat'}</div>
           </div>
         </a>
       );
@@ -129,43 +103,41 @@ export default async function CpuIndexPage(props) {
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <main style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
-        <div style={{ marginBottom: '30px' }}>
-          <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="guru-back-btn">
-            <ChevronLeft size={16} /> {isEn ? 'BACK TO CPU BATTLES' : 'ZPĚT NA CPU DUELY'}
-          </a>
-        </div>
-
-        <header style={{ textAlign: 'center', marginBottom: '60px' }}>
+        <header style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '50px', background: 'rgba(245,158,11,0.05)' }}>
             <Database size={16} /> GURU HARDWARE DATABASE
           </div>
           <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
             {isEn ? 'CPU' : 'KATALOG'} <br/>
-            <span style={{ color: '#f59e0b', textShadow: '0 0 30px rgba(245,158,11,0.5)' }}>
-              {isEn ? 'DATABASE' : 'PROCESORŮ'}
-            </span>
+            <span style={{ color: '#f59e0b', textShadow: '0 0 30px rgba(245,158,11,0.5)' }}>{isEn ? 'DATABASE' : 'PROCESORŮ'}</span>
           </h1>
 
-          {/* 🚀 GURU QUICK LINKS (Siloing) - Přidána FPS KALKULAČKA */}
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginTop: '30px' }}>
-            <a href={isEn ? "/en/cpuvs/ranking" : "/cpuvs/ranking"} className="quick-link-pill" style={{ borderColor: '#f59e0b', color: '#f59e0b' }}>
-              <TrendingUp size={14} /> {isEn ? 'TIER LIST' : 'ŽEBŘÍČEK'}
-            </a>
-            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="quick-link-pill" style={{ borderColor: '#a855f7', color: '#a855f7' }}>
-              <Gamepad2 size={14} /> {isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}
-            </a>
-            <a href={isEn ? "/en/bottleneck" : "/bottleneck"} className="quick-link-pill" style={{ borderColor: '#66fcf1', color: '#66fcf1' }}>
-              <Activity size={14} /> {isEn ? 'BOTTLENECK' : 'BOTTLENECK'}
-            </a>
+            <a href={isEn ? "/en/cpuvs/ranking" : "/cpuvs/ranking"} className="quick-link-pill" style={{ borderColor: '#f59e0b', color: '#f59e0b' }}><TrendingUp size={14} /> {isEn ? 'TIER LIST' : 'ŽEBŘÍČEK'}</a>
+            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="quick-link-pill" style={{ borderColor: '#a855f7', color: '#a855f7' }}><Gamepad2 size={14} /> {isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</a>
           </div>
         </header>
 
+        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD HLAVIČKOU */}
+        <div className="cpu-index-ad-slot" style={{ marginBottom: '50px' }}>
+            <span className="ad-label">Advertisement</span>
+            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        </div>
+
         {amdCpus.length > 0 && (
-          <section style={{ marginBottom: '80px' }}>
+          <section style={{ marginBottom: '40px' }}>
             <h2 className="vendor-h2" style={{ borderLeftColor: '#ed1c24' }}><span style={{ color: '#ed1c24' }}>AMD</span> RYZEN</h2>
             <div className="cpu-grid">{renderCpuCards(amdCpus, '#ed1c24')}</div>
           </section>
         )}
+
+        {/* 🔥 ADS SLOT #2: MID PLACEMENT MEZI AMD A INTEL */}
+        <div className="cpu-index-ad-slot" style={{ margin: '60px 0' }}>
+            <span className="ad-label">Sponsored Hardware Performance</span>
+            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        </div>
 
         {intelCpus.length > 0 && (
           <section style={{ marginBottom: '80px' }}>
@@ -174,26 +146,15 @@ export default async function CpuIndexPage(props) {
           </section>
         )}
 
-        {/* 🚀 SILOING BANNERY: PŘIDÁNA FPS KALKULAČKA JAKO HLAVNÍ BANNER */}
-        <div style={{ marginTop: '40px', display: 'flex', flexWrap: 'wrap', gap: '20px', marginBottom: '60px' }}>
-            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="silo-banner-card" style={{ borderLeftColor: '#a855f7', background: 'linear-gradient(145deg, rgba(168, 85, 247, 0.1) 0%, rgba(15, 17, 21, 0.95) 100%)' }}>
-                <div className="silo-banner-icon" style={{ color: '#a855f7', background: '#a855f720' }}><Gamepad2 size={28} /></div>
-                <div className="silo-banner-text">
-                    <h4>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</h4>
-                    <p>{isEn ? 'Check how many FPS you will get with this CPU.' : 'Zjisti, na kolik FPS rozjedeš hry s tímto procesorem.'}</p>
-                </div>
-            </a>
-        </div>
-
         {relatedArticles.length > 0 && (
             <section style={{ marginBottom: '80px', background: 'rgba(15, 17, 21, 0.95)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ color: '#fff', fontSize: '1.8rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #f59e0b', paddingLeft: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Info size={28} color="#f59e0b" /> {isEn ? 'LATEST HARDWARE REVIEWS' : 'NEJNOVĚJŠÍ HW RECENZE'}
+                    <Info size={28} color="#f59e0b" /> {isEn ? 'CPU NEWS & REVIEWS' : 'NOVINKY A RECENZE CPU'}
                 </h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
                     {relatedArticles.map((art) => (
                         <a key={art.slug} href={isEn ? `/en/clanky/${art.slug_en || art.slug}` : `/clanky/${art.slug}`} className="related-article-card">
-                            <div className="related-img-wrapper"><img src={art.image_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000'} alt={art.title} loading="lazy" /></div>
+                            <div className="related-img-wrapper"><img src={art.image_url} alt={art.title} loading="lazy" /></div>
                             <div className="related-content">
                                 <div className="related-date"><Calendar size={12} /> {new Date(art.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</div>
                                 <h3 className="related-title">{isEn && art.title_en ? art.title_en : art.title}</h3>
@@ -209,49 +170,48 @@ export default async function CpuIndexPage(props) {
                 <div className="silo-banner-icon" style={{ color: '#66fcf1', background: '#66fcf120' }}><Monitor size={28} /></div>
                 <div className="silo-banner-text">
                     <h4>{isEn ? 'GPU DATABASE' : 'KATALOG GRAFIK'}</h4>
-                    <p>{isEn ? 'Browse all graphics cards and benchmarks.' : 'Prohlédni si všechny grafiky a jejich výkon.'}</p>
+                    <p>{isEn ? 'Compare gaming graphics cards performance.' : 'Srovnej výkon všech herních grafických karet.'}</p>
                 </div>
             </a>
             <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="silo-banner-card" style={{ borderLeftColor: '#f97316' }}>
                 <div className="silo-banner-icon" style={{ color: '#f97316', background: '#f9731620' }}><Flame size={28} /></div>
                 <div className="silo-banner-text">
-                    <h4>{isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}</h4>
-                    <p>{isEn ? 'Hottest gaming sales right now.' : 'Omrkni ty nejlepší slevy na hry.'}</p>
+                    <h4>{isEn ? 'BEST GAME DEALS' : 'NEJLEPŠÍ CENY HER'}</h4>
+                    <p>{isEn ? 'Get latest games with Guru discount.' : 'Kupuj nejnovější pecky s Guru slevou.'}</p>
                 </div>
             </a>
         </div>
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
-        .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #f59e0b; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(245, 158, 11, 0.3); transition: 0.3s; }
+        .cpu-index-ad-slot { margin: 30px 0; padding: 15px; background: rgba(245, 158, 11, 0.02); border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 20px; text-align: center; }
+        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+        .ad-desktop { display: block; } .ad-mobile { display: none; }
+
         .vendor-h2 { color: #fff; font-size: 2.2rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 5px solid; padding-left: 15px; display: flex; align-items: center; gap: 15px; }
         .cpu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .cpu-card { display: flex; flex-direction: column; background: rgba(15, 17, 21, 0.95); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; padding: 25px; transition: 0.3s; }
-        .cpu-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.6); border-color: rgba(255,255,255,0.1); }
-        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; min-height: 50px; }
-        .card-header h3 { margin: 0; font-size: 1.3rem; font-weight: 950; text-transform: uppercase; line-height: 1.2; }
-        .top-badge { font-size: 9px; font-weight: 950; padding: 3px 8px; border: 1px solid; border-radius: 50px; }
+        .cpu-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.1); }
+        .card-header h3 { margin: 0 0 15px 0; font-size: 1.3rem; font-weight: 950; text-transform: uppercase; }
+        .top-badge { font-size: 9px; font-weight: 950; padding: 3px 8px; border: 1px solid; border-radius: 50px; display: inline-block; margin-top: 5px; }
         .card-specs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .spec-item { display: flex; flex-direction: column; align-items: center; text-align: center; }
-        .spec-label { font-size: 9px; font-weight: 950; color: #6b7280; text-transform: uppercase; margin-bottom: 4px; }
-        .spec-val { font-size: 14px; font-weight: 900; color: #9ca3af; }
-        .card-actions { display: flex; justify-content: space-between; gap: 10px; }
-        .action-btn { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: bold; color: #6b7280; text-transform: uppercase; }
+        .spec-label { font-size: 8px; font-weight: 950; color: #6b7280; text-transform: uppercase; margin-bottom: 4px; }
+        .spec-val { font-size: 13px; font-weight: 900; color: #9ca3af; }
+        .card-actions { display: flex; justify-content: space-between; }
+        .action-btn { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: bold; color: #6b7280; text-transform: uppercase; }
         .quick-link-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 50px; font-weight: 950; font-size: 11px; text-transform: uppercase; text-decoration: none; border: 1px solid; background: rgba(255,255,255,0.02); transition: 0.3s; }
-        .quick-link-pill:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
         .silo-banner-card { flex: 1; min-width: 300px; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; align-items: center; gap: 20px; text-decoration: none; transition: 0.3s; border-left-width: 5px; }
-        .silo-banner-card:hover { transform: translateY(-5px); }
-        .silo-banner-icon { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .silo-banner-text h4 { margin: 0 0 5px 0; color: #fff; font-size: 1.2rem; font-weight: 950; }
-        .silo-banner-text p { margin: 0; color: #9ca3af; font-size: 0.9rem; }
         .related-article-card { display: flex; flex-direction: column; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; overflow: hidden; text-decoration: none; transition: 0.3s; }
-        .related-article-card:hover { transform: translateY(-5px); border-color: rgba(245, 158, 11, 0.4); }
         .related-img-wrapper { height: 140px; overflow: hidden; }
-        .related-img-wrapper img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
+        .related-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
         .related-content { padding: 20px; }
-        .related-date { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 950; color: #6b7280; text-transform: uppercase; margin-bottom: 5px; }
-        .related-title { margin: 0; font-size: 1.1rem; font-weight: 950; color: #fff; line-height: 1.3; }
-        @media (max-width: 768px) { .silo-banner-card { flex-direction: column; text-align: center; } }
+        .related-title { margin: 10px 0 0 0; font-size: 1rem; font-weight: 950; color: #fff; line-height: 1.3; }
+
+        @media (max-width: 768px) { 
+          .ad-desktop { display: none; } .ad-mobile { display: block; }
+          .silo-banner-card { flex-direction: column; text-align: center; } 
+        }
       `}} />
     </div>
   );
