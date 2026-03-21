@@ -3,14 +3,19 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { 
-  Cpu, Monitor, Zap, AlertTriangle, Crosshair, Settings2, Sparkles, 
-  TrendingUp, TrendingDown, Layers, Target, Video, Share2, Check, 
-  Twitter, Award, Swords, Gamepad2, ChevronRight, Play, Newspaper, Lightbulb
+  Cpu, Zap, Crosshair, Layers, Share2, Check, Award, Swords, Gamepad2, ChevronRight, Play, Activity
 } from 'lucide-react';
 
+// Nativní bezpečné ikony (ochrana proti pádu lucide-react)
 const RedditIcon = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-2.05-6.65c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm4.1 0c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm1.64-3.56c-.34 0-.64.16-.84.4-.58-.4-1.36-.67-2.24-.72l.47-2.18 1.5.32c.04.53.48.95 1.02.95.57 0 1.03-.46 1.03-1.03 0-.57-.46-1.03-1.03-1.03-.42 0-.78.26-.94.63l-1.64-.35c-.06-.01-.13 0-.17.05-.05.04-.07.1-.06.16l-.52 2.45c-.93.03-1.74.32-2.35.74-.2-.23-.5-.38-.83-.38-.6 0-1.08.48-1.08 1.08 0 .42.24.78.58.96-.02.12-.03.24-.03.37 0 1.88 2.05 3.4 4.58 3.4s4.58-1.52 4.58-3.4c0-.13-.01-.25-.03-.37.34-.18.58-.54.58-.96 0-.6-.48-1.08-1.08-1.08zm-4.14 3.12c-.93 0-1.66-.4-1.7-.44-.1-.1-.11-.27-.01-.38.1-.1.27-.11.38-.01.02.01.62.33 1.33.33.7 0 1.31-.32 1.33-.33.11-.1.28-.09.38.01.1.11.09.28-.01.38-.04.04-.77.44-1.7.44z" />
+  </svg>
+);
+
+const XIcon = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
   </svg>
 );
 
@@ -73,12 +78,12 @@ export default function BottleneckClient({
         const rawCpuFps = (cpuEffective / (game.cpu_weight || 1)) * game.fps_scale;
         const rawGpuFps = (gpuEffective / (game.gpu_weight || 1)) * game.fps_scale;
 
-        const safeCpuFps = isFinite(rawCpuFps) ? rawCpuFps : 0;
-        const safeGpuFps = isFinite(rawGpuFps) ? rawGpuFps : 0;
+        const safeCpuFps = Number.isFinite(rawCpuFps) ? rawCpuFps : 0;
+        const safeGpuFps = Number.isFinite(rawGpuFps) ? rawGpuFps : 0;
         const estFps = Math.max(1, Math.round(Math.min(safeCpuFps, safeGpuFps)));
         const maxFps = Math.max(safeCpuFps, safeGpuFps, 1);
         const diff = Math.abs(safeCpuFps - safeGpuFps) / maxFps;
-        const safeDiff = isFinite(diff) ? diff : 0;
+        const safeDiff = Number.isFinite(diff) ? diff : 0;
 
         return {
             boundType: safeCpuFps < safeGpuFps ? 'CPU_BOUND' : (safeDiff < 0.08 ? 'BALANCED' : 'GPU_BOUND'),
@@ -118,11 +123,16 @@ export default function BottleneckClient({
     };
 
     const getShareDetails = () => {
-        const gameName = games.find(g => g.slug === selectedGameSlug)?.name || 'hře';
-        const cpuName = cpus.find(c => c.id === selectedCpuId)?.name || 'můj CPU';
-        const gpuName = gpus.find(g => g.id === selectedGpuId)?.name || 'moje GPU';
+        const gameObj = Array.isArray(games) ? games.find(g => String(g.slug) === String(selectedGameSlug)) : null;
+        const cpuObj = Array.isArray(cpus) ? cpus.find(c => String(c.id) === String(selectedCpuId)) : null;
+        const gpuObj = Array.isArray(gpus) ? gpus.find(g => String(g.id) === String(selectedGpuId)) : null;
         const url = isEn ? 'https://thehardwareguru.cz/en/fps-calculator' : 'https://thehardwareguru.cz/fps-kalkulacka';
-        return { gameName, cpuName, gpuName, url };
+        return { 
+            gameName: gameObj?.name || 'hře', 
+            cpuName: cpuObj?.name || 'můj CPU', 
+            gpuName: gpuObj?.name || 'moje GPU', 
+            url 
+        };
     };
 
     const handleCopyShare = async () => {
@@ -165,7 +175,10 @@ export default function BottleneckClient({
         : null;
 
     const a = analysis || {};
-    const statusColor = (a.bottleneckPercent || 0) < 15 ? '#10b981' : ((a.bottleneckPercent || 0) < 30 ? '#f59e0b' : '#ef4444');
+    const safePercent = a.bottleneckPercent || 0;
+    const statusColor = safePercent < 15 ? '#10b981' : (safePercent < 30 ? '#f59e0b' : '#ef4444');
+    const safeBoundType = a.boundType ? String(a.boundType).replace('_', ' ') : '';
+    const safeBoundClass = a.boundType ? String(a.boundType).toLowerCase().replace('_', '-') : '';
 
     return (
         <div className="bn-wrapper">
@@ -179,12 +192,12 @@ export default function BottleneckClient({
 
             <div className="bn-grid">
                 <div className="bn-inputs-card">
-                    <h3 className="section-title"><Settings2 size={18} /> Konfigurace</h3>
+                    <h3 className="section-title"><Activity size={18} /> Konfigurace</h3>
                     <div className="input-group">
                         <label>Herní Engine</label>
                         <select value={selectedGameSlug} onChange={(e) => { setSelectedGameSlug(e.target.value); setShowResult(false); }} className="bn-select">
                             <option value="">-- Vyber hru --</option>
-                            {(games || []).map(g => <option key={g.id} value={g.slug}>{g.name}</option>)}
+                            {(Array.isArray(games) ? games : []).map(g => <option key={g.id} value={g.slug}>{g.name}</option>)}
                         </select>
                     </div>
                     <div className="input-group">
@@ -210,32 +223,32 @@ export default function BottleneckClient({
                         <label><Cpu size={14} /> CPU</label>
                         <select value={selectedCpuId} onChange={(e) => { setSelectedCpuId(e.target.value); setShowResult(false); }} className="bn-select">
                             <option value="">-- Vyber procesor --</option>
-                            {(cpus || []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            {(Array.isArray(cpus) ? cpus : []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
                     <div className="input-group">
                         <label><Zap size={14} /> GPU</label>
                         <select value={selectedGpuId} onChange={(e) => { setSelectedGpuId(e.target.value); setShowResult(false); }} className="bn-select">
                             <option value="">-- Vyber grafiku --</option>
-                            {(gpus || []).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                            {(Array.isArray(gpus) ? gpus : []).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                         </select>
                     </div>
                     <button onClick={handleStart} disabled={!selectedCpuId || !selectedGpuId || !selectedGameSlug || isCalculating} className="start-btn">
-                        {isCalculating ? <Sparkles className="spin" /> : <Play size={20} />} SPUSTIT SIMULACI
+                        {isCalculating ? <Activity className="spin" /> : <Play size={20} />} SPUSTIT SIMULACI
                     </button>
                 </div>
 
                 <div className="bn-result-card">
                     {!analysis ? (
-                        <div className="empty-state"><Crosshair size={64} color="rgba(255,255,255,0.05)" /><p>Nastav hardware a spusť simulaci.</p></div>
+                        <div className="empty-state"><Crosshair size={64} color="rgba(255,255,255,0.05)" /><p style={{marginTop: '20px', color: '#666'}}>Nastav hardware a spusť simulaci.</p></div>
                     ) : (
                         <div className="analysis-board">
                             <div style={{ textAlign: 'center' }}>
-                                <div className={`bound-badge ${(a.boundType || '').toLowerCase().replace('_', '-')}`}>{a.boundType ? a.boundType.replace('_', ' ') : ''}</div>
+                                <div className={`bound-badge ${safeBoundClass}`}>{safeBoundType}</div>
                             </div>
                             <div className="percentage-display">
-                                <div className="pct-value" style={{ color: statusColor, textShadow: `0 0 60px ${statusColor}80` }}>{a.bottleneckPercent}%</div>
-                                <div className="pct-label" style={{ color: statusColor }}>{a.limitedBy} tě brzdí o {a.bottleneckPercent}%</div>
+                                <div className="pct-value" style={{ color: statusColor, textShadow: `0 0 60px ${statusColor}80` }}>{safePercent}%</div>
+                                <div className="pct-label" style={{ color: statusColor }}>{a.limitedBy || 'Systém'} tě brzdí o {safePercent}%</div>
                             </div>
 
                             {/* 🔥 ADS SLOT: INJEKCE PŘÍMO DO VÝSLEDKŮ */}
@@ -246,16 +259,16 @@ export default function BottleneckClient({
                             </div>
 
                             <div className="pro-metrics-grid">
-                                <div className="metric-box"><div className="m-label">AVG FPS</div><div className="m-val">{a.estFps}</div></div>
-                                <div className="metric-box"><div className="m-label">1% LOWS</div><div className="m-val">{a.low1Fps}</div></div>
-                                <div className="metric-box"><div className="m-label">LATENCY</div><div className="m-val">{a.frameTimeMs}ms</div></div>
+                                <div className="metric-box"><div className="m-label">AVG FPS</div><div className="m-val">{a.estFps || 0}</div></div>
+                                <div className="metric-box"><div className="m-label">1% LOWS</div><div className="m-val">{a.low1Fps || 0}</div></div>
+                                <div className="metric-box"><div className="m-label">LATENCY</div><div className="m-val">{a.frameTimeMs || '0.0'}ms</div></div>
                             </div>
                             <div className="recommendation">
                                 <h4>💡 Guru Verdikt</h4>
                                 <p>{a.boundType === 'CPU_BOUND' ? 'Grafika čeká na procesor. Potřebuješ silnější CPU pro vyrovnaný výkon.' : 'Sestava je limitována grafickou kartou. Snížení detailů pomůže FPS.'}</p>
                             </div>
                             {gta6DynamicLink ? (
-                                <a href={gta6DynamicLink} className="gta-cta"><Sparkles size={20} /> ROZJEDE TO GTA VI?</a>
+                                <a href={gta6DynamicLink} className="gta-cta"><Activity size={20} /> ROZJEDE TO GTA VI?</a>
                             ) : null}
                         </div>
                     )}
@@ -271,7 +284,7 @@ export default function BottleneckClient({
                     </div>
                     <div style={{ display: 'flex', gap: '12px' }}>
                         <button onClick={handleCopyShare} className="premium-share-btn btn-copy">{copied ? <Check size={20} /> : <Share2 size={20} />}</button>
-                        <button onClick={handleXShare} className="premium-share-btn btn-x"><Twitter size={20} /></button>
+                        <button onClick={handleXShare} className="premium-share-btn btn-x"><XIcon size={20} /></button>
                         <button onClick={handleRedditShare} className="premium-share-btn btn-reddit"><RedditIcon size={20} /></button>
                     </div>
                 </div>
@@ -341,7 +354,7 @@ export default function BottleneckClient({
                 .bn-divider { border: 0; height: 1px; background: rgba(255,255,255,0.05); margin: 40px 0; }
                 .input-group label { display: block; font-size: 13px; font-weight: 950; color: #9ca3af; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 2px; }
                 .recommendation h4 { font-size: 18px; font-weight: 950; text-transform: uppercase; margin-bottom: 15px; color: #fff; }
-                .recommendation p { font-size: 15px; color: #9ca3af; lineHeight: 1.6; }
+                .recommendation p { font-size: 15px; color: #9ca3af; line-height: 1.6; }
 
                 /* 💰 STYL PRO REKLAMU V KLIENTOVI */
                 .guru-client-ad-slot { margin: 30px 0; padding: 15px; background: rgba(0, 0, 0, 0.4); border: 1px dashed rgba(168, 85, 247, 0.2); border-radius: 20px; text-align: center; }
