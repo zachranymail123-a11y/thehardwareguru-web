@@ -6,15 +6,15 @@ import {
   Cpu, Zap, Crosshair, Layers, Share2, Check, Award, Swords, Gamepad2, ChevronRight, Play, Activity
 } from 'lucide-react';
 
-// Nativní bezpečné ikony (ochrana proti pádu lucide-react)
-const RedditIcon = ({ size = 20 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-2.05-6.65c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm4.1 0c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm1.64-3.56c-.34 0-.64.16-.84.4-.58-.4-1.36-.67-2.24-.72l.47-2.18 1.5.32c.04.53.48.95 1.02.95.57 0 1.03-.46 1.03-1.03 0-.57-.46-1.03-1.03-1.03-.42 0-.78.26-.94.63l-1.64-.35c-.06-.01-.13 0-.17.05-.05.04-.07.1-.06.16l-.52 2.45c-.93.03-1.74.32-2.35.74-.2-.23-.5-.38-.83-.38-.6 0-1.08.48-1.08 1.08 0 .42.24.78.58.96-.02.12-.03.24-.03.37 0 1.88 2.05 3.4 4.58 3.4s4.58-1.52 4.58-3.4c0-.13-.01-.25-.03-.37.34-.18.58-.54.58-.96 0-.6-.48-1.08-1.08-1.08zm-4.14 3.12c-.93 0-1.66-.4-1.7-.44-.1-.1-.11-.27-.01-.38.1-.1.27-.11.38-.01.02.01.62.33 1.33.33.7 0 1.31-.32 1.33-.33.11-.1.28-.09.38.01.1.11.09.28-.01.38-.04.04-.77.44-1.7.44z" />
+// 🚀 NATIVNÍ A BEZPEČNÉ IKONY (Nikdy neshodí React)
+const RedditIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-2.05-6.65c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm1.64-3.56c-.34 0-.64.16-.84.4-.58-.4-1.36-.67-2.24-.72l.47-2.18 1.5.32c.04.53.48.95 1.02.95.57 0 1.03-.46 1.03-1.03 0-.57-.46-1.03-1.03-1.03-.42 0-.78.26-.94.63l-1.64-.35c-.06-.01-.13 0-.17.05-.05.04-.07.1-.06.16l-.52 2.45c-.93.03-1.74.32-2.35.74-.2-.23-.5-.38-.83-.38-.6 0-1.08.48-1.08 1.08 0 .42.24.78.58.96-.02.12-.03.24-.03.37 0 1.88 2.05 3.4 4.58 3.4s4.58-1.52 4.58-3.4c0-.13-.01-.25-.03-.37.34-.18.58-.54.58-.96 0-.6-.48-1.08-1.08-1.08zm-4.14 3.12c-.93 0-1.66-.4-1.7-.44-.1-.1-.11-.27-.01-.38.1-.1.27-.11.38-.01.02.01.62.33 1.33.33.7 0 1.31-.32 1.33-.33.11-.1.28-.09.38.01.1.11.09.28-.01.38-.04.04-.77.44-1.7.44z" />
   </svg>
 );
 
-const XIcon = ({ size = 20 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+const XIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
   </svg>
 );
@@ -122,52 +122,36 @@ export default function BottleneckClient({
         setTimeout(() => { setShowResult(true); setIsCalculating(false); }, 800);
     };
 
-    const getShareDetails = () => {
-        const gameObj = Array.isArray(games) ? games.find(g => String(g.slug) === String(selectedGameSlug)) : null;
-        const cpuObj = Array.isArray(cpus) ? cpus.find(c => String(c.id) === String(selectedCpuId)) : null;
-        const gpuObj = Array.isArray(gpus) ? gpus.find(g => String(g.id) === String(selectedGpuId)) : null;
-        const url = isEn ? 'https://thehardwareguru.cz/en/fps-calculator' : 'https://thehardwareguru.cz/fps-kalkulacka';
-        return { 
-            gameName: gameObj?.name || 'hře', 
-            cpuName: cpuObj?.name || 'můj CPU', 
-            gpuName: gpuObj?.name || 'moje GPU', 
-            url 
-        };
-    };
+    // 🚀 BEZPEČNÁ TVORBA ODKAZŮ PRO SDÍLENÍ
+    const currentUrl = shareUrl || (isEn ? 'https://thehardwareguru.cz/en/fps-calculator' : 'https://thehardwareguru.cz/fps-kalkulacka');
+    const gameObj = Array.isArray(games) ? games.find(g => String(g.slug) === String(selectedGameSlug)) : null;
+    const cpuObj = Array.isArray(cpus) ? cpus.find(c => String(c.id) === String(selectedCpuId)) : null;
+    const gpuObj = Array.isArray(gpus) ? gpus.find(g => String(g.id) === String(selectedGpuId)) : null;
+    
+    const gameName = gameObj?.name || 'hře';
+    const cpuName = cpuObj?.name || 'CPU';
+    const gpuName = gpuObj?.name || 'GPU';
+
+    const textEn = analysis ? `🔥 My rig hits ${analysis.estFps} FPS in ${gameName} on ${resolution}!\n💻 Build: ${cpuName} + ${gpuName}\n\nCheck your PC performance at:` : '';
+    const textCs = analysis ? `🔥 Moje sestava dává v ${gameName} na ${resolution} brutálních ${analysis.estFps} FPS!\n💻 Železo: ${cpuName} + ${gpuName}\n\nZměř si to taky na:` : '';
+    
+    const titleEn = analysis ? `My rig hits ${analysis.estFps} FPS in ${gameName} (${resolution}). Build: ${cpuName} + ${gpuName}. What's yours?` : '';
+    const titleCs = analysis ? `Moje sestava dává v ${gameName} na ${resolution} přesně ${analysis.estFps} FPS! (Železo: ${cpuName} + ${gpuName})` : '';
+
+    const twitterHref = `https://twitter.com/intent/tweet?text=${encodeURIComponent(isEn ? textEn : textCs)}&url=${encodeURIComponent(currentUrl)}`;
+    const redditHref = `https://www.reddit.com/submit?url=${encodeURIComponent(currentUrl)}&title=${encodeURIComponent(isEn ? titleEn : titleCs)}`;
 
     const handleCopyShare = async () => {
-        if (typeof navigator !== 'undefined' && navigator.clipboard && shareUrl) {
+        if (typeof navigator !== 'undefined' && navigator.clipboard && currentUrl) {
             const text = isEn 
-                ? `🔥 My rig bottleneck result: ${shareUrl}` 
-                : `🔥 Moje sestava má přesně ${analysis?.bottleneckPercent || 0}% Bottleneck! 👉 ${shareUrl}`;
-            await navigator.clipboard.writeText(text);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 3000);
+                ? `🔥 My rig bottleneck result: ${currentUrl}` 
+                : `🔥 Moje sestava má přesně ${analysis?.bottleneckPercent || 0}% Bottleneck! 👉 ${currentUrl}`;
+            try {
+                await navigator.clipboard.writeText(text);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 3000);
+            } catch(e) {}
         }
-    };
-
-    const safeOpen = (url) => {
-        try {
-            if (typeof window !== 'undefined') window.open(url, '_blank', 'noopener,noreferrer');
-        } catch (e) {}
-    };
-
-    const handleXShare = () => {
-        if (!analysis) return;
-        const { gameName, cpuName, gpuName, url } = getShareDetails();
-        const textEn = `🔥 My rig hits ${analysis.estFps} FPS in ${gameName} on ${resolution}!\n💻 Build: ${cpuName} + ${gpuName}\n\nCheck your PC performance at:`;
-        const textCs = `🔥 Moje sestava dává v ${gameName} na ${resolution} brutálních ${analysis.estFps} FPS!\n💻 Železo: ${cpuName} + ${gpuName}\n\nZměř si to taky na:`;
-        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(isEn ? textEn : textCs)}&url=${encodeURIComponent(url)}`;
-        safeOpen(twitterUrl);
-    };
-
-    const handleRedditShare = () => {
-        if (!analysis) return;
-        const { gameName, cpuName, gpuName, url } = getShareDetails();
-        const titleEn = `My rig hits ${analysis.estFps} FPS in ${gameName} (${resolution}). Build: ${cpuName} + ${gpuName}. What's yours?`;
-        const titleCs = `Moje sestava dává v ${gameName} na ${resolution} přesně ${analysis.estFps} FPS! (Železo: ${cpuName} + ${gpuName})`;
-        const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(isEn ? titleEn : titleCs)}`;
-        safeOpen(redditUrl);
     };
 
     const gta6DynamicLink = analysis 
@@ -177,8 +161,8 @@ export default function BottleneckClient({
     const a = analysis || {};
     const safePercent = a.bottleneckPercent || 0;
     const statusColor = safePercent < 15 ? '#10b981' : (safePercent < 30 ? '#f59e0b' : '#ef4444');
-    const safeBoundType = a.boundType ? String(a.boundType).replace('_', ' ') : '';
-    const safeBoundClass = a.boundType ? String(a.boundType).toLowerCase().replace('_', '-') : '';
+    const safeBoundType = a.boundType ? String(a.boundType).replace(/_/g, ' ') : '';
+    const safeBoundClass = a.boundType ? String(a.boundType).toLowerCase().replace(/_/g, '-') : '';
 
     return (
         <div className="bn-wrapper">
@@ -247,7 +231,7 @@ export default function BottleneckClient({
                                 <div className={`bound-badge ${safeBoundClass}`}>{safeBoundType}</div>
                             </div>
                             <div className="percentage-display">
-                                <div className="pct-value" style={{ color: statusColor, textShadow: `0 0 60px ${statusColor}80` }}>{safePercent}%</div>
+                                <div className="pct-value" style={{ color: statusColor, textShadow: '0 0 40px rgba(0,0,0,0.5)' }}>{safePercent}%</div>
                                 <div className="pct-label" style={{ color: statusColor }}>{a.limitedBy || 'Systém'} tě brzdí o {safePercent}%</div>
                             </div>
 
@@ -279,13 +263,20 @@ export default function BottleneckClient({
                 <div className="viral-flex-card">
                     <div className="award-icon"><Award size={32} color="#a855f7" /></div>
                     <div className="viral-text-box">
-                        <div style={{ fontWeight: '950', fontSize: '18px' }}>SDÍLET KALKULAČKU</div>
-                        <div style={{ color: '#a855f7', fontWeight: 'bold' }}>Pomoz ostatním geekům najít pravdu</div>
+                        <div style={{ fontWeight: '950', fontSize: '18px' }}>ÚSPĚCH ODEMČEN</div>
+                        <div style={{ color: '#a855f7', fontWeight: 'bold' }}>Pochlub se výsledkem</div>
                     </div>
+                    {/* 🚀 OPRAVENÁ TLAČÍTKA PRO SDÍLENÍ BEZ CUSTOM SVG A BEZ ONCLICK BLOKACE */}
                     <div style={{ display: 'flex', gap: '12px' }}>
-                        <button onClick={handleCopyShare} className="premium-share-btn btn-copy">{copied ? <Check size={20} /> : <Share2 size={20} />}</button>
-                        <button onClick={handleXShare} className="premium-share-btn btn-x"><XIcon size={20} /></button>
-                        <button onClick={handleRedditShare} className="premium-share-btn btn-reddit"><RedditIcon size={20} /></button>
+                        <button onClick={handleCopyShare} className="premium-share-btn btn-copy" title="Kopírovat">
+                            {copied ? <Check size={20} /> : <Share2 size={20} />}
+                        </button>
+                        <a href={twitterHref} target="_blank" rel="noopener noreferrer" className="premium-share-btn btn-x" title="Sdílet na X">
+                            <XIcon />
+                        </a>
+                        <a href={redditHref} target="_blank" rel="noopener noreferrer" className="premium-share-btn btn-reddit" title="Sdílet na Reddit">
+                            <RedditIcon />
+                        </a>
                     </div>
                 </div>
 
@@ -323,7 +314,7 @@ export default function BottleneckClient({
                 .start-btn { width: 100%; margin-top: 30px; padding: 22px; background: #a855f7; color: #fff; border: none; border-radius: 18px; font-weight: 950; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 15px; transition: 0.4s; text-transform: uppercase; font-size: 18px; }
                 .start-btn:disabled { opacity: 0.3; }
                 .bn-result-card { background: linear-gradient(145deg, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0.6) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 30px; padding: 50px; display: flex; align-items: center; justify-content: center; min-height: 600px; }
-                .pct-value { font-size: 9rem; font-weight: 950; text-align: center; color: #fff; text-shadow: 0 0 60px rgba(168, 85, 247, 0.8); line-height: 0.9; }
+                .pct-value { font-size: 9rem; font-weight: 950; text-align: center; color: #fff; line-height: 0.9; }
                 .pct-label { text-align: center; color: #a855f7; font-weight: 950; text-transform: uppercase; letter-spacing: 4px; margin-top: 20px; font-size: 18px; }
                 .pro-metrics-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin: 30px 0 50px; }
                 .metric-box { background: rgba(0,0,0,0.8); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
@@ -331,7 +322,8 @@ export default function BottleneckClient({
                 .m-val { font-size: 32px; font-weight: 950; color: #fff; }
                 .gta-cta { display: flex; align-items: center; justify-content: center; gap: 15px; background: #f43f5e; color: #fff; padding: 22px; border-radius: 18px; text-decoration: none; font-weight: 950; margin-top: 40px; transition: 0.4s; box-shadow: 0 20px 40px rgba(244, 63, 94, 0.3); }
                 .viral-flex-card { display: flex; align-items: center; gap: 30px; padding: 40px; background: rgba(0,0,0,0.5); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 30px; margin-top: 80px; }
-                .premium-share-btn { width: 60px; height: 60px; border-radius: 18px; border: none; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+                .premium-share-btn { width: 60px; height: 60px; border-radius: 18px; border: none; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; transition: 0.3s; text-decoration: none; }
+                .premium-share-btn:hover { filter: brightness(1.2); transform: translateY(-3px); }
                 .btn-copy { background: #a855f7; }
                 .btn-x { background: #000; border: 1px solid #333; }
                 .btn-reddit { background: #ff4500; }
@@ -356,7 +348,6 @@ export default function BottleneckClient({
                 .recommendation h4 { font-size: 18px; font-weight: 950; text-transform: uppercase; margin-bottom: 15px; color: #fff; }
                 .recommendation p { font-size: 15px; color: #9ca3af; line-height: 1.6; }
 
-                /* 💰 STYL PRO REKLAMU V KLIENTOVI */
                 .guru-client-ad-slot { margin: 30px 0; padding: 15px; background: rgba(0, 0, 0, 0.4); border: 1px dashed rgba(168, 85, 247, 0.2); border-radius: 20px; text-align: center; }
                 .ad-tag { display: block; font-size: 9px; color: #444; font-weight: 900; margin-bottom: 10px; letter-spacing: 2px; }
                 .ad-desktop { display: block; } .ad-mobile { display: none; }
