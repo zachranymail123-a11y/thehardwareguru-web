@@ -17,7 +17,6 @@ const RedditIcon = ({ size = 20 }) => (
 export default function BottleneckClient({ 
     gpus = [], cpus = [], games = [], isEn = false, initialCpuId = '', initialGpuId = '', initialGameSlug = '', initialResolution = '1440p' 
 }) {
-    // --- STAV ---
     const [selectedCpuId, setSelectedCpuId] = useState(initialCpuId);
     const [selectedGpuId, setSelectedGpuId] = useState(initialGpuId);
     const [selectedGameSlug, setSelectedGameSlug] = useState(initialGameSlug);
@@ -30,7 +29,6 @@ export default function BottleneckClient({
     const [sb, setSb] = useState(null);
     const [showResult, setShowResult] = useState(false);
 
-    // ✅ FIX: Hydration & Supabase Init
     useEffect(() => {
         if (initialCpuId) setShowResult(true);
         const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -38,19 +36,14 @@ export default function BottleneckClient({
         if (url && key) setSb(createClient(url, key));
     }, [initialCpuId]);
 
-    // 🚀 ENGINE ANALÝZA
     const analysis = useMemo(() => {
         if (!showResult || !selectedCpuId || !selectedGpuId || !selectedGameSlug) return null;
-
-        const cpu = Array.isArray(cpus) ? cpus.find(c => String(c.id) === String(selectedCpuId)) : null;
-        const gpu = Array.isArray(gpus) ? gpus.find(g => String(g.id) === String(selectedGpuId)) : null;
-        const baseGame = Array.isArray(games) ? games.find(g => String(g.slug) === String(selectedGameSlug)) : null;
-
+        const cpu = cpus.find(c => String(c.id) === String(selectedCpuId));
+        const gpu = gpus.find(g => String(g.id) === String(selectedGpuId));
+        const baseGame = games.find(g => String(g.slug) === String(selectedGameSlug));
         if (!cpu || !gpu) return null;
 
         const cpuName = String(cpu.name || '').toLowerCase();
-        const gpuName = String(gpu.name || '').toLowerCase();
-
         const gameDataMap = {
             'cyberpunk-2077': { thread_scaling: 0.85, cpu_weight: 1.2, gpu_weight: 1.5, fps_scale: 1.2 },
             'cs2': { thread_scaling: 0.3, cpu_weight: 0.5, gpu_weight: 0.4, fps_scale: 3.5 },
@@ -76,77 +69,57 @@ export default function BottleneckClient({
         const rawCpuFps = (cpuEffective / (game.cpu_weight || 1)) * game.fps_scale;
         const rawGpuFps = (gpuEffective / (game.gpu_weight || 1)) * game.fps_scale;
 
-        const safeCpuFps = isFinite(rawCpuFps) ? rawCpuFps : 0;
-        const safeGpuFps = isFinite(rawGpuFps) ? rawGpuFps : 0;
-        const estFps = Math.max(1, Math.round(Math.min(safeCpuFps, safeGpuFps)));
-        const maxFps = Math.max(safeCpuFps, safeGpuFps, 1);
-        const diff = Math.abs(safeCpuFps - safeGpuFps) / maxFps;
-        const safeDiff = isFinite(diff) ? diff : 0;
+        const estFps = Math.max(1, Math.round(Math.min(rawCpuFps, rawGpuFps)));
+        const maxFps = Math.max(rawCpuFps, rawGpuFps, 1);
+        const diff = Math.abs(rawCpuFps - rawGpuFps) / maxFps;
 
         return {
-            boundType: safeCpuFps < safeGpuFps ? 'CPU_BOUND' : (safeDiff < 0.08 ? 'BALANCED' : 'GPU_BOUND'),
-            limitedBy: safeCpuFps < safeGpuFps ? 'CPU' : 'GPU',
-            bottleneckPercent: Math.round(safeDiff * 100), 
+            boundType: rawCpuFps < rawGpuFps ? 'CPU_BOUND' : (diff < 0.08 ? 'BALANCED' : 'GPU_BOUND'),
+            limitedBy: rawCpuFps < rawGpuFps ? 'CPU' : 'GPU',
+            bottleneckPercent: Math.round(diff * 100), 
             estFps, 
-            low1Fps: Math.max(0, Math.round(estFps * (1 - safeDiff * 0.8))),
-            frameTimeMs: (Number.isFinite(estFps) && estFps > 0) ? (1000 / estFps).toFixed(1) : '0.0',
+            low1Fps: Math.max(0, Math.round(estFps * (1 - diff * 0.8))),
+            frameTimeMs: estFps > 0 ? (1000 / estFps).toFixed(1) : '0.0',
             cpuName: String(cpu.name || 'CPU'), 
             gpuName: String(gpu.name || 'GPU'), 
             gameName: String(baseGame?.name || 'Hra')
         };
     }, [showResult, selectedCpuId, selectedGpuId, selectedGameSlug, resolution, enableUpscaling, isStreaming, cpus, gpus, games]);
 
-    // ✅ FIX: Stale Closure Protection v useEffect
     useEffect(() => {
         if (typeof window === 'undefined' || !analysis) return;
-        
         const cpuSafe = String(analysis.cpuName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
         const gpuSafe = String(analysis.gpuName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
         const slugBase = `${cpuSafe}-vs-${gpuSafe}-${selectedGameSlug}-${resolution}`;
         const fullUrl = `https://thehardwareguru.cz/${isEn ? 'en/bottleneck-calculator' : 'bottleneck-kalkulacka'}/${slugBase}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
-        
         setShareUrl(fullUrl);
-
         if (sb && !initialCpuId) {
-            try {
-                sb.from('generated_predictions').upsert({
-                    slug_base: slugBase, cpu_id: selectedCpuId, gpu_id: selectedGpuId, full_url: fullUrl, last_requested: new Date().toISOString()
-                }, { onConflict: 'full_url' }).catch(() => {});
-            } catch (e) {}
+            sb.from('generated_predictions').upsert({
+                slug_base: slugBase, cpu_id: selectedCpuId, gpu_id: selectedGpuId, full_url: fullUrl, last_requested: new Date().toISOString()
+            }, { onConflict: 'full_url' }).catch(() => {});
         }
     }, [analysis, selectedCpuId, selectedGpuId, selectedGameSlug, resolution, isEn, initialCpuId, sb]);
 
-    // --- 🛠️ HANDLERS ---
     const handleStart = () => {
         setIsCalculating(true);
         setTimeout(() => { setShowResult(true); setIsCalculating(false); }, 800);
     };
 
     const handleCopyShare = async () => {
-        try {
-            if (typeof navigator !== 'undefined' && navigator.clipboard && shareUrl) {
-                const text = isEn 
-                    ? `🔥 My rig bottleneck result: ${shareUrl}` 
-                    : `🔥 Moje sestava má přesně ${analysis?.bottleneckPercent || 0}% Bottleneck! 👉 ${shareUrl}`;
-                await navigator.clipboard.writeText(text);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 3000);
-            }
-        } catch (err) {}
+        if (typeof navigator !== 'undefined' && navigator.clipboard && shareUrl) {
+            const text = isEn ? `🔥 My rig bottleneck result: ${shareUrl}` : `🔥 Moje sestava má přesně ${analysis?.bottleneckPercent || 0}% Bottleneck! 👉 ${shareUrl}`;
+            await navigator.clipboard.writeText(text);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 3000);
+        }
     };
 
-    const safeOpen = (url) => {
-        try {
-            if (typeof window !== 'undefined') window.open(url, '_blank', 'noopener,noreferrer');
-        } catch (e) {}
-    };
-
-    // ✅ FIX: Safe Link Generation
     const gta6DynamicLink = analysis 
         ? `/${isEn ? 'en/fps-calculator/gta-6-prediction' : 'fps-kalkulacka/gta-6-predikce'}/${String(analysis.cpuName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-vs-${String(analysis.gpuName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${resolution}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}` 
         : '';
 
     const a = analysis || {};
+    const statusColor = a.bottleneckPercent < 15 ? '#10b981' : (a.bottleneckPercent < 30 ? '#f59e0b' : '#ef4444');
 
     return (
         <div className="bn-wrapper">
@@ -155,7 +128,6 @@ export default function BottleneckClient({
                 <h1 style={{ fontSize: '3.5rem', fontWeight: '950', textTransform: 'uppercase', margin: '10px 0', textShadow: '0 0 30px rgba(102, 252, 241, 0.4)' }}>
                     {isEn ? 'System Bottleneck' : 'Bottleneck Kalkulačka'}
                 </h1>
-                <p style={{ color: '#9ca3af', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '2px' }}>Najdi nejslabší článek své sestavy.</p>
             </div>
 
             <div className="bn-grid">
@@ -165,7 +137,7 @@ export default function BottleneckClient({
                         <label>Herní Engine</label>
                         <select value={selectedGameSlug} onChange={(e) => { setSelectedGameSlug(e.target.value); setShowResult(false); }} className="bn-select">
                             <option value="">-- Vyber hru --</option>
-                            {(games || []).map(g => <option key={g.id} value={g.slug}>{g.name}</option>)}
+                            {games.map(g => <option key={g.id} value={g.slug}>{g.name}</option>)}
                         </select>
                     </div>
                     <div className="input-group">
@@ -191,14 +163,14 @@ export default function BottleneckClient({
                         <label><Cpu size={14} /> CPU</label>
                         <select value={selectedCpuId} onChange={(e) => { setSelectedCpuId(e.target.value); setShowResult(false); }} className="bn-select">
                             <option value="">-- Vyber procesor --</option>
-                            {(cpus || []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            {cpus.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
                     <div className="input-group">
                         <label><Zap size={14} /> GPU</label>
                         <select value={selectedGpuId} onChange={(e) => { setSelectedGpuId(e.target.value); setShowResult(false); }} className="bn-select">
                             <option value="">-- Vyber grafiku --</option>
-                            {(gpus || []).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                            {gpus.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                         </select>
                     </div>
                     <button onClick={handleStart} disabled={!selectedCpuId || !selectedGpuId || !selectedGameSlug || isCalculating} className="start-btn">
@@ -215,9 +187,17 @@ export default function BottleneckClient({
                                 <div className={`bound-badge ${(a.boundType || '').toLowerCase().replace('_', '-')}`}>{a.boundType?.replace('_', ' ')}</div>
                             </div>
                             <div className="percentage-display">
-                                <div className="pct-value">{a.bottleneckPercent}%</div>
-                                <div className="pct-label">{a.limitedBy} tě brzdí o {a.bottleneckPercent}%</div>
+                                <div className="pct-value" style={{ color: statusColor, textShadow: `0 0 60px ${statusColor}80` }}>{a.bottleneckPercent}%</div>
+                                <div className="pct-label" style={{ color: statusColor }}>{a.limitedBy} tě brzdí o {a.bottleneckPercent}%</div>
                             </div>
+
+                            {/* 🔥 INTERACTIVE ADS SLOT: INJEKCE PŘÍMO DO VÝSLEDKŮ */}
+                            <div className="guru-client-ad-slot">
+                                <span className="ad-tag">GURU RECOMMENDED HARDWARE</span>
+                                <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                                <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                            </div>
+
                             <div className="pro-metrics-grid">
                                 <div className="metric-box"><div className="m-label">AVG FPS</div><div className="m-val">{a.estFps}</div></div>
                                 <div className="metric-box"><div className="m-label">1% LOWS</div><div className="m-val">{a.low1Fps}</div></div>
@@ -227,9 +207,7 @@ export default function BottleneckClient({
                                 <h4>💡 Guru Verdikt</h4>
                                 <p>{a.boundType === 'CPU_BOUND' ? 'Grafika čeká na procesor. Potřebuješ silnější CPU pro vyrovnaný výkon.' : 'Sestava je limitována grafickou kartou. Snížení detailů pomůže FPS.'}</p>
                             </div>
-                            {gta6DynamicLink && (
-                                <a href={gta6DynamicLink} className="gta-cta"><Sparkles size={20} /> ROZJEDE TO GTA VI?</a>
-                            )}
+                            {gta6DynamicLink && <a href={gta6DynamicLink} className="gta-cta"><Sparkles size={20} /> ROZJEDE TO GTA VI?</a>}
                         </div>
                     )}
                 </div>
@@ -244,26 +222,6 @@ export default function BottleneckClient({
                     </div>
                     <div style={{ display: 'flex', gap: '12px' }}>
                         <button onClick={handleCopyShare} className="premium-share-btn btn-copy">{copied ? <Check size={20} /> : <Share2 size={20} />}</button>
-                        <button onClick={() => safeOpen(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`)} className="premium-share-btn btn-x"><Twitter size={20} /></button>
-                        <button onClick={() => safeOpen(`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}`)} className="premium-share-btn btn-reddit"><RedditIcon size={20} /></button>
-                    </div>
-                </div>
-
-                <div className="hub-grid" style={{marginTop: '50px'}}>
-                    <div className="hub-column">
-                        <div className="hub-col-header"><Swords size={20} color="#ff0055" /> HW Souboje</div>
-                        <ul className="hub-links-list">
-                            <li><a href="/gpuvs"><ChevronRight size={16} /> Souboje Grafických Karet</a></li>
-                            <li><a href="/cpuvs"><ChevronRight size={16} /> Souboje Procesorů</a></li>
-                        </ul>
-                    </div>
-                    <div className="hub-column">
-                        <div className="hub-col-header"><Gamepad2 size={20} color="#66fcf1" /> Guru Ekosystém</div>
-                        <ul className="hub-links-list">
-                            <li><a href="/ocekavane-hry"><ChevronRight size={16} /> Archiv her</a></li>
-                            <li><a href="/clanky"><ChevronRight size={16} /> Články a Novinky</a></li>
-                            <li><a href="/tipy"><ChevronRight size={16} /> GURU Tipy</a></li>
-                        </ul>
                     </div>
                 </div>
             </div>
@@ -273,7 +231,6 @@ export default function BottleneckClient({
                 .bn-header { text-align: center; margin-bottom: 60px; }
                 .pred-badge { display: inline-flex; align-items: center; gap: 10px; color: #a855f7; font-weight: 950; padding: 10px 30px; border-radius: 50px; background: rgba(168, 85, 247, 0.1); margin-bottom: 30px; text-transform: uppercase; font-size: 13px; border: 1px solid rgba(168, 85, 247, 0.2); }
                 .bn-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 50px; }
-                @media (max-width: 1000px) { .bn-grid { grid-template-columns: 1fr; } }
                 .bn-inputs-card { background: rgba(255, 255, 255, 0.02); border-radius: 30px; padding: 40px; border: 1px solid rgba(255, 255, 255, 0.05); }
                 .section-title { display: flex; align-items: center; gap: 15px; font-size: 20px; font-weight: 950; color: #fff; margin-bottom: 40px; text-transform: uppercase; border-left: 4px solid #a855f7; padding-left: 15px; }
                 .bn-select { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; outline: none; transition: 0.3s; font-size: 16px; margin-bottom: 20px; }
@@ -281,41 +238,37 @@ export default function BottleneckClient({
                 .res-btn { flex: 1; padding: 15px; background: #000; border: 1px solid #222; color: #9ca3af; border-radius: 12px; font-weight: 950; cursor: pointer; transition: 0.3s; }
                 .res-btn.active { border-color: #a855f7; color: #fff; background: rgba(168, 85, 247, 0.15); }
                 .start-btn { width: 100%; margin-top: 30px; padding: 22px; background: #a855f7; color: #fff; border: none; border-radius: 18px; font-weight: 950; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 15px; transition: 0.4s; text-transform: uppercase; font-size: 18px; }
-                .start-btn:disabled { opacity: 0.3; }
-                .bn-result-card { background: linear-gradient(145deg, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0.6) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 30px; padding: 50px; display: flex; align-items: center; justify-content: center; min-height: 600px; }
-                .pct-value { font-size: 9rem; font-weight: 950; text-align: center; color: #fff; text-shadow: 0 0 60px rgba(168, 85, 247, 0.8); line-height: 0.9; }
-                .pct-label { text-align: center; color: #a855f7; font-weight: 950; text-transform: uppercase; letter-spacing: 4px; margin-top: 20px; font-size: 18px; }
-                .pro-metrics-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin: 50px 0; }
-                .metric-box { background: rgba(0,0,0,0.8); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-                .m-label { font-size: 12px; color: #666; font-weight: 950; text-transform: uppercase; margin-bottom: 8px; }
-                .m-val { font-size: 32px; font-weight: 950; color: #fff; }
-                .gta-cta { display: flex; align-items: center; justify-content: center; gap: 15px; background: #f43f5e; color: #fff; padding: 22px; border-radius: 18px; text-decoration: none; font-weight: 950; margin-top: 40px; transition: 0.4s; box-shadow: 0 20px 40px rgba(244, 63, 94, 0.3); }
-                .viral-flex-card { display: flex; align-items: center; gap: 30px; padding: 40px; background: rgba(0,0,0,0.5); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 30px; margin-top: 80px; }
-                .premium-share-btn { width: 60px; height: 60px; border-radius: 18px; border: none; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-                .btn-copy { background: #a855f7; }
-                .btn-x { background: #000; border: 1px solid #333; }
-                .btn-reddit { background: #ff4500; }
-                .massive-seo-hub { margin-top: 100px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 70px; }
-                .hub-main-title { text-align: center; text-transform: uppercase; font-weight: 950; letter-spacing: 5px; margin-bottom: 60px; font-size: 24px; }
-                .hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-                .hub-column { background: rgba(255,255,255,0.02); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); }
-                .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 30px; font-size: 18px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
-                .hub-links-list { list-style: none; padding: 0; }
-                .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 16px; display: flex; align-items: center; margin-bottom: 18px; font-weight: bold; transition: 0.3s; }
-                .hub-links-list a:hover { color: #66fcf1; transform: translateX(10px); }
-                .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-                .toggle-row { display: flex; align-items: center; gap: 15px; cursor: pointer; background: #000; padding: 18px; border-radius: 15px; font-size: 13px; font-weight: 950; border: 1px solid #222; }
-                .switch { width: 44px; height: 24px; background: #333; border-radius: 20px; position: relative; transition: 0.3s; }
-                .switch::after { content: ''; position: absolute; width: 18px; height: 18px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: 0.3s; }
+                .bn-result-card { background: linear-gradient(145deg, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0.6) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 30px; padding: 40px; display: flex; align-items: flex-start; justify-content: center; min-height: 600px; }
+                .analysis-board { width: 100%; }
+                .pct-value { font-size: 8rem; font-weight: 950; text-align: center; line-height: 1; }
+                .pct-label { text-align: center; font-weight: 950; text-transform: uppercase; letter-spacing: 4px; margin-top: 10px; font-size: 16px; }
+                
+                .guru-client-ad-slot { margin: 30px 0; padding: 15px; background: rgba(0,0,0,0.3); border: 1px dashed rgba(168, 85, 247, 0.2); border-radius: 20px; text-align: center; }
+                .ad-tag { display: block; font-size: 9px; color: #444; font-weight: 900; margin-bottom: 10px; letter-spacing: 2px; }
+                .ad-desktop { display: block; } .ad-mobile { display: none; }
+
+                .pro-metrics-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+                .metric-box { background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+                .m-label { font-size: 10px; color: #666; font-weight: 950; text-transform: uppercase; }
+                .m-val { font-size: 24px; font-weight: 950; color: #fff; }
+                .gta-cta { display: flex; align-items: center; justify-content: center; gap: 15px; background: #f43f5e; color: #fff; padding: 18px; border-radius: 15px; text-decoration: none; font-weight: 950; margin-top: 30px; transition: 0.4s; }
+                .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+                .toggle-row { display: flex; align-items: center; gap: 10px; cursor: pointer; background: #000; padding: 12px; border-radius: 12px; font-size: 12px; font-weight: 950; border: 1px solid #222; }
+                .switch { width: 36px; height: 20px; background: #333; border-radius: 20px; position: relative; }
+                .switch::after { content: ''; position: absolute; width: 14px; height: 14px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: 0.3s; }
                 .switch.on { background: #a855f7; }
-                .switch.on::after { left: 23px; }
-                .spin { animation: spin 1s linear infinite; }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .bound-badge { display: inline-block; padding: 12px 40px; border-radius: 50px; background: rgba(168, 85, 247, 0.1); border: 2px solid #a855f7; font-weight: 950; text-transform: uppercase; font-size: 15px; letter-spacing: 3px; color: #fff; margin-bottom: 30px; }
-                .bn-divider { border: 0; height: 1px; background: rgba(255,255,255,0.05); margin: 40px 0; }
-                .input-group label { display: block; font-size: 13px; font-weight: 950; color: #9ca3af; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 2px; }
-                .recommendation h4 { font-size: 18px; font-weight: 950; text-transform: uppercase; margin-bottom: 15px; color: #fff; }
-                .recommendation p { font-size: 15px; color: #9ca3af; lineHeight: 1.6; }
+                .switch.on::after { left: 19px; }
+                .bound-badge { display: inline-block; padding: 8px 25px; border-radius: 50px; background: rgba(168, 85, 247, 0.1); border: 2px solid #a855f7; font-weight: 950; text-transform: uppercase; font-size: 12px; letter-spacing: 2px; }
+                .viral-flex-card { display: flex; align-items: center; justify-content: space-between; padding: 30px; background: rgba(0,0,0,0.5); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 24px; margin-top: 50px; }
+                .premium-share-btn { padding: 15px 30px; background: #a855f7; border-radius: 12px; border: none; color: #fff; cursor: pointer; }
+
+                @media (max-width: 768px) { 
+                    .bn-wrapper { padding: 20px; }
+                    .pct-value { font-size: 6rem; }
+                    .ad-desktop { display: none; } .ad-mobile { display: block; }
+                    .pro-metrics-grid { grid-template-columns: 1fr; }
+                    .viral-flex-card { flex-direction: column; text-align: center; }
+                }
             `}} />
         </div>
     );
