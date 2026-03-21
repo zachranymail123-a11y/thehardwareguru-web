@@ -9,9 +9,8 @@ import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
 
 /**
- * GURU ROOT LAYOUT V5.2 (GLOBAL ADS MATCH)
- * 🚀 CÍL: 100% aplikace reklamy na všechny stránky.
- * 🛡️ FIX: Přidán A-ADS banner do patičky pro globální monetizaci.
+ * GURU ROOT LAYOUT V5.3 (EXACT ADS VERIFICATION)
+ * 🚀 CÍL: 100% aplikace reklamy na všechny stránky a úspěšná verifikace.
  */
 
 export const metadata = {
@@ -110,17 +109,18 @@ export default async function RootLayout({ children, params }) {
             .copyright { color: #4b5563; font-size: 12px; margin-top: 20px; font-weight: 600; }
             .eeat-link { color: #6b7280; font-size: 11px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; transition: 0.2s; }
             .eeat-link:hover { color: #d1d5db; }
-            .ad-container { width: 100%; max-width: 950px; margin: 0 auto 40px; text-align: center; overflow: hidden; }
           `}} />
           
-          {/* 🚀 GLOBÁLNÍ A-ADS BANNER (MONETIZACE) */}
-          <div className="ad-container">
+          {/* 🚀 PŘESNÝ KÓD PRO VERIFIKACI A-ADS */}
+          {/* BEGIN AADS AD UNIT 2431217 */}
+          <div id="frame" style={{ width: '100%', margin: '0 auto 40px', position: 'relative', zIndex: 99998 }}>
             <iframe 
               data-aa='2431217' 
-              src='//acceptable.a-ads.com/2431217/?size=Adaptive'
-              style={{ border: 0, padding: 0, width: '100%', height: '100px', overflow: 'hidden', display: 'block', margin: 'auto' }}
+              src='https://acceptable.a-ads.com/2431217/?size=Adaptive'
+              style={{ border: 0, padding: 0, width: '70%', height: '100px', overflow: 'hidden', display: 'block', margin: 'auto' }}
             ></iframe>
           </div>
+          {/* END AADS AD UNIT 2431217 */}
 
           <VisitorCounter locale={locale} />
 
