@@ -36,7 +36,6 @@ export async function generateMetadata(props) {
     if (!post) return { title: '404 | Preview Not Found' };
 
     const title = isEn && post.title_en ? post.title_en : post.title;
-    // Tady bezpečně taháme description do meta tagů
     const desc = isEn && post.description_en ? post.description_en : (post.description || post.perex || post.excerpt || '');
     const safeSlug = post.slug;
     const canonicalUrl = `${baseUrl}/kalendar/${safeSlug}`;
@@ -78,6 +77,12 @@ export default async function ExpectedGameDetail(props) {
     const content = isEn && item.content_en ? item.content_en : item.content;
     const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}kalendar/${item.slug}`;
 
+    // 🚀 GURU INJECTION LOGIC: Rozdělení obsahu pro reklamu uprostřed
+    const contentParts = content ? content.split('</p>') : [];
+    const midPoint = Math.ceil(contentParts.length / 2);
+    const firstHalf = contentParts.slice(0, midPoint).join('</p>');
+    const secondHalf = contentParts.slice(midPoint).join('</p>');
+
     return (
         <div style={pageWrapper}>
             <style dangerouslySetInnerHTML={{__html: `
@@ -88,6 +93,17 @@ export default async function ExpectedGameDetail(props) {
                 .article-body li::before { content: "⚡"; position: absolute; left: 0; color: #66fcf1; }
                 .share-btn-x { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid #333; padding: 14px 25px; border-radius: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 10px; font-weight: 900; font-size: 14px; transition: 0.2s; }
                 .share-btn-x:hover { background: #000; border-color: #66fcf1; }
+
+                /* Reklamní sloty */
+                .ad-slot-wrapper { margin: 35px 0; padding: 15px; background: rgba(102, 252, 241, 0.02); border: 1px solid rgba(102, 252, 241, 0.1); border-radius: 20px; text-align: center; }
+                .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+                
+                .ad-desktop { display: block; }
+                .ad-mobile { display: none; }
+                @media (max-width: 768px) {
+                    .ad-desktop { display: none; }
+                    .ad-mobile { display: block; }
+                }
             `}} />
 
             <article style={container}>
@@ -105,7 +121,18 @@ export default async function ExpectedGameDetail(props) {
                         <h1 style={mainTitle}>{title}</h1>
                     </header>
 
-                    {/* 🚀 TECH BRIEF PANEL (GURU INSIGHT) - KONEČNĚ FUNKČNÍ */}
+                    {/* 🔥 TOP AD SLOT: HNED POD H1 */}
+                    <div className="ad-slot-wrapper">
+                        <span className="ad-label">Advertisement</span>
+                        <div className="ad-desktop">
+                            <iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe>
+                        </div>
+                        <div className="ad-mobile">
+                            <iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe>
+                        </div>
+                    </div>
+
+                    {/* 🚀 TECH BRIEF PANEL (GURU INSIGHT) */}
                     {description && (
                         <div style={descPanel}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', marginBottom: '15px' }}>
@@ -125,15 +152,27 @@ export default async function ExpectedGameDetail(props) {
                         </div>
                     )}
 
-                    {/* 📝 HLAVNÍ TEXT ANALÝZY */}
-                    <div 
-                        className="article-body" 
-                        dangerouslySetInnerHTML={{ 
-                            __html: content && content.trim() !== '' 
-                                ? content 
-                                : '<p>Content zatím není dostupný.</p>' 
-                        }} 
-                    />
+                    {/* 📝 HLAVNÍ TEXT ANALÝZY S REKLAMOU UPROSTŘED */}
+                    <div className="article-body">
+                        {/* První polovina textu */}
+                        <div dangerouslySetInnerHTML={{ __html: firstHalf + (contentParts.length > 1 ? '</p>' : '') }} />
+
+                        {/* 🔥 MID AD SLOT: UPROSTŘED ČLÁNKU */}
+                        {contentParts.length > 2 && (
+                            <div className="ad-slot-wrapper">
+                                <span className="ad-label">Sponsored Content</span>
+                                <div className="ad-desktop">
+                                    <iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe>
+                                </div>
+                                <div className="ad-mobile">
+                                    <iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Druhá polovina textu */}
+                        <div dangerouslySetInnerHTML={{ __html: secondHalf }} />
+                    </div>
 
                     {/* 🛡️ GURU SUPPORT SHIELD */}
                     <div style={guruShield}>
@@ -152,12 +191,10 @@ export default async function ExpectedGameDetail(props) {
                                 DARY / REVOLUT
                             </Link>
                             
-                            {/* 📰 GOOGLE CONTRIBUTION BUTTON */}
                             <div style={{ background: '#fff', borderRadius: '12px', padding: '0 5px', display: 'flex', alignItems: 'center', height: '48px' }}>
                                 <button swg-standard-button="contribution" style={{ cursor: 'pointer' }}></button>
                             </div>
 
-                            {/* PŘEDĚLÁNO NA ČISTÝ ODKAZ (X / TWITTER) ABY TO FUNGOVALO BEZ USE CLIENT */}
                             <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`} target="_blank" rel="noopener noreferrer" className="share-btn-x">
                                 <Share2 size={18} /> {isEn ? 'SHARE ON X' : 'SDÍLET NA X'}
                             </a>
@@ -186,4 +223,3 @@ const descPanel = { background: 'rgba(255,255,255,0.03)', borderLeft: '5px solid
 const imageWrapper = { margin: '50px 0 70px' };
 const guruShield = { marginTop: '100px', padding: '60px 40px', background: 'rgba(102, 252, 241, 0.04)', borderRadius: '40px', border: '1px solid #66fcf1', textAlign: 'center', boxShadow: '0 0 50px rgba(102, 252, 241, 0.1)' };
 const supportBtn = { background: '#66fcf1', color: '#0b0c10', padding: '15px 30px', borderRadius: '12px', textDecoration: 'none', fontWeight: '950', fontSize: '14px', transition: '0.2s', display: 'inline-flex', alignItems: 'center' };
-const center = { minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a0b0d' };
