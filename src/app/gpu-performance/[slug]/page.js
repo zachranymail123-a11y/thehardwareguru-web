@@ -15,11 +15,8 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU PERFORMANCE ENGINE V2.6 (NEXT.JS 15 PROMISE FIX)
- * Cesta: src/app/gpu-performance/[slug]/page.js
- * 🛡️ FIX 1: 'params' je nyní Promise - přidán 'await params' (opravuje Server-side exception).
- * 🛡️ FIX 2: 3-Tier vyhledávač (Exact -> Substring -> Tokenized).
- * 🛡️ DESIGN: 1:1 s CPU verzí včetně CTA tlačítek.
+ * GURU GPU PERFORMANCE ENGINE V2.7 (ADS INJECTION UPDATE)
+ * 🚀 CÍL: Maximální monetizace technických analýz výkonu skrze A-ADS.
  */
 
 export const runtime = "nodejs";
@@ -58,12 +55,9 @@ export async function generateMetadata({ params }) {
   const rawSlug = resolvedParams?.slug || resolvedParams?.gpu || '';
   const isEn = rawSlug.startsWith('en-');
   const cleanSlug = rawSlug.replace(/^en-/, '');
-
   const gpu = await findGpuBySlug(cleanSlug);
   if (!gpu) return { title: '404 | Hardware Guru' };
-
   const safeSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
-
   return {
     title: isEn ? `${gpu.name} Performance & Benchmarks` : `${gpu.name} Výkon a Benchmarky`,
     alternates: {
@@ -82,25 +76,19 @@ export default async function GpuPerformancePage({ params }) {
   const gpu = await findGpuBySlug(cleanSlug);
   if (!gpu) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>GPU NENALEZENO</div>;
 
-  const fpsData = Array.isArray(gpu.game_fps) ? gpu.game_fps[0] : (gpu.game_fps || {});
   const safeSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
   const vendorColor = (gpu.vendor || '').toUpperCase() === 'NVIDIA' ? '#76b900' : ((gpu.vendor || '').toUpperCase() === 'AMD' ? '#ed1c24' : '#66fcf1');
-
-  const availableGames = Object.keys(fpsData || {})
-    .filter(k => k !== 'gpu_id' && k !== 'id' && (k.includes('_1080p') || k.includes('_1440p') || k.includes('_4k')))
-    .map(g => g.replace(/_(1080p|1440p|4k)/,'').replace(/_/g, '-'))
-    .filter((v, i, a) => a.indexOf(v) === i);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? `/en/gpu/${safeSlug}` : `/gpu/${safeSlug}`} className="guru-back-btn">
-            <ChevronLeft size={16} /> {isEn ? 'BACK TO PROFIL' : 'ZPĚT NA PROFIL'}
+            <ChevronLeft size={16} /> {isEn ? 'BACK TO PROFILE' : 'ZPĚT NA PROFIL'}
           </a>
         </div>
 
-        <header style={{ textAlign: 'center', marginBottom: '60px' }}>
+        <header style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)' }}>
             <Activity size={16} /> GURU PERFORMANCE ANALYSIS
           </div>
@@ -110,6 +98,13 @@ export default async function GpuPerformancePage({ params }) {
           </h1>
         </header>
 
+        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD HLAVIČKOU */}
+        <div className="guru-perf-ad-slot">
+            <span className="ad-label">Advertisement</span>
+            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        </div>
+
         <section style={{ marginBottom: '60px' }}>
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(102, 252, 241, 0.2)', borderLeft: '8px solid #66fcf1', borderRadius: '24px', padding: '50px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center' }}>
                 <div style={{ color: '#66fcf1', fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>{isEn ? 'Gaming Performance Index' : 'Index herního výkonu'}</div>
@@ -117,6 +112,13 @@ export default async function GpuPerformancePage({ params }) {
                 <div style={{ background: 'rgba(102, 252, 241, 0.1)', color: '#66fcf1', padding: '10px 25px', borderRadius: '50px', display: 'inline-flex', alignItems: 'center', gap: '10px', fontWeight: '950', fontSize: '14px', border: '1px solid rgba(102, 252, 241, 0.3)' }}><CheckCircle2 size={18} /> {isEn ? 'Verified Benchmark' : 'Ověřený benchmark'}</div>
             </div>
         </section>
+
+        {/* 🔥 ADS SLOT #2: PŘED TECHNICKÝMI SPECIFIKACEMI */}
+        <div className="guru-perf-ad-slot">
+            <span className="ad-label">Sponsored Hardware Data</span>
+            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        </div>
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2"><Database size={28} /> {isEn ? 'TECHNICAL SPECS' : 'TECHNICKÉ SPECIFIKACE'}</h2>
@@ -136,12 +138,22 @@ export default async function GpuPerformancePage({ params }) {
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
+        
+        .guru-perf-ad-slot { margin: 30px 0; padding: 15px; background: rgba(102, 252, 241, 0.02); border: 1px solid rgba(102, 252, 241, 0.1); border-radius: 20px; text-align: center; }
+        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+        .ad-desktop { display: block; } .ad-mobile { display: none; }
+
         .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; display: flex; align-items: center; gap: 12px; }
         .res-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
         .res-label { font-size: 11px; font-weight: 950; text-transform: uppercase; color: #6b7280; letter-spacing: 2px; margin-bottom: 10px; }
         .res-val { font-size: 26px; font-weight: 950; color: #fff; }
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; }
+        
+        @media (max-width: 768px) {
+            .ad-desktop { display: none; } .ad-mobile { display: block; }
+            .guru-deals-btn, .guru-support-btn { width: 100%; }
+        }
       `}} />
     </div>
   );
