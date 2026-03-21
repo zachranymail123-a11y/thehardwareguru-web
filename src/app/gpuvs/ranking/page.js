@@ -2,11 +2,8 @@ import React from 'react';
 import { Trophy, Zap, ShieldCheck, Star, Swords, ChevronRight, TrendingUp } from 'lucide-react';
 
 /**
- * GURU GPU RANKING ENGINE V1.1 (SEO SILOING FIX)
- * Cesta: src/app/gpuvs/ranking/page.js
- * 🚀 GURU: Tato stránka slouží jako traffic magnet pro klíčová slova "gpu ranking" a "gpu hierarchy".
- * 🛡️ DESIGN: Guru Supreme (Neon, Tier List struktura, agresivní Dark mode).
- * 🛡️ FIX 1: Přidáno masivní interní prolinkování (Každý řádek nyní vede na profil grafiky).
+ * GURU GPU RANKING ENGINE V1.2 (ADS INJECTION UPDATE)
+ * 🚀 CÍL: Maximální vytěžení trafficu z klíčových slov "gpu ranking" skrze A-ADS.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -39,7 +36,6 @@ export default async function GpuRankingPage({ searchParams }) {
     const isEn = searchParams?.lang === 'en';
     const gpus = await getGpuRanking();
 
-    // Rozdělení do Tierů podle performance_index
     const tiers = [
         { id: 'S', label: 'Tier S: Extreme (4K Ultra)', range: [250, 1000], color: '#66fcf1' },
         { id: 'A', label: 'Tier A: High-End (4K/1440p)', range: [180, 249], color: '#a855f7' },
@@ -54,63 +50,71 @@ export default async function GpuRankingPage({ searchParams }) {
         <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
             <main style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 20px' }}>
                 
-                {/* HERO SEKCE */}
-                <header style={{ textAlign: 'center', marginBottom: '80px' }}>
+                <header style={{ textAlign: 'center', marginBottom: '60px' }}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(102,252,241,0.3)', borderRadius: '50px', background: 'rgba(102,252,241,0.05)' }}>
                         <TrendingUp size={16} /> GURU RANKING ENGINE
                     </div>
                     <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', fontWeight: '950', fontStyle: 'italic', textTransform: 'uppercase', margin: '0 0 20px 0', lineHeight: '1', textShadow: '0 10px 40px rgba(0,0,0,0.8)' }}>
                         GPU <span style={{ color: '#66fcf1' }}>HIERARCHY</span> 2026
                     </h1>
-                    <p style={{ color: '#9ca3af', fontSize: '1.2rem', maxWidth: '700px', margin: '0 auto' }}>
-                        {isEn 
-                          ? "The definitive performance ranking for gaming graphics cards. Based on raw benchmarks and relative performance index." 
-                          : "Definitivní žebříček výkonu herních grafických karet. Hodnocení vychází z hrubého benchmarku a relativního indexu výkonu."}
-                    </p>
                 </header>
 
-                {/* TIER LIST */}
+                {/* 🔥 ADS SLOT #1: TOP PLACEMENT (PŘED ŽEBŘÍČKEM) */}
+                <div className="ranking-ad-slot" style={{ marginBottom: '50px' }}>
+                    <span className="ad-label">Advertisement</span>
+                    <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                    <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                </div>
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-                    {tiers.map(tier => {
+                    {tiers.map((tier, tierIdx) => {
                         const tierGpus = gpus.filter(g => g.performance_index >= tier.range[0] && g.performance_index <= tier.range[1]);
                         if (tierGpus.length === 0) return null;
 
                         return (
-                            <section key={tier.id}>
-                                <h2 style={{ display: 'flex', alignItems: 'center', gap: '15px', color: tier.color, fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '20px', letterSpacing: '1px' }}>
-                                    <div style={{ width: '45px', height: '45px', background: tier.color, color: '#000', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>{tier.id}</div>
-                                    {tier.label}
-                                </h2>
-                                <div style={{ background: 'rgba(15, 17, 21, 0.95)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
-                                    {tierGpus.map((gpu, idx) => {
-                                        const safeSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
-                                        const profileUrl = isEn ? `/en/gpu/${safeSlug}` : `/gpu/${safeSlug}`;
-                                        
-                                        return (
-                                            <a key={idx} href={profileUrl} className="ranking-row" style={{ display: 'grid', gridTemplateColumns: '50px 1fr 120px', padding: '20px 30px', borderBottom: idx === tierGpus.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.02)', alignItems: 'center', textDecoration: 'none' }}>
-                                                <span style={{ color: '#4b5563', fontWeight: '900', fontSize: '18px' }}>#{gpus.indexOf(gpu) + 1}</span>
-                                                <div>
-                                                    <div style={{ color: getVendorColor(gpu.vendor), fontSize: '10px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '1px' }}>{gpu.vendor} • {gpu.architecture}</div>
-                                                    <div className="gpu-name-hover" style={{ fontSize: '18px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', transition: '0.2s' }}>{gpu.name}</div>
-                                                </div>
-                                                <div style={{ textAlign: 'right' }}>
-                                                    <div style={{ color: tier.color, fontWeight: '950', fontSize: '20px' }}>{gpu.performance_index}%</div>
-                                                    <div style={{ fontSize: '10px', color: '#4b5563', fontWeight: 'bold' }}>{isEn ? 'REL. POWER' : 'REL. VÝKON'}</div>
-                                                </div>
-                                            </a>
-                                        );
-                                    })}
-                                </div>
-                            </section>
+                            <React.Fragment key={tier.id}>
+                                <section>
+                                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '15px', color: tier.color, fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '20px', letterSpacing: '1px' }}>
+                                        <div style={{ width: '45px', height: '45px', background: tier.color, color: '#000', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>{tier.id}</div>
+                                        {tier.label}
+                                    </h2>
+                                    <div style={{ background: 'rgba(15, 17, 21, 0.95)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
+                                        {tierGpus.map((gpu, idx) => {
+                                            const safeSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
+                                            const profileUrl = isEn ? `/en/gpu/${safeSlug}` : `/gpu/${safeSlug}`;
+                                            return (
+                                                <a key={idx} href={profileUrl} className="ranking-row" style={{ display: 'grid', gridTemplateColumns: '50px 1fr 120px', padding: '20px 30px', borderBottom: idx === tierGpus.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.02)', alignItems: 'center', textDecoration: 'none' }}>
+                                                    <span style={{ color: '#4b5563', fontWeight: '900', fontSize: '18px' }}>#{gpus.indexOf(gpu) + 1}</span>
+                                                    <div>
+                                                        <div style={{ color: getVendorColor(gpu.vendor), fontSize: '10px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '1px' }}>{gpu.vendor} • {gpu.architecture}</div>
+                                                        <div className="gpu-name-hover" style={{ fontSize: '18px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', transition: '0.2s' }}>{gpu.name}</div>
+                                                    </div>
+                                                    <div style={{ textAlign: 'right' }}>
+                                                        <div style={{ color: tier.color, fontWeight: '950', fontSize: '20px' }}>{gpu.performance_index}%</div>
+                                                        <div style={{ fontSize: '10px', color: '#4b5563', fontWeight: 'bold' }}>{isEn ? 'REL. POWER' : 'REL. VÝKON'}</div>
+                                                    </div>
+                                                </a>
+                                            );
+                                        })}
+                                    </div>
+                                </section>
+
+                                {/* 🔥 ADS SLOT #2: MID PLACEMENT (VLOŽENO PO TIER B) */}
+                                {tier.id === 'B' && (
+                                    <div className="ranking-ad-slot">
+                                        <span className="ad-label">Sponsored Performance Breakdown</span>
+                                        <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                                        <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                                    </div>
+                                )}
+                            </React.Fragment>
                         );
                     })}
                 </div>
 
-                {/* CTA BOX */}
                 <div style={{ marginTop: '100px', background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(0,0,0,0.4) 100%)', padding: '60px 40px', borderRadius: '40px', border: '1px solid rgba(168, 85, 247, 0.3)', textAlign: 'center' }}>
                     <Star color="#a855f7" size={48} style={{ marginBottom: '20px' }} />
                     <h3 style={{ fontSize: '28px', fontWeight: '950', textTransform: 'uppercase', marginBottom: '15px', color: '#fff' }}>{isEn ? 'Need a direct comparison?' : 'Potřebuješ přímé srovnání?'}</h3>
-                    <p style={{ color: '#9ca3af', marginBottom: '30px' }}>{isEn ? 'Use our Guru VS Engine to compare two specific GPUs head-to-head.' : 'Použij náš Guru VS Engine a porovnej dvě konkrétní grafiky tváří v tvář.'}</p>
                     <a href={isEn ? "/en/gpuvs" : "/gpuvs"} style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '18px 40px', background: '#a855f7', color: '#fff', textDecoration: 'none', fontWeight: '950', borderRadius: '16px', fontSize: '16px', textTransform: 'uppercase', transition: '0.3s' }}>
                         {isEn ? 'Launch VS Engine' : 'Spustit VS Engine'} <ChevronRight size={20} />
                     </a>
@@ -118,13 +122,15 @@ export default async function GpuRankingPage({ searchParams }) {
 
             </main>
             <style dangerouslySetInnerHTML={{__html: `
+                .ranking-ad-slot { margin: 30px 0; padding: 15px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; text-align: center; }
+                .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+                .ad-desktop { display: block; } .ad-mobile { display: none; }
                 .ranking-row { transition: 0.2s; cursor: pointer; }
                 .ranking-row:hover { background: rgba(255,255,255,0.03) !important; }
                 .ranking-row:hover .gpu-name-hover { color: #66fcf1 !important; transform: translateX(5px); }
-                
                 @media (max-width: 768px) {
+                  .ad-desktop { display: none; } .ad-mobile { display: block; }
                   .ranking-row { grid-template-columns: 40px 1fr 80px !important; padding: 15px !important; }
-                  .ranking-row div:last-child { font-size: 16px !important; }
                 }
             `}} />
         </div>
