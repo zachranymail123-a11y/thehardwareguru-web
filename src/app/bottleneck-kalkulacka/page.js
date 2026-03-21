@@ -2,11 +2,6 @@ import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import BottleneckClient from './BottleneckClient';
 
-/**
- * GURU BOTTLENECK CALCULATOR MAIN HUB - V1.1 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Monetizace hlavního vstupu kalkulačky skrze A-ADS.
- */
-
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
