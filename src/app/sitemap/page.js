@@ -6,10 +6,8 @@ import {
 import Link from 'next/link';
 
 /**
- * GURU HTML SITEMAP V2.5 (ULTIMATE SEO & GOLDEN RICH RESULTS)
- * 🛡️ FIX: Implementováno SiteNavigationElement a BreadcrumbList schéma.
- * 🛡️ FIX: Maximální interní prolinkování všech Guru rubrik.
- * 🛡️ FIX: Zlaté pravidlo pro Next.js 15 asynchronní props.
+ * GURU HTML SITEMAP V2.6 (ADS INJECTION & LINK FIX UPDATE)
+ * 🚀 CÍL: Oprava odkazu na Bottleneck Kalkulačku a nasazení reklamy.
  */
 
 export const runtime = "nodejs";
@@ -25,11 +23,7 @@ export async function generateMetadata(props) {
     description: isEn ? 'Complete overview of PC hardware benchmarks, CPU/GPU rankings, and tech guides.' : 'Kompletní přehled hardwarových benchmarků, žebříčků a tech návodů na Hardware Guru.',
     alternates: {
       canonical: `${baseUrl}/sitemap`,
-      languages: {
-        'en': `${baseUrl}/en/sitemap`,
-        'cs': `${baseUrl}/sitemap`,
-        'x-default': `${baseUrl}/sitemap`
-      }
+      languages: { 'en': `${baseUrl}/en/sitemap`, 'cs': `${baseUrl}/sitemap` }
     }
   };
 }
@@ -75,12 +69,11 @@ export default async function SitemapPage(props) {
       links: [
         { name: isEn ? 'GPU Comparison' : 'Srovnávač grafických karet', url: '/gpuvs' },
         { name: isEn ? 'CPU Comparison' : 'Srovnávač procesorů', url: '/cpuvs' },
-        { name: isEn ? 'Bottleneck Calc' : 'Kalkulačka Bottlenecku (Beta)', url: '/' }
+        { name: isEn ? 'Bottleneck Calc' : 'Kalkulačka Bottlenecku', url: '/bottleneck-kalkulacka' } // 🛡️ ODKAZ A NÁZEV OPRAVEN
       ]
     }
   ];
 
-  // 🚀 GOLDEN RICH RESULTS SCHEMAS
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -123,21 +116,32 @@ export default async function SitemapPage(props) {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px' }}>
             {sections.map((section, i) => (
-                <div key={i} style={{ background: 'rgba(15, 17, 21, 0.98)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '32px', padding: '45px 35px', boxShadow: '0 30px 60px rgba(0,0,0,0.6)', backdropFilter: 'blur(20px)', borderTop: `3px solid ${section.icon.props.color}` }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '30px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '20px' }}>
-                        {section.icon}
-                        <h2 style={{ fontSize: '1.4rem', fontWeight: '950', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>{section.title}</h2>
+                <React.Fragment key={i}>
+                    <div style={{ background: 'rgba(15, 17, 21, 0.98)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '32px', padding: '45px 35px', boxShadow: '0 30px 60px rgba(0,0,0,0.6)', backdropFilter: 'blur(20px)', borderTop: `3px solid ${section.icon.props.color}` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '30px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '20px' }}>
+                            {section.icon}
+                            <h2 style={{ fontSize: '1.4rem', fontWeight: '950', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>{section.title}</h2>
+                        </div>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                            {section.links.map((link, j) => (
+                                <li key={j}>
+                                    <Link href={isEn ? `/en${link.url === '/' ? '' : link.url}` : link.url} className="sitemap-link">
+                                        <ChevronRight size={16} style={{ color: section.icon.props.color }} /> {link.name}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                        {section.links.map((link, j) => (
-                            <li key={j}>
-                                <Link href={isEn ? `/en${link.url === '/' ? '' : link.url}` : link.url} className="sitemap-link">
-                                    <ChevronRight size={16} style={{ color: section.icon.props.color }} /> {link.name}
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+
+                    {/* 🔥 ADS SLOT: INJEKCE DO GRIDU (PO 2. KARTĚ) */}
+                    {i === 1 && (
+                        <div className="guru-sitemap-ad-slot grid-span-ad">
+                            <span className="ad-label">Sponsored Hardware Recommendation</span>
+                            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                        </div>
+                    )}
+                </React.Fragment>
             ))}
         </div>
 
@@ -154,6 +158,13 @@ export default async function SitemapPage(props) {
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 20px 40px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 16px; text-transform: uppercase; border-radius: 20px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 30px rgba(234, 179, 8, 0.3); }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 20px 40px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 16px; text-transform: uppercase; border-radius: 20px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4); border: 1px solid rgba(255,255,255,0.1); }
         .guru-support-btn:hover, .guru-deals-btn:hover { transform: translateY(-5px); filter: brightness(1.1); }
+
+        .guru-sitemap-ad-slot { margin: 15px 0; padding: 15px; background: rgba(168, 85, 247, 0.02); border: 1px solid rgba(168, 85, 247, 0.1); border-radius: 32px; text-align: center; }
+        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+        .ad-desktop { display: block; } .ad-mobile { display: none; }
+        
+        @media (min-width: 768px) { .grid-span-ad { grid-column: 1 / -1; } }
+        @media (max-width: 768px) { .ad-desktop { display: none; } .ad-mobile { display: block; } }
       `}} />
     </div>
   );
