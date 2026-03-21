@@ -9,8 +9,8 @@ import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
 
 /**
- * GURU ROOT LAYOUT V5.3 (EXACT ADS VERIFICATION)
- * 🚀 CÍL: 100% aplikace reklamy na všechny stránky a úspěšná verifikace.
+ * GURU ROOT LAYOUT V5.4 (DUAL ADS ENGINE)
+ * 🚀 CÍL: 100% aplikace reklamy pro Desktop i Mobil s verifikací.
  */
 
 export const metadata = {
@@ -109,18 +109,42 @@ export default async function RootLayout({ children, params }) {
             .copyright { color: #4b5563; font-size: 12px; margin-top: 20px; font-weight: 600; }
             .eeat-link { color: #6b7280; font-size: 11px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; transition: 0.2s; }
             .eeat-link:hover { color: #d1d5db; }
+            
+            /* GURU RESPONSIVE ADS */
+            .ad-desktop-wrapper { display: block; }
+            .ad-mobile-wrapper { display: none; }
+            
+            @media (max-width: 768px) {
+              .ad-desktop-wrapper { display: none; }
+              .ad-mobile-wrapper { display: block; }
+            }
           `}} />
           
-          {/* 🚀 PŘESNÝ KÓD PRO VERIFIKACI A-ADS */}
+          {/* 🚀 DESKTOP AD UNIT */}
           {/* BEGIN AADS AD UNIT 2431217 */}
-          <div id="frame" style={{ width: '100%', margin: '0 auto 40px', position: 'relative', zIndex: 99998 }}>
-            <iframe 
-              data-aa='2431217' 
-              src='https://acceptable.a-ads.com/2431217/?size=Adaptive'
-              style={{ border: 0, padding: 0, width: '70%', height: '100px', overflow: 'hidden', display: 'block', margin: 'auto' }}
-            ></iframe>
+          <div className="ad-desktop-wrapper">
+            <div id="frame" style={{ width: '100%', margin: '0 auto 40px', position: 'relative', zIndex: 99998 }}>
+              <iframe 
+                data-aa='2431217' 
+                src='https://acceptable.a-ads.com/2431217/?size=Adaptive'
+                style={{ border: 0, padding: 0, width: '70%', height: '100px', overflow: 'hidden', display: 'block', margin: 'auto' }}
+              ></iframe>
+            </div>
           </div>
           {/* END AADS AD UNIT 2431217 */}
+
+          {/* 🚀 MOBILE AD UNIT */}
+          {/* BEGIN AADS AD UNIT 2431218 */}
+          <div className="ad-mobile-wrapper">
+            <div id="frame" style={{ width: '100%', margin: '0 auto 40px', position: 'relative', zIndex: 99998 }}>
+              <iframe 
+                data-aa='2431218' 
+                src='https://acceptable.a-ads.com/2431218/?size=Adaptive'
+                style={{ border: 0, padding: 0, width: '70%', height: '100px', overflow: 'hidden', display: 'block', margin: 'auto' }}
+              ></iframe>
+            </div>
+          </div>
+          {/* END AADS AD UNIT 2431218 */}
 
           <VisitorCounter locale={locale} />
 
