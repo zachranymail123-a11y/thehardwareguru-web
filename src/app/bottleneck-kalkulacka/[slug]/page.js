@@ -3,6 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import BottleneckClient from '../BottleneckClient';
 
+/**
+ * GURU BOTTLENECK CALCULATOR RESULT - V1.1 (ADS INJECTION UPDATE)
+ * 🚀 CÍL: Monetizace výsledků kalkulačky skrze A-ADS.
+ */
+
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
@@ -37,8 +42,16 @@ export default async function BottleneckResultPage({ params, searchParams }) {
     else if (p.slug.includes('valorant')) selectedGameSlug = 'valorant';
 
     return (
-        <div style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', paddingTop: '100px', paddingBottom: '100px' }}>
+        <div style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', paddingTop: '100px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+                
+                {/* 🔥 ADS SLOT #1: TOP PLACEMENT (NAD KALKULAČKOU) */}
+                <div className="guru-calc-ad-slot">
+                    <span className="ad-label">Advertisement</span>
+                    <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                    <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                </div>
+
                 <BottleneckClient 
                     gpus={gpusRes.data || []} 
                     cpus={cpusRes.data || []} 
@@ -48,7 +61,25 @@ export default async function BottleneckResultPage({ params, searchParams }) {
                     initialGameSlug={selectedGameSlug}
                     initialResolution={resolutionStr}
                 />
+
+                {/* 🔥 ADS SLOT #2: BOTTOM PLACEMENT (POD KALKULAČKOU) */}
+                <div className="guru-calc-ad-slot" style={{ marginTop: '50px' }}>
+                    <span className="ad-label">Sponsored Hardware Recommendation</span>
+                    <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                    <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                </div>
+
             </div>
+
+            <style dangerouslySetInnerHTML={{__html: `
+                .guru-calc-ad-slot { margin-bottom: 30px; padding: 15px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 20px; text-align: center; }
+                .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+                .ad-desktop { display: block; } .ad-mobile { display: none; }
+                
+                @media (max-width: 768px) {
+                    .ad-desktop { display: none; } .ad-mobile { display: block; }
+                }
+            `}} />
         </div>
     );
 }
