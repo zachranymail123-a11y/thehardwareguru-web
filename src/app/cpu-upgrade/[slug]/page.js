@@ -22,10 +22,11 @@ import {
   Info,
   AlertTriangle
 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU CPU UPGRADE ENGINE - DETAIL V115.4 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Maximální monetizace CPU upgradů skrze A-ADS bez narušení UX.
+ * GURU CPU UPGRADE ENGINE - DETAIL V115.4 (ADS INJECTION & BUILD FIX)
+ * 🚀 CÍL: Fix chybějících uvozovek u display: 'grid' způsobujících pád buildu.
  */
 
 export const runtime = "nodejs";
@@ -231,10 +232,10 @@ export default async function App({ params }) {
         {similar.length > 0 && (
             <section style={{ marginBottom: '60px' }}>
                 <h2 className="section-h2" style={{ borderLeftColor: '#f59e0b' }}><ArrowUpCircle size={28} color="#f59e0b" style={{ display: 'inline', marginRight: '10px' }} /> {isEn ? 'MORE UPGRADES' : 'DALŠÍ UPGRADY'}</h2>
-                <div style={{ display: grid, gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
                     {similar.map(upg => (
                         <a key={upg.slug} href={isEn ? `/en/cpu-upgrade/${upg.slug_en || upg.slug}` : `/cpu-upgrade/${upg.slug}`} className="silo-link-card">
-                            <span style={{ fontWeight: '900' }}>{isEn ? upg.title_en : upg.title_cs}</span>
+                            <span style={{ fontWeight: '900' }}>{isEn && upg.title_en ? upg.title_en : upg.title_cs}</span>
                             <ArrowRight size={16} color="#f59e0b" />
                         </a>
                     ))}
@@ -243,7 +244,7 @@ export default async function App({ params }) {
         )}
 
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginTop: '50px' }}>
-            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" className="guru-deals-btn"><Flame size={20} /> DEALS</a>
+            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn"><Flame size={20} /> DEALS</a>
             <a href="/support" className="guru-support-btn"><Heart size={20} /> SUPPORT</a>
         </div>
       </main>
