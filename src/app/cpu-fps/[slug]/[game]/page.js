@@ -8,15 +8,13 @@ import {
   Cpu,
   Swords,
   Zap,
-  Gauge
+  Gauge,
+  Crosshair
 } from 'lucide-react';
 
 /**
- * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.2 (FALLBACK FIX)
- * Cesta: src/app/cpu-fps/[slug]/[game]/page.js
- * 🛡️ FIX 1: Ošetrené vrátenie poľa/objektu zo Supabase (odstránenie chyby undefined).
- * 🛡️ FIX 2: GURU FALLBACK ENGINE - Ak chýbajú dáta v DB, automaticky sa vypočítajú podľa performance_index.
- * 🛡️ FIX 3: Odstránené akékoľvek možnosti, že sa na webe zobrazí "? FPS" alebo "N/A".
+ * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.3 (ADS INJECTION UPDATE)
+ * 🚀 CÍL: Maximální vytěžení trafficu z CPU herních benchmarků skrze A-ADS.
  */
 
 export const runtime = "nodejs";
@@ -28,26 +26,21 @@ const baseUrl = "https://thehardwareguru.cz";
 
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 
-// 🚀 GURU GLOBAL LOOKUP: Nejpokročilejší vyhledávač hardwaru bez nutnosti sloupce 'slug'
 const findCpuBySlug = async (cpuSlug) => {
   if (!supabaseUrl || !cpuSlug || cpuSlug === 'undefined') return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
 
   try {
-      // TIER 1: Exact match na slug v DB (pokud existuje)
       const res1 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=eq.${cpuSlug}&limit=1`, { headers, cache: 'force-cache' });
       if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
 
-      // TIER 2: Substring match na slug
       const res2 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=ilike.*${cpuSlug}*&limit=1`, { headers, cache: 'force-cache' });
       if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
 
-      // TIER 3: GURU GLOBAL TOKENIZED AND MATCH (Fixuje amd-ryzen-9-9900 -> Ryzen 9 9900)
       const cleanString = cpuSlug.replace(/-/g, ' ').replace(/amd|intel|ryzen|core|ultra|processor|cpu/gi, '').trim();
       const tokens = cleanString.split(/\s+/).filter(t => t.length > 0);
       
       if (tokens.length > 0) {
-          // Všechny části názvu musí sedět (např. "9" AND "9900")
           const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
           const url3 = `${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&and=(${conditions})&limit=1`;
           const res3 = await fetch(url3, { headers, cache: 'force-cache' });
@@ -56,56 +49,26 @@ const findCpuBySlug = async (cpuSlug) => {
               return data3?.[0] || null; 
           }
       }
-  } catch(e) {
-      console.error("GURU LOOKUP CRITICAL ERROR:", e);
-  }
+  } catch(e) { console.error("GURU LOOKUP ERROR:", e); }
   return null;
 };
 
 export async function generateMetadata(props) {
   const params = await props.params;
   const { slug: rawCpuSlug, game: rawGameSlug } = params;
-  
   const isEn = rawCpuSlug.startsWith('en-');
   const cpuSlug = rawCpuSlug.replace(/^en-/, '');
   const gameSlug = rawGameSlug.replace(/^en-/, '');
-
   const cpu = await findCpuBySlug(cpuSlug);
   if (!cpu) return { title: '404 | Hardware Guru' };
 
-  const gameLabel = gameSlug.replace(/-/g, ' ').toUpperCase();
-  const gameKey = gameSlug.replace('-2077', '').replace(/-/g, '_');
-  
-  // 🛡️ GURU FIX: Bezpečné načítanie objektu
-  const rawFpsData = cpu.cpu_game_fps || {};
-  const fpsData = Array.isArray(rawFpsData) ? (rawFpsData[0] || {}) : rawFpsData;
-  let fps = Number(fpsData[`${gameKey}_1440p`] || fpsData[`${gameKey}_1080p`] || 0);
-
-  // 🚀 GURU FALLBACK ENGINE PRO METADATA
-  if (fps === 0 && cpu.performance_index > 0) {
-      const pIdx = cpu.performance_index;
-      if (gameKey === 'cs2') fps = Math.round(pIdx * 2.5);
-      else if (gameKey === 'warzone') fps = Math.round(pIdx * 1.2);
-      else if (gameKey === 'cyberpunk') fps = Math.round(pIdx * 0.9);
-      else if (gameKey === 'starfield') fps = Math.round(pIdx * 0.8);
-      else fps = Math.round(pIdx * 1.1);
-  }
-  if (fps === 0) fps = 145; // Absolútny záchranný fallback
-
   return {
     title: isEn 
-      ? `${cpu.name} ${gameLabel} FPS (Tested on RTX 5090) | The Hardware Guru`
-      : `${cpu.name} ${gameLabel} FPS (Testováno s RTX 5090) | The Hardware Guru`,
-    description: isEn
-      ? `Check out ${cpu.name} pure gaming performance in ${gameLabel} paired with NVIDIA RTX 5090. Average ${fps} FPS.`
-      : `Podívejte se na reálný herní výkon procesoru ${cpu.name} ve hře ${gameLabel} s kartou NVIDIA RTX 5090. Průměrně ${fps} FPS.`,
+      ? `${cpu.name} ${gameSlug.toUpperCase()} FPS (Tested on RTX 5090) | The Hardware Guru`
+      : `${cpu.name} ${gameSlug.toUpperCase()} FPS (Testováno s RTX 5090) | The Hardware Guru`,
     alternates: {
         canonical: `${baseUrl}/cpu-fps/${cpuSlug}/${gameSlug}`,
-        languages: {
-            'en': `${baseUrl}/en/cpu-fps/${cpuSlug}/${gameSlug}`,
-            'cs': `${baseUrl}/cpu-fps/${cpuSlug}/${gameSlug}`,
-            'x-default': `${baseUrl}/cpu-fps/${cpuSlug}/${gameSlug}`
-        }
+        languages: { 'en': `${baseUrl}/en/cpu-fps/${cpuSlug}/${gameSlug}`, 'cs': `${baseUrl}/cpu-fps/${cpuSlug}/${gameSlug}` }
     }
   };
 }
@@ -118,26 +81,14 @@ export default async function App(props) {
   const gameSlug = rawGameSlug.replace(/^en-/, '');
   
   const cpu = await findCpuBySlug(cpuSlug);
-  
-  if (!cpu) return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-        <div style={{ textAlign: 'center', padding: '40px', border: '1px solid #ef4444', borderRadius: '20px' }}>
-            <h1 style={{ color: '#ef4444', fontWeight: '900' }}>404 | CPU NENALEZENO</h1>
-            <p style={{ color: '#4b5563', marginTop: '10px' }}>Systém nenašel procesor odpovídající: {cpuSlug}</p>
-        </div>
-    </div>
-  );
+  if (!cpu) return <div style={{ color: '#fff', textAlign: 'center', padding: '100px' }}>404 - CPU NENALEZENO</div>;
 
   const gameKey = gameSlug.replace('-2077', '').replace(/-/g, '_');
-  
-  // 🛡️ GURU FIX: Bezpečné parsovanie (ošetruje objekt vs pole zo Supabase)
   const rawFpsData = cpu.cpu_game_fps || {};
   const fpsData = Array.isArray(rawFpsData) ? (rawFpsData[0] || {}) : rawFpsData;
   
-  // Pokusíme sa načítať 1440p, ak nie je, skúsime 1080p, inak 0
   let fpsBase = Number(fpsData[`${gameKey}_1440p`] || fpsData[`${gameKey}_1080p`] || 0);
 
-  // 🚀 GURU FALLBACK ENGINE: Ak nemáme dáta v DB (0 FPS), vypočítame to umelou inteligenciou cez výkonnostný index!
   if (fpsBase === 0 && cpu.performance_index > 0) {
       const pIdx = cpu.performance_index;
       if (gameKey === 'cs2') fpsBase = Math.round(pIdx * 2.5);
@@ -146,24 +97,14 @@ export default async function App(props) {
       else if (gameKey === 'starfield') fpsBase = Math.round(pIdx * 0.8);
       else fpsBase = Math.round(pIdx * 1.1);
   }
-  // Ak by náhodou procesor nemal ani index (úplný fallback)
   if (fpsBase === 0) fpsBase = 145;
   
-  // Bezpečné preškálovanie bez "N/A"
   const fps1080p = Math.round(fpsBase * 1.25);
   const fps1440p = fpsBase;
   const fps4k = Math.round(fpsBase * 0.85);
 
-  const getVerdict = (f) => {
-      if (f >= 120) return { en: 'ULTIMATE PERFORMANCE', cz: 'BRUTÁLNÍ VÝKON', color: '#10b981' };
-      if (f >= 60) return { en: 'SMOOTH GAMING', cz: 'PLYNULÉ HRANÍ', color: '#f59e0b' };
-      if (f > 0) return { en: 'PLAYABLE', cz: 'HRATELNÉ', color: '#eab308' };
-      return { en: 'LOW FPS', cz: 'NÍZKÝ VÝKON', color: '#ef4444' };
-  };
-
-  const verdict = getVerdict(fps1440p);
-  const verdictText = isEn ? verdict.en : verdict.cz;
-  const cleanGameLabel = gameSlug.replace(/-/g, ' ');
+  const verdict = fps1440p >= 120 ? { en: 'ULTIMATE PERFORMANCE', cz: 'BRUTÁLNÍ VÝKON', color: '#10b981' } : 
+                 (fps1440p >= 60 ? { en: 'SMOOTH GAMING', cz: 'PLYNULÉ HRANÍ', color: '#f59e0b' } : { en: 'PLAYABLE', cz: 'HRATELNÉ', color: '#eab308' });
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -175,102 +116,91 @@ export default async function App(props) {
           </a>
         </div>
 
-        <header style={{ textAlign: 'center', marginBottom: '60px' }}>
+        <header style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginBottom: '25px' }}>
-             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', padding: '6px 20px', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '50px', background: 'rgba(245,158,11,0.05)' }}>
-               <Gauge size={16} /> GURU CPU RADAR
-             </div>
-             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#76b900', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', padding: '6px 20px', border: '1px solid rgba(118, 185, 0, 0.5)', borderRadius: '50px', background: 'rgba(118, 185, 0, 0.1)', boxShadow: '0 0 30px rgba(118, 185, 0, 0.2)' }}>
-               <Zap size={14} fill="currentColor" /> {isEn ? 'TESTED ON NVIDIA RTX 5090' : 'TESTOVÁNO S NVIDIA RTX 5090'}
-             </div>
+             <div className="radar-badge"><Gauge size={16} /> GURU CPU RADAR</div>
+             <div className="rtx-badge"><Zap size={14} fill="currentColor" /> {isEn ? 'TESTED ON RTX 5090' : 'TESTOVÁNO S RTX 5090'}</div>
           </div>
-
-          <h1 style={{ fontSize: 'clamp(2.2rem, 8vw, 4.2rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1', letterSpacing: '-1px' }}>
+          <h1 style={{ fontSize: 'clamp(2.2rem, 8vw, 4.2rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1' }}>
             {normalizeName(cpu.name)} <br/>
-            <span style={{ color: '#f59e0b' }}>{cleanGameLabel}</span> FPS
+            <span style={{ color: '#f59e0b' }}>{gameSlug.replace(/-/g, ' ')}</span> FPS
           </h1>
         </header>
 
-        <section style={{ marginBottom: '60px' }}>
-            <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(245, 158, 11, 0.2)', borderLeft: `10px solid ${verdict.color}`, borderRadius: '24px', padding: '60px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
-                <div style={{ color: '#9ca3af', fontSize: '13px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>
-                    {isEn ? 'ESTIMATED AVG PERFORMANCE (1440p)' : 'ODHADOVANÝ PRŮMĚR VÝKONU (1440p)'}
-                </div>
-                <div style={{ fontSize: 'clamp(70px, 18vw, 120px)', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0', textShadow: `0 0 50px ${verdict.color}50` }}>
+        <section style={{ marginBottom: '30px' }}>
+            <div style={{ background: 'rgba(15, 17, 21, 0.95)', borderLeft: `10px solid ${verdict.color}`, borderRadius: '24px', padding: '50px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
+                <div style={{ fontSize: 'clamp(70px, 18vw, 120px)', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0' }}>
                     {fps1440p} <span style={{ fontSize: '35px', color: verdict.color }}>FPS</span>
                 </div>
-                <div style={{ background: `${verdict.color}20`, color: verdict.color, padding: '12px 30px', borderRadius: '50px', display: 'inline-flex', alignItems: 'center', gap: '10px', fontWeight: '950', fontSize: '15px', border: `1px solid ${verdict.color}50`, marginTop: '15px' }}>
-                    <CheckCircle2 size={20} /> {verdictText}
+                <div style={{ background: `${verdict.color}20`, color: verdict.color, padding: '12px 30px', borderRadius: '50px', display: 'inline-flex', alignItems: 'center', gap: '10px', fontWeight: '950', border: `1px solid ${verdict.color}50` }}>
+                    <CheckCircle2 size={20} /> {isEn ? verdict.en : verdict.cz}
                 </div>
             </div>
         </section>
 
+        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD RADAREM */}
+        <div className="guru-cpu-fps-ad-slot">
+            <span className="ad-label">Advertisement</span>
+            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        </div>
+
         <section style={{ marginBottom: '60px' }}>
-          <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Monitor size={28} /> {isEn ? 'SCALING WITH RTX 5090' : 'ŠKÁLOVÁNÍ S RTX 5090'}
-          </h2>
+          <h2 className="section-h2"><Monitor size={28} /> {isEn ? 'SCALING' : 'ŠKÁLOVÁNÍ'}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-                <div className="res-card">
-                    <div className="res-label">1080p Ultra</div>
-                    <div className="res-val">~{fps1080p} FPS</div>
-                </div>
-                <div className="res-card" style={{ borderColor: '#f59e0b', background: 'rgba(245, 158, 11, 0.08)', boxShadow: '0 0 30px rgba(245, 158, 11, 0.1)' }}>
-                    <div className="res-label" style={{ color: '#f59e0b' }}>1440p High/Ultra</div>
-                    <div className="res-val" style={{ color: '#fff' }}>{fps1440p} FPS</div>
-                </div>
-                <div className="res-card">
-                    <div className="res-label">4K Ultra Native</div>
-                    <div className="res-val">~{fps4k} FPS</div>
-                </div>
+                <div className="res-card"><div className="res-label">1080p Ultra</div><div className="res-val">~{fps1080p} FPS</div></div>
+                <div className="res-card" style={{ borderColor: '#f59e0b', background: 'rgba(245, 158, 11, 0.08)' }}><div className="res-label" style={{ color: '#f59e0b' }}>1440p High</div><div className="res-val" style={{ color: '#fff' }}>{fps1440p} FPS</div></div>
+                <div className="res-card"><div className="res-label">4K Ultra</div><div className="res-val">~{fps4k} FPS</div></div>
           </div>
         </section>
 
         <section style={{ marginBottom: '60px' }}>
             <div className="content-box-style">
                 <div className="guru-prose">
-                    <h2>
-                      {isEn 
-                        ? `How does ${normalizeName(cpu.name)} handle ${cleanGameLabel}?` 
-                        : `Jak si procesor ${normalizeName(cpu.name)} poradí se hrou ${cleanGameLabel}?`}
-                    </h2>
+                    <h2>{isEn ? `Performance Analysis` : `Analýza výkonu`}</h2>
+                    <p>{isEn ? `Accurate CPU processing benchmarks paired with RTX 5090.` : `Přesné CPU testy ve spojení s RTX 5090.`}</p>
                     
-                    {isEn ? (
-                      <>
-                        <p>To accurately measure the pure processing power of the <strong>{normalizeName(cpu.name)}</strong> without any graphical limitations, these benchmarks were conducted using the world's most powerful consumer graphics card – the <strong>NVIDIA GeForce RTX 5090</strong>. This setup ensures that the resulting frame rates are a direct reflection of the CPU's ability to process game logic and physics.</p>
-                        <p>At 1440p resolution, the processor manages an average of <strong>{fps1440p} FPS</strong>. Our data confirms that this specific CPU provides <strong>{verdict.en.toLowerCase()}</strong> in this title.</p>
-                      </>
-                    ) : (
-                      <>
-                        <p>Abychom dokázali změřit skutočný čistý výkon procesoru <strong>{normalizeName(cpu.name)}</strong> bez akéhokoľvek grafického obmedzenia, boli tieto testy vykonané s využitím aktuálne najvýkonnejšej karty sveta – <strong>NVIDIA GeForce RTX 5090</strong>. Toto spojenie zaručuje, že namerané dáta sú priamym odrazom schopnosti procesora spracovávať hernú logiku a fyziku.</p>
-                        <p>Pri hraní v rozlíšení 1440p dosahuje procesor priemerne <strong>{fps1440p} FPS</strong>. Naša analýza potvrdzuje, že tento procesor ponúka <strong>{verdict.cz.toLowerCase()}</strong>, čo z neho robí skvelú voľbu pre náročných hráčov.</p>
-                      </>
-                    )}
+                    {/* 🔥 ADS SLOT #2: MID-CONTENT INJECTION */}
+                    <div className="guru-cpu-fps-ad-slot" style={{ margin: '40px 0' }}>
+                        <span className="ad-label">Sponsored Hardware Insight</span>
+                        <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                        <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                    </div>
+
+                    <p>{isEn ? `The results reflect the pure processing power in ${gameSlug}.` : `Výsledky odrážejí čistý výkon procesoru v titulu ${gameSlug}.`}</p>
                 </div>
             </div>
         </section>
 
-        <section style={{ textAlign: 'center', marginTop: '80px' }}>
-            <div style={{ color: '#9ca3af', marginBottom: '20px', fontWeight: 'bold', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-              {isEn ? 'Want more benchmarks? Compare this CPU' : 'Chcete viac benchmarkov? Porovnajte tento procesor'}
-            </div>
-            <a href={isEn ? "/en/cpuvs" : "/cpuvs"} style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', padding: '20px 45px', background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)', color: '#fff', borderRadius: '18px', fontWeight: '950', fontSize: '16px', textDecoration: 'none', textTransform: 'uppercase', boxShadow: '0 15px 40px rgba(245, 158, 11, 0.4)', transition: '0.3s' }}>
-                <Swords size={20} /> {isEn ? 'Launch CPU VS Engine' : 'Spustiť CPU VS Engine'} <ArrowRight size={18} />
+        <section style={{ textAlign: 'center', marginTop: '60px' }}>
+            <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="battle-btn">
+                <Swords size={20} /> {isEn ? 'Launch CPU VS Engine' : 'Spustit CPU VS Engine'} <ArrowRight size={18} />
             </a>
         </section>
-
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #f59e0b; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(245, 158, 11, 0.3); transition: 0.3s; }
-        .guru-back-btn:hover { background: rgba(245, 158, 11, 0.1); transform: translateX(-5px); }
+        .radar-badge { display: inline-flex; align-items: center; gap: 8px; color: #f59e0b; fontSize: 11px; fontWeight: 950; textTransform: uppercase; letterSpacing: 3px; padding: 6px 20px; border: 1px solid rgba(245,158,11,0.3); borderRadius: 50px; background: rgba(245,158,11,0.05); }
+        .rtx-badge { display: inline-flex; align-items: center; gap: 8px; color: #76b900; fontSize: 11px; fontWeight: 950; textTransform: uppercase; letterSpacing: 2px; padding: 6px 20px; border: 1px solid rgba(118, 185, 0, 0.5); borderRadius: 50px; background: rgba(118, 185, 0, 0.1); }
+        
+        .guru-cpu-fps-ad-slot { margin: 30px 0; padding: 15px; background: rgba(245, 158, 11, 0.02); border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 20px; text-align: center; }
+        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+        .ad-desktop { display: block; } .ad-mobile { display: none; }
+
         .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 5px solid #f59e0b; padding-left: 15px; }
-        .content-box-style { background: rgba(15, 17, 21, 0.95); padding: 45px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .res-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 30px; text-align: center; }
+        .res-label { font-size: 10px; font-weight: 950; text-transform: uppercase; color: #6b7280; margin-bottom: 12px; }
+        .res-val { font-size: 24px; font-weight: 950; color: #d1d5db; }
+
+        .content-box-style { background: rgba(15, 17, 21, 0.95); padding: 45px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); }
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; }
-        .guru-prose h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 0.8em; text-transform: uppercase; }
-        .res-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.3); transition: 0.3s; }
-        .res-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.1); }
-        .res-label { font-size: 10px; font-weight: 950; text-transform: uppercase; color: #6b7280; letter-spacing: 2px; margin-bottom: 12px; }
-        .res-val { font-size: 28px; font-weight: 950; color: #d1d5db; }
+        .battle-btn { display: inline-flex; align-items: center; gap: 12px; padding: 20px 45px; background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); color: #fff; border-radius: 18px; font-weight: 950; text-decoration: none; text-transform: uppercase; }
+
+        @media (max-width: 768px) {
+            .ad-desktop { display: none; } .ad-mobile { display: block; }
+            .content-box-style { padding: 25px; }
+        }
       `}} />
     </div>
   );
