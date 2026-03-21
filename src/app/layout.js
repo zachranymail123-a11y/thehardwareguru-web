@@ -9,11 +9,9 @@ import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
 
 /**
- * GURU ROOT LAYOUT V5.1 (EXACT ADSENSE MATCH & E-E-A-T)
- * Cesta: src/app/layout.js
- * 🚀 CÍL: 100% čistý AdSense kód + Zviditelnění E-E-A-T stránek.
- * 🛡️ FIX 1: Zachován čistý AdSense kód podle návodu Google (bez AMP).
- * 🛡️ FIX 2: Do patičky přidány povinné E-E-A-T odkazy (O nás, Kontakt, Zásady, Podmínky) pro schválení Googlem.
+ * GURU ROOT LAYOUT V5.2 (GLOBAL ADS MATCH)
+ * 🚀 CÍL: 100% aplikace reklamy na všechny stránky.
+ * 🛡️ FIX: Přidán A-ADS banner do patičky pro globální monetizaci.
  */
 
 export const metadata = {
@@ -31,7 +29,6 @@ export const metadata = {
 }
 
 export default async function RootLayout({ children, params }) {
-  // Await params pro Next.js 15 (Striktní architektura)
   const resolvedParams = await params;
   const locale = resolvedParams?.locale || resolvedParams?.lang || 'cs';
   const isEn = locale === 'en';
@@ -41,7 +38,6 @@ export default async function RootLayout({ children, params }) {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
   };
 
-  // 🚀 ZLATÁ GSC SEO SCHÉMATA (GLOBÁLNÍ IDENTITA)
   const baseUrl = "https://thehardwareguru.cz";
   const organizationSchema = {
     "@context": "https://schema.org",
@@ -76,22 +72,18 @@ export default async function RootLayout({ children, params }) {
   return (
     <html lang={locale}>
       <head>
-        {/* 🚀 GOOGLE ADSENSE GLOBAL TAG (Přesně podle tvého screenshotu) */}
         <script 
           async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993"
           crossOrigin="anonymous"
         ></script>
 
-        {/* 🚀 GOOGLE DETECTION FIX */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(websiteSchema) }} />
 
-        {/* 🚀 GURU RSS FEEDY */}
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Novinky" href="https://thehardwareguru.cz/rss.xml" />
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Srovnání" href="https://thehardwareguru.cz/rss-comparisons.xml" />
         
-        {/* Google Analytics & GTM */}
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-9W5FBC9P68" strategy="afterInteractive" />
         <Script id="google-analytics" strategy="afterInteractive">
           {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-9W5FBC9P68');`}
@@ -115,12 +107,21 @@ export default async function RootLayout({ children, params }) {
             .guru-footer-link { color: #9ca3af; text-decoration: none; transition: 0.2s; font-size: 13px; font-weight: bold; text-transform: uppercase; }
             .guru-footer-link:hover { color: #fff !important; }
             .guru-footer-sitemap { color: #a855f7 !important; font-weight: 950 !important; }
-            .guru-counter-box { background: #000; border: 1px solid #a855f7; padding: 2px 10px; border-radius: 6px; color: #fff; margin: 0 5px; box-shadow: 0 0 15px rgba(168, 85, 247, 0.3); }
             .copyright { color: #4b5563; font-size: 12px; margin-top: 20px; font-weight: 600; }
             .eeat-link { color: #6b7280; font-size: 11px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; transition: 0.2s; }
             .eeat-link:hover { color: #d1d5db; }
+            .ad-container { width: 100%; max-width: 950px; margin: 0 auto 40px; text-align: center; overflow: hidden; }
           `}} />
           
+          {/* 🚀 GLOBÁLNÍ A-ADS BANNER (MONETIZACE) */}
+          <div className="ad-container">
+            <iframe 
+              data-aa='2431217' 
+              src='//acceptable.a-ads.com/2431217/?size=Adaptive'
+              style={{ border: 0, padding: 0, width: '100%', height: '100px', overflow: 'hidden', display: 'block', margin: 'auto' }}
+            ></iframe>
+          </div>
+
           <VisitorCounter locale={locale} />
 
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginBottom: '20px' }}>
@@ -137,7 +138,6 @@ export default async function RootLayout({ children, params }) {
             </a>
           </div>
 
-          {/* 🚀 GURU: E-E-A-T ODKAZY PRO GOOGLE A UŽIVATELE */}
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginBottom: '30px' }}>
             <a href={locale === 'en' ? "/en/about" : "/about"} className="eeat-link">
               {locale === 'en' ? 'About Us' : 'O nás'}
