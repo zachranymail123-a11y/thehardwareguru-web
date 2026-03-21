@@ -5,8 +5,8 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK ENGINE V22.2 (REALISTIC SCALING, FPS & SEO SILOING EDITION)
- * 🚀 CÍL: Fix masivního "Duplicate Content" v Bingu. + A-ADS MONETIZACE
+ * GURU BOTTLENECK ENGINE V22.4 (CRITICAL 500 & 404 FIX)
+ * 🚀 CÍL: Neprůstřelné zachytávání prázdných polí ze Supabase a oprava vyhledávání komponent.
  */
 
 export const runtime = "nodejs";
@@ -19,7 +19,7 @@ const baseUrl = "https://thehardwareguru.cz";
 const normalizeName = (name = '') => name.replace(/AMD |Intel |NVIDIA |GeForce |Ryzen |Core |Radeon /gi, '');
 const slugify = (text) => text ? text.toLowerCase().replace(/graphics|gpu|processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
-// 🛡️ GURU ENGINE: 3-TIER BULLETPROOF LOOKUP (TVŮJ ORIGINÁL - OPRAVENO!)
+// 🛡️ GURU ENGINE: 3-TIER BULLETPROOF LOOKUP
 const findHw = async (table, rawSlugPart) => {
   if (!rawSlugPart || rawSlugPart === 'undefined') return null;
   const slugPart = rawSlugPart.replace(/^en-/, '');
@@ -33,6 +33,7 @@ const findHw = async (table, rawSlugPart) => {
       const r2 = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&slug=ilike.*${slugPart}*&limit=1`, { headers, cache: 'force-cache' });
       if (r2.ok) { const d2 = await r2.json(); if (d2?.length) return d2[0]; }
 
+      // Zlepšený fallback pro problematické slugy z URL
       const filter = table === 'gpus' ? /nvidia|geforce|rtx|amd|radeon|rx|gb|graphics|gpu/gi : /amd|intel|ryzen|core|ultra|processor|cpu/gi;
       const clean = slugPart.replace(/-/g, ' ').replace(filter, '').trim();
       const tokens = clean.split(/\s+/).filter(t => t.length > 0);
@@ -41,15 +42,24 @@ const findHw = async (table, rawSlugPart) => {
           const r3 = await fetch(`${supabaseUrl}/rest/v1/${table}?select=*,${joinQuery}&and=(${cond})&limit=1`, { headers, cache: 'force-cache' });
           if (r3.ok) { const d3 = await r3.json(); if (d3?.length) return d3[0]; }
       }
-  } catch(e) {}
+  } catch(e) {
+      console.error("GURU FIND HW ERROR:", e);
+  }
   return null;
 };
+
+// 🛡️ NORMALIZÁTOR ROZLIŠENÍ
+const normalizeResolution = (res) => {
+    if (!res) return null;
+    if (res === '4k' || res === '4K') return '2160p';
+    return res;
+}
 
 const getAnalysisData = async (slug) => {
   if (!slug) return null;
   const cleanSlug = slug.replace(/^en-/, '');
   const resParts = cleanSlug.split('-at-');
-  const resolution = resParts[1] || null;
+  const resolution = normalizeResolution(resParts[1]); 
   const gameParts = resParts[0].split('-in-');
   const gameSlug = gameParts[1] || null;
   const hwParts = gameParts[0].split('-with-');
@@ -68,17 +78,17 @@ export async function generateMetadata(props) {
     const isEn = props.isEn === true;
     const data = await getAnalysisData(params.slug);
     
-    // FIX PRO TITLE DUPLICITU
-    if (!data?.cpu || !data?.gpu) return { title: 'Analysis' };
+    if (!data?.cpu || !data?.gpu) return { title: 'Analysis | Hardware Guru' };
     
     const { cpu, gpu, gameSlug, resolution } = data;
-    
+    const displayResolution = resolution === '2160p' ? '4K' : (resolution ? resolution.toUpperCase() : '');
+
     let titleSuffix = '';
     let descSuffix = '';
-    if (gameSlug && resolution) {
+    if (gameSlug && displayResolution) {
         const gameName = gameSlug.replace(/-/g, ' ').toUpperCase();
-        titleSuffix = ` in ${gameName} at ${resolution.toUpperCase()}`;
-        descSuffix = ` ve hře ${gameName} v rozlišení ${resolution.toUpperCase()}`;
+        titleSuffix = ` in ${gameName} at ${displayResolution}`;
+        descSuffix = ` ve hře ${gameName} v rozlišení ${displayResolution}`;
     } else if (gameSlug) {
         const gameName = gameSlug.replace(/-/g, ' ').toUpperCase();
         titleSuffix = ` in ${gameName}`;
@@ -93,16 +103,23 @@ export async function generateMetadata(props) {
       ? `Calculate PC bottleneck for ${cpu.name} and ${gpu.name}${titleSuffix}. Detailed FPS analysis, upgrade recommendations and system balance.`
       : `Kalkulačka bottlenecku pro ${cpu.name} a ${gpu.name}${descSuffix}. Detailní analýza FPS, doporučení pro upgrade a vyváženost.`;
 
-    const safeSlug = params.slug.replace(/^en-/, '');
-    const canonicalUrl = `${baseUrl}/bottleneck/${safeSlug}`;
+    const cleanSlug = params.slug.replace(/^en-/, '');
+    const resParts = cleanSlug.split('-at-');
+    const normalizedRes = normalizeResolution(resParts[1]);
+    
+    let canonicalSafeSlug = cleanSlug;
+    if (resParts[1] && resParts[1] !== normalizedRes) {
+        canonicalSafeSlug = resParts[0] + '-at-' + normalizedRes;
+    }
+    const canonicalUrl = `${baseUrl}/bottleneck/${canonicalSafeSlug}`;
 
     return { 
         title: `${title} | The Hardware Guru`,
         description: desc,
         alternates: {
-            canonical: isEn ? `${baseUrl}/en/bottleneck/${safeSlug}` : canonicalUrl,
+            canonical: isEn ? `${baseUrl}/en/bottleneck/${canonicalSafeSlug}` : canonicalUrl,
             languages: {
-                'en': `${baseUrl}/en/bottleneck/${safeSlug}`,
+                'en': `${baseUrl}/en/bottleneck/${canonicalSafeSlug}`,
                 'cs': canonicalUrl,
                 'x-default': canonicalUrl
             }
@@ -126,14 +143,13 @@ export default async function BottleneckPage(props) {
   if (resolution === '1080p') {
       resModifierCpu = 0.85; 
       resModifierGpu = 1.15;
-  } else if (resolution === '4k') {
+  } else if (resolution === '2160p') { 
       resModifierCpu = 1.25; 
       resModifierGpu = 0.80;
   }
 
   const effCpuPower = cpuPower * resModifierCpu;
   const effGpuPower = gpuPower * resModifierGpu;
-
   const normalizedCpu = effCpuPower * 2.9; 
   const normalizedGpu = effGpuPower;
   
@@ -156,17 +172,21 @@ export default async function BottleneckPage(props) {
   const statusColor = bottleneckScore < 15 ? '#10b981' : (bottleneckScore < 30 ? '#f59e0b' : '#ef4444');
 
   const gameName = gameSlug ? gameSlug.replace(/-/g, ' ').toUpperCase() : null;
-  const resText = resolution ? resolution.toUpperCase() : null;
+  const displayResolution = resolution === '2160p' ? '4K' : (resolution ? resolution.toUpperCase() : '');
   const gameKey = gameSlug ? gameSlug.replace('-2077', '').replace(/-/g, '_') : null;
   const targetRes = resolution || '1440p';
   
-  const gpuFpsData = Array.isArray(gpu.game_fps) ? gpu.game_fps[0] : (gpu.game_fps || {});
-  const cpuFpsData = Array.isArray(cpu.cpu_game_fps) ? cpu.cpu_game_fps[0] : (cpu.cpu_game_fps || {});
+  // 🔥 CRITICAL FIX 500 ERROR: Bezpečné ošetření prázdných polí ze Supabase
+  const gpuFpsData = (Array.isArray(gpu.game_fps) ? gpu.game_fps[0] : gpu.game_fps) || {};
+  const cpuFpsData = (Array.isArray(cpu.cpu_game_fps) ? cpu.cpu_game_fps[0] : cpu.cpu_game_fps) || {};
   
   let estimatedFps = null;
   if (gameKey) {
-      const gFps = Number(gpuFpsData[`${gameKey}_${targetRes}`] || gpuFpsData[`${gameKey}_1440p`] || 0);
-      const cFps = Number(cpuFpsData[`${gameKey}_${targetRes}`] || cpuFpsData[`${gameKey}_1440p`] || 0);
+      const gFpsStr = gpuFpsData[`${gameKey}_${targetRes}`] || gpuFpsData[`${gameKey}_1440p`];
+      const cFpsStr = cpuFpsData[`${gameKey}_${targetRes}`] || cpuFpsData[`${gameKey}_1440p`];
+      const gFps = Number(gFpsStr) || 0;
+      const cFps = Number(cFpsStr) || 0;
+      
       if (gFps > 0 && cFps > 0) {
           estimatedFps = Math.min(gFps, cFps);
       } else if (gFps > 0) {
@@ -176,15 +196,13 @@ export default async function BottleneckPage(props) {
       }
   }
 
-  const safeCpuSlug = (cpu.slug || slugify(cpu.name)).replace(/^en-/, '');
-  const safeGpuSlug = (gpu.slug || slugify(gpu.name)).replace(/^en-/, '');
+  const cpuNameStr = cpu.name || '';
+  const safeCpuSlug = (cpu.slug || slugify(cpuNameStr)).replace(/^en-/, '');
+  const safeGpuSlug = (gpu.slug || slugify(gpu.name || '')).replace(/^en-/, '');
   
   const betterCpuPath = `core-i7-14700k-with-${safeGpuSlug}`;
   const betterGpuPath = `${safeCpuSlug}-with-geforce-rtx-5080`;
-
-  const baseComboUrl = gameSlug 
-    ? `${safeCpuSlug}-with-${safeGpuSlug}-in-${gameSlug}`
-    : `${safeCpuSlug}-with-${safeGpuSlug}`;
+  const baseComboUrl = gameSlug ? `${safeCpuSlug}-with-${safeGpuSlug}-in-${gameSlug}` : `${safeCpuSlug}-with-${safeGpuSlug}`;
 
   const commonOfferDetails = {
     "priceValidUntil": "2026-12-31", 
@@ -201,15 +219,8 @@ export default async function BottleneckPage(props) {
     },
     "shippingDetails": {
       "@type": "OfferShippingDetails",
-      "shippingRate": {
-        "@type": "MonetaryAmount",
-        "value": 0,
-        "currency": "USD"
-      },
-      "shippingDestination": {
-        "@type": "DefinedRegion",
-        "addressCountry": "CZ"
-      },
+      "shippingRate": { "@type": "MonetaryAmount", "value": 0, "currency": "USD" },
+      "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "CZ" },
       "deliveryTime": {
         "@type": "ShippingDeliveryTime",
         "handlingTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 1, "unitCode": "d" },
@@ -234,13 +245,7 @@ export default async function BottleneckPage(props) {
       "url": `${baseUrl}/${isEn ? 'en/' : ''}cpu/${safeCpuSlug}`,
       ...commonOfferDetails
     },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": 4.8, 
-      "bestRating": 5,
-      "worstRating": 1,
-      "reviewCount": 124 
-    }
+    "aggregateRating": { "@type": "AggregateRating", "ratingValue": 4.8, "bestRating": 5, "worstRating": 1, "reviewCount": 124 }
   };
 
   const productSchemaGpu = {
@@ -259,23 +264,17 @@ export default async function BottleneckPage(props) {
       "url": `${baseUrl}/${isEn ? 'en/' : ''}gpu/${safeGpuSlug}`,
       ...commonOfferDetails
     },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": 4.7, 
-      "bestRating": 5,
-      "worstRating": 1,
-      "reviewCount": 98 
-    }
+    "aggregateRating": { "@type": "AggregateRating", "ratingValue": 4.7, "bestRating": 5, "worstRating": 1, "reviewCount": 98 }
   };
 
-  const titleSuffix = gameName ? ` in ${gameName}${resText ? ` at ${resText}` : ''}` : '';
+  const displayTitleSuffix = gameName ? ` in ${gameName}${displayResolution ? ` at ${displayResolution}` : ''}` : '';
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "mainEntity": [
       {
         "@type": "Question",
-        "name": isEn ? `Is ${normalizeName(cpu.name)} a bottleneck for ${normalizeName(gpu.name)}${titleSuffix}?` : `Bude ${normalizeName(cpu.name)} brzdit grafiku ${normalizeName(gpu.name)}${gameName ? ` ve hře ${gameName}`:''}?`,
+        "name": isEn ? `Is ${normalizeName(cpu.name)} a bottleneck for ${normalizeName(gpu.name)}${displayTitleSuffix}?` : `Bude ${normalizeName(cpu.name)} brzdit grafiku ${normalizeName(gpu.name)}${gameName ? ` ve hře ${gameName}`:''}?`,
         "acceptedAnswer": {
             "@type": "Answer",
             "text": bottleneckScore < 15 
@@ -289,7 +288,7 @@ export default async function BottleneckPage(props) {
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "TechArticle",
-    "headline": isEn ? `${normalizeName(cpu.name)} and ${normalizeName(gpu.name)} bottleneck analysis${titleSuffix}` : `Analýza bottlenecku: ${normalizeName(cpu.name)} a ${normalizeName(gpu.name)}${titleSuffix}`,
+    "headline": isEn ? `${normalizeName(cpu.name)} and ${normalizeName(gpu.name)} bottleneck analysis${displayTitleSuffix}` : `Analýza bottlenecku: ${normalizeName(cpu.name)} a ${normalizeName(gpu.name)}${displayTitleSuffix}`,
     "description": isEn ? `System calculates a bottleneck score of ${bottleneckScore}%.` : `Systém vypočítal úroveň bottlenecku na ${bottleneckScore} %.`,
     "image": [`${baseUrl}/logo.png`],
     "author": { "@type": "Organization", "name": "The Hardware Guru", "url": baseUrl },
@@ -320,19 +319,19 @@ export default async function BottleneckPage(props) {
           </h1>
           {gameName && (
              <div style={{ color: '#66fcf1', fontSize: '15px', fontWeight: '950', marginTop: '25px', letterSpacing: '2px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                <Gamepad2 size={18} style={{ marginBottom: '-2px' }}/> {isEn ? 'PERFORMANCE IN' : 'VÝKON VE HŘE'} {gameName} {resText && `(${resText})`}
+                <Gamepad2 size={18} style={{ marginBottom: '-2px' }}/> {isEn ? 'PERFORMANCE IN' : 'VÝKON VE HŘE'} {gameName} {displayResolution && `(${displayResolution})`}
              </div>
           )}
 
           {gameName && (
              <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                {['1080p', '1440p', '4k'].map(res => (
+                {['1080p', '1440p', '2160p'].map(res => (
                    <a 
                      key={res} 
                      href={isEn ? `/en/bottleneck/${baseComboUrl}-at-${res}` : `/bottleneck/${baseComboUrl}-at-${res}`} 
                      className={`res-btn ${resolution === res ? 'active' : ''}`}
                    >
-                      {res.toUpperCase()}
+                      {res === '2160p' ? '4K' : res.toUpperCase()}
                    </a>
                 ))}
              </div>
@@ -360,7 +359,7 @@ export default async function BottleneckPage(props) {
                     <div style={{ color: '#6b7280', fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '4px' }}>{isEn ? 'Estimated Average FPS' : 'Odhadovaný průměr FPS'}</div>
                     <div style={{ fontSize: 'clamp(70px, 12vw, 110px)', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '15px 0' }}>{estimatedFps}</div>
                     <div className="status-pill" style={{ background: `rgba(255,255,255,0.05)`, color: '#d1d5db', border: `1px solid rgba(255,255,255,0.1)` }}>
-                        {gameName} @ {resText || '1440P'}
+                        {gameName} @ {displayResolution || '1440P'}
                     </div>
                 </div>
                 )}
@@ -392,7 +391,7 @@ export default async function BottleneckPage(props) {
              <div className="spec-card-box">
                 <Database size={24} color="#a855f7" />
                 <div className="card-label">RAM</div>
-                <div className="card-val">{cpu.name.includes('5000') ? 'DDR4 3600 MT/s' : '32GB DDR5 6000MT/s'}</div>
+                <div className="card-val">{cpuNameStr.includes('5000') ? 'DDR4 3600 MT/s' : '32GB DDR5 6000MT/s'}</div>
              </div>
           </div>
         </section>
