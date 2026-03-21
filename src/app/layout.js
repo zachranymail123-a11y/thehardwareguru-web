@@ -9,17 +9,23 @@ import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
 
 /**
- * GURU ROOT LAYOUT V5.4 (DUAL ADS ENGINE)
- * 🚀 CÍL: 100% aplikace reklamy pro Desktop i Mobil s verifikací.
+ * GURU ROOT LAYOUT V5.5 (SEO DUPLICITY & BING FIX)
+ * 🚀 CÍL: Globální unikátnost titulků a Canonical URL fix.
  */
 
 export const metadata = {
   title: {
-    default: 'The Hardware Guru | Tech, Gaming & AI',
-    template: '%s | The Hardware Guru'
+    // 🔥 FIX: Změněno na unikátnější základ, aby se nepletl s Home Page
+    default: 'Hardware Guru | PC Benchmarks, Tech News & AI Tools',
+    // 🔥 FIX: %s vloží titulek z page.js, zbytek je unikátní přípona
+    template: '%s | Hardware Guru'
   },
   description: 'Exkluzivní novinky ze světa hardwaru, recenze her a streamy s unikátní AI.',
   metadataBase: new URL('https://thehardwareguru.cz'),
+  // 🔥 FIX: Globální Canonical URL pro zamezení duplicit v Bingu (www vs non-www)
+  alternates: {
+    canonical: '/',
+  },
   robots: {
     index: true,
     follow: true,
@@ -71,6 +77,7 @@ export default async function RootLayout({ children, params }) {
   return (
     <html lang={locale}>
       <head>
+        {/* Google AdSense */}
         <script 
           async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993"
@@ -120,10 +127,9 @@ export default async function RootLayout({ children, params }) {
             }
           `}} />
           
-          {/* 🚀 DESKTOP AD UNIT */}
-          {/* BEGIN AADS AD UNIT 2431217 */}
+          {/* DESKTOP AD */}
           <div className="ad-desktop-wrapper">
-            <div id="frame" style={{ width: '100%', margin: '0 auto 40px', position: 'relative', zIndex: 99998 }}>
+            <div style={{ width: '100%', margin: '0 auto 40px', position: 'relative', zIndex: 99998 }}>
               <iframe 
                 data-aa='2431217' 
                 src='https://acceptable.a-ads.com/2431217/?size=Adaptive'
@@ -131,12 +137,10 @@ export default async function RootLayout({ children, params }) {
               ></iframe>
             </div>
           </div>
-          {/* END AADS AD UNIT 2431217 */}
 
-          {/* 🚀 MOBILE AD UNIT */}
-          {/* BEGIN AADS AD UNIT 2431218 */}
+          {/* MOBILE AD */}
           <div className="ad-mobile-wrapper">
-            <div id="frame" style={{ width: '100%', margin: '0 auto 40px', position: 'relative', zIndex: 99998 }}>
+            <div style={{ width: '100%', margin: '0 auto 40px', position: 'relative', zIndex: 99998 }}>
               <iframe 
                 data-aa='2431218' 
                 src='https://acceptable.a-ads.com/2431218/?size=Adaptive'
@@ -144,7 +148,6 @@ export default async function RootLayout({ children, params }) {
               ></iframe>
             </div>
           </div>
-          {/* END AADS AD UNIT 2431218 */}
 
           <VisitorCounter locale={locale} />
 
