@@ -5,10 +5,8 @@ import {
 import Link from 'next/link';
 
 /**
- * GURU CPU RANKING V1.8 (STABLE BUILD RESTORE - FINAL)
- * 🛡️ FIX: Návrat k stabilnímu renderování bez destructured props.
- * 🛡️ RULE: Google Golden Rich Results (Breadcrumbs + Navigation).
- * 🛡️ RULE: Maximální prolinkování a Siloing.
+ * GURU CPU RANKING V1.9 (ADS INJECTION UPDATE)
+ * 🚀 CÍL: Maximální monetizace CPU žebříčku skrze A-ADS.
  */
 
 export const dynamic = 'force-dynamic';
@@ -40,35 +38,13 @@ export default async function CpuRankingPage(props) {
 
   if (!cpus || cpus.length === 0) return <div style={{ color: '#fff', background: '#0a0b0d', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>DATABASE ERROR</div>;
 
-  // 🚀 GOLDEN RICH RESULTS
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Guru", "item": baseUrl },
-      { "@type": "ListItem", "position": 2, "name": isEn ? "CPU Ranking" : "Žebříček procesorů", "item": `${baseUrl}/cpuvs/ranking` }
-    ]
-  };
-
-  const navSchema = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    "name": "CPU Tier List Navigation",
-    "itemListElement": cpus.slice(0, 20).map((cpu, i) => ({
-      "@type": "SiteNavigationElement",
-      "position": i + 1,
-      "name": cpu.name,
-      "url": `${baseUrl}${isEn ? '/en' : ''}/cpu/${cpu.slug || slugify(cpu.name)}`
-    }))
-  };
+  const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema).replace(/</g, '\\u003c') }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(navSchema).replace(/</g, '\\u003c') }} />
-
+      
       <main style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
-        <header style={{ textAlign: 'center', marginBottom: '60px' }}>
+        <header style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '8px 25px', border: '1px solid rgba(245,158,11,0.4)', borderRadius: '50px', background: 'rgba(245,158,11,0.1)' }}>
             <Trophy size={18} /> GURU RANKING SYSTEM
           </div>
@@ -76,6 +52,13 @@ export default async function CpuRankingPage(props) {
             {isEn ? 'CPU' : 'ŽEBŘÍČEK'} <span style={{ color: '#f59e0b', textShadow: '0 0 40px rgba(245,158,11,0.4)' }}>{isEn ? 'TIER LIST' : 'PROCESORŮ'}</span>
           </h1>
         </header>
+
+        {/* 🔥 ADS SLOT #1: TOP PLACEMENT PŘED SEZNAMEM */}
+        <div className="ranking-ad-box" style={{ marginBottom: '30px' }}>
+            <span className="ad-label">Advertisement</span>
+            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {cpus.map((cpu, index) => {
@@ -85,21 +68,32 @@ export default async function CpuRankingPage(props) {
             const isTop3 = index < 3;
 
             return (
-              <Link key={cpu.id || index} href={isEn ? `/en/cpu/${safeSlug}` : `/cpu/${safeSlug}`} className="ranking-card">
-                 <div className="rank-num" style={{ color: isTop3 ? '#f59e0b' : '#4b5563' }}>{index + 1}.</div>
-                 <div className="v-bar" style={{ backgroundColor: vendorColor }}></div>
-                 <div style={{ flex: 1 }}>
-                    <h2 className="cpu-title">{normalizeName(cpu.name)}</h2>
-                    <div className="cpu-meta">{cpu.vendor} • {cpu.cores || '?'}/{cpu.threads || '?'}C • {cpu.boost_clock_mhz || 'N/A'} MHz</div>
-                 </div>
-                 <div className="score-box">
-                    <div className="score-label">PERFORMANCE</div>
-                    <div className="score-val" style={{ color: isTop3 ? '#f59e0b' : '#fff' }}>
-                      <Zap size={18} fill={isTop3 ? '#f59e0b' : 'none'} /> {cpu.performance_index || '0'}
-                    </div>
-                 </div>
-                 <ChevronRight size={20} className="arrow-icon" />
-              </Link>
+              <React.Fragment key={cpu.id || index}>
+                <Link href={isEn ? `/en/cpu/${safeSlug}` : `/cpu/${safeSlug}`} className="ranking-card">
+                   <div className="rank-num" style={{ color: isTop3 ? '#f59e0b' : '#4b5563' }}>{index + 1}.</div>
+                   <div className="v-bar" style={{ backgroundColor: vendorColor }}></div>
+                   <div style={{ flex: 1 }}>
+                      <h2 className="cpu-title">{normalizeName(cpu.name)}</h2>
+                      <div className="cpu-meta">{cpu.vendor} • {cpu.cores || '?'}/{cpu.threads || '?'}C • {cpu.boost_clock_mhz || 'N/A'} MHz</div>
+                   </div>
+                   <div className="score-box">
+                      <div className="score-label">PERFORMANCE</div>
+                      <div className="score-val" style={{ color: isTop3 ? '#f59e0b' : '#fff' }}>
+                        <Zap size={18} fill={isTop3 ? '#f59e0b' : 'none'} /> {cpu.performance_index || '0'}
+                      </div>
+                   </div>
+                   <ChevronRight size={20} className="arrow-icon" />
+                </Link>
+
+                {/* 🔥 ADS SLOT #2: MEZI POLOŽKAMI (PO 5. MÍSTĚ) */}
+                {index === 4 && (
+                  <div className="ranking-ad-box">
+                    <span className="ad-label">Guru Recommended Ad</span>
+                    <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                    <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                  </div>
+                )}
+              </React.Fragment>
             );
           })}
         </div>
@@ -113,6 +107,10 @@ export default async function CpuRankingPage(props) {
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
+        .ranking-ad-box { margin: 20px 0; padding: 15px; background: rgba(245, 158, 11, 0.03); border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 24px; text-align: center; }
+        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+        .ad-desktop { display: block; } .ad-mobile { display: none; }
+
         .ranking-card { display: flex; align-items: center; background: rgba(15, 17, 21, 0.98); padding: 20px 30px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; }
         .ranking-card:hover { transform: translateX(8px); background: rgba(25, 27, 31, 1); border-color: rgba(245, 158, 11, 0.3); }
         .rank-num { width: 50px; font-size: 24px; font-weight: 950; }
@@ -125,6 +123,15 @@ export default async function CpuRankingPage(props) {
         .arrow-icon { color: #4b5563; }
         .silo-card { background: rgba(15, 17, 21, 0.98); padding: 30px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 20px; text-decoration: none; color: #fff; transition: 0.3s; }
         .silo-card:hover { transform: translateY(-5px); }
+
+        @media (max-width: 768px) {
+          .ad-desktop { display: none; } .ad-mobile { display: block; }
+          .ranking-card { padding: 15px; flex-wrap: wrap; }
+          .score-box { border-left: none; padding: 10px 0; width: 100%; border-top: 1px solid rgba(255,255,255,0.05); margin: 10px 0 0 0; }
+          .rank-num { width: 30px; font-size: 18px; }
+          .v-bar { margin-right: 15px; }
+          .cpu-title { font-size: 1.1rem; }
+        }
       `}} />
     </div>
   );
