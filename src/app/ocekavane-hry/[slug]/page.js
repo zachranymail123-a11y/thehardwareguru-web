@@ -5,9 +5,8 @@ import Link from 'next/link';
 import { ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart, Info, Monitor, Play, Sparkles, Gamepad2, Twitter, Share2, Swords, ArrowRight, Cpu } from 'lucide-react';
 
 /**
- * GURU EXPECTED GAME ENGINE - DETAIL V5.0 (THE GTA 6 & VIRAL HUB)
- * 🚀 CÍL: Přeměnit hype z budoucích her na traffic pro GTA 6 kalkulačku.
- * 🛡️ FIX: Implementace Reddit/X/FB share, GTA VI návnady a HW Siloingu.
+ * GURU EXPECTED GAME ENGINE - DETAIL V5.1 (ADS INJECTION UPDATE)
+ * 🚀 CÍL: Maximální zisk z hypu očekávaných her skrze A-ADS.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -15,7 +14,6 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 const baseUrl = "https://thehardwareguru.cz";
 
-// Reddit Ikona (SVG)
 const RedditIcon = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-2.05-6.65c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm4.1 0c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm1.64-3.56c-.34 0-.64.16-.84.4-.58-.4-1.36-.67-2.24-.72l.47-2.18 1.5.32c.04.53.48.95 1.02.95.57 0 1.03-.46 1.03-1.03 0-.57-.46-1.03-1.03-1.03-.42 0-.78.26-.94.63l-1.64-.35c-.06-.01-.13 0-.17.05-.05.04-.07.1-.06.16l-.52 2.45c-.93.03-1.74.32-2.35.74-.2-.23-.5-.38-.83-.38-.6 0-1.08.48-1.08 1.08 0 .42.24.78.58.96-.02.12-.03.24-.03.37 0 1.88 2.05 3.4 4.58 3.4s4.58-1.52 4.58-3.4c0-.13-.01-.25-.03-.37.34-.18.58-.54.58-.96 0-.6-.48-1.08-1.08-1.08zm-4.14 3.12c-.93 0-1.66-.4-1.7-.44-.1-.1-.11-.27-.01-.38.1-.1.27-.11.38-.01.02.01.62.33 1.33.33.7 0 1.31-.32 1.33-.33.11-.1.28-.09.38.01.1.11.09.28-.01.38-.04.04-.77.44-1.7.44z" />
@@ -24,7 +22,7 @@ const RedditIcon = ({ size = 20 }) => (
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const { data: post } = await supabase.from('posts').select('title, title_en, seo_description, seo_description_en, image_url, slug, slug_en').or(`slug.eq.${slug},slug_en.eq.${slug}`).single();
+  const { data: post } = await supabase.from('posts').select('title, title_en, seo_description, seo_description_en, image_url, slug, slug_en').or(`slug.eq."${slug}",slug_en.eq."${slug}"`).single();
   if (!post) return { title: '404' };
   const isEn = post.slug_en === slug && slug !== post.slug;
   return { title: `${isEn ? post.title_en : post.title} | The Hardware Guru`, description: isEn ? post.seo_description_en : post.seo_description };
@@ -32,7 +30,7 @@ export async function generateMetadata({ params }) {
 
 export default async function ExpectedGameDetail({ params }) {
   const { slug } = await params;
-  const { data: post, error } = await supabase.from('posts').select('*').or(`slug.eq.${slug},slug_en.eq.${slug}`).single();
+  const { data: post, error } = await supabase.from('posts').select('*').or(`slug.eq."${slug}",slug_en.eq."${slug}"`).single();
   if (error || !post) notFound();
 
   const isEn = post.slug_en === slug && post.slug_en !== post.slug;
@@ -40,6 +38,12 @@ export default async function ExpectedGameDetail({ params }) {
   const content = isEn && post.content_en ? post.content_en : post.content;
   const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}ocekavane-hry/${slug}`;
   const dateObj = post.created_at ? new Date(post.created_at) : new Date();
+
+  // 🚀 GURU ADS INJECTION: Rozdělení obsahu
+  const contentParts = content ? content.split('</p>') : [];
+  const midPoint = Math.ceil(contentParts.length / 2);
+  const firstHalf = contentParts.slice(0, midPoint).join('</p>');
+  const secondHalf = contentParts.slice(midPoint).join('</p>');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px' }}>
@@ -68,7 +72,27 @@ export default async function ExpectedGameDetail({ params }) {
             <h1 className="main-title">{title}</h1>
           </header>
 
-          <div className="guru-prose" dangerouslySetInnerHTML={{ __html: content }} />
+          {/* 🔥 ADS SLOT #1: POD NADPISEM */}
+          <div className="guru-ad-box">
+             <span className="ad-label">Advertisement</span>
+             <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+             <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+          </div>
+
+          <div className="guru-prose">
+             <div dangerouslySetInnerHTML={{ __html: firstHalf + (contentParts.length > 1 ? '</p>' : '') }} />
+
+             {/* 🔥 ADS SLOT #2: UPROSTŘED ČLÁNKU */}
+             {contentParts.length > 2 && (
+               <div className="guru-ad-box">
+                  <span className="ad-label">Sponsored Content</span>
+                  <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                  <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+               </div>
+             )}
+
+             <div dangerouslySetInnerHTML={{ __html: secondHalf }} />
+          </div>
 
           {/* 🚀 GTA 6 CONVERSION BAIT */}
           <div className="gta6-bait-box">
@@ -126,6 +150,12 @@ export default async function ExpectedGameDetail({ params }) {
         .guru-badge { color: #66fcf1; display: flex; align-items: center; gap: 6px; }
         .main-title { font-size: clamp(2.2rem, 5vw, 3.5rem); fontWeight: 950; color: #fff; text-transform: uppercase; line-height: 1.1; margin: 0; }
         
+        /* GURU ADS STYLES */
+        .guru-ad-box { margin: 30px 0; padding: 15px; background: rgba(102, 252, 241, 0.02); border: 1px solid rgba(102, 252, 241, 0.1); border-radius: 20px; text-align: center; }
+        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+        .ad-desktop { display: block; }
+        .ad-mobile { display: none; }
+
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; margin-bottom: 40px; }
         .guru-prose h2 { color: #66fcf1; font-size: 1.8rem; font-weight: 950; margin-top: 2em; text-transform: uppercase; border-left: 4px solid #f43f5e; padding-left: 15px; }
 
@@ -162,6 +192,8 @@ export default async function ExpectedGameDetail({ params }) {
 
         @media (max-width: 768px) {
             .share-grid, .duel-grid, .global-cta-row { grid-template-columns: 1fr; flex-direction: column; }
+            .ad-desktop { display: none; }
+            .ad-mobile { display: block; }
             .gta6-bait-box { padding: 25px; }
             .guru-prose { font-size: 1.05rem; }
         }
