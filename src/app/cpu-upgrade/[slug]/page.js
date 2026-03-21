@@ -25,8 +25,8 @@ import {
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU CPU UPGRADE ENGINE - DETAIL V115.4 (ADS INJECTION & BUILD FIX)
- * 🚀 CÍL: Fix chybějících uvozovek u display: 'grid' způsobujících pád buildu.
+ * GURU CPU UPGRADE ENGINE - DETAIL V115.5 (BUILD FIX & ADS)
+ * 🚀 CÍL: Čistý build bez pádů, ošetřená syntaxe CSS-in-JS a Ads.
  */
 
 export const runtime = "nodejs";
@@ -132,7 +132,6 @@ export default async function App({ params }) {
   ].filter(item => Number.isFinite(item.diff) && item.diff !== 0);
 
   const avgDiff = gameStats.length ? Math.round(gameStats.reduce((acc, curr) => acc + curr.diff, 0) / gameStats.length) : 0;
-  const safeNewSlug = cpuB.slug || slugify(cpuB.name);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -153,12 +152,13 @@ export default async function App({ params }) {
           </h1>
         </header>
 
+        {/* FIX STYLU PRO GRID */}
         <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '40px' }}>
-            <div className="gpu-card-box" style={{ borderTop: `5px solid #4b5563`, filter: 'grayscale(0.5)' }}>
+            <div className="gpu-card-box" style={{ borderTop: '5px solid #4b5563', filter: 'grayscale(0.5)' }}>
                 <h2 className="gpu-name-text">{normalizeName(cpuA.name)}</h2>
             </div>
             <div className="vs-badge" style={{ background: '#f59e0b' }}>➜</div>
-            <div className="gpu-card-box" style={{ borderTop: `5px solid #f59e0b`, transform: 'scale(1.05)', boxShadow: '0 0 40px rgba(245, 158, 11, 0.3)' }}>
+            <div className="gpu-card-box" style={{ borderTop: '5px solid #f59e0b', transform: 'scale(1.05)', boxShadow: '0 0 40px rgba(245, 158, 11, 0.3)' }}>
                 <h2 className="gpu-name-text">{normalizeName(cpuB.name)}</h2>
             </div>
         </div>
@@ -174,6 +174,7 @@ export default async function App({ params }) {
             <section style={{ marginBottom: '60px' }}>
                 <div className="content-box-style" style={{ borderLeft: '6px solid #f59e0b' }}>
                     <h2 className="section-h2" style={{ color: '#f59e0b', border: 'none', padding: 0 }}><BarChart3 size={28} style={{ display: 'inline', marginRight: '10px' }} /> {isEn ? 'GAMING PERFORMANCE GAIN' : 'NÁRŮST HERNÍHO VÝKONU'}</h2>
+                    {/* FIX STYLU PRO GRID 2 */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '30px' }}>
                         {gameStats.map((item, i) => (
                             <div key={i} className="summary-item">
@@ -191,7 +192,7 @@ export default async function App({ params }) {
         )}
 
         <section style={{ marginBottom: '60px' }}>
-          <h2 className="section-h2" style={{ borderLeftColor: '#f59e0b' }}><LayoutList size={28} /> {isEn ? 'UPGRADE SPECIFICATIONS' : 'POROVNÁNÍ PARAMETRŮ'}</h2>
+          <h2 className="section-h2" style={{ borderLeftColor: '#f59e0b' }}><LayoutList size={28} style={{ display: 'inline', marginRight: '10px' }} /> {isEn ? 'UPGRADE SPECIFICATIONS' : 'POROVNÁNÍ PARAMETRŮ'}</h2>
           <div className="table-wrapper">
               {[
                 { label: 'CORES / THREADS', valA: `${cpuA.cores}/${cpuA.threads}`, valB: `${cpuB.cores}/${cpuB.threads}`, winA: cpuA.cores, winB: cpuB.cores },
@@ -225,13 +226,15 @@ export default async function App({ params }) {
                     <h3 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase' }}>{isEn ? 'BOTTLENECK CHECK' : 'KONTROLA BOTTLENECKU'}</h3>
                     <p style={{ color: '#9ca3af', margin: 0 }}>{isEn ? `Will your GPU handle the ${normalizeName(cpuB.name)}?` : `Bude tvá grafika stačit na procesor ${normalizeName(cpuB.name)}?`}</p>
                 </div>
-                <a href={isEn ? `/en/cpu/${safeNewSlug}` : `/cpu/${safeNewSlug}`} className="guru-bottleneck-btn" style={{ background: '#f59e0b', color: '#000', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none' }}>{isEn ? 'VERIFY' : 'OVĚŘIT'}</a>
+                {/* 🚀 OPRAVENÝ ODKAZ (BEZPEČNÝ LINK NATVRDO) */}
+                <a href={isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka'} className="guru-bottleneck-btn" style={{ background: '#f59e0b', color: '#000', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none' }}>{isEn ? 'VERIFY' : 'OVĚŘIT'}</a>
             </div>
         </section>
 
         {similar.length > 0 && (
             <section style={{ marginBottom: '60px' }}>
                 <h2 className="section-h2" style={{ borderLeftColor: '#f59e0b' }}><ArrowUpCircle size={28} color="#f59e0b" style={{ display: 'inline', marginRight: '10px' }} /> {isEn ? 'MORE UPGRADES' : 'DALŠÍ UPGRADY'}</h2>
+                {/* FIX STYLU PRO GRID 3 */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
                     {similar.map(upg => (
                         <a key={upg.slug} href={isEn ? `/en/cpu-upgrade/${upg.slug_en || upg.slug}` : `/cpu-upgrade/${upg.slug}`} className="silo-link-card">
@@ -243,6 +246,7 @@ export default async function App({ params }) {
             </section>
         )}
 
+        {/* SPODNÍ TLAČÍTKA NA GURU SUPPORT/DEALS MÍSTO DUPLICITY */}
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginTop: '50px' }}>
             <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn"><Flame size={20} /> DEALS</a>
             <a href="/support" className="guru-support-btn"><Heart size={20} /> SUPPORT</a>
