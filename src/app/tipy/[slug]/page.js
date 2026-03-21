@@ -8,10 +8,8 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU TIP ENGINE V5.1 (ADSENSE & SEO GOLDEN FIX)
- * 🛡️ FIX: Odstraněna falešná 404 v metadatech (opraveno vyhledávání slug/slug_en).
- * 🛡️ FIX: Implementováno Article Schema (Google Golden Rich Results).
- * 🛡️ FIX: Next.js 15 Async Params Standard.
+ * GURU TIP ENGINE V5.2 (ADS INJECTION UPDATE)
+ * 🚀 CÍL: Maximální zisk z Tipů a triků skrze responzivní reklamy.
  */
 
 const supabase = createClient(
@@ -39,7 +37,7 @@ const getLatestTips = async (excludeId) => {
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const { data: tip } = await supabase.from('tipy').select('*').or(`slug.eq.${slug},slug_en.eq.${slug}`).single();
+  const { data: tip } = await supabase.from('tipy').select('*').or(`slug.eq."${slug}",slug_en.eq."${slug}"`).single();
   
   if (!tip) return { title: 'Stránka nenalezena | Hardware Guru' };
   
@@ -62,7 +60,7 @@ export async function generateMetadata({ params }) {
 
 export default async function TipDetail({ params }) {
   const { slug } = await params;
-  const { data: tip } = await supabase.from('tipy').select('*').or(`slug.eq.${slug},slug_en.eq.${slug}`).single();
+  const { data: tip } = await supabase.from('tipy').select('*').or(`slug.eq."${slug}",slug_en.eq."${slug}"`).single();
   
   if (!tip) notFound();
 
@@ -72,7 +70,12 @@ export default async function TipDetail({ params }) {
   const content = isEn && tip.content_en ? tip.content_en : tip.content;
   const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}tipy/${slug}`;
 
-  // 🚀 ARTICLE SCHEMA (GOLDEN RICH RESULTS)
+  // 🚀 GURU ADS INJECTION: Rozdělení obsahu
+  const contentParts = content ? content.split('</p>') : [];
+  const midPoint = Math.ceil(contentParts.length / 2);
+  const firstHalf = contentParts.slice(0, midPoint).join('</p>');
+  const secondHalf = contentParts.slice(midPoint).join('</p>');
+
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -117,7 +120,27 @@ export default async function TipDetail({ params }) {
             <h1 className="tip-h1">{title}</h1>
           </header>
 
-          <div className="guru-prose" dangerouslySetInnerHTML={{ __html: content }} />
+          {/* 🔥 ADS SLOT #1: POD NADPISEM */}
+          <div className="guru-ad-slot">
+             <span className="ad-label">Advertisement</span>
+             <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+             <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+          </div>
+
+          <div className="guru-prose">
+             <div dangerouslySetInnerHTML={{ __html: firstHalf + (contentParts.length > 1 ? '</p>' : '') }} />
+
+             {/* 🔥 ADS SLOT #2: UPROSTŘED OBSAHU */}
+             {contentParts.length > 2 && (
+               <div className="guru-ad-slot">
+                  <span className="ad-label">Sponsored Content</span>
+                  <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                  <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+               </div>
+             )}
+
+             <div dangerouslySetInnerHTML={{ __html: secondHalf }} />
+          </div>
 
           <div className="gta6-bait-box">
               <div className="gta6-badge"><Sparkles size={16} /> AI NEXT-GEN PREDIKCE</div>
@@ -188,6 +211,13 @@ export default async function TipDetail({ params }) {
         .guru-badge { color: #66fcf1; display: flex; align-items: center; gap: 6px; }
         .tip-h1 { font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 950; color: #fff; text-transform: uppercase; line-height: 1.1; margin: 0; }
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; margin-bottom: 40px; }
+        
+        /* GURU ADS STYLES */
+        .guru-ad-slot { margin: 30px 0; padding: 15px; background: rgba(102, 252, 241, 0.02); border: 1px solid rgba(102, 252, 241, 0.1); border-radius: 20px; text-align: center; }
+        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+        .ad-desktop { display: block; }
+        .ad-mobile { display: none; }
+
         .gta6-bait-box { background: linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(15, 17, 21, 0.98) 100%); border: 1px solid rgba(244, 63, 94, 0.4); padding: 40px; border-radius: 24px; text-align: center; margin: 40px 0; }
         .gta6-badge { display: inline-flex; align-items: center; gap: 8px; background: #f43f5e; color: #fff; padding: 6px 15px; border-radius: 8px; font-size: 10px; font-weight: 950; margin-bottom: 15px; text-transform: uppercase; }
         .gta6-title { font-size: 1.8rem; font-weight: 950; color: #fff; margin: 0 0 10px 0; text-transform: uppercase; }
@@ -212,8 +242,16 @@ export default async function TipDetail({ params }) {
         .related-info { padding: 12px; }
         .related-info h3 { margin: 0; color: #fff; font-size: 0.85rem; font-weight: 900; }
         .global-cta { margin-top: 50px; display: flex; gap: 15px; }
-        .deals-btn { background: #ea580c; color: #fff; }
-        .support-btn { background: #eab308; color: #000; }
+        .deals-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px; border-radius: 12px; font-weight: 950; text-decoration: none; text-transform: uppercase; background: #ea580c; color: #fff; transition: 0.3s; }
+        .support-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px; border-radius: 12px; font-weight: 950; text-decoration: none; text-transform: uppercase; background: #eab308; color: #000; transition: 0.3s; }
+
+        @media (max-width: 768px) {
+            .share-grid, .duel-grid, .related-grid, .global-cta { grid-template-columns: 1fr; flex-direction: column; }
+            .ad-desktop { display: none; }
+            .ad-mobile { display: block; }
+            .gta6-bait-box { padding: 25px; }
+            .guru-prose { font-size: 1.05rem; }
+        }
       `}} />
     </div>
   );
