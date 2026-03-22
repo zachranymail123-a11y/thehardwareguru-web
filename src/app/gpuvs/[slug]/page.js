@@ -8,8 +8,8 @@ import {
 import GuruGpuCompareText from '../../../components/GuruGpuCompareText';
 
 /**
- * GURU GPU DUELS ENGINE - V6.0 (SPLIT & MATCH SEARCH FIX)
- * 🚀 CÍL: Rozdělení slugu na dvě části ignoruje prostředního vendora, který shazoval shodu.
+ * GURU GPU DUELS ENGINE - V6.1 (BOTTLENECK & UPGRADE BANNER RESTORE + SPLIT SEARCH)
+ * 🚀 CÍL: 100% fix 404 přes split search a doplnění chybějících bannerů.
  */
 
 export const runtime = "nodejs";
@@ -59,7 +59,7 @@ const getDuelData = cache(async (rawSlug) => {
   let result = await performSearch(`slug=eq.${cleanSlug}`);
   if (result) return result;
 
-  // 2. ROZDĚL A PANUJ (Ignoruje prostřední balast)
+  // 2. ROZDĚL A PANUJ (Ignoruje prostřední balast jako "-vs-nvidia-geforce-")
   const parts = cleanSlug.split('-vs-');
   if (parts.length === 2) {
       // Očistíme obě strany od výrobců a velikosti paměti (např. -8gb)
@@ -68,7 +68,7 @@ const getDuelData = cache(async (rawSlug) => {
       const p2 = cleanPart(parts[1]);
       
       if (p1 && p2) {
-          // AND operátor: slug musí obsahovat P1 A ZÁROVEŇ P2 (v Supabase se pro ilike používá *)
+          // AND operátor: slug musí obsahovat P1 A ZÁROVEŇ P2
           result = await performSearch(`and=(slug.ilike.*${p1}*,slug.ilike.*${p2}*)`);
           if (result) return result;
       }
@@ -88,7 +88,6 @@ const getRelatedArticles = async (gpuA_Name, gpuB_Name) => {
     const nameA = normalizeName(gpuA_Name || '');
     const nameB = normalizeName(gpuB_Name || '');
     try {
-        // 🔥 GURU FIX: Změněno % na * i zde, aby nepadal URL parser
         const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.*${encodeURIComponent(nameA)}*,title_en.ilike.*${encodeURIComponent(nameA)}*,title.ilike.*${encodeURIComponent(nameB)}*,title_en.ilike.*${encodeURIComponent(nameB)}*)&order=created_at.desc&limit=3`, { headers, cache: 'force-cache' });
         let data = [];
         if (res.ok) data = await res.json();
@@ -96,18 +95,8 @@ const getRelatedArticles = async (gpuA_Name, gpuB_Name) => {
     } catch (e) { return []; }
 };
 
-const getMoreDuels = async (currentSlug) => {
-    if (!supabaseUrl) return [];
-    const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
-    try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=title_cs,title_en,slug,slug_en&slug=neq.${currentSlug}&order=created_at.desc&limit=3`, { headers, cache: 'force-cache' });
-        if (res.ok) return await res.json();
-        return [];
-    } catch(e) { return []; }
-};
-
 export async function generateMetadata({ params }) {
-  const { slug } = params; // 🛡️ FIX
+  const { slug } = params; 
   const duel = await getDuelData(slug);
   if (!duel || !duel.gpuA) return { title: 'GPU Comparison | Hardware Guru' };
   
@@ -120,13 +109,14 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function GpuVsDetailPage({ params }) {
-  const { slug } = params; // 🛡️ FIX
+  const { slug } = params; 
   const duel = await getDuelData(slug);
   
   if (!duel) notFound();
 
   const isEn = slug?.startsWith('en-');
   const { gpuA, gpuB } = duel;
+  
   const perfA = gpuA.performance_index || 1;
   const perfB = gpuB.performance_index || 1;
   const winner = perfA > perfB ? gpuA : gpuB;
@@ -190,6 +180,21 @@ export default async function GpuVsDetailPage({ params }) {
             </div>
         </div>
 
+        {/* 🚀 UPGRADE BANNER (Doplněn zpět!) */}
+        <section style={{ marginBottom: '60px' }}>
+            <div className="upgrade-banner" style={{ background: 'linear-gradient(135deg, rgba(255, 0, 85, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(255, 0, 85, 0.2)', padding: '30px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
+                <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#ff0055', fontWeight: '950', textTransform: 'uppercase', fontSize: '12px' }}><ArrowUpCircle size={16} /> {isEn ? 'UPGRADE ANALYSIS' : 'ANALÝZA UPGRADU'}</div>
+                    <h3 style={{ fontSize: '1.8rem', fontWeight: '950', color: '#fff', margin: '10px 0', textTransform: 'uppercase' }}>{isEn ? `WORTH UPGRADING TO ${normalizeName(winner.name)}?` : `VYPLATÍ SE UPGRADE NA ${normalizeName(winner.name)}?`}</h3>
+                    <p style={{ color: '#9ca3af', margin: 0 }}>{isEn ? `Find if switching from ${normalizeName(loser.name)} makes sense.` : `Zjisti, jestli dává přechod z ${normalizeName(loser.name)} smysl.`}</p>
+                </div>
+                <a href={isEn ? `/en/gpu-upgrade/${getSafeGpuSlug(loser)}-to-${getSafeGpuSlug(winner)}` : `/gpu-upgrade/${getSafeGpuSlug(loser)}-to-${getSafeGpuSlug(winner)}`} style={{ background: '#ff0055', color: '#fff', padding: '16px 30px', borderRadius: '16px', fontWeight: '950', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '10px', textTransform: 'uppercase' }}>
+                    {isEn ? 'CALCULATE' : 'SPOČÍTAT'} <ArrowRight size={20} />
+                </a>
+            </div>
+        </section>
+
+        {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT */}
         <section style={{ marginBottom: '60px' }}>
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -207,7 +212,7 @@ export default async function GpuVsDetailPage({ params }) {
         </section>
 
         <section style={{ marginBottom: '60px' }}>
-          <h2 className="section-h2" style={{ borderLeftColor: '#66fcf1' }}><LayoutList size={28} /> {isEn ? 'TECHNICAL SPECS' : 'GURU SPECIFIKACE'}</h2>
+          <h2 className="section-h2" style={{ borderLeftColor: '#ff0055' }}><LayoutList size={28} /> {isEn ? 'TECHNICAL SPECS' : 'GURU SPECIFIKACE'}</h2>
           <div className="table-wrapper">
                {[
                  { label: 'VRAM', valA: `${gpuA.vram_gb} GB`, valB: `${gpuB.vram_gb} GB`, winA: gpuA.vram_gb, winB: gpuB.vram_gb },
@@ -221,6 +226,17 @@ export default async function GpuVsDetailPage({ params }) {
                  </div>
                ))}
           </div>
+        </section>
+
+        {/* 🚀 BOTTLENECK CHECK BANNER (Doplněn zpět!) */}
+        <section style={{ marginBottom: '60px' }}>
+            <div style={{ background: 'linear-gradient(135deg, rgba(102, 252, 241, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(102, 252, 241, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                <div>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase' }}>{isEn ? 'BOTTLENECK CHECK' : 'KONTROLA BOTTLENECKU'}</h3>
+                    <p style={{ color: '#9ca3af', margin: 0 }}>{isEn ? `Will your CPU handle the ${normalizeName(winner.name)}?` : `Nebude tvůj procesor brzdit grafiku ${normalizeName(winner.name)}?`}</p>
+                </div>
+                <a href={isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka'} style={{ background: 'transparent', border: '2px solid #66fcf1', color: '#66fcf1', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase' }}>{isEn ? 'VERIFY' : 'OVĚŘIT'}</a>
+            </div>
         </section>
 
         {relatedArticles.length > 0 && (
