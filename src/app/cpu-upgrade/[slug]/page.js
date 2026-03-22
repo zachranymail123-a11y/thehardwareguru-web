@@ -23,10 +23,11 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; // 🚀 GURU: Import SEO generátoru
 
 /**
- * GURU CPU UPGRADE ENGINE - DETAIL V115.5 (BUILD FIX & ADS)
- * 🚀 CÍL: Čistý build bez pádů, ošetřená syntaxe CSS-in-JS a Ads.
+ * GURU CPU UPGRADE ENGINE - DETAIL V115.6 (SEO TEXT UPDATE)
+ * 🚀 CÍL: Přidán dynamický SEO generátor textu pro odstranění "Thin Content" hlášky z Bingu.
  */
 
 export const runtime = "nodejs";
@@ -191,6 +192,23 @@ export default async function App({ params }) {
             </section>
         )}
 
+        {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT (VLOŽENO ZDE) */}
+        <section style={{ marginBottom: '60px' }}>
+            <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Info size={24} color="#f59e0b" /> {isEn ? 'Upgrade Analysis' : 'Analýza upgradu'}
+                </h2>
+                <GuruCpuCompareText 
+                    cpu1Name={normalizeName(cpuA.name)} 
+                    cpu2Name={normalizeName(cpuB.name)} 
+                    perfDiff={finalPerfDiff} 
+                    cpu1Cores={cpuA.cores} 
+                    cpu2Cores={cpuB.cores} 
+                    isEn={isEn} 
+                />
+            </div>
+        </section>
+
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: '#f59e0b' }}><LayoutList size={28} style={{ display: 'inline', marginRight: '10px' }} /> {isEn ? 'UPGRADE SPECIFICATIONS' : 'POROVNÁNÍ PARAMETRŮ'}</h2>
           <div className="table-wrapper">
@@ -246,8 +264,7 @@ export default async function App({ params }) {
             </section>
         )}
 
-        {/* SPODNÍ TLAČÍTKA NA GURU SUPPORT/DEALS MÍSTO DUPLICITY */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginTop: '50px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%', marginTop: '50px' }}>
             <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn"><Flame size={20} /> DEALS</a>
             <a href="/support" className="guru-support-btn"><Heart size={20} /> SUPPORT</a>
         </div>
@@ -265,7 +282,7 @@ export default async function App({ params }) {
         .gpu-name-text { font-size: clamp(1.4rem, 3vw, 2.2rem); font-weight: 950; color: #fff; text-transform: uppercase; margin: 0; line-height: 1.1; }
         .vs-badge { width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 950; font-size: 32px; border: 5px solid #0f1115; color: #000; }
 
-        .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #f59e0b; padding-left: 15px; }
+        .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #f59e0b; padding-left: 15px; display: flex; align-items: center; gap: 12px; }
         .table-wrapper { background: rgba(15, 17, 21, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
         .spec-row-style { display: flex; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .spec-val-side { flex: 1; }
