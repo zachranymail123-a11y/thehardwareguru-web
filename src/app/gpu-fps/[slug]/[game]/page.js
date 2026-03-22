@@ -21,10 +21,11 @@ import {
   Info,
   Crosshair
 } from 'lucide-react';
+import GuruAnalysisText from '../../../../components/GuruAnalysisText'; // 🚀 GURU: Import dynamického generátoru textu
 
 /**
- * GURU FPS HUNTER V1.2 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Maximální vytěžení trafficu z herních benchmarků skrze A-ADS.
+ * GURU FPS HUNTER V1.3 (SEO TEXT UPDATE)
+ * 🚀 CÍL: Přidán dynamický generátor textu pro odblokování Bing indexace.
  */
 
 export const runtime = "nodejs";
@@ -158,6 +159,23 @@ export default async function GpuFpsHunterPage(props) {
             );
           })}
         </div>
+
+        {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT (VLOŽENO ZDE BEZ NARUŠENÍ ZBYTKU STRÁNKY) */}
+        <section style={{ marginBottom: '60px' }}>
+            <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950' }}>{isEn ? 'Performance Analysis' : 'Analýza výkonu'}</h2>
+                <GuruAnalysisText 
+                    cpuName="Intel Core i9-14900K" 
+                    gpuName={gpu.name} 
+                    gameName="modern games" 
+                    resolution="1440p" 
+                    bottleneckPercent={0} 
+                    isCpuBound={false} 
+                    fps={Number(fpsData['cyberpunk_2077_1440p'] || 0)} 
+                    isEn={isEn} 
+                />
+            </div>
+        </section>
 
         {/* 🚀 SÉMANTICKÝ ROZCESTNÍK */}
         <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '60px' }}>
