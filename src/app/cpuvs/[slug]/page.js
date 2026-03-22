@@ -10,7 +10,7 @@ import {
   Trophy,
   Zap,
   Cpu,
-  Activity,
+  Activity, 
   BarChart3,
   Gamepad2,
   LayoutList,
@@ -22,8 +22,8 @@ import {
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; 
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V74.7 (ULTRA SMART SEARCH FIX)
- * 🚀 CÍL: Absolutní eliminace 404 chyb pomocí ilike vyhledávání a ošetření metadat.
+ * GURU CPU DUELS ENGINE - DETAIL V74.8 (SUPABASE WILDCARD FIX)
+ * 🚀 CÍL: Oprava nefunkčního vyhledávání (záměna * za %) a eliminace 404.
  */
 
 export const runtime = "nodejs";
@@ -35,7 +35,7 @@ export async function generateStaticParams() {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   if (!supabaseUrl) return [];
   try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=slug&limit=10000`, {
+      const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=slug&limit=1000`, {
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
           next: { revalidate: 86400 }
       });
@@ -82,13 +82,14 @@ const getDuelData = cache(async (slug) => {
   const cleanSlug = slug.replace(/^en-/, '');
   const selectQuery = `*,cpuA:cpus!cpu_a_id(*),cpuB:cpus!cpu_b_id(*)`;
 
-  // Pomocná funkce pro vyhledávání
+  // 🔥 GURU FIX: Opravená syntaxe pro Supabase vyhledávání (% místo *)
   const performSearch = async (targetSlug, method = 'eq') => {
-    const filter = method === 'eq' ? `slug=eq.${targetSlug}` : `slug.ilike.*${targetSlug}*`;
+    // V Supabase REST API se ilike používá s % 
+    const filter = method === 'eq' ? `slug=eq.${targetSlug}` : `slug=ilike.%${targetSlug}%`;
     try {
         const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&${filter}&limit=1`, { 
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, 
-          cache: 'force-cache' 
+          cache: 'no-store' 
         });
         if (res.ok) {
            const data = await res.json();
@@ -98,19 +99,26 @@ const getDuelData = cache(async (slug) => {
     return null;
   };
 
-  // 1. Přesná shoda
+  // 1. Přesná shoda (amd-ryzen-7-7800x3d-vs-intel-core-i9-14900ks)
   let result = await performSearch(cleanSlug, 'eq');
   if (result) return result;
 
-  // 2. Ořezaná shoda (bez výrobců)
+  // 2. Ořezaná shoda bez výrobců (ryzen-7-7800x3d-vs-core-i9-14900ks)
   const vendorlessSlug = cleanSlug.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '');
   if (vendorlessSlug !== cleanSlug) {
       result = await performSearch(vendorlessSlug, 'eq');
       if (result) return result;
   }
 
-  // 3. Agresivní vyhledávání (ilike)
+  // 3. Agresivní fuzzy vyhledávání (%ryzen-7-7800x3d-vs-core-i9-14900ks%)
   result = await performSearch(vendorlessSlug, 'ilike');
+  if (result) return result;
+
+  // 4. Poslední záchrana - hledání pouze podle části názvu prvního CPU
+  const firstPart = vendorlessSlug.split('-vs-')[0];
+  if (firstPart) {
+      result = await performSearch(firstPart, 'ilike');
+  }
   
   return result;
 });
@@ -119,16 +127,15 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
   const duel = await getDuelData(slug);
   
-  // 🔥 GURU SEO FIX: Pokud duel neexistuje, nevracet notFound() hned v metadatech, ale vrátit bezpečný fallback
   if (!duel || !duel.cpuA) {
-    return { title: 'CPU Comparison | The Hardware Guru' };
+    return { title: 'CPU Duel Analysis | The Hardware Guru' };
   }
 
   const isEn = slug?.startsWith('en-');
   const { cpuA, cpuB } = duel;
   const canonicalUrl = `${baseUrl}/cpuvs/${duel.slug}`;
   return { 
-    title: isEn ? `${cpuA.name} vs ${cpuB.name} | The Hardware Guru` : `${cpuA.name} vs ${cpuB.name} | The Hardware Guru`,
+    title: isEn ? `${cpuA.name} vs ${cpuB.name} | Gaming Benchmarks` : `${cpuA.name} vs ${cpuB.name} | Porovnání výkonu`,
     alternates: { canonical: canonicalUrl, languages: { "en": `${baseUrl}/en/cpuvs/${(duel.slug_en || `en-${duel.slug}`).replace(/^en-en-/,'en-')}`, "cs": canonicalUrl } }
   };
 }
