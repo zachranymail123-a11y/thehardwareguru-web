@@ -8,13 +8,13 @@ import {
 import GuruGpuCompareText from '../../../components/GuruGpuCompareText'; // 🚀 GURU: Import SEO generátoru
 
 /**
- * GURU GPU DUELS ENGINE - V5.7 (SEO TEXT UPDATE)
- * 🚀 CÍL: Přidán dynamický SEO generátor textu pro odstranění "Thin Content" hlášky z Bingu.
+ * GURU GPU DUELS ENGINE - V5.8 (SLUG FIX)
+ * 🚀 CÍL: Odstranění "amd/geforce" z URL pro úspěšné nalezení v DB.
  */
 
 export const runtime = "nodejs";
 export const revalidate = 86400; 
-export const dynamicParams = false;
+export const dynamicParams = true; // Změněno na true
 
 export async function generateStaticParams() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -41,14 +41,28 @@ const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon 
 const getDuelData = cache(async (rawSlug) => {
   if (!supabaseUrl || !rawSlug) return null;
   const cleanSlug = rawSlug.replace(/^en-/, '');
+
+  // 🔥 GURU FIX: Ořeže prefixy výrobců z URL pro snazší hledání v DB
+  const vendorlessSlug = cleanSlug.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '');
+
   const selectQuery = `*,gpuA:gpus!gpu_a_id(*,game_fps!gpu_id(*)),gpuB:gpus!gpu_b_id(*,game_fps!gpu_id(*))`;
-  try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${cleanSlug}&limit=1`, { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }, cache: 'force-cache' });
-      if (!res.ok) return null;
-      const data = await res.json();
-      if (!data || data.length === 0) return null; 
-      return data[0];
-  } catch (e) { return null; }
+
+  const fetchWithSlug = async (targetSlug) => {
+    try {
+        const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${targetSlug}&limit=1`, { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }, cache: 'force-cache' });
+        if (res.ok) {
+           const data = await res.json();
+           if (data && data.length > 0) return data[0];
+        }
+    } catch (e) {}
+    return null;
+  };
+
+  let result = await fetchWithSlug(cleanSlug);
+  if (!result && cleanSlug !== vendorlessSlug) {
+      result = await fetchWithSlug(vendorlessSlug);
+  }
+  return result;
 });
 
 const getRelatedArticles = async (gpuA_Name, gpuB_Name) => {
