@@ -10,14 +10,14 @@ import { createClient } from '@supabase/supabase-js';
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; // 🚀 GURU: Import SEO generátoru
 
 /**
- * GURU CPU UPGRADE ENGINE - DETAIL V116.0 (CRITICAL TABLE NAME FIX)
- * 🚀 CÍL: Definitivní oprava 404 opravou názvu tabulky a relací v DB dotazu.
+ * GURU CPU UPGRADE ENGINE - DETAIL V116.1 (ULTRA SMART SEARCH FIX)
+ * 🚀 CÍL: Definitivní vyhubení 404 chyb pomocí ilike vyhledávání a ošetření relací.
  */
 
 export const runtime = "nodejs";
 export const revalidate = 86400; 
 
-// 🔥 GURU FIX: Povoleno dynamické generování chybějících stránek
+// 🔥 GURU FIX: Povoleno dynamické generování pro všechny cesty
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
@@ -25,7 +25,7 @@ export async function generateStaticParams() {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   if (!supabaseUrl) return [];
   try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/cpu_upgrades?select=slug&limit=10000`, {
+      const res = await fetch(`${supabaseUrl}/rest/v1/cpu_upgrades?select=slug&limit=1000`, {
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
           next: { revalidate: 86400 }
       });
@@ -57,14 +57,15 @@ const getUpgradeData = cache(async (slug) => {
   if (!supabaseUrl || !slug) return null;
   const cleanSlug = slug.replace(/^en-/, '');
   
-  // 🔥 GURU FIX: Správné aliasy pro CPU tabulku (old_cpu_id a new_cpu_id)
+  // 🔥 GURU FIX: Správné aliasy a select pro CPU upgrade
   const selectQuery = `*,oldCpu:cpus!old_cpu_id(*,cpu_game_fps!cpu_id(*)),newCpu:cpus!new_cpu_id(*,cpu_game_fps!cpu_id(*))`;
   
-  const performSearch = async (targetSlug) => {
+  const performSearch = async (targetSlug, method = 'eq') => {
+      const filter = method === 'eq' ? `slug=eq.${targetSlug}` : `slug=ilike.%${targetSlug}%`;
       try {
-          // 🔥 GURU FIX: Opraven název tabulky na cpu_upgrades!
-          const res = await fetch(`${supabaseUrl}/rest/v1/cpu_upgrades?select=${encodeURIComponent(selectQuery)}&slug=eq.${targetSlug}&limit=1`, {
-            headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }, cache: 'force-cache'
+          const res = await fetch(`${supabaseUrl}/rest/v1/cpu_upgrades?select=${encodeURIComponent(selectQuery)}&${filter}&limit=1`, {
+            headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }, 
+            cache: 'no-store' // 🛡️ Vypnutí cache pro hledání, ať nevidíme staré 404
           });
           if (res.ok) {
               const data = await res.json();
@@ -74,18 +75,28 @@ const getUpgradeData = cache(async (slug) => {
       return null;
   };
 
-  // 1. Zkusíme najít přesně to, co je v URL
-  let upgrade = await performSearch(cleanSlug);
-  if (upgrade) return upgrade;
+  // 1. Zkusíme přesnou shodu (amd-ryzen-7-5800x3d-to-amd-ryzen-7-9800x3d)
+  let result = await performSearch(cleanSlug, 'eq');
+  if (result) return result;
 
-  // 2. Pokud nic, ořežeme amd/intel a zkusíme znova
+  // 2. Ořežeme výrobce (ryzen-7-5800x3d-to-ryzen-7-9800x3d)
   const vendorlessSlug = cleanSlug.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '');
   if (vendorlessSlug !== cleanSlug) {
-      upgrade = await performSearch(vendorlessSlug);
-      if (upgrade) return upgrade;
+      result = await performSearch(vendorlessSlug, 'eq');
+      if (result) return result;
   }
 
-  return null;
+  // 3. Agresivní fuzzy vyhledávání přes LIKE (%ryzen-7-5800x3d-to-ryzen-7-9800x3d%)
+  result = await performSearch(vendorlessSlug, 'ilike');
+  if (result) return result;
+
+  // 4. Poslední záchrana - hledání podle názvu prvního CPU
+  const firstCpu = vendorlessSlug.split('-to-')[0];
+  if (firstCpu) {
+      result = await performSearch(firstCpu, 'ilike');
+  }
+
+  return result;
 });
 
 const getSimilarUpgrades = async (cpuId, currentSlug) => {
@@ -103,11 +114,15 @@ const getSimilarUpgrades = async (cpuId, currentSlug) => {
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const upgrade = await getUpgradeData(slug);
-  if (!upgrade) return { title: 'CPU Upgrade | The Hardware Guru' };
+  
+  if (!upgrade || !upgrade.oldCpu) {
+    return { title: 'CPU Upgrade Analysis | The Hardware Guru' };
+  }
+
   const isEn = slug?.startsWith('en-');
   const { oldCpu, newCpu } = upgrade;
   const { diff } = calculatePerf(oldCpu, newCpu);
-  return { title: isEn ? `Upgrade ${oldCpu.name} to ${newCpu.name} (+${diff}% Perf)` : `Upgrade z ${oldCpu.name} na ${newCpu.name} (+${diff} % výkon)` };
+  return { title: isEn ? `Upgrade ${oldCpu.name} to ${newCpu.name} (+${diff}% Perf)` : `Upgrade z ${oldCpu.name} na ${newCpu.name} (+${diff} % výkonu)` };
 }
 
 export default async function App({ params }) {
