@@ -11,10 +11,11 @@ import {
   Gauge,
   Crosshair
 } from 'lucide-react';
+import GuruAnalysisText from '../../../../components/GuruAnalysisText'; // 🚀 GURU: Přidán import
 
 /**
- * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.3 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Maximální vytěžení trafficu z CPU herních benchmarků skrze A-ADS.
+ * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.4 (SEO TEXT UPDATE)
+ * 🚀 CÍL: Přidán dynamický generátor textu pro odblokování Bing indexace.
  */
 
 export const runtime = "nodejs";
@@ -157,8 +158,19 @@ export default async function App(props) {
         <section style={{ marginBottom: '60px' }}>
             <div className="content-box-style">
                 <div className="guru-prose">
-                    <h2>{isEn ? `Performance Analysis` : `Analýza výkonu`}</h2>
-                    <p>{isEn ? `Accurate CPU processing benchmarks paired with RTX 5090.` : `Přesné CPU testy ve spojení s RTX 5090.`}</p>
+                    <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950' }}>{isEn ? `Performance Analysis` : `Analýza výkonu`}</h2>
+                    
+                    {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT NAHRAZUJE PŮVODNÍ KRÁTKÉ VĚTY */}
+                    <GuruAnalysisText 
+                      cpuName={cpu.name} 
+                      gpuName="GeForce RTX 5090" 
+                      gameName={gameSlug.replace(/-/g, ' ')} 
+                      resolution="1440p" 
+                      bottleneckPercent={0} // Protože je to čistý CPU test
+                      isCpuBound={false} 
+                      fps={fps1440p} 
+                      isEn={isEn} 
+                    />
                     
                     {/* 🔥 ADS SLOT #2: MID-CONTENT INJECTION */}
                     <div className="guru-cpu-fps-ad-slot" style={{ margin: '40px 0' }}>
@@ -167,7 +179,6 @@ export default async function App(props) {
                         <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
                     </div>
 
-                    <p>{isEn ? `The results reflect the pure processing power in ${gameSlug}.` : `Výsledky odrážejí čistý výkon procesoru v titulu ${gameSlug}.`}</p>
                 </div>
             </div>
         </section>
