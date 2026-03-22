@@ -3,10 +3,11 @@ import { notFound } from 'next/navigation';
 import { 
   ChevronLeft, Activity, Zap, ShieldCheck, AlertTriangle, ArrowRight, Cpu, Monitor, Gauge, CheckCircle2, Flame, Heart, Swords, PlugZap, Layers, Database, Info, BarChart3, Gamepad2, ArrowUpCircle, ShoppingCart
 } from 'lucide-react';
+import GuruAnalysisText from '../../../components/GuruAnalysisText'; // 🚀 GURU: Import dynamického generátoru textu
 
 /**
- * GURU BOTTLENECK ENGINE V22.4 (CRITICAL 500 & 404 FIX)
- * 🚀 CÍL: Neprůstřelné zachytávání prázdných polí ze Supabase a oprava vyhledávání komponent.
+ * GURU BOTTLENECK ENGINE V22.5 (DYNAMIC SEO TEXT UPDATE)
+ * 🚀 CÍL: Generování unikátního textu pro každou sestavu kvůli Bing SEO indexaci.
  */
 
 export const runtime = "nodejs";
@@ -364,6 +365,21 @@ export default async function BottleneckPage(props) {
                 </div>
                 )}
             </div>
+
+            {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT (VLOŽENO ZDE) */}
+            <div style={{ marginTop: '40px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '20px', textAlign: 'left' }}>
+              <GuruAnalysisText 
+                cpuName={cpu.name} 
+                gpuName={gpu.name} 
+                gameName={gameName || 'popular PC games'} 
+                resolution={displayResolution} 
+                bottleneckPercent={bottleneckScore} 
+                isCpuBound={isCpuBottleneck} 
+                fps={estimatedFps} 
+                isEn={isEn} 
+              />
+            </div>
+
         </section>
 
         {/* 🔥 ADS SLOT #2: BEZPEČNĚ VLOŽEN PŘED DOPORUČENÍ */}
