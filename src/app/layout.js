@@ -7,23 +7,20 @@ import SupportWidget from '../components/SupportWidget';
 import Navbar from '../components/Navbar'; 
 import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
-import ShareWidget from '../components/ShareWidget'; // 🚀 Přidán import ShareWidgetu
+import ShareWidget from '../components/ShareWidget';
 
 /**
- * GURU ROOT LAYOUT V5.6 (VIRAL WIDGET UPDATE)
- * 🚀 CÍL: Globální unikátnost titulků a přidání globálního Share Widgetu.
+ * GURU ROOT LAYOUT V5.8 (ONESIGNAL APP ID FIX + WIDGET)
+ * 🚀 CÍL: Pevně vložené OneSignal App ID a Share Widget.
  */
 
 export const metadata = {
   title: {
-    // 🔥 FIX: Změněno na unikátnější základ, aby se nepletl s Home Page
     default: 'Hardware Guru | PC Benchmarks, Tech News & AI Tools',
-    // 🔥 FIX: %s vloží titulek z page.js, zbytek je unikátní přípona
     template: '%s | Hardware Guru'
   },
   description: 'Exkluzivní novinky ze světa hardwaru, recenze her a streamy s unikátní AI.',
   metadataBase: new URL('https://thehardwareguru.cz'),
-  // 🔥 FIX: Globální Canonical URL pro zamezení duplicit v Bingu (www vs non-www)
   alternates: {
     canonical: '/',
   },
@@ -91,6 +88,19 @@ export default async function RootLayout({ children, params }) {
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Novinky" href="https://thehardwareguru.cz/rss.xml" />
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Srovnání" href="https://thehardwareguru.cz/rss-comparisons.xml" />
         
+        {/* 🔥 ONESIGNAL NOTIFIKACE (VRÁCENO ZPĚT S APP ID) 🔥 */}
+        <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="afterInteractive" />
+        <Script id="onesignal-init" strategy="afterInteractive">
+          {`
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            OneSignalDeferred.push(async function(OneSignal) {
+              await OneSignal.init({
+                appId: "1ea5ad89-5f3e-4922-b2c8-e8cd05304047",
+              });
+            });
+          `}
+        </Script>
+
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-9W5FBC9P68" strategy="afterInteractive" />
         <Script id="google-analytics" strategy="afterInteractive">
           {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-9W5FBC9P68');`}
@@ -108,7 +118,7 @@ export default async function RootLayout({ children, params }) {
         <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden' }}>
           {children}
 
-          {/* 🚀 GURU VIRÁLNÍ WIDGET PRO CELÝ WEB (VLOŽENO ZDE) */}
+          {/* 🚀 GURU VIRÁLNÍ WIDGET PRO CELÝ WEB */}
           <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
              <ShareWidget isEn={isEn} />
           </div>
