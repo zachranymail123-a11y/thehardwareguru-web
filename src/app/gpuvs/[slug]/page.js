@@ -5,10 +5,11 @@ import {
   BarChart3, Gamepad2, Coins, CheckCircle2, Swords, Flame, Heart, 
   Monitor, ExternalLink, Info, HelpCircle
 } from 'lucide-react';
+import GuruGpuCompareText from '../../../components/GuruGpuCompareText'; // 🚀 GURU: Import SEO generátoru
 
 /**
- * GURU GPU DUELS ENGINE - V5.6 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Maximální zisk z nejnavštěvovanějších stránek webu skrze A-ADS.
+ * GURU GPU DUELS ENGINE - V5.7 (SEO TEXT UPDATE)
+ * 🚀 CÍL: Přidán dynamický SEO generátor textu pro odstranění "Thin Content" hlášky z Bingu.
  */
 
 export const runtime = "nodejs";
@@ -106,6 +107,9 @@ export default async function GpuVsDetailPage(props) {
   const loser = perfA > perfB ? gpuB : gpuA;
   const finalPerfDiff = Math.round((Math.max(perfA, perfB) / Math.min(perfA, perfB) - 1) * 100);
 
+  // Výpočet rozdílu výkonu s ohledem na to, kdo je gpuA a gpuB pro komponentu
+  const perfDiffForComponent = perfA > perfB ? -finalPerfDiff : finalPerfDiff;
+
   const getSafeGpuSlug = (gpu) => gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
   const getVendorColor = (vendor) => {
     const v = (vendor || '').toUpperCase();
@@ -192,6 +196,16 @@ export default async function GpuVsDetailPage(props) {
             <div className="guru-prose">
               <h3>{isEn ? 'Gaming Benchmark' : 'Herní Benchmarking'}</h3>
               <p>{isEn ? `The ${winner.name} delivers ${finalPerfDiff}% more power.` : `Karta ${winner.name} poskytuje o ${finalPerfDiff}% vyšší výkon.`}</p>
+              
+              {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT (VLOŽENO ZDE) */}
+              <GuruGpuCompareText 
+                  gpu1Name={normalizeName(gpuA.name)} 
+                  gpu2Name={normalizeName(gpuB.name)} 
+                  perfDiff={perfDiffForComponent} 
+                  gpu1Vram={gpuA.vram_gb} 
+                  gpu2Vram={gpuB.vram_gb} 
+                  isEn={isEn} 
+              />
               
               {/* 🔥 ADS SLOT #2: MEZI ODSTAVCI ANALÝZY */}
               <div className="guru-vs-ad-slot" style={{ margin: '40px 0' }}>
