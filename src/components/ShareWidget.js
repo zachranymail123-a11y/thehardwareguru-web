@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Award, Share2, Check } from 'lucide-react';
+import { Award, Share2, Check, Bell, Bookmark } from 'lucide-react';
 
 // 🚀 Bezpečné ikony pro zabránění pádu React hydratace
 const XIcon = () => (
@@ -20,7 +20,6 @@ export default function ShareWidget({ isEn = false }) {
   const [copied, setCopied] = useState(false);
   const [currentUrl, setCurrentUrl] = useState('');
 
-  // Automaticky si zjistí URL adresu, na které zrovna widget leží
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setCurrentUrl(window.location.href);
@@ -40,6 +39,33 @@ export default function ShareWidget({ isEn = false }) {
     }
   };
 
+  // 🔥 Trigger pro OneSignal notifikace
+  const handleSubscribe = () => {
+    if (typeof window !== 'undefined' && window.OneSignalDeferred) {
+      window.OneSignalDeferred.push(function(OneSignal) {
+        OneSignal.showSlidedownPrompt();
+      });
+    } else {
+      alert(isEn ? "Push notifications are loading, please try again in a moment." : "Systém notifikací se načítá, zkuste to za chvíli.");
+    }
+  };
+
+  // 🔥 Logika pro Záložky
+  const handleBookmark = () => {
+    if (typeof window !== 'undefined') {
+      const os = navigator.userAgent.toLowerCase();
+      const isMac = os.includes('mac');
+      const isMobile = os.includes('mobi') || os.includes('android');
+      
+      if (isMobile) {
+        alert(isEn ? "Tap the menu button in your browser and select 'Add to Bookmarks'." : "Klikněte na menu v prohlížeči a vyberte 'Přidat do záložek'.");
+      } else {
+        const shortcut = isMac ? 'Cmd + D' : 'Ctrl + D';
+        alert(isEn ? `Press ${shortcut} to save this page to your bookmarks!` : `Pro uložení do záložek stiskněte ${shortcut} !`);
+      }
+    }
+  };
+
   const titleText = isEn 
     ? "Check out this PC setup and hardware benchmark!" 
     : "Zkoukni tuhle sestavu a HW benchmark!";
@@ -52,12 +78,19 @@ export default function ShareWidget({ isEn = false }) {
         <div className="sw-left">
             <div className="sw-icon"><Award size={32} color="#a855f7" /></div>
             <div className="sw-texts">
-                <div className="sw-title">{isEn ? 'SHARE THIS WEBSITE' : 'SDÍLET TENTO WEB'}</div>
+                <div className="sw-title">{isEn ? 'SHARE & FOLLOW' : 'SDÍLET & ODEBÍRAT'}</div>
                 <div className="sw-sub">{isEn ? 'Help other geeks find the truth' : 'Pomoz ostatním geekům najít pravdu'}</div>
             </div>
         </div>
         
         <div className="sw-buttons">
+            <button onClick={handleSubscribe} className="sw-btn sw-bell" title={isEn ? "Subscribe to Notifications" : "Odebírat novinky"}>
+                <Bell size={20} fill="currentColor" />
+            </button>
+            <button onClick={handleBookmark} className="sw-btn sw-bookmark" title={isEn ? "Bookmark this page" : "Přidat do záložek"}>
+                <Bookmark size={20} fill="currentColor" />
+            </button>
+            <div className="sw-divider"></div>
             <button onClick={handleCopyShare} className="sw-btn sw-copy" title={isEn ? "Copy Link" : "Kopírovat odkaz"}>
                 {copied ? <Check size={20} /> : <Share2 size={20} />}
             </button>
@@ -82,21 +115,28 @@ export default function ShareWidget({ isEn = false }) {
             .sw-texts { display: flex; flex-direction: column; }
             .sw-title { font-weight: 950; font-size: 20px; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
             .sw-sub { color: #a855f7; font-weight: bold; font-size: 14px; }
-            .sw-buttons { display: flex; gap: 12px; }
+            
+            .sw-buttons { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+            .sw-divider { width: 1px; height: 40px; background: rgba(255,255,255,0.1); margin: 0 5px; }
+            
             .sw-btn { 
-                width: 60px; height: 60px; border-radius: 18px; border: none; cursor: pointer; 
+                width: 55px; height: 55px; border-radius: 16px; border: none; cursor: pointer; 
                 color: #fff; display: flex; align-items: center; justify-content: center; 
                 transition: 0.3s; text-decoration: none; 
             }
             .sw-btn:hover { filter: brightness(1.2); transform: translateY(-3px); }
-            .sw-copy { background: #a855f7; }
-            .sw-x { background: #000; border: 1px solid #333; }
-            .sw-reddit { background: #ff4500; }
+            
+            .sw-bell { background: #3b82f6; box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3); }
+            .sw-bookmark { background: #eab308; color: #000; box-shadow: 0 5px 15px rgba(234, 179, 8, 0.3); }
+            .sw-copy { background: #a855f7; box-shadow: 0 5px 15px rgba(168, 85, 247, 0.3); }
+            .sw-x { background: #000; border: 1px solid rgba(255,255,255,0.1); }
+            .sw-reddit { background: #ff4500; box-shadow: 0 5px 15px rgba(255, 69, 0, 0.3); }
 
-            @media (max-width: 600px) {
+            @media (max-width: 768px) {
                 .share-widget-global { flex-direction: column; text-align: center; justify-content: center; padding: 25px 20px; gap: 20px; }
                 .sw-left { flex-direction: column; gap: 10px; }
                 .sw-buttons { width: 100%; justify-content: center; }
+                .sw-divider { display: none; }
             }
         `}} />
     </div>
