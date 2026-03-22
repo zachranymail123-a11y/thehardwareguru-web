@@ -6,8 +6,8 @@ import {
 } from 'lucide-react';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER HUB V67.1 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Maximální monetizace GPU Hubu skrze A-ADS bez narušení UX.
+ * GURU GPU DUELS ENGINE - MASTER HUB V67.2 (SLUG CLEANUP UPDATE)
+ * 🚀 CÍL: Odstranění "geforce/radeon" z generovaných URL pro eliminaci 404.
  */
 
 export default function GpuVsHub() {
@@ -57,13 +57,25 @@ export default function GpuVsHub() {
     loadData();
   }, [isEn]);
 
-  const slugify = (text) => text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").trim();
+  // 🔥 GURU FIX: Slugify nyní čistí jména od výrobců, aby odpovídala slugům v DB
+  const slugify = (text) => text
+    .toLowerCase()
+    .replace(/nvidia|amd|geforce|radeon|intel|graphics|gpu/gi, "") // Odstraní balast
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9\-]/g, "")
+    .replace(/\-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .trim();
 
   const handleStartDuel = () => {
     if (!gpuA || !gpuB || gpuA === gpuB) return;
     const cardA = gpus.find(g => String(g.id) === gpuA);
     const cardB = gpus.find(g => String(g.id) === gpuB);
     if (!cardA || !cardB) return;
+    
+    // Generujeme čistý slug bez "geforce-rtx-" atd.
     const rawSlug = `${slugify(cardA.name)}-vs-${slugify(cardB.name)}`;
     window.location.href = isEn ? `/en/gpuvs/en-${rawSlug}` : `/gpuvs/${rawSlug}`;
   };
@@ -89,7 +101,6 @@ export default function GpuVsHub() {
         .compact-duel-item { background: rgba(15, 17, 21, 0.7); border: 1px solid rgba(255,255,255,0.05); padding: 14px 18px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; transition: 0.3s; }
         .compact-duel-item:hover { transform: translateX(5px); border-color: #66fcf1; }
 
-        /* Reklamní sloty */
         .hub-ad-slot { margin: 30px 0; padding: 15px; background: rgba(102, 252, 241, 0.03); border: 1px solid rgba(102, 252, 241, 0.1); border-radius: 20px; text-align: center; }
         .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
         .ad-desktop { display: block; } .ad-mobile { display: none; }
@@ -113,7 +124,6 @@ export default function GpuVsHub() {
           </p>
         </header>
 
-        {/* 🔥 TOP AD SLOT: POD HLAVIČKOU */}
         <div className="hub-ad-slot">
             <span className="ad-label">Advertisement</span>
             <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
@@ -148,7 +158,6 @@ export default function GpuVsHub() {
                 </a>
               ))}
 
-              {/* 🔥 SIDEBAR AD SLOT: POD HISTORIÍ */}
               <div className="hub-ad-slot" style={{ marginTop: '20px' }}>
                   <span className="ad-label">Sponsored Hardware</span>
                   <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
