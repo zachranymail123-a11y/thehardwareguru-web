@@ -19,17 +19,15 @@ import {
   ExternalLink,
   Info
 } from 'lucide-react';
-import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; // 🚀 GURU: Import SEO generátoru
+import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; 
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V74.6 (FINAL SLUG & SMART SEARCH FIX)
- * 🚀 CÍL: Odstranění 404 chyb díky inteligentnímu čištění slugů.
+ * GURU CPU DUELS ENGINE - DETAIL V74.7 (ULTRA SMART SEARCH FIX)
+ * 🚀 CÍL: Absolutní eliminace 404 chyb pomocí ilike vyhledávání a ošetření metadat.
  */
 
 export const runtime = "nodejs";
 export const revalidate = 86400; 
-
-// 🔥 GURU FIX: Povoleno dynamické generování chybějících stránek
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
@@ -82,12 +80,16 @@ const getSimilarDuels = async (cpuId, currentSlug) => {
 const getDuelData = cache(async (slug) => {
   if (!supabaseUrl || !slug) return null;
   const cleanSlug = slug.replace(/^en-/, '');
-  
   const selectQuery = `*,cpuA:cpus!cpu_a_id(*),cpuB:cpus!cpu_b_id(*)`;
 
-  const performSearch = async (targetSlug) => {
+  // Pomocná funkce pro vyhledávání
+  const performSearch = async (targetSlug, method = 'eq') => {
+    const filter = method === 'eq' ? `slug=eq.${targetSlug}` : `slug.ilike.*${targetSlug}*`;
     try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${targetSlug}&limit=1`, { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, cache: 'force-cache' });
+        const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&${filter}&limit=1`, { 
+          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, 
+          cache: 'force-cache' 
+        });
         if (res.ok) {
            const data = await res.json();
            if (data && data.length > 0) return data[0];
@@ -96,15 +98,19 @@ const getDuelData = cache(async (slug) => {
     return null;
   };
 
-  // 1. První pokus: přesná shoda (např. amd-ryzen-7-7700x-vs-amd-ryzen-5-9600x)
-  let result = await performSearch(cleanSlug);
+  // 1. Přesná shoda
+  let result = await performSearch(cleanSlug, 'eq');
   if (result) return result;
 
-  // 2. Druhý pokus: ořezaná shoda bez značek výrobců (např. ryzen-7-7700x-vs-ryzen-5-9600x)
+  // 2. Ořezaná shoda (bez výrobců)
   const vendorlessSlug = cleanSlug.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '');
   if (vendorlessSlug !== cleanSlug) {
-      result = await performSearch(vendorlessSlug);
+      result = await performSearch(vendorlessSlug, 'eq');
+      if (result) return result;
   }
+
+  // 3. Agresivní vyhledávání (ilike)
+  result = await performSearch(vendorlessSlug, 'ilike');
   
   return result;
 });
@@ -112,7 +118,12 @@ const getDuelData = cache(async (slug) => {
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const duel = await getDuelData(slug);
-  if (!duel) return { title: '404 | The Hardware Guru' };
+  
+  // 🔥 GURU SEO FIX: Pokud duel neexistuje, nevracet notFound() hned v metadatech, ale vrátit bezpečný fallback
+  if (!duel || !duel.cpuA) {
+    return { title: 'CPU Comparison | The Hardware Guru' };
+  }
+
   const isEn = slug?.startsWith('en-');
   const { cpuA, cpuB } = duel;
   const canonicalUrl = `${baseUrl}/cpuvs/${duel.slug}`;
@@ -157,7 +168,6 @@ export default async function CpuDuelDetail({ params }) {
     }
   }
 
-  // Příprava dat pro SEO komponentu
   let perfDiffForComponent = 0;
   if (hasPerfData) {
       perfDiffForComponent = cpuA.performance_index > cpuB.performance_index ? -perfDiff : perfDiff;
