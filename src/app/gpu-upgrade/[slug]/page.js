@@ -8,8 +8,8 @@ import {
 import GuruGpuCompareText from '../../../components/GuruGpuCompareText';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V120.8 (WILDCARD FIX)
- * 🚀 CÍL: Totální eliminace 404 chyb pomocí správného * wildcard vyhledávání.
+ * GURU GPU UPGRADE ENGINE - DETAIL V120.9 (SPLIT SEARCH FIX)
+ * 🚀 CÍL: Oprava 404 na URL s -8gb a -geforce- pomocí rozdělení slugu.
  */
 
 export const runtime = "nodejs";
@@ -42,12 +42,11 @@ const getUpgradeData = cache(async (rawSlug) => {
   const cleanSlug = rawSlug.replace(/^en-/, '');
   const selectQuery = `*,oldGpu:gpus!old_gpu_id(*,game_fps!gpu_id(*)),newGpu:gpus!new_gpu_id(*,game_fps!gpu_id(*))`;
 
-  const performSearch = async (targetSlug, mode = 'eq') => {
-    // 🔥 GURU FIX: Supabase REST API vyžaduje * jako wildcard. % by rozbilo URL!
-    const filter = mode === 'eq' ? `slug=eq.${targetSlug}` : `slug=ilike.*${targetSlug}*`;
+  // 🔥 GURU FIX: Funkce teď bere celý filtr pro složitější dotazy s AND
+  const performSearch = async (filterStr) => {
     try {
       const res = await fetch(
-        `${supabaseUrl}/rest/v1/gpu_upgrades?select=${encodeURIComponent(selectQuery)}&${filter}&limit=1`,
+        `${supabaseUrl}/rest/v1/gpu_upgrades?select=${encodeURIComponent(selectQuery)}&${filterStr}&limit=1`,
         {
           headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
           cache: 'no-store' 
@@ -62,25 +61,28 @@ const getUpgradeData = cache(async (rawSlug) => {
     }
   };
 
-  // 1️⃣ exact shoda
-  let result = await performSearch(cleanSlug, 'eq');
+  // 1️⃣ Přesná shoda
+  let result = await performSearch(`slug=eq.${cleanSlug}`);
   if (result) return result;
 
-  // 2️⃣ bez výrobců
-  const vendorless = cleanSlug.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '');
-  if (vendorless !== cleanSlug) {
-    result = await performSearch(vendorless, 'eq');
-    if (result) return result;
-  }
-
-  // 3️⃣ fuzzy vyhledávání (*slug*)
-  result = await performSearch(vendorless, 'ilike');
-  if (result) return result;
-
-  // 4️⃣ fallback podle první grafiky
-  const first = vendorless.split('-to-')[0];
-  if (first) {
-    result = await performSearch(first, 'ilike');
+  // 2️⃣ Rozdělení na dvě části (vyřeší problém s -8gb a prostředním vendorem)
+  const parts = cleanSlug.split('-to-');
+  if (parts.length === 2) {
+      // Odstraníme výrobce a kapacitu VRAM
+      const cleanPart = (p) => p.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '').replace(/-[0-9]+gb/gi, '').trim();
+      const p1 = cleanPart(parts[0]);
+      const p2 = cleanPart(parts[1]);
+      
+      if (p1 && p2) {
+          // AND: Slug musí obsahovat starou I novou grafiku
+          result = await performSearch(`and=(slug.ilike.*${p1}*,slug.ilike.*${p2}*)`);
+          if (result) return result;
+      }
+      
+      // 3️⃣ Fallback jen na první grafiku
+      if (p1) {
+          result = await performSearch(`slug=ilike.*${p1}*`);
+      }
   }
 
   return result;
