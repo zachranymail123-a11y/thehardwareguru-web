@@ -1,30 +1,11 @@
 import React, { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { 
-  ChevronLeft, 
-  ShieldCheck, 
-  Flame, 
-  Heart, 
-  Swords, 
-  Calendar,
-  Trophy,
-  Zap,
-  Cpu,
-  Activity,
-  BarChart3,
-  Gamepad2,
-  LayoutList,
-  TrendingUp,
-  ArrowRight,
-  ExternalLink,
-  Info
+  ChevronLeft, ShieldCheck, Flame, Heart, Swords, Calendar,
+  Trophy, Zap, Cpu, Activity, BarChart3, Gamepad2, LayoutList,
+  TrendingUp, ArrowRight, ExternalLink, Info
 } from 'lucide-react';
-import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; // 🚀 GURU: SEO generátor
-
-/**
- * GURU CPU DUELS ENGINE - DETAIL V75.2 (BACKUP DESIGN + SMART SEARCH)
- * 🚀 CÍL: Návrat k tvému originálnímu UI + definitivní fix 404 chyb.
- */
+import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; 
 
 export const runtime = "nodejs";
 export const revalidate = 86400; 
@@ -35,7 +16,7 @@ export async function generateStaticParams() {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   if (!supabaseUrl) return [];
   try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=slug&limit=1000`, {
+      const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=slug&limit=10000`, {
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
           next: { revalidate: 86400 }
       });
@@ -52,42 +33,6 @@ const baseUrl = "https://thehardwareguru.cz";
 const slugify = (text) => text ? text.toLowerCase().replace(/processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 const normalizeName = (name = '') => name.replace(/Intel |AMD |Ryzen |Core /gi, '');
 
-const getDuelData = cache(async (slug) => {
-  if (!supabaseUrl || !slug) return null;
-  const cleanSlug = slug.replace(/^en-/, '');
-  const selectQuery = `*,cpuA:cpus!cpu_a_id(*,cpu_game_fps!cpu_id(*)),cpuB:cpus!cpu_b_id(*,cpu_game_fps!cpu_id(*))`;
-  const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
-
-  const performSearch = async (targetSlug, method = 'eq') => {
-    const filter = method === 'eq' ? `slug=eq.${targetSlug}` : `slug=ilike.%${targetSlug}%`;
-    try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&${filter}&limit=1`, { 
-          headers, cache: 'no-store' 
-        });
-        if (res.ok) {
-           const data = await res.json();
-           if (data && data.length > 0) return data[0];
-        }
-    } catch (e) {}
-    return null;
-  };
-
-  // 1. Přesná shoda
-  let result = await performSearch(cleanSlug, 'eq');
-  if (result) return result;
-
-  // 2. Ořezaná shoda (bez amd-/intel-)
-  const vendorless = cleanSlug.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '');
-  if (vendorless !== cleanSlug) {
-      result = await performSearch(vendorless, 'eq');
-      if (result) return result;
-  }
-
-  // 3. Agresivní fuzzy vyhledávání (Supabase % wildcard)
-  result = await performSearch(vendorless, 'ilike');
-  return result;
-});
-
 const getRelatedArticles = async (cpuA, cpuB) => {
     if (!supabaseUrl) return [];
     const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
@@ -96,7 +41,11 @@ const getRelatedArticles = async (cpuA, cpuB) => {
     try {
         const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.%${encodeURIComponent(nameA)}%,title.ilike.%${encodeURIComponent(nameB)}%)&order=created_at.desc&limit=3`, { headers, cache: 'force-cache' });
         const data = await res.json();
-        return Array.isArray(data) ? data : [];
+        if (!data || data.length === 0) {
+            const resLatest = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&type=eq.hardware&order=created_at.desc&limit=3`, { headers, cache: 'force-cache' });
+            return await resLatest.json();
+        }
+        return data;
     } catch (e) { return []; }
 };
 
@@ -109,20 +58,67 @@ const getSimilarDuels = async (cpuId, currentSlug) => {
     } catch (e) { return []; }
 };
 
-export async function generateMetadata({ params }) {
-  const { slug } = params; // FIX: params není Promise
+const getDuelData = cache(async (slug) => {
+  if (!supabaseUrl || !slug) return null;
+  const cleanSlug = slug.replace(/^en-/, '');
+  
+  const selectQuery = `*,cpuA:cpus!cpu_a_id(*),cpuB:cpus!cpu_b_id(*)`;
+
+  const performSearch = async (targetSlug, method = 'eq') => {
+    // 🔥 GURU FIX: PostgREST REST API vyžaduje * jako wildcard. % by rozbilo URL!
+    const filter = method === 'eq' ? `slug=eq.${targetSlug}` : `slug=ilike.*${targetSlug}*`;
+    try {
+        const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&${filter}&limit=1`, { 
+          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, 
+          cache: 'no-store' 
+        });
+        if (res.ok) {
+           const data = await res.json();
+           if (data && data.length > 0) return data[0];
+        }
+    } catch (e) {}
+    return null;
+  };
+
+  // 1. První pokus: přesná shoda
+  let result = await performSearch(cleanSlug, 'eq');
+  if (result) return result;
+
+  // 2. Druhý pokus: ořezaná shoda bez značek výrobců
+  const vendorlessSlug = cleanSlug.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '');
+  if (vendorlessSlug !== cleanSlug) {
+      result = await performSearch(vendorlessSlug, 'eq');
+      if (result) return result;
+  }
+
+  // 3. Třetí pokus: Fuzzy vyhledávání (*)
+  result = await performSearch(vendorlessSlug, 'ilike');
+  if (result) return result;
+
+  // 4. Poslední záchrana - hledání pouze podle části názvu prvního CPU
+  const firstPart = vendorlessSlug.split('-vs-')[0];
+  if (firstPart) {
+      result = await performSearch(firstPart, 'ilike');
+  }
+  
+  return result;
+});
+
+export async function generateMetadata(props) {
+  const { slug } = props.params;
   const duel = await getDuelData(slug);
-  if (!duel) return { title: 'CPU Comparison | The Hardware Guru' };
+  if (!duel) return { title: '404 | The Hardware Guru' };
   const isEn = slug?.startsWith('en-');
+  const { cpuA, cpuB } = duel;
   const canonicalUrl = `${baseUrl}/cpuvs/${duel.slug}`;
   return { 
-    title: isEn ? `${duel.cpuA.name} vs ${duel.cpuB.name} | The Hardware Guru` : `${duel.cpuA.name} vs ${duel.cpuB.name} | The Hardware Guru`,
-    alternates: { canonical: canonicalUrl, languages: { "en": `${baseUrl}/en/cpuvs/${duel.slug}`, "cs": canonicalUrl } }
+    title: isEn ? `${cpuA.name} vs ${cpuB.name} | The Hardware Guru` : `${cpuA.name} vs ${cpuB.name} | The Hardware Guru`,
+    alternates: { canonical: canonicalUrl, languages: { "en": `${baseUrl}/en/cpuvs/${(duel.slug_en || `en-${duel.slug}`).replace(/^en-en-/,'en-')}`, "cs": canonicalUrl } }
   };
 }
 
-export default async function CpuDuelDetail({ params }) {
-  const { slug } = params; // FIX: params není Promise
+export default async function CpuDuelDetail(props) {
+  const { slug } = props.params;
   const duel = await getDuelData(slug);
   
   if (!duel) notFound();
