@@ -7,6 +7,11 @@ import {
 } from 'lucide-react';
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; 
 
+/**
+ * GURU CPU DUELS ENGINE - DETAIL V75.0 (WILDCARD FIX & BOTTLENECK LINK)
+ * 🚀 CÍL: Fix 404 chyb pomocí * vyhledávání + doplněn odkaz na Bottleneck.
+ */
+
 export const runtime = "nodejs";
 export const revalidate = 86400; 
 export const dynamicParams = true;
@@ -64,9 +69,11 @@ const getDuelData = cache(async (slug) => {
   
   const selectQuery = `*,cpuA:cpus!cpu_a_id(*),cpuB:cpus!cpu_b_id(*)`;
 
-  const performSearch = async (filterStr) => {
+  const performSearch = async (targetSlug, method = 'eq') => {
+    // 🔥 GURU FIX: Supabase REST API vyžaduje * jako wildcard.
+    const filter = method === 'eq' ? `slug=eq.${targetSlug}` : `slug=ilike.*${targetSlug}*`;
     try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&${filterStr}&limit=1`, { 
+        const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&${filter}&limit=1`, { 
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, 
           cache: 'no-store' 
         });
@@ -79,29 +86,26 @@ const getDuelData = cache(async (slug) => {
   };
 
   // 1. Přesná shoda
-  let result = await performSearch(`slug=eq.${cleanSlug}`);
+  let result = await performSearch(cleanSlug, 'eq');
   if (result) return result;
 
-  // 2. ROZDĚL A PANUJ (Eliminace prostředního balastu jako "-vs-amd-ryzen-")
-  const parts = cleanSlug.split('-vs-');
-  if (parts.length === 2) {
-      // Očistíme obě strany od výrobců
-      const cleanPart = (p) => p.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '').trim();
-      const p1 = cleanPart(parts[0]);
-      const p2 = cleanPart(parts[1]);
-      
-      if (p1 && p2) {
-          // AND operátor: slug musí obsahovat P1 A ZÁROVEŇ P2
-          result = await performSearch(`and=(slug.ilike.*${p1}*,slug.ilike.*${p2}*)`);
-          if (result) return result;
-      }
-      
-      // 3. Fallback jen na první CPU
-      if (p1) {
-          result = await performSearch(`slug=ilike.*${p1}*`);
-      }
+  // 2. Ořezaná shoda bez značek výrobců
+  const vendorlessSlug = cleanSlug.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '');
+  if (vendorlessSlug !== cleanSlug) {
+      result = await performSearch(vendorlessSlug, 'eq');
+      if (result) return result;
   }
 
+  // 3. Fuzzy vyhledávání (*)
+  result = await performSearch(vendorlessSlug, 'ilike');
+  if (result) return result;
+
+  // 4. Poslední záchrana - hledání podle názvu prvního CPU
+  const firstPart = vendorlessSlug.split('-vs-')[0];
+  if (firstPart) {
+      result = await performSearch(firstPart, 'ilike');
+  }
+  
   return result;
 });
 
@@ -247,6 +251,17 @@ export default async function CpuDuelDetail(props) {
                  </div>
                ))}
           </div>
+        </section>
+
+        {/* 🚀 BOTTLENECK CHECK BANNER (DOPLNĚNO ZPĚT!) */}
+        <section style={{ marginBottom: '60px' }}>
+            <div style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                <div>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase' }}>{isEn ? 'BOTTLENECK CHECK' : 'KONTROLA BOTTLENECKU'}</h3>
+                    <p style={{ color: '#9ca3af', margin: 0 }}>{isEn ? `Will your GPU handle the ${normalizeName((perfWinner || cpuA).name)}?` : `Bude tvá grafika stačit na procesor ${normalizeName((perfWinner || cpuA).name)}?`}</p>
+                </div>
+                <a href={isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka'} style={{ background: 'transparent', border: '2px solid #f59e0b', color: '#f59e0b', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase' }}>{isEn ? 'VERIFY' : 'OVĚŘIT'}</a>
+            </div>
         </section>
 
         {relatedArticles.length > 0 && (
