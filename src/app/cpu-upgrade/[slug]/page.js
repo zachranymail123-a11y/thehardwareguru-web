@@ -26,14 +26,15 @@ import { createClient } from '@supabase/supabase-js';
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; // 🚀 GURU: Import SEO generátoru
 
 /**
- * GURU CPU UPGRADE ENGINE - DETAIL V115.6 (SEO TEXT UPDATE)
- * 🚀 CÍL: Přidán dynamický SEO generátor textu pro odstranění "Thin Content" hlášky z Bingu.
+ * GURU CPU UPGRADE ENGINE - DETAIL V115.7 (DYNAMIC PARAMS FIX)
+ * 🚀 CÍL: Povoleno dynamické generování chybějících stránek.
  */
 
 export const runtime = "nodejs";
 export const revalidate = 86400; 
 
-export const dynamicParams = false;
+// 🔥 GURU FIX: Nastaveno na true, aby to neházelo 404 u nevygenerovaných URL!
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
