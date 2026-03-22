@@ -5,27 +5,25 @@ import {
   BarChart3, Gamepad2, Coins, CheckCircle2, Swords, Flame, Heart, 
   Monitor, ExternalLink, Info, HelpCircle
 } from 'lucide-react';
-import GuruGpuCompareText from '../../../components/GuruGpuCompareText'; // 🚀 GURU: Import SEO generátoru
+import GuruGpuCompareText from '../../../components/GuruGpuCompareText'; 
 
 /**
- * GURU GPU DUELS ENGINE - DETAIL V5.9 (BACKUP DESIGN + SMART SEARCH FIX)
- * 🚀 CÍL: Návrat k původnímu UI + oprava 404 pomocí % wildcard vyhledávání.
+ * GURU GPU DUELS ENGINE - V5.10 (ULTRA SMART SEARCH FIX)
+ * 🚀 CÍL: Odstranění 404 přes * wildcard hledání, zachován tvůj design.
  */
 
 export const runtime = "nodejs";
 export const revalidate = 86400; 
-export const dynamicParams = true;
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const baseUrl = "https://thehardwareguru.cz";
+export const dynamicParams = true; 
 
 export async function generateStaticParams() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   if (!supabaseUrl) return [];
-  const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
   try {
       const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=slug&limit=1000`, {
-          headers, next: { revalidate: 86400 }
+          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
+          next: { revalidate: 86400 }
       });
       if (!res.ok) return [];
       const duels = await res.json();
@@ -33,18 +31,23 @@ export async function generateStaticParams() {
   } catch (e) { return []; }
 }
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const baseUrl = "https://thehardwareguru.cz";
+
 const slugify = (text) => text ? text.toLowerCase().replace(/graphics|gpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon |Intel /gi, '');
 
-const getDuelData = cache(async (slug) => {
-  if (!supabaseUrl || !slug) return null;
-  const cleanSlug = slug.replace(/^en-/, '');
+const getDuelData = cache(async (rawSlug) => {
+  if (!supabaseUrl || !rawSlug) return null;
+  const cleanSlug = rawSlug.replace(/^en-/, '');
+
   const selectQuery = `*,gpuA:gpus!gpu_a_id(*,game_fps!gpu_id(*)),gpuB:gpus!gpu_b_id(*,game_fps!gpu_id(*))`;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
 
   const performSearch = async (targetSlug, method = 'eq') => {
-    // 🔥 GURU FIX: Supabase REST API vyžaduje % pro ilike
-    const filter = method === 'eq' ? `slug=eq.${targetSlug}` : `slug=ilike.%${targetSlug}%`;
+    // 🔥 GURU FIX: Supabase REST API vyžaduje * pro ilike. % rozbíjí parser URL.
+    const filter = method === 'eq' ? `slug=eq.${targetSlug}` : `slug=ilike.*${targetSlug}*`;
     try {
         const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=${encodeURIComponent(selectQuery)}&${filter}&limit=1`, { 
           headers, cache: 'no-store' 
@@ -68,7 +71,7 @@ const getDuelData = cache(async (slug) => {
       if (result) return result;
   }
 
-  // 3. Agresivní fuzzy vyhledávání (%)
+  // 3. Agresivní fuzzy vyhledávání (*)
   result = await performSearch(vendorless, 'ilike');
   if (result) return result;
 
@@ -87,21 +90,15 @@ const getRelatedArticles = async (gpuA_Name, gpuB_Name) => {
     const nameA = normalizeName(gpuA_Name || '');
     const nameB = normalizeName(gpuB_Name || '');
     try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.%${encodeURIComponent(nameA)}%,title_en.ilike.%${encodeURIComponent(nameA)}%,title.ilike.%${encodeURIComponent(nameB)}%,title_en.ilike.%${encodeURIComponent(nameB)}%)&order=created_at.desc&limit=3`, { headers, cache: 'force-cache' });
+        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.*${encodeURIComponent(nameA)}*,title_en.ilike.*${encodeURIComponent(nameA)}*,title.ilike.*${encodeURIComponent(nameB)}*,title_en.ilike.*${encodeURIComponent(nameB)}*)&order=created_at.desc&limit=3`, { headers, cache: 'force-cache' });
         let data = [];
         if (res.ok) data = await res.json();
+        if (!data || data.length === 0) {
+            const resLatest = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&type=eq.hardware&order=created_at.desc&limit=3`, { headers, cache: 'force-cache' });
+            if (resLatest.ok) data = await resLatest.json();
+        }
         return Array.isArray(data) ? data : [];
     } catch (e) { return []; }
-};
-
-const getMoreDuels = async (currentSlug) => {
-    if (!supabaseUrl) return [];
-    const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
-    try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/gpu_duels?select=title_cs,title_en,slug,slug_en&slug=neq.${currentSlug}&order=created_at.desc&limit=3`, { headers, cache: 'force-cache' });
-        if (res.ok) return await res.json();
-        return [];
-    } catch(e) { return []; }
 };
 
 export async function generateMetadata({ params }) {
