@@ -22,8 +22,8 @@ import {
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; // 🚀 GURU: Import SEO generátoru
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V74.5 (FINAL SLUG & DYNAMIC FIX)
- * 🚀 CÍL: Odstranění 404 chyb a přidání SEO textu pro Bing.
+ * GURU CPU DUELS ENGINE - DETAIL V74.6 (FINAL SLUG & SMART SEARCH FIX)
+ * 🚀 CÍL: Odstranění 404 chyb díky inteligentnímu čištění slugů.
  */
 
 export const runtime = "nodejs";
@@ -83,12 +83,9 @@ const getDuelData = cache(async (slug) => {
   if (!supabaseUrl || !slug) return null;
   const cleanSlug = slug.replace(/^en-/, '');
   
-  // 🔥 GURU FIX: Ořeže prefixy výrobců z URL pro snazší hledání v DB
-  const vendorlessSlug = cleanSlug.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '');
-  
   const selectQuery = `*,cpuA:cpus!cpu_a_id(*),cpuB:cpus!cpu_b_id(*)`;
 
-  const fetchWithSlug = async (targetSlug) => {
+  const performSearch = async (targetSlug) => {
     try {
         const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${targetSlug}&limit=1`, { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, cache: 'force-cache' });
         if (res.ok) {
@@ -99,10 +96,16 @@ const getDuelData = cache(async (slug) => {
     return null;
   };
 
-  let result = await fetchWithSlug(cleanSlug);
-  if (!result && cleanSlug !== vendorlessSlug) {
-      result = await fetchWithSlug(vendorlessSlug);
+  // 1. První pokus: přesná shoda (např. amd-ryzen-7-7700x-vs-amd-ryzen-5-9600x)
+  let result = await performSearch(cleanSlug);
+  if (result) return result;
+
+  // 2. Druhý pokus: ořezaná shoda (např. ryzen-7-7700x-vs-ryzen-5-9600x)
+  const vendorlessSlug = cleanSlug.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '');
+  if (vendorlessSlug !== cleanSlug) {
+      result = await performSearch(vendorlessSlug);
   }
+  
   return result;
 });
 
@@ -122,6 +125,7 @@ export async function generateMetadata({ params }) {
 export default async function CpuDuelDetail({ params }) {
   const { slug } = await params;
   const duel = await getDuelData(slug);
+  
   if (!duel) notFound();
 
   const isEn = slug?.startsWith('en-');
@@ -153,7 +157,6 @@ export default async function CpuDuelDetail({ params }) {
     }
   }
 
-  // Příprava dat pro SEO komponentu
   let perfDiffForComponent = 0;
   if (hasPerfData) {
       perfDiffForComponent = cpuA.performance_index > cpuB.performance_index ? -perfDiff : perfDiff;
@@ -193,7 +196,6 @@ export default async function CpuDuelDetail({ params }) {
           )}
         </header>
 
-        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD VERDIKTEM */}
         <div className="guru-vs-ad-slot">
              <span className="ad-label">Advertisement</span>
              <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
@@ -212,14 +214,12 @@ export default async function CpuDuelDetail({ params }) {
             </div>
         </div>
 
-        {/* 🔥 ADS SLOT #2: PŘED SPECIFIKACEMI */}
         <div className="guru-vs-ad-slot">
              <span className="ad-label">Sponsored Performance Analysis</span>
              <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
              <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
         </div>
 
-        {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT (VLOŽENO ZDE) */}
         <section style={{ marginBottom: '60px' }}>
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -281,32 +281,26 @@ export default async function CpuDuelDetail({ params }) {
         .guru-ranking-link { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
         .guru-verdict { margin-top: 25px; color: #66fcf1; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 10px 25px; background: rgba(102, 252, 241, 0.05); border: 1px solid rgba(102, 252, 241, 0.2); border-radius: 50px; display: inline-block; }
         .guru-upgrade-pill { display: inline-flex; align-items: center; gap: 10px; padding: 12px 30px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 50px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
-        
         .guru-vs-ad-slot { margin: 30px 0; padding: 15px; background: rgba(102, 252, 241, 0.03); border: 1px solid rgba(102, 252, 241, 0.1); border-radius: 20px; text-align: center; }
         .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
         .ad-desktop { display: block; } .ad-mobile { display: none; }
-
         .cpu-box { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 40px 20px; text-align: center; flex: 1; }
         .vendor-label { font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 15px; display: block; }
         .cpu-name-text { font-size: clamp(1.6rem, 3.5vw, 2.5rem); font-weight: 950; color: #fff; text-transform: uppercase; margin: 0; line-height: 1.1; }
         .vs-badge { background: #ff0055; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 950; font-size: 24px; border: 5px solid #0f1115; box-shadow: 0 0 30px rgba(255,0,85,0.6); color: #fff; z-index: 10; margin: 0 -15px; }
-        
         .section-h2 { color: #fff; font-size: 2rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #ff0055; padding-left: 15px; display: flex; align-items: center; gap: 12px; }
         .table-wrapper { background: rgba(15, 17, 21, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
         .spec-row-style { display: flex; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .table-label { width: 180px; text-align: center; font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; }
-
         .related-card-style { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; text-decoration: none; transition: 0.3s; }
         .related-img-box { height: 160px; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .related-img-box img { width: 100%; height: 100%; object-fit: cover; }
         .related-content-box { padding: 20px; }
         .related-tag { color: #a855f7; font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 10px; }
         .related-title-text { color: #fff; font-size: 1.1rem; font-weight: 950; margin: 0; line-height: 1.3; }
-
         .guru-deals-btn, .guru-support-btn { flex: 1; max-width: 300px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px; border-radius: 16px; font-weight: 950; text-decoration: none; text-transform: uppercase; transition: 0.3s; }
         .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
         .guru-support-btn { background: #eab308; color: #000; }
-        
         @media (max-width: 768px) {
             .ad-desktop { display: none; } .ad-mobile { display: block; }
             .guru-grid-ring { grid-template-columns: 1fr !important; }
