@@ -8,13 +8,13 @@ import {
 import GuruGpuCompareText from '../../../components/GuruGpuCompareText'; // 🚀 GURU: Import SEO generátoru
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V120.3 (SEO TEXT UPDATE)
- * 🚀 CÍL: Přidán dynamický SEO generátor textu pro odstranění "Thin Content" hlášky z Bingu.
+ * GURU GPU UPGRADE ENGINE - DETAIL V120.4 (DYNAMIC PARAMS FIX)
+ * 🚀 CÍL: Přidán dynamický SEO generátor textu a povoleno dynamické routování.
  */
 
 export const runtime = "nodejs";
 export const revalidate = 86400; 
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
