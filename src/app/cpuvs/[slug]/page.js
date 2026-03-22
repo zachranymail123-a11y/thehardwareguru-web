@@ -100,7 +100,7 @@ const getDuelData = cache(async (slug) => {
   let result = await performSearch(cleanSlug);
   if (result) return result;
 
-  // 2. Druhý pokus: ořezaná shoda (např. ryzen-7-7700x-vs-ryzen-5-9600x)
+  // 2. Druhý pokus: ořezaná shoda bez značek výrobců (např. ryzen-7-7700x-vs-ryzen-5-9600x)
   const vendorlessSlug = cleanSlug.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '');
   if (vendorlessSlug !== cleanSlug) {
       result = await performSearch(vendorlessSlug);
@@ -157,6 +157,7 @@ export default async function CpuDuelDetail({ params }) {
     }
   }
 
+  // Příprava dat pro SEO komponentu
   let perfDiffForComponent = 0;
   if (hasPerfData) {
       perfDiffForComponent = cpuA.performance_index > cpuB.performance_index ? -perfDiff : perfDiff;
