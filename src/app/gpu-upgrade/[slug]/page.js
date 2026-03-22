@@ -8,8 +8,8 @@ import {
 import GuruGpuCompareText from '../../../components/GuruGpuCompareText'; // 🚀 GURU: Import SEO generátoru
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V120.4 (DYNAMIC PARAMS FIX)
- * 🚀 CÍL: Přidán dynamický SEO generátor textu a povoleno dynamické routování.
+ * GURU GPU UPGRADE ENGINE - DETAIL V120.7 (ULTRA SMART SEARCH FIX)
+ * 🚀 CÍL: Totální eliminace 404 chyb pomocí ilike vyhledávání a ošetření params.
  */
 
 export const runtime = "nodejs";
@@ -24,7 +24,7 @@ export async function generateStaticParams() {
   if (!supabaseUrl) return [];
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
   try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades?select=slug&limit=10000`, {
+      const res = await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades?select=slug&limit=1000`, {
           headers, next: { revalidate: 86400 }
       });
       if (!res.ok) return [];
@@ -38,14 +38,51 @@ const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon 
 
 const getUpgradeData = cache(async (rawSlug) => {
   if (!supabaseUrl || !rawSlug) return null;
+
   const cleanSlug = rawSlug.replace(/^en-/, '');
   const selectQuery = `*,oldGpu:gpus!old_gpu_id(*,game_fps!gpu_id(*)),newGpu:gpus!new_gpu_id(*,game_fps!gpu_id(*))`;
-  try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades?select=${encodeURIComponent(selectQuery)}&slug=eq.${cleanSlug}&limit=1`, { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }, cache: 'force-cache' });
+
+  const performSearch = async (targetSlug, mode = 'eq') => {
+    const filter = mode === 'eq' ? `slug=eq.${targetSlug}` : `slug=ilike.%${targetSlug}%`;
+    try {
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/gpu_upgrades?select=${encodeURIComponent(selectQuery)}&${filter}&limit=1`,
+        {
+          headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+          cache: 'no-store' // 🛡️ Vypnutí cache pro hledání, ať nevidíme staré 404
+        }
+      );
+
       if (!res.ok) return null;
       const data = await res.json();
-      return data[0] || null;
-  } catch (e) { return null; }
+      return data?.[0] || null;
+    } catch {
+      return null;
+    }
+  };
+
+  // 1️⃣ exact shoda
+  let result = await performSearch(cleanSlug, 'eq');
+  if (result) return result;
+
+  // 2️⃣ bez výrobců
+  const vendorless = cleanSlug.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '');
+  if (vendorless !== cleanSlug) {
+    result = await performSearch(vendorless, 'eq');
+    if (result) return result;
+  }
+
+  // 3️⃣ fuzzy vyhledávání (%slug%)
+  result = await performSearch(vendorless, 'ilike');
+  if (result) return result;
+
+  // 4️⃣ fallback podle první grafiky
+  const first = vendorless.split('-to-')[0];
+  if (first) {
+    result = await performSearch(first, 'ilike');
+  }
+
+  return result;
 });
 
 const getRelatedArticles = async (gpuA_Name, gpuB_Name) => {
@@ -54,11 +91,11 @@ const getRelatedArticles = async (gpuA_Name, gpuB_Name) => {
     const nameA = normalizeName(gpuA_Name || '');
     const nameB = normalizeName(gpuB_Name || '');
     try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.%${encodeURIComponent(nameA)}%,title_en.ilike.%${encodeURIComponent(nameA)}%,title.ilike.%${encodeURIComponent(nameB)}%,title_en.ilike.%${encodeURIComponent(nameB)}%)&order=created_at.desc&limit=3`, { headers, cache: 'no-store' });
+        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.%${encodeURIComponent(nameA)}%,title_en.ilike.%${encodeURIComponent(nameA)}%,title.ilike.%${encodeURIComponent(nameB)}%,title_en.ilike.%${encodeURIComponent(nameB)}%)&order=created_at.desc&limit=3`, { headers, cache: 'force-cache' });
         let data = [];
         if (res.ok) data = await res.json();
         if (!data || data.length === 0) {
-            const resLatest = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&type=eq.hardware&order=created_at.desc&limit=3`, { headers, cache: 'no-store' });
+            const resLatest = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&type=eq.hardware&order=created_at.desc&limit=3`, { headers, cache: 'force-cache' });
             if (resLatest.ok) data = await resLatest.json();
         }
         return Array.isArray(data) ? data : [];
@@ -69,18 +106,19 @@ const getMoreUpgrades = async (currentSlug) => {
     if (!supabaseUrl) return [];
     const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
     try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades?select=title_cs,title_en,slug,slug_en&slug=neq.${currentSlug}&order=created_at.desc&limit=3`, { headers, cache: 'no-store' });
+        const res = await fetch(`${supabaseUrl}/rest/v1/gpu_upgrades?select=title_cs,title_en,slug,slug_en&slug=neq.${currentSlug}&order=created_at.desc&limit=3`, { headers, cache: 'force-cache' });
         if (res.ok) return await res.json();
         return [];
     } catch(e) { return []; }
 };
 
 export async function generateMetadata(props) {
-  const params = await props.params;
-  const rawSlug = params?.slug || '';
+  const { slug } = props.params; // 🛡️ FIX: params není Promise
+  const rawSlug = slug || '';
   const isEn = rawSlug.startsWith('en-');
   const upgrade = await getUpgradeData(rawSlug);
-  if (!upgrade) notFound();
+  if (!upgrade || !upgrade.oldGpu) return { title: 'GPU Upgrade | Hardware Guru' };
+  
   const { oldGpu, newGpu } = upgrade;
   const perfDiff = Math.round(((newGpu.performance_index / oldGpu.performance_index) - 1) * 100);
   return { 
@@ -89,10 +127,11 @@ export async function generateMetadata(props) {
 }
 
 export default async function GpuUpgradePage(props) {
-  const params = await props.params;
-  const rawSlug = params?.slug || '';
+  const { slug } = props.params; // 🛡️ FIX: params není Promise
+  const rawSlug = slug || '';
   const isEn = rawSlug.startsWith('en-');
   const upgrade = await getUpgradeData(rawSlug);
+  
   if (!upgrade) notFound();
 
   const { oldGpu: gpuA, newGpu: gpuB } = upgrade;
@@ -119,7 +158,7 @@ export default async function GpuUpgradePage(props) {
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', padding: '6px 16px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.1)' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', padding: '6px 16px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)' }}>
             <ArrowUpCircle size={14} /> GURU UPGRADE ANALYSIS
           </div>
           <h1 style={{ fontSize: 'clamp(1.8rem, 4vw, 3rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0', lineHeight: '1.2' }}>
@@ -151,7 +190,7 @@ export default async function GpuUpgradePage(props) {
             <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
         </div>
 
-        {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT (VLOŽENO ZDE BEZ ZMĚNY ZBYTKU STRÁNKY) */}
+        {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT */}
         <section style={{ marginBottom: '60px' }}>
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -202,7 +241,6 @@ export default async function GpuUpgradePage(props) {
           </div>
         </section>
 
-        {/* SILOING - ARTICLES */}
         {relatedArticles.length > 0 && (
             <section style={{ marginBottom: '60px' }}>
                 <h2 className="section-h2" style={{ borderLeftColor: '#a855f7' }}><Info size={28} color="#a855f7" /> {isEn ? 'RELATED NEWS' : 'SOUVISEJÍCÍ NOVINKY'}</h2>
@@ -217,7 +255,6 @@ export default async function GpuUpgradePage(props) {
             </section>
         )}
 
-        {/* SILOING - MORE UPGRADES */}
         {moreUpgrades.length > 0 && (
             <section style={{ marginBottom: '60px' }}>
                 <h2 className="section-h2" style={{ borderLeftColor: '#66fcf1' }}><ArrowUpCircle size={28} color="#66fcf1" /> {isEn ? 'OTHER UPGRADES' : 'DALŠÍ UPGRADY'}</h2>
