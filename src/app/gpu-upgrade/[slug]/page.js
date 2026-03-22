@@ -5,10 +5,11 @@ import {
   BarChart3, Gamepad2, Coins, CheckCircle2, Swords, Flame, Heart, 
   Monitor, ExternalLink, Info, HelpCircle, Trophy
 } from 'lucide-react';
+import GuruGpuCompareText from '../../../components/GuruGpuCompareText'; // 🚀 GURU: Import SEO generátoru
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V120.2 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Maximální zisk z doporučení pro upgrade skrze A-ADS.
+ * GURU GPU UPGRADE ENGINE - DETAIL V120.3 (SEO TEXT UPDATE)
+ * 🚀 CÍL: Přidán dynamický SEO generátor textu pro odstranění "Thin Content" hlášky z Bingu.
  */
 
 export const runtime = "nodejs";
@@ -149,6 +150,23 @@ export default async function GpuUpgradePage(props) {
             <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
             <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
         </div>
+
+        {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT (VLOŽENO ZDE BEZ ZMĚNY ZBYTKU STRÁNKY) */}
+        <section style={{ marginBottom: '60px' }}>
+            <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Info size={24} color="#66fcf1" /> {isEn ? 'Upgrade Analysis' : 'Analýza upgradu'}
+                </h2>
+                <GuruGpuCompareText 
+                    gpu1Name={normalizeName(gpuA.name)} 
+                    gpu2Name={normalizeName(gpuB.name)} 
+                    perfDiff={finalPerfDiff} 
+                    gpu1Vram={gpuA.vram_gb} 
+                    gpu2Vram={gpuB.vram_gb} 
+                    isEn={isEn} 
+                />
+            </div>
+        </section>
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: '#66fcf1' }}><LayoutList size={28} /> {isEn ? 'UPGRADE SPECIFICATIONS' : 'POROVNÁNÍ PARAMETRŮ'}</h2>
