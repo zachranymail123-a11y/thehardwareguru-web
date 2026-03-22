@@ -19,10 +19,11 @@ import {
   ExternalLink,
   Info
 } from 'lucide-react';
+import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; // 🚀 GURU: Import SEO generátoru
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V74.2 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Maximální monetizace CPU duelů skrze A-ADS.
+ * GURU CPU DUELS ENGINE - DETAIL V74.3 (SEO TEXT UPDATE)
+ * 🚀 CÍL: Přidán dynamický SEO generátor textu pro odstranění "Thin Content" hlášky z Bingu.
  */
 
 export const runtime = "nodejs";
@@ -137,6 +138,12 @@ export default async function CpuDuelDetail({ params }) {
     }
   }
 
+  // Příprava dat pro SEO komponentu
+  let perfDiffForComponent = 0;
+  if (hasPerfData) {
+      perfDiffForComponent = cpuA.performance_index > cpuB.performance_index ? -perfDiff : perfDiff;
+  }
+
   const upgradeUrl = perfWinner && perfLoser ? `/${isEn ? 'en/' : ''}cpu-upgrade/${slugify(perfLoser.name)}-to-${slugify(perfWinner.name)}` : null;
   const similar = await (cpuA?.id ? getSimilarDuels(cpuA.id, duel.slug) : Promise.resolve([]));
   const relatedArticles = await getRelatedArticles(cpuA.name, cpuB.name);
@@ -196,6 +203,23 @@ export default async function CpuDuelDetail({ params }) {
              <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
              <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
         </div>
+
+        {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT (VLOŽENO ZDE) */}
+        <section style={{ marginBottom: '60px' }}>
+            <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Info size={24} color="#f59e0b" /> {isEn ? 'Performance Analysis' : 'Analýza výkonu'}
+                </h2>
+                <GuruCpuCompareText 
+                    cpu1Name={normalizeName(cpuA.name)} 
+                    cpu2Name={normalizeName(cpuB.name)} 
+                    perfDiff={perfDiffForComponent} 
+                    cpu1Cores={cpuA.cores} 
+                    cpu2Cores={cpuB.cores} 
+                    isEn={isEn} 
+                />
+            </div>
+        </section>
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: '#66fcf1' }}><LayoutList size={28} /> {isEn ? 'TECHNICAL SPECS' : 'GURU SPECIFIKACE'}</h2>
