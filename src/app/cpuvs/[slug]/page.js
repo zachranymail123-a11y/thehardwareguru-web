@@ -22,14 +22,15 @@ import {
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; // 🚀 GURU: Import SEO generátoru
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V74.3 (SEO TEXT UPDATE)
- * 🚀 CÍL: Přidán dynamický SEO generátor textu pro odstranění "Thin Content" hlášky z Bingu.
+ * GURU CPU DUELS ENGINE - DETAIL V74.5 (FINAL SLUG & DYNAMIC FIX)
+ * 🚀 CÍL: Odstranění 404 chyb a přidání SEO textu pro Bing.
  */
 
 export const runtime = "nodejs";
 export const revalidate = 86400; 
 
-export const dynamicParams = false;
+// 🔥 GURU FIX: Povoleno dynamické generování chybějících stránek
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -81,20 +82,34 @@ const getSimilarDuels = async (cpuId, currentSlug) => {
 const getDuelData = cache(async (slug) => {
   if (!supabaseUrl || !slug) return null;
   const cleanSlug = slug.replace(/^en-/, '');
+  
+  // 🔥 GURU FIX: Ořeže prefixy výrobců z URL pro snazší hledání v DB
+  const vendorlessSlug = cleanSlug.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '');
+  
   const selectQuery = `*,cpuA:cpus!cpu_a_id(*),cpuB:cpus!cpu_b_id(*)`;
-  try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${cleanSlug}&limit=1`, { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, cache: 'force-cache' });
-      if (!res.ok) return null;
-      const data = await res.json();
-      if (!data || data.length === 0) return null; 
-      return data[0];
-  } catch (e) { return null; }
+
+  const fetchWithSlug = async (targetSlug) => {
+    try {
+        const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&slug=eq.${targetSlug}&limit=1`, { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, cache: 'force-cache' });
+        if (res.ok) {
+           const data = await res.json();
+           if (data && data.length > 0) return data[0];
+        }
+    } catch (e) {}
+    return null;
+  };
+
+  let result = await fetchWithSlug(cleanSlug);
+  if (!result && cleanSlug !== vendorlessSlug) {
+      result = await fetchWithSlug(vendorlessSlug);
+  }
+  return result;
 });
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const duel = await getDuelData(slug);
-  if (!duel) notFound();
+  if (!duel) return { title: '404 | The Hardware Guru' };
   const isEn = slug?.startsWith('en-');
   const { cpuA, cpuB } = duel;
   const canonicalUrl = `${baseUrl}/cpuvs/${duel.slug}`;
