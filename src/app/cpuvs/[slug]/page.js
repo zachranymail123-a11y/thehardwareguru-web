@@ -39,7 +39,7 @@ const getRelatedArticles = async (cpuA, cpuB) => {
     const nameA = normalizeName(cpuA || '');
     const nameB = normalizeName(cpuB || '');
     try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.%${encodeURIComponent(nameA)}%,title.ilike.%${encodeURIComponent(nameB)}%)&order=created_at.desc&limit=3`, { headers, cache: 'force-cache' });
+        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.*${encodeURIComponent(nameA)}*,title.ilike.*${encodeURIComponent(nameB)}*)&order=created_at.desc&limit=3`, { headers, cache: 'force-cache' });
         const data = await res.json();
         if (!data || data.length === 0) {
             const resLatest = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&type=eq.hardware&order=created_at.desc&limit=3`, { headers, cache: 'force-cache' });
@@ -64,11 +64,9 @@ const getDuelData = cache(async (slug) => {
   
   const selectQuery = `*,cpuA:cpus!cpu_a_id(*),cpuB:cpus!cpu_b_id(*)`;
 
-  const performSearch = async (targetSlug, method = 'eq') => {
-    // 🔥 GURU FIX: PostgREST REST API vyžaduje * jako wildcard. % by rozbilo URL!
-    const filter = method === 'eq' ? `slug=eq.${targetSlug}` : `slug=ilike.*${targetSlug}*`;
+  const performSearch = async (filterStr) => {
     try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&${filter}&limit=1`, { 
+        const res = await fetch(`${supabaseUrl}/rest/v1/cpu_duels?select=${encodeURIComponent(selectQuery)}&${filterStr}&limit=1`, { 
           headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, 
           cache: 'no-store' 
         });
@@ -80,27 +78,30 @@ const getDuelData = cache(async (slug) => {
     return null;
   };
 
-  // 1. První pokus: přesná shoda
-  let result = await performSearch(cleanSlug, 'eq');
+  // 1. Přesná shoda
+  let result = await performSearch(`slug=eq.${cleanSlug}`);
   if (result) return result;
 
-  // 2. Druhý pokus: ořezaná shoda bez značek výrobců
-  const vendorlessSlug = cleanSlug.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '');
-  if (vendorlessSlug !== cleanSlug) {
-      result = await performSearch(vendorlessSlug, 'eq');
-      if (result) return result;
+  // 2. ROZDĚL A PANUJ (Eliminace prostředního balastu jako "-vs-amd-ryzen-")
+  const parts = cleanSlug.split('-vs-');
+  if (parts.length === 2) {
+      // Očistíme obě strany od výrobců
+      const cleanPart = (p) => p.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '').trim();
+      const p1 = cleanPart(parts[0]);
+      const p2 = cleanPart(parts[1]);
+      
+      if (p1 && p2) {
+          // AND operátor: slug musí obsahovat P1 A ZÁROVEŇ P2
+          result = await performSearch(`and=(slug.ilike.*${p1}*,slug.ilike.*${p2}*)`);
+          if (result) return result;
+      }
+      
+      // 3. Fallback jen na první CPU
+      if (p1) {
+          result = await performSearch(`slug=ilike.*${p1}*`);
+      }
   }
 
-  // 3. Třetí pokus: Fuzzy vyhledávání (*)
-  result = await performSearch(vendorlessSlug, 'ilike');
-  if (result) return result;
-
-  // 4. Poslední záchrana - hledání pouze podle části názvu prvního CPU
-  const firstPart = vendorlessSlug.split('-vs-')[0];
-  if (firstPart) {
-      result = await performSearch(firstPart, 'ilike');
-  }
-  
   return result;
 });
 
