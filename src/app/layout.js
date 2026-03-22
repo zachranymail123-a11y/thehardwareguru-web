@@ -7,10 +7,11 @@ import SupportWidget from '../components/SupportWidget';
 import Navbar from '../components/Navbar'; 
 import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
+import ShareWidget from '../components/ShareWidget'; // 🚀 Přidán import ShareWidgetu
 
 /**
- * GURU ROOT LAYOUT V5.5 (SEO DUPLICITY & BING FIX)
- * 🚀 CÍL: Globální unikátnost titulků a Canonical URL fix.
+ * GURU ROOT LAYOUT V5.6 (VIRAL WIDGET UPDATE)
+ * 🚀 CÍL: Globální unikátnost titulků a přidání globálního Share Widgetu.
  */
 
 export const metadata = {
@@ -106,6 +107,12 @@ export default async function RootLayout({ children, params }) {
 
         <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden' }}>
           {children}
+
+          {/* 🚀 GURU VIRÁLNÍ WIDGET PRO CELÝ WEB (VLOŽENO ZDE) */}
+          <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
+             <ShareWidget isEn={isEn} />
+          </div>
+
         </main>
 
         <footer style={{ padding: '60px 20px 40px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto', background: '#0a0b0d' }}>
