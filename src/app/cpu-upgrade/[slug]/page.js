@@ -26,8 +26,8 @@ import { createClient } from '@supabase/supabase-js';
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; // 🚀 GURU: Import SEO generátoru
 
 /**
- * GURU CPU UPGRADE ENGINE - DETAIL V115.8 (SMART SLUG FIX)
- * 🚀 CÍL: Odstranění 404 díky inteligentnímu čištění slugů při hledání v DB.
+ * GURU CPU UPGRADE ENGINE - DETAIL V115.9 (FINAL SMART SEARCH FIX)
+ * 🚀 CÍL: Definitivní odstranění 404 díky inteligentnímu čištění slugů při hledání v DB.
  */
 
 export const runtime = "nodejs";
@@ -73,7 +73,7 @@ const getUpgradeData = cache(async (slug) => {
   if (!supabaseUrl || !slug) return null;
   const cleanSlug = slug.replace(/^en-/, '');
   
-  // 🔥 GURU SMART FIX: Definujeme funkci pro hledání, která ošetří vztahy cpus
+  // 🔥 GURU SMART FIX: Definujeme dotaz s opraveným aliasem pro newCpu
   const selectQuery = `*,oldCpu:cpus!old_cpu_id(*,cpu_game_fps!cpu_id(*)),newCpu:cpus!new_cpu_id(*,cpu_game_fps!cpu_id(*))`;
   
   const performSearch = async (targetSlug) => {
@@ -128,6 +128,7 @@ export async function generateMetadata({ params }) {
 export default async function App({ params }) {
   const { slug } = await params;
   const upgrade = await getUpgradeData(slug);
+  
   if (!upgrade) notFound();
 
   const isEn = slug?.startsWith('en-');
