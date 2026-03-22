@@ -26,8 +26,8 @@ import { createClient } from '@supabase/supabase-js';
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; // 🚀 GURU: Import SEO generátoru
 
 /**
- * GURU CPU UPGRADE ENGINE - DETAIL V115.7 (DYNAMIC PARAMS FIX)
- * 🚀 CÍL: Povoleno dynamické generování chybějících stránek.
+ * GURU CPU UPGRADE ENGINE - DETAIL V115.8 (SMART SLUG FIX)
+ * 🚀 CÍL: Odstranění 404 díky inteligentnímu čištění slugů při hledání v DB.
  */
 
 export const runtime = "nodejs";
@@ -72,16 +72,35 @@ function calculatePerf(a, b) {
 const getUpgradeData = cache(async (slug) => {
   if (!supabaseUrl || !slug) return null;
   const cleanSlug = slug.replace(/^en-/, '');
+  
+  // 🔥 GURU SMART FIX: Definujeme funkci pro hledání, která ošetří vztahy cpus
   const selectQuery = `*,oldCpu:cpus!old_cpu_id(*,cpu_game_fps!cpu_id(*)),newCpu:cpus!new_cpu_id(*,cpu_game_fps!cpu_id(*))`;
-  try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/cpu_upgrades?select=${encodeURIComponent(selectQuery)}&slug=eq.${cleanSlug}&limit=1`, {
-        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }, cache: 'force-cache'
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      if (!data || data.length === 0) return null; 
-      return data[0];
-  } catch (e) { return null; }
+  
+  const performSearch = async (targetSlug) => {
+      try {
+          const res = await fetch(`${supabaseUrl}/rest/v1/cpu_upgrades?select=${encodeURIComponent(selectQuery)}&slug=eq.${targetSlug}&limit=1`, {
+            headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }, cache: 'force-cache'
+          });
+          if (res.ok) {
+              const data = await res.json();
+              if (data && data.length > 0) return data[0];
+          }
+      } catch(e) {}
+      return null;
+  };
+
+  // 1. Zkusíme najít přesně to, co je v URL (např. amd-ryzen-7-5700x-to-amd-ryzen-5-9600x)
+  let upgrade = await performSearch(cleanSlug);
+  if (upgrade) return upgrade;
+
+  // 2. Pokud nic, ořežeme amd/intel a zkusíme znova (např. ryzen-7-5700x-to-ryzen-5-9600x)
+  const vendorlessSlug = cleanSlug.replace(/(amd-|intel-)/gi, '');
+  if (vendorlessSlug !== cleanSlug) {
+      upgrade = await performSearch(vendorlessSlug);
+      if (upgrade) return upgrade;
+  }
+
+  return null;
 });
 
 const getSimilarUpgrades = async (cpuId, currentSlug) => {
@@ -99,7 +118,7 @@ const getSimilarUpgrades = async (cpuId, currentSlug) => {
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const upgrade = await getUpgradeData(slug);
-  if (!upgrade) notFound();
+  if (!upgrade) return { title: '404 | The Hardware Guru' };
   const isEn = slug?.startsWith('en-');
   const { oldCpu, newCpu } = upgrade;
   const { diff } = calculatePerf(oldCpu, newCpu);
@@ -133,7 +152,7 @@ export default async function App({ params }) {
       { label: 'STARFIELD', diff: calcSafeDiff(fpsA?.starfield_1440p, fpsB?.starfield_1440p) }
   ].filter(item => Number.isFinite(item.diff) && item.diff !== 0);
 
-  const avgDiff = gameStats.length ? Math.round(gameStats.reduce((acc, curr) => acc + curr.diff, 0) / gameStats.length) : 0;
+  const avgDiff = gameStats.length ? Math.round(gameStats.reduce((acc, curr) => acc + curr.diff, 0) / gameStats.length) : finalPerfDiff;
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -283,7 +302,7 @@ export default async function App({ params }) {
         .gpu-name-text { font-size: clamp(1.4rem, 3vw, 2.2rem); font-weight: 950; color: #fff; text-transform: uppercase; margin: 0; line-height: 1.1; }
         .vs-badge { width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 950; font-size: 32px; border: 5px solid #0f1115; color: #000; }
 
-        .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #f59e0b; padding-left: 15px; display: flex; align-items: center; gap: 12px; }
+        .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #f59e0b; padding-left: 15px; }
         .table-wrapper { background: rgba(15, 17, 21, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
         .spec-row-style { display: flex; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .spec-val-side { flex: 1; }
