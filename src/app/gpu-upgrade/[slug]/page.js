@@ -5,11 +5,11 @@ import {
   BarChart3, Gamepad2, Coins, CheckCircle2, Swords, Flame, Heart, 
   Monitor, ExternalLink, Info, HelpCircle, Trophy
 } from 'lucide-react';
-import GuruGpuCompareText from '../../../components/GuruGpuCompareText'; // 🚀 GURU: Import SEO generátoru
+import GuruGpuCompareText from '../../../components/GuruGpuCompareText';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V120.7 (ULTRA SMART SEARCH FIX)
- * 🚀 CÍL: Totální eliminace 404 chyb pomocí ilike vyhledávání a ošetření params.
+ * GURU GPU UPGRADE ENGINE - DETAIL V120.8 (WILDCARD FIX)
+ * 🚀 CÍL: Totální eliminace 404 chyb pomocí správného * wildcard vyhledávání.
  */
 
 export const runtime = "nodejs";
@@ -43,13 +43,14 @@ const getUpgradeData = cache(async (rawSlug) => {
   const selectQuery = `*,oldGpu:gpus!old_gpu_id(*,game_fps!gpu_id(*)),newGpu:gpus!new_gpu_id(*,game_fps!gpu_id(*))`;
 
   const performSearch = async (targetSlug, mode = 'eq') => {
-    const filter = mode === 'eq' ? `slug=eq.${targetSlug}` : `slug=ilike.%${targetSlug}%`;
+    // 🔥 GURU FIX: Supabase REST API vyžaduje * jako wildcard. % by rozbilo URL!
+    const filter = mode === 'eq' ? `slug=eq.${targetSlug}` : `slug=ilike.*${targetSlug}*`;
     try {
       const res = await fetch(
         `${supabaseUrl}/rest/v1/gpu_upgrades?select=${encodeURIComponent(selectQuery)}&${filter}&limit=1`,
         {
           headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
-          cache: 'no-store' // 🛡️ Vypnutí cache pro hledání, ať nevidíme staré 404
+          cache: 'no-store' 
         }
       );
 
@@ -72,7 +73,7 @@ const getUpgradeData = cache(async (rawSlug) => {
     if (result) return result;
   }
 
-  // 3️⃣ fuzzy vyhledávání (%slug%)
+  // 3️⃣ fuzzy vyhledávání (*slug*)
   result = await performSearch(vendorless, 'ilike');
   if (result) return result;
 
@@ -91,7 +92,7 @@ const getRelatedArticles = async (gpuA_Name, gpuB_Name) => {
     const nameA = normalizeName(gpuA_Name || '');
     const nameB = normalizeName(gpuB_Name || '');
     try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.%${encodeURIComponent(nameA)}%,title_en.ilike.%${encodeURIComponent(nameA)}%,title.ilike.%${encodeURIComponent(nameB)}%,title_en.ilike.%${encodeURIComponent(nameB)}%)&order=created_at.desc&limit=3`, { headers, cache: 'force-cache' });
+        const res = await fetch(`${supabaseUrl}/rest/v1/posts?select=title,title_en,slug,slug_en,created_at,image_url&or=(title.ilike.*${encodeURIComponent(nameA)}*,title_en.ilike.*${encodeURIComponent(nameA)}*,title.ilike.*${encodeURIComponent(nameB)}*,title_en.ilike.*${encodeURIComponent(nameB)}*)&order=created_at.desc&limit=3`, { headers, cache: 'force-cache' });
         let data = [];
         if (res.ok) data = await res.json();
         if (!data || data.length === 0) {
@@ -113,7 +114,7 @@ const getMoreUpgrades = async (currentSlug) => {
 };
 
 export async function generateMetadata(props) {
-  const { slug } = props.params; // 🛡️ FIX: params není Promise
+  const { slug } = props.params; 
   const rawSlug = slug || '';
   const isEn = rawSlug.startsWith('en-');
   const upgrade = await getUpgradeData(rawSlug);
@@ -127,7 +128,7 @@ export async function generateMetadata(props) {
 }
 
 export default async function GpuUpgradePage(props) {
-  const { slug } = props.params; // 🛡️ FIX: params není Promise
+  const { slug } = props.params; 
   const rawSlug = slug || '';
   const isEn = rawSlug.startsWith('en-');
   const upgrade = await getUpgradeData(rawSlug);
@@ -158,7 +159,7 @@ export default async function GpuUpgradePage(props) {
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', padding: '6px 16px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', padding: '6px 16px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.1)' }}>
             <ArrowUpCircle size={14} /> GURU UPGRADE ANALYSIS
           </div>
           <h1 style={{ fontSize: 'clamp(1.8rem, 4vw, 3rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0', lineHeight: '1.2' }}>
@@ -169,7 +170,6 @@ export default async function GpuUpgradePage(props) {
           </h1>
         </header>
 
-        {/* 🚀 UPGRADE RING */}
         <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '40px' }}>
             <div className="upgrade-box" style={{ opacity: 0.7 }}>
                 <span className="box-label">{isEn ? 'CURRENT' : 'STÁVAJÍCÍ'}</span>
@@ -183,14 +183,12 @@ export default async function GpuUpgradePage(props) {
             </div>
         </div>
 
-        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD UPGRADE RINGEM */}
-        <div className="guru-upgrade-ad-slot">
+        <div className="guru-upg-ad-slot">
             <span className="ad-label">Advertisement</span>
             <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
             <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
         </div>
 
-        {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT */}
         <section style={{ marginBottom: '60px' }}>
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -222,8 +220,7 @@ export default async function GpuUpgradePage(props) {
                 </div>
               ))}
 
-              {/* 🔥 ADS SLOT #2: MEZI SPECIFIKACEMI */}
-              <div className="guru-upgrade-ad-slot" style={{ border: 'none', margin: '10px 0' }}>
+              <div className="guru-upg-ad-slot" style={{ border: 'none', margin: '10px 0' }}>
                   <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
                   <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
               </div>
