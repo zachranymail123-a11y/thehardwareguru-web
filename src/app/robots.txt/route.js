@@ -1,8 +1,7 @@
 /**
- * GURU ROBOTS ENGINE V4.3 (ADSENSE APPROVAL MODE)
+ * GURU ROBOTS ENGINE V4.4 (FULL SITEMAP MODE)
  * Cesta: src/app/robots.txt/route.js
- * 🛡️ STRATEGIE: Skrýt automatický balast před manuální kontrolou AdSense.
- * 🛡️ AKCE: Dočasně zakomentovány dynamické sitemapy pro hladké schválení.
+ * 🚀 CÍL: Přidány všechny dílčí sitemapy natvrdo, aby je Bingbot bez problému našel.
  */
 
 export const revalidate = 86400;
@@ -17,8 +16,23 @@ Crawl-delay: 1
 Disallow: /api/
 Disallow: /admin/
 
-# Mapy webu (Hlavní mapy pro schválení)
-Sitemap: https://thehardwareguru.cz/guru-sitemap.xml
+# Mapy webu (Všechny dílčí mapy vypsané natvrdo pro pomalejší boty)
+Sitemap: https://thehardwareguru.cz/guru-sitemap/pages.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap/posts.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap/cpu.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap/gpu.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap/duels.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap/upgrades.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap/1.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap/2.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap/3.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap/4.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap/5.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap/6.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap/7.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap/8.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap/9.xml
+Sitemap: https://thehardwareguru.cz/guru-sitemap/10.xml
 Sitemap: https://thehardwareguru.cz/latest.xml
 
 # Dynamické mapy (AKTIVOVAT AŽ PO SCHVÁLENÍ ADSENSE)
