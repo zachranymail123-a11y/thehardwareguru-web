@@ -1,7 +1,7 @@
 /**
- * GURU ROBOTS ENGINE V4.4 (FULL SITEMAP MODE)
+ * GURU ROBOTS ENGINE V4.5 (BING OPTIMIZED MODE)
  * Cesta: src/app/robots.txt/route.js
- * 🚀 CÍL: Přidány všechny dílčí sitemapy natvrdo, aby je Bingbot bez problému našel.
+ * 🚀 CÍL: Přidány všechny dílčí sitemapy natvrdo, zrušen Crawl-delay a povoleno BingAI pro max indexaci.
  */
 
 export const revalidate = 86400;
@@ -10,7 +10,6 @@ export async function GET() {
   const robots = `# GURU ROBOTS CONFIG - thehardwareguru.cz
 User-agent: *
 Allow: /
-Crawl-delay: 1
 
 # Administrace a API
 Disallow: /api/
@@ -56,9 +55,6 @@ User-agent: Google-Extended
 Disallow: /
 
 User-agent: PerplexityBot
-Disallow: /
-
-User-agent: BingAI
 Disallow: /
 
 User-agent: Bytespider
