@@ -11,7 +11,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default function PoradnaPage() {
+export default function PoradnaPage({ isEn = false }) {
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   
@@ -53,7 +53,7 @@ export default function PoradnaPage() {
       }]);
 
     if (error) {
-      setStatus({ loading: false, error: 'Něco se pokazilo. Zkus to prosím znovu.', success: false });
+      setStatus({ loading: false, error: isEn ? 'Something went wrong. Please try again.' : 'Něco se pokazilo. Zkus to prosím znovu.', success: false });
     } else {
       setStatus({ loading: false, error: null, success: true });
       setFormData({ name: '', email: user.email || '', components: '', question: '' });
@@ -67,28 +67,32 @@ export default function PoradnaPage() {
       <main style={{ maxWidth: '800px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
         <div style={{ marginBottom: '30px' }}>
-          <a href="/" className="guru-back-btn">
-            <ChevronLeft size={16} /> ZPĚT NA HLAVNÍ STRANU
+          <a href={isEn ? "/en" : "/"} className="guru-back-btn">
+            <ChevronLeft size={16} /> {isEn ? 'BACK TO HOME' : 'ZPĚT NA HLAVNÍ STRANU'}
           </a>
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '50px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#a855f7', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', padding: '6px 16px', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '50px', background: 'rgba(168, 85, 247, 0.1)' }}>
-            <ShieldCheck size={14} /> VIP GURU PODPORA
+            <ShieldCheck size={14} /> {isEn ? 'VIP GURU SUPPORT' : 'VIP GURU PODPORA'}
           </div>
           <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
-            PC <span style={{ color: '#a855f7' }}>PORADNA</span>
+            PC <span style={{ color: '#a855f7' }}>{isEn ? 'HELP DESK' : 'PORADNA'}</span>
           </h1>
-          <p style={{ color: '#9ca3af', marginTop: '15px', fontSize: '1.1rem' }}>Máš problém se sestavou nebo plánuješ upgrade? Zeptej se.</p>
+          <p style={{ color: '#9ca3af', marginTop: '15px', fontSize: '1.1rem' }}>
+            {isEn ? 'Having issues with your build or planning an upgrade? Ask away.' : 'Máš problém se sestavou nebo plánuješ upgrade? Zeptej se.'}
+          </p>
         </header>
 
         {!user ? (
           <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '50px 20px', textAlign: 'center' }}>
             <AlertCircle size={48} color="#f59e0b" style={{ margin: '0 auto 20px' }} />
-            <h2 style={{ fontSize: '1.8rem', fontWeight: '950', marginBottom: '15px', color: '#fff' }}>GURU RADÍ JEN ČLENŮM</h2>
-            <p style={{ color: '#9ca3af', marginBottom: '30px' }}>Pro položení dotazu do poradny se musíš přihlásit. Odfiltrujeme tak boty a spammery.</p>
-            <a href="/login" style={{ background: '#a855f7', color: '#fff', padding: '16px 35px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', display: 'inline-block', textTransform: 'uppercase' }}>
-              PŘIHLÁSIT SE / REGISTROVAT
+            <h2 style={{ fontSize: '1.8rem', fontWeight: '950', marginBottom: '15px', color: '#fff' }}>{isEn ? 'MEMBERS ONLY' : 'GURU RADÍ JEN ČLENŮM'}</h2>
+            <p style={{ color: '#9ca3af', marginBottom: '30px' }}>
+              {isEn ? 'You need to log in to submit a question. This helps us filter out bots and spammers.' : 'Pro položení dotazu do poradny se musíš přihlásit. Odfiltrujeme tak boty a spammery.'}
+            </p>
+            <a href={isEn ? "/en/login" : "/login"} style={{ background: '#a855f7', color: '#fff', padding: '16px 35px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', display: 'inline-block', textTransform: 'uppercase' }}>
+              {isEn ? 'LOGIN / REGISTER' : 'PŘIHLÁSIT SE / REGISTROVAT'}
             </a>
           </div>
         ) : (
@@ -98,8 +102,8 @@ export default function PoradnaPage() {
               <div style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', padding: '20px', borderRadius: '12px', marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '15px', color: '#4ade80' }}>
                 <CheckCircle2 size={24} />
                 <div>
-                  <strong style={{ display: 'block', fontSize: '1.1rem' }}>Dotaz odeslán!</strong>
-                  <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>Guru se na to co nejdřív podívá.</span>
+                  <strong style={{ display: 'block', fontSize: '1.1rem' }}>{isEn ? 'Question Submitted!' : 'Dotaz odeslán!'}</strong>
+                  <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>{isEn ? 'The Guru will take a look at it soon.' : 'Guru se na to co nejdřív podívá.'}</span>
                 </div>
               </div>
             )}
@@ -112,8 +116,8 @@ export default function PoradnaPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
               <div>
-                <label className="guru-label"><User size={14}/> Tvé jméno / Přezdívka</label>
-                <input required type="text" name="name" value={formData.name} onChange={handleChange} className="guru-input" placeholder="Jak ti má Guru říkat?" />
+                <label className="guru-label"><User size={14}/> {isEn ? 'Your Name / Nickname' : 'Tvé jméno / Přezdívka'}</label>
+                <input required type="text" name="name" value={formData.name} onChange={handleChange} className="guru-input" placeholder={isEn ? 'What should the Guru call you?' : 'Jak ti má Guru říkat?'} />
               </div>
               <div>
                 <label className="guru-label"><Mail size={14}/> E-mail</label>
@@ -122,17 +126,17 @@ export default function PoradnaPage() {
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <label className="guru-label"><Cpu size={14}/> Tvoje PC Sestava (Volitelné)</label>
-              <textarea name="components" value={formData.components} onChange={handleChange} className="guru-input" rows="2" placeholder="Např. RTX 4070, Ryzen 5 7600, 32GB RAM..."></textarea>
+              <label className="guru-label"><Cpu size={14}/> {isEn ? 'Your PC Specs (Optional)' : 'Tvoje PC Sestava (Volitelné)'}</label>
+              <textarea name="components" value={formData.components} onChange={handleChange} className="guru-input" rows="2" placeholder={isEn ? 'E.g. RTX 4070, Ryzen 5 7600, 32GB RAM...' : 'Např. RTX 4070, Ryzen 5 7600, 32GB RAM...'}></textarea>
             </div>
 
             <div style={{ marginBottom: '30px' }}>
-              <label className="guru-label"><MessageSquare size={14}/> Tvůj dotaz</label>
-              <textarea required name="question" value={formData.question} onChange={handleChange} className="guru-input" rows="6" placeholder="Co potřebuješ vyřešit? Napiš to co nejpodrobněji..."></textarea>
+              <label className="guru-label"><MessageSquare size={14}/> {isEn ? 'Your Question' : 'Tvůj dotaz'}</label>
+              <textarea required name="question" value={formData.question} onChange={handleChange} className="guru-input" rows="6" placeholder={isEn ? 'What do you need help with? Be as detailed as possible...' : 'Co potřebuješ vyřešit? Napiš to co nejpodrobněji...'}></textarea>
             </div>
 
             <button type="submit" disabled={status.loading} style={{ background: 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)', color: '#fff', width: '100%', padding: '18px', border: 'none', borderRadius: '12px', fontWeight: '950', fontSize: '1rem', textTransform: 'uppercase', cursor: status.loading ? 'not-allowed' : 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', opacity: status.loading ? 0.7 : 1 }}>
-              {status.loading ? 'ODESÍLÁM...' : <><Send size={18} /> ODESLAT DOTAZ GURUVI</>}
+              {status.loading ? (isEn ? 'SUBMITTING...' : 'ODESÍLÁM...') : <><Send size={18} /> {isEn ? 'ASK THE GURU' : 'ODESLAT DOTAZ GURUVI'}</>}
             </button>
           </form>
         )}
