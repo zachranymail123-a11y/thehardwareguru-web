@@ -1,11 +1,11 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { ChevronLeft, Info, Calendar, Flame, Heart, Share2, Swords, Gauge, ArrowRight, Sparkles, Gamepad2, Twitter, Cpu, Monitor } from 'lucide-react';
+import { ChevronLeft, Info, Calendar, Flame, Heart, Share2, Swords, Gauge, ArrowRight, Sparkles, Gamepad2, Twitter, Cpu, Monitor, User, Clock, CheckCircle } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU ARTICLE ENGINE V5.1 (ADS INJECTION UPDATE)
- * 🚀 CIEĽ: Maximálny profit z A-ADS + GTA 6 konverzia.
+ * GURU ARTICLE ENGINE V5.2 (ADSENSE E-E-A-T & HIGH VALUE CONTENT FIX)
+ * 🚀 CÍL: Schválení Google AdSense přidáním redakčních prvků (Autor, Čas čtení, Article Schema).
  */
 
 export const runtime = "nodejs";
@@ -45,6 +45,13 @@ const getLatestPosts = async (excludeId) => {
         .limit(3);
     return data || [];
 }
+
+// 🚀 POMOCNÁ FUNKCE PRO VÝPOČET ČASU ČTENÍ (SEO Signál)
+const getReadingTime = (text) => {
+    const words = text ? text.replace(/<[^>]*>?/gm, '').split(/\s+/).length : 0;
+    const minutes = Math.ceil(words / 200); // průměr 200 slov za minutu
+    return minutes < 1 ? 1 : minutes;
+};
 
 export async function generateMetadata(props) {
     const params = await props.params;
@@ -86,6 +93,7 @@ export default async function ArticleDetailPage(props) {
     const date = post.created_at || new Date().toISOString();
     const formattedDate = new Intl.DateTimeFormat(isEn ? 'en-US' : 'cs-CZ', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(date));
     const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}clanky/${post.slug}`;
+    const readingTime = getReadingTime(content);
 
     // 🚀 GURU ADS INJECTION: Rozdělení obsahu
     const contentParts = content ? content.split('</p>') : [];
@@ -93,9 +101,27 @@ export default async function ArticleDetailPage(props) {
     const firstHalf = contentParts.slice(0, midPoint).join('</p>');
     const secondHalf = contentParts.slice(midPoint).join('</p>');
 
+    // 🚀 GURU SEO: Article Schema pro E-E-A-T
+    const articleSchema = {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": title,
+      "image": post.image_url ? [post.image_url] : [],
+      "datePublished": date,
+      "dateModified": post.updated_at || date,
+      "author": [{
+          "@type": "Person",
+          "name": "The Hardware Guru",
+          "url": `${baseUrl}/about`
+      }]
+    };
+
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
             
+            {/* 🚀 SCHEMA INJECTION */}
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+
             <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
                 
                 <div style={{ marginBottom: '40px' }}>
@@ -105,13 +131,26 @@ export default async function ArticleDetailPage(props) {
                 </div>
 
                 <article style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '50px 40px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
-                    <header style={{ marginBottom: '40px', textAlign: 'center' }}>
-                        <div className="guru-date-badge">
-                            <Calendar size={14} /> {formattedDate}
+                    <header style={{ marginBottom: '30px', textAlign: 'center' }}>
+                        {/* 🚀 GURU E-E-A-T META INFO */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginBottom: '20px' }}>
+                            <div className="guru-meta-badge">
+                                <Calendar size={14} /> {formattedDate}
+                            </div>
+                            <div className="guru-meta-badge" style={{ borderColor: 'rgba(16, 185, 129, 0.3)', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)' }}>
+                                <Clock size={14} /> {readingTime} {isEn ? 'min read' : 'min. čtení'}
+                            </div>
                         </div>
-                        <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', lineHeight: '1.2', margin: '0', textTransform: 'uppercase' }}>
+
+                        <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', lineHeight: '1.2', margin: '0 0 20px 0', textTransform: 'uppercase' }}>
                             {title}
                         </h1>
+
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.03)', padding: '10px 20px', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                             <User size={16} color="#a855f7" />
+                             <span style={{ fontSize: '0.9rem', color: '#d1d5db', fontWeight: 'bold' }}>{isEn ? 'Author:' : 'Autor:'} <span style={{ color: '#fff' }}>The Hardware Guru</span></span>
+                             <CheckCircle size={14} color="#10b981" title="Verified Expert" />
+                        </div>
                     </header>
 
                     {/* 🔥 ADS SLOT #1: POD NADPISOM */}
@@ -157,7 +196,7 @@ export default async function ArticleDetailPage(props) {
                         <div className="gta6-badge"><Sparkles size={16} /> AI NEXT-GEN PREDIKCE</div>
                         <h3 className="gta6-title">{isEn ? 'WILL YOUR PC RUN GTA VI?' : 'ZVLÁDNE TO TVŮJ PC?'}</h3>
                         <p className="gta6-p">
-                            {isEn ? 'Check your estimated performance for GTA VI based on your hardware.' : 'Zisti exkluzívny odhad FPS pre Grand Theft Auto VI na tvojom hardvéri.'}
+                            {isEn ? 'Check your estimated performance for GTA VI based on your hardware.' : 'Zjisti exkluzivní odhad FPS pro Grand Theft Auto VI na tvém hardwaru.'}
                         </p>
                         <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="gta6-link">
                             <Gamepad2 size={20} /> {isEn ? 'TEST GTA VI FPS' : 'ZJISTIT FPS V GTA VI'} <ArrowRight size={18} />
@@ -220,8 +259,17 @@ export default async function ArticleDetailPage(props) {
 
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #a855f7; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(168, 85, 247, 0.3); transition: 0.3s; }
-                .guru-date-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 12px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; padding: 8px 20px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
+                .guru-meta-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 12px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; padding: 8px 15px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
+                
+                /* 🚀 GURU TYPOGRAFIE PRO ČLÁNKY (Velmi důležité pro AdSense a čitelnost) */
                 .guru-article-content { font-size: 1.15rem; line-height: 1.8; color: #d1d5db; margin-bottom: 40px; }
+                .guru-article-content h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin: 1.5em 0 0.8em; text-transform: uppercase; border-left: 4px solid #a855f7; padding-left: 15px; }
+                .guru-article-content h3 { color: #eab308; font-size: 1.4rem; font-weight: 900; margin: 1.2em 0 0.5em; }
+                .guru-article-content p { margin-bottom: 1.5em; }
+                .guru-article-content strong { color: #fff; font-weight: 900; }
+                .guru-article-content ul, .guru-article-content ol { margin-bottom: 1.5em; padding-left: 20px; }
+                .guru-article-content li { margin-bottom: 0.5em; }
+                .guru-article-content blockquote { border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.05); padding: 20px; margin: 20px 0; font-style: italic; border-radius: 0 15px 15px 0; }
                 
                 /* GURU ADS STYLES */
                 .guru-ad-slot { margin: 30px 0; padding: 15px; background: rgba(168, 85, 247, 0.03); border: 1px solid rgba(168, 85, 247, 0.1); border-radius: 20px; text-align: center; }
@@ -263,6 +311,7 @@ export default async function ArticleDetailPage(props) {
                 .related-card:hover { border-color: #a855f7; transform: translateY(-5px); }
 
                 @media (max-width: 768px) {
+                    .content-box-style { padding: 30px 20px; }
                     .share-grid, .duel-grid, .related-grid { grid-template-columns: 1fr; }
                     .ad-desktop { display: none; }
                     .ad-mobile { display: block; }
