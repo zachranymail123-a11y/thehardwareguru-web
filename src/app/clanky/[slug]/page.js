@@ -4,8 +4,8 @@ import { ChevronLeft, Info, Calendar, Flame, Heart, Share2, Swords, Gauge, Arrow
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU ARTICLE ENGINE V5.2 (ADSENSE E-E-A-T & HIGH VALUE CONTENT FIX)
- * 🚀 CÍL: Schválení Google AdSense přidáním redakčních prvků (Autor, Čas čtení, Article Schema).
+ * GURU ARTICLE ENGINE V5.3 (CLEAN MODE FOR ADSENSE REVIEW)
+ * 🚀 CÍL: Schválení Google AdSense - dočasně skryty reklamní sloty a nápisy.
  */
 
 export const runtime = "nodejs";
@@ -46,10 +46,9 @@ const getLatestPosts = async (excludeId) => {
     return data || [];
 }
 
-// 🚀 POMOCNÁ FUNKCE PRO VÝPOČET ČASU ČTENÍ (SEO Signál)
 const getReadingTime = (text) => {
     const words = text ? text.replace(/<[^>]*>?/gm, '').split(/\s+/).length : 0;
-    const minutes = Math.ceil(words / 200); // průměr 200 slov za minutu
+    const minutes = Math.ceil(words / 200); 
     return minutes < 1 ? 1 : minutes;
 };
 
@@ -95,13 +94,11 @@ export default async function ArticleDetailPage(props) {
     const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}clanky/${post.slug}`;
     const readingTime = getReadingTime(content);
 
-    // 🚀 GURU ADS INJECTION: Rozdělení obsahu
     const contentParts = content ? content.split('</p>') : [];
     const midPoint = Math.ceil(contentParts.length / 2);
     const firstHalf = contentParts.slice(0, midPoint).join('</p>');
     const secondHalf = contentParts.slice(midPoint).join('</p>');
 
-    // 🚀 GURU SEO: Article Schema pro E-E-A-T
     const articleSchema = {
       "@context": "https://schema.org",
       "@type": "Article",
@@ -119,7 +116,6 @@ export default async function ArticleDetailPage(props) {
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
             
-            {/* 🚀 SCHEMA INJECTION */}
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
 
             <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
@@ -132,7 +128,6 @@ export default async function ArticleDetailPage(props) {
 
                 <article style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '50px 40px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
                     <header style={{ marginBottom: '30px', textAlign: 'center' }}>
-                        {/* 🚀 GURU E-E-A-T META INFO */}
                         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginBottom: '20px' }}>
                             <div className="guru-meta-badge">
                                 <Calendar size={14} /> {formattedDate}
@@ -153,17 +148,6 @@ export default async function ArticleDetailPage(props) {
                         </div>
                     </header>
 
-                    {/* 🔥 ADS SLOT #1: POD NADPISOM */}
-                    <div className="guru-ad-slot">
-                        <span className="ad-label">Advertisement</span>
-                        <div className="ad-desktop">
-                            <iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe>
-                        </div>
-                        <div className="ad-mobile">
-                            <iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe>
-                        </div>
-                    </div>
-
                     {post.image_url && (
                         <div style={{ marginBottom: '40px', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
                             <img src={post.image_url} alt={title} style={{ width: '100%', height: 'auto', display: 'block' }} />
@@ -171,27 +155,10 @@ export default async function ArticleDetailPage(props) {
                     )}
 
                     <div className="guru-article-content">
-                         {/* Prvá polovica textu */}
                          <div dangerouslySetInnerHTML={{ __html: firstHalf + (contentParts.length > 1 ? '</p>' : '') }} />
-
-                         {/* 🔥 ADS SLOT #2: UPROSTRED ČLÁNKU */}
-                         {contentParts.length > 2 && (
-                             <div className="guru-ad-slot">
-                                 <span className="ad-label">Sponsored Content</span>
-                                 <div className="ad-desktop">
-                                     <iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe>
-                                 </div>
-                                 <div className="ad-mobile">
-                                     <iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe>
-                                 </div>
-                             </div>
-                         )}
-
-                         {/* Druhá polovica textu */}
                          <div dangerouslySetInnerHTML={{ __html: secondHalf }} />
                     </div>
                     
-                    {/* 🚀 GTA 6 CONVERSION BAIT */}
                     <div className="gta6-conversion-box">
                         <div className="gta6-badge"><Sparkles size={16} /> AI NEXT-GEN PREDIKCE</div>
                         <h3 className="gta6-title">{isEn ? 'WILL YOUR PC RUN GTA VI?' : 'ZVLÁDNE TO TVŮJ PC?'}</h3>
@@ -204,10 +171,7 @@ export default async function ArticleDetailPage(props) {
                     </div>
                 </article>
 
-                {/* 🚀 VIRAL & SILO HUB */}
                 <div style={{ marginTop: '50px' }}>
-                    
-                    {/* 1. SHARE BUTTONS (X, FB, REDDIT) */}
                     <div className="share-grid">
                         <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`} target="_blank" className="share-card x-bg">
                             <Twitter size={18} /> TWITTER / X
@@ -220,7 +184,6 @@ export default async function ArticleDetailPage(props) {
                         </a>
                     </div>
 
-                    {/* 2. DUEL BANNERS (CPU & GPU) */}
                     <div className="duel-grid">
                         <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="silo-banner-card cpu-border">
                             <div className="silo-banner-icon cpu-icon-bg"><Swords size={28} /></div>
@@ -239,7 +202,6 @@ export default async function ArticleDetailPage(props) {
                     </div>
                 </div>
 
-                {/* RECIRKULACE */}
                 {latestPosts.length > 0 && (
                     <section style={{ marginTop: '60px' }}>
                         <h2 className="section-title">{isEn ? 'READ NEXT' : 'DALŠÍ ČTENÍ'}</h2>
@@ -260,8 +222,6 @@ export default async function ArticleDetailPage(props) {
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #a855f7; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(168, 85, 247, 0.3); transition: 0.3s; }
                 .guru-meta-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 12px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; padding: 8px 15px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
-                
-                /* 🚀 GURU TYPOGRAFIE PRO ČLÁNKY (Velmi důležité pro AdSense a čitelnost) */
                 .guru-article-content { font-size: 1.15rem; line-height: 1.8; color: #d1d5db; margin-bottom: 40px; }
                 .guru-article-content h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin: 1.5em 0 0.8em; text-transform: uppercase; border-left: 4px solid #a855f7; padding-left: 15px; }
                 .guru-article-content h3 { color: #eab308; font-size: 1.4rem; font-weight: 900; margin: 1.2em 0 0.5em; }
@@ -270,27 +230,18 @@ export default async function ArticleDetailPage(props) {
                 .guru-article-content ul, .guru-article-content ol { margin-bottom: 1.5em; padding-left: 20px; }
                 .guru-article-content li { margin-bottom: 0.5em; }
                 .guru-article-content blockquote { border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.05); padding: 20px; margin: 20px 0; font-style: italic; border-radius: 0 15px 15px 0; }
-                
-                /* GURU ADS STYLES */
-                .guru-ad-slot { margin: 30px 0; padding: 15px; background: rgba(168, 85, 247, 0.03); border: 1px solid rgba(168, 85, 247, 0.1); border-radius: 20px; text-align: center; }
-                .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-                .ad-desktop { display: block; }
-                .ad-mobile { display: none; }
-
                 .gta6-conversion-box { background: linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(15, 17, 21, 0.98) 100%); border: 1px solid rgba(244, 63, 94, 0.4); padding: 40px; border-radius: 24px; text-align: center; box-shadow: 0 15px 40px rgba(244, 63, 94, 0.1); margin-top: 40px; }
                 .gta6-badge { display: inline-flex; align-items: center; gap: 8px; background: #f43f5e; color: #fff; padding: 6px 15px; border-radius: 8px; font-size: 10px; font-weight: 950; margin-bottom: 20px; text-transform: uppercase; }
                 .gta6-title { font-size: 1.8rem; font-weight: 950; color: #fff; margin: 0 0 10px 0; text-transform: uppercase; }
                 .gta6-p { color: #9ca3af; margin-bottom: 25px; }
                 .gta6-link { display: inline-flex; align-items: center; gap: 12px; background: #f43f5e; color: #fff; padding: 16px 35px; border-radius: 14px; font-weight: 950; text-decoration: none; text-transform: uppercase; transition: 0.3s; }
                 .gta6-link:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(244, 63, 94, 0.4); }
-
                 .share-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
                 .share-card { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px; border-radius: 12px; font-weight: 950; font-size: 12px; text-decoration: none; color: #fff; transition: 0.3s; }
                 .x-bg { background: #000; border: 1px solid #333; }
                 .fb-bg { background: #1877f2; }
                 .reddit-bg { background: #ff4500; }
                 .share-card:hover { transform: translateY(-3px); filter: brightness(1.2); }
-
                 .duel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
                 .silo-banner-card { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; display: flex; align-items: center; gap: 15px; text-decoration: none; transition: 0.3s; border-left: 5px solid transparent; }
                 .cpu-border { border-left-color: #66fcf1; }
@@ -301,7 +252,6 @@ export default async function ArticleDetailPage(props) {
                 .silo-banner-text h4 { margin: 0; color: #fff; font-size: 1rem; font-weight: 950; text-transform: uppercase; }
                 .silo-banner-text p { margin: 0; color: #9ca3af; font-size: 0.8rem; }
                 .silo-banner-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.02); }
-
                 .section-title { color: #fff; font-size: 1.5rem; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; border-left: 4px solid #a855f7; padding-left: 15px; }
                 .related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
                 .related-card { background: #000; border-radius: 15px; overflow: hidden; text-decoration: none; border: 1px solid #222; transition: 0.3s; }
@@ -309,12 +259,9 @@ export default async function ArticleDetailPage(props) {
                 .related-info { padding: 15px; }
                 .related-info h3 { margin: 0; color: #fff; font-size: 0.9rem; font-weight: 900; line-height: 1.3; }
                 .related-card:hover { border-color: #a855f7; transform: translateY(-5px); }
-
                 @media (max-width: 768px) {
                     .content-box-style { padding: 30px 20px; }
                     .share-grid, .duel-grid, .related-grid { grid-template-columns: 1fr; }
-                    .ad-desktop { display: none; }
-                    .ad-mobile { display: block; }
                     .gta6-conversion-box { padding: 25px; }
                 }
             `}} />
