@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Rocket, Settings, Globe, Search, Database, CalendarClock, 
-  ShoppingCart, Activity, ShieldCheck, Zap, AlertTriangle, 
+  ShoppingCart, Activity, ShieldCheck, Zap, AlertTriangle, AlertCircle,
   CheckCircle2, RefreshCw, Send, Sparkles, Flame, Plus, X, 
   ExternalLink, Lightbulb, BookOpen, Wrench, Video, Cpu, Lock, Calendar, Terminal,
   LayoutDashboard, Image as ImageIcon, CalendarDays, Layers, ChevronRight, Play,
@@ -15,11 +15,10 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V5.8 (PORADNA INTEGRATION)
+ * GURU ULTIMATE COMMAND CENTER V5.9 (PORADNA CRASH FIX)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
- * 🛡️ FIX 1-9: Zachovány z V5.7
- * 🛡️ FIX 10: Integrován modul "PORADNA" pro správu uživatelských dotazů přímo z hlavního dashboardu.
+ * 🛡️ FIX 11: Opraven chybějící import AlertCircle způsobující pád na bílou obrazovku v záložce Poradna.
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -192,7 +191,6 @@ export default function AdminApp() {
       const r = await response.json();
       const aiData = JSON.parse(r.choices[0].message.content);
       
-      // 🚀 GURU FIX: Záchyt a přiřazení obrázku z více možných klíčů, aby nezanikl
       const imageUrl = aiData.image_url || item.image_url || item.image || item.thumbnail || item.urlToImage || '';
       
       const newDraft = { 
@@ -217,8 +215,7 @@ export default function AdminApp() {
     try {
         const finalSlug = draft.slug_cs || slugify(draft.title_cs);
         
-        // 🚀 GURU FIX: Přesné určení typu článku pro databázi a webhook (hw novinka / game / leak)
-        let postType = 'article'; // Default = HW Novinka
+        let postType = 'article'; 
         if (draft.original_item?.intelType === 'game') postType = 'game';
         if (draft.original_item?.intelType === 'leaks') postType = 'leak';
         
@@ -524,7 +521,6 @@ export default function AdminApp() {
         addLog(`Chyba při generování dodatečných dat (duely atd.): ${e.message}`, 'error');
     }
 
-    // 🚀 AUTOMATICKÝ VERCEL DEPLOY (SSG REBUILD)
     const vercelWebhook = getEnv('NEXT_PUBLIC_VERCEL_DEPLOY_WEBHOOK_URL');
     if (vercelWebhook) {
         addLog('Odesílám signál do Vercelu pro automatický rebuild SSG stránek...', 'warning');
@@ -650,7 +646,6 @@ export default function AdminApp() {
           <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="INTEL HUB" color="#a855f7" />
           <SidebarItemUI id="database" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Database />} label="DATABÁZE (NEW)" color="#66fcf1" />
           <SidebarItemUI id="seznam-indexer" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Search />} label="SEZNAM INDEXER" color="#ef4444" />
-          {/* 🚀 NOVÁ POLOŽKA: PORADNA */}
           <SidebarItemUI id="poradna" activeTab={activeTab} setActiveTab={setActiveTab} icon={<MessageSquare />} label="PORADNA" color="#3b82f6" />
         </nav>
       </aside>
