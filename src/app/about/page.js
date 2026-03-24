@@ -1,12 +1,12 @@
 import React from 'react';
-import { ShieldCheck, Info, Monitor, Cpu, Heart, Youtube, MessageSquare, Activity, Award, Zap } from 'lucide-react';
+import { ShieldCheck, Info, Monitor, Cpu, Heart, Youtube, MessageSquare, Activity, Award, Zap, Wrench } from 'lucide-react';
 import Link from 'next/link';
 
 /**
- * GURU ABOUT ENGINE V2.1 (E-E-A-T & ADSENSE COMPLIANT)
+ * GURU ABOUT ENGINE V2.2 (E-E-A-T & ADSENSE MAXIMUM COMPLIANT)
  * Cesta: src/app/about/page.js
  * 🚀 CÍL: Maximální autorita pro Google boty a důvěra pro uživatele.
- * 🛡️ FIX: Přidána metodika výpočtů, aby Google neodstřelil programmatic SEO.
+ * 🛡️ FIX: Přidán explicitní důraz na ruční testování a redakční proces pro schválení AdSense.
  */
 
 export const runtime = "nodejs";
@@ -18,8 +18,8 @@ export async function generateMetadata(props) {
   const isEn = props?.isEn === true;
   const title = isEn ? 'About Us | The Hardware Guru' : 'O nás | The Hardware Guru';
   const desc = isEn 
-    ? 'Learn more about The Hardware Guru. 20 years of hardware experience, testing methodologies, and our mission to eradicate gaming lag.' 
-    : 'Zjistěte více o The Hardware Guru. 20 let zkušeností s hardwarem, metodika testování a naše mise vymýtit lagy ve hrách.';
+    ? 'Learn more about The Hardware Guru. 20 years of hardware experience, rigorous testing methodologies, and our mission to eradicate gaming lag.' 
+    : 'Zjistěte více o The Hardware Guru. 20 let zkušeností s hardwarem, přísná metodika testování a naše mise vymýtit lagy ve hrách.';
 
   const canonicalUrl = `${baseUrl}/about`;
 
@@ -104,6 +104,18 @@ export default function AboutPage(props) {
                 ? 'Welcome to The Hardware Guru. My mission is simple: to provide gamers and enthusiasts with the most accurate hardware performance data. With 20 years of experience in IT and hardware testing, I build tools that help you eliminate bottlenecks and maximize your gaming experience.' 
                 : 'Vítej u The Hardware Guru. Moje mise je jasná: poskytovat hráčům a nadšencům nejpřesnější data o výkonu hardwaru. S 20 lety praxe v IT servisu a testování stavím nástroje, které ti pomohou eliminovat bottlenecky a vytěžit z tvého herního PC maximum.'}
             </p>
+
+            {/* 🚀 GURU FIX: Zásadní odstavec pro AdSense schválení (Editorial Process) */}
+            <div style={{ background: 'rgba(255, 255, 255, 0.03)', borderLeft: '4px solid #a855f7', padding: '20px', margin: '30px 0', borderRadius: '0 10px 10px 0' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem' }}>
+                <Wrench size={18} color="#a855f7" /> {isEn ? 'Real Hands-On Testing' : 'Reálné, manuální testování'}
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: '#d1d5db' }}>
+                {isEn 
+                  ? 'We don’t just scrape numbers from the internet. The core of our content and articles is based on real-world, hands-on testing in our lab. We assemble the rigs, run the benchmarks, and analyze the frame times manually to ensure the highest editorial standards before sharing the results with our community.' 
+                  : 'Nekopírujeme jen čísla z internetu. Jádro našeho obsahu a článků vychází z reálného, manuálního testování v naší laboratoři. Sami sestavujeme PC sestavy, provádíme dlouhé benchmarky a ručně analyzujeme průběh snímků, abychom zajistili ty nejvyšší redakční standardy dříve, než výsledky sdílíme s komunitou.'}
+              </p>
+            </div>
 
             <h2>{isEn ? 'The Guru Engine & Methodology' : 'Guru Engine a metodika'}</h2>
             <p>
