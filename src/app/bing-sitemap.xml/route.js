@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - BING OPTIMIZED SITEMAP INDEX V1.0
+ * GURU SEO ENGINE - BING OPTIMIZED SITEMAP INDEX V1.1
  * Cesta: src/app/bing-sitemap.xml/route.js
  * 🚀 CÍL: Dedikovaná, stabilní sitemapa čistě pro Bing.
  * 🛡️ FIX 1: Odstraněn fake <lastmod> (aby Bing neresetoval crawl každý den).
- * 🛡️ FIX 2: Agresivní chunkování sníženo (z 5 na 1000 per sitemap), Bing tak dostane stabilní strukturu.
+ * 🛡️ FIX 2: Chunkování nastaveno na bezpečných 100, aby Vercel nepadal na 19MB limitu.
  */
 
 export const revalidate = 86400; // 1 den (Bing nevyžaduje každou hodinu)
@@ -33,22 +33,23 @@ export async function GET() {
     console.error("Bing index count fetch failed", e);
   }
 
-  // 🚀 BING FIX: Extrémně stabilní chunkování (1000 místo 5). 
-  // Odkazuje ale pořád na stejné fyzické API soubory (1.xml, 2.xml...), 
-  // takže pokud tvoje /guru-sitemap/[id].xml funguje po 5, Bing dostane jen 1.xml. 
-  // POZNÁMKA: Jelikož nechceme měnit tvé vnitřní soubory pro Google, 
-  // u Bingu tam ty dynamické chunky (/1.xml atd.) prostě nepošleme všechny jako indexy, 
-  // ale jen hlavní mapy, ať se tím neudusí.
+  // 🚀 BING FIX: Zlatá střední cesta 100.
+  const chunksNeeded = Math.max(1, Math.ceil(cpuCount / 100));
   
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
   
   // 1. ZÁKLADNÍ SITEMAPY (BEZ LASTMOD)
   const namedMaps = ['pages', 'posts', 'cpu', 'gpu', 'duels', 'upgrades'];
   namedMaps.forEach(m => {
-    xml += `  <sitemap>\n    <loc>${baseUrl}/guru-sitemap/${m}.xml</loc>\n  </sitemap>\n`;
+    xml += `  <sitemap>\n    <loc>${baseUrl}/bing-sitemap/${m}.xml</loc>\n  </sitemap>\n`;
   });
+
+  // 2. PROGRAMMATICKÉ CHUNKY PRO BING
+  for (let i = 1; i <= chunksNeeded; i++) {
+    xml += `  <sitemap>\n    <loc>${baseUrl}/bing-sitemap/${i}.xml</loc>\n  </sitemap>\n`;
+  }
   
-  // 2. FRESH SITEMAP (Latest.xml)
+  // 3. FRESH SITEMAP (Latest.xml)
   xml += `  <sitemap>\n    <loc>${baseUrl}/latest.xml</loc>\n  </sitemap>\n`;
   
   xml += `</sitemapindex>`;
