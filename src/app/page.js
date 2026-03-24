@@ -2,9 +2,9 @@ import React from 'react';
 import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, MessageSquare, Award, Bell, Bookmark, Share2 } from 'lucide-react';
 
 /**
- * GURU HOMEPAGE V16.3 - SHARE BAR ONESIGNAL FIX
+ * GURU HOMEPAGE V16.4 - ONESIGNAL BELL FIX
  * Cesta: src/app/page.js
- * 🚀 CÍL: Zvoneček nyní správně vyvolává OneSignal Push notifikace.
+ * 🚀 CÍL: Oprava scriptu zvonečku pro OneSignal Push Notifikace (podpora v15 i v16 API).
  */
 
 // --- UNIKÁTNÍ METADATA PRO BING & GOOGLE ---
@@ -258,24 +258,29 @@ export default async function HomePage({ params }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             
             {/* Tlačítko pro OneSignal Push Notifikace */}
-            <button id="onesignal-guru-btn" title={isEn ? "Subscribe to notifications" : "Odebírat upozornění webu"} className="onesignal-customlink-subscribe hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 20px rgba(37, 99, 235, 0.4)', textDecoration: 'none' }}>
+            <button id="guru-os-btn" title={isEn ? "Subscribe to notifications" : "Odebírat upozornění webu"} className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 20px rgba(37, 99, 235, 0.4)', textDecoration: 'none' }}>
               <Bell size={20} fill="#fff" />
             </button>
             <script dangerouslySetInnerHTML={{ __html: `
-              setInterval(function() {
-                var btn = document.getElementById('onesignal-guru-btn');
-                if (btn && !btn.hasAttribute('data-os-bind')) {
-                  btn.setAttribute('data-os-bind', 'true');
-                  btn.addEventListener('click', function(e) {
+              var checkBtn = setInterval(function() {
+                var btn = document.getElementById('guru-os-btn');
+                if (btn && !btn.hasAttribute('data-bound')) {
+                  btn.setAttribute('data-bound', 'true');
+                  btn.onclick = function(e) {
                     e.preventDefault();
                     if (window.OneSignal) {
-                      window.OneSignal.push(function() {
-                        window.OneSignal.showSlidedownPrompt();
-                      });
+                      if (window.OneSignal.Slidedown && window.OneSignal.Slidedown.promptPush) {
+                        window.OneSignal.Slidedown.promptPush(); // OneSignal v16+
+                      } else if (window.OneSignal.showSlidedownPrompt) {
+                        window.OneSignal.showSlidedownPrompt(); // OneSignal v15
+                      } else if (window.OneSignal.push) {
+                        window.OneSignal.push(function() { window.OneSignal.showSlidedownPrompt(); }); // OneSignal starší
+                      }
                     }
-                  });
+                  };
+                  clearInterval(checkBtn);
                 }
-              }, 1000);
+              }, 500);
             `}} />
 
             <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" title={isEn ? "Join our Discord" : "Připojit se na Discord"} className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#d97706', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 20px rgba(217, 119, 6, 0.4)', textDecoration: 'none' }}><Bookmark size={20} fill="#fff" /></a>
