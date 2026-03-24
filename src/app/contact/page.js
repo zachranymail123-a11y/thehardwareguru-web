@@ -2,7 +2,7 @@ import React from 'react';
 import { Mail, MessageSquare, Youtube, Activity, Briefcase } from 'lucide-react';
 
 /**
- * GURU CONTACT ENGINE V3.2 (E-E-A-T & ADSENSE FULL COMPLIANT)
+ * GURU CONTACT ENGINE V3.3 (E-E-A-T & ADSENSE FULL COMPLIANT - REAL DATA)
  * Cesta: src/app/contact/page.js
  * 🚀 CÍL: Jasná identifikace provozovatele (IČO, Adresa) pro schválení Seznam Partner a AdSense.
  */
@@ -95,7 +95,7 @@ export default function ContactPage(props) {
                 </div>
             </div>
 
-            {/* 🚀 GURU FIX: Nová sekce pro Seznam a AdSense (Identifikace provozovatele) */}
+            {/* 🚀 GURU FIX: Reálná data pro Seznam a AdSense (Identifikace provozovatele) */}
             <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(102, 252, 241, 0.2)', padding: '30px', borderRadius: '20px', marginBottom: '40px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
                 <Briefcase size={24} color="#66fcf1" />
@@ -105,21 +105,24 @@ export default function ContactPage(props) {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', fontSize: '1.1rem', color: '#d1d5db' }}>
                 <div>
-                  <strong style={{ color: '#fff' }}>{isEn ? 'Name / Company:' : 'Jméno / Společnost:'}</strong><br/>
-                  The Hardware Guru (Tvoje Jméno)
+                  <strong style={{ color: '#fff' }}>{isEn ? 'Name:' : 'Jméno / Fyzická osoba:'}</strong><br/>
+                  Petr Ťapťuch
                 </div>
                 <div>
                   <strong style={{ color: '#fff' }}>{isEn ? 'Address:' : 'Sídlo / Adresa:'}</strong><br/>
-                  Tvoje Adresa 123, 110 00 Praha
+                  Albrechtická 560/94<br/>
+                  794 01 Krnov<br/>
+                  {isEn ? 'Czech Republic' : 'Česká republika'}
                 </div>
                 <div>
                   <strong style={{ color: '#fff' }}>{isEn ? 'Reg. Number (IČO):' : 'IČO:'}</strong><br/>
-                  12345678 (Doplň reálné)
+                  69606846
+                  <div style={{ fontSize: '0.85rem', marginTop: '4px', color: '#9ca3af' }}>{isEn ? 'Non-VAT payer' : 'Neplátce DPH'}</div>
                 </div>
               </div>
               <p style={{ fontSize: '0.9rem', color: '#9ca3af', marginTop: '20px', fontStyle: 'italic' }}>
                 {isEn 
-                  ? 'The portal is operated by an individual/company properly registered in the Czech Republic. For business or legal inquiries, please use the email above.' 
+                  ? 'The portal is operated by an individual properly registered in the Czech Republic. For business or legal inquiries, please use the email above.' 
                   : 'Portál je provozován fyzickou osobou podnikající dle živnostenského zákona. Pro obchodní či právní dotazy využijte výše uvedený e-mail.'}
               </p>
             </div>
