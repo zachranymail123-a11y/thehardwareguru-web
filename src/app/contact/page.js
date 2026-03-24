@@ -1,10 +1,10 @@
 import React from 'react';
-import { Mail, MessageSquare, Youtube, Activity } from 'lucide-react';
+import { Mail, MessageSquare, Youtube, Activity, Briefcase } from 'lucide-react';
 
 /**
- * GURU CONTACT ENGINE V3.1 (E-E-A-T & ADSENSE COMPLIANT)
+ * GURU CONTACT ENGINE V3.2 (E-E-A-T & ADSENSE FULL COMPLIANT)
  * Cesta: src/app/contact/page.js
- * 🚀 CÍL: Poskytnout Googlu a uživatelům jasné kontaktní údaje pro důvěryhodnost.
+ * 🚀 CÍL: Jasná identifikace provozovatele (IČO, Adresa) pro schválení Seznam Partner a AdSense.
  */
 
 export const runtime = "nodejs";
@@ -93,6 +93,35 @@ export default function ContactPage(props) {
                     <h3 style={{ margin: '0 0 5px 0', fontSize: '1.2rem', color: '#fff' }}>Discord</h3>
                     <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" style={{ margin: 0, color: '#5865F2', textDecoration: 'none', fontWeight: 'bold' }}>Guru Community</a>
                 </div>
+            </div>
+
+            {/* 🚀 GURU FIX: Nová sekce pro Seznam a AdSense (Identifikace provozovatele) */}
+            <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(102, 252, 241, 0.2)', padding: '30px', borderRadius: '20px', marginBottom: '40px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                <Briefcase size={24} color="#66fcf1" />
+                <h2 style={{ margin: 0, fontSize: '1.5rem', borderLeft: 'none', paddingLeft: 0 }}>
+                  {isEn ? 'Operator Details' : 'Provozovatel webu'}
+                </h2>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', fontSize: '1.1rem', color: '#d1d5db' }}>
+                <div>
+                  <strong style={{ color: '#fff' }}>{isEn ? 'Name / Company:' : 'Jméno / Společnost:'}</strong><br/>
+                  The Hardware Guru (Tvoje Jméno)
+                </div>
+                <div>
+                  <strong style={{ color: '#fff' }}>{isEn ? 'Address:' : 'Sídlo / Adresa:'}</strong><br/>
+                  Tvoje Adresa 123, 110 00 Praha
+                </div>
+                <div>
+                  <strong style={{ color: '#fff' }}>{isEn ? 'Reg. Number (IČO):' : 'IČO:'}</strong><br/>
+                  12345678 (Doplň reálné)
+                </div>
+              </div>
+              <p style={{ fontSize: '0.9rem', color: '#9ca3af', marginTop: '20px', fontStyle: 'italic' }}>
+                {isEn 
+                  ? 'The portal is operated by an individual/company properly registered in the Czech Republic. For business or legal inquiries, please use the email above.' 
+                  : 'Portál je provozován fyzickou osobou podnikající dle živnostenského zákona. Pro obchodní či právní dotazy využijte výše uvedený e-mail.'}
+              </p>
             </div>
 
             <h2>{isEn ? 'Social Media' : 'Sociální sítě'}</h2>
