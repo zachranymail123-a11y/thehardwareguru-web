@@ -3,10 +3,9 @@ import { XMLParser } from 'fast-xml-parser';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU MASTER INDEXER V5.1 (TOTAL SEARCH DOMINATION - REPORT READY)
+ * GURU MASTER INDEXER V5.2 (SEZNAM ONLY MODE)
  * Cesta: src/app/api/seznam-indexer/route.js
- * 🚀 CIEĽ: Pokryť Seznam, Bing a ďalšie české vyhľadávače v jednom cykle.
- * 🛡️ FIX: Výsledok IndexNow pushu sa teraz zobrazuje priamo v JSON reporte.
+ * 🚀 CÍL: Odesílat URL výhradně do Seznam.cz (IndexNow běží vlastním cronem).
  */
 
 export const dynamic = 'force-dynamic';
@@ -17,14 +16,13 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PU
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const parser = new XMLParser();
-const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   
   // Bezpečnostná kontrola kľúča (voliteľné, ak používaš cron-job.org)
   const providedKey = searchParams.get('key');
-  const validKey = INDEXNOW_KEY;
+  const validKey = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
 
   if (process.env.NODE_ENV === 'production' && providedKey !== validKey) {
     // Ak chceš testovať v prehliadači, pridaj ?key=85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e
@@ -88,33 +86,10 @@ export async function GET(request) {
 
     if (urlsToProcess.length === 0) return NextResponse.json({ guru_status: "TOTAL_FINISHED", message: "Všetky sitemapy sú kompletne zaindexované." });
 
-    // 🚀 3. MASTER PUSH: ODOSLANIE DO VYHĽADÁVAČOV
+    // 🚀 3. MASTER PUSH: ODOSLANIE VÝHRADNĚ DO SEZNAMU
     const successfulUrls = [];
-    let indexNowReport = { ok: false, status: 0, message: "Not attempted" };
 
-    // --- A) INDEXNOW PUSH (Bing, Tiscali, Seznam-IndexNow Hub) ---
-    try {
-        const inRes = await fetch('https://api.indexnow.org/indexnow', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json; charset=utf-8' },
-            body: JSON.stringify({
-                host: "thehardwareguru.cz",
-                key: INDEXNOW_KEY,
-                keyLocation: `https://thehardwareguru.cz/${INDEXNOW_KEY}.txt`,
-                urlList: urlsToProcess
-            })
-        });
-        indexNowReport = { 
-            ok: inRes.ok, 
-            status: inRes.status, 
-            message: inRes.ok ? "Batch successfully sent to IndexNow Hub" : "IndexNow Hub rejected the request" 
-        };
-    } catch (e) { 
-        indexNowReport = { ok: false, status: 500, message: e.message };
-        console.error("IndexNow Push Failed", e); 
-    }
-
-    // --- B) SEZNAM SPECIFIC PUSH (Priame API cez POST) ---
+    // --- SEZNAM SPECIFIC PUSH (Priame API cez POST) ---
     for (const url of urlsToProcess) {
         try {
             const targetUrl = `https://reporter.seznam.cz/wm-api/web/document/reindex?key=${apiKey}&url=${encodeURIComponent(url)}`;
@@ -141,8 +116,7 @@ export async function GET(request) {
 
     return NextResponse.json({
         guru_status: "SUCCESS",
-        targets: ["Seznam.cz", "Bing.com", "IndexNow Partners"],
-        index_now_result: indexNowReport, // 🚀 TU TO UVIDÍŠ!
+        targets: ["Seznam.cz"],
         sitemap_processed: activeSitemapName,
         sent_count: successfulUrls.length,
         message: `Odoslaných ${successfulUrls.length} nových URL z ${activeSitemapName}.`
