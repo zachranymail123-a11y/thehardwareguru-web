@@ -1,14 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - BING CHUNK GENERATOR V1.1
+ * GURU SEO ENGINE - BING CHUNK GENERATOR V1.2
  * Cesta: src/app/bing-sitemap/[id]/route.js
- * 🚀 CÍL: Dedikovaný generátor čistě pro BING, oddělený od Google sitemap.
- * 🛡️ FIX 1: Limit upraven na 100, aby nedocházelo k chybě "Oversized ISR page (74 MB)".
- * 🛡️ FIX 2: Odstraněn fake <lastmod> všude, kde není reálně k dispozici.
+ * 🛡️ FIX: Zrušeno předgenerování statických chunků (ať se o to stará dynamicParams).
+ * 🛡️ FIX: Snížen limit na 50, aby to nepadalo na Vercel "Oversized ISR page".
  */
 
-export const revalidate = 86400; // 1 den (Bing nepotřebuje každou hodinu)
+export const revalidate = 86400; 
 export const dynamicParams = true; 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -20,9 +19,8 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
 });
 
 export async function generateStaticParams() {
+    // 🚀 BING FIX: Předgenerujeme POUZE textové mapy, aby Vercel nepadl na obřích číselných maticích!
     const types = ['pages.xml', 'posts.xml', 'cpu.xml', 'gpu.xml', 'duels.xml', 'upgrades.xml'];
-    // Pro Bing předgenerujeme prvních 10 chunků (při limitu 100 je to dostatek)
-    for(let i=1; i<=10; i++) types.push(`${i}.xml`);
     return types.map(t => ({ id: t }));
 }
 
@@ -133,8 +131,8 @@ export async function GET(req, props) {
 
         } else if (!isNaN(parseInt(type, 10))) {
             const chunkId = parseInt(type, 10);
-            // 🚀 BING FIX: 100 (místo Vercel zabijáckých 1000)
-            const limit = 100; 
+            // 🚀 FIX: Limit 50 - Bezpečné pro Vercel
+            const limit = 50; 
             const offset = (chunkId - 1) * limit;
 
             const { data: cpus } = await supabase.from('cpus').select('name').order('name').range(offset, offset + limit - 1); 
