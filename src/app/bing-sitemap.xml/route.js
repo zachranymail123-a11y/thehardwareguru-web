@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - BING OPTIMIZED SITEMAP INDEX V1.2
+ * GURU SEO ENGINE - BING OPTIMIZED SITEMAP INDEX V1.3
  * Cesta: src/app/bing-sitemap.xml/route.js
  */
 
@@ -29,8 +29,8 @@ export async function GET() {
     console.error("Bing index count fetch failed", e);
   }
 
-  // 🚀 FIX: Chunk size 50 (bezpečné pro Vercel)
-  const chunksNeeded = Math.max(1, Math.ceil(cpuCount / 50));
+  // 🚀 FIX: Vracíme tvůj originální limit 5, aby se vygenerovaly VŠECHNY chunky pro 400k stran!
+  const chunksNeeded = Math.max(1, Math.ceil(cpuCount / 5));
   
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
   
