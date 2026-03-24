@@ -1,10 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - BING CHUNK GENERATOR V1.0
+ * GURU SEO ENGINE - BING CHUNK GENERATOR V1.1
  * Cesta: src/app/bing-sitemap/[id]/route.js
  * 🚀 CÍL: Dedikovaný generátor čistě pro BING, oddělený od Google sitemap.
- * 🛡️ FIX 1: Extrémně stabilní chunkování (1000 CPU per chunk) místo 5.
+ * 🛡️ FIX 1: Limit upraven na 100, aby nedocházelo k chybě "Oversized ISR page (74 MB)".
  * 🛡️ FIX 2: Odstraněn fake <lastmod> všude, kde není reálně k dispozici.
  */
 
@@ -21,8 +21,8 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
 
 export async function generateStaticParams() {
     const types = ['pages.xml', 'posts.xml', 'cpu.xml', 'gpu.xml', 'duels.xml', 'upgrades.xml'];
-    // Pro Bing stačí předgenerovat mnohem méně chunků, protože mají po 1000
-    for(let i=1; i<=2; i++) types.push(`${i}.xml`);
+    // Pro Bing předgenerujeme prvních 10 chunků (při limitu 100 je to dostatek)
+    for(let i=1; i<=10; i++) types.push(`${i}.xml`);
     return types.map(t => ({ id: t }));
 }
 
@@ -30,7 +30,6 @@ const escapeXml = (str) => str ? str.replace(/[<>&'"]/g, c => ({'<':'&lt;','>':'
 const slugify = (text) => text?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '').replace(/\-+/g, '-').replace(/^-+|-+$/g, '').trim();
 const cleanGpuSlug = (s, n) => s || slugify(n).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
 
-// Změněno pro Bing: Vracíme null, pokud datum chybí, místo generování fake data.
 const safeDate = (dateStr) => {
     if (!dateStr) return null;
     try { return new Date(dateStr).toISOString(); } catch(e) { return null; }
@@ -134,8 +133,8 @@ export async function GET(req, props) {
 
         } else if (!isNaN(parseInt(type, 10))) {
             const chunkId = parseInt(type, 10);
-            // 🚀 BING FIX: 1000 místo 5 pro stabilní sitemapu
-            const limit = 1000; 
+            // 🚀 BING FIX: 100 (místo Vercel zabijáckých 1000)
+            const limit = 100; 
             const offset = (chunkId - 1) * limit;
 
             const { data: cpus } = await supabase.from('cpus').select('name').order('name').range(offset, offset + limit - 1); 
@@ -175,7 +174,6 @@ export async function GET(req, props) {
         let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
         routes.forEach(r => {
             xml += `  <url>\n    <loc>${escapeXml(r.url)}</loc>\n`;
-            // Vkládáme lastmod POUZE pokud reálně existuje v databázi (Bing to vyžaduje)
             if (r.lastmod) xml += `    <lastmod>${r.lastmod}</lastmod>\n`;
             xml += `    <changefreq>${r.changefreq || 'monthly'}</changefreq>\n`;
             xml += `    <priority>${r.priority}</priority>\n  </url>\n`;
