@@ -2,9 +2,9 @@ import React from 'react';
 import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, MessageSquare, Award, Bell, Bookmark, Share2 } from 'lucide-react';
 
 /**
- * GURU HOMEPAGE V16.1 - SHARE BAR INTEGRATION & ROLLBACK
+ * GURU HOMEPAGE V16.3 - SHARE BAR ONESIGNAL FIX
  * Cesta: src/app/page.js
- * 🚀 CÍL: Návrat k původnímu rozložení, zachováno tlačítko Poradna a přidána pouze lišta Sdílet & Odebírat.
+ * 🚀 CÍL: Zvoneček nyní správně vyvolává OneSignal Push notifikace.
  */
 
 // --- UNIKÁTNÍ METADATA PRO BING & GOOGLE ---
@@ -256,18 +256,39 @@ export default async function HomePage({ params }) {
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 20px rgba(37, 99, 235, 0.4)' }}><Bell size={20} fill="#fff" /></button>
-            <button className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#d97706', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 20px rgba(217, 119, 6, 0.4)' }}><Bookmark size={20} fill="#fff" /></button>
+            
+            {/* Tlačítko pro OneSignal Push Notifikace */}
+            <button id="onesignal-guru-btn" title={isEn ? "Subscribe to notifications" : "Odebírat upozornění webu"} className="onesignal-customlink-subscribe hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 20px rgba(37, 99, 235, 0.4)', textDecoration: 'none' }}>
+              <Bell size={20} fill="#fff" />
+            </button>
+            <script dangerouslySetInnerHTML={{ __html: `
+              setInterval(function() {
+                var btn = document.getElementById('onesignal-guru-btn');
+                if (btn && !btn.hasAttribute('data-os-bind')) {
+                  btn.setAttribute('data-os-bind', 'true');
+                  btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (window.OneSignal) {
+                      window.OneSignal.push(function() {
+                        window.OneSignal.showSlidedownPrompt();
+                      });
+                    }
+                  });
+                }
+              }, 1000);
+            `}} />
+
+            <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" title={isEn ? "Join our Discord" : "Připojit se na Discord"} className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#d97706', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 20px rgba(217, 119, 6, 0.4)', textDecoration: 'none' }}><Bookmark size={20} fill="#fff" /></a>
             
             <div style={{ width: '1px', height: '30px', background: 'rgba(255,255,255,0.1)', margin: '0 10px' }}></div>
             
-            <button className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#9333ea', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 20px rgba(147, 51, 234, 0.4)' }}><Share2 size={20} /></button>
-            <button className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <a href="https://www.facebook.com/sharer/sharer.php?u=https://thehardwareguru.cz" target="_blank" rel="noreferrer" title={isEn ? "Share on Facebook" : "Sdílet na Facebooku"} className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#9333ea', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 20px rgba(147, 51, 234, 0.4)', textDecoration: 'none' }}><Share2 size={20} /></a>
+            <a href="https://twitter.com/intent/tweet?url=https://thehardwareguru.cz&text=Mrkni%20na%20Hardware%20Guru!%20Nejlep%C5%A1%C3%AD%20tech%20web." target="_blank" rel="noreferrer" title={isEn ? "Share on X" : "Sdílet na X"} className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.1)', textDecoration: 'none' }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.005 4.150h-1.91z"/></svg>
-            </button>
-            <button className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#ea580c', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 20px rgba(234, 88, 12, 0.4)' }}>
+            </a>
+            <a href="https://www.reddit.com/submit?url=https://thehardwareguru.cz&title=The%20Hardware%20Guru%20-%20Tech%20Web" target="_blank" rel="noreferrer" title={isEn ? "Share on Reddit" : "Sdílet na Redditu"} className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#ea580c', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 20px rgba(234, 88, 12, 0.4)', textDecoration: 'none' }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.505 1.12-.823 2.686-1.373 4.417-1.469l.865-4.053c.036-.164.19-.283.359-.283h.032l2.914.613a1.256 1.256 0 0 1 1.434-1.315zm-9.043 8.354a1.26 1.26 0 0 0-1.26 1.26c0 .695.564 1.26 1.26 1.26.695 0 1.26-.565 1.26-1.26a1.26 1.26 0 0 0-1.26-1.26zm8.066 0a1.26 1.26 0 0 0-1.26 1.26c0 .695.564 1.26 1.26 1.26.695 0 1.26-.565 1.26-1.26a1.26 1.26 0 0 0-1.26-1.26zm-4.032 4.148c-1.503 0-2.698-.387-2.836-.431a.333.333 0 0 0-.197.636c.036.012 1.348.462 3.033.462 1.684 0 2.996-.45 3.032-.462a.333.333 0 0 0-.197-.636c-.138.044-1.333.431-2.835.431z"/></svg>
-            </button>
+            </a>
           </div>
       </section>
 
