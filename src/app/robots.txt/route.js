@@ -1,7 +1,7 @@
 /**
- * GURU ROBOTS ENGINE V4.6 (CLEAN MODE)
+ * GURU ROBOTS ENGINE V4.7 (BING SITEMAP ADDED)
  * Cesta: src/app/robots.txt/route.js
- * 🚀 CÍL: Návrat k čistému formátu pouze s hlavními sitemap indexy.
+ * 🚀 CÍL: Přidána dedikovaná sitemapa pro Bing, zachován čistý formát.
  */
 
 export const revalidate = 86400;
@@ -18,6 +18,9 @@ Disallow: /admin/
 # Hlavní indexy map webu
 Sitemap: https://thehardwareguru.cz/guru-sitemap.xml
 Sitemap: https://thehardwareguru.cz/latest.xml
+
+# Mapa speciálně pro Bing
+Sitemap: https://thehardwareguru.cz/bing-sitemap.xml
 
 # Dynamické mapy (AKTIVOVAT AŽ PO SCHVÁLENÍ ADSENSE)
 # Sitemap: https://thehardwareguru.cz/sitemap-hity.xml
