@@ -8,10 +8,11 @@ import Navbar from '../components/Navbar';
 import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
 import ShareWidget from '../components/ShareWidget';
+import CookieBanner from '../components/CookieBanner';
 
 /**
- * GURU ROOT LAYOUT V5.8 (ONESIGNAL APP ID FIX + WIDGET)
- * 🚀 CÍL: Pevně vložené OneSignal App ID a Share Widget.
+ * GURU ROOT LAYOUT V5.9 (ONESIGNAL APP ID FIX + WIDGET + COOKIES)
+ * 🚀 CÍL: Pevně vložené OneSignal App ID, Share Widget a Cookies lišta.
  */
 
 export const metadata = {
@@ -207,6 +208,7 @@ export default async function RootLayout({ children, params }) {
 
         <SestavyBubble />
         <SupportWidget />
+        <CookieBanner />
         <Analytics />
       </body>
     </html>
