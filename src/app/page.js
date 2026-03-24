@@ -1,10 +1,10 @@
 import React from 'react';
-import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, MessageSquare, ExternalLink } from 'lucide-react';
+import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, MessageSquare, Award, Bell, Bookmark, Share2 } from 'lucide-react';
 
 /**
- * GURU HOMEPAGE V16.0 - GURU TOOLS CARD INTEGRATION
+ * GURU HOMEPAGE V16.1 - SHARE BAR INTEGRATION & ROLLBACK
  * Cesta: src/app/page.js
- * 🚀 CÍL: Přidána graficky integrovaná karta "GURU NÁSTROJE" na začátek gridu s články.
+ * 🚀 CÍL: Návrat k původnímu rozložení, zachováno tlačítko Poradna a přidána pouze lišta Sdílet & Odebírat.
  */
 
 // --- UNIKÁTNÍ METADATA PRO BING & GOOGLE ---
@@ -43,46 +43,6 @@ const getBadgeInfo = (post, isEn) => {
   if (isGame) return { text: isEn ? 'GAME NEWS' : 'HERNÍ NOVINKA', color: '#ff0055', textColor: '#fff', isLeak: false };
   
   return { text: isEn ? 'HW NEWS' : 'HW NOVINKA', color: '#ff0000', textColor: '#fff', isLeak: false };
-};
-
-// --- NOVÁ KOMPONENTA: KARTA S GURU NÁSTROJI ---
-const GuruToolsCard = ({ isEn }) => {
-    const tools = [
-        { icon: <Activity />, text: isEn ? 'LIVE' : 'SLEDOVAT LIVE', color: '#53fc18', href: 'https://kick.com/thehardwareguru' },
-        { icon: <Swords />, text: isEn ? 'GPU BATTLES' : 'SOUBOJE GPU', color: '#ff0055', href: '/gpuvs' },
-        { icon: <Cpu />, text: isEn ? 'CPU BATTLES' : 'SOUBOJE CPU', color: '#66fcf1', href: '/cpuvs' },
-        { icon: <Gamepad2 />, text: isEn ? 'CAN I RUN IT?' : 'ROZJEDU TO?', color: '#a855f7', href: '/fps-calculator' },
-        { icon: <Layers />, text: isEn ? 'BOTTLENECK' : 'BOTTLENECK', color: '#38bdf8', href: '/bottleneck-calculator' },
-        { icon: <MessageSquare />, text: isEn ? 'V.I.P HELP DESK' : 'V.I.P PORADNA', color: '#3b82f6', href: '/poradna' },
-        { icon: <Flame />, text: isEn ? 'GAME DEALS' : 'SLEVY NA HRY', color: '#f97316', href: '/deals' },
-        { icon: <Heart />, text: isEn ? 'SUPPORT' : 'PODPOŘIT GURU', color: '#eab308', href: '/support' }
-    ];
-
-    return (
-        <div className="game-card" style={{ borderRadius: '12px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ position: 'relative', paddingTop: '56.25%', background: 'linear-gradient(135deg, #0d1117 0%, #1a1c23 100%)' }}>
-                <div style={{ position: 'absolute', top: '10px', right: '10px', background: '#66fcf1', color: '#0b0c10', padding: '5px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <ShieldCheck size={14} /> {isEn ? 'GURU TOOLS' : 'GURU NÁSTROJE'}
-                </div>
-                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(102, 252, 241, 0.1)', fontSize: '8rem', fontWeight: '950', userSelect: 'none' }}>HG</div>
-            </div>
-            <div style={{ padding: '25px', flex: 1, display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                <h3 style={{ color: '#fff', margin: '0 0 10px 0', fontSize: '1.2rem', fontWeight: 'bold' }}>{isEn ? 'Quick Access to Guru Tools' : 'Rychlý přístup k nástrojům Guru'}</h3>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', flex: 1 }}>
-                    {tools.map((tool, idx) => (
-                        <a key={idx} href={tool.href} target={tool.href.startsWith('http') ? "_blank" : "_self"} rel={tool.href.startsWith('http') ? "noreferrer" : ""} style={{ textDecoration: 'none', transition: '0.3s' }}>
-                            <div className="guru-tweak-card" style={{ padding: '10px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', gap: '8px', color: tool.color, fontWeight: 'bold', fontSize: '12px' }}>
-                                {tool.icon && React.cloneElement(tool.icon, { size: 16 })}
-                                <span style={{ textTransform: 'uppercase', letterSpacing: '1px' }}>{tool.text}</span>
-                                {tool.href.startsWith('http') && <ExternalLink size={12} style={{ marginLeft: 'auto', opacity: 0.5 }} />}
-                            </div>
-                        </a>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
 };
 
 export default async function HomePage({ params }) {
@@ -226,8 +186,11 @@ export default async function HomePage({ params }) {
         .monetize-hero-card.partners { border-top: 4px solid #eab308; }
         .monetize-hero-card.partners:hover { border-color: #eab308; box-shadow: 0 25px 60px rgba(234, 179, 8, 0.3); transform: translateY(-8px); }
 
+        .hover-scale { transition: transform 0.3s ease; }
+        .hover-scale:hover { transform: scale(1.05); }
+
         @media (max-width: 768px) {
-          .guru-hero-section { padding: 40px 20px; text-align: center; justify-content: center; }
+          .guru-hero-section { padding: 40px 20px; text-align: center; justify-content: center; margin-bottom: 20px; }
           .social-btn-main { width: 100%; }
         }
       `}</style>
@@ -282,8 +245,34 @@ export default async function HomePage({ params }) {
         }}>HG</div>
       </header>
 
+      {/* --- SDÍLET & ODEBÍRAT LIŠTA --- */}
+      <section style={{ maxWidth: '1200px', margin: '0 auto 60px auto', background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '24px', padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', backdropFilter: 'blur(10px)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <Award size={32} color="#a855f7" />
+            <div>
+              <h3 style={{ fontSize: '20px', fontWeight: '950', margin: 0, color: '#fff', textTransform: 'uppercase', letterSpacing: '2px' }}>{isEn ? 'SHARE & SUBSCRIBE' : 'SDÍLET & ODEBÍRAT'}</h3>
+              <p style={{ margin: '5px 0 0 0', color: '#a855f7', fontSize: '13px', fontWeight: 'bold' }}>{isEn ? 'Help other geeks find the truth' : 'Pomoz ostatním geekům najít pravdu'}</p>
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 20px rgba(37, 99, 235, 0.4)' }}><Bell size={20} fill="#fff" /></button>
+            <button className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#d97706', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 20px rgba(217, 119, 6, 0.4)' }}><Bookmark size={20} fill="#fff" /></button>
+            
+            <div style={{ width: '1px', height: '30px', background: 'rgba(255,255,255,0.1)', margin: '0 10px' }}></div>
+            
+            <button className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#9333ea', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 20px rgba(147, 51, 234, 0.4)' }}><Share2 size={20} /></button>
+            <button className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.005 4.150h-1.91z"/></svg>
+            </button>
+            <button className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#ea580c', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 20px rgba(234, 88, 12, 0.4)' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.505 1.12-.823 2.686-1.373 4.417-1.469l.865-4.053c.036-.164.19-.283.359-.283h.032l2.914.613a1.256 1.256 0 0 1 1.434-1.315zm-9.043 8.354a1.26 1.26 0 0 0-1.26 1.26c0 .695.564 1.26 1.26 1.26.695 0 1.26-.565 1.26-1.26a1.26 1.26 0 0 0-1.26-1.26zm8.066 0a1.26 1.26 0 0 0-1.26 1.26c0 .695.564 1.26 1.26 1.26.695 0 1.26-.565 1.26-1.26a1.26 1.26 0 0 0-1.26-1.26zm-4.032 4.148c-1.503 0-2.698-.387-2.836-.431a.333.333 0 0 0-.197.636c.036.012 1.348.462 3.033.462 1.684 0 2.996-.45 3.032-.462a.333.333 0 0 0-.197-.636c-.138.044-1.333.431-2.835.431z"/></svg>
+            </button>
+          </div>
+      </section>
+
       {/* --- MONETIZACE --- */}
-      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px', display: 'flex', gap: '30px', flexWrap: 'wrap', marginTop: '-30px', marginBottom: '60px' }}>
+      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px', display: 'flex', gap: '30px', flexWrap: 'wrap', marginBottom: '60px' }}>
           <a href={isEn ? "/en/sin-slavy" : "/sin-slavy"} className="monetize-hero-card hof" style={{ flex: 1, minWidth: '300px' }}>
             <div style={{ background: 'rgba(168, 85, 247, 0.1)', padding: '20px', borderRadius: '50%', marginBottom: '20px', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
               <Trophy size={40} color="#a855f7" style={{ filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.6))' }} />
@@ -508,10 +497,6 @@ export default async function HomePage({ params }) {
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(320px, 1fr))`, gap: '30px' }}>
-            
-            {/* 🚀 GURU TOOLS CARD INTEGRACE */}
-            <GuruToolsCard isEn={isEn} />
-
             {data.posts.map((post, idx) => {
               const badge = getBadgeInfo(post, isEn);
               return (
