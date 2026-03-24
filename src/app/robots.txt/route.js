@@ -1,7 +1,7 @@
 /**
- * GURU ROBOTS ENGINE V4.5 (BING OPTIMIZED MODE)
+ * GURU ROBOTS ENGINE V4.6 (CLEAN MODE)
  * Cesta: src/app/robots.txt/route.js
- * 🚀 CÍL: Přidány všechny dílčí sitemapy natvrdo, zrušen Crawl-delay a povoleno BingAI pro max indexaci.
+ * 🚀 CÍL: Návrat k čistému formátu pouze s hlavními sitemap indexy.
  */
 
 export const revalidate = 86400;
@@ -15,23 +15,8 @@ Allow: /
 Disallow: /api/
 Disallow: /admin/
 
-# Mapy webu (Všechny dílčí mapy vypsané natvrdo pro pomalejší boty)
-Sitemap: https://thehardwareguru.cz/guru-sitemap/pages.xml
-Sitemap: https://thehardwareguru.cz/guru-sitemap/posts.xml
-Sitemap: https://thehardwareguru.cz/guru-sitemap/cpu.xml
-Sitemap: https://thehardwareguru.cz/guru-sitemap/gpu.xml
-Sitemap: https://thehardwareguru.cz/guru-sitemap/duels.xml
-Sitemap: https://thehardwareguru.cz/guru-sitemap/upgrades.xml
-Sitemap: https://thehardwareguru.cz/guru-sitemap/1.xml
-Sitemap: https://thehardwareguru.cz/guru-sitemap/2.xml
-Sitemap: https://thehardwareguru.cz/guru-sitemap/3.xml
-Sitemap: https://thehardwareguru.cz/guru-sitemap/4.xml
-Sitemap: https://thehardwareguru.cz/guru-sitemap/5.xml
-Sitemap: https://thehardwareguru.cz/guru-sitemap/6.xml
-Sitemap: https://thehardwareguru.cz/guru-sitemap/7.xml
-Sitemap: https://thehardwareguru.cz/guru-sitemap/8.xml
-Sitemap: https://thehardwareguru.cz/guru-sitemap/9.xml
-Sitemap: https://thehardwareguru.cz/guru-sitemap/10.xml
+# Hlavní indexy map webu
+Sitemap: https://thehardwareguru.cz/guru-sitemap.xml
 Sitemap: https://thehardwareguru.cz/latest.xml
 
 # Dynamické mapy (AKTIVOVAT AŽ PO SCHVÁLENÍ ADSENSE)
