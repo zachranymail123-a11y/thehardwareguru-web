@@ -1,10 +1,10 @@
 import React from 'react';
-import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers } from 'lucide-react';
+import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, MessageSquare } from 'lucide-react';
 
 /**
- * GURU HOMEPAGE V15.8 - SEO & BING DUPLICITY FIX
+ * GURU HOMEPAGE V15.9 - V.I.P PORADNA BUTTON
  * Cesta: src/app/page.js
- * 🚀 CÍL: Unikátní metadata pro Bing a integrace všech GURU nástrojů.
+ * 🚀 CÍL: Přidáno tlačítko V.I.P Poradna do hlavní Hero sekce. Žádné další úpravy.
  */
 
 // --- UNIKÁTNÍ METADATA PRO BING & GOOGLE ---
@@ -155,6 +155,9 @@ export default async function HomePage({ params }) {
         .social-btn-main.bottleneck { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); }
         .social-btn-main.bottleneck:hover { background: #38bdf8; color: #000; box-shadow: 0 10px 25px rgba(56, 189, 248, 0.4); transform: translateY(-3px); }
 
+        .social-btn-main.poradna { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); }
+        .social-btn-main.poradna:hover { background: #3b82f6; color: #fff; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4); transform: translateY(-3px); }
+
         .social-btn-main.deals { background: rgba(249, 115, 22, 0.1); color: #f97316; border-color: rgba(249, 115, 22, 0.3); }
         .social-btn-main.deals:hover { background: #f97316; color: #fff; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4); transform: translateY(-3px); }
 
@@ -220,6 +223,10 @@ export default async function HomePage({ params }) {
 
               <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} className="social-btn-main bottleneck">
                 <Layers size={18}/> {isEn ? 'BOTTLENECK' : 'BOTTLENECK'}
+              </a>
+
+              <a href={isEn ? "/en/poradna" : "/poradna"} className="social-btn-main poradna">
+                <MessageSquare size={18}/> {isEn ? 'V.I.P HELP DESK' : 'V.I.P PORADNA'}
               </a>
 
               <a href={isEn ? "/en/deals" : "/cs/deals"} className="social-btn-main deals"><Flame size={18}/> {isEn ? 'GAME DEALS' : 'SLEVY NA HRY'}</a>
