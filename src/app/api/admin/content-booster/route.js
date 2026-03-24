@@ -3,10 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
 /**
- * GURU CONTENT BOOSTER V1.1 (ADSENSE RECOVERY - EXACT COLUMN MATCH)
- * Cesta: src/app/api/admin/content-booster/route.js
- * 🚀 CÍL: Hromadně nafouknout krátké články na High-Value Content.
- * 🛡️ FIX: Používá sloupce 'content' (CZ) a 'content_en' (EN).
+ * GURU CONTENT BOOSTER V1.3 (HTML STRUCTURE ENFORCER)
+ * 🛡️ FIX: Striktní vynucení HTML tagů (H2, strong, UL/LI) pro maximální SEO skóre.
  */
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -19,38 +17,27 @@ const MASTER_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
-  if (searchParams.get('key') !== MASTER_KEY) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (searchParams.get('key') !== MASTER_KEY) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    // 1. Najdeme články, které mají CZ content kratší než 800 znaků (aby tam bylo maso)
     const { data: posts, error } = await supabase
       .from('posts')
       .select('id, title, content')
-      // Filtrujeme články, které jsou pro Google "tenké"
-      .or('content.is.null,content.lt.800')
-      .limit(3); // Sníženo na 3 kvůli limitům Vercel timeoutu (generování trvá dlouho)
+      .or('content.lt.1000,content_en.is.null') // Bereme ty, co potřebují maso
+      .order('created_at', { ascending: false })
+      .limit(3); 
 
     if (error) throw error;
-    if (!posts || posts.length === 0) {
-      return NextResponse.json({ message: "Všechny články v databázi jsou už dostatečně dlouhé." });
-    }
-
-    const results = [];
+    if (!posts || posts.length === 0) return NextResponse.json({ guru_status: "FINISHED" });
 
     for (const post of posts) {
-      // 2. AI Generování hluboké CZ analýzy
-      const promptCZ = `Jsi seniorní hardwarový analytik s 20 lety praxe (The Hardware Guru). 
-      Napiš hlubokou analýzu (minimálně 600-800 slov) v češtině na téma: "${post.title}".
-      Původní krátká zpráva: "${post.content || ''}".
-      
-      Striktně dodržuj tuto HTML strukturu (bez Markdownu, jen tagy):
-      - Začni krátkým shrnutím v <p><strong>...</strong></p>
-      - Použij nejméně tři logické sekce s nadpisy <h2>
-      - Vlož jeden seznam <ul> s odrážkami <li><strong>...</strong></li> pro klíčové body.
-      - Na závěr sekci "Slovo Guru závěrem" v <h2>.
-      - Styl: Profesionální, technický, srovnávej s aktuální generací (RTX 5090, Zen 5, atd.).`;
+      const promptCZ = `Jsi seniorní hardwarový analytik. Napiš hlubokou analýzu (800 slov) na: "${post.title}".
+      STRIKTNĚ POUŽIJ TYTO HTML TAGY (NE MARKDOWN!):
+      - Hlavní shrnutí v <p><strong>...</strong></p>
+      - Každý podnadpis v <h2>...</h2>
+      - Klíčové body v <ul><li><strong>...</strong>: ...</li></ul>
+      - Každý odstavec v <p>...</p>
+      Obsah musí být technický, zmiňuj RTX 5090, DLSS 4, Zen 5 a tržní dopady.`;
 
       const aiResCZ = await openai.chat.completions.create({
         model: "gpt-4-turbo-preview",
@@ -60,40 +47,22 @@ export async function GET(req) {
 
       const fullContentCZ = aiResCZ.choices[0].message.content;
 
-      // 3. AI Generování EN verze (Překlad + adaptace)
-      const promptEN = `Translate and adapt the following hardware article into professional English for a global gaming audience. 
-      Keep the exact same HTML structure. Content to translate: ${fullContentCZ}`;
-
+      // Překlad se zachováním HTML
       const aiResEN = await openai.chat.completions.create({
         model: "gpt-4-turbo-preview",
-        messages: [{ role: "user", content: promptEN }],
-        temperature: 0.3,
+        messages: [{ role: "user", content: `Translate this article to professional English, KEEP ALL HTML TAGS EXACTLY: ${fullContentCZ}` }],
+        temperature: 0.2,
       });
 
       const fullContentEN = aiResEN.choices[0].message.content;
 
-      // 4. Update databáze (přesné sloupce: content, content_en)
-      const { error: updateErr } = await supabase
-        .from('posts')
-        .update({
-          content: fullContentCZ,      // 🇨🇿 Čeština
-          content_en: fullContentEN    // 🇬🇧 Angličtina
-        })
-        .eq('id', post.id);
-
-      if (!updateErr) {
-        results.push({ id: post.id, title: post.title });
-      } else {
-        console.error(`Chyba u postu ${post.id}:`, updateErr);
-      }
+      await supabase.from('posts').update({
+        content: fullContentCZ,
+        content_en: fullContentEN
+      }).eq('id', post.id);
     }
 
-    return NextResponse.json({ 
-      status: "SUCCESS", 
-      processed_count: results.length,
-      boosted_articles: results,
-      instructions: "Pokud chceš pokračovat, obnov stránku. Vercel dává cca 30s na jeden běh."
-    });
+    return NextResponse.json({ status: "SUCCESS", boosted: posts.map(p => p.title) });
 
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
