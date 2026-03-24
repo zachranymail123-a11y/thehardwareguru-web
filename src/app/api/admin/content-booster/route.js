@@ -3,87 +3,86 @@ import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 
 /**
- * GURU CONTENT BOOSTER V1.5 (CRON-OPTIMIZED)
- * 🚀 CÍL: Nafouknout vždy pouze 1 článek, aby nedošlo k timeoutu.
+ * GURU CONTENT BOOSTER V1.6 (THE "REALLY FIX IT" EDITION)
+ * 🚀 CÍL: Brutální kontrola zápisu do DB a eliminace duplicit.
  */
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Musíš použít SERVICE_ROLE_KEY, aby si Supabase nehrála na hrdinu s RLS politikama!
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  process.env.SUPABASE_SERVICE_ROLE_KEY || '' 
 );
 
 const MASTER_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   if (searchParams.get('key') !== MASTER_KEY) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    // 1. Vybereme pouze JEDEN článek, který ještě nemá pořádný anglický obsah
-    const { data: posts, error } = await supabase
+    // 1. GURU FETCH: Najdeme jeden článek, co má krátký EN obsah (pod 1000 znaků)
+    const { data: posts, error: fetchError } = await supabase
       .from('posts')
       .select('id, title, content')
-      .or('content_en.is.null,content_en.lt.1000') // Pokud má EN verze pod 1000 znaků, bereme jako nenafouknuto
-      .order('created_at', { ascending: false })
-      .limit(1); 
+      .or('content_en.is.null,content_en.lt.1000')
+      .order('id', { ascending: true }) // Bereme je popořadě podle ID
+      .limit(1);
 
-    if (error) throw error;
-    if (!posts || posts.length === 0) {
-      return NextResponse.json({ status: "FINISHED", message: "Všechny články jsou již nafouknuty." });
-    }
+    if (fetchError) throw new Error("Fetch Error: " + fetchError.message);
+    if (!posts || posts.length === 0) return NextResponse.json({ status: "FINISHED" });
 
     const post = posts[0];
 
-    // 2. Generování CZ obsahu (Hluboká analýza)
-    const promptCZ = `Jsi seniorní hardwarový analytik webu The Hardware Guru. Napiš hlubokou technickou analýzu (minimálně 800 slov) na téma: "${post.title}".
-    STRIKTNĚ POUŽIJ TYTO HTML TAGY:
-    - Hlavní shrnutí v <p><strong>...</strong></p>
-    - Každý podnadpis v <h2>...</h2>
-    - Klíčové technické parametry v <ul><li><strong>...</strong>: ...</li></ul>
-    - Ostatní text v <p>...</p>
-    Zaměř se na výkon, architekturu (RTX 50-series, Zen 5 atd.) a tržní souvislosti.`;
+    // 2. AI GENERATOR CZ
+    const promptCZ = `Jsi seniorní hardwarový analytik The Hardware Guru. Napiš hlubokou analýzu (800 slov) na téma: "${post.title}". 
+    Původní info: "${post.content || ''}".
+    STRIKTNĚ POUŽIJ HTML: <p>, <h2>, <ul>, <li>. Žádný Markdown!`;
 
     const aiResCZ = await openai.chat.completions.create({
       model: "gpt-4-turbo-preview",
       messages: [{ role: "user", content: promptCZ }],
       temperature: 0.7,
     });
-
     const fullContentCZ = aiResCZ.choices[0].message.content;
 
-    // 3. Překlad do EN (Zachování HTML)
+    // 3. AI TRANSLATOR EN
     const aiResEN = await openai.chat.completions.create({
       model: "gpt-4-turbo-preview",
-      messages: [{ role: "user", content: `Translate this tech article to professional English, KEEP ALL HTML TAGS EXACTLY: ${fullContentCZ}` }],
+      messages: [{ role: "user", content: `Translate this to tech English, keep HTML tags: ${fullContentCZ}` }],
       temperature: 0.2,
     });
-
     const fullContentEN = aiResEN.choices[0].message.content;
 
-    // 4. Update databáze - zapíšeme CZ i EN verzi
-    const { error: updateError } = await supabase
+    // 4. KRITICKÝ UPDATE: Tady se láme chleba
+    const { data: updateData, error: updateError, count } = await supabase
       .from('posts')
       .update({
         content: fullContentCZ,
         content_en: fullContentEN,
         updated_at: new Date().toISOString()
       })
-      .eq('id', post.id);
+      .eq('id', post.id)
+      .select(); // Tohle nám vrátí, co se reálně zapsalo
 
-    if (updateError) throw updateError;
+    if (updateError) throw new Error("Update Error: " + updateError.message);
 
+    // 5. FINÁLNÍ KONTROLA
     return NextResponse.json({ 
       status: "SUCCESS", 
-      boosted: post.title 
+      boosted_id: post.id,
+      boosted_title: post.title,
+      db_confirmed: updateData && updateData.length > 0 ? "YES" : "NO - ZÁPIS SE NEPOVEDL!",
+      new_content_length: fullContentCZ.length
     }, {
-      headers: { 'Cache-Control': 'no-store' }
+      headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' }
     });
 
   } catch (err) {
-    console.error("Booster Error:", err.message);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err.message, stack: "Guru Engine Fail" }, { status: 500 });
   }
 }
