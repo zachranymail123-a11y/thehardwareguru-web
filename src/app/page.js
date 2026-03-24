@@ -1,10 +1,10 @@
 import React from 'react';
-import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, MessageSquare } from 'lucide-react';
+import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, MessageSquare, ExternalLink } from 'lucide-react';
 
 /**
- * GURU HOMEPAGE V15.9 - V.I.P PORADNA BUTTON
+ * GURU HOMEPAGE V16.0 - GURU TOOLS CARD INTEGRATION
  * Cesta: src/app/page.js
- * 🚀 CÍL: Přidáno tlačítko V.I.P Poradna do hlavní Hero sekce. Žádné další úpravy.
+ * 🚀 CÍL: Přidána graficky integrovaná karta "GURU NÁSTROJE" na začátek gridu s články.
  */
 
 // --- UNIKÁTNÍ METADATA PRO BING & GOOGLE ---
@@ -43,6 +43,46 @@ const getBadgeInfo = (post, isEn) => {
   if (isGame) return { text: isEn ? 'GAME NEWS' : 'HERNÍ NOVINKA', color: '#ff0055', textColor: '#fff', isLeak: false };
   
   return { text: isEn ? 'HW NEWS' : 'HW NOVINKA', color: '#ff0000', textColor: '#fff', isLeak: false };
+};
+
+// --- NOVÁ KOMPONENTA: KARTA S GURU NÁSTROJI ---
+const GuruToolsCard = ({ isEn }) => {
+    const tools = [
+        { icon: <Activity />, text: isEn ? 'LIVE' : 'SLEDOVAT LIVE', color: '#53fc18', href: 'https://kick.com/thehardwareguru' },
+        { icon: <Swords />, text: isEn ? 'GPU BATTLES' : 'SOUBOJE GPU', color: '#ff0055', href: '/gpuvs' },
+        { icon: <Cpu />, text: isEn ? 'CPU BATTLES' : 'SOUBOJE CPU', color: '#66fcf1', href: '/cpuvs' },
+        { icon: <Gamepad2 />, text: isEn ? 'CAN I RUN IT?' : 'ROZJEDU TO?', color: '#a855f7', href: '/fps-calculator' },
+        { icon: <Layers />, text: isEn ? 'BOTTLENECK' : 'BOTTLENECK', color: '#38bdf8', href: '/bottleneck-calculator' },
+        { icon: <MessageSquare />, text: isEn ? 'V.I.P HELP DESK' : 'V.I.P PORADNA', color: '#3b82f6', href: '/poradna' },
+        { icon: <Flame />, text: isEn ? 'GAME DEALS' : 'SLEVY NA HRY', color: '#f97316', href: '/deals' },
+        { icon: <Heart />, text: isEn ? 'SUPPORT' : 'PODPOŘIT GURU', color: '#eab308', href: '/support' }
+    ];
+
+    return (
+        <div className="game-card" style={{ borderRadius: '12px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ position: 'relative', paddingTop: '56.25%', background: 'linear-gradient(135deg, #0d1117 0%, #1a1c23 100%)' }}>
+                <div style={{ position: 'absolute', top: '10px', right: '10px', background: '#66fcf1', color: '#0b0c10', padding: '5px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <ShieldCheck size={14} /> {isEn ? 'GURU TOOLS' : 'GURU NÁSTROJE'}
+                </div>
+                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(102, 252, 241, 0.1)', fontSize: '8rem', fontWeight: '950', userSelect: 'none' }}>HG</div>
+            </div>
+            <div style={{ padding: '25px', flex: 1, display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <h3 style={{ color: '#fff', margin: '0 0 10px 0', fontSize: '1.2rem', fontWeight: 'bold' }}>{isEn ? 'Quick Access to Guru Tools' : 'Rychlý přístup k nástrojům Guru'}</h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', flex: 1 }}>
+                    {tools.map((tool, idx) => (
+                        <a key={idx} href={tool.href} target={tool.href.startsWith('http') ? "_blank" : "_self"} rel={tool.href.startsWith('http') ? "noreferrer" : ""} style={{ textDecoration: 'none', transition: '0.3s' }}>
+                            <div className="guru-tweak-card" style={{ padding: '10px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', gap: '8px', color: tool.color, fontWeight: 'bold', fontSize: '12px' }}>
+                                {tool.icon && React.cloneElement(tool.icon, { size: 16 })}
+                                <span style={{ textTransform: 'uppercase', letterSpacing: '1px' }}>{tool.text}</span>
+                                {tool.href.startsWith('http') && <ExternalLink size={12} style={{ marginLeft: 'auto', opacity: 0.5 }} />}
+                            </div>
+                        </a>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export default async function HomePage({ params }) {
@@ -468,6 +508,10 @@ export default async function HomePage({ params }) {
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(320px, 1fr))`, gap: '30px' }}>
+            
+            {/* 🚀 GURU TOOLS CARD INTEGRACE */}
+            <GuruToolsCard isEn={isEn} />
+
             {data.posts.map((post, idx) => {
               const badge = getBadgeInfo(post, isEn);
               return (
