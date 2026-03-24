@@ -8,25 +8,18 @@ import {
   ExternalLink, Lightbulb, BookOpen, Wrench, Video, Cpu, Lock, Calendar, Terminal,
   LayoutDashboard, Image as ImageIcon, CalendarDays, Layers, ChevronRight, Play,
   Download, Eye, Check, RotateCcw, Smartphone, Monitor, ArrowLeft, TrendingUp, Gamepad2, Star, Heart, Ghost, Brain,
-  LineChart, ArrowUpRight, Info, BarChart3
+  LineChart, ArrowUpRight, Info, BarChart3, MessageSquare, User, Mail
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V5.7 (HYPE RADAR, IMAGES & TYPE FIX)
+ * GURU ULTIMATE COMMAND CENTER V5.8 (PORADNA INTEGRATION)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
- * 🛡️ FIX 1: Opraven Vercel prerender error (přidáno force-dynamic a ošetřen přístup k document v getEnv).
- * 🛡️ FIX 2: Uživatel vkládá data přes čistý JSON.
- * 🛡️ FIX 3: Při vložení CPU nebo GPU administrace vygeneruje duely (opraven slug fetch error).
- * 🛡️ FIX 4: Upraveny verifikační URL odkazy tak, aby exaktně seděly na reálnou strukturu (cpuvs, cpu-upgrade).
- * 🛡️ FIX 5: Zaveden plně automatický Vercel Rebuild ihned po zápisu do DB.
- * 🛡️ FIX 6: Aplikováno pravidlo Google Golden Rich.
- * 🛡️ FIX 7: Hype Radar - opraveno načítání a parsování dat z /api/predictor (podpora game, name, title), zabráněno "undefined".
- * 🛡️ FIX 8: Intel Hub - do Modalu přidáno viditelné pole pro IMAGE URL + opraveno mapování obrázků z feedu.
- * 🛡️ FIX 9: Intel Hub - Přesné rozlišení typu příspěvku do databáze (game / leak / article).
+ * 🛡️ FIX 1-9: Zachovány z V5.7
+ * 🛡️ FIX 10: Integrován modul "PORADNA" pro správu uživatelských dotazů přímo z hlavního dashboardu.
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -120,6 +113,12 @@ export default function AdminApp() {
   const [seznamLimit, setSeznamLimit] = useState(50);
   const [seznamStatsLoading, setSeznamStatsLoading] = useState(false);
   const [seznamStats, setSeznamStats] = useState(null);
+
+  // --- PORADNA STATE ---
+  const [poradnaQuestions, setPoradnaQuestions] = useState([]);
+  const [poradnaLoading, setPoradnaLoading] = useState(false);
+  const [poradnaAnswers, setPoradnaAnswers] = useState({});
+  const [poradnaSubmitting, setPoradnaSubmitting] = useState(null);
 
   const addLog = (msg, type = 'info') => {
     const timeStr = new Date().toTimeString().split(' ')[0]; 
@@ -273,6 +272,56 @@ export default function AdminApp() {
     setLoading(false);
   };
 
+  // --- PORADNA FUNKCE ---
+  const fetchPoradnaQuestions = async () => {
+    setPoradnaLoading(true);
+    addLog('Načítám dotazy z poradny...', 'info');
+    const { data, error } = await supabase
+      .from('pc_questions')
+      .select('*')
+      .order('is_answered', { ascending: true })
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+        addLog(`Chyba načítání poradny: ${error.message}`, 'error');
+    } else {
+        setPoradnaQuestions(data || []);
+        addLog(`Načteno ${data?.length || 0} dotazů.`, 'success');
+    }
+    setPoradnaLoading(false);
+  };
+
+  const handlePoradnaAnswerChange = (id, text) => {
+    setPoradnaAnswers({ ...poradnaAnswers, [id]: text });
+  };
+
+  const submitPoradnaAnswer = async (id) => {
+    const answerText = poradnaAnswers[id];
+    if (!answerText || answerText.trim() === '') return;
+
+    setPoradnaSubmitting(id);
+    addLog(`Ukládám odpověď na dotaz ID: ${id}...`, 'warning');
+
+    const { error } = await supabase
+      .from('pc_questions')
+      .update({ 
+        answer: answerText, 
+        is_answered: true 
+      })
+      .eq('id', id);
+
+    if (error) {
+      addLog(`Chyba při ukládání odpovědi: ${error.message}`, 'error');
+    } else {
+      addLog(`Odpověď uložena!`, 'success');
+      setPoradnaQuestions(poradnaQuestions.map(q => 
+        q.id === id ? { ...q, is_answered: true, answer: answerText } : q
+      ));
+    }
+    setPoradnaSubmitting(null);
+  };
+
+
   useEffect(() => {
     if (typeof window !== 'undefined' && sessionStorage.getItem('guru_admin_auth') === 'true') {
         setIsAuthenticated(true);
@@ -281,10 +330,11 @@ export default function AdminApp() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchPredictor();
-      fetchIntelFeed();
+      if (activeTab === 'predictor') fetchPredictor();
+      if (activeTab === 'intel-hub') fetchIntelFeed();
+      if (activeTab === 'poradna') fetchPoradnaQuestions();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, activeTab]);
 
   useEffect(() => {
     if (dbTab === 'cpu') setDbFormData(prev => ({...prev, rawData: exampleCpuJson, name: '', slug: ''}));
@@ -600,6 +650,8 @@ export default function AdminApp() {
           <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="INTEL HUB" color="#a855f7" />
           <SidebarItemUI id="database" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Database />} label="DATABÁZE (NEW)" color="#66fcf1" />
           <SidebarItemUI id="seznam-indexer" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Search />} label="SEZNAM INDEXER" color="#ef4444" />
+          {/* 🚀 NOVÁ POLOŽKA: PORADNA */}
+          <SidebarItemUI id="poradna" activeTab={activeTab} setActiveTab={setActiveTab} icon={<MessageSquare />} label="PORADNA" color="#3b82f6" />
         </nav>
       </aside>
 
@@ -823,6 +875,95 @@ export default function AdminApp() {
                     </div>
                 )}
             </div>
+        )}
+
+        {/* 🚀 NOVÁ ZÁLOŽKA: PORADNA */}
+        {activeTab === 'poradna' && (
+          <div className="fade-in">
+            <header style={{ marginBottom: '40px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '20px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#3b82f6', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px', padding: '6px 16px', borderRadius: '50px', background: 'rgba(59, 130, 246, 0.1)' }}>
+                <MessageSquare size={14} /> SPRÁVA DOTAZŮ
+              </div>
+              <h1 style={{ color: '#fff', fontSize: '2.5rem', fontWeight: '950', textTransform: 'uppercase', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                PC <span style={{ color: '#3b82f6' }}>PORADNA</span>
+                <button onClick={fetchPoradnaQuestions} disabled={poradnaLoading} style={{ background: '#3b82f6', color: '#fff', padding: '10px 20px', borderRadius: '12px', border: 'none', fontWeight: '950', cursor: 'pointer', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {poradnaLoading ? <RefreshCw className="spin" size={16}/> : <RefreshCw size={16}/>} REFRESH
+                </button>
+              </h1>
+              <p style={{ color: '#9ca3af', marginTop: '10px' }}>
+                Čeká na tebe <strong style={{ color: poradnaQuestions.filter(q => !q.is_answered).length > 0 ? '#f59e0b' : '#4ade80' }}>{poradnaQuestions.filter(q => !q.is_answered).length}</strong> nezodpovězených dotazů.
+              </p>
+            </header>
+
+            {poradnaQuestions.length === 0 ? (
+              <div style={{ background: 'rgba(15,17,21,0.5)', padding: '40px', textAlign: 'center', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)', color: '#9ca3af' }}>
+                {poradnaLoading ? 'Načítám dotazy...' : 'Zatím tu nejsou žádné dotazy.'}
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '30px' }}>
+                {poradnaQuestions.map((q) => (
+                  <div key={q.id} style={{ background: '#0f1115', border: q.is_answered ? '1px solid rgba(34, 197, 94, 0.2)' : '1px solid rgba(59, 130, 246, 0.4)', borderRadius: '16px', overflow: 'hidden' }}>
+                    
+                    <div style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '15px' }}>
+                      <div>
+                        <strong style={{ color: '#fff', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <User size={16} color="#3b82f6" /> {q.name}
+                        </strong>
+                        <div style={{ color: '#9ca3af', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '5px' }}>
+                          <Mail size={12} /> {q.email}
+                        </div>
+                        {q.components && (
+                          <div style={{ color: '#d1d5db', fontSize: '0.85rem', fontWeight: 'bold', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <Cpu size={14} color="#f59e0b" /> {q.components}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {q.is_answered ? (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'rgba(34, 197, 94, 0.1)', color: '#4ade80', padding: '6px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                          <CheckCircle2 size={14} /> Vyřešeno
+                        </span>
+                      ) : (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '6px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                          <AlertCircle size={14} /> Čeká na odpověď
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ padding: '20px' }}>
+                      <p style={{ color: '#fff', fontSize: '1rem', lineHeight: '1.6', margin: 0, whiteSpace: 'pre-wrap' }}>{q.question}</p>
+                    </div>
+
+                    <div style={{ padding: '20px', background: q.is_answered ? 'rgba(34, 197, 94, 0.05)' : 'rgba(0,0,0,0.3)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      {q.is_answered ? (
+                        <div>
+                          <span style={{ color: '#4ade80', fontSize: '0.8rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '10px', display: 'block' }}>Tvoje odpověď:</span>
+                          <p style={{ color: '#d1d5db', margin: 0, whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{q.answer}</p>
+                        </div>
+                      ) : (
+                        <div>
+                          <textarea 
+                            value={poradnaAnswers[q.id] || ''} 
+                            onChange={(e) => handlePoradnaAnswerChange(q.id, e.target.value)}
+                            placeholder="Napiš svou Guru odpověď sem..."
+                            style={{ width: '100%', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '12px', padding: '15px', color: '#fff', fontFamily: 'inherit', fontSize: '1rem', minHeight: '120px', marginBottom: '15px', boxSizing: 'border-box' }}
+                          />
+                          <button 
+                            onClick={() => submitPoradnaAnswer(q.id)}
+                            disabled={poradnaSubmitting === q.id || !poradnaAnswers[q.id]}
+                            style={{ background: '#3b82f6', color: '#fff', padding: '12px 24px', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: (poradnaSubmitting === q.id || !poradnaAnswers[q.id]) ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', opacity: (poradnaSubmitting === q.id || !poradnaAnswers[q.id]) ? 0.5 : 1 }}
+                          >
+                            {poradnaSubmitting === q.id ? 'Ukládám...' : <><Send size={16} /> Odeslat odpověď</>}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         <div className="terminal">
