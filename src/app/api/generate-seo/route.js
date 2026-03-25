@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store'; // GURU FIX: Zabití Next.js Cache!
-export const maxDuration = 60; 
+export const maxDuration = 120; // 🚀 GURU TIMEOUT FIX: Zvýšeno na maximum pro jistotu
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const SERPER_API_KEY = process.env.SERPER_API_KEY;
@@ -30,14 +30,15 @@ export async function GET(request) {
   );
 
   try {
+    // 🚀 GURU QUEUE FIX: Změněno na limit(1). Zpracováváme striktně jeden po druhém,
+    // abychom zamezili timeoutům a zaručili, že se updated_at propíše a posune frontu.
     const { data: posts, error: dbError } = await supabase
       .from('posts')
       .select('id, title, content, image_url, type')
-      // GURU FIX: Přidáno hledání chybějícího seo_schema!
       .or('seo_description.is.null,seo_description.eq."",image_url.is.null,image_url.eq."",image_alt.is.null,og_title.is.null,seo_schema.is.null')
       .not('image_url', 'eq', 'error_dalle')
       .order('updated_at', { ascending: true, nullsFirst: true }) 
-      .limit(4);
+      .limit(1);
 
     if (dbError) throw dbError;
     if (!posts || posts.length === 0) {
@@ -50,24 +51,31 @@ export async function GET(request) {
     const results = await Promise.all(posts.map(async (post) => {
       try {
         const videoQuery = `${post.title} trailer review gameplay`;
-        const serperRes = await fetch('https://google.serper.dev/search', {
-          method: 'POST',
-          headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ q: videoQuery, num: 3 }),
-          cache: 'no-store' // Pojistka i pro Google Serper
-        });
-        const searchResults = await serperRes.json();
-        const ytLinks = (searchResults.organic || [])
-          .filter(item => item.link.includes('youtube.com') || item.link.includes('youtu.be'))
-          .map(item => item.link);
+        let ytLinks = [];
+        
+        try {
+            const serperRes = await fetch('https://google.serper.dev/search', {
+              method: 'POST',
+              headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ q: videoQuery, num: 3 }),
+              cache: 'no-store' // Pojistka i pro Google Serper
+            });
+            const searchResults = await serperRes.json();
+            ytLinks = (searchResults.organic || [])
+              .filter(item => item.link.includes('youtube.com') || item.link.includes('youtu.be'))
+              .map(item => item.link);
+        } catch(serperErr) {
+            console.error("Serper API Error:", serperErr);
+        }
 
         const completion = await openai.chat.completions.create({
-          model: "gpt-4o",
+          model: "gpt-4o-mini", // 🚀 ŠETŘÍME KREDITY NA MAX
           messages: [
             { role: "system", content: "Jsi SEO Guru pro web thehardwareguru.cz. Vrať JSON: { \"seo_description\": \"...\", \"seo_keywords\": \"...\", \"image_alt\": \"...\", \"og_title\": \"...\", \"youtube_url\": \"...\", \"dalle_prompt\": \"...\" }" },
             { role: "user", content: `Název: ${post.title}\nObsah: ${(post.content || "").substring(0, 1000)}` }
           ],
-          response_format: { type: "json_object" }
+          response_format: { type: "json_object" },
+          temperature: 0.7,
         });
 
         const aiData = JSON.parse(completion.choices[0].message.content);
@@ -108,7 +116,7 @@ export async function GET(request) {
           youtube_url: aiData.youtube_url || ytLinks[0] || null,
           image_url: finalImageUrl,
           seo_schema: seoSchema, // <-- TADY TO TEĎ ZAPÍŠE!
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString() // 🚀 KOUZELNÝ POSUN VE FRONTĚ
         }).eq('id', post.id).select();
 
         if (updateError) throw updateError;
