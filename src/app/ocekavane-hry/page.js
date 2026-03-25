@@ -1,15 +1,16 @@
 import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { Monitor, Info, Play, Heart, Flame, ShieldCheck, ArrowRight, Zap } from 'lucide-react';
+import { Monitor, Info, Play, Heart, Flame, ShieldCheck, ArrowRight, Zap, CalendarDays } from 'lucide-react';
 
 /**
- * GURU EXPECTED GAMES ARCHIVE - V5.0 (GOLDEN RICH & BUILD FIX)
+ * GURU EXPECTED GAMES ARCHIVE - V5.1 (GOLDEN RICH & RELEASE DATE FIX)
  * Cesta: src/app/ocekavane-hry/page.js
  * 🚀 CÍL: 100% zelená v GSC a oprava build erroru (use client directive).
  * 🛡️ FIX 1: Přepsáno na čistý Server Component. Odstraněna direktiva "use client".
  * 🛡️ FIX 2: Video hover efekty vyřešeny čistě přes CSS (blesková rychlost, 0 JS overhead).
  * 🛡️ FIX 3: Implementován Golden Rich standard (ItemList, Breadcrumbs, Absolute URLs).
+ * 🛡️ FIX 4: Přidáno zobrazení data vydání (release_date) z databáze na kartičky.
  */
 
 export const runtime = "nodejs";
@@ -184,6 +185,15 @@ export default async function ExpectedGamesArchive(props) {
                   
                   <div style={{ padding: '30px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <h3 style={cardTitleStyle}>{displayTitle}</h3>
+                    
+                    {/* 🚀 GURU FIX: Zobrazení data vydání na kartičce */}
+                    {item.release_date && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontSize: '12px', fontWeight: '950', marginBottom: '15px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        <CalendarDays size={14} />
+                        {isEn ? 'RELEASE: ' : 'VYDÁNÍ: '} {new Date(item.release_date).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}
+                      </div>
+                    )}
+
                     <p className="desc-text">{(isEn ? item.description_en : item.description) || (isEn ? 'Detailed technical analysis.' : 'Detailní technický rozbor.')}</p>
                     <div style={moreBtn}>{isEn ? 'VIEW ANALYSIS' : 'ZOBRAZIT ROZBOR'} <ArrowRight size={18} /></div>
                   </div>
