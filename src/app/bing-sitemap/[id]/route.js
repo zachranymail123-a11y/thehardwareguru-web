@@ -1,188 +1,88 @@
+import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-/**
- * GURU SEO ENGINE - BING CHUNK GENERATOR V1.3
- * Cesta: src/app/bing-sitemap/[id]/route.js
- * 🛡️ FIX 1: Návrat na tvůj původní zlatý standard: limit 5. Vytvoří se všechny chunky!
- * 🛡️ FIX 2: Odstraněno předgenerování číselných map pro Vercel (eliminace 74MB memory leak buildu).
- * 🛡️ FIX 3: Odstraněn fake <lastmod> všude, kde není reálně k dispozici.
- */
+export const revalidate = 86400; // Cache na 24 hodin
 
-export const revalidate = 86400; 
-export const dynamicParams = true; 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const baseUrl = 'https://thehardwareguru.cz';
+export async function GET(req, { params }) {
+  const id = parseInt(params.id, 10);
+  if (isNaN(id) || id < 1) return new NextResponse('Invalid ID', { status: 400 });
 
-const supabase = createClient(supabaseUrl, supabaseKey, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
-});
+  // 🚀 CHATGPT FIX 1: Změna limitu na 500
+  const LIMIT = 500;
+  const offset = (id - 1) * LIMIT;
 
-export async function generateStaticParams() {
-    // 🚀 BING FIX: Předgenerujeme POUZE textové mapy, aby Vercel nepadl na obřích číselných maticích!
-    const types = ['pages.xml', 'posts.xml', 'cpu.xml', 'gpu.xml', 'duels.xml', 'upgrades.xml'];
-    return types.map(t => ({ id: t }));
-}
+  try {
+    // 🚀 CHATGPT FIX 2: Taháme jen základní entity, ŽÁDNÉ kombinování VS, FPS atd.
+    const [cpus, gpus, games, posts] = await Promise.all([
+      supabase.from('cpus').select('slug, updated_at').range(offset, offset + LIMIT - 1),
+      supabase.from('gpus').select('slug, updated_at').range(offset, offset + LIMIT - 1),
+      supabase.from('games').select('slug, created_at').range(offset, offset + LIMIT - 1),
+      supabase.from('posts').select('slug, updated_at').range(offset, offset + LIMIT - 1)
+    ]);
 
-const escapeXml = (str) => str ? str.replace(/[<>&'"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[c])) : '';
-const slugify = (text) => text?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '').replace(/\-+/g, '-').replace(/^-+|-+$/g, '').trim();
-const cleanGpuSlug = (s, n) => s || slugify(n).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
 
-const safeDate = (dateStr) => {
-    if (!dateStr) return null;
-    try { return new Date(dateStr).toISOString(); } catch(e) { return null; }
-};
+    const addUrl = (path, date) => {
+      xml += `  <url>\n`;
+      xml += `    <loc>https://thehardwareguru.cz${path}</loc>\n`;
+      if (date) xml += `    <lastmod>${new Date(date).toISOString()}</lastmod>\n`;
+      xml += `  </url>\n`;
+    };
 
-export async function GET(req, props) {
-    const params = await props.params;
-    const id = params.id; 
-    const xmlHeaders = { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, s-maxage=86400' };
-    const emptyXml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`;
-
-    if (!id || !id.endsWith('.xml')) return new Response(emptyXml, { headers: xmlHeaders });
-
-    const type = id.replace('.xml', '');
-    const routes = [];
-
-    try {
-        if (type === 'pages') {
-            const staticPaths = [
-                '/', '/clanky', '/gpuvs', '/cpuvs', '/gpuvs/ranking', '/cpuvs/ranking', 
-                '/gpu-index', '/cpu-index', '/deals', '/support', '/tipy', '/tweaky', 
-                '/rady', '/slovnik', '/about', '/contact', '/privacy-policy', '/terms-of-service',
-                '/fps-kalkulacka'
-            ];
-            
-            staticPaths.forEach(p => {
-                routes.push({ url: `${baseUrl}${p}`, priority: '1.0', changefreq: 'daily' });
-                if (p === '/fps-kalkulacka') {
-                    routes.push({ url: `${baseUrl}/en/fps-calculator`, priority: '0.9', changefreq: 'daily' });
-                } else {
-                    routes.push({ url: `${baseUrl}/en${p}`, priority: '0.9', changefreq: 'daily' });
-                }
-            });
-
-        } else if (type === 'posts') {
-            const [pRes, tRes, twRes, rRes, sRes] = await Promise.all([
-                supabase.from('posts').select('slug, created_at'),
-                supabase.from('tipy').select('slug, created_at'),
-                supabase.from('tweaky').select('slug, created_at'),
-                supabase.from('rady').select('slug, created_at'),
-                supabase.from('slovnik').select('slug, created_at')
-            ]);
-            const add = (data, path) => data?.forEach(i => {
-                if (i.slug) {
-                    routes.push({ url: `${baseUrl}/${path}/${i.slug}`, lastmod: safeDate(i.created_at), priority: '0.9', changefreq: 'weekly' });
-                    routes.push({ url: `${baseUrl}/en/${path}/${i.slug}`, lastmod: safeDate(i.created_at), priority: '0.8', changefreq: 'weekly' });
-                }
-            });
-            add(pRes.data, 'clanky'); add(tRes.data, 'tipy'); add(twRes.data, 'tweaky'); add(rRes.data, 'rady'); add(sRes.data, 'slovnik');
-
-        } else if (type === 'cpu') {
-            const { data: cpus } = await supabase.from('cpus').select('name, created_at'); 
-            const { data: gamesData } = await supabase.from('games').select('slug');
-            const games = gamesData?.map(g => g.slug).filter(Boolean) || ['cyberpunk-2077'];
-
-            cpus?.forEach(c => {
-                const s = slugify(c.name);
-                const d = safeDate(c.created_at);
-                routes.push({ url: `${baseUrl}/cpu/${s}`, lastmod: d, priority: '0.9', changefreq: 'monthly' });
-                routes.push({ url: `${baseUrl}/en/cpu/${s}`, lastmod: d, priority: '0.8' });
-                games.forEach(g => {
-                    routes.push({ url: `${baseUrl}/cpu-fps/${s}/${g}`, lastmod: d, priority: '0.7' });
-                    routes.push({ url: `${baseUrl}/en/cpu-fps/${s}/${g}`, lastmod: d, priority: '0.6' });
-                });
-            });
-
-        } else if (type === 'gpu') {
-            const { data: gpus } = await supabase.from('gpus').select('name, slug, created_at');
-            const { data: gamesData } = await supabase.from('games').select('slug');
-            const games = gamesData?.map(g => g.slug).filter(Boolean) || ['cyberpunk-2077'];
-            gpus?.forEach(g => {
-                const s = cleanGpuSlug(g.slug, g.name);
-                const d = safeDate(g.created_at);
-                routes.push({ url: `${baseUrl}/gpu/${s}`, lastmod: d, priority: '0.9', changefreq: 'monthly' });
-                routes.push({ url: `${baseUrl}/en/gpu/${s}`, lastmod: d, priority: '0.8' });
-                games.forEach(gm => {
-                    routes.push({ url: `${baseUrl}/gpu-fps/${s}/${gm}`, lastmod: d, priority: '0.7' });
-                    routes.push({ url: `${baseUrl}/en/gpu-fps/${s}/${gm}`, lastmod: d, priority: '0.6' });
-                });
-            });
-
-        } else if (type === 'duels' || type === 'upgrades') {
-            const isUpg = type === 'upgrades';
-            const [cpuRes, gpuRes] = await Promise.all([
-                supabase.from(isUpg ? 'cpu_upgrades' : 'cpu_duels').select('slug, slug_en, created_at'),
-                supabase.from(isUpg ? 'gpu_upgrades' : 'gpu_duels').select('slug, slug_en, created_at')
-            ]);
-            const pathCpu = isUpg ? 'cpu-upgrade' : 'cpuvs';
-            const pathGpu = isUpg ? 'gpu-upgrade' : 'gpuvs';
-            
-            cpuRes.data?.forEach(d => {
-                const dt = safeDate(d.created_at);
-                if (d.slug) routes.push({ url: `${baseUrl}/${pathCpu}/${d.slug}`, lastmod: dt, priority: '0.7', changefreq: 'monthly' });
-                if (d.slug_en) routes.push({ url: `${baseUrl}/en/${pathCpu}/${d.slug_en}`, lastmod: dt, priority: '0.6' });
-            });
-            gpuRes.data?.forEach(d => {
-                const dt = safeDate(d.created_at);
-                if (d.slug) routes.push({ url: `${baseUrl}/${pathGpu}/${d.slug}`, lastmod: dt, priority: '0.7', changefreq: 'monthly' });
-                if (d.slug_en) routes.push({ url: `${baseUrl}/en/${pathGpu}/${d.slug_en}`, lastmod: dt, priority: '0.6' });
-            });
-
-        } else if (!isNaN(parseInt(type, 10))) {
-            const chunkId = parseInt(type, 10);
-            
-            // 🚀 BING FIX: Návrat na limit 5 (aby se vygenerovaly úplně všechny potřebné sitemapy pro Bing)
-            const limit = 5; 
-            const offset = (chunkId - 1) * limit;
-
-            const { data: cpus } = await supabase.from('cpus').select('name').order('name').range(offset, offset + limit - 1); 
-            if (!cpus || cpus.length === 0) return new Response(emptyXml, { headers: xmlHeaders });
-
-            const [gRes, gamesRes] = await Promise.all([
-                supabase.from('gpus').select('name, slug'),
-                supabase.from('games').select('slug')
-            ]);
-            const gpus = gRes.data || [];
-            const games = gamesRes.data?.map(g => g.slug).filter(Boolean) || ['cyberpunk-2077'];
-            const resolutions = ['1080p', '1440p', '4k'];
-
-            cpus.forEach(cpu => {
-                const cpuSlug = slugify(cpu.name); 
-                gpus.forEach(gpu => {
-                    const gpuSlug = cleanGpuSlug(gpu.slug, gpu.name);
-                    const pairPath = `/bottleneck/${cpuSlug}-with-${gpuSlug}`;
-                    routes.push({ url: `${baseUrl}${pairPath}`, priority: '0.6', changefreq: 'monthly' });
-                    routes.push({ url: `${baseUrl}/en${pairPath}`, priority: '0.5' });
-                    games.forEach(game => {
-                        routes.push({ url: `${baseUrl}${pairPath}-in-${game}`, priority: '0.5' });
-                        routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}`, priority: '0.4' });
-                        resolutions.forEach(res => {
-                            routes.push({ url: `${baseUrl}${pairPath}-in-${game}-at-${res}`, priority: '0.4' });
-                            routes.push({ url: `${baseUrl}/en${pairPath}-in-${game}-at-${res}`, priority: '0.3' });
-                        });
-                    });
-                });
-            });
-        } else {
-            return new Response(emptyXml, { headers: xmlHeaders });
-        }
-
-        if (routes.length === 0) return new Response(emptyXml, { headers: xmlHeaders });
-
-        let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
-        routes.forEach(r => {
-            xml += `  <url>\n    <loc>${escapeXml(r.url)}</loc>\n`;
-            // Vkládáme lastmod POUZE pokud reálně existuje v databázi (Bing to vyžaduje)
-            if (r.lastmod) xml += `    <lastmod>${r.lastmod}</lastmod>\n`;
-            xml += `    <changefreq>${r.changefreq || 'monthly'}</changefreq>\n`;
-            xml += `    <priority>${r.priority}</priority>\n  </url>\n`;
-        });
-        xml += `</urlset>`;
-
-        return new Response(xml.trim(), { headers: xmlHeaders });
-    } catch (err) {
-        return new Response(emptyXml, { headers: xmlHeaders });
+    // Hlavní sekce webu nacpeme jen do prvního souboru
+    if (id === 1) {
+      addUrl('', new Date().toISOString());
+      addUrl('/cpu', new Date().toISOString());
+      addUrl('/gpu', new Date().toISOString());
+      addUrl('/clanky', new Date().toISOString());
+      addUrl('/hry', new Date().toISOString());
     }
+
+    // CPU profily
+    if (cpus.data) {
+      cpus.data.forEach(cpu => {
+        if (cpu.slug) addUrl(`/cpu/${cpu.slug}`, cpu.updated_at);
+      });
+    }
+
+    // GPU profily
+    if (gpus.data) {
+      gpus.data.forEach(gpu => {
+        if (gpu.slug) addUrl(`/gpu/${gpu.slug}`, gpu.updated_at);
+      });
+    }
+
+    // Herní profily
+    if (games.data) {
+      games.data.forEach(game => {
+        if (game.slug) addUrl(`/game/${game.slug}`, game.created_at);
+      });
+    }
+
+    // Články
+    if (posts.data) {
+      posts.data.forEach(post => {
+        if (post.slug) addUrl(`/clanky/${post.slug}`, post.updated_at);
+      });
+    }
+
+    xml += `</urlset>`;
+
+    return new NextResponse(xml, {
+      headers: {
+        'Content-Type': 'application/xml',
+        'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate'
+      }
+    });
+  } catch (err) {
+    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`, {
+      headers: { 'Content-Type': 'application/xml' }
+    });
+  }
 }
