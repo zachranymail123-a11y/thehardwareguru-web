@@ -1,56 +1,48 @@
+import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-/**
- * GURU SEO ENGINE - BING OPTIMIZED SITEMAP INDEX V1.3
- * Cesta: src/app/bing-sitemap.xml/route.js
- */
+export const revalidate = 86400; // Cache na 24 hodin
 
-export const revalidate = 86400; 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
 export async function GET() {
-  const baseUrl = 'https://thehardwareguru.cz';
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-  const supabase = createClient(supabaseUrl, supabaseKey, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
-  });
-
-  let cpuCount = 50; 
   try {
+    // Vezmeme počet CPU jako referenci pro rozpad do chunků
     const { count, error } = await supabase
       .from('cpus')
       .select('*', { count: 'exact', head: true });
-      
-    if (!error && count) {
-      cpuCount = count;
+
+    if (error) throw error;
+
+    // 🚀 CHATGPT FIX 1: Změna chunk size z 5 na 500
+    const CHUNK_SIZE = 500;
+    const totalItems = count || 0;
+    const chunksNeeded = Math.max(1, Math.ceil(totalItems / CHUNK_SIZE));
+
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+
+    for (let i = 1; i <= chunksNeeded; i++) {
+      xml += `  <sitemap>\n`;
+      xml += `    <loc>https://thehardwareguru.cz/bing-sitemap/${i}.xml</loc>\n`;
+      xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
+      xml += `  </sitemap>\n`;
     }
-  } catch (e) {
-    console.error("Bing index count fetch failed", e);
-  }
 
-  // 🚀 FIX: Vracíme tvůj originální limit 5, aby se vygenerovaly VŠECHNY chunky pro 400k stran!
-  const chunksNeeded = Math.max(1, Math.ceil(cpuCount / 5));
-  
-  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
-  
-  const namedMaps = ['pages', 'posts', 'cpu', 'gpu', 'duels', 'upgrades'];
-  namedMaps.forEach(m => {
-    xml += `  <sitemap>\n    <loc>${baseUrl}/bing-sitemap/${m}.xml</loc>\n  </sitemap>\n`;
-  });
+    xml += `</sitemapindex>`;
 
-  for (let i = 1; i <= chunksNeeded; i++) {
-    xml += `  <sitemap>\n    <loc>${baseUrl}/bing-sitemap/${i}.xml</loc>\n  </sitemap>\n`;
+    return new NextResponse(xml, {
+      headers: {
+        'Content-Type': 'application/xml',
+        'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate'
+      }
+    });
+  } catch (err) {
+    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></sitemapindex>`, {
+      headers: { 'Content-Type': 'application/xml' }
+    });
   }
-  
-  xml += `  <sitemap>\n    <loc>${baseUrl}/latest.xml</loc>\n  </sitemap>\n`;
-  
-  xml += `</sitemapindex>`;
-  
-  return new Response(xml, { 
-    headers: { 
-      'Content-Type': 'application/xml; charset=utf-8', 
-      'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=3600' 
-    } 
-  });
 }
