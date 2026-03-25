@@ -1,7 +1,7 @@
 /**
- * 🚀 GURU GAME ARTICLE GENERATOR - MASTER ENGINE V10
- * Vyriešené: Anti-Alibi Prompt (Nekompromisní predikce HW), 
- * Fix data vydání (release_date), Anti-Duplicate logika.
+ * 🚀 GURU GAME ARTICLE GENERATOR - MASTER ENGINE V11
+ * Vyriešené: Anti-Hallucination HW (Pouze real Steam data),
+ * Vložení reálného popisu hry do HTML, Fix data vydání.
  */
 
 export const maxDuration = 60;
@@ -105,38 +105,38 @@ export async function POST(req) {
     const techContext = techData.organic?.map(r => r.snippet).join('\n') || '';
     const steamContext = steamData.organic?.map(r => r.snippet).join('\n') || '';
 
-    // 3. GURU AI ANALYST (S nekompromisní ochranou proti alibismu a povinností predikce HW)
+    // 3. GURU AI ANALYST (S ochranou proti halucinaci HW a přesnou integrací popisu)
     const completion = await openai.chat.completions.create({
-      model: "gpt-4-turbo-preview", // Používáme Turbo pro maximální analytický výkon
+      model: "gpt-4-turbo-preview",
       messages: [
         { 
           role: "system", 
           content: `Jsi 'The Hardware Guru'. Generuješ nekompromisní technické rozbory her pro hardcore PC komunitu. 
-          MÁŠ ABSOLUTNÍ ZÁKAZ používat fráze jako "informace nejsou dostupné", "vývojáři nestanovili" nebo "zatím nevíme". Jsi expert, tvou prací je PREDIKOVAT a analyzovat!
           
-          PRAVIDLA PRO ROZDĚLENÍ OBSAHU:
-          1. Pole "description" a "description_en": Zde vytvoř krátký příběhový a herní popis hry (o čem hra je) na základě dat z RAWG. Maximálně 3 úderné věty. NEPIŠ SEM TECHNICKÉ VĚCI!
-          2. Pole "content" a "content_en" (HTML): Zde piš VÝHRADNĚ technický rozbor. NIKDY sem nekopíruj příběhový děj z RAWG.
+          TVOU HTML STRUKTURU PŘIKAZUJI TAKTO (MUSÍ OBSAHOVAT TYTO 3 SEKCE):
           
-          TVOU HTML STRUKTURU PŘIKAZUJI TAKTO:
-              <h2>Technický rozbor a Engine</h2>
-              <p>[Zde napiš expertní analýzu enginu (např. Unreal Engine 5), předpokládané technologie (DLSS, FSR, Ray-Tracing) a odhadovanou náročnost na VRAM a CPU.]</p>
-              <h2>Systémové požadavky</h2>
-              <ul>[Zde vlož seznam HW v <li> tagu]</ul>
+          <h2>O hře</h2>
+          <p>[Zde vlož přesný příběhový popis hry, který dostaneš v zadání od uživatele. Nic nevymýšlej, jen ho hezky zformuluj, aby to dávalo smysl.]</p>
+          
+          <h2>Technický rozbor a Engine</h2>
+          <p>[Zde napiš expertní analýzu enginu, předpokládané technologie (DLSS, Ray-Tracing) a odhadovanou náročnost na VRAM a CPU. TADY nesmíš psát, že informace nejsou dostupné - analyzuj a predikuj na základě žánru a trendů.]</p>
+          
+          <h2>Systémové požadavky</h2>
+          [Zde vlož <ul> seznam HW přesně podle [STEAM DATA]]
 
-          KRITICKÉ PRAVIDLO PRO SYSTÉMOVÉ POŽADAVKY:
-          1. Pokud najdeš přesná data v [STEAM DATA], použij je a vlož je do seznamu.
-          2. POKUD [STEAM DATA] CHYBÍ NEBO JSOU PRÁZDNÁ: ZAKAZUJU ti psát, že chybí. MUSÍŠ vygenerovat "Expertní předpověď HW nároků" na základě použitého enginu a žánru. Odhadni modely CPU, GPU (včetně VRAM) a velikost RAM. Přidej poznámku, že se jedná o kvalifikovaný odhad.
+          KRITICKÉ PRAVIDLO PRO SYSTÉMOVÉ POŽADAVKY (ŽÁDNÁ HALUCINACE HW!!!):
+          1. HW komponenty (grafiky, procesory, RAM) smíš do seznamu vypsat JEDINĚ tehdy, pokud je reálně najdeš ve [STEAM DATA].
+          2. POKUD [STEAM DATA] CHYBÍ NEBO JSOU PRÁZDNÁ: MÁŠ PŘÍSNÝ ZÁKAZ vymýšlet si modely HW! Místo seznamu musíš vypsat přesně tuto větu: <p>Oficiální hardwarové specifikace zatím nebyly vývojáři stanoveny.</p>
 
-          Vrať validní JSON s poli: title, slug, description, content (CZ HTML přesně podle mé šablony), title_en, slug_en, description_en, content_en (EN HTML).` 
+          Vrať validní JSON s poli: title, slug, description (sem dej to samé co do sekce O hře - čistý text bez HTML), content (CZ HTML přesně podle mé šablony), title_en, slug_en, description_en, content_en (EN HTML).` 
         },
         { 
           role: "user", 
-          content: `Hra: ${gameData.name}\nO hře (Příběhový základ pro pole description): ${gameData.description_raw}\n\n[TECHNICKÝ KONTEXT]:\n${techContext}\n\n[STEAM DATA]:\n${steamContext}` 
+          content: `Hra: ${gameData.name}\nO hře (Příběhový základ z databáze): ${gameData.description_raw}\n\n[TECHNICKÝ KONTEXT]:\n${techContext}\n\n[STEAM DATA - POUZE ODTUD BER HW]:\n${steamContext}` 
         }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7
+      temperature: 0.4 // 🚀 GURU FIX: Snížená teplota, aby AI striktně kopírovala fakta a nevymýšlela si.
     });
 
     const ai = JSON.parse(completion.choices[0].message.content);
@@ -156,7 +156,7 @@ export async function POST(req) {
       trailer: trailerUrl,
       youtube_url: videoId ? `https://www.youtube.com/watch?v=${videoId}` : trailerUrl,
       type: section || 'expected',
-      release_date: gameData.released || null // 🚀 GURU FIX: Ukládání data vydání pro frontend!
+      release_date: gameData.released || null
     };
 
     // 4. DB UPDATE / INSERT - GURU MASTER ANTI-DUPLICATE ENGINE
