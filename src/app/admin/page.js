@@ -15,10 +15,9 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V5.9 (PORADNA CRASH FIX)
+ * GURU ULTIMATE COMMAND CENTER V6.0 (BOOSTER DASHBOARD ADDED)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
- * 🛡️ FIX 11: Opraven chybějící import AlertCircle způsobující pád na bílou obrazovku v záložce Poradna.
  */
 
 const INDEXNOW_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
@@ -119,9 +118,28 @@ export default function AdminApp() {
   const [poradnaAnswers, setPoradnaAnswers] = useState({});
   const [poradnaSubmitting, setPoradnaSubmitting] = useState(null);
 
+  // --- 🚀 CONTENT BOOSTER STATE ---
+  const [boosterStats, setBoosterStats] = useState({ total: 0, boosted: 0, pending: 0, sample: [] });
+  const [boosterLoading, setBoosterLoading] = useState(false);
+
   const addLog = (msg, type = 'info') => {
     const timeStr = new Date().toTimeString().split(' ')[0]; 
     setConsoleLogs(prev => [...prev, { time: timeStr, msg, type }]);
+  };
+
+  const fetchBoosterStats = async () => {
+    setBoosterLoading(true);
+    addLog('Skenuji stav High-Value obsahu...', 'warning');
+    const { data, error } = await supabase.from('posts').select('id, title, content, content_en');
+    if (error) {
+        addLog(`Chyba boosteru: ${error.message}`, 'error');
+    } else {
+        const ok = data.filter(p => (p.content?.length || 0) > 2000 && (p.content_en?.length || 0) > 2000);
+        const bad = data.filter(p => (p.content?.length || 0) < 2000 || !p.content_en || p.content_en.length < 2000);
+        setBoosterStats({ total: data.length, boosted: ok.length, pending: bad.length, sample: bad.slice(0, 15) });
+        addLog(`Nafouknuto: ${ok.length} / ${data.length}`, 'success');
+    }
+    setBoosterLoading(false);
   };
 
   const fetchPredictor = async () => {
@@ -330,6 +348,7 @@ export default function AdminApp() {
       if (activeTab === 'predictor') fetchPredictor();
       if (activeTab === 'intel-hub') fetchIntelFeed();
       if (activeTab === 'poradna') fetchPoradnaQuestions();
+      if (activeTab === 'booster') fetchBoosterStats(); // 🚀 Přidáno pro automatický fetch
     }
   }, [isAuthenticated, activeTab]);
 
@@ -643,6 +662,7 @@ export default function AdminApp() {
         </div>
         <nav style={{ flex: 1 }}>
           <SidebarItemUI id="predictor" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Brain />} label="HYPE RADAR" color="#eab308" />
+          <SidebarItemUI id="booster" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Flame />} label="CONTENT BOOSTER" color="#ff4b2b" />
           <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="INTEL HUB" color="#a855f7" />
           <SidebarItemUI id="database" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Database />} label="DATABÁZE (NEW)" color="#66fcf1" />
           <SidebarItemUI id="seznam-indexer" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Search />} label="SEZNAM INDEXER" color="#ef4444" />
@@ -651,6 +671,51 @@ export default function AdminApp() {
       </aside>
 
       <main className="admin-main">
+        {activeTab === 'booster' && (
+          <div className="fade-in">
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+              <div>
+                <h2 style={{ fontSize: '32px', fontWeight: 950, textTransform: 'uppercase', margin: 0 }}>CONTENT <span style={{ color: '#ff4b2b' }}>BOOSTER</span></h2>
+                <p style={{ color: '#4b5563', fontWeight: 'bold' }}>Monitoring High-Value Contentu pro AdSense</p>
+              </div>
+              <button onClick={fetchBoosterStats} disabled={boosterLoading} style={{ background: '#ff4b2b', color: '#fff', padding: '15px 30px', borderRadius: '15px', border: 'none', fontWeight: '950', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {boosterLoading ? <RefreshCw className="spin" size={20}/> : <RotateCcw size={20}/>} OBNOVIT STAV
+              </button>
+            </header>
+
+            <div style={{ display: 'flex', gap: '20px', marginBottom: '40px' }}>
+                <div style={{ background: '#111318', padding: '30px', borderRadius: '20px', border: '1px solid #ffffff08', textAlign: 'center', flex: 1 }}>
+                    <div style={{ fontSize: '10px', fontWeight: 900, color: '#4b5563', letterSpacing: '2px', marginBottom: '10px' }}>CELKEM ČLÁNKŮ</div>
+                    <div style={{ fontSize: '48px', fontWeight: 950 }}>{boosterStats.total}</div>
+                </div>
+                <div style={{ background: '#111318', padding: '30px', borderRadius: '20px', border: '1px solid #10b98144', textAlign: 'center', flex: 1 }}>
+                    <div style={{ fontSize: '10px', fontWeight: 900, color: '#10b981', letterSpacing: '2px', marginBottom: '10px' }}>HVC (DOKONČENO)</div>
+                    <div style={{ fontSize: '48px', fontWeight: 950, color: '#10b981' }}>{boosterStats.boosted}</div>
+                </div>
+                <div style={{ background: '#111318', padding: '30px', borderRadius: '20px', border: '1px solid #ff4b2b44', textAlign: 'center', flex: 1 }}>
+                    <div style={{ fontSize: '10px', fontWeight: 900, color: '#ff4b2b', letterSpacing: '2px', marginBottom: '10px' }}>THIN (ČEKÁ NA AI)</div>
+                    <div style={{ fontSize: '48px', fontWeight: 950, color: '#ff4b2b' }}>{boosterStats.pending}</div>
+                </div>
+            </div>
+
+            <h3 style={{ fontSize: '14px', fontWeight: 950, color: '#fff', marginBottom: '20px', borderLeft: '4px solid #ff4b2b', paddingLeft: '15px' }}>FRONTA KE ZPRACOVÁNÍ (MAX 15)</h3>
+            <div style={{ background: '#0d0e12', borderRadius: '20px', border: '1px solid #ffffff0d', overflow: 'hidden' }}>
+                {boosterStats.sample.map((art, i) => (
+                    <div key={i} style={{ padding: '15px 25px', borderBottom: '1px solid #ffffff05', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{art.title}</div>
+                            <div style={{ fontSize: '10px', color: '#4b5563', marginTop: '4px' }}>Délka CZ: {art.content?.length || 0} | EN: {art.content_en?.length || 0}</div>
+                        </div>
+                        <div style={{ background: '#ff4b2b22', color: '#ff4b2b', padding: '5px 10px', borderRadius: '6px', fontSize: '9px', fontWeight: 950 }}>THIN CONTENT</div>
+                    </div>
+                ))}
+                {boosterStats.sample.length === 0 && (
+                    <div style={{ padding: '30px', textAlign: 'center', color: '#10b981', fontWeight: 900 }}>VŠECHNY ČLÁNKY JSOU NAFOUKNUTY! 🎉</div>
+                )}
+            </div>
+          </div>
+        )}
+
         {activeTab === 'predictor' && (
           <div className="fade-in">
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
@@ -696,7 +761,7 @@ export default function AdminApp() {
                   <span className="card-source">{item.source}</span>
                   <h4 className="card-title">{item.title}</h4>
                   <div style={{ display: 'flex', gap: '5px' }}>
-                    <a href={item.link} target="_blank" className="card-btn" style={{flex: 1, textAlign: 'center'}}>ZDROJ</a>
+                    <a href={item.link} target="_blank" rel="noreferrer" className="card-btn" style={{flex: 1, textAlign: 'center'}}>ZDROJ</a>
                     <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className="card-btn card-btn-main" style={{flex: 2}}>
                         {processingTitle === item.title ? 'AI...' : 'KONCEPT'}
                     </button>
@@ -713,7 +778,7 @@ export default function AdminApp() {
                   <span className="card-source">{item.source}</span>
                   <h4 className="card-title">{item.title}</h4>
                   <div style={{ display: 'flex', gap: '5px' }}>
-                    <a href={item.link} target="_blank" className="card-btn" style={{flex: 1, textAlign: 'center'}}>ZDROJ</a>
+                    <a href={item.link} target="_blank" rel="noreferrer" className="card-btn" style={{flex: 1, textAlign: 'center'}}>ZDROJ</a>
                     <button onClick={() => createDraftFromIntel(item)} disabled={!!processingTitle} className="card-btn card-btn-main" style={{borderColor: '#ff005544', color: '#ff0055', flex: 2}}>
                         {processingTitle === item.title ? 'AI...' : 'KONCEPT'}
                     </button>
