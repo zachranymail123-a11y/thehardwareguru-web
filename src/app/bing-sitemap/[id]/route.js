@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export const revalidate = 86400;
+// 🚀 GURU FIX: Smazal jsem revalidate = 86400 a dal force-dynamic. 
+// Vercel ti totiž doteď vracel tu starou sračku z paměti!
+export const dynamic = 'force-dynamic';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -25,13 +27,11 @@ export async function GET(req, props) {
   const id = parseInt(params.id, 10);
   if (isNaN(id) || id < 1) return new NextResponse('Invalid ID', { status: 400 });
 
-  // Přečteme z každé tabulky 1000 řádků per chunk = obrovská rychlost, minimum souborů
   const LIMIT = 1000;
   const offset = (id - 1) * LIMIT;
   const routes = [];
 
   try {
-    // Rychlé paralelní čtení TVÝCH SKUTEČNÝCH tabulek
     const [
       pRes, tRes, twRes, rRes, sRes, cpusRes, gpusRes,
       cpuDuels, cpuUpg, gpuDuels, gpuUpg
@@ -53,7 +53,6 @@ export async function GET(req, props) {
       routes.push({ url: `${baseUrl}${path}`, lastmod: safeDate(date) });
     };
 
-    // TVÉ STATICKÉ STRÁNKY (přidáme jen do prvního souboru)
     if (id === 1) {
       const staticPaths = [
         '/', '/clanky', '/gpuvs', '/cpuvs', '/gpuvs/ranking', '/cpuvs/ranking', 
@@ -67,7 +66,6 @@ export async function GET(req, props) {
       });
     }
 
-    // ČLÁNKY A ZNALOSTNÍ BÁZE
     const addCollection = (data, prefix) => {
       data?.forEach(i => {
         if (i.slug) {
@@ -83,7 +81,6 @@ export async function GET(req, props) {
     addCollection(rRes.data, 'rady');
     addCollection(sRes.data, 'slovnik');
 
-    // CPU a GPU (čisté profily)
     cpusRes.data?.forEach(c => {
       const s = slugify(c.name);
       addRoute(`/cpu/${s}`, c.created_at);
@@ -96,7 +93,6 @@ export async function GET(req, props) {
       addRoute(`/en/gpu/${s}`, g.created_at);
     });
 
-    // DUELY A UPGRADY
     const addVersus = (data, prefix) => {
       data?.forEach(d => {
         if (d.slug) addRoute(`/${prefix}/${d.slug}`, d.created_at);
@@ -109,7 +105,6 @@ export async function GET(req, props) {
     addVersus(gpuDuels.data, 'gpuvs');
     addVersus(gpuUpg.data, 'gpu-upgrade');
 
-    // RENDER XML
     if (routes.length === 0) return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>`, { headers: { 'Content-Type': 'application/xml' } });
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
@@ -123,7 +118,7 @@ export async function GET(req, props) {
     return new NextResponse(xml.trim(), {
       headers: {
         'Content-Type': 'application/xml',
-        'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate'
+        'Cache-Control': 'no-store' // 🚀 Přidáno no-store, ať se ti to necachuje ani v prohlížeči!
       }
     });
   } catch (err) {
