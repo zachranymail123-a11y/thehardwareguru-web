@@ -1,15 +1,15 @@
 import React from 'react';
-import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, MessageSquare, Award, Bell, Bookmark, Share2 } from 'lucide-react';
+import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, MessageSquare, Award, Bell, Bookmark, Share2, Clock } from 'lucide-react'; // Přidán Clock (i když už tam byl, pro jistotu)
 
 /**
- * GURU HOMEPAGE V16.4 - ONESIGNAL BELL FIX
+ * GURU HOMEPAGE V16.5 - RELEASE DATE FIX
  * Cesta: src/app/page.js
- * 🚀 CÍL: Oprava scriptu zvonečku pro OneSignal Push Notifikace (podpora v15 i v16 API).
+ * 🚀 CÍL: Přidání data vydání (release_date) na karty očekávaných her. Striktně bez dalších úprav.
  */
 
 // --- UNIKÁTNÍ METADATA PRO BING & GOOGLE ---
 export const metadata = {
-  title: 'Home Base for PC Gamers & Geeks', // Výsledný title: Home Base for PC Gamers & Geeks | Hardware Guru
+  title: 'Home Base for PC Gamers & Geeks', 
   description: 'Vaše technologická základna pro srovnání CPU, GPU, výpočet bottlenecku a nejnovější HW novinky.',
   alternates: {
     canonical: '/',
@@ -439,6 +439,14 @@ export default async function HomePage({ params }) {
                  <a href={isEn ? `/en/ocekavane-hry/${displaySlug}` : `/ocekavane-hry/${displaySlug}`} key={game.id} className="expected-card" style={{ textDecoration: 'none', borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                     <div style={{ position: 'relative', height: '220px', width: '100%', background: '#0b0c10' }}>
                        {hasVideo && <div style={{ position: 'absolute', top: '15px', right: '15px', background: '#ff0055', color: '#fff', padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '900', zIndex: 10, display: 'flex', alignItems: 'center', gap: '4px' }}><Play size={10} fill="#fff"/> VIDEO</div>}
+                       
+                       {/* 🚀 NOVÝ KÓD PRO DATUM VYDÁNÍ */}
+                       {game.release_date && (
+                         <div style={{ position: 'absolute', bottom: '15px', right: '15px', background: '#eab308', color: '#000', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: '900', zIndex: 10, display: 'flex', alignItems: 'center', gap: '5px', boxShadow: '0 5px 15px rgba(0,0,0,0.5)' }}>
+                           <Clock size={12} /> {new Date(game.release_date).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}
+                         </div>
+                       )}
+
                        <img src={getThumbnail(game, supabaseUrl)} alt={displayTitle} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} loading="lazy" />
                     </div>
                     <div style={{ padding: '25px', display: 'flex', flexDirection: 'column', flex: 1 }}>
