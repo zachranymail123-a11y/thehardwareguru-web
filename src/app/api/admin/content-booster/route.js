@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { revalidatePath, unstable_noStore as noStore } from 'next/cache';
 
-export const maxDuration = 120; // 🚀 GURU TIMEOUT FIX
+export const maxDuration = 120;
 export const dynamic = 'force-dynamic';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -20,11 +20,13 @@ export async function GET(req) {
   if (searchParams.get('key') !== MASTER_KEY) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
+    // 🚀 GURU FIX: Zvednuto na limit 1000! 
+    // Teď skript projede VŠECHNY tvé články (máš jich 344) a ty krátké se už neschovají.
     const { data: allPosts, error: fetchError } = await supabase
       .from('posts')
       .select('id, title, content, content_en, slug, slug_en')
       .order('updated_at', { ascending: true, nullsFirst: true }) 
-      .limit(100);
+      .limit(1000);
 
     if (fetchError) throw new Error("DB FETCH ERROR: " + fetchError.message);
 
@@ -40,7 +42,7 @@ export async function GET(req) {
     let finalCZ = post.content || '';
     let finalEN = post.content_en || '';
     let actionTaken = "";
-    let pushToBackOfQueue = false; // 🚀 Magický přepínač
+    let pushToBackOfQueue = false;
 
     // KROK A: Chybí Čeština
     if (finalCZ.length < 2000) {
@@ -56,9 +58,6 @@ export async function GET(req) {
       finalCZ = aiResCZ.choices[0].message.content;
       actionTaken = "GENERATED_CZ";
 
-      // Pokud AI udělala práci dobře (>2000 znaků), NEZMĚNÍME updated_at! 
-      // Tím článek zůstane první na ráně pro další F5, aby se rovnou udělala EN.
-      // Pokud to AI odflákla, odpálíme ho dozadu, ať se nezacyklíme.
       if (finalCZ.length < 2000) {
          pushToBackOfQueue = true;
       }
@@ -73,7 +72,6 @@ export async function GET(req) {
       finalEN = aiResEN.choices[0].message.content;
       actionTaken = "GENERATED_EN";
 
-      // Obě verze jsou hotové, můžeme článek poslat na konec fronty.
       pushToBackOfQueue = true;
     }
 
@@ -83,7 +81,6 @@ export async function GET(req) {
       content_en: finalEN,
     };
 
-    // Zapíšeme aktuální čas jen tehdy, když chceme článek vyřadit z čela fronty
     if (pushToBackOfQueue) {
       updatePayload.updated_at = new Date().toISOString();
     }
