@@ -1,7 +1,7 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
-import { Monitor, ArrowLeft, Activity, Zap, Share2 } from 'lucide-react';
+import { Monitor, ArrowLeft, Activity, Zap, Share2, CalendarDays } from 'lucide-react'; // Přidal jsem CalendarDays
 import Link from 'next/link';
 
 // Architektura převzata z tvého funkčního vzoru pro články (Server Component)
@@ -113,9 +113,17 @@ export default async function ExpectedGameDetail(props) {
                             <ArrowLeft size={16} /> {isEn ? 'BACK TO PREVIEWS' : 'ZPĚT NA PREVIEW'}
                         </Link>
                         
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', color: '#66fcf1', marginTop: '30px', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', color: '#66fcf1', marginTop: '30px', marginBottom: '20px', flexWrap: 'wrap' }}>
                                 <Monitor size={40} />
                                 <span style={badgeStyle}>{isEn ? 'TECHNICAL PREVIEW' : 'TECHNICKÝ ROZBOR'}</span>
+                                {/* 🔥 GURU FIX: Zde se dynamicky ukáže datum vydání (pokud ho v DB máš pod release_date) */}
+                                {item.release_date && (
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(234, 179, 8, 0.1)', padding: '8px 16px', borderRadius: '10px', fontSize: '12px', fontWeight: '950', border: '1px solid #eab308', color: '#eab308', letterSpacing: '1px' }}>
+                                        <CalendarDays size={14} /> 
+                                        {isEn ? 'RELEASE: ' : 'VYDÁNÍ: '} 
+                                        {new Date(item.release_date).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}
+                                    </span>
+                                )}
                         </div>
                         
                         <h1 style={mainTitle}>{title}</h1>
