@@ -3,6 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { revalidatePath, unstable_noStore as noStore } from 'next/cache';
 
+// 🚀 GURU TIMEOUT FIX 1: Natvrdo řekneme Vercelu, ať natáhne limit na 120 sekund (pomůže, pokud máš Pro účet)
+export const maxDuration = 120;
+export const dynamic = 'force-dynamic';
+
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -11,16 +15,13 @@ const supabase = createClient(
 
 const MASTER_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(req) {
   noStore(); // Totální smrt Vercel cache
   const { searchParams } = new URL(req.url);
   if (searchParams.get('key') !== MASTER_KEY) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    // 1. GURU QUEUE: Vezmeme 100 NEJSTARŠÍCH článků podle času poslední úpravy.
-    // Tím zaručíme, že se fronta po každém zápisu posune!
+    // 1. GURU QUEUE
     const { data: allPosts, error: fetchError } = await supabase
       .from('posts')
       .select('id, title, content, content_en, slug, slug_en')
@@ -29,7 +30,7 @@ export async function GET(req) {
 
     if (fetchError) throw new Error("DB FETCH ERROR: " + fetchError.message);
 
-    // 2. JS FILTER: Zkontrolujeme REÁLNOU délku znaků, ne abecední nesmysly
+    // 2. JS FILTER
     const post = allPosts.find(p => 
       (p.content === null || p.content.length < 2000) || 
       (p.content_en === null || p.content_en.length < 2000)
@@ -41,9 +42,12 @@ export async function GET(req) {
 
     let finalCZ = post.content || '';
     let finalEN = post.content_en || '';
+    let actionTaken = "";
 
-    // 3. AI GENERATOR (CZ) přes levný model gpt-4o-mini
+    // 🚀 GURU TIMEOUT FIX 2: "If / Else If" místo "If / If"
+    // Děláme VŽDY JEN JEDEN KROK během jednoho requestu!
     if (finalCZ.length < 2000) {
+      // KROK A: Chybí Čeština -> vygenerujeme ji a končíme pro tenhle tick.
       const promptCZ = `Jsi seniorní hardwarový redaktor. Napiš VELMI DLOUHÝ článek (min. 4000 znaků) na téma: "${post.title}". 
       Původní info: "${finalCZ}". 
       STRIKTNĚ POUŽIJ HTML TAGY: <p>, <h2>, <ul>, <li>, <strong>. Žádný Markdown! Rozděl to do logických odstavců.`;
@@ -54,25 +58,26 @@ export async function GET(req) {
         temperature: 0.7,
       });
       finalCZ = aiResCZ.choices[0].message.content;
-    }
+      actionTaken = "GENERATED_CZ";
 
-    // 4. AI TRANSLATOR (EN)
-    if (finalEN.length < 2000) {
+    } else if (finalEN.length < 2000) {
+      // KROK B: Čeština je hotová, takže teď přeložíme EN a končíme.
       const aiResEN = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: `Translate this tech article to professional English, KEEP ALL HTML TAGS: ${finalCZ}` }],
         temperature: 0.2,
       });
       finalEN = aiResEN.choices[0].message.content;
+      actionTaken = "GENERATED_EN";
     }
 
-    // 5. 🚀 CRITICAL UPDATE: Zápis STRIKTNĚ do content a content_en + POSUNUTÍ VE FRONTĚ
+    // 5. Zápis do DB + POSUNUTÍ VE FRONTĚ
     const { error: updateError } = await supabase
       .from('posts')
       .update({
         content: finalCZ,
         content_en: finalEN,
-        updated_at: new Date().toISOString() // Tohle zapíše aktuální čas a pošle článek na konec fronty!
+        updated_at: new Date().toISOString() 
       })
       .eq('id', post.id);
 
@@ -87,6 +92,7 @@ export async function GET(req) {
       status: "SUCCESS", 
       article_id: post.id,
       title: post.title,
+      action: actionTaken,
       cz_length_saved: finalCZ.length,
       en_length_saved: finalEN.length,
       next_action: "Dej F5. Fronta se teď zaručeně posunula."
