@@ -1,121 +1,112 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
+import { revalidatePath, unstable_noStore as noStore } from 'next/cache';
 
+export const maxDuration = 120; // 🚀 GURU TIMEOUT FIX
 export const dynamic = 'force-dynamic';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const SERPER_API_KEY = process.env.SERPER_API_KEY;
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+);
 
-export async function GET() {
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+// Můžeš použít stejný klíč jako u boosteru, ať v tom nemáš bordel
+const MASTER_KEY = "85b2e3f5a1c44d7e9b0d3f2a1b5c4d7e";
 
-  // 1. Najdeme články, kde chybí SEO (bereme max 2 najednou, kvůli DALL-E timeoutu)
-  const { data: posts, error } = await supabase
-    .from('posts')
-    .select('id, title, content, image_url, type')
-    .is('seo_description', null)
-    .limit(2);
+export async function GET(req) {
+  noStore(); // 🚀 SMRT CACHE!
+  const { searchParams } = new URL(req.url);
+  if (searchParams.get('key') !== MASTER_KEY) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (error) return NextResponse.json({ error: 'DB Error', details: error.message });
-  
-  if (!posts || posts.length === 0) {
-    return NextResponse.json({ message: '🦾 SEO GURU: Všechny články jsou perfektní!' });
-  }
+  try {
+    // 1. GURU QUEUE: Taháme jen články, kterým reálně chybí SEO nebo obrázek
+    const { data: posts, error: fetchError } = await supabase
+      .from('posts')
+      .select('id, title, content, seo_description, seo_description_en, image_url, slug, slug_en')
+      .or('seo_description.is.null,seo_description.eq."",seo_description_en.is.null,seo_description_en.eq."",image_url.is.null,image_url.eq.""')
+      .order('updated_at', { ascending: true, nullsFirst: true }) // 🚀 Řazení od nejstaršího!
+      .limit(100);
 
-  let results = [];
+    if (fetchError) throw new Error("DB FETCH ERROR: " + fetchError.message);
 
-  for (const post of posts) {
-    try {
-      // --- KROK 1: Sběr kontextu a YouTube přes Serper ---
-      const videoQuery = `${post.title} ${post.type === 'game' ? 'trailer gameplay' : 'review benchmark'}`;
-      const serperRes = await fetch('https://google.serper.dev/search', {
-        method: 'POST',
-        headers: { 'X-API-KEY': SERPER_API_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q: videoQuery, num: 3 })
-      });
-      const searchResults = await serperRes.json();
-      const rawContext = JSON.stringify(searchResults.organic || []).substring(0, 1500);
+    // Najdeme první, který má fakt nějaký deficit
+    const post = posts.find(p => 
+      !p.seo_description || 
+      !p.seo_description_en || 
+      !p.image_url
+    );
 
-      // --- KROK 2: Analýza přes gpt-4o a generování SEO dat ---
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { 
-            role: "system", 
-            content: `Jsi SEO expert a šéfredaktor HW/Gaming webu The Hardware Guru. 
-            Analyzuj text a data z vyhledávání. Vrať STRIKTNÍ JSON:
-            {
-              "seo_description": "Úderné SEO shrnutí (max 160 znaků) s klíčovým slovem na začátku.",
-              "seo_keywords": "čárkou oddělená nehledanější CZ klíčová slova (max 8).",
-              "image_alt": "Popis obrázku pro Google Images (5-10 slov).",
-              "youtube_url": "Z dodaného kontextu vyber POUZE validní YouTube odkaz (formát youtube.com/watch?v=...), jinak null.",
-              "og_title": "Clickbait titulek pro Pinterest/FB.",
-              "dalle_prompt": "Detailní anglický prompt pro DALL-E 3, který vystihuje téma článku. Styl: moderní, fotorealistický, dramatické osvětlení, žádný text v obrázku."
-            }` 
-          },
-          { 
-            role: "user", 
-            content: `Název: ${post.title}\nText: ${(post.content || '').substring(0, 2000)}...\n\nYouTube data: ${rawContext}` 
-          }
-        ],
-        response_format: { type: "json_object" }
-      });
-
-      const aiData = JSON.parse(completion.choices[0].message.content);
-
-      // --- KROK 3: Generování obrázku přes DALL-E 3 (pokud image_url je NULL) ---
-      let finalImageUrl = post.image_url;
-      if (!finalImageUrl) {
-        try {
-          const imageGeneration = await openai.images.generate({
-            model: "dall-e-3",
-            prompt: aiData.dalle_prompt,
-            n: 1,
-            size: "1024x1024", // Lepší čtverec pro Pinterest
-          });
-          finalImageUrl = imageGeneration.data[0].url;
-        } catch (imgErr) {
-          console.error("DALL-E chyba:", imgErr.message);
-          // Záloha pro případ selhání DALL-E (např. nevhodný prompt)
-          finalImageUrl = "https://thehardwareguru.cz/images/guru_placeholder.jpg";
-        }
-      }
-
-      // --- KROK 4: Strukturovaná data (Schema.org) ---
-      const schemaType = post.type === 'hardware' ? 'TechArticle' : 'Article';
-      const seoSchema = {
-        "@context": "https://schema.org",
-        "@type": schemaType,
-        "headline": post.title,
-        "description": aiData.seo_description,
-        "image": finalImageUrl,
-        "author": { "@type": "Person", "name": "The Hardware Guru" },
-        "publisher": { "@type": "Organization", "name": "TheHardwareGuru.cz" }
-      };
-
-      // --- KROK 5: Zápis do databáze (s novými poli a upsert logikou) ---
-      const { error: updateError } = await supabase
-        .from('posts')
-        .update({
-          seo_description: aiData.seo_description,
-          seo_keywords: aiData.seo_keywords,
-          image_alt: aiData.image_alt, // Přidej si sloupec image_alt (text)
-          youtube_url: aiData.youtube_url || null,
-          og_title: aiData.og_title, // Přidej si sloupec og_title (text)
-          seo_schema: seoSchema, // Přidej si sloupec seo_schema (jsonb)
-          image_url: finalImageUrl, // Aktualizujeme image_url, pokud byla NULL
-        })
-        .eq('id', post.id);
-
-      if (updateError) throw new Error(`DB Update Error: ${updateError.message}`);
-
-      results.push({ title: post.title, status: 'DOPLNĚNO', image: finalImageUrl });
-
-    } catch (err) {
-      results.push({ title: post.title, status: 'CHYBA', error: err.message });
+    if (!post) {
+      return NextResponse.json({ status: "FINISHED", message: "Všechny články mají kompletní SEO i obrázky." });
     }
-  }
 
-  return NextResponse.json({ processed: results });
+    let finalSeoCZ = post.seo_description || '';
+    let finalSeoEN = post.seo_description_en || '';
+    let finalImage = post.image_url || '';
+    let actionTaken = [];
+
+    // KROK A: Generování chybějícího CZ SEO (přes ultra levný gpt-4o-mini)
+    if (!finalSeoCZ) {
+      const resCZ = await openai.chat.completions.create({
+        model: "gpt-4o-mini", // 🚀 ŠETŘÍME KREDITY
+        messages: [{ role: "user", content: `Napiš úderný SEO meta popisek (max 155 znaků) v češtině pro článek s názvem: "${post.title}". Obsah: ${post.content?.substring(0, 500)}` }],
+        temperature: 0.5,
+      });
+      finalSeoCZ = resCZ.choices[0].message.content.replace(/["']/g, ''); // Vyčištění od uvozovek
+      actionTaken.push("SEO_CZ");
+    }
+
+    // KROK B: Generování chybějícího EN SEO (přes ultra levný gpt-4o-mini)
+    else if (!finalSeoEN) {
+      const resEN = await openai.chat.completions.create({
+        model: "gpt-4o-mini", // 🚀 ŠETŘÍME KREDITY
+        messages: [{ role: "user", content: `Translate this SEO meta description to professional English (max 155 chars): ${finalSeoCZ || post.title}` }],
+        temperature: 0.3,
+      });
+      finalSeoEN = resEN.choices[0].message.content.replace(/["']/g, '');
+      actionTaken.push("SEO_EN");
+    }
+
+    // KROK C: Generování chybějícího OBRÁZKU (DALL-E 3 - tady to prostě něco stojí)
+    else if (!finalImage) {
+      const imgRes = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: `High quality editorial illustration for a hardware and gaming article titled: "${post.title}". Tech, neon, cyberpunk aesthetic, professional lighting, no text in image.`,
+        n: 1,
+        size: "1024x1024",
+      });
+      finalImage = imgRes.data[0].url;
+      actionTaken.push("IMAGE_GENERATED");
+    }
+
+    // 5. 🚀 CRITICAL UPDATE: Zápis do DB + Změna času (posun na konec fronty)
+    const { error: updateError } = await supabase
+      .from('posts')
+      .update({
+        seo_description: finalSeoCZ,
+        seo_description_en: finalSeoEN,
+        image_url: finalImage,
+        updated_at: new Date().toISOString() // 🚀 TOHLE JE TEN KOUZELNÝ POSUN VE FRONTĚ
+      })
+      .eq('id', post.id);
+
+    if (updateError) throw new Error("UPDATE FAIL: " + updateError.message);
+
+    // Vymazání staré cache pro upravený článek
+    revalidatePath(`/clanky/${post.slug}`);
+    if (post.slug_en) revalidatePath(`/en/clanky/${post.slug_en}`);
+
+    return NextResponse.json({ 
+      status: "SUCCESS", 
+      article_id: post.id,
+      title: post.title,
+      actions: actionTaken,
+      next_action: "Dej F5 pro další krok nebo další článek."
+    });
+
+  } catch (err) {
+    return NextResponse.json({ status: "ERROR", message: err.message }, { status: 500 });
+  }
 }
