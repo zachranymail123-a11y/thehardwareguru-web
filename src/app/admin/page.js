@@ -8,14 +8,14 @@ import {
   ExternalLink, Lightbulb, BookOpen, Wrench, Video, Cpu, Lock, Calendar, Terminal,
   LayoutDashboard, Image as ImageIcon, CalendarDays, Layers, ChevronRight, Play,
   Download, Eye, Check, RotateCcw, Smartphone, Monitor, ArrowLeft, TrendingUp, Gamepad2, Star, Heart, Ghost, Brain,
-  LineChart, ArrowUpRight, Info, BarChart3, MessageSquare, User, Mail
+  LineChart, ArrowUpRight, Info, BarChart3, MessageSquare, User, Mail, CheckSquare
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V6.2 (SEO AUDIT UI ACTIVE)
+ * GURU ULTIMATE COMMAND CENTER V6.4 (SEO BATCH AUTO-FIX ADDED)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
  */
@@ -125,6 +125,8 @@ export default function AdminApp() {
   // --- SEO AUDIT STATE ---
   const [seoAudits, setSeoAudits] = useState([]);
   const [seoAuditsLoading, setSeoAuditsLoading] = useState(false);
+  const [selectedAudits, setSelectedAudits] = useState([]);
+  const [batchFixing, setBatchFixing] = useState(false);
 
   const addLog = (msg, type = 'info') => {
     const timeStr = new Date().toTimeString().split(' ')[0]; 
@@ -149,6 +151,7 @@ export default function AdminApp() {
   // --- FETCH SEO AUDITS ---
   const fetchSeoAudits = async () => {
     setSeoAuditsLoading(true);
+    setSelectedAudits([]); // Reset výběru při refreši
     addLog('Načítám AI SEO Audity z karantény...', 'warning');
     const { data, error } = await supabase
         .from('seo_audits')
@@ -176,7 +179,103 @@ export default function AdminApp() {
     } else {
         addLog('Audit úspěšně vyřešen a odsunut z fronty.', 'success');
         setSeoAudits(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
+        setSelectedAudits(prev => prev.filter(aId => aId !== id));
     }
+  };
+
+  const toggleAuditSelection = (id) => {
+      setSelectedAudits(prev => prev.includes(id) ? prev.filter(aId => aId !== id) : [...prev, id]);
+  };
+
+  // --- 🚀 AI BATCH AUTO-FIX LOGIC ---
+  const handleBatchAutoFix = async () => {
+      if (selectedAudits.length === 0) return;
+      
+      setBatchFixing(true);
+      addLog(`Spouštím dávkovou AI opravu pro ${selectedAudits.length} článků...`, 'warning');
+      
+      let successCount = 0;
+      const openAiKey = getEnv('OPENAI_API_KEY');
+
+      if (!openAiKey) {
+          addLog('Chybí OpenAI klíč.', 'error');
+          setBatchFixing(false);
+          return;
+      }
+
+      for (const auditId of selectedAudits) {
+          const audit = seoAudits.find(a => a.id === auditId);
+          if (!audit) continue;
+
+          addLog(`Analyzuji a opravuji: ${audit.url.split('/').pop()}...`, 'info');
+
+          try {
+              if (!audit.url.includes('/clanky/')) throw new Error('Auto-Fix aktuálně podporuje pouze články (/clanky/).');
+              
+              const slug = audit.url.split('/').pop();
+              const { data: post, error: postErr } = await supabase.from('posts').select('*').eq('slug', slug).single();
+              
+              if (postErr || !post) throw new Error('Článek nenalezen v databázi.');
+
+              const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openAiKey}` },
+                  body: JSON.stringify({
+                      model: "gpt-4o",
+                      messages: [
+                          { role: "system", content: `Jsi expertní SEO architekt. Oprav SEO metadata pro tento článek, aby vyhovoval Google a Bing standardům. 
+Tyto chyby byly nalezeny: ${JSON.stringify(audit.critical_errors)}.
+Vrať POUZE validní JSON s opravenými daty: { "title": "nový titulek (max 60 znaků bez duplicit)", "seo_description": "nový popisek (max 155 znaků)" }` },
+                          { role: "user", content: `Původní title: ${post.title}\nPůvodní SEO description: ${post.seo_description || post.description || 'Chybí'}\nZkrácený obsah: ${post.content_cs?.substring(0, 1000) || post.content?.substring(0, 1000)}` }
+                      ],
+                      response_format: { type: "json_object" }
+                  })
+              });
+
+              const r = await response.json();
+              const fixedData = JSON.parse(r.choices[0].message.content);
+
+              if (!fixedData.title || !fixedData.seo_description) throw new Error('AI nevrátilo kompletní data.');
+
+              // Update Post in DB
+              const { error: updateErr } = await supabase.from('posts').update({
+                  title: fixedData.title,
+                  seo_description: fixedData.seo_description
+              }).eq('id', post.id);
+
+              if (updateErr) throw updateErr;
+
+              // Update Audit Status
+              await supabase.from('seo_audits').update({ status: 'approved', resolved_at: new Date().toISOString() }).eq('id', audit.id);
+
+              // Update UI State
+              setSeoAudits(prev => prev.map(a => a.id === audit.id ? { ...a, status: 'approved' } : a));
+              successCount++;
+              
+              addLog(`Hotovo: ${fixedData.title}`, 'success');
+
+          } catch (err) {
+              addLog(`Chyba u ${audit.url.split('/').pop()}: ${err.message}`, 'error');
+          }
+      }
+
+      // ODPÁLENÍ JEDNOHO VERCEL BUILDU NA KONCI
+      if (successCount > 0) {
+          const vercelWebhook = getEnv('NEXT_PUBLIC_VERCEL_DEPLOY_WEBHOOK_URL');
+          if (vercelWebhook) {
+              addLog(`Dávka dokončena (${successCount} opraveno). Odpaluji JEDEN finální Vercel Rebuild...`, 'warning');
+              fetch(vercelWebhook, { method: 'POST' }).then(() => {
+                  addLog('Vercel Build spuštěn. Změny budou online za 1-2 minuty.', 'success');
+              }).catch(() => {
+                  addLog('Vercel webhook selhal.', 'error');
+              });
+          } else {
+              addLog(`Dávka dokončena, ale chybí Vercel Webhook v .env pro automatický rebuild.`, 'warning');
+          }
+      }
+
+      setSelectedAudits([]); // Vyčištění výběru
+      setBatchFixing(false);
   };
 
   const fetchPredictor = async () => {
@@ -384,7 +483,7 @@ export default function AdminApp() {
       if (activeTab === 'intel-hub') fetchIntelFeed();
       if (activeTab === 'poradna') fetchPoradnaQuestions();
       if (activeTab === 'booster') fetchBoosterStats();
-      if (activeTab === 'seo-audit') fetchSeoAudits(); // 🚀 AUTONAČÍTÁNÍ AUDITŮ
+      if (activeTab === 'seo-audit') fetchSeoAudits();
     }
   }, [isAuthenticated, activeTab]);
 
@@ -1076,6 +1175,19 @@ export default function AdminApp() {
               </button>
             </header>
 
+            {/* 🚀 BATCH ACTION BAR (Zobrazí se, když je něco vybráno) */}
+            {selectedAudits.length > 0 && (
+                <div style={{ background: 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)', padding: '20px 30px', borderRadius: '20px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 10px 30px rgba(168, 85, 247, 0.3)' }}>
+                    <div style={{ fontWeight: '950', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <CheckSquare size={24} />
+                        VYBRÁNO K OPRAVĚ: {selectedAudits.length}
+                    </div>
+                    <button onClick={handleBatchAutoFix} disabled={batchFixing} style={{ background: '#fff', color: '#7e22ce', padding: '12px 25px', borderRadius: '12px', border: 'none', fontWeight: '950', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', textTransform: 'uppercase', fontSize: '14px' }}>
+                        {batchFixing ? <><RefreshCw className="spin" size={18}/> OPRAVUJI...</> : <><Sparkles size={18}/> VYŘEŠIT VŠE A BUILDNOUT (1X)</>}
+                    </button>
+                </div>
+            )}
+
             {seoAudits.length === 0 ? (
               <div style={{ background: '#111318', padding: '40px', textAlign: 'center', borderRadius: '24px', border: '1px dashed #10b98144', color: '#9ca3af' }}>
                 {seoAuditsLoading ? 'Stahuji data z databáze...' : 'Zatím nebyly provedeny žádné SEO audity.'}
@@ -1083,14 +1195,25 @@ export default function AdminApp() {
             ) : (
               <div style={{ display: 'grid', gap: '20px' }}>
                 {seoAudits.map(audit => (
-                  <div key={audit.id} style={{ background: '#111318', borderRadius: '20px', border: `1px solid ${audit.status === 'pending_review' ? '#eab30855' : '#333'}`, padding: '25px', position: 'relative', opacity: audit.status === 'pending_review' ? 1 : 0.5 }}>
+                  <div key={audit.id} style={{ background: '#111318', borderRadius: '20px', border: `1px solid ${audit.status === 'pending_review' ? (selectedAudits.includes(audit.id) ? '#a855f7' : '#eab30855') : '#333'}`, padding: '25px', position: 'relative', opacity: audit.status === 'pending_review' ? 1 : 0.5, transition: '0.2s' }}>
                      
                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '20px' }}>
-                        <div>
-                            <a href={audit.url} target="_blank" rel="noreferrer" style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                {audit.url.split('/').pop()} <ExternalLink size={14} color="#6b7280" />
-                            </a>
-                            <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '5px' }}>{audit.url}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                            {/* 🚀 CHECKBOX PRO BATCH SELECTION */}
+                            {audit.status === 'pending_review' && (
+                                <input 
+                                    type="checkbox" 
+                                    checked={selectedAudits.includes(audit.id)} 
+                                    onChange={() => toggleAuditSelection(audit.id)}
+                                    style={{ width: '22px', height: '22px', accentColor: '#a855f7', cursor: 'pointer' }}
+                                />
+                            )}
+                            <div>
+                                <a href={audit.url} target="_blank" rel="noreferrer" style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    {audit.url.split('/').pop()} <ExternalLink size={14} color="#6b7280" />
+                                </a>
+                                <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '5px' }}>{audit.url}</div>
+                            </div>
                         </div>
                         <div style={{ background: audit.seo_score > 70 ? '#10b98122' : audit.seo_score > 40 ? '#eab30822' : '#ef444422', color: audit.seo_score > 70 ? '#10b981' : audit.seo_score > 40 ? '#eab308' : '#ef4444', padding: '10px 15px', borderRadius: '12px', fontWeight: '950', fontSize: '18px' }}>
                             {audit.seo_score} / 100
@@ -1113,12 +1236,12 @@ export default function AdminApp() {
                      </div>
 
                      {audit.status === 'pending_review' && (
-                        <div style={{ display: 'flex', gap: '10px', marginTop: '25px', paddingTop: '20px', borderTop: '1px solid #333' }}>
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '25px', paddingTop: '20px', borderTop: '1px solid #333', flexWrap: 'wrap' }}>
                             <button onClick={() => updateAuditStatus(audit.id, 'approved')} style={{ background: '#10b981', color: '#fff', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', flex: 1, textTransform: 'uppercase' }}>
-                                Označit jako vyřešeno
+                                Označit jako vyřešeno (Ručně)
                             </button>
                             <button onClick={() => updateAuditStatus(audit.id, 'rejected')} style={{ background: '#ef4444', color: '#fff', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', flex: 1, textTransform: 'uppercase' }}>
-                                Zamítnout (Ignorovat)
+                                Zamítnout
                             </button>
                         </div>
                      )}
