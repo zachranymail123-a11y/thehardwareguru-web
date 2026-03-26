@@ -24,7 +24,7 @@ export async function GET(req) {
     const secretKey = url.searchParams.get('key');
     
     // Zde doplň svůj tajný klíč, který používáš pro crony
-    if (secretKey !== 'TVUJ_TAJNY_KLIC') {
+    if (secretKey !== 'Wifik500') {
       return NextResponse.json({ error: 'Neplatný bezpečnostní klíč' }, { status: 401 });
     }
 
