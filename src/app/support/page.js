@@ -2,8 +2,8 @@ import React from 'react';
 import { ChevronLeft, ShieldCheck, Heart, Flame, ShoppingCart, Info, CheckCircle2 } from 'lucide-react';
 
 /**
- * GURU SUPPORT ENGINE V2.2 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Monetizace i podpůrné stránky skrze A-ADS.
+ * GURU SUPPORT ENGINE V2.3 (BING SEO FIX)
+ * 🚀 CÍL: Přidání unikátních meta tagů pro Bing indexaci.
  */
 
 export const runtime = "nodejs";
@@ -15,7 +15,10 @@ export async function generateMetadata(props) {
   const p = await props.params;
   const isEn = props?.isEn === true;
   return {
-    title: isEn ? 'Support Hardware Guru' : 'Podpoř Hardware Guru',
+    title: isEn ? 'Support The Hardware Guru | Join the VIP Community' : 'Podpořte The Hardware Guru | Staňte se VIP členem',
+    description: isEn 
+      ? 'Help us build the ultimate hardware database. Support the project via QR code, Apple Pay, Stripe, or by using our partner affiliate links.' 
+      : 'Pomozte nám vybudovat nejlepší hardwarovou databázi. Podpořte projekt přes QR platbu, Apple Pay, Stripe nebo využitím našich partnerských odkazů.',
     alternates: {
       canonical: `${baseUrl}/support`,
       languages: { 'en': `${baseUrl}/en/support`, 'cs': `${baseUrl}/support` }
