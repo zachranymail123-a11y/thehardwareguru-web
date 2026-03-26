@@ -10,7 +10,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-// Použijeme tvůj standardní klíč pro připojení
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -29,35 +28,51 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Chybí OPENAI_API_KEY v proměnných' }, { status: 500 });
     }
 
-    // 1. STÁHNUTÍ HTML STRÁNKY (Náš vlastní mini-crawler)
+    // 1. STÁHNUTÍ HTML STRÁNKY
     const pageRes = await fetch(url, { headers: { 'User-Agent': 'Guru-SEO-Bot/1.0' } });
     if (!pageRes.ok) {
         return NextResponse.json({ error: 'Nepodařilo se načíst zadanou URL' }, { status: 400 });
     }
     const html = await pageRes.text();
 
-    // 2. EXTRAKCE HLAVNÍCH SEO METADAT POMOCÍ REGEXU (rychlé, bez zátěže)
+    // 2. EXTRAKCE HLAVNÍCH SEO METADAT
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
     const descMatch = html.match(/<meta[^>]*name="description"[^>]*content="([^"]+)"[^>]*>/i) || html.match(/<meta[^>]*content="([^"]+)"[^>]*name="description"[^>]*>/i);
     const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+    const textContentMatch = html.match(/<main[^>]*>([\s\S]*?)<\/main>/i) || html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
 
     const extractedData = {
         title: titleMatch ? titleMatch[1].trim() : 'CHYBÍ TITLE',
         description: descMatch ? descMatch[1].trim() : 'CHYBÍ META DESCRIPTION',
-        h1: h1Match ? h1Match[1].replace(/<[^>]+>/g, '').trim() : 'CHYBÍ H1'
+        h1: h1Match ? h1Match[1].replace(/<[^>]+>/g, '').trim() : 'CHYBÍ H1',
+        textLength: textContentMatch ? textContentMatch[1].replace(/<[^>]+>/g, '').length : 0
     };
 
-    // 3. ODESLÁNÍ DO GPT-4o-mini (Nejlevnější model)
-    const systemPrompt = `Jsi senior SEO architekt pro Google, Bing, Yandex a Seznam.cz. 
-Zhodnoť poskytnutá metadata webové stránky. Hledej duplicity, příliš dlouhé/krátké texty, chybějící klíčová slova nebo thin-content znaky.
+    // 3. ODESLÁNÍ DO GPT-4o-mini S EXTRÉMNĚ SPECIFICKÝM PROMPTEM PRO 4 VYHLEDÁVAČE
+    const systemPrompt = `Jsi elitní SEO architekt. Tvým jediným cílem je raketový růst organického trafficu.
+Perfektně ovládáš algoritmy a oficiální dokumentace pro tyto 4 vyhledávače:
+1. GOOGLE: Zaměření na E-E-A-T, uživatelský záměr (search intent). Title max 60 znaků, Description max 155 znaků.
+2. BING: Extrémní citlivost na přesnou shodu klíčových slov v Title a H1. Nulová tolerance k duplicitám a prázdným meta tagům.
+3. YANDEX: Tvrdá penalizace za "thin content" (krátký, nekvalitní obsah) a SEO spam. Hodnotí čistotu tagů a jasnou strukturu.
+4. SEZNAM.CZ: Specifický lokální vyhledávač. Klade důraz na přesnou českou sémantiku, skloňování a výskyt klíčového slova hned na začátku nadpisu.
+
+Zhodnoť poskytnutá data webové stránky. Tvé návrhy musí být agresivní, praktické a cílené na získání prvních pozic.
+U každé chyby nebo návrhu specifikuj, pro který vyhledávač je to kritické (např. "[BING] Chybí klíčové slovo v H1", "[YANDEX] Obsah je příliš krátký").
+
 Vrať POUZE validní JSON v tomto formátu, bez markdownu nebo textu okolo:
 {
   "seo_score": číslo od 0 do 100,
-  "critical_errors": ["chyba 1", "chyba 2"],
-  "suggestions": ["konkrétní návrh na nový title", "návrh na úpravu textu pro lepší indexaci"]
+  "critical_errors": ["seznam kritických chyb s označením vyhledávače"],
+  "suggestions": ["konkrétní návrhy na úpravu textů, klíčových slov a tagů pro raketový růst"]
 }`;
 
-    const userPrompt = `Analyzuj tuto stránku: URL: ${url} \nTyp: ${pageType} \nTitle: ${extractedData.title} \nDescription: ${extractedData.description} \nH1: ${extractedData.h1}`;
+    const userPrompt = `Analyzuj tuto stránku: 
+URL: ${url} 
+Typ stránky: ${pageType} 
+Title: ${extractedData.title} 
+Description: ${extractedData.description} 
+H1: ${extractedData.h1}
+Přibližná délka textu: ${extractedData.textLength} znaků.`;
 
     const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -83,7 +98,7 @@ Vrať POUZE validní JSON v tomto formátu, bez markdownu nebo textu okolo:
         return NextResponse.json({ error: 'Chyba při komunikaci s OpenAI' }, { status: 500 });
     }
 
-    // 4. BEZPEČNÉ ULOŽENÍ DO KARANTÉNNÍ TABULKY (Status: pending_review)
+    // 4. BEZPEČNÉ ULOŽENÍ DO KARANTÉNNÍ TABULKY
     const analysisResult = JSON.parse(aiData.choices[0].message.content);
 
     const { error: dbError } = await supabase
