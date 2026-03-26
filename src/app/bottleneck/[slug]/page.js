@@ -3,11 +3,10 @@ import { notFound } from 'next/navigation';
 import { 
   ChevronLeft, Activity, Zap, ShieldCheck, AlertTriangle, ArrowRight, Cpu, Monitor, Gauge, CheckCircle2, Flame, Heart, Swords, PlugZap, Layers, Database, Info, BarChart3, Gamepad2, ArrowUpCircle, ShoppingCart
 } from 'lucide-react';
-import GuruAnalysisText from '../../../components/GuruAnalysisText'; // 🚀 GURU: Import dynamického generátoru textu
 
 /**
- * GURU BOTTLENECK ENGINE V22.5 (DYNAMIC SEO TEXT UPDATE)
- * 🚀 CÍL: Generování unikátního textu pro každou sestavu kvůli Bing SEO indexaci.
+ * GURU BOTTLENECK ENGINE V22.6 (ALGORITHMIC SEO TEXT GENERATOR)
+ * 🚀 CÍL: Generování unikátního textu bez OpenAI (0$ cost, 0ms latency) kvůli Google indexaci.
  */
 
 export const runtime = "nodejs";
@@ -72,6 +71,52 @@ const getAnalysisData = async (slug) => {
   ]);
   
   return { cpu, gpu, gameSlug, resolution };
+};
+
+// 🚀 GURU ALGORITHMIC SEO TEXT GENERATOR (BEZ OPENAI = ZADARMO)
+const AlgorithmicSeoText = ({ cpuName, gpuName, gameName, resolution, bottleneckPercent, isCpuBound, fps, isEn }) => {
+  const isPerfect = bottleneckPercent < 10;
+  const isMinor = bottleneckPercent >= 10 && bottleneckPercent <= 20;
+  const targetGame = gameName ? (isEn ? `in ${gameName}` : `ve hře ${gameName}`) : (isEn ? `in modern titles` : `v moderních titulech`);
+  const targetRes = resolution ? (isEn ? `at ${resolution}` : `v rozlišení ${resolution}`) : '';
+  const bottleneckType = isCpuBound ? "CPU" : "GPU";
+
+  let p1, p2, p3;
+
+  if (isEn) {
+    p1 = `When pairing the **${cpuName}** processor with the **${gpuName}** graphics card, it is crucial to analyze how they perform together ${targetGame} ${targetRes}. A balanced system ensures maximum frames per second without wasting hardware potential.`;
+    
+    if (isPerfect) {
+      p2 = `Based on our performance index, this combination is **perfectly balanced**. With a negligible bottleneck of only **${bottleneckPercent}%**, neither the ${bottleneckType} nor the other components are significantly holding the system back. This means you are extracting the maximum possible value from both components.`;
+    } else if (isMinor) {
+      p2 = `Our analysis reveals a minor **${bottleneckPercent}% bottleneck**, primarily caused by the **${bottleneckType}**. While not critical, it indicates that the ${bottleneckType} reaches its maximum capacity slightly earlier than the rest of the system ${targetRes}.`;
+    } else {
+      p2 = `This configuration experiences a significant **${bottleneckPercent}% bottleneck**, strictly limited by the **${bottleneckType}**. In highly demanding scenarios ${targetGame}, the ${bottleneckType} struggles to keep pace, preventing the other components from achieving their full potential.`;
+    }
+
+    p3 = fps ? `For gamers, this translates to an estimated average performance of **${fps} FPS**. If you are planning to build or upgrade this PC, focusing on a more powerful ${bottleneckType} would yield the most noticeable improvements in smoothness and visual fidelity.` : `If you are planning to build or upgrade this exact PC setup, balancing the ${bottleneckType} power should be your next priority to optimize your gaming or professional workflow.`;
+
+  } else {
+    p1 = `Při spojení procesoru **${cpuName}** s grafickou kartou **${gpuName}** je naprosto klíčové vědět, jak se budou chovat ${targetGame} ${targetRes}. Správně vyvážená sestava garantuje maximální snímkovou frekvenci (FPS) bez zbytečného plýtvání výkonem.`;
+    
+    if (isPerfect) {
+      p2 = `Na základě našeho výkonnostního indexu je tato kombinace **naprosto ideální**. S naprosto zanedbatelným omezením pouze **${bottleneckPercent} %** nebrzdí procesor ani grafická karta zbytek systému. Z obou drahých komponent tak těžíte absolutní maximum.`;
+    } else if (isMinor) {
+      p2 = `Naše analýza odhalila mírný úzký profil (bottleneck) na úrovni **${bottleneckPercent} %**, který je způsoben primárně ze strany **${bottleneckType}**. Nejedná se o kritický problém, ale znamená to, že ${bottleneckType} naráží na své limity o něco dříve než zbytek sestavy ${targetRes}.`;
+    } else {
+      p2 = `Tato konfigurace trpí poměrně zásadním bottleneckem **${bottleneckPercent} %**, kdy je výkon striktně limitován ze strany **${bottleneckType}**. V náročných momentech ${targetGame} přestává ${bottleneckType} stíhat a nedovolí druhé komponentě využít její plný potenciál.`;
+    }
+
+    p3 = fps ? `Pro hráče to v reálu znamená odhadovaný průměrný výkon kolem **${fps} FPS**. Pokud plánujete tuto sestavu stavět nebo vylepšovat, investice do silnějšího ${bottleneckType} by vám přinesla největší skok v plynulosti a kvalitě obrazu.` : `Pokud plánujete tuto počítačovou sestavu teprve stavět, doporučujeme zvážit lepší vyvážení. Investice do silnějšího ${bottleneckType} by měla být vaší prioritou číslo jedna pro maximalizaci výkonu.`;
+  }
+
+  return (
+    <div className="seo-text-container" style={{ fontSize: '1.1rem', lineHeight: '1.7', color: '#d1d5db' }}>
+      <p style={{ marginBottom: '15px' }} dangerouslySetInnerHTML={{ __html: p1 }}></p>
+      <p style={{ marginBottom: '15px' }} dangerouslySetInnerHTML={{ __html: p2 }}></p>
+      <p dangerouslySetInnerHTML={{ __html: p3 }}></p>
+    </div>
+  );
 };
 
 export async function generateMetadata(props) {
@@ -367,11 +412,11 @@ export default async function BottleneckPage(props) {
             </div>
 
             {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT (VLOŽENO ZDE) */}
-            <div style={{ marginTop: '40px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '20px', textAlign: 'left' }}>
-              <GuruAnalysisText 
+            <div style={{ marginTop: '40px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '30px', textAlign: 'left' }}>
+              <AlgorithmicSeoText 
                 cpuName={cpu.name} 
                 gpuName={gpu.name} 
-                gameName={gameName || 'popular PC games'} 
+                gameName={gameName} 
                 resolution={displayResolution} 
                 bottleneckPercent={bottleneckScore} 
                 isCpuBound={isCpuBottleneck} 
