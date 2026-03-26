@@ -1,7 +1,6 @@
 /**
- * GURU ROBOTS ENGINE V4.7 (BING SITEMAP ADDED)
+ * GURU ROBOTS ENGINE V4.7
  * Cesta: src/app/robots.txt/route.js
- * 🚀 CÍL: Přidána dedikovaná sitemapa pro Bing, zachován čistý formát.
  */
 
 export const revalidate = 86400;
@@ -18,9 +17,6 @@ Disallow: /admin/
 # Hlavní indexy map webu
 Sitemap: https://thehardwareguru.cz/guru-sitemap.xml
 Sitemap: https://thehardwareguru.cz/latest.xml
-
-# Mapa speciálně pro Bing
-Sitemap: https://thehardwareguru.cz/bing-sitemap.xml
 
 # Dynamické mapy (AKTIVOVAT AŽ PO SCHVÁLENÍ ADSENSE)
 # Sitemap: https://thehardwareguru.cz/sitemap-hity.xml
