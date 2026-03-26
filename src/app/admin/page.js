@@ -15,7 +15,7 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V6.1 (SEO AUDIT ADDED)
+ * GURU ULTIMATE COMMAND CENTER V6.2 (SEO AUDIT UI ACTIVE)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
  */
@@ -118,9 +118,13 @@ export default function AdminApp() {
   const [poradnaAnswers, setPoradnaAnswers] = useState({});
   const [poradnaSubmitting, setPoradnaSubmitting] = useState(null);
 
-  // --- 🚀 CONTENT BOOSTER STATE ---
+  // --- CONTENT BOOSTER STATE ---
   const [boosterStats, setBoosterStats] = useState({ total: 0, boosted: 0, pending: 0, sample: [] });
   const [boosterLoading, setBoosterLoading] = useState(false);
+
+  // --- SEO AUDIT STATE ---
+  const [seoAudits, setSeoAudits] = useState([]);
+  const [seoAuditsLoading, setSeoAuditsLoading] = useState(false);
 
   const addLog = (msg, type = 'info') => {
     const timeStr = new Date().toTimeString().split(' ')[0]; 
@@ -142,6 +146,39 @@ export default function AdminApp() {
     setBoosterLoading(false);
   };
 
+  // --- FETCH SEO AUDITS ---
+  const fetchSeoAudits = async () => {
+    setSeoAuditsLoading(true);
+    addLog('Načítám AI SEO Audity z karantény...', 'warning');
+    const { data, error } = await supabase
+        .from('seo_audits')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        addLog(`Chyba načítání SEO auditů: ${error.message}`, 'error');
+    } else {
+        setSeoAudits(data || []);
+        addLog(`Načteno ${data?.length || 0} SEO auditů.`, 'success');
+    }
+    setSeoAuditsLoading(false);
+  };
+
+  const updateAuditStatus = async (id, newStatus) => {
+    addLog(`Měním status auditu na: ${newStatus}...`, 'warning');
+    const { error } = await supabase
+        .from('seo_audits')
+        .update({ status: newStatus, resolved_at: new Date().toISOString() })
+        .eq('id', id);
+
+    if (error) {
+        addLog(`Chyba aktualizace auditu: ${error.message}`, 'error');
+    } else {
+        addLog('Audit úspěšně vyřešen a odsunut z fronty.', 'success');
+        setSeoAudits(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a));
+    }
+  };
+
   const fetchPredictor = async () => {
     setPredictorLoading(true);
     addLog("Odpalyji Guru Predictor Engine...", "warning");
@@ -149,7 +186,6 @@ export default function AdminApp() {
         const res = await fetch('/api/predictor');
         const json = await res.json();
         
-        // 🚀 GURU FIX: Robustnější kontrola formátu vrácených dat
         if (json && (json.success || Array.isArray(json))) {
             const dataToSet = Array.isArray(json) ? json : (json.data || []);
             setPredictorData(dataToSet);
@@ -287,7 +323,6 @@ export default function AdminApp() {
     setLoading(false);
   };
 
-  // --- PORADNA FUNKCE ---
   const fetchPoradnaQuestions = async () => {
     setPoradnaLoading(true);
     addLog('Načítám dotazy z poradny...', 'info');
@@ -348,7 +383,8 @@ export default function AdminApp() {
       if (activeTab === 'predictor') fetchPredictor();
       if (activeTab === 'intel-hub') fetchIntelFeed();
       if (activeTab === 'poradna') fetchPoradnaQuestions();
-      if (activeTab === 'booster') fetchBoosterStats(); // 🚀 Přidáno pro automatický fetch
+      if (activeTab === 'booster') fetchBoosterStats();
+      if (activeTab === 'seo-audit') fetchSeoAudits(); // 🚀 AUTONAČÍTÁNÍ AUDITŮ
     }
   }, [isAuthenticated, activeTab]);
 
@@ -1027,6 +1063,7 @@ export default function AdminApp() {
           </div>
         )}
 
+        {/* 🚀 NOVÁ ZÁLOŽKA: SEO AUDIT */}
         {activeTab === 'seo-audit' && (
           <div className="fade-in">
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
@@ -1034,10 +1071,61 @@ export default function AdminApp() {
                 <h2 style={{ fontSize: '32px', fontWeight: 950, textTransform: 'uppercase', margin: 0 }}>SEO <span style={{ color: '#10b981' }}>AUDIT</span></h2>
                 <p style={{ color: '#4b5563', fontWeight: 'bold' }}>AI návrhy pro raketový růst vyhledávačů (Read-Only)</p>
               </div>
+              <button onClick={fetchSeoAudits} disabled={seoAuditsLoading} style={{ background: '#10b981', color: '#fff', padding: '15px 30px', borderRadius: '15px', border: 'none', fontWeight: '950', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {seoAuditsLoading ? <RefreshCw className="spin" size={20}/> : <RotateCcw size={20}/>} OBNOVIT
+              </button>
             </header>
-            <div style={{ background: '#111318', padding: '40px', textAlign: 'center', borderRadius: '24px', border: '1px dashed #10b98144', color: '#9ca3af' }}>
-              Modul AI SEO Auditu se připravuje k zobrazení dat z karanténní databáze.
-            </div>
+
+            {seoAudits.length === 0 ? (
+              <div style={{ background: '#111318', padding: '40px', textAlign: 'center', borderRadius: '24px', border: '1px dashed #10b98144', color: '#9ca3af' }}>
+                {seoAuditsLoading ? 'Stahuji data z databáze...' : 'Zatím nebyly provedeny žádné SEO audity.'}
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '20px' }}>
+                {seoAudits.map(audit => (
+                  <div key={audit.id} style={{ background: '#111318', borderRadius: '20px', border: `1px solid ${audit.status === 'pending_review' ? '#eab30855' : '#333'}`, padding: '25px', position: 'relative', opacity: audit.status === 'pending_review' ? 1 : 0.5 }}>
+                     
+                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '15px', marginBottom: '20px' }}>
+                        <div>
+                            <a href={audit.url} target="_blank" rel="noreferrer" style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {audit.url.split('/').pop()} <ExternalLink size={14} color="#6b7280" />
+                            </a>
+                            <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '5px' }}>{audit.url}</div>
+                        </div>
+                        <div style={{ background: audit.seo_score > 70 ? '#10b98122' : audit.seo_score > 40 ? '#eab30822' : '#ef444422', color: audit.seo_score > 70 ? '#10b981' : audit.seo_score > 40 ? '#eab308' : '#ef4444', padding: '10px 15px', borderRadius: '12px', fontWeight: '950', fontSize: '18px' }}>
+                            {audit.seo_score} / 100
+                        </div>
+                     </div>
+
+                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        <div>
+                            <h4 style={{ color: '#ef4444', margin: '0 0 10px 0', fontSize: '12px', letterSpacing: '1px' }}>KRITICKÉ CHYBY:</h4>
+                            <ul style={{ margin: 0, paddingLeft: '20px', color: '#fca5a5', fontSize: '13px', lineHeight: '1.6' }}>
+                                {Array.isArray(audit.critical_errors) ? audit.critical_errors.map((e, i) => <li key={i}>{e}</li>) : <li>Žádné chyby</li>}
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 style={{ color: '#10b981', margin: '0 0 10px 0', fontSize: '12px', letterSpacing: '1px' }}>AI NÁVRHY:</h4>
+                            <ul style={{ margin: 0, paddingLeft: '20px', color: '#6ee7b7', fontSize: '13px', lineHeight: '1.6' }}>
+                                {Array.isArray(audit.suggestions) ? audit.suggestions.map((s, i) => <li key={i}>{s}</li>) : <li>Žádné návrhy</li>}
+                            </ul>
+                        </div>
+                     </div>
+
+                     {audit.status === 'pending_review' && (
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '25px', paddingTop: '20px', borderTop: '1px solid #333' }}>
+                            <button onClick={() => updateAuditStatus(audit.id, 'approved')} style={{ background: '#10b981', color: '#fff', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', flex: 1, textTransform: 'uppercase' }}>
+                                Označit jako vyřešeno
+                            </button>
+                            <button onClick={() => updateAuditStatus(audit.id, 'rejected')} style={{ background: '#ef4444', color: '#fff', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', flex: 1, textTransform: 'uppercase' }}>
+                                Zamítnout (Ignorovat)
+                            </button>
+                        </div>
+                     )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -1048,7 +1136,7 @@ export default function AdminApp() {
         
       </main>
 
-      {/* 🚀 GURU FIX: MODAL PRO NÁHLED A PUBLIKACI (OPRAVENÝ PAYLOAD PRO SÍTĚ) */}
+      {/* 🚀 MODAL PRO NÁHLED A PUBLIKACI */}
       {draft && previewMode === 'card' && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(5px)' }}>
             <div style={{ background: '#111318', padding: '40px', borderRadius: '24px', border: '1px solid #a855f7', width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto', position: 'relative', boxShadow: '0 0 50px rgba(168, 85, 247, 0.2)' }}>
@@ -1070,7 +1158,6 @@ export default function AdminApp() {
                         </div>
                     </div>
                     
-                    {/* 🚀 GURU FIX: Viditelné a upravitelné pole pro IMAGE URL */}
                     <div style={{ marginBottom: '15px' }}>
                         <label style={{ fontSize: '10px', fontWeight: '900', color: '#a855f7', marginBottom: '5px', display: 'block' }}>IMAGE URL (NÁHLEDOVÝ OBRÁZEK)</label>
                         <input value={draft.image_url || ''} onChange={e => setDraft({...draft, image_url: e.target.value})} placeholder="https://..." style={{ width: '100%', padding: '12px', background: '#000', border: '1px dashed #a855f7', color: '#fff', borderRadius: '8px' }} />
