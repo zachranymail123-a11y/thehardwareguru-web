@@ -15,7 +15,7 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 
 /**
- * GURU ULTIMATE COMMAND CENTER V6.0 (BOOSTER DASHBOARD ADDED)
+ * GURU ULTIMATE COMMAND CENTER V6.1 (SEO AUDIT ADDED)
  * Cesta: src/app/admin/page.js
  * 🛡️ STATUS: PRODUCTION READY
  */
@@ -664,6 +664,7 @@ export default function AdminApp() {
           <SidebarItemUI id="predictor" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Brain />} label="HYPE RADAR" color="#eab308" />
           <SidebarItemUI id="booster" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Flame />} label="CONTENT BOOSTER" color="#ff4b2b" />
           <SidebarItemUI id="intel-hub" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Layers />} label="INTEL HUB" color="#a855f7" />
+          <SidebarItemUI id="seo-audit" activeTab={activeTab} setActiveTab={setActiveTab} icon={<LineChart />} label="SEO AUDIT" color="#10b981" />
           <SidebarItemUI id="database" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Database />} label="DATABÁZE (NEW)" color="#66fcf1" />
           <SidebarItemUI id="seznam-indexer" activeTab={activeTab} setActiveTab={setActiveTab} icon={<Search />} label="SEZNAM INDEXER" color="#ef4444" />
           <SidebarItemUI id="poradna" activeTab={activeTab} setActiveTab={setActiveTab} icon={<MessageSquare />} label="PORADNA" color="#3b82f6" />
@@ -1023,6 +1024,20 @@ export default function AdminApp() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'seo-audit' && (
+          <div className="fade-in">
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+              <div>
+                <h2 style={{ fontSize: '32px', fontWeight: 950, textTransform: 'uppercase', margin: 0 }}>SEO <span style={{ color: '#10b981' }}>AUDIT</span></h2>
+                <p style={{ color: '#4b5563', fontWeight: 'bold' }}>AI návrhy pro raketový růst vyhledávačů (Read-Only)</p>
+              </div>
+            </header>
+            <div style={{ background: '#111318', padding: '40px', textAlign: 'center', borderRadius: '24px', border: '1px dashed #10b98144', color: '#9ca3af' }}>
+              Modul AI SEO Auditu se připravuje k zobrazení dat z karanténní databáze.
+            </div>
           </div>
         )}
 
