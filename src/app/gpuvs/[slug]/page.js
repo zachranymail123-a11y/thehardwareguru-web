@@ -6,10 +6,11 @@ import {
   Monitor, ExternalLink, Info, HelpCircle
 } from 'lucide-react';
 import GuruGpuCompareText from '../../../components/GuruGpuCompareText';
+import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU GPU DUELS ENGINE - V6.1 (BOTTLENECK & UPGRADE BANNER RESTORE + SPLIT SEARCH)
- * 🚀 CÍL: 100% fix 404 přes split search a doplnění chybějících bannerů.
+ * GURU GPU DUELS ENGINE - V6.2 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Maximální monetizace srovnávače grafických karet skrze Seznam Partner.
  */
 
 export const runtime = "nodejs";
@@ -55,25 +56,20 @@ const getDuelData = cache(async (rawSlug) => {
     return null;
   };
 
-  // 1. Přesná shoda
   let result = await performSearch(`slug=eq.${cleanSlug}`);
   if (result) return result;
 
-  // 2. ROZDĚL A PANUJ (Ignoruje prostřední balast jako "-vs-nvidia-geforce-")
   const parts = cleanSlug.split('-vs-');
   if (parts.length === 2) {
-      // Očistíme obě strany od výrobců a velikosti paměti (např. -8gb)
       const cleanPart = (p) => p.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '').replace(/-[0-9]+gb/gi, '').trim();
       const p1 = cleanPart(parts[0]);
       const p2 = cleanPart(parts[1]);
       
       if (p1 && p2) {
-          // AND operátor: slug musí obsahovat P1 A ZÁROVEŇ P2
           result = await performSearch(`and=(slug.ilike.*${p1}*,slug.ilike.*${p2}*)`);
           if (result) return result;
       }
       
-      // 3. Fallback jen na první grafiku
       if (p1) {
           result = await performSearch(`slug=ilike.*${p1}*`);
       }
@@ -95,8 +91,8 @@ const getRelatedArticles = async (gpuA_Name, gpuB_Name) => {
     } catch (e) { return []; }
 };
 
-export async function generateMetadata({ params }) {
-  const { slug } = params; 
+export async function generateMetadata(props) {
+  const { slug } = await props.params; 
   const duel = await getDuelData(slug);
   if (!duel || !duel.gpuA) return { title: 'GPU Comparison | Hardware Guru' };
   
@@ -108,8 +104,8 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default async function GpuVsDetailPage({ params }) {
-  const { slug } = params; 
+export default async function GpuVsDetailPage(props) {
+  const { slug } = await props.params; 
   const duel = await getDuelData(slug);
   
   if (!duel) notFound();
@@ -180,7 +176,11 @@ export default async function GpuVsDetailPage({ params }) {
             </div>
         </div>
 
-        {/* 🚀 UPGRADE BANNER (Doplněn zpět!) */}
+        {/* 🔥 SEZNAM AD #1: TOP BANNER POD HLAVNÍM SROVNÁNÍM */}
+        <div style={{ marginBottom: '50px', display: 'flex', justifyContent: 'center' }}>
+            <SeznamAd zoneId={408654} width={970} height={210} />
+        </div>
+
         <section style={{ marginBottom: '60px' }}>
             <div className="upgrade-banner" style={{ background: 'linear-gradient(135deg, rgba(255, 0, 85, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(255, 0, 85, 0.2)', padding: '30px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
                 <div>
@@ -194,7 +194,6 @@ export default async function GpuVsDetailPage({ params }) {
             </div>
         </section>
 
-        {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT */}
         <section style={{ marginBottom: '60px' }}>
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -225,10 +224,14 @@ export default async function GpuVsDetailPage({ params }) {
                    <div style={{ ...getWinnerStyle(row.winB, row.winA, row.lower), flex: 1, textAlign: 'left', fontSize: '18px' }}>{row.valB}</div>
                  </div>
                ))}
+
+               {/* 🔥 SEZNAM AD #2: PROSTŘEDEK TABULKY */}
+               <div style={{ padding: '20px 0', display: 'flex', justifyContent: 'center' }}>
+                    <SeznamAd zoneId={408651} width={300} height={250} />
+               </div>
           </div>
         </section>
 
-        {/* 🚀 BOTTLENECK CHECK BANNER (Doplněn zpět!) */}
         <section style={{ marginBottom: '60px' }}>
             <div style={{ background: 'linear-gradient(135deg, rgba(102, 252, 241, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(102, 252, 241, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
                 <div>
@@ -285,6 +288,8 @@ export default async function GpuVsDetailPage({ params }) {
             .guru-grid-ring { grid-template-columns: 1fr !important; }
             .spec-row-style { flex-direction: column !important; gap: 10px; padding: 15px 10px !important; }
             .table-label { width: 100%; }
+            .cta-row-upgrade { flex-direction: column; }
+            .btn-guru { max-width: 100%; }
         }
       `}} />
     </div>
