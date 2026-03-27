@@ -13,10 +13,11 @@ import {
   ExternalLink,
   BarChart3
 } from 'lucide-react';
+import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU GPU PERFORMANCE ENGINE V2.7 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Maximální monetizace technických analýz výkonu skrze A-ADS.
+ * GURU GPU PERFORMANCE ENGINE V2.8 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Maximální monetizace technických analýz výkonu skrze Seznam Partner.
  */
 
 export const runtime = "nodejs";
@@ -89,20 +90,18 @@ export default async function GpuPerformancePage({ params }) {
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(102,252,241,0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)' }}>
             <Activity size={16} /> GURU PERFORMANCE ANALYSIS
           </div>
-          <h1 style={{ fontSize: 'clamp(2rem, 8vw, 4rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.2' }}>
+          <h1 style={{ fontSize: 'clamp(2rem, 6vw, 4rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.2' }}>
             <span style={{ color: vendorColor }}>{normalizeName(gpu.name)}</span> <br/>
             {isEn ? 'SPECS & PERFORMANCE' : 'VÝKON A PARAMETRY'}
           </h1>
         </header>
 
-        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD HLAVIČKOU */}
-        <div className="guru-perf-ad-slot">
-            <span className="ad-label">Advertisement</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        {/* 🔥 SEZNAM AD #1: TOP PLACEMENT POD HLAVIČKOU */}
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+            <SeznamAd zoneId={408654} width={970} height={210} />
         </div>
 
         <section style={{ marginBottom: '60px' }}>
@@ -113,11 +112,9 @@ export default async function GpuPerformancePage({ params }) {
             </div>
         </section>
 
-        {/* 🔥 ADS SLOT #2: PŘED TECHNICKÝMI SPECIFIKACEMI */}
-        <div className="guru-perf-ad-slot">
-            <span className="ad-label">Sponsored Hardware Data</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        {/* 🔥 SEZNAM AD #2: PŘED TECHNICKÝMI SPECIFIKACEMI */}
+        <div style={{ marginBottom: '40px' }}>
+            <SeznamAd zoneId={408651} width={300} height={250} />
         </div>
 
         <section style={{ marginBottom: '60px' }}>
@@ -139,10 +136,6 @@ export default async function GpuPerformancePage({ params }) {
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         
-        .guru-perf-ad-slot { margin: 30px 0; padding: 15px; background: rgba(102, 252, 241, 0.02); border: 1px solid rgba(102, 252, 241, 0.1); border-radius: 20px; text-align: center; }
-        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; } .ad-mobile { display: none; }
-
         .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; display: flex; align-items: center; gap: 12px; }
         .res-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
         .res-label { font-size: 11px; font-weight: 950; text-transform: uppercase; color: #6b7280; letter-spacing: 2px; margin-bottom: 10px; }
@@ -151,7 +144,6 @@ export default async function GpuPerformancePage({ params }) {
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; }
         
         @media (max-width: 768px) {
-            .ad-desktop { display: none; } .ad-mobile { display: block; }
             .guru-deals-btn, .guru-support-btn { width: 100%; }
         }
       `}} />
