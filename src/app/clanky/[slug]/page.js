@@ -2,6 +2,7 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, Info, Calendar, Flame, Heart, Share2, Swords, Gauge, ArrowRight, Sparkles, Gamepad2, Twitter, Cpu, Monitor, User, Clock, CheckCircle } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import SeznamAd from '@/components/SeznamAd';
 
 /**
  * GURU ARTICLE ENGINE V5.3 (CLEAN MODE FOR ADSENSE REVIEW)
@@ -156,8 +157,11 @@ export default async function ArticleDetailPage(props) {
 
                     <div className="guru-article-content">
                          <div dangerouslySetInnerHTML={{ __html: firstHalf + (contentParts.length > 1 ? '</p>' : '') }} />
+                         <SeznamAd zoneId={408651} width={300} height={250} />
                          <div dangerouslySetInnerHTML={{ __html: secondHalf }} />
                     </div>
+                    
+                    <SeznamAd zoneId={408658} width={480} height={300} />
                     
                     <div className="gta6-conversion-box">
                         <div className="gta6-badge"><Sparkles size={16} /> AI NEXT-GEN PREDIKCE</div>
