@@ -7,6 +7,7 @@ import {
   TrendingUp, TrendingDown, Layers, Target, Video, Share2, Check, 
   Twitter, Award, Swords, Gamepad2, ChevronRight, Play, Newspaper, Lightbulb
 } from 'lucide-react';
+import SeznamAd from '../../components/SeznamAd';
 
 const RedditIcon = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -117,14 +118,6 @@ export default function BottleneckClient({
         setTimeout(() => { setShowResult(true); setIsCalculating(false); }, 800);
     };
 
-    const getShareDetails = () => {
-        const gameName = games.find(g => g.slug === selectedGameSlug)?.name || 'hře';
-        const cpuName = cpus.find(c => c.id === selectedCpuId)?.name || 'můj CPU';
-        const gpuName = gpus.find(g => g.id === selectedGpuId)?.name || 'moje GPU';
-        const url = isEn ? 'https://thehardwareguru.cz/en/fps-calculator' : 'https://thehardwareguru.cz/fps-kalkulacka';
-        return { gameName, cpuName, gpuName, url };
-    };
-
     const handleCopyShare = async () => {
         if (typeof navigator !== 'undefined' && navigator.clipboard && shareUrl) {
             const text = isEn 
@@ -136,28 +129,17 @@ export default function BottleneckClient({
         }
     };
 
-    const safeOpen = (url) => {
-        try {
-            if (typeof window !== 'undefined') window.open(url, '_blank', 'noopener,noreferrer');
-        } catch (e) {}
-    };
-
     const handleXShare = () => {
         if (!analysis) return;
-        const { gameName, cpuName, gpuName, url } = getShareDetails();
-        const textEn = `🔥 My rig hits ${analysis.estFps} FPS in ${gameName} on ${resolution}!\n💻 Build: ${cpuName} + ${gpuName}\n\nCheck your PC performance at:`;
-        const textCs = `🔥 Moje sestava dává v ${gameName} na ${resolution} brutálních ${analysis.estFps} FPS!\n💻 Železo: ${cpuName} + ${gpuName}\n\nZměř si to taky na:`;
-        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(isEn ? textEn : textCs)}&url=${encodeURIComponent(url)}`;
-        safeOpen(twitterUrl);
+        const textEn = `🔥 My rig hits ${analysis.estFps} FPS in ${analysis.gameName} on ${resolution}!\n💻 Build: ${analysis.cpuName} + ${analysis.gpuName}\n\nCheck your PC at: ${shareUrl}`;
+        const textCs = `🔥 Moje sestava dává v ${analysis.gameName} na ${resolution} brutálních ${analysis.estFps} FPS!\n💻 Železo: ${analysis.cpuName} + ${analysis.gpuName}\n\nZměř si to na: ${shareUrl}`;
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(isEn ? textEn : textCs)}`, '_blank');
     };
 
     const handleRedditShare = () => {
         if (!analysis) return;
-        const { gameName, cpuName, gpuName, url } = getShareDetails();
-        const titleEn = `My rig hits ${analysis.estFps} FPS in ${gameName} (${resolution}). Build: ${cpuName} + ${gpuName}. What's yours?`;
-        const titleCs = `Moje sestava dává v ${gameName} na ${resolution} přesně ${analysis.estFps} FPS! (Železo: ${cpuName} + ${gpuName})`;
-        const redditUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(isEn ? titleEn : titleCs)}`;
-        safeOpen(redditUrl);
+        const titleEn = `My rig hits ${analysis.estFps} FPS in ${analysis.gameName} (${resolution}). Build: ${analysis.cpuName} + ${analysis.gpuName}`;
+        window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(titleEn)}`, '_blank');
     };
 
     const gta6DynamicLink = analysis 
@@ -238,11 +220,9 @@ export default function BottleneckClient({
                                 <div className="pct-label" style={{ color: statusColor }}>{a.limitedBy} tě brzdí o {a.bottleneckPercent}%</div>
                             </div>
 
-                            {/* 🔥 ADS SLOT: INJEKCE PŘÍMO DO VÝSLEDKŮ */}
-                            <div className="guru-client-ad-slot">
-                                <span className="ad-tag">SPONZOROVANÉ HW DOPORUČENÍ</span>
-                                <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                                <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                            {/* 🔥 SEZNAM AD: DYNAMICKÁ REKLAMA POD VÝSLEDKEM */}
+                            <div style={{ margin: '30px 0' }}>
+                                <SeznamAd zoneId={408651} width={300} height={250} />
                             </div>
 
                             <div className="pro-metrics-grid">
@@ -343,14 +323,8 @@ export default function BottleneckClient({
                 .recommendation h4 { font-size: 18px; font-weight: 950; text-transform: uppercase; margin-bottom: 15px; color: #fff; }
                 .recommendation p { font-size: 15px; color: #9ca3af; lineHeight: 1.6; }
 
-                /* 💰 STYL PRO REKLAMU V KLIENTOVI */
-                .guru-client-ad-slot { margin: 30px 0; padding: 15px; background: rgba(0, 0, 0, 0.4); border: 1px dashed rgba(168, 85, 247, 0.2); border-radius: 20px; text-align: center; }
-                .ad-tag { display: block; font-size: 9px; color: #444; font-weight: 900; margin-bottom: 10px; letter-spacing: 2px; }
-                .ad-desktop { display: block; } .ad-mobile { display: none; }
-
                 @media (max-width: 768px) {
                   .bn-wrapper { padding: 20px; }
-                  .ad-desktop { display: none; } .ad-mobile { display: block; }
                 }
             `}} />
         </div>
