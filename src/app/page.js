@@ -109,8 +109,8 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 12000) => {
 // --- TVRDÝ STATICKÝ SNAPSHOT (NEJLEPŠÍ ZÁCHRANNÁ SÍŤ PRO BING) ---
 // Pokud API failne, vloží se tato data. Stránka tak bude pro Bing vždy obsahově bohatá.
 const STATIC_SNAPSHOT_POSTS = [
-  { id: 'snap-1', title: 'Nejlepší grafické karty (GPU) – Velký test a srovnání', title_en: 'Best Graphics Cards (GPU) – Mega Test & Comparison', slug: 'nejlepsi-graficke-karty-gpu-velky-test', slug_en: 'best-graphics-cards-gpu-mega-test', created_at: new Date().toISOString(), type: 'article' },
-  { id: 'snap-2', title: 'Jak vybrat procesor (CPU) pro herní PC', title_en: 'How to choose a CPU for a gaming PC', slug: 'jak-vybrat-procesor-cpu', slug_en: 'how-to-choose-cpu', created_at: new Date().toISOString(), type: 'article' },
+  { id: 'snap-1', title: 'Katalog Grafických Karet a Index Výkonu', title_en: 'GPU Database and Performance Index', slug: 'gpu-index', slug_en: 'gpu-index', created_at: new Date().toISOString(), type: 'article' },
+  { id: 'snap-2', title: 'Katalog Procesorů a Index Výkonu', title_en: 'CPU Database and Performance Index', slug: 'cpu-index', slug_en: 'cpu-index', created_at: new Date().toISOString(), type: 'article' },
   { id: 'snap-3', title: 'Co je to Bottleneck a jak ho vyřešit?', title_en: 'What is a Bottleneck and how to fix it?', slug: 'co-je-bottleneck', slug_en: 'what-is-bottleneck', created_at: new Date().toISOString(), type: 'article' },
   { id: 'snap-4', title: 'Doporučené PC sestavy pro hráče', title_en: 'Recommended PC Builds for Gamers', slug: 'doporucene-herni-pc-sestavy', slug_en: 'recommended-gaming-pc-builds', created_at: new Date().toISOString(), type: 'article' }
 ];
@@ -413,8 +413,8 @@ export default async function HomePage({ params }) {
               <li><a href="/en/fps-calculator">FPS Calculator (Can I run it?)</a></li>
               <li><a href="/en/doporucene-sestavy">Best PC Builds for Gaming (Updated)</a></li>
               <li><a href="/en/slovnik">Tech Dictionary (Hardware terms explained)</a></li>
-              <li><a href="/en/gpu">Full GPU Database & Hierarchy</a></li>
-              <li><a href="/en/cpu">Full CPU Database & Tier List</a></li>
+              <li><a href="/en/gpu-index">GPU Database and Performance Index</a></li>
+              <li><a href="/en/cpu-index">CPU Database and Performance Index</a></li>
             </ul>
           </>
         ) : (
@@ -434,8 +434,8 @@ export default async function HomePage({ params }) {
               <li><a href="/fps-kalkulacka">FPS Kalkulačka (Otestuj si výkon PC)</a></li>
               <li><a href="/doporucene-sestavy">Doporučené herní PC sestavy (Aktualizováno)</a></li>
               <li><a href="/slovnik">Slovník pojmů (Vysvětlení hardwarových výrazů)</a></li>
-              <li><a href="/gpu">Kompletní databáze GPU a žebříček výkonu</a></li>
-              <li><a href="/cpu">Kompletní databáze CPU a Tier List</a></li>
+              <li><a href="/gpu-index">Katalog Grafických Karet a Index Výkonu</a></li>
+              <li><a href="/cpu-index">Katalog Procesorů a Index Výkonu</a></li>
             </ul>
           </>
         )}
@@ -445,8 +445,8 @@ export default async function HomePage({ params }) {
       <section style={{ maxWidth: '1200px', margin: '0 auto 60px auto', padding: '0 20px' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', justifyContent: 'center' }}>
           <a href={isEn ? "/en/clanky" : "/clanky"} className="seo-link-pill"><Compass size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }}/> {isEn ? 'Hardware News' : 'HW Novinky'}</a>
-          <a href={isEn ? "/en/gpu" : "/gpu"} className="seo-link-pill"><Layers size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }}/> {isEn ? 'GPU Database' : 'Databáze Grafických Karet'}</a>
-          <a href={isEn ? "/en/cpu" : "/cpu"} className="seo-link-pill"><Cpu size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }}/> {isEn ? 'CPU Database' : 'Databáze Procesorů'}</a>
+          <a href={isEn ? "/en/gpu-index" : "/gpu-index"} className="seo-link-pill"><Layers size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }}/> {isEn ? 'GPU Catalog' : 'Katalog Grafických Karet a Index Výkonu'}</a>
+          <a href={isEn ? "/en/cpu-index" : "/cpu-index"} className="seo-link-pill"><Cpu size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }}/> {isEn ? 'CPU Catalog' : 'Katalog Procesorů a Index Výkonu'}</a>
           <a href={isEn ? "/en/slovnik" : "/slovnik"} className="seo-link-pill"><MessageSquare size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }}/> {isEn ? 'Tech Dictionary' : 'HW Slovník Pojmů'}</a>
           <a href={isEn ? "/en/doporucene-sestavy" : "/doporucene-sestavy"} className="seo-link-pill"><Gamepad2 size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }}/> {isEn ? 'PC Builds' : 'Doporučené PC Sestavy'}</a>
         </div>
@@ -458,7 +458,7 @@ export default async function HomePage({ params }) {
             <Award size={32} color="#a855f7" />
             <div>
               <h3 style={{ fontSize: '20px', fontWeight: '950', margin: 0, color: '#fff', textTransform: 'uppercase', letterSpacing: '2px' }}>{isEn ? 'SHARE & SUBSCRIBE' : 'SDÍLET & ODEBÍRAT'}</h3>
-              <p style={{ margin: '5px 0 0 0', color: '#a855f7', fontSize: '13px', fontWeight: 'bold' }}>{isEn ? 'Help other geeks find the truth' : 'Pomoz ostatním geekům najít pravdu'}</p>
+              <p style={{ margin: '5px 0 0 0', color: '#a855f7', fontSize: '13px', fontWeight: 'bold' }}>Pomoz ostatním geekům najít pravdu</p>
             </div>
           </div>
           
@@ -466,7 +466,6 @@ export default async function HomePage({ params }) {
             <button id="guru-os-btn" title={isEn ? "Subscribe to notifications" : "Odebírat upozornění webu"} className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 0 20px rgba(37, 99, 235, 0.4)', textDecoration: 'none' }}>
               <Bell size={20} fill="#fff" />
             </button>
-            {/* ✅ FIX: Bezpečná kontrola na typeof window proti pádům a blokování na straně serveru/crawlera */}
             <Script id="onesignal-init" strategy="lazyOnload">
               {`
                 if (typeof window !== 'undefined') {
@@ -830,8 +829,8 @@ export default async function HomePage({ params }) {
       {/* --- SÉMANTICKÝ FOOTER (SEO Anchor) --- */}
       <footer style={{ background: '#050505', padding: '40px 20px', borderTop: '1px solid rgba(102, 252, 241, 0.2)', textAlign: 'center' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', fontSize: '12px', color: '#6b7280' }}>
-            <a href={isEn ? "/en/gpu" : "/gpu"} style={{ color: '#6b7280', textDecoration: 'none' }}>GPU DB</a>
-            <a href={isEn ? "/en/cpu" : "/cpu"} style={{ color: '#6b7280', textDecoration: 'none' }}>CPU DB</a>
+            <a href={isEn ? "/en/gpu-index" : "/gpu-index"} style={{ color: '#6b7280', textDecoration: 'none' }}>Katalog Grafických Karet a Index Výkonu</a>
+            <a href={isEn ? "/en/cpu-index" : "/cpu-index"} style={{ color: '#6b7280', textDecoration: 'none' }}>Katalog Procesorů a Index Výkonu</a>
             <a href={isEn ? "/en/slovnik" : "/slovnik"} style={{ color: '#6b7280', textDecoration: 'none' }}>HW Slovník</a>
             <a href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"} style={{ color: '#6b7280', textDecoration: 'none' }}>Očekávané Hry</a>
             <a href={isEn ? "/en/deals" : "/deals"} style={{ color: '#6b7280', textDecoration: 'none' }}>Slevy</a>
