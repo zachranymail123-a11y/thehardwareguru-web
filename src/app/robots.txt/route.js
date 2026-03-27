@@ -1,6 +1,7 @@
 /**
- * GURU ROBOTS ENGINE V4.7
+ * GURU ROBOTS ENGINE V5.0 (FINAL CRAWL SIGNAL OPTIMIZATION)
  * Cesta: src/app/robots.txt/route.js
+ * 🚀 CÍL: Odstranění brzd (Crawl-delay) a plná propustnost pro Bing/Google crawlery.
  */
 
 export const revalidate = 86400;
@@ -17,38 +18,20 @@ Disallow: /admin/
 # Hlavní indexy map webu
 Sitemap: https://thehardwareguru.cz/guru-sitemap.xml
 Sitemap: https://thehardwareguru.cz/latest.xml
+Sitemap: https://thehardwareguru.cz/sitemap-hity.xml
 
-# Dynamické mapy (AKTIVOVAT AŽ PO SCHVÁLENÍ ADSENSE)
-# Sitemap: https://thehardwareguru.cz/sitemap-hity.xml
-# Sitemap: https://thehardwareguru.cz/rss-comparisons.xml
+# RSS Feedy (podpora rychlé indexace)
+Sitemap: https://thehardwareguru.cz/rss.xml
+Sitemap: https://thehardwareguru.cz/rss-comparisons.xml
 
-# Ochrana před AI (Zákaz vykrádání obsahu)
+# Ochrana před AI
 User-agent: GPTBot
-Disallow: /
-
-User-agent: CCBot
 Disallow: /
 
 User-agent: ClaudeBot
 Disallow: /
 
-User-agent: anthropic-ai
-Disallow: /
-
 User-agent: Google-Extended
-Disallow: /
-
-User-agent: PerplexityBot
-Disallow: /
-
-User-agent: Bytespider
-Disallow: /
-
-# Roboty SEO
-User-agent: AhrefsBot
-Disallow: /
-
-User-agent: SemrushBot
 Disallow: /
 `;
 
