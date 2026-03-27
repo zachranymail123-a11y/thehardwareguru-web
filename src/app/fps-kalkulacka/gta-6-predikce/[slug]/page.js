@@ -3,10 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import { Sparkles, Zap, Monitor, Cpu, ChevronRight } from 'lucide-react';
 import ShareButtonsClient from './ShareButtonsClient';
+import SeznamAd from '../../../../components/SeznamAd';
 
 /**
- * GURU GTA 6 PREDICTOR - V11.2 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Maximální monetizace GTA VI hypu skrze strategické A-ADS.
+ * GURU GTA 6 PREDICTOR - V11.3 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Maximální monetizace GTA VI hypu skrze Seznam Partner.
  */
 
 export const dynamic = 'force-dynamic';
@@ -69,11 +70,9 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                     </div>
                 </div>
 
-                {/* 🔥 ADS SLOT: GURU MONETIZATION ENGINE (INJEKCE POD VÝSLEDEK) */}
-                <div className="guru-gta-ad-slot">
-                    <span className="ad-label">Sponsored Gaming Hardware</span>
-                    <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                    <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                {/* 🔥 SEZNAM AD: GURU MONETIZATION ENGINE (INJEKCE POD VÝSLEDEK) */}
+                <div style={{ marginTop: '30px' }}>
+                    <SeznamAd zoneId={408651} width={300} height={250} />
                 </div>
 
                 <ShareButtonsClient shareText={shareText} shareUrl={shareUrl} />
@@ -99,10 +98,6 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                 .stats-row { display: flex; justify-content: center; gap: 20px; margin-top: 40px; padding-top: 30px; border-top: 1px solid rgba(244, 63, 94, 0.2); }
                 .stat-pill { display: flex; align-items: center; gap: 8px; color: #d1d5db; font-weight: 900; font-size: 13px; background: rgba(255,255,255,0.03); padding: 10px 18px; border-radius: 12px; }
                 
-                .guru-gta-ad-slot { margin: 30px 0; padding: 15px; background: rgba(244, 63, 94, 0.02); border: 1px solid rgba(244, 63, 94, 0.1); border-radius: 20px; text-align: center; }
-                .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-                .ad-desktop { display: block; } .ad-mobile { display: none; }
-
                 .res-switch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 30px; }
                 .res-nav { padding: 18px; background: rgba(15,17,21,0.8); border-radius: 16px; text-align: center; text-decoration: none; color: #6b7280; font-weight: 950; border: 1px solid #222; transition: 0.3s; }
                 .res-nav.active { border-color: #f43f5e; background: rgba(244, 63, 94, 0.1); color: #f43f5e; }
@@ -110,7 +105,7 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                 @media (max-width: 768px) { 
                     .fps-main { font-size: 5rem; } 
                     .stats-row { flex-direction: column; align-items: center; }
-                    .ad-desktop { display: none; } .ad-mobile { display: block; }
+                    .res-switch-grid { grid-template-columns: 1fr; }
                 }
             `}} />
         </div>
