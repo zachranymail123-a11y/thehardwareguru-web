@@ -28,7 +28,8 @@ async function sendToIndexNow(payload) {
     const endpoints = [
         'https://api.indexnow.org/indexnow',
         'https://www.bing.com/indexnow',
-        'https://search.yandex.com/indexnow'
+        'https://search.yandex.com/indexnow',
+        'https://search.seznam.cz/indexnow'
     ];
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -201,45 +202,4 @@ export async function GET(request) {
         }
 
         // 5. ODESLÁNÍ DO INDEXNOW
-        const payload = {
-            host: "thehardwareguru.cz",
-            key: "guru-indexnow-key-2026",
-            keyLocation: "https://thehardwareguru.cz/guru-indexnow-key-2026.txt",
-            urlList: urlsToSend
-        };
-
-        const success = await sendToIndexNow(payload);
-
-        if (success) {
-            const newTotal = (state.total_submitted || 0) + urlsToSend.length;
-            await supabase.from('seo_cron_state').update({
-                current_sitemap_index: iter_sitemap_index,
-                current_url_index: iter_url_index,
-                total_submitted: newTotal,
-                is_running: false,
-                updated_at: new Date()
-            }).eq('id', 1);
-
-            return NextResponse.json({
-                success: true,
-                mode: MODE,
-                submitted: urlsToSend.length,
-                total_historical: newTotal,
-                position: `Sitemapa ${iter_sitemap_index}, URL ${iter_url_index}`
-            });
-        } else {
-            await supabase.from('seo_cron_state').update({ is_running: false }).eq('id', 1);
-            return NextResponse.json({ error: 'IndexNow endpoints unreachable' }, { status: 502 });
-        }
-
-    } catch (error) {
-        console.error("[CRITICAL CRON ERROR]", error);
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (supabaseUrl && supabaseKey) {
-            const supabase = createClient(supabaseUrl, supabaseKey);
-            await supabase.from('seo_cron_state').update({ is_running: false }).eq('id', 1);
-        }
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-    }
-}
+        const
