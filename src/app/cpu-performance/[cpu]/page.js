@@ -7,10 +7,11 @@ import {
   Database,
   ArrowRight
 } from 'lucide-react';
+import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU CPU PERFORMANCE ENGINE V1.1 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Maximální monetizace technických analýz CPU skrze A-ADS.
+ * GURU CPU PERFORMANCE ENGINE V2.0 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Maximální monetizace technických analýz CPU skrze Seznam Partner.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -102,12 +103,8 @@ export default async function CpuPerformancePage({ params }) {
           </h1>
         </header>
 
-        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD HLAVIČKOU */}
-        <div className="guru-cpu-perf-ad-slot">
-            <span className="ad-label">Advertisement</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-        </div>
+        {/* 🔥 SEZNAM AD #1: TOP BANNER POD HLAVIČKOU */}
+        <SeznamAd zoneId={408654} width={970} height={210} />
 
         <section style={{ marginBottom: '60px' }}>
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(245, 158, 11, 0.2)', borderLeft: '8px solid #f59e0b', borderRadius: '24px', padding: '50px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center' }}>
@@ -123,12 +120,8 @@ export default async function CpuPerformancePage({ params }) {
             </div>
         </section>
 
-        {/* 🔥 ADS SLOT #2: PŘED TECHNICKÝMI SPECIFIKACEMI */}
-        <div className="guru-cpu-perf-ad-slot">
-            <span className="ad-label">Sponsored Hardware Insights</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-        </div>
+        {/* 🔥 SEZNAM AD #2: IN-TEXT PŘED TECHNICKÝMI SPECIFIKACEMI */}
+        <SeznamAd zoneId={408651} width={300} height={250} />
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -156,18 +149,10 @@ export default async function CpuPerformancePage({ params }) {
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #f59e0b; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(245, 158, 11, 0.3); transition: 0.3s; }
         .guru-back-btn:hover { background: rgba(245, 158, 11, 0.1); transform: translateX(-5px); }
 
-        .guru-cpu-perf-ad-slot { margin: 30px 0; padding: 15px; background: rgba(245, 158, 11, 0.03); border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 20px; text-align: center; }
-        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; } .ad-mobile { display: none; }
-
         .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #f59e0b; padding-left: 15px; }
         .res-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
         .res-label { font-size: 11px; font-weight: 950; text-transform: uppercase; color: #6b7280; letter-spacing: 2px; margin-bottom: 10px; }
         .res-val { font-size: 24px; font-weight: 950; color: #fff; }
-
-        @media (max-width: 768px) {
-            .ad-desktop { display: none; } .ad-mobile { display: block; }
-        }
       `}} />
     </div>
   );
