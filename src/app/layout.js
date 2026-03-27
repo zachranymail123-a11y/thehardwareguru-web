@@ -12,8 +12,8 @@ import CookieBanner from '../components/CookieBanner';
 import SeznamAd from '../components/SeznamAd';
 
 /**
- * GURU ROOT LAYOUT V6.3 (SIDEBAR SKYSCRAPERS POSITIONS FIX)
- * 🚀 CÍL: Posunutí svislých reklam výše a dále od středu, aby nepřekrývaly Hero sekci.
+ * GURU ROOT LAYOUT V6.4 (SIDEBAR POSITIONS FINAL FIX)
+ * 🚀 CÍL: Posunutí svislých reklam pod Navbar v layoutu.
  */
 
 export const metadata = {
@@ -124,17 +124,15 @@ export default async function RootLayout({ children, params }) {
         <style dangerouslySetInnerHTML={{__html: `
           .skyscraper-left, .skyscraper-right {
             position: fixed;
-            top: 20px; /* 🚀 VYŠŠÍ NAHORU - ZMĚNĚNO Z 120px NA 20px */
+            top: 110px; /* 🚀 POSUNUTO POD NAVBAR (90px + 20px rezerva) */
             width: 300px;
             display: none;
             z-index: 10;
           }
           
-          /* 🚀 VÍCE DOSTRAN - ZVĚTŠENO ODSLAZENÍ O 60px */
           .skyscraper-left { left: calc(50% - 600px - 380px); }
           .skyscraper-right { right: calc(50% - 600px - 380px); }
 
-          /* 🚀 ZOBRAZIT JEN NA OPRAVDU VELKÝCH MONITORECH - ZVÝŠENO Z 1850px NA 1950px */
           @media (min-width: 1950px) {
             .skyscraper-left, .skyscraper-right { display: block; }
           }
