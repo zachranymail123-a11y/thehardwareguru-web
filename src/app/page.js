@@ -1,5 +1,6 @@
 import React from 'react';
 import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, MessageSquare, Award, Bell, Bookmark, Share2, Clock } from 'lucide-react'; // Přidán Clock (i když už tam byl, pro jistotu)
+import SeznamAd from '../components/SeznamAd';
 
 /**
  * GURU HOMEPAGE V16.5 - RELEASE DATE FIX
@@ -195,6 +196,11 @@ export default async function HomePage({ params }) {
         }
       `}</style>
 
+      {/* --- 🚀 TOP REKLAMA (Homepage-Top) --- */}
+      <div style={{ maxWidth: '1200px', margin: '20px auto 0 auto', padding: '0 20px' }}>
+        <SeznamAd zoneId={408654} width={970} height={210} />
+      </div>
+
       {/* --- 🚀 HERO SEKCE --- */}
       <header className="guru-hero-section">
         <div style={{ flex: '1', minWidth: '300px', position: 'relative', zIndex: 10 }}>
@@ -369,7 +375,7 @@ export default async function HomePage({ params }) {
                 {data.latestDuels.map(duel => (
                     <a key={duel.id} href={`/${isEn ? 'en/' : ''}gpuvs/${isEn ? (duel.slug_en || `en-${duel.slug}`) : duel.slug}`} style={{ textDecoration: 'none' }}>
                         <div className="duel-hp-card group">
-                            <div style={{ background: '#ff0055', width: '50px', height: '50px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 0 15px rgba(255,0,85,0.4)' }}>
+                            <div style={{ background: '#ff0055', width: '50px', height: '50px', borderRadius: '14px', display: 'flex', alignItems: 'center', justify: 'center', flexShrink: 0, boxShadow: '0 0 15px rgba(255,0,85,0.4)' }}>
                                 <Swords size={24} color="#fff" />
                             </div>
                             <div style={{ flex: 1 }}>
@@ -401,7 +407,7 @@ export default async function HomePage({ params }) {
                 {data.latestCpuDuels.map(duel => (
                     <a key={duel.id} href={`/${isEn ? 'en/' : ''}cpuvs/${isEn ? (duel.slug_en || `en-${duel.slug}`) : duel.slug}`} style={{ textDecoration: 'none' }}>
                         <div className="cpu-duel-hp-card group">
-                            <div style={{ background: '#66fcf1', width: '50px', height: '50px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 0 15px rgba(102,252,241,0.4)' }}>
+                            <div style={{ background: '#66fcf1', width: '50px', height: '50px', borderRadius: '14px', display: 'flex', alignItems: 'center', justify: 'center', flexShrink: 0, boxShadow: '0 0 15px rgba(102,252,241,0.4)' }}>
                                 <Cpu size={24} color="#000" />
                             </div>
                             <div style={{ flex: 1 }}>
