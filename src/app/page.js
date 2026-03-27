@@ -3,9 +3,9 @@ import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, 
 import SeznamAd from '../components/SeznamAd';
 
 /**
- * GURU HOMEPAGE V16.6 - SEZNAM ADS INTEGRATION + LAYOUT FIX
+ * GURU HOMEPAGE V16.7 - TOP AD OFFSET FIX
  * Cesta: src/app/page.js
- * 🚀 CÍL: Vystředění reklam a vložení "nudlí" mezi kategorie. Striktně bez dalších úprav.
+ * 🚀 CÍL: Posunutí reklamy níže, aby ji nekryl Navbar.
  */
 
 // --- UNIKÁTNÍ METADATA PRO BING & GOOGLE ---
@@ -196,8 +196,8 @@ export default async function HomePage({ params }) {
         }
       `}</style>
 
-      {/* --- 🚀 TOP REKLAMA (Homepage-Top) VYSTŘEDĚNÁ --- */}
-      <div style={{ maxWidth: '1200px', margin: '20px auto 0 auto', padding: '0 20px', display: 'flex', justifyContent: 'center' }}>
+      {/* --- 🚀 TOP REKLAMA (Homepage-Top) VYSTŘEDĚNÁ + FIX OFFSET --- */}
+      <div style={{ maxWidth: '1200px', margin: '40px auto 0 auto', padding: '0 20px', display: 'flex', justifyContent: 'center' }}>
         <SeznamAd zoneId={408654} width={970} height={210} />
       </div>
 
