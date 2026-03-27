@@ -2,10 +2,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from 'react';
+import SeznamAd from "../../components/SeznamAd";
 
 /**
- * GURU GAME INDEX V1.1 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Monetizace rozcestníku her skrze A-ADS.
+ * GURU GAME INDEX V1.2 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Kompletní monetizace rozcestníku her skrze Seznam Partner.
  */
 
 export default function GameIndexPage() {
@@ -26,11 +27,9 @@ export default function GameIndexPage() {
                 </h1>
             </header>
 
-            {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD NADPISEM */}
-            <div className="guru-index-ad-wrapper">
-                <span className="ad-label">Advertisement</span>
-                <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{ border: 0, padding: 0, width: '100%', height: '100px', overflow: 'hidden', display: 'block', margin: 'auto' }}></iframe></div>
-                <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{ border: 0, padding: 0, width: '100%', height: '100px', overflow: 'hidden', display: 'block', margin: 'auto' }}></iframe></div>
+            {/* 🔥 SEZNAM AD #1: TOP PLACEMENT POD NADPISEM */}
+            <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+                <SeznamAd zoneId={408654} width={970} height={210} />
             </div>
 
             <main style={main}>
@@ -46,12 +45,10 @@ export default function GameIndexPage() {
                                 </div>
                             </Link>
 
-                            {/* 🔥 ADS SLOT #2: GRID INJECTION (Vloží reklamu po 4. hře) */}
+                            {/* 🔥 SEZNAM AD #2: GRID INJECTION (Vloží reklamu po 4. hře) */}
                             {index === 3 && (
-                                <div className="guru-index-ad-wrapper grid-span-ad">
-                                    <span className="ad-label">Sponsored Gaming Tech</span>
-                                    <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{ border: 0, padding: 0, width: '100%', height: '100px', overflow: 'hidden', display: 'block', margin: 'auto' }}></iframe></div>
-                                    <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{ border: 0, padding: 0, width: '100%', height: '100px', overflow: 'hidden', display: 'block', margin: 'auto' }}></iframe></div>
+                                <div className="grid-span-ad" style={{ padding: '20px 0' }}>
+                                    <SeznamAd zoneId={408651} width={300} height={250} />
                                 </div>
                             )}
                         </React.Fragment>
@@ -61,23 +58,8 @@ export default function GameIndexPage() {
 
             <style>{`
                 ${cardCss}
-                .guru-index-ad-wrapper { 
-                    max-width: 1200px; 
-                    margin: 0 auto 40px; 
-                    padding: 15px; 
-                    background: rgba(168, 85, 247, 0.03); 
-                    border: 1px solid rgba(168, 85, 247, 0.1); 
-                    border-radius: 20px; 
-                    text-align: center; 
-                }
-                .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-                .ad-desktop { display: block; } .ad-mobile { display: none; }
-                
                 @media (min-width: 768px) {
-                    .grid-span-ad { grid-column: 1 / -1; }
-                }
-                @media (max-width: 768px) {
-                    .ad-desktop { display: none; } .ad-mobile { display: block; }
+                    .grid-span-ad { grid-column: 1 / -1; display: flex; justifyContent: center; }
                 }
             `}</style>
         </div>
