@@ -11,11 +11,12 @@ import {
   Gauge,
   Crosshair
 } from 'lucide-react';
-import GuruAnalysisText from '../../../../components/GuruAnalysisText'; // 🚀 GURU: Přidán import
+import GuruAnalysisText from '../../../../components/GuruAnalysisText';
+import SeznamAd from '../../../../components/SeznamAd';
 
 /**
- * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.4 (SEO TEXT UPDATE)
- * 🚀 CÍL: Přidán dynamický generátor textu pro odblokování Bing indexace.
+ * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.5 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Maximální monetizace herních benchmarků skrze Seznam Partner.
  */
 
 export const runtime = "nodejs";
@@ -105,7 +106,7 @@ export default async function App(props) {
   const fps4k = Math.round(fpsBase * 0.85);
 
   const verdict = fps1440p >= 120 ? { en: 'ULTIMATE PERFORMANCE', cz: 'BRUTÁLNÍ VÝKON', color: '#10b981' } : 
-                 (fps1440p >= 60 ? { en: 'SMOOTH GAMING', cz: 'PLYNULÉ HRANÍ', color: '#f59e0b' } : { en: 'PLAYABLE', cz: 'HRATELNÉ', color: '#eab308' });
+                  (fps1440p >= 60 ? { en: 'SMOOTH GAMING', cz: 'PLYNULÉ HRANÍ', color: '#f59e0b' } : { en: 'PLAYABLE', cz: 'HRATELNÉ', color: '#eab308' });
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -139,12 +140,8 @@ export default async function App(props) {
             </div>
         </section>
 
-        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD RADAREM */}
-        <div className="guru-cpu-fps-ad-slot">
-            <span className="ad-label">Advertisement</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-        </div>
+        {/* 🔥 SEZNAM AD #1: TOP BANNER POD RADAREM */}
+        <SeznamAd zoneId={408654} width={970} height={210} />
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2"><Monitor size={28} /> {isEn ? 'SCALING' : 'ŠKÁLOVÁNÍ'}</h2>
@@ -160,24 +157,19 @@ export default async function App(props) {
                 <div className="guru-prose">
                     <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950' }}>{isEn ? `Performance Analysis` : `Analýza výkonu`}</h2>
                     
-                    {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT NAHRAZUJE PŮVODNÍ KRÁTKÉ VĚTY */}
                     <GuruAnalysisText 
                       cpuName={cpu.name} 
                       gpuName="GeForce RTX 5090" 
                       gameName={gameSlug.replace(/-/g, ' ')} 
                       resolution="1440p" 
-                      bottleneckPercent={0} // Protože je to čistý CPU test
+                      bottleneckPercent={0} 
                       isCpuBound={false} 
                       fps={fps1440p} 
                       isEn={isEn} 
                     />
                     
-                    {/* 🔥 ADS SLOT #2: MID-CONTENT INJECTION */}
-                    <div className="guru-cpu-fps-ad-slot" style={{ margin: '40px 0' }}>
-                        <span className="ad-label">Sponsored Hardware Insight</span>
-                        <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                        <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                    </div>
+                    {/* 🔥 SEZNAM AD #2: IN-TEXT POD ANALÝZOU */}
+                    <SeznamAd zoneId={408651} width={300} height={250} />
 
                 </div>
             </div>
@@ -192,13 +184,9 @@ export default async function App(props) {
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #f59e0b; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(245, 158, 11, 0.3); transition: 0.3s; }
-        .radar-badge { display: inline-flex; align-items: center; gap: 8px; color: #f59e0b; fontSize: 11px; fontWeight: 950; textTransform: uppercase; letterSpacing: 3px; padding: 6px 20px; border: 1px solid rgba(245,158,11,0.3); borderRadius: 50px; background: rgba(245,158,11,0.05); }
-        .rtx-badge { display: inline-flex; align-items: center; gap: 8px; color: #76b900; fontSize: 11px; fontWeight: 950; textTransform: uppercase; letterSpacing: 2px; padding: 6px 20px; border: 1px solid rgba(118, 185, 0, 0.5); borderRadius: 50px; background: rgba(118, 185, 0, 0.1); }
+        .radar-badge { display: inline-flex; align-items: center; gap: 8px; color: #f59e0b; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; padding: 6px 20px; border: 1px solid rgba(245,158,11,0.3); border-radius: 50px; background: rgba(245,158,11,0.05); }
+        .rtx-badge { display: inline-flex; align-items: center; gap: 8px; color: #76b900; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; padding: 6px 20px; border: 1px solid rgba(118, 185, 0, 0.5); border-radius: 50px; background: rgba(118, 185, 0, 0.1); }
         
-        .guru-cpu-fps-ad-slot { margin: 30px 0; padding: 15px; background: rgba(245, 158, 11, 0.02); border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 20px; text-align: center; }
-        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; } .ad-mobile { display: none; }
-
         .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 5px solid #f59e0b; padding-left: 15px; }
         .res-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 30px; text-align: center; }
         .res-label { font-size: 10px; font-weight: 950; text-transform: uppercase; color: #6b7280; margin-bottom: 12px; }
@@ -209,7 +197,6 @@ export default async function App(props) {
         .battle-btn { display: inline-flex; align-items: center; gap: 12px; padding: 20px 45px; background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); color: #fff; border-radius: 18px; font-weight: 950; text-decoration: none; text-transform: uppercase; }
 
         @media (max-width: 768px) {
-            .ad-desktop { display: none; } .ad-mobile { display: block; }
             .content-box-style { padding: 25px; }
         }
       `}} />
