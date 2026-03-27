@@ -26,10 +26,10 @@ async function fetchSitemapData(url) {
 
 async function sendToIndexNow(payload) {
     const endpoints = [
-        'https://api.indexnow.org/indexnow',
         'https://www.bing.com/indexnow',
-        'https://search.yandex.com/indexnow',
-        'https://search.seznam.cz/indexnow'
+        'https://search.seznam.cz/indexnow',
+        'https://api.indexnow.org/indexnow',
+        'https://search.yandex.com/indexnow'
     ];
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -39,17 +39,27 @@ async function sendToIndexNow(payload) {
                     fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json; charset=utf-8' },
-                        body: JSON.stringify(payload)
+                        body: JSON.stringify(payload),
+                        signal: AbortSignal.timeout(5000) // 🔥 TIMEOUT FIX
+                    }).catch(err => {
+                        // Ochrana proti pádu Promise.all při timeoutu jednoho endpointu
+                        return { ok: false, status: err.name === 'TimeoutError' ? 'TIMEOUT' : 'FETCH_ERROR' };
                     })
                 )
             );
 
-            if (results[0].ok || results[1].ok) {
-                console.log(`[INDEXNOW SUCCESS] Pokus č. ${attempt}`);
+            // 🔥 DEBUG LEVEL PRO: Detailní log per endpoint
+            console.log(`[INDEXNOW STATUS - POKUS ${attempt}]`);
+            results.forEach((r, i) => {
+                console.log(` ➔ ${endpoints[i]} | Status: ${r.status}`);
+            });
+
+            if (results.some(r => r.ok)) {
+                console.log(`[INDEXNOW SUCCESS] Pokus č. ${attempt} vyšel pro alespoň 1 endpoint.`);
                 return true;
             }
         } catch (err) {
-            console.error(`[INDEXNOW ATTEMPT ${attempt} FAILED]`, err);
+            console.error(`[INDEXNOW ATTEMPT ${attempt} CRITICAL FAIL]`, err);
         }
         if (attempt < MAX_RETRIES) await new Promise(r => setTimeout(r, attempt * 1000));
     }
@@ -186,7 +196,7 @@ export async function GET(request) {
                 if (urlsToSend.length > 0) {
                     await sendToIndexNow({
                         host: "thehardwareguru.cz",
-                        key: "guru-indexnow-key-2026",
+                        key: process.env.INDEXNOW_KEY,
                         keyLocation: "https://thehardwareguru.cz/guru-indexnow-key-2026.txt",
                         urlList: urlsToSend
                     });
@@ -202,4 +212,45 @@ export async function GET(request) {
         }
 
         // 5. ODESLÁNÍ DO INDEXNOW
-        const
+        const payload = {
+            host: "thehardwareguru.cz",
+            key: process.env.INDEXNOW_KEY,
+            keyLocation: "https://thehardwareguru.cz/guru-indexnow-key-2026.txt",
+            urlList: urlsToSend
+        };
+
+        const success = await sendToIndexNow(payload);
+
+        if (success) {
+            const newTotal = (state.total_submitted || 0) + urlsToSend.length;
+            await supabase.from('seo_cron_state').update({
+                current_sitemap_index: iter_sitemap_index,
+                current_url_index: iter_url_index,
+                total_submitted: newTotal,
+                is_running: false,
+                updated_at: new Date()
+            }).eq('id', 1);
+
+            return NextResponse.json({
+                success: true,
+                mode: MODE,
+                submitted: urlsToSend.length,
+                total_historical: newTotal,
+                position: `Sitemapa ${iter_sitemap_index}, URL ${iter_url_index}`
+            });
+        } else {
+            await supabase.from('seo_cron_state').update({ is_running: false }).eq('id', 1);
+            return NextResponse.json({ error: 'IndexNow endpoints unreachable' }, { status: 502 });
+        }
+
+    } catch (error) {
+        console.error("[CRITICAL CRON ERROR]", error);
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (supabaseUrl && supabaseKey) {
+            const supabase = createClient(supabaseUrl, supabaseKey);
+            await supabase.from('seo_cron_state').update({ is_running: false }).eq('id', 1);
+        }
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
