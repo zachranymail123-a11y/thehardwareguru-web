@@ -2,10 +2,11 @@ import React from 'react';
 import { Gamepad2, Monitor, Cpu, Info, ArrowRight, ChevronLeft, Zap, Sparkles } from 'lucide-react';
 import FpsCalculatorClient from './FpsCalculatorClient';
 import { createClient } from '@supabase/supabase-js';
+import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU FPS ENGINE - V6.3 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Maximální monetizace FPS kalkulačky skrze A-ADS.
+ * GURU FPS ENGINE - V6.4 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Maximální monetizace FPS kalkulačky skrze Seznam Partner.
  */
 
 export const dynamic = 'force-dynamic';
@@ -55,20 +56,16 @@ export default async function FpsKalkulackaPage(props) {
           </div>
         </header>
 
-        {/* 🔥 ADS SLOT #1: TOP PLACEMENT (POD BAIT PANELEM) */}
-        <div className="guru-fps-main-ad-slot">
-            <span className="ad-label">Advertisement</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        {/* 🔥 SEZNAM AD #1: TOP BANNER POD BAIT PANELEM */}
+        <SeznamAd zoneId={408654} width={970} height={210} />
+
+        <div style={{ marginTop: '30px' }}>
+          <FpsCalculatorClient gpus={gpuRes.data || []} cpus={cpuRes.data || []} games={gameRes.data || []} isEn={isEn} />
         </div>
 
-        <FpsCalculatorClient gpus={gpuRes.data || []} cpus={cpuRes.data || []} games={gameRes.data || []} isEn={isEn} />
-
-        {/* 🔥 ADS SLOT #2: BOTTOM PLACEMENT (NAD ROZCESTNÍKEM) */}
-        <div className="guru-fps-main-ad-slot" style={{ marginTop: '50px' }}>
-            <span className="ad-label">Sponsored Hardware Deal</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        {/* 🔥 SEZNAM AD #2: BOTTOM BANNER NAD ROZCESTNÍKEM */}
+        <div style={{ marginTop: '50px' }}>
+          <SeznamAd zoneId={408651} width={300} height={250} />
         </div>
 
         <div style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
@@ -81,13 +78,6 @@ export default async function FpsKalkulackaPage(props) {
       <style dangerouslySetInnerHTML={{__html: `
         .guru-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
         
-        .guru-fps-main-ad-slot { margin-bottom: 30px; padding: 15px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(168, 85, 247, 0.1); border-radius: 20px; text-align: center; }
-        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; } .ad-mobile { display: none; }
-
-        select { background-color: #0f1115 !important; color: #ffffff !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
-        select option { background-color: #1a1d23 !important; color: #ffffff !important; }
-
         .main-bait-panel { background: linear-gradient(135deg, rgba(244, 63, 94, 0.1), rgba(168, 85, 247, 0.1)); border: 1px solid rgba(255,255,255,0.05); padding: 30px; border-radius: 24px; margin-top: 30px; border-bottom: 2px solid #f43f5e; box-shadow: 0 15px 30px rgba(0,0,0,0.4); }
         .bait-tag { display: inline-flex; align-items: center; gap: 6px; background: #f43f5e; color: #fff; padding: 4px 12px; border-radius: 6px; font-size: 10px; font-weight: 950; margin-bottom: 15px; }
         .bait-title { font-size: 22px; font-weight: 950; margin: 0; text-transform: uppercase; }
@@ -96,10 +86,6 @@ export default async function FpsKalkulackaPage(props) {
         .silo-mini-card { display: flex; align-items: center; justify-content: space-between; background: rgba(15,17,21,0.9); padding: 25px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; font-weight: 950; font-size: 13px; transition: 0.3s; }
         .silo-mini-card:hover { transform: translateY(-3px); border-color: #a855f7; }
         .silo-mini-card.highlight { border-color: rgba(168, 85, 247, 0.5); }
-
-        @media (max-width: 768px) {
-            .ad-desktop { display: none; } .ad-mobile { display: block; }
-        }
       `}} />
     </div>
   );
