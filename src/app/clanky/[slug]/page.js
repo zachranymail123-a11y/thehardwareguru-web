@@ -157,7 +157,7 @@ export default async function ArticleDetailPage(props) {
 
                     <div className="guru-article-content">
                          <div dangerouslySetInnerHTML={{ __html: firstHalf + (contentParts.length > 1 ? '</p>' : '') }} />
-                         <SeznamAd zoneId={408651} width={300} height={250} />
+                         {contentParts.length > 3 && <SeznamAd zoneId={408651} width={300} height={250} />}
                          <div dangerouslySetInnerHTML={{ __html: secondHalf }} />
                     </div>
                     
