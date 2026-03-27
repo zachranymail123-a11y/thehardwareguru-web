@@ -112,7 +112,7 @@ const STATIC_SNAPSHOT_POSTS = [
   { id: 'snap-1', title: 'Katalog Grafických Karet a Index Výkonu', title_en: 'GPU Database and Performance Index', slug: '../../gpu-index', slug_en: '../../gpu-index', created_at: new Date().toISOString(), type: 'article' },
   { id: 'snap-2', title: 'Katalog Procesorů a Index Výkonu', title_en: 'CPU Database and Performance Index', slug: '../../cpu-index', slug_en: '../../cpu-index', created_at: new Date().toISOString(), type: 'article' },
   { id: 'snap-3', title: 'Co je to Bottleneck a jak ho vyřešit?', title_en: 'What is a Bottleneck and how to fix it?', slug: 'co-je-bottleneck', slug_en: 'what-is-bottleneck', created_at: new Date().toISOString(), type: 'article' },
-  { id: 'snap-4', title: 'Doporučené PC sestavy pro hráče', title_en: 'Recommended PC Builds for Gamers', slug: 'doporucene-herni-pc-sestavy', slug_en: 'recommended-gaming-pc-builds', created_at: new Date().toISOString(), type: 'article' }
+  { id: 'snap-4', title: 'Doporučené PC sestavy pro hráče', title_en: 'Recommended PC Builds for Gamers', slug: '../../sestavy', slug_en: '../../sestavy', created_at: new Date().toISOString(), type: 'article' }
 ];
 
 const STATIC_SNAPSHOT_GPU_DUELS = [
@@ -403,15 +403,15 @@ export default async function HomePage({ params }) {
               Welcome to The Hardware Guru, a leading tech portal focused on detailed <a href="/en/gpuvs">graphics card (GPU) comparisons</a> and <a href="/en/cpuvs">processor (CPU) comparisons</a>. Whether you are building a new gaming PC or planning an upgrade, our tools will help you make the right decision.
             </p>
             <p>
-              Try our unique <a href="/en/fps-calculator">FPS calculator</a> to find out how the latest games will run, or test your rig with our <a href="/en/bottleneck-calculator">Bottleneck calculator</a> to eliminate any weak points in your PC. We also provide daily <a href="/en/clanky">technology news</a>, reviews, and performance optimization tips. For inspiration, check out our <a href="/en/doporucene-sestavy">recommended PC builds</a>.
+              Try our unique <a href="/en/fps-calculator">FPS calculator</a> to find out how the latest games will run, or test your rig with our <a href="/en/bottleneck-calculator">Bottleneck calculator</a> to eliminate any weak points in your PC. We also provide daily <a href="/en/clanky">technology news</a>, reviews, and performance optimization tips. For inspiration, check out our <a href="/en/sestavy">recommended PC builds</a>.
             </p>
             <h3>🔥 Essential Hardware Guides:</h3>
             <ul>
-              <li><a href="/en/gpu-index">GPU Database and Performance Index</a></li>
-              <li><a href="/en/cpu-index">CPU Database and Performance Index</a></li>
+              <li><a href="/en/gpu-index">Katalog Grafických Karet a Index Výkonu</a></li>
+              <li><a href="/en/cpu-index">Katalog Procesorů a Index Výkonu</a></li>
               <li><a href="/en/bottleneck-calculator">Bottleneck Calculator (Find your PC limits)</a></li>
               <li><a href="/en/fps-calculator">FPS Calculator (Can I run it?)</a></li>
-              <li><a href="/en/doporucene-sestavy">Best PC Builds for Gaming (Updated)</a></li>
+              <li><a href="/en/sestavy">Best PC Builds for Gaming (Updated)</a></li>
               <li><a href="/en/slovnik">Tech Dictionary (Hardware terms explained)</a></li>
             </ul>
           </>
@@ -422,7 +422,7 @@ export default async function HomePage({ params }) {
               Vítejte na The Hardware Guru, předním českém portálu zaměřeném na detailní <a href="/gpuvs">srovnání grafických karet (GPU)</a> a <a href="/cpuvs">procesorů (CPU)</a>. Ať už skládáte nový herní počítač, nebo plánujete upgrade, naše nástroje vám pomohou udělat to správné rozhodnutí.
             </p>
             <p>
-              Vyzkoušejte naši unikátní <a href="/fps-kalkulacka">FPS kalkulačku</a> pro zjištění, jak vám poběží nejnovější hry, nebo otestujte svou sestavu přes náš <a href="/bottleneck-kalkulacka">Bottleneck kalkulátor</a>, abyste eliminovali slabá místa vašeho PC. Nechybí ani denně aktualizované <a href="/clanky">technologické novinky</a>, recenze a tipy pro optimalizaci výkonu. Pro inspiraci si prohlédněte naše <a href="/doporucene-sestavy">doporučené PC sestavy</a>.
+              Vyzkoušejte naši unikátní <a href="/fps-kalkulacka">FPS kalkulačku</a> pro zjištění, jak vám poběží nejnovější hry, nebo otestujte svou sestavu přes náš <a href="/bottleneck-kalkulacka">Bottleneck kalkulátor</a>, abyste eliminovali slabá místa vašeho PC. Nechybí ani denně aktualizované <a href="/clanky">technologické novinky</a>, recenze a tipy pro optimalizaci výkonu. Pro inspiraci si prohlédněte naše <a href="/sestavy">doporučené PC sestavy</a>.
             </p>
             <h3>🔥 Nejdůležitější hardwarové průvodce a nástroje:</h3>
             <ul>
@@ -430,7 +430,7 @@ export default async function HomePage({ params }) {
               <li><a href="/cpu-index">Katalog Procesorů a Index Výkonu</a></li>
               <li><a href="/bottleneck-kalkulacka">Výpočet Bottlenecku (Kalkulačka úzkého hrdla)</a></li>
               <li><a href="/fps-kalkulacka">FPS Kalkulačka (Otestuj si výkon PC)</a></li>
-              <li><a href="/doporucene-sestavy">Doporučené herní PC sestavy (Aktualizováno)</a></li>
+              <li><a href="/sestavy">Doporučené herní PC sestavy (Aktualizováno)</a></li>
               <li><a href="/slovnik">Slovník pojmů (Vysvětlení hardwarových výrazů)</a></li>
             </ul>
           </>
@@ -444,7 +444,7 @@ export default async function HomePage({ params }) {
           <a href={isEn ? "/en/gpu-index" : "/gpu-index"} className="seo-link-pill"><Layers size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }}/> {isEn ? 'GPU Catalog' : 'Katalog Grafických Karet a Index Výkonu'}</a>
           <a href={isEn ? "/en/cpu-index" : "/cpu-index"} className="seo-link-pill"><Cpu size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }}/> {isEn ? 'CPU Catalog' : 'Katalog Procesorů a Index Výkonu'}</a>
           <a href={isEn ? "/en/slovnik" : "/slovnik"} className="seo-link-pill"><MessageSquare size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }}/> {isEn ? 'Tech Dictionary' : 'HW Slovník Pojmů'}</a>
-          <a href={isEn ? "/en/doporucene-sestavy" : "/doporucene-sestavy"} className="seo-link-pill"><Gamepad2 size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }}/> {isEn ? 'PC Builds' : 'Doporučené PC Sestavy'}</a>
+          <a href={isEn ? "/en/sestavy" : "/sestavy"} className="seo-link-pill"><Gamepad2 size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }}/> {isEn ? 'PC Builds' : 'Doporučené PC Sestavy'}</a>
         </div>
       </section>
 
@@ -454,7 +454,7 @@ export default async function HomePage({ params }) {
             <Award size={32} color="#a855f7" />
             <div>
               <h3 style={{ fontSize: '20px', fontWeight: '950', margin: 0, color: '#fff', textTransform: 'uppercase', letterSpacing: '2px' }}>{isEn ? 'SHARE & SUBSCRIBE' : 'SDÍLET & ODEBÍRAT'}</h3>
-              <p style={{ margin: '5px 0 0 0', color: '#a855f7', fontSize: '13px', fontWeight: 'bold' }}>Pomoz ostatním geekům najít pravdu</p>
+              <p style={{ margin: '5px 0 0 0', color: '#a855f7', fontSize: '13px', fontWeight: 'bold' }}>{isEn ? 'Help other geeks find the truth' : 'Pomoz ostatním geekům najít pravdu'}</p>
             </div>
           </div>
           
@@ -799,11 +799,12 @@ export default async function HomePage({ params }) {
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(320px, 1fr))`, gap: '30px' }}>
             {latestPosts.map((post, idx) => {
               const badge = getBadgeInfo(post, isEn);
-              // Funkce pro určení href, aby se předešlo 404 u katalogových stránek
+              // Pomocná funkce pro určení href, aby se předešlo 404 u indexových stránek
               const getPostHref = (p) => {
                 const s = isEn ? (p.slug_en || p.slug) : p.slug;
-                if (s === '../../gpu-index' || s === '../../cpu-index') return isEn ? `/en/${s.replace('../../', '')}` : `/${s.replace('../../', '')}`;
-                if (s === 'doporucene-herni-pc-sestavy' || s === 'recommended-gaming-pc-builds') return isEn ? `/en/doporucene-sestavy` : `/doporucene-sestavy`;
+                // Pokud slug obsahuje ../.. (snapshot), míří na root
+                if (s.startsWith('../../')) return isEn ? `/en/${s.replace('../../', '')}` : `/${s.replace('../../', '')}`;
+                // Standardní články
                 return isEn ? `/en/clanky/${s}` : `/clanky/${s}`;
               };
               return (
