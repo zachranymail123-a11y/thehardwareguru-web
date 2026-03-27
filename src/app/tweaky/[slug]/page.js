@@ -3,10 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart, Info, Share2, Cpu, Monitor } from 'lucide-react';
+import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU TWEAK ENGINE - DETAIL V2.2 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Maximální monetizace Tweaků skrze A-ADS + Golden Rich SEO.
+ * GURU TWEAK ENGINE - DETAIL V2.3 (SEZNAM ADS UPDATE)
+ * 🚀 CÍL: Migrace z A-ADS na Seznam reklamy + Golden Rich SEO.
  */
 
 const supabase = createClient(
@@ -93,7 +94,7 @@ export default async function TweakDetail({ params }) {
   const firstHalf = contentParts.slice(0, midPoint).join('</p>');
   const secondHalf = contentParts.slice(midPoint).join('</p>');
 
-  // Schema LD (Zůstává původní z V2.1)
+  // Schema LD
   const commonOfferDetails = {
     "priceValidUntil": "2026-12-31", 
     "itemCondition": "https://schema.org/NewCondition",
@@ -197,26 +198,24 @@ export default async function TweakDetail({ params }) {
             </h1>
           </header>
 
-          {/* 🔥 ADS SLOT #1: POD HLAVIČKOU */}
+          {/* 🔥 ADS SLOT #1: POD HLAVIČKOU (SEZNAM) */}
           <div className="guru-ad-wrapper">
-             <span className="ad-label">Advertisement</span>
-             <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-             <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+              <span className="ad-label">Advertisement</span>
+              <SeznamAd zoneId={408654} width={970} height={210} />
           </div>
 
           <div className="guru-prose">
-             <div dangerouslySetInnerHTML={{ __html: firstHalf + (contentParts.length > 1 ? '</p>' : '') }} />
+              <div dangerouslySetInnerHTML={{ __html: firstHalf + (contentParts.length > 1 ? '</p>' : '') }} />
 
-             {/* 🔥 ADS SLOT #2: UPROSTŘED OBSAHU */}
-             {contentParts.length > 2 && (
-               <div className="guru-ad-wrapper">
-                  <span className="ad-label">Sponsored Content</span>
-                  <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                  <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-               </div>
-             )}
+              {/* 🔥 ADS SLOT #2: UPROSTŘED OBSAHU (SEZNAM) */}
+              {contentParts.length > 2 && (
+                <div className="guru-ad-wrapper">
+                   <span className="ad-label">Sponsored Content</span>
+                   <SeznamAd zoneId={408654} width={970} height={210} />
+                </div>
+              )}
 
-             <div dangerouslySetInnerHTML={{ __html: secondHalf }} />
+              <div dangerouslySetInnerHTML={{ __html: secondHalf }} />
           </div>
 
           {tweak.affiliate_link && (
@@ -274,8 +273,6 @@ export default async function TweakDetail({ params }) {
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #eab308; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(234, 179, 8, 0.3); transition: 0.3s; }
         .guru-ad-wrapper { margin: 35px 0; padding: 15px; background: rgba(234, 179, 8, 0.02); border: 1px solid rgba(234, 179, 8, 0.1); border-radius: 20px; text-align: center; }
         .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; }
-        .ad-mobile { display: none; }
         .share-link-x { display: flex; align-items: center; gap: 8px; background: #1da1f220; color: #1da1f2; border: 1px solid #1da1f250; padding: 10px 20px; border-radius: 12px; fontWeight: 950; text-decoration: none; transition: 0.3s; }
         .share-link-fb { display: flex; align-items: center; gap: 8px; background: #1877f220; color: #1877f2; border: 1px solid #1877f250; padding: 10px 20px; border-radius: 12px; fontWeight: 950; text-decoration: none; transition: 0.3s; }
 
@@ -285,12 +282,36 @@ export default async function TweakDetail({ params }) {
         .silo-banner-card { flex: 1; min-width: 300px; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; align-items: center; gap: 20px; text-decoration: none; transition: 0.3s; border-left-width: 5px; }
 
         @media (max-width: 768px) {
-          .ad-desktop { display: none; }
-          .ad-mobile { display: block; }
           .guru-affiliate-cta { font-size: 15px; width: 100%; }
           .silo-banner-card { flex-direction: column; text-align: center; }
         }
       `}} />
+
+      <Script id="onesignal-init" strategy="lazyOnload">
+        {`
+          if (typeof window !== 'undefined') {
+            var checkBtn = setInterval(function() {
+              var btn = document.getElementById('guru-os-btn');
+              if (btn && !btn.hasAttribute('data-bound')) {
+                btn.setAttribute('data-bound', 'true');
+                btn.onclick = function(e) {
+                  e.preventDefault();
+                  if (window.OneSignal) {
+                    if (window.OneSignal.Slidedown && window.OneSignal.Slidedown.promptPush) {
+                      window.OneSignal.Slidedown.promptPush(); 
+                    } else if (window.OneSignal.showSlidedownPrompt) {
+                      window.OneSignal.showSlidedownPrompt(); 
+                    } else if (window.OneSignal.push) {
+                      window.OneSignal.push(function() { window.OneSignal.showSlidedownPrompt(); }); 
+                    }
+                  }
+                };
+                clearInterval(checkBtn);
+              }
+            }, 500);
+          }
+        `}
+      </Script>
     </div>
   );
 }
