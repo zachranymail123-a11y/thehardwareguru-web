@@ -2,7 +2,7 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, Info, Calendar, Flame, Heart, Share2, Swords, Gauge, ArrowRight, Sparkles, Gamepad2, Twitter, Cpu, Monitor, User, Clock, CheckCircle } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
-import SeznamAd from '@/components/SeznamAd';
+import SeznamAd from '../../../components/SeznamAd';
 
 /**
  * GURU ARTICLE ENGINE V5.3 (CLEAN MODE FOR ADSENSE REVIEW)
