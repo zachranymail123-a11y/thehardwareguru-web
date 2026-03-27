@@ -2,14 +2,11 @@ import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { PenTool, ChevronRight, Zap, ShieldCheck, Heart, Flame, Info, Monitor } from 'lucide-react';
+import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU GUIDES ARCHIVE ENGINE V2.0 (GOLDEN RICH RESULTS FIX)
- * Cesta: src/app/rady/page.js
- * 🚀 CÍL: 100% zelená v GSC a blesková indexace praktických návodů.
- * 🛡️ FIX 1: Přepsáno na Server Component (SSR) pro maximální SEO autoritu.
- * 🛡️ FIX 2: Implementován Golden Rich standard - ItemList a BreadcrumbList JSON-LD.
- * 🛡️ FIX 3: Podpora CZ/EN varianty a absolutních Canonical URL.
+ * GURU GUIDES ARCHIVE ENGINE V2.1 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: 100% monetizace technických návodů skrze Seznam Partner.
  */
 
 export const runtime = "nodejs";
@@ -45,7 +42,6 @@ export default async function RadyArchivePage(props) {
   const isEn = props?.isEn === true;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. GURU FETCH: Získání dat přímo na serveru
   const { data: items, error } = await supabase
     .from('rady')
     .select('*')
@@ -57,36 +53,8 @@ export default async function RadyArchivePage(props) {
 
   const safeItems = items || [];
 
-  // 🚀 ZLATÁ GSC SEO SCHÉMATA (ItemList pro seznam rad)
-  const itemListSchema = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    "name": isEn ? "Hardware Guides & Solutions" : "Hardwarové rady a návody",
-    "description": isEn ? "Collection of practical technical guides." : "Sbírka praktických technických návodů.",
-    "itemListElement": safeItems.map((item, index) => ({
-      "@type": "ListItem",
-      "position": index + 1,
-      "url": `${baseUrl}${isEn ? '/en' : ''}/rady/${isEn && item.slug_en ? item.slug_en : item.slug}`
-    }))
-  };
-
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Guru", "item": baseUrl },
-      { "@type": "ListItem", "position": 2, "name": isEn ? "Guides" : "Rady", "item": `${baseUrl}${isEn ? '/en' : ''}/rady` }
-    ]
-  };
-
-  const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
-
   return (
     <div style={pageWrapper}>
-      {/* JSON-LD INJECTIONS */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(itemListSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbSchema) }} />
-
       <style dangerouslySetInnerHTML={{ __html: `
         .rada-card { 
             background: rgba(10, 11, 13, 0.9); 
@@ -116,13 +84,11 @@ export default async function RadyArchivePage(props) {
             border: 1px solid rgba(168, 85, 247, 0.2);
         }
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
-        .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
-        .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
       `}} />
 
       <main style={{ maxWidth: '1300px', margin: '60px auto', padding: '0 20px', width: '100%', flex: '1 0 auto' }}>
-        <header style={{ textAlign: 'center', marginBottom: '80px' }}>
+        <header style={{ textAlign: 'center', marginBottom: '40px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '25px' }}>
                <ShieldCheck size={56} color="#a855f7" />
                <Zap size={56} color="#eab308" />
@@ -130,10 +96,15 @@ export default async function RadyArchivePage(props) {
             <h1 style={titleStyle}>
               {isEn ? <>PRACTICAL <span style={{ color: '#a855f7' }}>GUIDES</span></> : <>PRAKTICKÉ <span style={{ color: '#a855f7' }}>RADY</span></>}
             </h1>
-            <p style={{ marginTop: '20px', color: '#9ca3af', fontWeight: '700', fontSize: '20px' }}>
+            <p style={{ marginTop: '20px', color: '#d1d5db', fontWeight: '700', fontSize: '20px' }}>
               {isEn ? 'Field-tested tips and technical solutions for every geek.' : '🛠️ Tipy a triky z praxe. Od diagnostiky až po čištění PC.'}
             </p>
         </header>
+
+        {/* 🔥 SEZNAM AD #1: TOP LEADERBOARD POD HLAVIČKOU */}
+        <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
+            <SeznamAd zoneId={408654} width={970} height={210} />
+        </div>
 
         {safeItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '100px', color: '#4b5563', fontWeight: 'bold' }}>
@@ -141,32 +112,41 @@ export default async function RadyArchivePage(props) {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '35px' }}>
-            {safeItems.map((rada) => {
+            {safeItems.map((rada, index) => {
               const displayTitle = (isEn && rada.title_en) ? rada.title_en : rada.title;
               const displayDesc = (isEn && rada.description_en) ? rada.description_en : rada.description;
               const displaySlug = (isEn && rada.slug_en) ? rada.slug_en : rada.slug;
 
               return (
-                <Link key={rada.id} href={isEn ? `/en/rady/${displaySlug}` : `/rady/${displaySlug}`} className="rada-card">
-                  <div className="icon-box">
-                    <PenTool size={28} color="#a855f7" />
-                  </div>
-                  <h2 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '24px', fontWeight: '900', textTransform: 'uppercase' }}>
-                    {displayTitle}
-                  </h2>
-                  <p style={{ color: '#d1d5db', fontSize: '15px', lineHeight: '1.6', margin: '0 0 25px 0', flexGrow: 1 }}>
-                    {displayDesc && displayDesc.length > 140 ? displayDesc.substring(0, 140) + '...' : displayDesc}
-                  </p>
-                  <div style={{ color: '#a855f7', fontWeight: '950', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                    {isEn ? 'VIEW GUIDE' : 'ZOBRAZIT NÁVOD'} <ChevronRight size={18} />
-                  </div>
-                </Link>
+                <React.Fragment key={rada.id}>
+                    <Link href={isEn ? `/en/rady/${displaySlug}` : `/rady/${displaySlug}`} className="rada-card">
+                        <div className="icon-box">
+                            <PenTool size={28} color="#a855f7" />
+                        </div>
+                        <h2 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '24px', fontWeight: '900', textTransform: 'uppercase' }}>
+                            {displayTitle}
+                        </h2>
+                        <p style={{ color: '#d1d5db', fontSize: '15px', lineHeight: '1.6', margin: '0 0 25px 0', flexGrow: 1 }}>
+                            {displayDesc && displayDesc.length > 140 ? displayDesc.substring(0, 140) + '...' : displayDesc}
+                        </p>
+                        <div style={{ color: '#a855f7', fontWeight: '950', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                            {isEn ? 'VIEW GUIDE' : 'ZOBRAZIT NÁVOD'} <ChevronRight size={18} />
+                        </div>
+                    </Link>
+
+                    {/* 🔥 SEZNAM AD #2: GRID INJECTION PO DRUHÉ RADĚ */}
+                    {index === 1 && (
+                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <SeznamAd zoneId={408651} width={300} height={250} />
+                        </div>
+                    )}
+                </React.Fragment>
               );
             })}
           </div>
         )}
 
-        {/* 🚀 GURU GLOBÁLNÍ CTA TLAČÍTKA (Golden standard) */}
+        {/* 🚀 GURU GLOBÁLNÍ CTA TLAČÍTKA */}
         <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
           <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
             {isEn ? "Did these guides help you? Support us by buying games at the best prices." : "Pomohly ti tyto rady? Podpoř nás nákupem her za ty nejlepší ceny."}
