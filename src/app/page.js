@@ -3,9 +3,9 @@ import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, 
 import SeznamAd from '../components/SeznamAd';
 
 /**
- * GURU HOMEPAGE V16.5 - RELEASE DATE FIX
+ * GURU HOMEPAGE V16.6 - SEZNAM ADS INTEGRATION + LAYOUT FIX
  * Cesta: src/app/page.js
- * 🚀 CÍL: Přidání data vydání (release_date) na karty očekávaných her. Striktně bez dalších úprav.
+ * 🚀 CÍL: Vystředění reklam a vložení "nudlí" mezi kategorie. Striktně bez dalších úprav.
  */
 
 // --- UNIKÁTNÍ METADATA PRO BING & GOOGLE ---
@@ -196,8 +196,8 @@ export default async function HomePage({ params }) {
         }
       `}</style>
 
-      {/* --- 🚀 TOP REKLAMA (Homepage-Top) --- */}
-      <div style={{ maxWidth: '1200px', margin: '20px auto 0 auto', padding: '0 20px' }}>
+      {/* --- 🚀 TOP REKLAMA (Homepage-Top) VYSTŘEDĚNÁ --- */}
+      <div style={{ maxWidth: '1200px', margin: '20px auto 0 auto', padding: '0 20px', display: 'flex', justifyContent: 'center' }}>
         <SeznamAd zoneId={408654} width={970} height={210} />
       </div>
 
@@ -327,6 +327,11 @@ export default async function HomePage({ params }) {
             </div>
           </a>
       </section>
+
+      {/* --- 🚀 MEZI-KATEGORIÁLNÍ REKLAMA ( Leaderboard) --- */}
+      <div style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px', display: 'flex', justifyContent: 'center' }}>
+          <SeznamAd zoneId={408654} width={970} height={210} />
+      </div>
 
       {/* --- SLEVY --- */}
       {data.featuredDeals.length > 0 && (
@@ -522,6 +527,11 @@ export default async function HomePage({ params }) {
           </div>
         </section>
       )}
+
+      {/* --- 🚀 DRUHÁ MEZI-KATEGORIÁLNÍ REKLAMA ( Leaderboard) --- */}
+      <div style={{ maxWidth: '1200px', margin: '60px auto 0 auto', padding: '0 20px', display: 'flex', justifyContent: 'center' }}>
+          <SeznamAd zoneId={408654} width={970} height={210} />
+      </div>
 
       {/* ČLÁNKY */}
       {data.posts.length > 0 && (
