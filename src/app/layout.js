@@ -12,8 +12,8 @@ import CookieBanner from '../components/CookieBanner';
 import SeznamAd from '../components/SeznamAd';
 
 /**
- * GURU ROOT LAYOUT V6.2 (CENTERED ADS FIX)
- * 🚀 CÍL: Pevně vložené OneSignal App ID, Share Widget, Cookies lišta a vystředěné Seznam reklamy.
+ * GURU ROOT LAYOUT V6.3 (SIDEBAR SKYSCRAPERS ADDED)
+ * 🚀 CÍL: Přidání svislých reklam na boky webu pro velké monitory.
  */
 
 export const metadata = {
@@ -119,6 +119,31 @@ export default async function RootLayout({ children, params }) {
         <Navbar />
         <SocialTracker />
         <Tracker />
+
+        {/* 🔥 SVISLÉ REKLAMY NA BOKY (SIDEBAR SKYSCRAPERS) 🔥 */}
+        <style dangerouslySetInnerHTML={{__html: `
+          .skyscraper-left, .skyscraper-right {
+            position: fixed;
+            top: 120px;
+            width: 300px;
+            display: none;
+            z-index: 10;
+          }
+          .skyscraper-left { left: calc(50% - 600px - 320px); }
+          .skyscraper-right { right: calc(50% - 600px - 320px); }
+
+          @media (min-width: 1850px) {
+            .skyscraper-left, .skyscraper-right { display: block; }
+          }
+        `}} />
+
+        <aside className="skyscraper-left">
+          <SeznamAd zoneId={408655} width={300} height={600} />
+        </aside>
+
+        <aside className="skyscraper-right">
+          <SeznamAd zoneId={408655} width={300} height={600} />
+        </aside>
 
         <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden' }}>
           {children}
