@@ -8,14 +8,15 @@ import {
   TrendingUp,
   Cpu,
   Flame,
-  Info,
+  Info, 
   Calendar,
   Gamepad2
 } from 'lucide-react';
+import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU GPU ENGINE - KATALOG GRAFIK V1.3 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Maximální monetizace katalogu skrze strategické umístění bannerů.
+ * GURU GPU ENGINE - KATALOG GRAFIK V1.4 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Maximální monetizace katalogu skrze Seznam Partner.
  */
 
 export const dynamic = 'force-dynamic';
@@ -125,29 +126,21 @@ export default async function GpuIndexPage(props) {
           </div>
         </header>
 
-        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD HLAVIČKOU */}
-        <div className="index-ad-slot" style={{ marginBottom: '50px' }}>
-            <span className="ad-label">Advertisement</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-        </div>
+        {/* 🔥 SEZNAM AD #1: TOP BANNER POD HLAVIČKOU */}
+        <SeznamAd zoneId={408654} width={970} height={210} />
 
         {nvidiaGpus.length > 0 && (
-          <section style={{ marginBottom: '40px' }}>
+          <section style={{ marginBottom: '40px', marginTop: '40px' }}>
             <h2 className="vendor-h2" style={{ borderLeftColor: '#76b900' }}><span style={{ color: '#76b900' }}>NVIDIA</span> GEFORCE</h2>
             <div className="gpu-grid">{renderGpuCards(nvidiaGpus, '#76b900')}</div>
           </section>
         )}
 
-        {/* 🔥 ADS SLOT #2: MID PLACEMENT MEZI VÝROBCI */}
-        <div className="index-ad-slot" style={{ margin: '60px 0' }}>
-            <span className="ad-label">Sponsored Hardware Performance</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-        </div>
+        {/* 🔥 SEZNAM AD #2: MID PLACEMENT MEZI VÝROBCI */}
+        <SeznamAd zoneId={408651} width={300} height={250} />
 
         {amdGpus.length > 0 && (
-          <section style={{ marginBottom: '80px' }}>
+          <section style={{ marginBottom: '80px', marginTop: '40px' }}>
             <h2 className="vendor-h2" style={{ borderLeftColor: '#ed1c24' }}><span style={{ color: '#ed1c24' }}>AMD</span> RADEON</h2>
             <div className="gpu-grid">{renderGpuCards(amdGpus, '#ed1c24')}</div>
           </section>
@@ -203,10 +196,6 @@ export default async function GpuIndexPage(props) {
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         
-        .index-ad-slot { margin: 30px 0; padding: 15px; background: rgba(102, 252, 241, 0.02); border: 1px solid rgba(102, 252, 241, 0.1); border-radius: 20px; text-align: center; }
-        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; } .ad-mobile { display: none; }
-
         .vendor-h2 { color: #fff; font-size: 2.2rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 5px solid; padding-left: 15px; display: flex; align-items: center; gap: 15px; }
         .gpu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .gpu-card { display: flex; flex-direction: column; background: rgba(15, 17, 21, 0.95); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; padding: 25px; transition: 0.3s; }
@@ -236,7 +225,6 @@ export default async function GpuIndexPage(props) {
         .related-title { margin: 0; font-size: 1.1rem; font-weight: 950; color: #fff; line-height: 1.3; }
         
         @media (max-width: 768px) { 
-          .ad-desktop { display: none; } .ad-mobile { display: block; }
           .silo-banner-card { flex-direction: column; text-align: center; } 
         }
       `}} />
