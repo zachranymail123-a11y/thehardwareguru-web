@@ -6,10 +6,11 @@ import {
   Monitor, ExternalLink, Info, HelpCircle, Trophy
 } from 'lucide-react';
 import GuruGpuCompareText from '../../../components/GuruGpuCompareText';
+import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V120.9 (SPLIT SEARCH FIX)
- * 🚀 CÍL: Oprava 404 na URL s -8gb a -geforce- pomocí rozdělení slugu.
+ * GURU GPU UPGRADE ENGINE - DETAIL V121.0 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Maximální monetizace GPU upgradů skrze Seznam Partner.
  */
 
 export const runtime = "nodejs";
@@ -42,7 +43,6 @@ const getUpgradeData = cache(async (rawSlug) => {
   const cleanSlug = rawSlug.replace(/^en-/, '');
   const selectQuery = `*,oldGpu:gpus!old_gpu_id(*,game_fps!gpu_id(*)),newGpu:gpus!new_gpu_id(*,game_fps!gpu_id(*))`;
 
-  // 🔥 GURU FIX: Funkce teď bere celý filtr pro složitější dotazy s AND
   const performSearch = async (filterStr) => {
     try {
       const res = await fetch(
@@ -61,25 +61,20 @@ const getUpgradeData = cache(async (rawSlug) => {
     }
   };
 
-  // 1️⃣ Přesná shoda
   let result = await performSearch(`slug=eq.${cleanSlug}`);
   if (result) return result;
 
-  // 2️⃣ Rozdělení na dvě části (vyřeší problém s -8gb a prostředním vendorem)
   const parts = cleanSlug.split('-to-');
   if (parts.length === 2) {
-      // Odstraníme výrobce a kapacitu VRAM
       const cleanPart = (p) => p.replace(/(amd-|intel-|nvidia-|geforce-|radeon-)/gi, '').replace(/-[0-9]+gb/gi, '').trim();
       const p1 = cleanPart(parts[0]);
       const p2 = cleanPart(parts[1]);
       
       if (p1 && p2) {
-          // AND: Slug musí obsahovat starou I novou grafiku
           result = await performSearch(`and=(slug.ilike.*${p1}*,slug.ilike.*${p2}*)`);
           if (result) return result;
       }
       
-      // 3️⃣ Fallback jen na první grafiku
       if (p1) {
           result = await performSearch(`slug=ilike.*${p1}*`);
       }
@@ -116,7 +111,7 @@ const getMoreUpgrades = async (currentSlug) => {
 };
 
 export async function generateMetadata(props) {
-  const { slug } = props.params; 
+  const { slug } = await props.params; 
   const rawSlug = slug || '';
   const isEn = rawSlug.startsWith('en-');
   const upgrade = await getUpgradeData(rawSlug);
@@ -130,7 +125,7 @@ export async function generateMetadata(props) {
 }
 
 export default async function GpuUpgradePage(props) {
-  const { slug } = props.params; 
+  const { slug } = await props.params; 
   const rawSlug = slug || '';
   const isEn = rawSlug.startsWith('en-');
   const upgrade = await getUpgradeData(rawSlug);
@@ -185,10 +180,9 @@ export default async function GpuUpgradePage(props) {
             </div>
         </div>
 
-        <div className="guru-upg-ad-slot">
-            <span className="ad-label">Advertisement</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        {/* 🔥 SEZNAM AD #1: TOP BANNER POD BOXAMA */}
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+            <SeznamAd zoneId={408654} width={970} height={210} />
         </div>
 
         <section style={{ marginBottom: '60px' }}>
@@ -222,9 +216,9 @@ export default async function GpuUpgradePage(props) {
                 </div>
               ))}
 
-              <div className="guru-upg-ad-slot" style={{ border: 'none', margin: '10px 0' }}>
-                  <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                  <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+              {/* 🔥 SEZNAM AD #2: PROSTŘEDEK TABULKY */}
+              <div style={{ padding: '20px 0', display: 'flex', justifyContent: 'center' }}>
+                  <SeznamAd zoneId={408651} width={300} height={250} />
               </div>
 
               {[
@@ -277,16 +271,12 @@ export default async function GpuUpgradePage(props) {
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         
-        .guru-upgrade-ad-slot { margin: 30px 0; padding: 15px; background: rgba(102, 252, 241, 0.02); border: 1px solid rgba(102, 252, 241, 0.1); border-radius: 20px; text-align: center; }
-        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; } .ad-mobile { display: none; }
-
         .guru-grid-ring { display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; }
         .upgrade-box { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 40px 20px; text-align: center; }
         .box-label { font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; display: block; margin-bottom: 10px; color: #6b7280; }
         .box-title { font-size: clamp(1.4rem, 3vw, 2.2rem); font-weight: 950; color: #d1d5db; text-transform: uppercase; margin: 0; line-height: 1.1; }
         .perf-gain { font-size: 16px; font-weight: 950; color: #66fcf1; margin-top: 10px; text-transform: uppercase; }
-        .vs-badge { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justifyContent: center; font-weight: 950; font-size: 24px; color: #66fcf1; border: 2px solid #66fcf1; }
+        .vs-badge { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 950; font-size: 24px; color: #66fcf1; border: 2px solid #66fcf1; }
 
         .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; display: flex; align-items: center; gap: 12px; }
         .table-wrapper { background: rgba(15, 17, 21, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
@@ -307,13 +297,12 @@ export default async function GpuUpgradePage(props) {
         .silo-link { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 15px 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #d1d5db; transition: 0.3s; font-weight: 900; text-transform: uppercase; font-size: 13px; }
         .silo-link:hover { background: rgba(255,255,255,0.05); transform: translateX(5px); color: #fff; }
 
-        .cta-row-upgrade { display: flex; gap: 20px; justifyContent: center; margin-top: 50px; }
-        .btn-guru { flex: 1; max-width: 300px; padding: 18px; border-radius: 16px; font-weight: 950; text-transform: uppercase; text-decoration: none; display: flex; align-items: center; justifyContent: center; gap: 10px; }
+        .cta-row-upgrade { display: flex; gap: 20px; justify-content: center; margin-top: 50px; }
+        .btn-guru { flex: 1; max-width: 300px; padding: 18px; border-radius: 16px; font-weight: 950; text-transform: uppercase; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-guru.deals { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
         .btn-guru.support { background: #eab308; color: #000; }
 
         @media (max-width: 768px) {
-            .ad-desktop { display: none; } .ad-mobile { display: block; }
             .guru-grid-ring { grid-template-columns: 1fr; }
             .vs-badge { margin: 10px auto; transform: rotate(90deg); }
             .spec-row-style { padding: 15px 10px; }
