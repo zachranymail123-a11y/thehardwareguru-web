@@ -4,9 +4,6 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
-// 🔥 GURU CONFIG
-const MODE = 'FULL'; // 'FULL' projde web jednou a ZASTAVÍ SE | 'SMART' bere náhodný vzorek
-const BATCH_SIZE = 500; 
 const MAX_RETRIES = 3;
 
 async function fetchSitemapData(url) {
@@ -98,20 +95,24 @@ export async function GET(request) {
                 current_url_index: 0,
                 total_submitted: 0,
                 is_running: false,
-                full_push_done: false
+                full_push_done: false,
+                mode: 'FULL'
             };
             await supabase.from('seo_cron_state').insert(initialState);
             state = initialState;
         }
 
-        // 🔥 2. HARD STOP + UNLOCK (Kritická ochrana proti spamu)
+        // 🔥 DYNAMICKÝ REŽIM A BATCH SIZE
+        const MODE = state.mode || 'FULL';
+        const BATCH_SIZE = MODE === 'SMART' ? 50 : 500;
+
+        // 2. HARD STOP + UNLOCK
         if (MODE === 'FULL' && state.full_push_done) {
-            // Pokud by náhodou zůstal viset zámek, uvolníme ho
             if (state.is_running) {
-                await supabase.from('seo_cron_state').update({ is_running: false }).eq('id', 1);
+                await supabase.from('seo_cron_state').update({ is_running: false, mode: 'SMART' }).eq('id', 1);
             }
             return NextResponse.json({ 
-                message: '🛑 FULL PUSH DONE – Cron deaktivován proti spamu. Bing zpracovává data.' 
+                message: '🛑 FULL PUSH DONE – čekám na přepnutí nebo už je přepnuto' 
             }, { status: 200 });
         }
 
@@ -142,12 +143,11 @@ export async function GET(request) {
         let iter_url_index = state.current_url_index;
 
         if (MODE === 'SMART') {
-            // Náhodný vzorek pro udržení aktivity bota bez spamu
             const randomSitemap = leafSitemaps[Math.floor(Math.random() * leafSitemaps.length)];
             const data = await fetchSitemapData(randomSitemap);
             urlsToSend = data.urls.sort(() => 0.5 - Math.random()).slice(0, BATCH_SIZE);
         } else {
-            // FULL MODE: Postupná iterace
+            // FULL MODE
             while (urlsToSend.length < BATCH_SIZE && iter_sitemap_index < leafSitemaps.length) {
                 const targetSitemap = leafSitemaps[iter_sitemap_index];
                 const sitemapData = await fetchSitemapData(targetSitemap);
@@ -170,18 +170,18 @@ export async function GET(request) {
                 }
             }
             
-            // 🔥 STOP CONDITION: Pokud jsme na konci, ZASTAVÍME TO NAPOŘÁD A ODEMKNEME
+            // 🔥 AUTO SWITCH NA SMART MODE PO DOKONČENÍ
             if (iter_sitemap_index >= leafSitemaps.length) {
                 await supabase.from('seo_cron_state').update({
                     full_push_done: true,
+                    mode: 'SMART',
                     is_running: false,
-                    current_sitemap_index: iter_sitemap_index,
-                    current_url_index: iter_url_index,
+                    current_sitemap_index: 0,
+                    current_url_index: 0,
                     total_submitted: (state.total_submitted || 0) + urlsToSend.length,
                     updated_at: new Date()
                 }).eq('id', 1);
 
-                // Odešleme poslední várku a končíme
                 if (urlsToSend.length > 0) {
                     await sendToIndexNow({
                         host: "thehardwareguru.cz",
@@ -191,7 +191,7 @@ export async function GET(request) {
                     });
                 }
 
-                return NextResponse.json({ message: '🔥 FULL PUSH HOTOV. Zápis do DB proveden, spam loop ukončen.' }, { status: 200 });
+                return NextResponse.json({ message: '🔥 FULL PUSH HOTOV → AUTO SWITCH NA SMART MODE' }, { status: 200 });
             }
         }
 
