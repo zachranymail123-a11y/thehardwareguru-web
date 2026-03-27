@@ -1,6 +1,12 @@
 import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import BottleneckClient from './BottleneckClient';
+import SeznamAd from '../../components/SeznamAd';
+
+/**
+ * GURU BOTTLENECK CALCULATOR - HUB V1.2 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Monetizace hlavního hubu kalkulačky skrze Seznam Partner.
+ */
 
 export const dynamic = 'force-dynamic';
 
@@ -29,11 +35,9 @@ export default async function BottleneckPage() {
         <div style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', paddingTop: '100px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
                 
-                {/* 🔥 ADS SLOT #1: TOP PLACEMENT (POD TITULKEM) */}
-                <div className="guru-hub-ad-slot">
-                    <span className="ad-label">Advertisement</span>
-                    <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                    <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                {/* 🔥 SEZNAM AD #1: TOP PLACEMENT (NAD NÁSTROJEM) */}
+                <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+                    <SeznamAd zoneId={408654} width={970} height={210} />
                 </div>
 
                 <BottleneckClient 
@@ -42,31 +46,12 @@ export default async function BottleneckPage() {
                     games={gamesRes.data || []} 
                 />
 
-                {/* 🔥 ADS SLOT #2: BOTTOM PLACEMENT (POD NÁSTROJEM) */}
-                <div className="guru-hub-ad-slot" style={{ marginTop: '50px' }}>
-                    <span className="ad-label">Sponsored Hardware Setup</span>
-                    <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                    <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                {/* 🔥 SEZNAM AD #2: BOTTOM PLACEMENT (POD NÁSTROJEM) */}
+                <div style={{ marginTop: '50px', display: 'flex', justifyContent: 'center' }}>
+                    <SeznamAd zoneId={408651} width={300} height={250} />
                 </div>
 
             </div>
-
-            <style dangerouslySetInnerHTML={{__html: `
-                .guru-hub-ad-slot { 
-                    margin-bottom: 40px; 
-                    padding: 15px; 
-                    background: rgba(255, 255, 255, 0.02); 
-                    border: 1px solid rgba(255, 255, 255, 0.05); 
-                    border-radius: 20px; 
-                    text-align: center; 
-                }
-                .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-                .ad-desktop { display: block; } .ad-mobile { display: none; }
-                
-                @media (max-width: 768px) {
-                    .ad-desktop { display: none; } .ad-mobile { display: block; }
-                }
-            `}} />
         </div>
     );
 }
