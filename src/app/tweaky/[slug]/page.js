@@ -7,7 +7,7 @@ import SeznamAd from '../../../components/SeznamAd';
 
 /**
  * GURU TWEAK ENGINE - DETAIL V2.3 (SEZNAM ADS UPDATE)
- * 🚀 CÍL: Migrace z A-ADS na Seznam reklamy + Golden Rich SEO.
+ * 🚀 CÍL: Maximální monetizace Tweaků skrze Seznam Ads + Golden Rich SEO.
  */
 
 const supabase = createClient(
@@ -94,7 +94,7 @@ export default async function TweakDetail({ params }) {
   const firstHalf = contentParts.slice(0, midPoint).join('</p>');
   const secondHalf = contentParts.slice(midPoint).join('</p>');
 
-  // Schema LD
+  // Schema LD (Zůstává původní z V2.1)
   const commonOfferDetails = {
     "priceValidUntil": "2026-12-31", 
     "itemCondition": "https://schema.org/NewCondition",
@@ -200,8 +200,8 @@ export default async function TweakDetail({ params }) {
 
           {/* 🔥 ADS SLOT #1: POD HLAVIČKOU (SEZNAM) */}
           <div className="guru-ad-wrapper">
-              <span className="ad-label">Advertisement</span>
-              <SeznamAd zoneId={408654} width={970} height={210} />
+             <span className="ad-label">Advertisement</span>
+             <SeznamAd zoneId={408654} width={970} height={210} />
           </div>
 
           <div className="guru-prose">
@@ -286,32 +286,6 @@ export default async function TweakDetail({ params }) {
           .silo-banner-card { flex-direction: column; text-align: center; }
         }
       `}} />
-
-      <Script id="onesignal-init" strategy="lazyOnload">
-        {`
-          if (typeof window !== 'undefined') {
-            var checkBtn = setInterval(function() {
-              var btn = document.getElementById('guru-os-btn');
-              if (btn && !btn.hasAttribute('data-bound')) {
-                btn.setAttribute('data-bound', 'true');
-                btn.onclick = function(e) {
-                  e.preventDefault();
-                  if (window.OneSignal) {
-                    if (window.OneSignal.Slidedown && window.OneSignal.Slidedown.promptPush) {
-                      window.OneSignal.Slidedown.promptPush(); 
-                    } else if (window.OneSignal.showSlidedownPrompt) {
-                      window.OneSignal.showSlidedownPrompt(); 
-                    } else if (window.OneSignal.push) {
-                      window.OneSignal.push(function() { window.OneSignal.showSlidedownPrompt(); }); 
-                    }
-                  }
-                };
-                clearInterval(checkBtn);
-              }
-            }, 500);
-          }
-        `}
-      </Script>
     </div>
   );
 }
