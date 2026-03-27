@@ -1,9 +1,10 @@
 import React from 'react';
 import { Trophy, Zap, ShieldCheck, Star, Swords, ChevronRight, TrendingUp } from 'lucide-react';
+import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU GPU RANKING ENGINE V1.2 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Maximální vytěžení trafficu z klíčových slov "gpu ranking" skrze A-ADS.
+ * GURU GPU RANKING ENGINE V2.0 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Maximální monetizace žebříčku grafických karet skrze Seznam Partner.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -24,7 +25,8 @@ async function getGpuRanking() {
 }
 
 export async function generateMetadata({ searchParams }) {
-    const isEn = searchParams?.lang === 'en';
+    const s = await searchParams;
+    const isEn = s?.lang === 'en';
     const title = isEn ? 'GPU Performance Ranking 2026 | The Hardware Guru' : 'Žebříček grafických karet 2026 | The Hardware Guru';
     const desc = isEn 
         ? 'Ultimate GPU performance ranking and tier list. Compare top graphics cards from NVIDIA and AMD.' 
@@ -33,7 +35,8 @@ export async function generateMetadata({ searchParams }) {
 }
 
 export default async function GpuRankingPage({ searchParams }) {
-    const isEn = searchParams?.lang === 'en';
+    const s = await searchParams;
+    const isEn = s?.lang === 'en';
     const gpus = await getGpuRanking();
 
     const tiers = [
@@ -59,15 +62,13 @@ export default async function GpuRankingPage({ searchParams }) {
                     </h1>
                 </header>
 
-                {/* 🔥 ADS SLOT #1: TOP PLACEMENT (PŘED ŽEBŘÍČKEM) */}
-                <div className="ranking-ad-slot" style={{ marginBottom: '50px' }}>
-                    <span className="ad-label">Advertisement</span>
-                    <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                    <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                {/* 🔥 SEZNAM AD #1: TOP PLACEMENT PŘED ŽEBŘÍČKEM */}
+                <div style={{ marginBottom: '50px', display: 'flex', justifyContent: 'center' }}>
+                    <SeznamAd zoneId={408654} width={970} height={210} />
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-                    {tiers.map((tier, tierIdx) => {
+                    {tiers.map((tier) => {
                         const tierGpus = gpus.filter(g => g.performance_index >= tier.range[0] && g.performance_index <= tier.range[1]);
                         if (tierGpus.length === 0) return null;
 
@@ -99,12 +100,10 @@ export default async function GpuRankingPage({ searchParams }) {
                                     </div>
                                 </section>
 
-                                {/* 🔥 ADS SLOT #2: MID PLACEMENT (VLOŽENO PO TIER B) */}
+                                {/* 🔥 SEZNAM AD #2: MID PLACEMENT VLOŽENO PO TIER B */}
                                 {tier.id === 'B' && (
-                                    <div className="ranking-ad-slot">
-                                        <span className="ad-label">Sponsored Performance Breakdown</span>
-                                        <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                                        <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                                    <div style={{ padding: '20px 0', display: 'flex', justifyContent: 'center' }}>
+                                        <SeznamAd zoneId={408651} width={300} height={250} />
                                     </div>
                                 )}
                             </React.Fragment>
@@ -122,14 +121,10 @@ export default async function GpuRankingPage({ searchParams }) {
 
             </main>
             <style dangerouslySetInnerHTML={{__html: `
-                .ranking-ad-slot { margin: 30px 0; padding: 15px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; text-align: center; }
-                .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-                .ad-desktop { display: block; } .ad-mobile { display: none; }
                 .ranking-row { transition: 0.2s; cursor: pointer; }
                 .ranking-row:hover { background: rgba(255,255,255,0.03) !important; }
                 .ranking-row:hover .gpu-name-hover { color: #66fcf1 !important; transform: translateX(5px); }
                 @media (max-width: 768px) {
-                  .ad-desktop { display: none; } .ad-mobile { display: block; }
                   .ranking-row { grid-template-columns: 40px 1fr 80px !important; padding: 15px !important; }
                 }
             `}} />
