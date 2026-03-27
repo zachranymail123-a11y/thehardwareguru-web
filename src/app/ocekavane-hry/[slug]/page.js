@@ -2,10 +2,11 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, Info, Calendar, Flame, Heart, Share2, Swords, Gauge, ArrowRight, Sparkles, Gamepad2, Twitter, Cpu, Monitor, User, Clock, CheckCircle } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU EXPECTED GAMES ENGINE V5.4 (CLEAN MODE FOR ADSENSE REVIEW)
- * 🚀 CÍL: Schválení Google AdSense - čistý sjednocený layout podle vzoru článků.
+ * GURU EXPECTED GAMES ENGINE V5.5 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Schválení Google AdSense + Seznam Partner monetizace.
  */
 
 export const runtime = "nodejs";
@@ -40,7 +41,7 @@ const getLatestPosts = async (excludeId) => {
     const { data } = await supabase
         .from('posts')
         .select('title, title_en, slug, slug_en, created_at, image_url')
-        .eq('type', 'expected') // 🚀 Taháme jen další očekávané hry
+        .eq('type', 'expected')
         .neq('id', excludeId)
         .order('created_at', { ascending: false })
         .limit(3);
@@ -64,7 +65,7 @@ export async function generateMetadata(props) {
     const title = isEn && post.title_en ? post.title_en : post.title;
     const desc = isEn && post.seo_description_en ? post.seo_description_en : (post.seo_description_cs || post.description || '');
     const safeSlug = post.slug;
-    const canonicalUrl = `${baseUrl}/ocekavane-hry/${safeSlug}`; // 🚀 Správná URL
+    const canonicalUrl = `${baseUrl}/ocekavane-hry/${safeSlug}`;
 
     return {
         title: `${title} | The Hardware Guru`,
@@ -92,7 +93,7 @@ export default async function ExpectedGameDetailPage(props) {
     const content = isEn && post.content_en ? post.content_en : (post.content_cs || post.content || '');
     const date = post.created_at || new Date().toISOString();
     const formattedDate = new Intl.DateTimeFormat(isEn ? 'en-US' : 'cs-CZ', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(date));
-    const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}ocekavane-hry/${post.slug}`; // 🚀 Správná URL
+    const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}ocekavane-hry/${post.slug}`;
     const readingTime = getReadingTime(content);
 
     const contentParts = content ? content.split('</p>') : [];
@@ -136,7 +137,6 @@ export default async function ExpectedGameDetailPage(props) {
                             <div className="guru-meta-badge" style={{ borderColor: 'rgba(16, 185, 129, 0.3)', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)' }}>
                                 <Clock size={14} /> {readingTime} {isEn ? 'min read' : 'min. čtení'}
                             </div>
-                            {/* 🚀 GURU: Datum vydání integrováno jako badge */}
                             {post.release_date && (
                                 <div className="guru-meta-badge" style={{ borderColor: 'rgba(234, 179, 8, 0.3)', color: '#eab308', background: 'rgba(234, 179, 8, 0.1)' }}>
                                     <Calendar size={14} /> {isEn ? 'RELEASE: ' : 'VYDÁNÍ: '} {new Intl.DateTimeFormat(isEn ? 'en-US' : 'cs-CZ', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(post.release_date))}
@@ -163,6 +163,12 @@ export default async function ExpectedGameDetailPage(props) {
 
                     <div className="guru-article-content">
                          <div dangerouslySetInnerHTML={{ __html: firstHalf + (contentParts.length > 1 ? '</p>' : '') }} />
+                         
+                         {/* 🔥 SEZNAM AD #1: IN-CONTENT BANNER */}
+                         <div style={{ margin: '30px 0', display: 'flex', justifyContent: 'center' }}>
+                            <SeznamAd zoneId={408651} width={300} height={250} />
+                         </div>
+
                          <div dangerouslySetInnerHTML={{ __html: secondHalf }} />
                     </div>
                     
@@ -177,6 +183,11 @@ export default async function ExpectedGameDetailPage(props) {
                         </a>
                     </div>
                 </article>
+
+                {/* 🔥 SEZNAM AD #2: BOTTOM BANNER */}
+                <div style={{ margin: '40px 0', display: 'flex', justifyContent: 'center' }}>
+                    <SeznamAd zoneId={408651} width={300} height={250} />
+                </div>
 
                 <div style={{ marginTop: '50px' }}>
                     <div className="share-grid">
@@ -256,7 +267,7 @@ export default async function ExpectedGameDetailPage(props) {
                 .silo-banner-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
                 .cpu-icon-bg { color: #66fcf1; background: rgba(102, 252, 241, 0.1); }
                 .gpu-icon-bg { color: #ff0055; background: rgba(255, 0, 85, 0.1); }
-                .silo-banner-text h4 { margin: 0; color: #fff; font-size: 1rem; font-weight: 950; text-transform: uppercase; }
+                .silo-banner-text h4 { margin: 0; color: #fff; font-size: 1.1rem; font-weight: 950; text-transform: uppercase; }
                 .silo-banner-text p { margin: 0; color: #9ca3af; font-size: 0.8rem; }
                 .silo-banner-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.02); }
                 .section-title { color: #fff; font-size: 1.5rem; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; border-left: 4px solid #a855f7; padding-left: 15px; }
@@ -267,9 +278,7 @@ export default async function ExpectedGameDetailPage(props) {
                 .related-info h3 { margin: 0; color: #fff; font-size: 0.9rem; font-weight: 900; line-height: 1.3; }
                 .related-card:hover { border-color: #a855f7; transform: translateY(-5px); }
                 @media (max-width: 768px) {
-                    .content-box-style { padding: 30px 20px; }
                     .share-grid, .duel-grid, .related-grid { grid-template-columns: 1fr; }
-                    .gta6-conversion-box { padding: 25px; }
                 }
             `}} />
         </div>
