@@ -11,8 +11,8 @@ import ShareWidget from '../components/ShareWidget';
 import CookieBanner from '../components/CookieBanner';
 
 /**
- * GURU ROOT LAYOUT V5.9 (ONESIGNAL APP ID FIX + WIDGET + COOKIES)
- * 🚀 CÍL: Pevně vložené OneSignal App ID, Share Widget a Cookies lišta.
+ * GURU ROOT LAYOUT V6.0 (ONESIGNAL APP ID FIX + WIDGET + COOKIES + SEZNAM SSP)
+ * 🚀 CÍL: Pevně vložené OneSignal App ID, Share Widget, Cookies lišta a Seznam reklamy.
  */
 
 export const metadata = {
@@ -82,6 +82,9 @@ export default async function RootLayout({ children, params }) {
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993"
           crossOrigin="anonymous"
         ></script>
+
+        {/* 🔥 SEZNAM SSP REKLAMY 🔥 */}
+        <Script src="https://ssp.seznam.cz/static/js/ssp.js" strategy="afterInteractive" />
 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(websiteSchema) }} />
