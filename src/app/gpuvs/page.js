@@ -4,10 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { 
   Swords, Zap, RefreshCw, ChevronRight, ArrowLeftRight, ShieldCheck, Flame, AlertTriangle
 } from 'lucide-react';
+import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER HUB V67.2 (SLUG CLEANUP UPDATE)
- * 🚀 CÍL: Odstranění "geforce/radeon" z generovaných URL pro eliminaci 404.
+ * GURU GPU DUELS ENGINE - MASTER HUB V67.3 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Maximální monetizace srovnávače grafik skrze Seznam Partner.
  */
 
 export default function GpuVsHub() {
@@ -57,10 +58,9 @@ export default function GpuVsHub() {
     loadData();
   }, [isEn]);
 
-  // 🔥 GURU FIX: Slugify nyní čistí jména od výrobců, aby odpovídala slugům v DB
   const slugify = (text) => text
     .toLowerCase()
-    .replace(/nvidia|amd|geforce|radeon|intel|graphics|gpu/gi, "") // Odstraní balast
+    .replace(/nvidia|amd|geforce|radeon|intel|graphics|gpu/gi, "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/\s+/g, "-")
@@ -75,7 +75,6 @@ export default function GpuVsHub() {
     const cardB = gpus.find(g => String(g.id) === gpuB);
     if (!cardA || !cardB) return;
     
-    // Generujeme čistý slug bez "geforce-rtx-" atd.
     const rawSlug = `${slugify(cardA.name)}-vs-${slugify(cardB.name)}`;
     window.location.href = isEn ? `/en/gpuvs/en-${rawSlug}` : `/gpuvs/${rawSlug}`;
   };
@@ -101,13 +100,8 @@ export default function GpuVsHub() {
         .compact-duel-item { background: rgba(15, 17, 21, 0.7); border: 1px solid rgba(255,255,255,0.05); padding: 14px 18px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; transition: 0.3s; }
         .compact-duel-item:hover { transform: translateX(5px); border-color: #66fcf1; }
 
-        .hub-ad-slot { margin: 30px 0; padding: 15px; background: rgba(102, 252, 241, 0.03); border: 1px solid rgba(102, 252, 241, 0.1); border-radius: 20px; text-align: center; }
-        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; } .ad-mobile { display: none; }
-
         @media (max-width: 1024px) { 
           .hub-grid { grid-template-columns: 1fr; } 
-          .ad-desktop { display: none; } .ad-mobile { display: block; }
         }
       `}} />
 
@@ -124,10 +118,9 @@ export default function GpuVsHub() {
           </p>
         </header>
 
-        <div className="hub-ad-slot">
-            <span className="ad-label">Advertisement</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        {/* 🔥 SEZNAM AD #1: TOP BANNER POD HLAVIČKOU */}
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+            <SeznamAd zoneId={408654} width={970} height={210} />
         </div>
 
         <div className="hub-grid">
@@ -158,10 +151,9 @@ export default function GpuVsHub() {
                 </a>
               ))}
 
-              <div className="hub-ad-slot" style={{ marginTop: '20px' }}>
-                  <span className="ad-label">Sponsored Hardware</span>
-                  <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                  <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+              {/* 🔥 SEZNAM AD #2: SIDEBAR / BOTTOM BANNER */}
+              <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+                  <SeznamAd zoneId={408651} width={300} height={250} />
               </div>
             </section>
         </div>
