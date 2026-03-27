@@ -1,26 +1,29 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 export default function SeznamAd({ zoneId, width, height, className = "" }) {
   const pathname = usePathname();
-  // Vytvoříme unikátní ID pro každý banner, aby se jich mohlo načíst víc na jedné stránce
-  const [divId] = useState(`ssp-zone-${zoneId}-${Math.random().toString(36).substring(2, 9)}`);
-  const isLoaded = useRef(false);
+  const [divId, setDivId] = useState("");
 
   useEffect(() => {
-    // Timeout zajistí, že počkáme na načtení hlavního ssp.js skriptu
-    const timer = setTimeout(() => {
+    // Generujeme ID na klientovi
+    setDivId(`ssp-zone-${zoneId}-${Math.random().toString(36).substring(2, 9)}`);
+  }, [zoneId]);
+
+  useEffect(() => {
+    if (!divId) return;
+
+    const loadAd = () => {
       if (typeof window !== 'undefined' && window.sssp) {
-        
-        // Pokud jsme zrovna přešli na novou stránku, řekneme Seznamu, ať započítá nové PageView
+        // SPA Tracking - započítání PageView
         if (!window.guruSspPageTracked || window.guruSspPageTracked !== pathname) {
           window.sssp.setPageViewId();
           window.guruSspPageTracked = pathname;
         }
 
-        // Zavoláme samotnou reklamu
+        // Zavolání reklamy
         window.sssp.getAds([
           {
             zoneId: zoneId,
@@ -29,23 +32,37 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
             height: height,
           }
         ]);
-        isLoaded.current = true;
-      } else {
-        console.warn("Seznam SSP skript nebyl nalezen.");
       }
-    }, 500); // Lehké zpoždění pro jistotu, aby se neprali s Reactem
+    };
 
-    return () => clearTimeout(timer);
+    // 1. Pokus o načtení hned po renderu
+    const timer = setTimeout(loadAd, 400);
+
+    // 2. OPRAVA BUGU: Posluchač pro návrat tlačítkem ZPĚT (bfcache)
+    const handlePageShow = (event) => {
+      // event.persisted je true, pokud se stránka načetla z paměti (tlačítko zpět)
+      if (event.persisted) {
+        loadAd();
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('pageshow', handlePageShow);
+    };
   }, [zoneId, width, height, divId, pathname]);
+
+  if (!divId) return <div style={{ minHeight: height }} className="w-full" />;
 
   return (
     <div className={`flex justify-center items-center my-6 w-full ${className}`}>
       <div 
         id={divId} 
-        style={{ minWidth: width, minHeight: height, background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}
+        style={{ minWidth: width, minHeight: height, background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}
         className="overflow-hidden flex justify-center items-center"
       >
-        {/* Sem Seznam střelí ten svůj iframe */}
       </div>
     </div>
   );
