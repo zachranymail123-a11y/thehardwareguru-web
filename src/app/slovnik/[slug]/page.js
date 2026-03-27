@@ -3,10 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart, Info, BookOpen, Share2, Cpu, Monitor } from 'lucide-react';
+import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU GLOSSARY ENGINE - DETAIL V2.2 (ADS INJECTION UPDATE)
- * 🚀 CÍL: 100% monetizace slovníkových pojmů skrze A-ADS + Golden Rich SEO.
+ * GURU GLOSSARY ENGINE - DETAIL V2.3 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: 100% monetizace slovníkových pojmů skrze Seznam Partner.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -96,31 +97,6 @@ export default async function SlovnikDetail({ params }) {
   const firstHalf = contentParts.slice(0, midPoint).join('</p>');
   const secondHalf = contentParts.slice(midPoint).join('</p>');
 
-  const commonOfferDetails = {
-    "priceValidUntil": "2026-12-31", 
-    "itemCondition": "https://schema.org/NewCondition",
-    "availability": "https://schema.org/InStock",
-    "seller": { "@type": "Organization", "name": "The Hardware Guru" },
-    "hasMerchantReturnPolicy": {
-      "@type": "MerchantReturnPolicy",
-      "applicableCountry": "CZ",
-      "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
-      "merchantReturnDays": 14,
-      "returnMethod": "https://schema.org/ReturnByMail",
-      "returnFees": "https://schema.org/FreeReturn"
-    },
-    "shippingDetails": {
-      "@type": "OfferShippingDetails",
-      "shippingRate": { "@type": "MonetaryAmount", "value": 0, "currency": "USD" },
-      "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "CZ" },
-      "deliveryTime": {
-        "@type": "ShippingDeliveryTime",
-        "handlingTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 1, "unitCode": "d" },
-        "transitTime": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 3, "unitCode": "d" }
-      }
-    }
-  };
-
   const productSchema = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -134,12 +110,7 @@ export default async function SlovnikDetail({ params }) {
       "priceCurrency": "USD",
       "price": 1,
       "url": `${baseUrl}/${isEn ? 'en/' : ''}slovnik/${slug}`,
-      ...commonOfferDetails
-    },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": 4.9,
-      "reviewCount": 142
+      "availability": "https://schema.org/InStock"
     }
   };
 
@@ -178,7 +149,7 @@ export default async function SlovnikDetail({ params }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', color: '#9ca3af', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '25px' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#66fcf1' }}><ShieldCheck size={16} /> GURU ENGINE</span>
               <span>•</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={16} /> {dateObj.toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
+              <span suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={16} /> {dateObj.toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
             </div>
             
             <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', lineHeight: '1.1', margin: '0', textShadow: '0 0 20px rgba(102, 252, 241, 0.2)' }}>
@@ -186,22 +157,18 @@ export default async function SlovnikDetail({ params }) {
             </h1>
           </header>
 
-          {/* 🔥 ADS SLOT #1: POD HLAVIČKOU POJMU */}
-          <div className="guru-ad-slot">
-             <span className="ad-label">Advertisement</span>
-             <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-             <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+          {/* 🔥 SEZNAM AD #1: TOP BANNER POD NADPISEM */}
+          <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+            <SeznamAd zoneId={408654} width={970} height={210} />
           </div>
 
           <div className="guru-prose">
              <div dangerouslySetInnerHTML={{ __html: firstHalf + (contentParts.length > 1 ? '</p>' : '') }} />
 
-             {/* 🔥 ADS SLOT #2: UPROSTŘED VYSVĚTLENÍ */}
+             {/* 🔥 SEZNAM AD #2: IN-CONTENT BANNER */}
              {contentParts.length > 2 && (
-               <div className="guru-ad-slot">
-                  <span className="ad-label">Sponsored Content</span>
-                  <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                  <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+               <div style={{ margin: '30px 0', display: 'flex', justifyContent: 'center' }}>
+                  <SeznamAd zoneId={408651} width={300} height={250} />
                </div>
              )}
 
@@ -262,11 +229,6 @@ export default async function SlovnikDetail({ params }) {
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         
-        .guru-ad-slot { margin: 30px 0; padding: 15px; background: rgba(102, 252, 241, 0.02); border: 1px solid rgba(102, 252, 241, 0.1); border-radius: 20px; text-align: center; }
-        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; }
-        .ad-mobile { display: none; }
-
         .share-btn-x { display: flex; align-items: center; gap: 8px; background: #1da1f220; color: #1da1f2; border: 1px solid #1da1f250; padding: 10px 20px; border-radius: 12px; fontWeight: 950; text-decoration: none; transition: 0.3s; }
         .share-btn-fb { display: flex; align-items: center; gap: 8px; background: #1877f220; color: #1877f2; border: 1px solid #1877f250; padding: 10px 20px; border-radius: 12px; fontWeight: 950; text-decoration: none; transition: 0.3s; }
 
@@ -276,8 +238,6 @@ export default async function SlovnikDetail({ params }) {
         .silo-banner-card { flex: 1; min-width: 300px; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; align-items: center; gap: 20px; text-decoration: none; transition: 0.3s; border-left-width: 5px; }
 
         @media (max-width: 768px) {
-          .ad-desktop { display: none; }
-          .ad-mobile { display: block; }
           .guru-affiliate-cta { font-size: 15px; width: 100%; }
           .silo-banner-card { flex-direction: column; text-align: center; }
           .guru-prose { font-size: 1.05rem; }
