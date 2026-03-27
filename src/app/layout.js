@@ -12,8 +12,8 @@ import CookieBanner from '../components/CookieBanner';
 import SeznamAd from '../components/SeznamAd';
 
 /**
- * GURU ROOT LAYOUT V6.1 (A-ADS REMOVED + SEZNAM SSP ADS ADDED)
- * 🚀 CÍL: Pevně vložené OneSignal App ID, Share Widget, Cookies lišta a Seznam reklamy místo A-Ads.
+ * GURU ROOT LAYOUT V6.2 (CENTERED ADS FIX)
+ * 🚀 CÍL: Pevně vložené OneSignal App ID, Share Widget, Cookies lišta a vystředěné Seznam reklamy.
  */
 
 export const metadata = {
@@ -93,7 +93,7 @@ export default async function RootLayout({ children, params }) {
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Novinky" href="https://thehardwareguru.cz/rss.xml" />
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Srovnání" href="https://thehardwareguru.cz/rss-comparisons.xml" />
         
-        {/* 🔥 ONESIGNAL NOTIFIKACE (VRÁCENO ZPĚT S APP ID) 🔥 */}
+        {/* 🔥 ONESIGNAL NOTIFIKACE 🔥 */}
         <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="afterInteractive" />
         <Script id="onesignal-init" strategy="afterInteractive">
           {`
@@ -140,25 +140,25 @@ export default async function RootLayout({ children, params }) {
             .eeat-link:hover { color: #d1d5db; }
             
             /* GURU RESPONSIVE ADS */
-            .ad-desktop-wrapper { display: block; }
+            .ad-desktop-wrapper { display: flex; justify-content: center; }
             .ad-mobile-wrapper { display: none; }
             
             @media (max-width: 768px) {
               .ad-desktop-wrapper { display: none; }
-              .ad-mobile-wrapper { display: block; }
+              .ad-mobile-wrapper { display: flex; justify-content: center; }
             }
           `}} />
           
-          {/* DESKTOP AD */}
+          {/* DESKTOP AD (CENTERED) */}
           <div className="ad-desktop-wrapper">
-            <div style={{ width: '100%', margin: '0 auto 40px', position: 'relative', zIndex: 99998 }}>
+            <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto 40px', display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 99998 }}>
               <SeznamAd zoneId={408654} width={970} height={210} />
             </div>
           </div>
 
-          {/* MOBILE AD */}
+          {/* MOBILE AD (CENTERED) */}
           <div className="ad-mobile-wrapper">
-            <div style={{ width: '100%', margin: '0 auto 40px', position: 'relative', zIndex: 99998 }}>
+            <div style={{ width: '100%', margin: '0 auto 40px', display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 99998 }}>
               <SeznamAd zoneId={408651} width={300} height={250} />
             </div>
           </div>
