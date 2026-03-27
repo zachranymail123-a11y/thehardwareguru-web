@@ -3,10 +3,11 @@ import {
   ChevronLeft, Cpu, Database, Gamepad2, ArrowRight, ExternalLink, 
   Activity, CheckCircle2, Swords, LayoutList, ShoppingCart, Flame, Heart, Zap
 } from 'lucide-react';
+import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU CPU ENGINE - DETAIL PROCESORU V2.3 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Maximální monetizace CPU profilů skrze A-ADS bez ztráty stability.
+ * GURU CPU ENGINE - DETAIL PROCESORU V2.4 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Maximální monetizace CPU profilů skrze Seznam Partner bez ztráty stability.
  */
 
 export const runtime = "nodejs";
@@ -114,14 +115,10 @@ export default async function CpuDetailPage({ params }) {
           </div>
         </header>
 
-        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD HLAVIČKOU */}
-        <div className="guru-cpu-ad-slot">
-            <span className="ad-label">Advertisement</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-        </div>
+        {/* 🔥 SEZNAM AD #1: TOP BANNER POD HLAVIČKOU */}
+        <SeznamAd zoneId={408654} width={970} height={210} />
 
-        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '60px' }}>
+        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '60px', marginTop: '40px' }}>
             <div className="stat-card"><div className="stat-label">{isEn ? 'Boost Clock' : 'Boost Takt'}</div><div className="stat-val">{cpu.boost_clock_mhz ?? '-'} <span style={{ fontSize: '16px', color: '#6b7280' }}>MHz</span></div></div>
             <div className="stat-card"><div className="stat-label">Cinebench R23</div><div className="stat-val">{cinebenchScore} <span style={{ fontSize: '16px', color: '#6b7280' }}>PTS</span></div></div>
             <div className="stat-card"><div className="stat-label">{isEn ? 'Power Draw' : 'Spotřeba (TDP)'}</div><div className="stat-val">{cpu.tdp_w ?? '-'} <span style={{ fontSize: '16px', color: '#6b7280' }}>W</span></div></div>
@@ -147,11 +144,8 @@ export default async function CpuDetailPage({ params }) {
                <div className="spec-row-style"><div className="table-label">{isEn ? 'CORES / THREADS' : 'JÁDRA / VLÁKNA'}</div><div className="spec-val-box">{cpu.cores} / {cpu.threads}</div></div>
                <div className="spec-row-style"><div className="table-label">{isEn ? 'BASE CLOCK' : 'ZÁKLADNÍ TAKT'}</div><div className="spec-val-box">{cpu.base_clock_mhz} MHz</div></div>
                
-               {/* 🔥 ADS SLOT #2: MID-TABLE PLACEMENT */}
-               <div className="guru-cpu-ad-slot" style={{ border: 'none', margin: '10px 0' }}>
-                   <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                   <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-               </div>
+               {/* 🔥 SEZNAM AD #2: PROSTŘEDEK TABULKY */}
+               <SeznamAd zoneId={408651} width={300} height={250} />
 
                <div className="spec-row-style"><div className="table-label">L3 CACHE</div><div className="spec-val-box">{cpu.l3_cache_mb} MB</div></div>
                <div className="spec-row-style"><div className="table-label">TDP (SPOTŘEBA)</div><div className="spec-val-box">{cpu.tdp_w} W</div></div>
@@ -168,10 +162,6 @@ export default async function CpuDetailPage({ params }) {
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #f59e0b; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(245, 158, 11, 0.3); transition: 0.3s; }
         
-        .guru-cpu-ad-slot { margin: 30px 0; padding: 15px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; text-align: center; }
-        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; } .ad-mobile { display: none; }
-
         .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #f59e0b; padding-left: 15px; display: flex; align-items: center; gap: 12px; }
         .stat-card { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 30px; text-align: center; }
         .stat-label { color: #6b7280; font-size: 10px; font-weight: 950; letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase; }
@@ -180,14 +170,13 @@ export default async function CpuDetailPage({ params }) {
         .table-wrapper { background: rgba(15, 17, 21, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
         .spec-row-style { display: flex; align-items: center; justify-content: space-between; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .table-label { font-size: 11px; font-weight: 950; color: #6b7280; text-transform: uppercase; }
-        .spec-val-box { color: #fff; font-weight: 950; fontSize: 18px; }
+        .spec-val-box { color: #fff; font-weight: 950; font-size: 18px; }
 
         .deep-link-card { display: flex; align-items: center; gap: 20px; background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; }
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000; font-weight: 950; border-radius: 16px; text-decoration: none; }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-weight: 950; border-radius: 16px; text-decoration: none; }
 
         @media (max-width: 768px) {
-            .ad-desktop { display: none; } .ad-mobile { display: block; }
             .spec-row-style { flex-direction: column; align-items: flex-start; gap: 10px; }
         }
       `}} />
