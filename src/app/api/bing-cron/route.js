@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
 // 🔥 GURU CONFIG
-const MODE = 'FULL'; // 'FULL' projde web jednou a ZASTAVÍ SE | 'SMART' bere novinky
+const MODE = 'FULL'; // 'FULL' projde web jednou a ZASTAVÍ SE | 'SMART' bere náhodný vzorek
 const BATCH_SIZE = 500; 
 const MAX_RETRIES = 3;
 
@@ -104,16 +104,23 @@ export async function GET(request) {
             state = initialState;
         }
 
-        // 2. Kontrola zámku a prevence spamu
+        // 🔥 2. HARD STOP + UNLOCK (Kritická ochrana proti spamu)
+        if (MODE === 'FULL' && state.full_push_done) {
+            // Pokud by náhodou zůstal viset zámek, uvolníme ho
+            if (state.is_running) {
+                await supabase.from('seo_cron_state').update({ is_running: false }).eq('id', 1);
+            }
+            return NextResponse.json({ 
+                message: '🛑 FULL PUSH DONE – Cron deaktivován proti spamu. Bing zpracovává data.' 
+            }, { status: 200 });
+        }
+
+        // 3. Kontrola zámku
         if (state.is_running) {
             return NextResponse.json({ message: 'Cron už běží' }, { status: 429 });
         }
 
-        if (MODE === 'FULL' && state.full_push_done) {
-            return NextResponse.json({ message: '✅ FULL PUSH DOKONČEN. Zastaveno proti spamu. Bing nyní zpracovává data.' }, { status: 200 });
-        }
-
-        // 3. ZAMKNI
+        // 4. ZAMKNI DB
         await supabase.from('seo_cron_state').update({ is_running: true }).eq('id', 1);
 
         const mainSitemaps = [
@@ -163,7 +170,7 @@ export async function GET(request) {
                 }
             }
             
-            // 🔥 STOP CONDITION: Pokud jsme na konci, ZASTAVÍME TO NAPOŘÁD
+            // 🔥 STOP CONDITION: Pokud jsme na konci, ZASTAVÍME TO NAPOŘÁD A ODEMKNEME
             if (iter_sitemap_index >= leafSitemaps.length) {
                 await supabase.from('seo_cron_state').update({
                     full_push_done: true,
@@ -184,16 +191,16 @@ export async function GET(request) {
                     });
                 }
 
-                return NextResponse.json({ message: '🔥 FULL PUSH HOTOV. Zápis do DB proveden, spam loop ukončen.' });
+                return NextResponse.json({ message: '🔥 FULL PUSH HOTOV. Zápis do DB proveden, spam loop ukončen.' }, { status: 200 });
             }
         }
 
         if (urlsToSend.length === 0) {
             await supabase.from('seo_cron_state').update({ is_running: false }).eq('id', 1);
-            return NextResponse.json({ message: 'Žádné URL k odeslání' });
+            return NextResponse.json({ message: 'Žádné URL k odeslání' }, { status: 200 });
         }
 
-        // 4. ODESLÁNÍ DO INDEXNOW
+        // 5. ODESLÁNÍ DO INDEXNOW
         const payload = {
             host: "thehardwareguru.cz",
             key: "guru-indexnow-key-2026",
