@@ -1,9 +1,10 @@
 import React from 'react';
 import { ChevronLeft, ShieldCheck, Heart, Flame, ShoppingCart, Info, CheckCircle2 } from 'lucide-react';
+import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU SUPPORT ENGINE V2.3 (BING SEO FIX)
- * 🚀 CÍL: Přidání unikátních meta tagů pro Bing indexaci.
+ * GURU SUPPORT ENGINE V2.4 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Monetizace stránky podpory skrze Seznam Partner.
  */
 
 export const runtime = "nodejs";
@@ -70,11 +71,6 @@ export default async function SupportPage(props) {
         <style dangerouslySetInnerHTML={{ __html: `
           .guru-btn-hover:hover { transform: translateY(-3px) scale(1.02); filter: brightness(1.1); }
           .guru-affiliate-cta { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
-          
-          .guru-support-ad-slot { margin: 25px 0; padding: 15px; background: rgba(234, 179, 8, 0.02); border: 1px solid rgba(234, 179, 8, 0.1); border-radius: 20px; text-align: center; }
-          .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-          .ad-desktop { display: block; } .ad-mobile { display: none; }
-          @media (max-width: 768px) { .ad-desktop { display: none; } .ad-mobile { display: block; } }
         `}} />
 
         {/* QR KÓD SEKCE */}
@@ -87,11 +83,9 @@ export default async function SupportPage(props) {
           </div>
         </div>
 
-        {/* 🔥 ADS SLOT: INJEKCE MEZI PLATEBNÍ METODY */}
-        <div className="guru-support-ad-slot">
-            <span className="ad-label">Advertisement</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        {/* 🔥 SEZNAM AD: INJEKCE MEZI PLATEBNÍ METODY */}
+        <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'center' }}>
+            <SeznamAd zoneId={408651} width={300} height={250} />
         </div>
 
         {/* GOOGLE SUBSCRIBE */}
