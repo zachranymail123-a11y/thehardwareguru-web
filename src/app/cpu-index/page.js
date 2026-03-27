@@ -12,10 +12,11 @@ import {
   Calendar,
   Gamepad2
 } from 'lucide-react';
+import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU CPU ENGINE - KATALOG PROCESORŮ V1.6 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Kompletní monetizace CPU katalogu skrze strategické A-ADS sloty.
+ * GURU CPU ENGINE - KATALOG PROCESORŮ V1.7 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Kompletní monetizace CPU katalogu skrze strategické Seznam Partner sloty.
  */
 
 export const dynamic = 'force-dynamic';
@@ -104,7 +105,7 @@ export default async function CpuIndexPage(props) {
       
       <main style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '50px', background: 'rgba(245,158,11,0.05)' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 25px', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '50px', background: 'rgba(245,158,11,0.05)' }}>
             <Database size={16} /> GURU HARDWARE DATABASE
           </div>
           <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
@@ -118,29 +119,21 @@ export default async function CpuIndexPage(props) {
           </div>
         </header>
 
-        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD HLAVIČKOU */}
-        <div className="cpu-index-ad-slot" style={{ marginBottom: '50px' }}>
-            <span className="ad-label">Advertisement</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-        </div>
+        {/* 🔥 SEZNAM AD #1: TOP BANNER POD HLAVIČKOU */}
+        <SeznamAd zoneId={408654} width={970} height={210} />
 
         {amdCpus.length > 0 && (
-          <section style={{ marginBottom: '40px' }}>
+          <section style={{ marginBottom: '40px', marginTop: '40px' }}>
             <h2 className="vendor-h2" style={{ borderLeftColor: '#ed1c24' }}><span style={{ color: '#ed1c24' }}>AMD</span> RYZEN</h2>
             <div className="cpu-grid">{renderCpuCards(amdCpus, '#ed1c24')}</div>
           </section>
         )}
 
-        {/* 🔥 ADS SLOT #2: MID PLACEMENT MEZI AMD A INTEL */}
-        <div className="cpu-index-ad-slot" style={{ margin: '60px 0' }}>
-            <span className="ad-label">Sponsored Hardware Performance</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-        </div>
+        {/* 🔥 SEZNAM AD #2: MID PLACEMENT MEZI AMD A INTEL */}
+        <SeznamAd zoneId={408651} width={300} height={250} />
 
         {intelCpus.length > 0 && (
-          <section style={{ marginBottom: '80px' }}>
+          <section style={{ marginBottom: '80px', marginTop: '40px' }}>
             <h2 className="vendor-h2" style={{ borderLeftColor: '#0071c5' }}><span style={{ color: '#0071c5' }}>INTEL</span> CORE</h2>
             <div className="cpu-grid">{renderCpuCards(intelCpus, '#0071c5')}</div>
           </section>
@@ -184,10 +177,6 @@ export default async function CpuIndexPage(props) {
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
-        .cpu-index-ad-slot { margin: 30px 0; padding: 15px; background: rgba(245, 158, 11, 0.02); border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 20px; text-align: center; }
-        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; } .ad-mobile { display: none; }
-
         .vendor-h2 { color: #fff; font-size: 2.2rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 5px solid; padding-left: 15px; display: flex; align-items: center; gap: 15px; }
         .cpu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .cpu-card { display: flex; flex-direction: column; background: rgba(15, 17, 21, 0.95); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; padding: 25px; transition: 0.3s; }
@@ -209,7 +198,6 @@ export default async function CpuIndexPage(props) {
         .related-title { margin: 10px 0 0 0; font-size: 1rem; font-weight: 950; color: #fff; line-height: 1.3; }
 
         @media (max-width: 768px) { 
-          .ad-desktop { display: none; } .ad-mobile { display: block; }
           .silo-banner-card { flex-direction: column; text-align: center; } 
         }
       `}} />
