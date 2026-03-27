@@ -21,11 +21,12 @@ import {
   Info,
   Crosshair
 } from 'lucide-react';
-import GuruAnalysisText from '../../../components/GuruAnalysisText'; // 🚀 GURU: Import dynamického generátoru textu
+import GuruAnalysisText from '../../../components/GuruAnalysisText';
+import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU FPS HUNTER V1.3 (SEO TEXT UPDATE)
- * 🚀 CÍL: Rozcestník grafické karty (oprava 404) + generátor textu pro Bing.
+ * GURU FPS HUNTER V1.4 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Rozcestník grafické karty (oprava 404) + Seznam Partner reklamy.
  * Cesta: src/app/gpu-fps/[slug]/page.js
  */
 
@@ -114,15 +115,11 @@ export default async function GpuFpsHunterPage(props) {
           </h1>
         </header>
 
-        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD HLAVIČKOU */}
-        <div className="guru-fps-ad-slot">
-            <span className="ad-label">Advertisement</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-        </div>
+        {/* 🔥 SEZNAM AD #1: TOP BANNER POD HLAVIČKOU */}
+        <SeznamAd zoneId={408654} width={970} height={210} />
 
         {/* 🚀 HLAVNÍ FPS MATRIX S REKLAMOU UPROSTŘED */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px', marginBottom: '60px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px', marginBottom: '60px', marginTop: '40px' }}>
           {gamesToShow.map((game, index) => {
             const fpsValue = Number(fpsData[`${game.key}_1440p`] || fpsData[`${game.key}_1080p`] || 0);
             const verdict = getVerdict(fpsValue);
@@ -146,22 +143,16 @@ export default async function GpuFpsHunterPage(props) {
                   </div>
                 </a>
 
-                {/* 🔥 ADS SLOT #2: GRID INJECTION (Vloží reklamu po druhé kartě) */}
+                {/* 🔥 SEZNAM AD #2: GRID INJECTION PO 2. KARTĚ */}
                 {index === 1 && (
-                  <div className="guru-fps-ad-slot" style={{ margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                      <div style={{ width: '100%' }}>
-                        <span className="ad-label">Sponsored Performance</span>
-                        <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                        <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                      </div>
-                  </div>
+                  <SeznamAd zoneId={408651} width={300} height={250} />
                 )}
               </React.Fragment>
             );
           })}
         </div>
 
-        {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT (VLOŽENO ZDE BEZ NARUŠENÍ ZBYTKU STRÁNKY) */}
+        {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT */}
         <section style={{ marginBottom: '60px' }}>
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950' }}>{isEn ? 'Performance Analysis' : 'Analýza výkonu'}</h2>
@@ -175,6 +166,11 @@ export default async function GpuFpsHunterPage(props) {
                     fps={Number(fpsData['cyberpunk_2077_1440p'] || 0)} 
                     isEn={isEn} 
                 />
+
+                {/* 🔥 SEZNAM AD #3: POD ANALÝZOU */}
+                <div style={{ marginTop: '40px' }}>
+                  <SeznamAd zoneId={408651} width={300} height={250} />
+                </div>
             </div>
         </section>
 
@@ -209,10 +205,6 @@ export default async function GpuFpsHunterPage(props) {
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         
-        .guru-fps-ad-slot { margin: 30px 0; padding: 15px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; text-align: center; }
-        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; } .ad-mobile { display: none; }
-
         .game-fps-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.2) !important; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
         .deep-link-card { background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; position: relative; }
         .deep-link-card h3 { font-size: 18px; fontWeight: 950; margin: 15px 0 10px 0; text-transform: uppercase; }
@@ -223,7 +215,6 @@ export default async function GpuFpsHunterPage(props) {
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-weight: 950; border-radius: 16px; text-decoration: none; }
 
         @media (max-width: 768px) {
-            .ad-desktop { display: none; } .ad-mobile { display: block; }
             .guru-deals-btn, .guru-support-btn { width: 100%; }
         }
       `}} />
