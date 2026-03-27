@@ -1,10 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import React from 'react';
 import { Home, Lightbulb, Book, PenTool, Cpu, Wallet, Rocket, Share2, Heart, ShieldCheck, ShoppingCart, MessageSquare, MonitorPlay, Youtube } from 'lucide-react';
+import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU SESTAVY ENGINE V1.4 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Monetizace detailů sestav skrze strategické A-ADS sloty.
+ * GURU SESTAVY ENGINE V1.5 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Monetizace detailů sestav skrze Seznam Partner.
  */
 
 const supabase = createClient(
@@ -61,11 +62,10 @@ export default async function SestavaDetail({ params }) {
       </div>
 
       <main style={contentWidthStyle}>
-        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD HERO SEKCI */}
-        <div className="guru-sestava-ad-slot">
-            <span className="ad-label">Advertisement</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        
+        {/* 🔥 SEZNAM AD #1: TOP PLACEMENT POD HERO SEKCI */}
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+            <SeznamAd zoneId={408654} width={970} height={210} />
         </div>
 
         <div style={glassCardStyle}>
@@ -88,12 +88,10 @@ export default async function SestavaDetail({ params }) {
                   </div>
                 </div>
 
-                {/* 🔥 ADS SLOT #2: MID-COMPONENTS INJECTION (PO 4. KOMPONENTĚ) */}
+                {/* 🔥 SEZNAM AD #2: MID-COMPONENTS INJECTION PO 4. POLOŽCE */}
                 {idx === 3 && (
-                  <div className="guru-sestava-ad-slot" style={{ border: 'none', margin: '15px 0' }}>
-                    <span className="ad-label">Sponsored Hardware Link</span>
-                    <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                    <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                  <div style={{ margin: '20px 0', display: 'flex', justifyContent: 'center' }}>
+                    <SeznamAd zoneId={408651} width={300} height={250} />
                   </div>
                 )}
               </React.Fragment>
@@ -129,13 +127,6 @@ export default async function SestavaDetail({ params }) {
           </div>
         </div>
       </main>
-
-      <style dangerouslySetInnerHTML={{__html: `
-        .guru-sestava-ad-slot { margin-bottom: 30px; padding: 15px; background: rgba(168, 85, 247, 0.02); border: 1px solid rgba(168, 85, 247, 0.1); border-radius: 20px; text-align: center; }
-        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; } .ad-mobile { display: none; }
-        @media (max-width: 768px) { .ad-desktop { display: none; } .ad-mobile { display: block; } }
-      `}} />
     </div>
   );
 }
