@@ -9,10 +9,11 @@ import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
 import ShareWidget from '../components/ShareWidget';
 import CookieBanner from '../components/CookieBanner';
+import SeznamAd from '../components/SeznamAd';
 
 /**
- * GURU ROOT LAYOUT V6.0 (ONESIGNAL APP ID FIX + WIDGET + COOKIES + SEZNAM SSP)
- * 🚀 CÍL: Pevně vložené OneSignal App ID, Share Widget, Cookies lišta a Seznam reklamy.
+ * GURU ROOT LAYOUT V6.1 (A-ADS REMOVED + SEZNAM SSP ADS ADDED)
+ * 🚀 CÍL: Pevně vložené OneSignal App ID, Share Widget, Cookies lišta a Seznam reklamy místo A-Ads.
  */
 
 export const metadata = {
@@ -151,22 +152,14 @@ export default async function RootLayout({ children, params }) {
           {/* DESKTOP AD */}
           <div className="ad-desktop-wrapper">
             <div style={{ width: '100%', margin: '0 auto 40px', position: 'relative', zIndex: 99998 }}>
-              <iframe 
-                data-aa='2431217' 
-                src='https://acceptable.a-ads.com/2431217/?size=Adaptive'
-                style={{ border: 0, padding: 0, width: '70%', height: '100px', overflow: 'hidden', display: 'block', margin: 'auto' }}
-              ></iframe>
+              <SeznamAd zoneId={408654} width={970} height={210} />
             </div>
           </div>
 
           {/* MOBILE AD */}
           <div className="ad-mobile-wrapper">
             <div style={{ width: '100%', margin: '0 auto 40px', position: 'relative', zIndex: 99998 }}>
-              <iframe 
-                data-aa='2431218' 
-                src='https://acceptable.a-ads.com/2431218/?size=Adaptive'
-                style={{ border: 0, padding: 0, width: '70%', height: '100px', overflow: 'hidden', display: 'block', margin: 'auto' }}
-              ></iframe>
+              <SeznamAd zoneId={408651} width={300} height={250} />
             </div>
           </div>
 
