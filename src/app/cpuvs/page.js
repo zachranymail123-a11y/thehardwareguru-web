@@ -4,10 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { 
   Swords, Zap, RefreshCw, ChevronRight, ArrowLeftRight, ShieldCheck, Flame, AlertTriangle
 } from 'lucide-react';
+import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU CPU DUELS ENGINE - MASTER HUB V1.2 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Kompletní monetizace CPU generátoru skrze A-ADS.
+ * GURU CPU DUELS ENGINE - MASTER HUB V1.3 (SEZNAM ADS UPDATE)
+ * 🚀 CÍL: Kompletní monetizace CPU generátoru skrze Seznam Partner.
  */
 
 export default function CpuVsHub() {
@@ -88,14 +89,8 @@ export default function CpuVsHub() {
         .compact-duel-item { background: rgba(15, 17, 21, 0.7); border: 1px solid rgba(255,255,255,0.05); padding: 14px 18px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; transition: 0.3s; margin-bottom: 10px; }
         .compact-duel-item:hover { border-color: #66fcf1; transform: translateX(5px); }
 
-        /* Reklamní sloty */
-        .hub-ad-slot { margin: 30px 0; padding: 15px; background: rgba(102, 252, 241, 0.03); border: 1px solid rgba(102, 252, 241, 0.1); border-radius: 20px; text-align: center; }
-        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; } .ad-mobile { display: none; }
-
         @media (max-width: 1024px) { 
           .hub-grid { grid-template-columns: 1fr; } 
-          .ad-desktop { display: none; } .ad-mobile { display: block; }
         }
       `}} />
 
@@ -112,12 +107,8 @@ export default function CpuVsHub() {
           </p>
         </header>
 
-        {/* 🔥 TOP AD SLOT: POD HLAVIČKOU */}
-        <div className="hub-ad-slot">
-            <span className="ad-label">Advertisement</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-        </div>
+        {/* 🔥 SEZNAM AD #1: TOP BANNER POD HLAVIČKOU */}
+        <SeznamAd zoneId={408654} width={970} height={210} />
 
         <div className="hub-grid">
             <section className="generator-panel">
@@ -147,12 +138,8 @@ export default function CpuVsHub() {
                 </a>
               ))}
 
-              {/* 🔥 SIDEBAR AD SLOT: POD HISTORIÍ */}
-              <div className="hub-ad-slot" style={{ marginTop: '20px' }}>
-                  <span className="ad-label">Sponsored Hardware</span>
-                  <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                  <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-              </div>
+              {/* 🔥 SEZNAM AD #2: SIDEBAR ČTVEREC POD HISTORIÍ */}
+              <SeznamAd zoneId={408651} width={300} height={250} />
             </section>
         </div>
       </div>
