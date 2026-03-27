@@ -3,10 +3,11 @@ import {
   ChevronLeft, Trophy, Zap, Cpu, Medal, Monitor, ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
+import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU CPU RANKING V1.9 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Maximální monetizace CPU žebříčku skrze A-ADS.
+ * GURU CPU RANKING V2.0 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Maximální monetizace CPU žebříčku skrze Seznam Partner.
  */
 
 export const dynamic = 'force-dynamic';
@@ -38,8 +39,6 @@ export default async function CpuRankingPage(props) {
 
   if (!cpus || cpus.length === 0) return <div style={{ color: '#fff', background: '#0a0b0d', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>DATABASE ERROR</div>;
 
-  const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
-
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
@@ -53,12 +52,8 @@ export default async function CpuRankingPage(props) {
           </h1>
         </header>
 
-        {/* 🔥 ADS SLOT #1: TOP PLACEMENT PŘED SEZNAMEM */}
-        <div className="ranking-ad-box" style={{ marginBottom: '30px' }}>
-            <span className="ad-label">Advertisement</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-        </div>
+        {/* 🔥 SEZNAM AD #1: TOP PLACEMENT PŘED SEZNAMEM */}
+        <SeznamAd zoneId={408654} width={970} height={210} />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {cpus.map((cpu, index) => {
@@ -85,13 +80,9 @@ export default async function CpuRankingPage(props) {
                    <ChevronRight size={20} className="arrow-icon" />
                 </Link>
 
-                {/* 🔥 ADS SLOT #2: MEZI POLOŽKAMI (PO 5. MÍSTĚ) */}
+                {/* 🔥 SEZNAM AD #2: IN-FEED (PO 5. MÍSTĚ) */}
                 {index === 4 && (
-                  <div className="ranking-ad-box">
-                    <span className="ad-label">Guru Recommended Ad</span>
-                    <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                    <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                  </div>
+                  <SeznamAd zoneId={408651} width={300} height={250} />
                 )}
               </React.Fragment>
             );
@@ -107,10 +98,6 @@ export default async function CpuRankingPage(props) {
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
-        .ranking-ad-box { margin: 20px 0; padding: 15px; background: rgba(245, 158, 11, 0.03); border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 24px; text-align: center; }
-        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; } .ad-mobile { display: none; }
-
         .ranking-card { display: flex; align-items: center; background: rgba(15, 17, 21, 0.98); padding: 20px 30px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; }
         .ranking-card:hover { transform: translateX(8px); background: rgba(25, 27, 31, 1); border-color: rgba(245, 158, 11, 0.3); }
         .rank-num { width: 50px; font-size: 24px; font-weight: 950; }
@@ -125,7 +112,6 @@ export default async function CpuRankingPage(props) {
         .silo-card:hover { transform: translateY(-5px); }
 
         @media (max-width: 768px) {
-          .ad-desktop { display: none; } .ad-mobile { display: block; }
           .ranking-card { padding: 15px; flex-wrap: wrap; }
           .score-box { border-left: none; padding: 10px 0; width: 100%; border-top: 1px solid rgba(255,255,255,0.05); margin: 10px 0 0 0; }
           .rank-num { width: 30px; font-size: 18px; }
