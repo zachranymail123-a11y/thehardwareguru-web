@@ -12,8 +12,8 @@ import CookieBanner from '../components/CookieBanner';
 import SeznamAd from '../components/SeznamAd';
 
 /**
- * GURU ROOT LAYOUT V6.4 (SIDEBAR POSITIONS FINAL FIX)
- * 🚀 CÍL: Posunutí svislých reklam pod Navbar v layoutu.
+ * GURU ROOT LAYOUT V6.5 (SIDEBAR POSITION & Z-INDEX FINAL FIX)
+ * 🚀 CÍL: Posunutí reklam a snížení z-indexu, aby nepřekážely navigátorovi a menu.
  */
 
 export const metadata = {
@@ -120,14 +120,14 @@ export default async function RootLayout({ children, params }) {
         <SocialTracker />
         <Tracker />
 
-        {/* 🔥 SVISLÉ REKLAMY NA BOKY (SIDEBAR SKYSCRAPERS) 🔥 */}
+        {/* 🔥 SVISLÉ REKLAMY NA BOKY 🔥 */}
         <style dangerouslySetInnerHTML={{__html: `
           .skyscraper-left, .skyscraper-right {
             position: fixed;
-            top: 110px; /* 🚀 POSUNUTO POD NAVBAR (90px + 20px rezerva) */
+            top: 120px; /* 🚀 POŘÁDNÁ MEZERA POD NAVBAR */
             width: 300px;
             display: none;
-            z-index: 10;
+            z-index: 5; /* 🚀 NIŽŠÍ Z-INDEX: GURU NAVIGÁTOR BUDE NAD TÍM */
           }
           
           .skyscraper-left { left: calc(50% - 600px - 380px); }
@@ -149,7 +149,7 @@ export default async function RootLayout({ children, params }) {
         <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden' }}>
           {children}
 
-          {/* 🚀 GURU VIRÁLNÍ WIDGET PRO CELÝ WEB */}
+          {/* 🚀 GURU VIRÁLNÍ WIDGET */}
           <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
              <ShareWidget isEn={isEn} />
           </div>
@@ -175,14 +175,12 @@ export default async function RootLayout({ children, params }) {
             }
           `}} />
           
-          {/* DESKTOP AD (CENTERED) */}
           <div className="ad-desktop-wrapper">
             <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto 40px', display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 99998 }}>
               <SeznamAd zoneId={408654} width={970} height={210} />
             </div>
           </div>
 
-          {/* MOBILE AD (CENTERED) */}
           <div className="ad-mobile-wrapper">
             <div style={{ width: '100%', margin: '0 auto 40px', display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 99998 }}>
               <SeznamAd zoneId={408651} width={300} height={250} />
