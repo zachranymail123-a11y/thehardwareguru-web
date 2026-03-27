@@ -4,6 +4,11 @@ import { createClient } from '@supabase/supabase-js';
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
+// 🔥 GURU CONFIG
+const MODE = 'FULL'; // 'FULL' projde web jednou a ZASTAVÍ SE | 'SMART' bere novinky
+const BATCH_SIZE = 500; 
+const MAX_RETRIES = 3;
+
 async function fetchSitemapData(url) {
     try {
         const res = await fetch(url, { cache: 'no-store' });
@@ -20,6 +25,37 @@ async function fetchSitemapData(url) {
         console.error(`[INDEXNOW] Chyba stahování ${url}:`, e);
         return { isIndex: false, urls: [] };
     }
+}
+
+async function sendToIndexNow(payload) {
+    const endpoints = [
+        'https://api.indexnow.org/indexnow',
+        'https://www.bing.com/indexnow',
+        'https://search.yandex.com/indexnow'
+    ];
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const results = await Promise.all(
+                endpoints.map(url =>
+                    fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    })
+                )
+            );
+
+            if (results[0].ok || results[1].ok) {
+                console.log(`[INDEXNOW SUCCESS] Pokus č. ${attempt}`);
+                return true;
+            }
+        } catch (err) {
+            console.error(`[INDEXNOW ATTEMPT ${attempt} FAILED]`, err);
+        }
+        if (attempt < MAX_RETRIES) await new Promise(r => setTimeout(r, attempt * 1000));
+    }
+    return false;
 }
 
 export async function GET(request) {
@@ -41,13 +77,11 @@ export async function GET(request) {
         
         const supabase = createClient(supabaseUrl, supabaseKey, {
             auth: { persistSession: false },
-            global: {
-                fetch: (...args) => fetch(args[0], { ...args[1], cache: 'no-store' })
-            }
+            global: { fetch: (...args) => fetch(args[0], { ...args[1], cache: 'no-store' }) }
         });
 
         // 1. Načtení state
-        let { data: lockRow, error: stateError } = await supabase
+        let { data: state, error: stateError } = await supabase
             .from('seo_cron_state')
             .select('*')
             .eq('id', 1)
@@ -57,31 +91,30 @@ export async function GET(request) {
             return NextResponse.json({ error: stateError.message }, { status: 500 });
         }
 
-        if (!lockRow) {
-            await supabase.from('seo_cron_state').insert({
+        if (!state) {
+            const initialState = {
                 id: 1,
                 current_sitemap_index: 0,
                 current_url_index: 0,
-                total_submitted: 0, // Nové počítadlo
-                is_running: false
-            });
-            lockRow = { current_sitemap_index: 0, current_url_index: 0, total_submitted: 0, is_running: false };
+                total_submitted: 0,
+                is_running: false,
+                full_push_done: false
+            };
+            await supabase.from('seo_cron_state').insert(initialState);
+            state = initialState;
         }
 
-        // 2. Kontrola zámku
-        if (lockRow?.is_running) {
+        // 2. Kontrola zámku a prevence spamu
+        if (state.is_running) {
             return NextResponse.json({ message: 'Cron už běží' }, { status: 429 });
         }
 
-        // 3. ZAMKNI
-        await supabase.from('seo_cron_state').upsert({
-            id: 1,
-            is_running: true
-        });
+        if (MODE === 'FULL' && state.full_push_done) {
+            return NextResponse.json({ message: '✅ FULL PUSH DOKONČEN. Zastaveno proti spamu. Bing nyní zpracovává data.' }, { status: 200 });
+        }
 
-        let iter_sitemap_index = lockRow.current_sitemap_index;
-        let iter_url_index = lockRow.current_url_index;
-        let current_total = lockRow.total_submitted || 0; // Načtení dosavadního počtu
+        // 3. ZAMKNI
+        await supabase.from('seo_cron_state').update({ is_running: true }).eq('id', 1);
 
         const mainSitemaps = [
             "https://thehardwareguru.cz/guru-sitemap.xml",
@@ -90,65 +123,77 @@ export async function GET(request) {
         ];
 
         let leafSitemaps = [];
-
         for (const url of mainSitemaps) {
             const data = await fetchSitemapData(url);
-            if (data.isIndex) {
-                leafSitemaps.push(...data.urls);
-            } else {
-                leafSitemaps.push(url);
-            }
+            if (data.isIndex) leafSitemaps.push(...data.urls);
+            else leafSitemaps.push(url);
         }
-
         leafSitemaps = [...new Set(leafSitemaps)];
 
-        if (leafSitemaps.length === 0) {
-            await supabase.from('seo_cron_state').upsert({ id: 1, is_running: false });
-            return NextResponse.json({ error: 'Nenalezeny žádné XML sitemapy' }, { status: 404 });
-        }
-
-        if (iter_sitemap_index >= leafSitemaps.length) {
-            iter_sitemap_index = 0;
-            iter_url_index = 0;
-        }
-
         let urlsToSend = [];
-        let processedSitemaps = [];
+        let iter_sitemap_index = state.current_sitemap_index;
+        let iter_url_index = state.current_url_index;
 
-        while (urlsToSend.length < 500 && iter_sitemap_index < leafSitemaps.length) {
-            const targetSitemap = leafSitemaps[iter_sitemap_index];
-            const sitemapData = await fetchSitemapData(targetSitemap);
-            const actualUrls = sitemapData.urls;
+        if (MODE === 'SMART') {
+            // Náhodný vzorek pro udržení aktivity bota bez spamu
+            const randomSitemap = leafSitemaps[Math.floor(Math.random() * leafSitemaps.length)];
+            const data = await fetchSitemapData(randomSitemap);
+            urlsToSend = data.urls.sort(() => 0.5 - Math.random()).slice(0, BATCH_SIZE);
+        } else {
+            // FULL MODE: Postupná iterace
+            while (urlsToSend.length < BATCH_SIZE && iter_sitemap_index < leafSitemaps.length) {
+                const targetSitemap = leafSitemaps[iter_sitemap_index];
+                const sitemapData = await fetchSitemapData(targetSitemap);
+                const actualUrls = sitemapData.urls;
 
-            if (actualUrls.length === 0) {
-                 iter_sitemap_index++;
-                 iter_url_index = 0;
-                 continue;
-            }
+                if (actualUrls.length === 0) {
+                    iter_sitemap_index++;
+                    iter_url_index = 0;
+                    continue;
+                }
 
-            const needed = 500 - urlsToSend.length;
-            const chunk = actualUrls.slice(iter_url_index, iter_url_index + needed);
-
-            if (chunk.length > 0) {
+                const needed = BATCH_SIZE - urlsToSend.length;
+                const chunk = actualUrls.slice(iter_url_index, iter_url_index + needed);
                 urlsToSend.push(...chunk);
-                if (!processedSitemaps.includes(targetSitemap)) {
-                    processedSitemaps.push(targetSitemap);
+
+                iter_url_index += chunk.length;
+                if (iter_url_index >= actualUrls.length) {
+                    iter_sitemap_index++;
+                    iter_url_index = 0;
                 }
             }
+            
+            // 🔥 STOP CONDITION: Pokud jsme na konci, ZASTAVÍME TO NAPOŘÁD
+            if (iter_sitemap_index >= leafSitemaps.length) {
+                await supabase.from('seo_cron_state').update({
+                    full_push_done: true,
+                    is_running: false,
+                    current_sitemap_index: iter_sitemap_index,
+                    current_url_index: iter_url_index,
+                    total_submitted: (state.total_submitted || 0) + urlsToSend.length,
+                    updated_at: new Date()
+                }).eq('id', 1);
 
-            iter_url_index += chunk.length;
+                // Odešleme poslední várku a končíme
+                if (urlsToSend.length > 0) {
+                    await sendToIndexNow({
+                        host: "thehardwareguru.cz",
+                        key: "guru-indexnow-key-2026",
+                        keyLocation: "https://thehardwareguru.cz/guru-indexnow-key-2026.txt",
+                        urlList: urlsToSend
+                    });
+                }
 
-            if (iter_url_index >= actualUrls.length) {
-                iter_sitemap_index++;
-                iter_url_index = 0;
+                return NextResponse.json({ message: '🔥 FULL PUSH HOTOV. Zápis do DB proveden, spam loop ukončen.' });
             }
         }
 
         if (urlsToSend.length === 0) {
-            await supabase.from('seo_cron_state').upsert({ id: 1, is_running: false });
-            return NextResponse.json({ message: 'Žádné další URL k odeslání.' }, { status: 200 });
+            await supabase.from('seo_cron_state').update({ is_running: false }).eq('id', 1);
+            return NextResponse.json({ message: 'Žádné URL k odeslání' });
         }
 
+        // 4. ODESLÁNÍ DO INDEXNOW
         const payload = {
             host: "thehardwareguru.cz",
             key: "guru-indexnow-key-2026",
@@ -156,53 +201,37 @@ export async function GET(request) {
             urlList: urlsToSend
         };
 
-        const response = await fetch('https://api.indexnow.org/indexnow', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json; charset=utf-8' },
-            body: JSON.stringify(payload)
-        });
+        const success = await sendToIndexNow(payload);
 
-        if (response.ok) {
-            // 4. UNLOCK A ULOŽENÍ NOVÉ POZICE + PŘIČTENÍ DO CELKOVÉHO SKÓRE
-            const new_total = current_total + urlsToSend.length;
-            
-            const { error: upsertError } = await supabase.from('seo_cron_state').upsert({
-                id: 1,
+        if (success) {
+            const newTotal = (state.total_submitted || 0) + urlsToSend.length;
+            await supabase.from('seo_cron_state').update({
                 current_sitemap_index: iter_sitemap_index,
                 current_url_index: iter_url_index,
-                total_submitted: new_total, // Zápis nového součtu
+                total_submitted: newTotal,
                 is_running: false,
                 updated_at: new Date()
+            }).eq('id', 1);
+
+            return NextResponse.json({
+                success: true,
+                mode: MODE,
+                submitted: urlsToSend.length,
+                total_historical: newTotal,
+                position: `Sitemapa ${iter_sitemap_index}, URL ${iter_url_index}`
             });
-
-            if (upsertError) {
-                return NextResponse.json({ 
-                    success: false, 
-                    error: "Nelze uložit pozici. Zkontroluj RLS!", 
-                    details: upsertError 
-                }, { status: 500 });
-            }
-
-            return NextResponse.json({ 
-                success: true, 
-                zpracovane_sitemapy: processedSitemaps,
-                nova_pozice_v_db: `Sitemapa index ${iter_sitemap_index}, URL index ${iter_url_index}`,
-                celkem_odeslano_historicky: new_total, // Nový údaj ve výpisu
-                submittedCount: urlsToSend.length
-            }, { status: 200 });
         } else {
-            const errorText = await response.text();
-            await supabase.from('seo_cron_state').upsert({ id: 1, is_running: false });
-            return NextResponse.json({ success: false, error: 'IndexNow Error', details: errorText }, { status: response.status });
+            await supabase.from('seo_cron_state').update({ is_running: false }).eq('id', 1);
+            return NextResponse.json({ error: 'IndexNow endpoints unreachable' }, { status: 502 });
         }
 
     } catch (error) {
-        console.error("[INDEXNOW CRON] Kritická chyba:", error);
+        console.error("[CRITICAL CRON ERROR]", error);
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
         if (supabaseUrl && supabaseKey) {
-            const supabase = createClient(supabaseUrl, supabaseKey, { global: { fetch: (...args) => fetch(args[0], { ...args[1], cache: 'no-store' }) } });
-            await supabase.from('seo_cron_state').upsert({ id: 1, is_running: false });
+            const supabase = createClient(supabaseUrl, supabaseKey);
+            await supabase.from('seo_cron_state').update({ is_running: false }).eq('id', 1);
         }
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
