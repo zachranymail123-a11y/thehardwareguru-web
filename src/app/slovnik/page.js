@@ -2,14 +2,11 @@ import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { Book, ChevronRight, Search, Heart, Flame, ShieldCheck } from 'lucide-react';
+import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU GLOSSARY ENGINE V2.0 (GOLDEN RICH RESULTS FIX)
- * Cesta: src/app/slovnik/page.js
- * 🚀 CÍL: 100% zelená v GSC a masivní indexace hardwarových pojmů.
- * 🛡️ FIX 1: Přepsáno na Server Component (SSR) pro bleskovou indexaci všech definic.
- * 🛡️ FIX 2: Implementován Golden Rich standard - ItemList a BreadcrumbList JSON-LD.
- * 🛡️ FIX 3: Vyhledávání přesunuto do URL parametrů (Server-side filtering).
+ * GURU GLOSSARY ENGINE V2.1 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: 100% monetizace slovníku skrze Seznam Partner.
  */
 
 export const runtime = "nodejs";
@@ -42,14 +39,12 @@ export async function generateMetadata(props) {
 }
 
 export default async function SlovnikPage(props) {
-  // Ošetření searchParams a props pro Next.js 15
   const searchParams = await props.searchParams;
   const query = searchParams?.q || '';
   const isEn = props?.isEn === true;
   
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. GURU FETCH: Získání všech pojmů přímo na serveru
   let dbQuery = supabase
     .from('slovnik')
     .select('*')
@@ -63,42 +58,13 @@ export default async function SlovnikPage(props) {
 
   const allItems = pojmy || [];
 
-  // 2. GURU SERVER-SIDE FILTER: Pokud uživatel hledá
   const filteredItems = allItems.filter(item => {
     const title = (isEn && item.title_en ? item.title_en : item.title).toLowerCase();
     return title.includes(query.toLowerCase());
   });
 
-  // 🚀 ZLATÁ GSC SEO SCHÉMATA (ItemList pro seznam definic)
-  const itemListSchema = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    "name": isEn ? "Hardware Glossary" : "Hardwarový slovník",
-    "description": isEn ? "Collection of technical terms and definitions." : "Sbírka technických pojmů a jejich definic.",
-    "itemListElement": filteredItems.slice(0, 50).map((item, index) => ({
-      "@type": "ListItem",
-      "position": index + 1,
-      "url": `${baseUrl}${isEn ? '/en' : ''}/slovnik/${isEn && item.slug_en ? item.slug_en : item.slug}`
-    }))
-  };
-
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Guru", "item": baseUrl },
-      { "@type": "ListItem", "position": 2, "name": isEn ? "Glossary" : "Slovník", "item": `${baseUrl}${isEn ? '/en' : ''}/slovnik` }
-    ]
-  };
-
-  const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
-
   return (
     <div style={pageWrapper}>
-      {/* JSON-LD INJECTIONS */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(itemListSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbSchema) }} />
-
       <style dangerouslySetInnerHTML={{ __html: `
         .term-card { 
             background: rgba(10, 11, 13, 0.9); 
@@ -152,12 +118,9 @@ export default async function SlovnikPage(props) {
         }
         .social-btn:hover { transform: scale(1.05); filter: brightness(1.2); }
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
-        .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
-        .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
       `}} />
 
-      {/* --- HLAVNÍ OBSAH --- */}
       <main style={{ maxWidth: '1300px', margin: '60px auto', padding: '0 20px', width: '100%', flex: '1 0 auto' }}>
         <header style={{ textAlign: 'center', marginBottom: '60px' }}>
             <Book size={64} color="#a855f7" style={{ margin: '0 auto 25px', filter: 'drop-shadow(0 0 15px rgba(168, 85, 247, 0.4))' }} />
@@ -169,7 +132,6 @@ export default async function SlovnikPage(props) {
             </p>
         </header>
 
-        {/* --- VYHLEDÁVÁNÍ (GURU UX IMPROVEMENT přes Form) --- */}
         <form action={isEn ? "/en/slovnik" : "/slovnik"} method="GET" className="search-container">
           <Search size={24} color="#a855f7" style={{ position: 'absolute', left: '22px', top: '50%', transform: 'translateY(-50%)' }} />
           <input 
@@ -181,35 +143,48 @@ export default async function SlovnikPage(props) {
           />
         </form>
 
+        {/* 🔥 SEZNAM AD #1: TOP LEADERBOARD POD VYHLEDÁVÁNÍM */}
+        <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
+            <SeznamAd zoneId={408654} width={970} height={210} />
+        </div>
+
         {filteredItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '100px', color: '#4b5563', fontWeight: 'bold' }}>
             {isEn ? 'NO TERMS MATCH YOUR SEARCH' : 'HLEDANÝ POJEM NENALEZEN'}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '30px' }}>
-            {filteredItems.map((pojem) => {
+            {filteredItems.map((pojem, index) => {
               const displayTitle = (isEn && pojem.title_en) ? pojem.title_en : pojem.title;
               const displayDesc = (isEn && pojem.description_en) ? pojem.description_en : pojem.description;
               const displaySlug = (isEn && pojem.slug_en) ? pojem.slug_en : pojem.slug;
 
               return (
-                <Link key={pojem.id} href={isEn ? `/en/slovnik/${displaySlug}` : `/slovnik/${displaySlug}`} className="term-card">
-                  <h2 style={{ color: '#a855f7', margin: '0 0 15px 0', fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
-                    {displayTitle}
-                  </h2>
-                  <p style={{ color: '#d1d5db', fontSize: '15px', lineHeight: '1.6', margin: '0 0 25px 0', flexGrow: 1 }}>
-                    {displayDesc && displayDesc.length > 140 ? displayDesc.substring(0, 140) + '...' : displayDesc}
-                  </p>
-                  <div style={{ color: '#a855f7', fontWeight: '950', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                    {isEn ? 'DECRYPT DETAIL' : 'ZOBRAZIT DETAIL'} <ChevronRight size={18} />
-                  </div>
-                </Link>
+                <React.Fragment key={pojem.id}>
+                    <Link href={isEn ? `/en/slovnik/${displaySlug}` : `/slovnik/${displaySlug}`} className="term-card">
+                        <h2 style={{ color: '#a855f7', margin: '0 0 15px 0', fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
+                            {displayTitle}
+                        </h2>
+                        <p style={{ color: '#d1d5db', fontSize: '15px', lineHeight: '1.6', margin: '0 0 25px 0', flexGrow: 1 }}>
+                            {displayDesc && displayDesc.length > 140 ? displayDesc.substring(0, 140) + '...' : displayDesc}
+                        </p>
+                        <div style={{ color: '#a855f7', fontWeight: '950', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                            {isEn ? 'DECRYPT DETAIL' : 'ZOBRAZIT DETAIL'} <ChevronRight size={18} />
+                        </div>
+                    </Link>
+
+                    {/* 🔥 SEZNAM AD #2: GRID INJECTION PO DRUHÉM POJMU */}
+                    {index === 1 && (
+                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <SeznamAd zoneId={408651} width={300} height={250} />
+                        </div>
+                    )}
+                </React.Fragment>
               );
             })}
           </div>
         )}
 
-        {/* 🚀 GURU GLOBÁLNÍ CTA TLAČÍTKA (Golden standard) */}
         <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
           <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
             {isEn ? "Want to expand your hardware knowledge? Support the Guru project." : "Chceš dál rozšiřovat své HW znalosti? Podpoř projekt Guru."}
@@ -225,7 +200,6 @@ export default async function SlovnikPage(props) {
         </div>
       </main>
 
-      {/* --- GURU FOOTER --- */}
       <footer style={footerStyle}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <h2 style={{ color: '#a855f7', marginBottom: '30px', textTransform: 'uppercase', fontWeight: '950', fontSize: '36px', letterSpacing: '-1px' }}>
