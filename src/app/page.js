@@ -6,10 +6,10 @@ import SeznamAd from '../components/SeznamAd';
 /**
  * GURU HOMEPAGE V18.8 - FINAL ROUTE & LABEL FIX
  * Cesta: src/app/page.js
- * 🚀 CÍL: Fix cest na /gpu-db a /cpu-db + aplikace přesných názvů katalogů pro maximální SEO relevanci.
+ * 🚀 CÍL: Fix cest na /gpu-db a /cpu-db + aplikace přesných názvů katalogů.
  */
 
-// --- DYNAMICKÁ METADATA ---
+// --- DYNAMICKÁ METADATA PRO ABSOLUTNÍ CANONICAL A BING TRUST ---
 export async function generateMetadata({ params }) {
   const locale = params?.locale || 'cs';
   const isEn = locale === 'en';
@@ -21,35 +21,77 @@ export async function generateMetadata({ params }) {
   return {
     title, 
     description,
-    robots: { index: true, follow: true, bingBot: { index: true, follow: true } },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+      bingBot: { 
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      }
+    },
     alternates: {
       canonical: isEn ? `${baseUrl}/en` : `${baseUrl}/`, 
-      languages: { 'cs-CZ': `${baseUrl}/`, 'en-US': `${baseUrl}/en` }
+      languages: {
+        'cs-CZ': `${baseUrl}/`,
+        'en-US': `${baseUrl}/en`,
+      }
     },
-    openGraph: { title, description, url: isEn ? `${baseUrl}/en` : `${baseUrl}/`, siteName: 'The Hardware Guru', type: 'website' },
-    twitter: { card: 'summary_large_image', title, description }
+    openGraph: {
+      title,
+      description,
+      url: isEn ? `${baseUrl}/en` : `${baseUrl}/`,
+      siteName: 'The Hardware Guru',
+      locale: isEn ? 'en_US' : 'cs_CZ',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    }
   };
 }
 
 const LEAK_PLACEHOLDER_URL = 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000';
 
+// --- POMOCNÉ FUNKCE PRO SSR ---
+const getSafeImage = (url) => {
+  if (!url || !url.startsWith('http')) return 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000&auto=format&fit=crop';
+  return url;
+};
+
 const getThumbnail = (post, supabaseUrl) => {
   const typeStr = (post.type || '').toLowerCase().trim();
-  if (typeStr.includes('leak')) return supabaseUrl ? `${supabaseUrl}/storage/v1/object/public/images/davinci_prompt__a_high_tech__cinematic_placeholder_for_a_g.png` : LEAK_PLACEHOLDER_URL;
+  if (typeStr.includes('leak')) {
+    return supabaseUrl ? `${supabaseUrl}/storage/v1/object/public/images/davinci_prompt__a_high_tech__cinematic_placeholder_for_a_g.png` : LEAK_PLACEHOLDER_URL;
+  }
   if (post.image_url) return post.image_url;
   if (post.video_id && post.video_id.length > 5) return `https://img.youtube.com/vi/${post.video_id}/hqdefault.jpg`;
-  return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000';
+  return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop';
 };
 
 const getBadgeInfo = (post, isEn) => {
   const typeStr = (post.type || '').toLowerCase().trim();
   if (typeStr.includes('leak')) return { text: 'LEAK', color: '#66fcf1', textColor: '#0b0c10', isLeak: true };
   if (post.video_id && post.video_id.length > 5) return { text: 'VIDEO / SHORT', color: '#66fcf1', textColor: '#0b0c10', isLeak: false };
+  
   const isGame = typeStr.includes('game') || (post.title && post.title.toLowerCase().includes('recenze'));
   if (isGame) return { text: isEn ? 'GAME NEWS' : 'HERNÍ NOVINKA', color: '#ff0055', textColor: '#fff', isLeak: false };
+  
   return { text: isEn ? 'HW NEWS' : 'HW NOVINKA', color: '#ff0000', textColor: '#fff', isLeak: false };
 };
 
+// ✅ FIX: Zvýšený timeout na 12000ms pro pomalé crawlery (Bing)
 const fetchWithTimeout = async (url, options = {}, timeoutMs = 12000) => {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
@@ -59,21 +101,43 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 12000) => {
     return response.json();
   } catch (error) {
     clearTimeout(id);
-    return null;
+    console.warn(`[TIMEOUT OR FETCH ERROR] ${url}`);
+    return null; 
   }
 };
 
+// --- TVRDÝ STATICKÝ SNAPSHOT ---
 const STATIC_SNAPSHOT_POSTS = [
   { id: 'snap-1', title: 'Katalog Grafických Karet a Index Výkonu', title_en: 'GPU Database and Performance Index', slug: 'nejlepsi-graficke-karty-gpu-velky-test', slug_en: 'best-graphics-cards-gpu-mega-test', created_at: new Date().toISOString(), type: 'article' },
-  { id: 'snap-2', title: 'Katalog Procesorů a Index Výkonu', title_en: 'CPU Database and Performance Index', slug: 'jak-vybrat-procesor-cpu', slug_en: 'how-to-choose-cpu', created_at: new Date().toISOString(), type: 'article' }
+  { id: 'snap-2', title: 'Katalog Procesorů a Index Výkonu', title_en: 'CPU Database and Performance Index', slug: 'jak-vybrat-procesor-cpu', slug_en: 'how-to-choose-cpu', created_at: new Date().toISOString(), type: 'article' },
+  { id: 'snap-3', title: 'Co je to Bottleneck a jak ho vyřešit?', title_en: 'What is a Bottleneck and how to fix it?', slug: 'co-je-bottleneck', slug_en: 'what-is-bottleneck', created_at: new Date().toISOString(), type: 'article' },
+  { id: 'snap-4', title: 'Doporučené PC sestavy pro hráče', title_en: 'Recommended PC Builds for Gamers', slug: 'doporucene-herni-pc-sestavy', slug_en: 'recommended-gaming-pc-builds', created_at: new Date().toISOString(), type: 'article' }
 ];
+
+const STATIC_SNAPSHOT_GPU_DUELS = [
+  { id: 'sdg-1', title_cs: 'RTX 4090 vs RX 7900 XTX', title_en: 'RTX 4090 vs RX 7900 XTX', slug: 'rtx-4090-vs-rx-7900-xtx', slug_en: 'rtx-4090-vs-rx-7900-xtx' },
+  { id: 'sdg-2', title_cs: 'RTX 4070 vs RX 7800 XT', title_en: 'RTX 4070 vs RX 7800 XT', slug: 'rtx-4070-vs-rx-7800-xt', slug_en: 'rtx-4070-vs-rx-7800-xt' },
+  { id: 'sdg-3', title_cs: 'RTX 4060 vs RX 7600', title_en: 'RTX 4060 vs RX 7600', slug: 'rtx-4060-vs-rx-7600', slug_en: 'rtx-4060-vs-rx-7600' }
+];
+
+const STATIC_SNAPSHOT_CPU_DUELS = [
+  { id: 'sdc-1', title_cs: 'Ryzen 7 7800X3D vs Core i9-14900K', title_en: 'Ryzen 7 7800X3D vs Core i9-14900K', slug: 'ryzen-7-7800x3d-vs-core-i9-14900k', slug_en: 'ryzen-7-7800x3d-vs-core-i9-14900k' },
+  { id: 'sdc-2', title_cs: 'Ryzen 5 7600X vs Core i5-13600K', title_en: 'Ryzen 5 7600X vs Core i5-13600K', slug: 'ryzen-5-7600x-vs-core-i5-13600k', slug_en: 'ryzen-5-7600x-vs-core-i5-13600k' },
+  { id: 'sdc-3', title_cs: 'Ryzen 7 5800X3D vs Ryzen 7 7800X3D', title_en: 'Ryzen 7 5800X3D vs Ryzen 7 7800X3D', slug: 'ryzen-7-5800x3d-vs-ryzen-7-7800x3d', slug_en: 'ryzen-7-5800x3d-vs-ryzen-7-7800x3d' }
+];
+
+// =====================================================================
+// HLAVNÍ STRÁNKA (TVRDÝ SERVER RENDER BEZ SUSPENSE)
+// =====================================================================
 
 export default async function HomePage({ params }) {
   const locale = params?.locale || 'cs';
   const isEn = locale === 'en';
+  
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   const getHeaders = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+  
   const fetchOpts = { headers: getHeaders, next: { revalidate: 60 } };
 
   let p = [], s = [], duelsRes = [], cpuDuelsRes = [], exp = [], t = [], tw = [], d = [], pa = [], feat = [];
@@ -91,22 +155,77 @@ export default async function HomePage({ params }) {
       fetchWithTimeout(`${supabaseUrl}/rest/v1/partneri?select=*&order=created_at.desc&limit=4`, fetchOpts),
       fetchWithTimeout(`${supabaseUrl}/rest/v1/game_deals?select=*&order=created_at.desc&limit=3`, fetchOpts)
     ]);
-  } catch (err) {}
+  } catch (err) {
+    console.error("Data load critical fail:", err);
+  }
 
   const data = { 
-    posts: p?.length > 0 ? p : STATIC_SNAPSHOT_POSTS, 
-    stats: s?.[0] || { value: 0 }, 
-    latestDuels: duelsRes?.length > 0 ? duelsRes : [],
-    latestCpuDuels: cpuDuelsRes?.length > 0 ? cpuDuelsRes : [],
-    expectedGames: exp || [], nejnovejsiTipy: t || [], nejnovejsiTweaky: tw || [], darci: d || [], partneri: pa || [], featuredDeals: feat || []
+    posts: p && Array.isArray(p) && p.length > 0 ? p : STATIC_SNAPSHOT_POSTS, 
+    stats: (s && Array.isArray(s) && s.length > 0) ? s[0] : { value: 0 }, 
+    latestDuels: duelsRes && Array.isArray(duelsRes) && duelsRes.length > 0 ? duelsRes : STATIC_SNAPSHOT_GPU_DUELS,
+    latestCpuDuels: cpuDuelsRes && Array.isArray(cpuDuelsRes) && cpuDuelsRes.length > 0 ? cpuDuelsRes : STATIC_SNAPSHOT_CPU_DUELS,
+    expectedGames: exp && Array.isArray(exp) ? exp : [],
+    nejnovejsiTipy: t && Array.isArray(t) ? t : [],
+    nejnovejsiTweaky: tw && Array.isArray(tw) ? tw : [],
+    darci: d && Array.isArray(d) ? d : [],
+    partneri: pa && Array.isArray(pa) ? pa : [],
+    featuredDeals: feat && Array.isArray(feat) ? feat : []
   };
 
   const latestPosts = data.posts.slice(0, 20);
-  const randomPosts = data.posts.length > 20 ? data.posts.slice(20, 35) : data.posts;
-  const baseUrl = "https://thehardwareguru.cz";
+  const randomPosts = data.posts.length > 20 ? data.posts.slice(20, 35) : data.posts; 
+  
+  const visualGpuDuels = data.latestDuels.slice(0, 3);
+  const deepGpuDuels = data.latestDuels.slice(3, 11);
+  const visualCpuDuels = data.latestCpuDuels.slice(0, 3);
+  const deepCpuDuels = data.latestCpuDuels.slice(3, 11);
 
-  const websiteSchema = { "@context": "https://schema.org", "@type": "WebSite", "name": "The Hardware Guru", "url": isEn ? `${baseUrl}/en` : baseUrl };
-  const articleSchemas = latestPosts.slice(0, 3).map(post => ({ "@context": "https://schema.org", "@type": "Article", "headline": isEn ? (post.title_en || post.title) : post.title, "datePublished": post.created_at, "image": getThumbnail(post, supabaseUrl) }));
+  const baseUrl = "https://thehardwareguru.cz";
+  const currentUrl = isEn ? `${baseUrl}/en` : baseUrl;
+
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "The Hardware Guru",
+    "url": currentUrl,
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": `${baseUrl}/search?q={search_term_string}`
+      },
+      "query-input": "required name=search_term_string"
+    }
+  };
+
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "The Hardware Guru",
+    "url": baseUrl,
+    "logo": `${baseUrl}/logo.png`,
+    "image": [`${baseUrl}/logo.png`],
+    "sameAs": ["https://kick.com/thehardwareguru", "https://discord.com/invite/n7xThr8", "https://youtube.com/@TheHardwareGuru_Czech"]
+  };
+
+  const articleSchemas = latestPosts.slice(0, 3).map(post => ({
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": isEn ? (post.title_en || post.title) : post.title,
+    "datePublished": post.created_at,
+    "image": getThumbnail(post, supabaseUrl)
+  }));
+
+  const itemListSchema = latestPosts.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "itemListElement": latestPosts.map((post, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "url": isEn ? `${baseUrl}/en/clanky/${post.slug_en || post.slug}` : `${baseUrl}/clanky/${post.slug}`,
+      "name": isEn ? (post.title_en || post.title) : post.title
+    }))
+  } : null;
 
   const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
@@ -114,23 +233,33 @@ export default async function HomePage({ params }) {
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#fff', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', fontFamily: 'sans-serif' }}>
       
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(websiteSchema) }} />
-      {articleSchemas.map((schema, i) => ( <script key={`article-schema-${i}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(schema) }} /> ))}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
+      {itemListSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(itemListSchema) }} />}
+      {articleSchemas.map((schema, i) => (
+         <script key={`article-schema-${i}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(schema) }} />
+      ))}
 
       <style>{`
-        .game-card { transition: 0.3s; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); border-radius: 12px; overflow: hidden; }
+        .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); }
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
-        .guru-hero-section { max-width: 1200px; margin: 40px auto; padding: 60px 50px; background: linear-gradient(145deg, rgba(15, 17, 21, 0.9) 0%, rgba(10, 11, 13, 0.95) 100%); border-radius: 30px; border: 1px solid rgba(102, 252, 241, 0.2); display: flex; align-items: center; gap: 50px; flex-wrap: wrap; backdrop-filter: blur(15px); }
-        .social-btn-main { padding: 14px 28px; border-radius: 14px; font-weight: 900; font-size: 14px; text-decoration: none; text-transform: uppercase; transition: 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid transparent; cursor: pointer; }
+        .expected-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
+        .expected-card:hover { transform: translateY(-5px); box-shadow: 0 0 25px rgba(102, 252, 241, 0.25); border-color: #66fcf1; }
+        .guru-hero-section { max-width: 1200px; margin: 40px auto; padding: 60px 50px; background: linear-gradient(145deg, rgba(15, 17, 21, 0.9) 0%, rgba(10, 11, 13, 0.95) 100%); border-radius: 30px; border: 1px solid rgba(102, 252, 241, 0.2); display: flex; align-items: center; gap: 50px; flex-wrap: wrap; box-shadow: 0 30px 60px rgba(0,0,0,0.8); position: relative; overflow: hidden; backdrop-filter: blur(15px); }
+        .social-btn-main { padding: 14px 28px; border-radius: 14px; font-weight: 900; font-size: 14px; text-decoration: none; text-transform: uppercase; transition: all 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid transparent; cursor: pointer; }
         .social-btn-main.live { background: rgba(83, 252, 24, 0.1); color: #53fc18; border-color: rgba(83, 252, 24, 0.3); }
         .social-btn-main.live:hover { background: #53fc18; color: #000; transform: translateY(-3px); }
         .social-btn-main.duels { background: rgba(255, 0, 85, 0.1); color: #ff0055; border-color: rgba(255, 0, 85, 0.3); }
         .social-btn-main.duels:hover { background: #ff0055; color: #fff; transform: translateY(-3px); }
         .social-btn-main.cpuduels { background: rgba(102, 252, 241, 0.1); color: #66fcf1; border-color: rgba(102, 252, 241, 0.3); }
         .social-btn-main.cpuduels:hover { background: #66fcf1; color: #000; transform: translateY(-3px); }
-        .seo-link-pill { display: inline-block; padding: 8px 16px; margin: 0 10px 10px 0; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; color: #9ca3af; font-size: 13px; text-decoration: none; transition: 0.2s; }
+        .seo-link-pill { display: inline-block; padding: 8px 16px; margin: 0 10px 10px 0; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; color: #9ca3af; font-size: 13px; text-decoration: none; transition: 0.2s ease; }
         .seo-link-pill:hover { background: rgba(102, 252, 241, 0.1); border-color: #66fcf1; color: #fff; }
-        .seo-hard-text-block { max-width: 1200px; margin: 0 auto 60px auto; padding: 40px; background: rgba(15, 17, 21, 0.8); border-radius: 24px; border: 1px solid rgba(102, 252, 241, 0.15); color: #9ca3af; line-height: 1.8; font-size: 16px; backdrop-filter: blur(10px); }
+        .seo-hard-text-block { max-width: 1200px; margin: 0 auto 60px auto; padding: 40px; background: rgba(15, 17, 21, 0.8); border-radius: 24px; border: 1px solid rgba(102, 252, 241, 0.15); color: #9ca3af; line-height: 1.8; font-size: 16px; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .seo-hard-text-block h2 { color: #fff; font-size: 24px; margin-bottom: 20px; font-weight: 900; }
+        .seo-hard-text-block h3 { color: #fff; font-size: 18px; margin-top: 30px; margin-bottom: 15px; font-weight: bold; }
+        .seo-hard-text-block ul { list-style-type: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; }
+        .seo-hard-text-block li { margin-bottom: 10px; padding-left: 20px; position: relative; }
+        .seo-hard-text-block li::before { content: '→'; color: #66fcf1; position: absolute; left: 0; top: 0; font-weight: bold; }
         .seo-hard-text-block a { color: #66fcf1; text-decoration: none; font-weight: bold; border-bottom: 1px solid rgba(102, 252, 241, 0.3); }
         @media (max-width: 768px) { .guru-hero-section { padding: 40px 20px; text-align: center; } .social-btn-main { width: 100%; } }
       `}</style>
@@ -140,7 +269,7 @@ export default async function HomePage({ params }) {
       </div>
 
       <header className="guru-hero-section">
-        <div style={{ flex: '1', minWidth: '300px' }}>
+        <div style={{ flex: '1', minWidth: '300px', position: 'relative', zIndex: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', marginBottom: '20px' }}>
               <ShieldCheck size={20} /> <span style={{ fontWeight: '950', letterSpacing: '3px', textTransform: 'uppercase', fontSize: '11px' }}>Vaše technologická základna</span>
             </div>
@@ -148,42 +277,111 @@ export default async function HomePage({ params }) {
               {isEn ? <>HARDWARE GURU – <span style={{ color: '#66fcf1' }}>CPU, GPU COMPARISON</span>, FPS CALCULATOR & PC BUILDS</> 
                      : <>HARDWARE GURU – <span style={{ color: '#66fcf1' }}>CPU, GPU SROVNÁNÍ</span>, FPS KALKULAČKA A PC SESTAVY</>}
             </h1>
-            <p style={{ fontSize: '1.15rem', color: '#9ca3af', marginBottom: '40px' }}>Hardware expert s 20 lety praxe. Moje mise: vymýtit lagy, zkrotit FPS a vytvořit web, kde se každý geek cítí jako doma.</p>
-            <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+            <p style={{ fontSize: '1.15rem', lineHeight: '1.8', color: '#9ca3af', marginBottom: '40px', maxWidth: '700px' }}>
+              {isEn ? "Hardware expert with 20 years of experience. Mission: eradicate lag, optimize FPS, and build a place where every geek feels at home." 
+                     : "S 20 lety praxe v servisu hardware vím, kde každá mašina tlačí. Moje mise je jasná: vymýtit lagy, zkrotit FPS a vytvořit web, kde se každý geek cítí jako doma."}
+            </p>
+            <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
               <a href="https://kick.com/thehardwareguru" target="_blank" rel="noreferrer" className="social-btn-main live"><Activity size={18}/> {isEn ? 'LIVE' : 'SLEDOVAT LIVE'}</a>
               <a href={isEn ? "/en/gpuvs" : "/gpuvs"} className="social-btn-main duels"><Swords size={18}/> {isEn ? 'GPU BATTLES' : 'SOUBOJE GPU'}</a>
               <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="social-btn-main cpuduels"><Cpu size={18}/> {isEn ? 'CPU BATTLES' : 'SOUBOJE CPU'}</a>
-              <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="social-btn-main cpuduels" style={{backgroundColor:'rgba(168,85,247,0.1)', color:'#a855f7', borderColor:'rgba(168,85,247,0.3)'}}><Gamepad2 size={18}/> {isEn ? 'CAN I RUN IT?' : 'ROZJEDU TO?'}</a>
+              <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="social-btn-main fpscalc" style={{backgroundColor:'rgba(168,85,247,0.1)', color:'#a855f7', borderColor:'rgba(168,85,247,0.3)'}}><Gamepad2 size={18}/> {isEn ? 'CAN I RUN IT?' : 'ROZJEDU TO?'}</a>
             </div>
         </div>
         <div style={{ width: '180px', height: '180px', background: 'linear-gradient(135deg, #0b0c10 0%, #1a1c23 100%)', borderRadius: '50%', border: '4px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#66fcf1', fontSize: '4rem', fontWeight: '950', flexShrink: 0 }}>HG</div>
       </header>
 
-      {/* --- SEO TEXT BLOCK S OPRAVENÝMI NÁZVY A CESTAMI --- */}
-      <section className="seo-hard-text-block">
-        <h2>{isEn ? 'Hardware Guru – CPU, GPU comparison and FPS calculator' : 'Hardware Guru – CPU, GPU srovnání a FPS kalkulačka'}</h2>
-        <p>Vítejte na The Hardware Guru, portálu zaměřeném na <a href={isEn ? "/en/gpu-db" : "/gpu-db"}>Katalog Grafických Karet a Index Výkonu</a> a <a href={isEn ? "/en/cpu-db" : "/cpu-db"}>Katalog Procesorů a Index Výkonu</a>. Naše nástroje jako <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"}>FPS kalkulačka</a> a <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"}>Bottleneck kalkulátor</a> vám pomohou optimalizovat váš herní zážitek.</p>
-        <ul style={{ listStyle: 'none', padding: 0, marginTop: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
-          <li><a href={isEn ? "/en/gpu-db" : "/gpu-db"}>→ Katalog Grafických Karet a Index Výkonu</a></li>
-          <li><a href={isEn ? "/en/cpu-db" : "/cpu-db"}>→ Katalog Procesorů a Index Výkonu</a></li>
-          <li><a href={isEn ? "/en/gpuvs" : "/gpuvs"}>→ Srovnání výkonu grafických karet (GPU VS)</a></li>
-          <li><a href={isEn ? "/en/cpuvs" : "/cpuvs"}>→ Srovnání výkonu procesorů (CPU VS)</a></li>
-        </ul>
+      {/* --- SEO TEXT BLOCK --- */}
+      <section className="seo-hard-text-block" style={{ marginBottom: '60px' }}>
+        {isEn ? (
+          <>
+            <h2>Hardware Guru – CPU, GPU comparison and FPS calculator</h2>
+            <p>Welcome to The Hardware Guru, focusing on detailed <a href="/en/gpu-db">GPU Database and Performance Index</a> and <a href="/en/cpu-db">CPU Database and Performance Index</a>.</p>
+            <h3>🔥 Essential Hardware Guides:</h3>
+            <ul>
+              <li><a href="/en/clanky/nejlepsi-graficke-karty-gpu-velky-test">Best Graphics Cards (GPU) – Mega Test & Comparison</a></li>
+              <li><a href="/en/clanky/jak-vybrat-procesor-cpu">How to choose a CPU for a gaming PC</a></li>
+              <li><a href="/en/gpu-db">Katalog Grafických Karet a Index Výkonu</a></li>
+              <li><a href="/en/cpu-db">Katalog Procesorů a Index Výkonu</a></li>
+            </ul>
+          </>
+        ) : (
+          <>
+            <h2>Hardware Guru – CPU, GPU srovnání a FPS kalkulačka</h2>
+            <p>Vítejte na The Hardware Guru, portálu zaměřeném na <a href="/gpu-db">Katalog Grafických Karet a Index Výkonu</a> a <a href="/cpu-db">Katalog Procesorů a Index Výkonu</a>.</p>
+            <h3>🔥 Nejdůležitější hardwarové průvodce a nástroje:</h3>
+            <ul>
+              <li><a href="/clanky/nejlepsi-graficke-karty-gpu-velky-test">Nejlepší grafické karty (GPU) – Velký test a srovnání</a></li>
+              <li><a href="/clanky/jak-vybrat-procesor-cpu">Jak vybrat procesor (CPU) pro herní PC</a></li>
+              <li><a href="/gpu-db">Katalog Grafických Karet a Index Výkonu</a></li>
+              <li><a href="/cpu-db">Katalog Procesorů a Index Výkonu</a></li>
+            </ul>
+          </>
+        )}
       </section>
 
-      {/* --- SEO: CATEGORY HUB (FIXED ROUTES) --- */}
+      {/* --- SEO: CATEGORY HUB --- */}
       <section style={{ maxWidth: '1200px', margin: '0 auto 60px auto', padding: '0 20px' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', justifyContent: 'center' }}>
           <a href={isEn ? "/en/clanky" : "/clanky"} className="seo-link-pill"><Compass size={14} style={{marginRight:'5px'}}/> {isEn ? 'Hardware News' : 'HW Novinky'}</a>
-          <a href={isEn ? "/en/gpu-db" : "/gpu-db"} className="seo-link-pill"><Layers size={14} style={{marginRight:'5px'}}/> {isEn ? 'GPU Catalog' : 'Katalog Grafických Karet'}</a>
-          <a href={isEn ? "/en/cpu-db" : "/cpu-db"} className="seo-link-pill"><Cpu size={14} style={{marginRight:'5px'}}/> {isEn ? 'CPU Catalog' : 'Katalog Procesorů'}</a>
+          <a href={isEn ? "/en/gpu-db" : "/gpu-db"} className="seo-link-pill"><Layers size={14} style={{marginRight:'5px'}}/> {isEn ? 'GPU Catalog' : 'Katalog Grafických Karet a Index Výkonu'}</a>
+          <a href={isEn ? "/en/cpu-db" : "/cpu-db"} className="seo-link-pill"><Cpu size={14} style={{marginRight:'5px'}}/> {isEn ? 'CPU Catalog' : 'Katalog Procesorů a Index Výkonu'}</a>
           <a href={isEn ? "/en/doporucene-sestavy" : "/doporucene-sestavy"} className="seo-link-pill"><Gamepad2 size={14} style={{marginRight:'5px'}}/> {isEn ? 'PC Builds' : 'Doporučené PC Sestavy'}</a>
         </div>
       </section>
 
+      {/* --- SDÍLET & ODEBÍRAT --- */}
+      <section style={{ maxWidth: '1200px', margin: '0 auto 60px auto', background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '24px', padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', backdropFilter: 'blur(10px)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <Award size={32} color="#a855f7" />
+            <div>
+              <h3 style={{ fontSize: '20px', fontWeight: '950', margin: 0, color: '#fff' }}>{isEn ? 'SHARE & SUBSCRIBE' : 'SDÍLET & ODEBÍRAT'}</h3>
+              <p style={{ margin: '5px 0 0 0', color: '#a855f7', fontSize: '13px', fontWeight: 'bold' }}>Pomoz ostatním geekům najít pravdu</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button id="guru-os-btn" className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', border: 'none', background: '#2563eb', color: '#fff', cursor: 'pointer' }}><Bell size={20} fill="#fff" /></button>
+            <Script id="onesignal-init" strategy="lazyOnload">
+              {`if (typeof window !== 'undefined') {
+                var checkBtn = setInterval(function() {
+                  var btn = document.getElementById('guru-os-btn');
+                  if (btn && !btn.hasAttribute('data-bound')) {
+                    btn.setAttribute('data-bound', 'true');
+                    btn.onclick = function(e) {
+                      if (window.OneSignal) { window.OneSignal.showSlidedownPrompt(); }
+                    };
+                    clearInterval(checkBtn);
+                  }
+                }, 500);
+              }`}
+            </Script>
+            <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noreferrer" className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', background: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Bookmark size={20} fill="#fff" /></a>
+            <div style={{ width: '1px', height: '30px', background: 'rgba(255,255,255,0.1)', margin: '0 10px' }}></div>
+            <a href="https://www.facebook.com/sharer/sharer.php?u=https://thehardwareguru.cz" target="_blank" rel="noreferrer" className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', background: '#9333ea', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Share2 size={20} color="#fff" /></a>
+            <a href="https://twitter.com/intent/tweet?url=https://thehardwareguru.cz" target="_blank" rel="noreferrer" className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.005 4.150h-1.91z"/></svg>
+            </a>
+          </div>
+      </section>
+
+      {/* --- RANDOM LINK BLOCK --- */}
+      {randomPosts.length > 0 && (
+        <section style={{ maxWidth: '1200px', margin: '0 auto 60px auto', padding: '30px 20px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(102, 252, 241, 0.1)', borderRadius: '24px' }}>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: '#6b7280', textTransform: 'uppercase', marginBottom: '20px' }}><Shuffle size={16} /> OBJEVTE DALŠÍ OBSAH</h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            {randomPosts.map((post, idx) => (
+              <a key={`rand-${idx}`} href={isEn ? `/en/clanky/${post.slug_en || post.slug}` : `/clanky/${post.slug}`} className="seo-link-pill">{isEn ? (post.title_en || post.title) : post.title}</a>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* --- ČLÁNKY GRID --- */}
       {latestPosts.length > 0 && (
         <main style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
+          <div className="section-title-wrapper" style={{ marginBottom: '40px', borderLeft: '4px solid #66fcf1' }}>
+            <h2 style={{ color: '#fff', fontSize: '1.8rem', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>Nejnovější články & Videa</h2>
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(320px, 1fr))`, gap: '30px' }}>
             {latestPosts.map((post, idx) => {
               const badge = getBadgeInfo(post, isEn);
@@ -191,14 +389,14 @@ export default async function HomePage({ params }) {
                 <a key={post.id} href={isEn ? `/en/clanky/${post.slug_en || post.slug}` : `/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
                   <div className="game-card">
                     <div style={{ position: 'relative', paddingTop: '56.25%', background: '#0b0c10' }}>
-                      <img src={getThumbnail(post, supabaseUrl)} alt={`${post.title} - srovnání benchmark`} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} loading={idx < 3 ? "eager" : "lazy"} />
+                      <img src={getThumbnail(post, supabaseUrl)} alt={post.title} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} loading={idx < 3 ? "eager" : "lazy"} />
                       <div style={{ position: 'absolute', top: '10px', right: '10px', background: badge.color, color: badge.textColor, padding: '5px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem' }}>{badge.text}</div>
                     </div>
                     <div style={{ padding: '25px' }}>
                       <h3 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '1.2rem', fontWeight: 'bold' }}>{isEn ? (post.title_en || post.title) : post.title}</h3>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ color: '#45a29e', fontSize: '0.85rem' }}>{new Date(post.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
-                        <span style={{ color: '#66fcf1', fontWeight: 'bold' }}>{isEn ? 'READ MORE →' : 'ČÍST ČLÁNEK →'}</span>
+                        <span style={{ color: '#45a29e', fontSize: '0.85rem' }}>{new Date(post.created_at).toLocaleDateString()}</span>
+                        <span style={{ color: '#66fcf1', fontWeight: 'bold' }}>ČÍST →</span>
                       </div>
                     </div>
                   </div>
@@ -209,32 +407,16 @@ export default async function HomePage({ params }) {
         </main>
       )}
 
-      {/* --- FOOTER (FIXED ROUTES) --- */}
+      {/* --- FOOTER --- */}
       <footer style={{ background: '#050505', padding: '40px 20px', borderTop: '1px solid rgba(102, 252, 241, 0.2)', textAlign: 'center' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', fontSize: '12px', color: '#6b7280' }}>
-            <a href={isEn ? "/en/gpu-db" : "/gpu-db"} style={{ color: '#6b7280', textDecoration: 'none' }}>Katalog Grafických Karet</a>
-            <a href={isEn ? "/en/cpu-db" : "/cpu-db"} style={{ color: '#6b7280', textDecoration: 'none' }}>Katalog Procesorů</a>
-            <a href={isEn ? "/en/slovnik" : "/slovnik"} style={{ color: '#6b7280', textDecoration: 'none' }}>HW Slovník</a>
-            <a href={isEn ? "/en/bottleneck-kalkulacka" : "/bottleneck-kalkulacka"} style={{ color: '#6b7280', textDecoration: 'none' }}>Bottleneck Kalkulačka</a>
+            <a href="/gpu-db" style={{ color: '#6b7280', textDecoration: 'none' }}>Katalog Grafických Karet a Index Výkonu</a>
+            <a href="/cpu-db" style={{ color: '#6b7280', textDecoration: 'none' }}>Katalog Procesorů a Index Výkonu</a>
+            <a href="/slovnik" style={{ color: '#6b7280', textDecoration: 'none' }}>HW Slovník</a>
+            <a href="/bottleneck-kalkulacka" style={{ color: '#6b7280', textDecoration: 'none' }}>Bottleneck Kalkulačka</a>
         </div>
         <div style={{ marginTop: '20px', color: '#4b5563', fontSize: '11px' }}>&copy; {new Date().getFullYear()} The Hardware Guru. Všechna práva vyhrazena.</div>
       </footer>
-
-      {/* ONESIGNAL POJISTKA */}
-      <Script id="onesignal-init" strategy="lazyOnload">
-        {`if (typeof window !== 'undefined') {
-          var checkBtn = setInterval(function() {
-            var btn = document.getElementById('guru-os-btn');
-            if (btn && !btn.hasAttribute('data-bound')) {
-              btn.setAttribute('data-bound', 'true');
-              btn.onclick = function(e) {
-                if (window.OneSignal) { window.OneSignal.showSlidedownPrompt(); }
-              };
-              clearInterval(checkBtn);
-            }
-          }, 500);
-        }`}
-      </Script>
     </div>
   );
 }
