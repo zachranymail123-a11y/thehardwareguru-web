@@ -8,10 +8,11 @@ import {
   Heart
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU DEALS ENGINE V1.4 (ADS INJECTION UPDATE)
- * 🚀 CÍL: Monetizace slevového portálu skrze strategické A-ADS sloty.
+ * GURU DEALS ENGINE V1.5 (SEZNAM ADS INTEGRATION)
+ * 🚀 CÍL: Maximální monetizace slevového portálu skrze Seznam Partner.
  */
 
 export const runtime = "nodejs";
@@ -59,11 +60,9 @@ export default async function DealsPage(props) {
           </p>
         </header>
 
-        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD HLAVIČKOU */}
-        <div className="guru-deals-ad-slot">
-            <span className="ad-label">Advertisement</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+        {/* 🔥 SEZNAM AD #1: TOP LEADERBOARD POD HLAVIČKOU */}
+        <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
+            <SeznamAd zoneId={408654} width={970} height={210} />
         </div>
 
         {safeDeals.length === 0 ? (
@@ -97,12 +96,10 @@ export default async function DealsPage(props) {
                                 </div>
                             </a>
 
-                            {/* 🔥 ADS SLOT #2: GRID INJECTION (PO 3. SLEVĚ) */}
+                            {/* 🔥 SEZNAM AD #2: GRID INJECTION PO 3. SLEVĚ */}
                             {index === 2 && (
-                                <div className="guru-deals-ad-slot grid-span-ad">
-                                    <span className="ad-label">Sponsored Hardware Recommendation</span>
-                                    <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                                    <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                                <div className="grid-span-ad" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px 0' }}>
+                                    <SeznamAd zoneId={408651} width={300} height={250} />
                                 </div>
                             )}
                         </React.Fragment>
@@ -139,17 +136,12 @@ export default async function DealsPage(props) {
         .deal-desc { color: #9ca3af; font-size: 0.95rem; line-height: 1.5; margin: 0 0 25px 0; flex: 1; }
         .deal-cta { display: flex; align-items: center; justify-content: space-between; color: #f97316; font-weight: 950; font-size: 14px; text-transform: uppercase; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; }
 
-        .guru-deals-ad-slot { margin-bottom: 40px; padding: 15px; background: rgba(249, 115, 22, 0.02); border: 1px solid rgba(249, 115, 22, 0.1); border-radius: 24px; text-align: center; }
-        .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; } .ad-mobile { display: none; }
-        
         .guru-support-btn, .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; font-size: 15px; text-transform: uppercase; text-decoration: none; transition: 0.3s; }
         .guru-support-btn { background: #eab308; color: #000; }
         .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
 
         @media (min-width: 1024px) { .grid-span-ad { grid-column: 1 / -1; } }
         @media (max-width: 768px) {
-            .ad-desktop { display: none; } .ad-mobile { display: block; }
             .guru-deals-btn, .guru-support-btn { width: 100%; }
         }
       `}} />
