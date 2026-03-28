@@ -11,6 +11,10 @@ import ShareWidget from '../components/ShareWidget';
 import CookieBanner from '../components/CookieBanner';
 import SeznamAd from '../components/SeznamAd';
 
+// 🔥 PŘIDANÉ IMPORTY 🔥
+import MobileAnchorAd from '../components/MobileAnchorAd';
+import SeznamInterstitial from '../components/SeznamInterstitial';
+
 /**
  * GURU ROOT LAYOUT V6.5 (SIDEBAR POSITION & Z-INDEX FINAL FIX)
  * 🚀 CÍL: Posunutí reklam a snížení z-indexu, aby nepřekážely navigátorovi a menu.
@@ -117,6 +121,10 @@ export default async function RootLayout({ children, params }) {
         <div id="guru-env-bridge" style={{ display: 'none' }} data-url={envVars.NEXT_PUBLIC_SUPABASE_URL} data-key={envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY} />
         
         <Navbar />
+        
+        {/* 🔥 PŘIDANÁ VINĚTA 🔥 */}
+        <SeznamInterstitial />
+
         <SocialTracker />
         <Tracker />
 
@@ -230,6 +238,10 @@ export default async function RootLayout({ children, params }) {
         <SupportWidget />
         <CookieBanner />
         <Analytics />
+
+        {/* 🔥 PŘIDANÝ MOBILNÍ ANCHOR 🔥 */}
+        <MobileAnchorAd />
+
       </body>
     </html>
   )
