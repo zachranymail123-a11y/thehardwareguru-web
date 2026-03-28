@@ -1,16 +1,16 @@
 import React, { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { 
-  ChevronLeft, Zap, ArrowRight, Activity, ArrowUpCircle, LayoutList, 
-  BarChart3, Gamepad2, Coins, CheckCircle2, Swords, Flame, Heart, 
-  Monitor, ExternalLink, Info, HelpCircle
+ ChevronLeft, Zap, ArrowRight, Activity, ArrowUpCircle, LayoutList, 
+ BarChart3, Gamepad2, Coins, CheckCircle2, Swords, Flame, Heart, 
+ Monitor, ExternalLink, Info, HelpCircle
 } from 'lucide-react';
 import GuruGpuCompareText from '../../../components/GuruGpuCompareText';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU GPU DUELS ENGINE - V6.2 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Maximální monetizace srovnávače grafických karet skrze Seznam Partner.
+ * GURU GPU DUELS ENGINE - V6.3 (MOBILE OPTIMIZED)
+ * 🚀 CÍL: Maximální monetizace srovnávače a perfektní mobilní UX.
  */
 
 export const runtime = "nodejs";
@@ -136,20 +136,20 @@ export default async function GpuVsDetailPage(props) {
   const relatedArticles = await getRelatedArticles(gpuA.name, gpuB.name);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-duel-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
-      <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+      <main className="inner-container" style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? '/en/gpuvs/ranking' : '/gpuvs/ranking'} className="guru-back-btn">
-            <ChevronLeft size={16} /> {isEn ? 'BACK TO TIER LIST' : 'ZPĚT NA ŽEBŘÍČEK'}
+            <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
           </a>
         </div>
 
         <header style={{ marginBottom: '50px', textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#ff0055', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', padding: '6px 16px', border: '1px solid rgba(255, 0, 85, 0.3)', borderRadius: '50px', background: 'rgba(255, 0, 85, 0.1)' }}>
+          <div className="engine-badge">
             <Swords size={14} /> GURU VS ENGINE
           </div>
-          <h1 style={{ fontSize: 'clamp(2rem, 5vw, 4rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
+          <h1 className="main-h1" style={{ fontSize: 'clamp(2rem, 5vw, 4rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
             {normalizeName(gpuA.name)} <br/>
             <span style={{ color: '#ff0055' }}>VS</span> {normalizeName(gpuB.name)}
           </h1>
@@ -159,43 +159,48 @@ export default async function GpuVsDetailPage(props) {
         </header>
 
         <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '50px' }}>
-            <div className="gpu-card" style={{ borderTop: `5px solid ${getVendorColor(gpuA.vendor)}`, background: 'rgba(15, 17, 21, 0.95)', borderLeft: '1px solid rgba(255,255,255,0.05)', borderRight: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '40px 20px', textAlign: 'center' }}>
-                <span style={{ color: getVendorColor(gpuA.vendor), fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', display: 'block', marginBottom: '10px' }} className="vendor-tag">{gpuA.vendor} GPU</span>
-                <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0 0 15px 0' }} className="gpu-name-h2">{normalizeName(gpuA.name)}</h2>
+            <div className="compare-card" style={{ borderTop: `5px solid ${getVendorColor(gpuA.vendor)}`, background: 'rgba(15, 17, 21, 0.95)', borderLeft: '1px solid rgba(255,255,255,0.05)', borderRight: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '40px 20px', textAlign: 'center' }}>
+                <span className="vendor-tag" style={{ color: getVendorColor(gpuA.vendor), fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', display: 'block', marginBottom: '10px' }}>{gpuA.vendor} GPU</span>
+                <h2 className="gpu-name-h2" style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0 0 15px 0' }}>{normalizeName(gpuA.name)}</h2>
                 <a href={isEn ? `/en/gpu/${getSafeGpuSlug(gpuA)}` : `/gpu/${getSafeGpuSlug(gpuA)}`} className="entity-link" style={{ color: getVendorColor(gpuA.vendor), textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
-                    <Activity size={12} /> {isEn ? 'View Profile' : 'Profil grafiky'}
+                    <Activity size={12} /> {isEn ? 'Profile' : 'Profil'}
                 </a>
             </div>
-            <div style={{ background: '#0a0b0d', width: '70px', height: '70px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff0055', border: '2px solid #ff0055', fontWeight: '950', fontSize: '24px' }} className="vs-circle">VS</div>
-            <div className="gpu-card" style={{ borderTop: `5px solid ${getVendorColor(gpuB.vendor)}`, background: 'rgba(15, 17, 21, 0.95)', borderLeft: '1px solid rgba(255,255,255,0.05)', borderRight: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '40px 20px', textAlign: 'center' }}>
-                <span style={{ color: getVendorColor(gpuB.vendor), fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', display: 'block', marginBottom: '10px' }} className="vendor-tag">{gpuB.vendor} GPU</span>
-                <h2 style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0 0 15px 0' }} className="gpu-name-h2">{normalizeName(gpuB.name)}</h2>
+            <div className="vs-circle" style={{ background: '#0a0b0d', width: '70px', height: '70px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff0055', border: '2px solid #ff0055', fontWeight: '950', fontSize: '24px' }}>VS</div>
+            <div className="compare-card" style={{ borderTop: `5px solid ${getVendorColor(gpuB.vendor)}`, background: 'rgba(15, 17, 21, 0.95)', borderLeft: '1px solid rgba(255,255,255,0.05)', borderRight: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '40px 20px', textAlign: 'center' }}>
+                <span className="vendor-tag" style={{ color: getVendorColor(gpuB.vendor), fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', display: 'block', marginBottom: '10px' }}>{gpuB.vendor} GPU</span>
+                <h2 className="gpu-name-h2" style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0 0 15px 0' }}>{normalizeName(gpuB.name)}</h2>
                 <a href={isEn ? `/en/gpu/${getSafeGpuSlug(gpuB)}` : `/gpu/${getSafeGpuSlug(gpuB)}`} className="entity-link" style={{ color: getVendorColor(gpuB.vendor), textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
-                    <Activity size={12} /> {isEn ? 'View Profile' : 'Profil grafiky'}
+                    <Activity size={12} /> {isEn ? 'Profile' : 'Profil'}
                 </a>
             </div>
         </div>
 
-        {/* 🔥 SEZNAM AD #1: TOP BANNER POD HLAVNÍM SROVNÁNÍM */}
-        <div style={{ marginBottom: '50px', display: 'flex', justifyContent: 'center' }}>
-            <SeznamAd zoneId={408654} width={970} height={210} />
+        {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
+        <div style={{ marginBottom: '50px' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
         </div>
 
         <section style={{ marginBottom: '60px' }}>
             <div className="upgrade-banner" style={{ background: 'linear-gradient(135deg, rgba(255, 0, 85, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(255, 0, 85, 0.2)', padding: '30px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#ff0055', fontWeight: '950', textTransform: 'uppercase', fontSize: '12px' }}><ArrowUpCircle size={16} /> {isEn ? 'UPGRADE ANALYSIS' : 'ANALÝZA UPGRADU'}</div>
-                    <h3 style={{ fontSize: '1.8rem', fontWeight: '950', color: '#fff', margin: '10px 0', textTransform: 'uppercase' }}>{isEn ? `WORTH UPGRADING TO ${normalizeName(winner.name)}?` : `VYPLATÍ SE UPGRADE NA ${normalizeName(winner.name)}?`}</h3>
+                    <h3 className="banner-h3" style={{ fontSize: '1.8rem', fontWeight: '950', color: '#fff', margin: '10px 0', textTransform: 'uppercase' }}>{isEn ? `WORTH UPGRADING TO ${normalizeName(winner.name)}?` : `VYPLATÍ SE UPGRADE NA ${normalizeName(winner.name)}?`}</h3>
                     <p style={{ color: '#9ca3af', margin: 0 }}>{isEn ? `Find if switching from ${normalizeName(loser.name)} makes sense.` : `Zjisti, jestli dává přechod z ${normalizeName(loser.name)} smysl.`}</p>
                 </div>
-                <a href={isEn ? `/en/gpu-upgrade/${getSafeGpuSlug(loser)}-to-${getSafeGpuSlug(winner)}` : `/gpu-upgrade/${getSafeGpuSlug(loser)}-to-${getSafeGpuSlug(winner)}`} style={{ background: '#ff0055', color: '#fff', padding: '16px 30px', borderRadius: '16px', fontWeight: '950', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '10px', textTransform: 'uppercase' }}>
+                <a href={isEn ? `/en/gpu-upgrade/${getSafeGpuSlug(loser)}-to-${getSafeGpuSlug(winner)}` : `/gpu-upgrade/${getSafeGpuSlug(loser)}-to-${getSafeGpuSlug(winner)}`} className="btn-upgrade-calc" style={{ background: '#ff0055', color: '#fff', padding: '16px 30px', borderRadius: '16px', fontWeight: '950', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '10px', textTransform: 'uppercase' }}>
                     {isEn ? 'CALCULATE' : 'SPOČÍTAT'} <ArrowRight size={20} />
                 </a>
             </div>
         </section>
 
         <section style={{ marginBottom: '60px' }}>
-            <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div className="analysis-box" style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <Info size={24} color="#f59e0b" /> {isEn ? 'Performance Analysis' : 'Analýza výkonu'}
                 </h2>
@@ -219,21 +224,21 @@ export default async function GpuVsDetailPage(props) {
                  { label: 'CLOCK', valA: `${gpuA.boost_clock_mhz} MHz`, valB: `${gpuB.boost_clock_mhz} MHz`, winA: gpuA.boost_clock_mhz, winB: gpuB.boost_clock_mhz }
                ].map((row, i) => (
                  <div key={i} className="spec-row-style">
-                   <div style={{ ...getWinnerStyle(row.winA, row.winB, row.lower), flex: 1, textAlign: 'right', fontSize: '18px' }}>{row.valA}</div>
+                   <div className="spec-val-side" style={{ ...getWinnerStyle(row.winA, row.winB, row.lower), flex: 1, textAlign: 'right', fontSize: '18px' }}>{row.valA}</div>
                    <div className="table-label">{row.label}</div>
-                   <div style={{ ...getWinnerStyle(row.winB, row.winA, row.lower), flex: 1, textAlign: 'left', fontSize: '18px' }}>{row.valB}</div>
+                   <div className="spec-val-side" style={{ ...getWinnerStyle(row.winB, row.winA, row.lower), flex: 1, textAlign: 'left', fontSize: '18px' }}>{row.valB}</div>
                  </div>
                ))}
 
-               {/* 🔥 SEZNAM AD #2: PROSTŘEDEK TABULKY */}
-               <div style={{ padding: '20px 0', display: 'flex', justifyContent: 'center' }}>
+               {/* 🔥 MID AD SLOT - STRIKTNÍ SEPARACE (POUZE MOBIL) */}
+               <div className="ad-mobile-wrapper" style={{ padding: '20px 0' }}>
                     <SeznamAd zoneId={408651} width={300} height={250} />
                </div>
           </div>
         </section>
 
         <section style={{ marginBottom: '60px' }}>
-            <div style={{ background: 'linear-gradient(135deg, rgba(102, 252, 241, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(102, 252, 241, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+            <div className="bottleneck-cta" style={{ background: 'linear-gradient(135deg, rgba(102, 252, 241, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(102, 252, 241, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
                 <div>
                     <h3 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase' }}>{isEn ? 'BOTTLENECK CHECK' : 'KONTROLA BOTTLENECKU'}</h3>
                     <p style={{ color: '#9ca3af', margin: 0 }}>{isEn ? `Will your CPU handle the ${normalizeName(winner.name)}?` : `Nebude tvůj procesor brzdit grafiku ${normalizeName(winner.name)}?`}</p>
@@ -245,7 +250,7 @@ export default async function GpuVsDetailPage(props) {
         {relatedArticles.length > 0 && (
             <section style={{ marginBottom: '60px' }}>
                 <h2 className="section-h2" style={{ borderLeftColor: '#a855f7' }}><Info size={28} color="#a855f7" /> {isEn ? 'GURU NEWS' : 'GURU NOVINKY'}</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+                <div className="news-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
                     {relatedArticles.map((art) => (
                         <a key={art.slug} href={isEn ? `/en/clanky/${art.slug_en || art.slug}` : `/clanky/${art.slug}`} className="related-card-style">
                             <div className="related-img-box"><img src={art.image_url} alt={art.title} loading="lazy" /></div>
@@ -259,13 +264,14 @@ export default async function GpuVsDetailPage(props) {
             </section>
         )}
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%', marginTop: '50px' }}>
+        <div className="footer-btns" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%', marginTop: '50px' }}>
           <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" className="guru-deals-btn"><Flame size={20} /> {isEn ? 'DEALS' : 'SLEVY'}</a>
           <a href="/support" className="guru-support-btn"><Heart size={20} /> {isEn ? 'SUPPORT' : 'PODPORA'}</a>
         </div>
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
+        .engine-badge { display: inline-flex; align-items: center; gap: 8px; color: #ff0055; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; marginBottom: 20px; padding: 6px 16px; border: 1px solid rgba(255, 0, 85, 0.3); border-radius: 50px; background: rgba(255, 0, 85, 0.1); margin-bottom: 20px; }
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #ff0055; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(255, 0, 85, 0.3); transition: 0.3s; }
         
         .section-h2 { color: #fff; font-size: 2rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #ff0055; padding-left: 15px; display: flex; align-items: center; gap: 12px; }
@@ -283,13 +289,31 @@ export default async function GpuVsDetailPage(props) {
         .guru-deals-btn, .guru-support-btn { flex: 1; max-width: 300px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px; border-radius: 16px; font-weight: 950; text-decoration: none; text-transform: uppercase; transition: 0.3s; }
         .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
         .guru-support-btn { background: #eab308; color: #000; }
-        
+
+        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
         @media (max-width: 768px) {
-            .guru-grid-ring { grid-template-columns: 1fr !important; }
+            .guru-duel-wrapper { padding-top: 80px !important; }
+            .inner-container { padding: 0 15px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+            .main-h1 { font-size: 1.6rem !important; }
+            .guru-verdict { font-size: 13px !important; padding: 8px 15px !important; }
+            .guru-grid-ring { grid-template-columns: 1fr !important; gap: 10px; }
+            .compare-card { padding: 25px 15px !important; border-radius: 18px; }
+            .vs-circle { margin: 10px auto; width: 50px; height: 50px; font-size: 18px; }
+            .upgrade-banner { padding: 25px 20px !important; text-align: center; justify-content: center !important; }
+            .banner-h3 { font-size: 1.4rem !important; }
+            .btn-upgrade-calc { width: 100% !important; justify-content: center; }
+            .analysis-box { padding: 25px 15px !important; border-radius: 20px !important; }
             .spec-row-style { flex-direction: column !important; gap: 10px; padding: 15px 10px !important; }
             .table-label { width: 100%; }
-            .cta-row-upgrade { flex-direction: column; }
-            .btn-guru { max-width: 100%; }
+            .spec-val-side { font-size: 16px !important; }
+            .bottleneck-cta { padding: 25px 15px !important; text-align: center; }
+            .footer-btns { flex-direction: column; gap: 15px !important; }
+            .guru-deals-btn, .guru-support-btn { max-width: 100% !important; }
         }
       `}} />
     </div>
