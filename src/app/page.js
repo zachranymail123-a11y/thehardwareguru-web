@@ -6,7 +6,7 @@ import SeznamAd from '../components/SeznamAd';
 /**
  * GURU HOMEPAGE V18.6 - BING CONSISTENCY & STATIC SNAPSHOT UPDATE
  * Cesta: src/app/page.js
- * 🚀 CÍL: 12s timeout, záchranný statický snapshot (nikdy prázdný DOM), revalidate: 60, ItemList name fix.
+ * 🚀 CÍL: 12s timeout, záchranný statický snapshot (nikdy prázdnný DOM), revalidate: 60, ItemList name fix.
  */
 
 // --- DYNAMICKÁ METADATA PRO ABSOLUTNÍ CANONICAL A BING TRUST ---
@@ -333,15 +333,26 @@ export default async function HomePage({ params }) {
         .seo-hard-text-block a { color: #66fcf1; text-decoration: none; font-weight: bold; transition: 0.2s; border-bottom: 1px solid rgba(102, 252, 241, 0.3); padding-bottom: 1px; }
         .seo-hard-text-block a:hover { color: #fff; border-bottom-color: #fff; }
 
+        /* GURU RESPONSIVE ADS */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
         @media (max-width: 768px) {
           .guru-hero-section { padding: 40px 20px; text-align: center; justify-content: center; margin-bottom: 20px; }
           .social-btn-main { width: 100%; }
+          .ad-desktop-wrapper { display: none; }
+          .ad-mobile-wrapper { display: flex; justify-content: center; }
         }
       `}</style>
 
       {/* --- 🚀 TOP REKLAMA (Homepage-Top) VYSTŘEDĚNÁ + FIX OFFSET --- */}
-      <div style={{ maxWidth: '1200px', margin: '40px auto 0 auto', padding: '0 20px', display: 'flex', justifyContent: 'center' }}>
-        <SeznamAd zoneId={408654} width={970} height={210} />
+      <div style={{ maxWidth: '1200px', margin: '40px auto 0 auto', padding: '0 20px' }}>
+        <div className="ad-desktop-wrapper">
+          <SeznamAd zoneId={408654} width={970} height={210} />
+        </div>
+        <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
+          <SeznamAd zoneId={408651} width={300} height={250} />
+        </div>
       </div>
 
       {/* --- 🚀 HERO SEKCE --- */}
@@ -547,8 +558,13 @@ export default async function HomePage({ params }) {
       )}
 
       {/* --- 🚀 MEZI-KATEGORIÁLNÍ REKLAMA --- */}
-      <div style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
+        <div className="ad-desktop-wrapper">
           <SeznamAd zoneId={408654} width={970} height={210} />
+        </div>
+        <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
+          <SeznamAd zoneId={408651} width={300} height={250} />
+        </div>
       </div>
 
       {/* --- SLEVY --- */}
@@ -778,8 +794,13 @@ export default async function HomePage({ params }) {
       )}
 
       {/* --- 🚀 DRUHÁ MEZI-KATEGORIÁLNÍ REKLAMA --- */}
-      <div style={{ maxWidth: '1200px', margin: '60px auto 0 auto', padding: '0 20px', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ maxWidth: '1200px', margin: '60px auto 0 auto', padding: '0 20px' }}>
+        <div className="ad-desktop-wrapper">
           <SeznamAd zoneId={408654} width={970} height={210} />
+        </div>
+        <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
+          <SeznamAd zoneId={408651} width={300} height={250} />
+        </div>
       </div>
 
       {/* ČLÁNKY (Content Grid) */}
