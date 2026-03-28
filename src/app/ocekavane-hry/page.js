@@ -5,8 +5,8 @@ import { Monitor, Info, Play, Heart, Flame, ShieldCheck, ArrowRight, Zap, Calend
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU EXPECTED GAMES ARCHIVE - V5.6 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Maximální monetizace archivu her skrze Seznam Partner.
+ * GURU EXPECTED GAMES ARCHIVE - V5.7 (MOBILE OPTIMIZED & ADS SEPARATION)
+ * 🚀 CÍL: Maximální monetizace archivu her skrze Seznam Partner a perfektní mobilní UX.
  */
 
 export const runtime = "nodejs";
@@ -53,8 +53,23 @@ export default async function ExpectedGamesArchive(props) {
 
   const safeItems = items || [];
 
+  // Google Golden Rich: ItemList Schema
+  const itemListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "itemListElement": safeItems.map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "url": `${baseUrl}/${isEn ? 'en/' : ''}ocekavane-hry/${isEn ? (item.slug_en || item.slug) : item.slug}`,
+      "name": isEn ? (item.title_en || item.title) : item.title
+    }))
+  };
+
   return (
-    <div style={archiveWrapper}>
+    <div className="guru-archive-wrapper" style={{ minHeight: '100vh', padding: '120px 20px 80px', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed' }}>
+      
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+
       <style dangerouslySetInnerHTML={{__html: `
         .expected-card { 
             background: rgba(10, 11, 13, 0.94); 
@@ -82,34 +97,57 @@ export default async function ExpectedGamesArchive(props) {
             display: none; opacity: 0; transition: opacity 0.3s;
         }
         .expected-card:hover .card-video-hover { display: block; opacity: 1; }
-        .expected-card:hover .card-poster { opacity: 0; }
         .video-badge { position: absolute; top: 20px; right: 20px; background: #ff0055; color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 10px; font-weight: 900; display: flex; align-items: center; gap: 6px; z-index: 5; box-shadow: 0 0 20px rgba(255, 0, 85, 0.4); text-transform: uppercase; letter-spacing: 1px; }
-        .desc-text { color: #9ca3af; font-size: 14px; line-height: 1.6; margin-bottom: 25px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
+
+        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
+        @media (max-width: 768px) {
+            .guru-archive-wrapper { padding-top: 80px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+            .header-box { padding: 30px 15px !important; border-radius: 24px !important; }
+            .title-h1 { font-size: 2.2rem !important; }
+            .subtitle-p { font-size: 1rem !important; margin-top: 15px !important; }
+            .archive-grid { gap: 20px !important; }
+            .card-image-wrapper { height: 180px !important; }
+            .expected-card { border-radius: 24px !important; }
+            .card-content { padding: 20px !important; }
+            .card-title { font-size: 1.3rem !important; }
+            .footer-silo { margin-top: 60px !important; padding-top: 30px !important; }
+        }
       `}} />
 
       <header style={headerStyle}>
-        <div style={headerContentBox}>
+        <div className="header-box" style={headerContentBox}>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '20px' }}>
             <Monitor size={48} color="#66fcf1" style={{ filter: 'drop-shadow(0 0 10px rgba(102, 252, 241, 0.5))' }} />
           </div>
-          <h1 style={titleStyle}>
+          <h1 className="title-h1" style={titleStyle}>
             {isEn ? <>EXPECTED <span style={{ color: '#66fcf1' }}>GAMES</span></> : <>OČEKÁVANÉ <span style={{ color: '#66fcf1' }}>HRY</span></>}
           </h1>
-          <p style={subtitleStyle}>
+          <p className="subtitle-p" style={subtitleStyle}>
             {isEn ? 'Technical breakdowns and next-gen predictions.' : 'Technické rozbory a predikce výkonu herní budoucnosti.'}
           </p>
         </div>
       </header>
 
-      {/* 🔥 SEZNAM AD #1: TOP LEADERBOARD POD HLAVIČKOU */}
-      <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
-        <SeznamAd zoneId={408654} width={970} height={210} />
+      {/* 🔥 SEZNAM AD #1: TOP LEADERBOARD (STRIKTNÍ SEPARACE) */}
+      <div style={{ marginBottom: '60px' }}>
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={210} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={250} />
+          </div>
       </div>
 
       <main style={gridContainer}>
-        <div style={grid}>
+        <div className="archive-grid" style={grid}>
           {safeItems.map((item, index) => {
             const actualSlug = (isEn && item.slug_en) ? item.slug_en : item.slug;
             const displayTitle = (isEn && item.title_en) ? item.title_en : item.title;
@@ -134,23 +172,25 @@ export default async function ExpectedGamesArchive(props) {
                       <div style={techBadge}><Zap size={12} /> {isEn ? 'TECH PREVIEW' : 'TECHNICKÝ ROZBOR'}</div>
                     </div>
                     
-                    <div style={{ padding: '30px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <h3 style={cardTitleStyle}>{displayTitle}</h3>
+                    <div className="card-content" style={{ padding: '30px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      <h3 className="card-title" style={cardTitleStyle}>{displayTitle}</h3>
                       {item.release_date && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontSize: '12px', fontWeight: '950', marginBottom: '15px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                           <CalendarDays size={14} />
                           {isEn ? 'RELEASE: ' : 'VYDÁNÍ: '} {new Date(item.release_date).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}
                         </div>
                       )}
-                      <p className="desc-text">{(isEn ? item.description_en : item.description) || (isEn ? 'Detailed technical analysis.' : 'Detailní technický rozbor.')}</p>
+                      <p className="desc-text" style={{ color: '#9ca3af', fontSize: '14px', lineHeight: '1.6', marginBottom: '25px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {(isEn ? item.description_en : item.description) || (isEn ? 'Detailed technical analysis.' : 'Detailní technický rozbor.')}
+                      </p>
                       <div style={moreBtn}>{isEn ? 'VIEW ANALYSIS' : 'ZOBRAZIT ROZBOR'} <ArrowRight size={18} /></div>
                     </div>
                   </article>
                 </Link>
 
-                {/* 🔥 SEZNAM AD #2: GRID INJECTION PO DRUHÉM PŘÍSPĚVKU */}
+                {/* 🔥 SEZNAM AD #2: GRID INJECTION (POUZE MOBIL) */}
                 {index === 1 && (
-                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <div className="ad-mobile-wrapper" style={{ margin: '10px 0' }}>
                     <SeznamAd zoneId={408651} width={300} height={250} />
                   </div>
                 )}
@@ -159,7 +199,7 @@ export default async function ExpectedGamesArchive(props) {
           })}
         </div>
 
-        <div style={{ marginTop: '100px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
+        <div className="footer-silo" style={{ marginTop: '100px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
           <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
             {isEn ? "Want to see more hardware tests? Support the Guru project." : "Chceš vidět další technické rozbory? Podpoř projekt Guru."}
           </h4>
@@ -177,13 +217,12 @@ export default async function ExpectedGamesArchive(props) {
   );
 }
 
-const archiveWrapper = { minHeight: '100vh', padding: '120px 20px 80px', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed' };
 const headerStyle = { maxWidth: '1000px', margin: '0 auto 40px', textAlign: 'center' };
 const headerContentBox = { background: 'rgba(0,0,0,0.7)', padding: '50px 30px', borderRadius: '40px', border: '1px solid rgba(102, 252, 241, 0.15)', backdropFilter: 'blur(10px)' };
-const titleStyle = { fontSize: 'clamp(40px, 8vw, 80px)', fontWeight: '950', textTransform: 'uppercase', color: '#fff', margin: 0, letterSpacing: '-2px' };
+const titleStyle = { fontSize: 'clamp(2.5rem, 8vw, 5rem)', fontWeight: '950', textTransform: 'uppercase', color: '#fff', margin: 0, letterSpacing: '-2px', lineHeight: 1 };
 const subtitleStyle = { marginTop: '25px', color: '#d1d5db', fontWeight: '700', fontSize: '22px' };
 const gridContainer = { maxWidth: '1300px', margin: '0 auto' };
 const grid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '40px' };
-const cardTitleStyle = { fontSize: '26px', fontWeight: '900', color: '#fff', marginBottom: '15px', textTransform: 'uppercase', lineHeight: '1.1' };
+const cardTitleStyle = { fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '15px', textTransform: 'uppercase', lineHeight: '1.1' };
 const techBadge = { position: 'absolute', top: '20px', left: '20px', background: 'rgba(102, 252, 241, 0.9)', color: '#000', padding: '6px 12px', borderRadius: '8px', fontSize: '10px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '5px', textTransform: 'uppercase', zIndex: 10 };
 const moreBtn = { color: '#66fcf1', fontWeight: '950', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '10px', marginTop: 'auto', textTransform: 'uppercase', letterSpacing: '1px' };
