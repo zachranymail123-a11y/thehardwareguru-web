@@ -132,7 +132,7 @@ export default async function ArticleDetailPage(props) {
                     </a>
                 </div>
 
-                <article style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '50px 40px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
+                <article className="guru-main-article" style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '50px 40px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
                     <header style={{ marginBottom: '30px', textAlign: 'center' }}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginBottom: '20px' }}>
                             <div className="guru-meta-badge">
@@ -185,7 +185,15 @@ export default async function ArticleDetailPage(props) {
                          {part3 && <div dangerouslySetInnerHTML={{ __html: part3 }} />}
                     </div>
                     
-                    <SeznamAd zoneId={408658} width={480} height={300} />
+                    {/* 🚀 RESPONSIVE AD BEFORE CTA (OPRAVENO) */}
+                    <div style={{ margin: '40px 0' }}>
+                        <div className="ad-desktop-wrapper">
+                            <SeznamAd zoneId={408658} width={480} height={300} />
+                        </div>
+                        <div className="ad-mobile-wrapper">
+                            <SeznamAd zoneId={408651} width={300} height={250} />
+                        </div>
+                    </div>
                     
                     <div className="gta6-conversion-box">
                         <div className="gta6-badge"><Sparkles size={16} /> AI NEXT-GEN PREDIKCE</div>
@@ -296,6 +304,10 @@ export default async function ArticleDetailPage(props) {
                 .silo-banner-text p { margin: 0; color: #9ca3af; font-size: 0.8rem; }
                 .silo-banner-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.02); }
                 
+                /* GURU RESPONSIVE ADS */
+                .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+                .ad-mobile-wrapper { display: none; width: 100%; }
+
                 /* 🚀 GURU READER TRAP CSS */
                 .guru-trap-section { margin-top: 80px; padding: 40px; background: linear-gradient(to bottom, rgba(168, 85, 247, 0.05) 0%, transparent 100%); border-top: 2px solid rgba(168, 85, 247, 0.3); border-radius: 30px; }
                 .trap-title { font-size: 2.2rem; text-align: center; border: none; padding: 0; color: #fff; text-shadow: 0 0 20px rgba(168, 85, 247, 0.4); margin-bottom: 40px; font-weight: 950; text-transform: uppercase; }
@@ -323,10 +335,15 @@ export default async function ArticleDetailPage(props) {
                 }
 
                 @media (max-width: 768px) {
-                    .content-box-style { padding: 30px 20px; }
+                    .ad-desktop-wrapper { display: none; }
+                    .ad-mobile-wrapper { display: flex; justify-content: center; }
+                    .guru-main-article { padding: 30px 15px !important; border-radius: 20px !important; }
+                    .guru-article-content { font-size: 1.05rem; }
+                    .guru-article-content h2 { font-size: 1.5rem; }
                     .share-grid, .duel-grid, .trap-grid { grid-template-columns: 1fr; }
                     .gta6-conversion-box { padding: 25px; }
-                    .guru-trap-section { padding: 30px 20px; margin-top: 50px; }
+                    .guru-trap-section { padding: 30px 15px; margin-top: 50px; }
+                    .trap-title { font-size: 1.6rem; }
                 }
             `}} />
         </div>
