@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, X, Heart, Zap } from 'lucide-react';
+import { ShieldAlert, X } from 'lucide-react';
 
 /**
- * GURU ADBLOCK DETECTOR V1.0
- * 🚀 CÍL: Slušná prosba o podporu provozu bez blokování obsahu.
+ * GURU ADBLOCK DETECTOR V1.1 (MINIMAL & MOBILE OPTIMIZED)
+ * 🚀 CÍL: Kompaktní a slušná prosba o podporu podle vizuálního stylu Guru.
  */
 
 export default function AdBlockDetector() {
@@ -20,18 +20,17 @@ export default function AdBlockDetector() {
         }
 
         // Funkce pro kontrolu AdBlocku
-        const checkAdBlock = async () => {
-            // Metoda 1: Kontrola existence falešného reklamního elementu
+        const checkAdBlock = () => {
             const fakeAd = document.createElement('div');
             fakeAd.innerHTML = '&nbsp;';
-            fakeAd.className = 'adsbox ad-placement ad-content doubleclick-ad';
+            fakeAd.className = 'adsbox ad-placement ad-content doubleclick-ad pub_300x250';
             fakeAd.style.position = 'absolute';
             fakeAd.style.left = '-9999px';
             document.body.appendChild(fakeAd);
 
             window.setTimeout(() => {
                 if (fakeAd.offsetHeight === 0 || !document.body.contains(fakeAd)) {
-                    // AdBlock pravděpodobně aktivní
+                    // AdBlock aktivní
                     const dismissed = sessionStorage.getItem('guru_adblock_dismissed');
                     if (!dismissed) {
                         setIsAdBlockActive(true);
@@ -41,7 +40,7 @@ export default function AdBlockDetector() {
                 if (document.body.contains(fakeAd)) {
                     document.body.removeChild(fakeAd);
                 }
-            }, 100);
+            }, 150);
         };
 
         checkAdBlock();
@@ -49,111 +48,128 @@ export default function AdBlockDetector() {
 
     const handleDismiss = () => {
         setIsVisible(false);
-        // Uložíme do session, aby Guru neotravoval při každém kliknutí, ale jen jednou za návštěvu
         sessionStorage.setItem('guru_adblock_dismissed', 'true');
     };
 
     if (!isAdBlockActive || !isVisible) return null;
 
     return (
-        <div className="adblock-banner-root">
+        <div className="guru-adblock-root">
             <style dangerouslySetInnerHTML={{ __html: `
-                .adblock-banner-root {
+                .guru-adblock-root {
                     position: fixed;
-                    bottom: 20px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    z-index: 9999;
-                    width: 90%;
-                    max-width: 600px;
-                    animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                    bottom: 30px;
+                    right: 30px;
+                    z-index: 10000;
+                    width: 100%;
+                    max-width: 420px;
+                    animation: guruFadeIn 0.6s cubic-bezier(0.23, 1, 0.32, 1);
                 }
 
-                .adblock-container {
-                    background: rgba(15, 17, 21, 0.95);
-                    backdrop-filter: blur(15px);
-                    border: 2px solid #eab308;
-                    border-radius: 24px;
-                    padding: 25px;
+                .guru-adblock-box {
+                    background: rgba(10, 11, 13, 0.96);
+                    backdrop-filter: blur(12px);
+                    border: 1px solid #eab308;
+                    border-radius: 20px;
+                    padding: 18px;
                     display: flex;
-                    align-items: center;
-                    gap: 20px;
-                    box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(234, 179, 8, 0.2);
+                    align-items: flex-start;
+                    gap: 16px;
+                    box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 15px rgba(234, 179, 8, 0.15);
+                    position: relative;
                 }
 
-                .guru-icon-zone {
+                .guru-icon-box {
                     background: rgba(234, 179, 8, 0.1);
                     color: #eab308;
-                    padding: 15px;
-                    border-radius: 16px;
+                    padding: 12px;
+                    border-radius: 14px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    flex-shrink: 0;
                 }
 
-                .guru-text-zone {
-                    flex: 1;
+                .guru-content-box {
+                    padding-right: 20px;
                 }
 
-                .guru-text-zone h4 {
-                    margin: 0 0 5px 0;
+                .guru-content-box h4 {
+                    margin: 0 0 4px 0;
                     color: #fff;
                     font-weight: 900;
                     text-transform: uppercase;
-                    font-size: 16px;
-                    letter-spacing: 1px;
+                    font-size: 14px;
+                    letter-spacing: 1.5px;
+                    font-family: 'Segoe UI', Tahoma, sans-serif;
                 }
 
-                .guru-text-zone p {
+                .guru-content-box p {
                     margin: 0;
                     color: #9ca3af;
-                    font-size: 13px;
+                    font-size: 12px;
                     line-height: 1.5;
+                    font-weight: 500;
                 }
 
-                .guru-close-btn {
+                .guru-close-trigger {
+                    position: absolute;
+                    top: 12px;
+                    right: 12px;
                     background: none;
                     border: none;
                     color: #4b5563;
                     cursor: pointer;
-                    padding: 5px;
+                    padding: 4px;
                     transition: 0.2s;
-                    align-self: flex-start;
+                    display: flex;
                 }
 
-                .guru-close-btn:hover {
+                .guru-close-trigger:hover {
                     color: #fff;
+                    transform: rotate(90deg);
                 }
 
-                @keyframes slideUp {
-                    from { bottom: -100px; opacity: 0; }
-                    to { bottom: 20px; opacity: 1; }
+                @keyframes guruFadeIn {
+                    from { transform: translateY(30px) scale(0.95); opacity: 0; }
+                    to { transform: translateY(0) scale(1); opacity: 1; }
                 }
 
-                @media (max-width: 600px) {
-                    .adblock-container { flex-direction: column; text-align: center; padding: 20px; }
-                    .adblock-banner-root { bottom: 10px; }
-                    .guru-close-btn { position: absolute; top: 10px; right: 10px; }
+                @media (max-width: 768px) {
+                    .guru-adblock-root {
+                        bottom: 0;
+                        right: 0;
+                        left: 0;
+                        max-width: 100%;
+                        padding: 15px;
+                        box-sizing: border-box;
+                    }
+                    .guru-adblock-box {
+                        border-radius: 16px;
+                        padding: 15px;
+                    }
+                    .guru-content-box h4 { font-size: 13px; }
+                    .guru-content-box p { font-size: 11px; }
                 }
             `}} />
 
-            <div className="adblock-container">
-                <div className="guru-icon-zone">
-                    <ShieldAlert size={32} />
+            <div className="guru-adblock-box">
+                <div className="guru-icon-box">
+                    <ShieldAlert size={24} />
                 </div>
                 
-                <div className="guru-text-zone">
-                    <h4>{isEn ? "SYSTEM OPTIMIZATION NEEDED" : "POTŘEBUJEME OPTIMALIZACI"}</h4>
+                <div className="guru-content-box">
+                    <h4>{isEn ? "SYSTEM OPTIMIZATION" : "POTŘEBUJEME OPTIMALIZACI"}</h4>
                     <p>
                         {isEn 
-                          ? "Hey Guru! We see you're using an AdBlocker. This system runs on data and electricity (and ads). If our tools help you, please consider disabling it to support further development."
-                          : "Čau Guru! Vidíme, že tvůj prohlížeč blokuje reklamy. Chápeme to, ale provoz téhle mašiny a databáze něco stojí. Pokud ti naše testy pomáhají, vypni prosím AdBlock. Pomůžeš nám udržet systém v chodu."
+                          ? "Hey Guru! We noticed you're blocking ads. Pro-grade tech news and databases need resources. Please consider whitelist to keep us running."
+                          : "Čau Guru! Vidíme aktivní AdBlock. Chápeme to, ale provoz téhle mašiny a databáze něco stojí. Pokud ti testy pomáhají, vypni ho prosím."
                         }
                     </p>
                 </div>
 
-                <button onClick={handleDismiss} className="guru-close-btn" aria-label="Close">
-                    <X size={20} />
+                <button onClick={handleDismiss} className="guru-close-trigger" aria-label="Close">
+                    <X size={16} />
                 </button>
             </div>
         </div>
