@@ -1,17 +1,17 @@
 import React from 'react';
 import { 
-  ChevronLeft, 
-  Activity, 
-  Swords,
-  CheckCircle2,
-  Database,
-  ArrowRight
+ ChevronLeft, 
+ Activity, 
+ Swords,
+ CheckCircle2,
+ Database,
+ ArrowRight
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU CPU PERFORMANCE ENGINE V2.0 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Maximální monetizace technických analýz CPU skrze Seznam Partner.
+ * GURU CPU PERFORMANCE ENGINE V2.1 (MOBILE OPTIMIZED)
+ * 🚀 CÍL: Maximální monetizace a perfektní mobilní zobrazení technických analýz.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -84,34 +84,41 @@ export default async function CpuPerformancePage({ params }) {
   const cinebenchScore = fpsData?.cinebench_r23_multi || 'N/A';
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-performance-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? `/en/cpu/${cpuSlug}` : `/cpu/${cpuSlug}`} className="guru-back-btn">
-            <ChevronLeft size={16} /> {isEn ? 'BACK TO CPU PROFILE' : 'ZPĚT NA PROFIL'}
+            <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
           </a>
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '50px', background: 'rgba(245,158,11,0.05)' }}>
+          <div className="analysis-badge">
             <Activity size={16} /> GURU PERFORMANCE ANALYSIS
           </div>
-          <h1 style={{ fontSize: 'clamp(2.1rem, 8vw, 4rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.2' }}>
+          <h1 className="main-title" style={{ fontSize: 'clamp(1.8rem, 8vw, 4rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.2' }}>
             <span style={{ color: '#f59e0b' }}>{normalizeName(cpu.name)}</span> <br/>
             {isEn ? 'SPECS & PERFORMANCE' : 'VÝKON A PARAMETRY'}
           </h1>
         </header>
 
-        {/* 🔥 SEZNAM AD #1: TOP BANNER POD HLAVIČKOU */}
-        <SeznamAd zoneId={408654} width={970} height={210} />
+        {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
+        <div style={{ marginBottom: '40px' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
 
         <section style={{ marginBottom: '60px' }}>
-            <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(245, 158, 11, 0.2)', borderLeft: '8px solid #f59e0b', borderRadius: '24px', padding: '50px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center' }}>
+            <div className="benchmark-result-box" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(245, 158, 11, 0.2)', borderLeft: '8px solid #f59e0b', borderRadius: '24px', padding: '50px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center' }}>
                 <div style={{ color: '#f59e0b', fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>
                     {isEn ? 'Cinebench R23 Multi-Core Score' : 'Cinebench R23 Multi-Core Skóre'}
                 </div>
-                <div style={{ fontSize: 'clamp(60px, 12vw, 80px)', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0', textShadow: '0 0 40px rgba(245,158,11,0.4)' }}>
+                <div style={{ fontSize: 'clamp(50px, 12vw, 80px)', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0', textShadow: '0 0 40px rgba(245,158,11,0.4)' }}>
                     {cinebenchScore} <span style={{ fontSize: '24px', color: '#f59e0b' }}>PTS</span>
                 </div>
                 <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '10px 25px', borderRadius: '50px', display: 'inline-flex', alignItems: 'center', gap: '10px', fontWeight: '950', fontSize: '14px', border: '1px solid rgba(245, 158, 11, 0.3)', marginTop: '10px' }}>
@@ -120,14 +127,16 @@ export default async function CpuPerformancePage({ params }) {
             </div>
         </section>
 
-        {/* 🔥 SEZNAM AD #2: IN-TEXT PŘED TECHNICKÝMI SPECIFIKACEMI */}
-        <SeznamAd zoneId={408651} width={300} height={250} />
+        {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE (POUZE MOBIL) */}
+        <div className="ad-mobile-wrapper" style={{ marginBottom: '40px' }}>
+            <SeznamAd zoneId={408651} width={300} height={250} />
+        </div>
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Database size={28} /> {isEn ? 'TECHNICAL SPECIFICATIONS' : 'TECHNICKÉ SPECIFIKACE'}
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+          <div className="specs-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
               <div className="res-card"><div className="res-label">{isEn ? 'Cores / Threads' : 'Jádra / Vlákna'}</div><div className="res-val">{cpu.cores ?? '-'} / {cpu.threads ?? '-'}</div></div>
               <div className="res-card"><div className="res-label">Base Clock</div><div className="res-val" style={{ color: '#f59e0b' }}>{cpu.base_clock_mhz ?? '-'} MHz</div></div>
               <div className="res-card"><div className="res-label">Boost Clock</div><div className="res-val" style={{ color: '#f59e0b' }}>{cpu.boost_clock_mhz ?? '-'} MHz</div></div>
@@ -138,21 +147,36 @@ export default async function CpuPerformancePage({ params }) {
         </section>
 
         <section style={{ textAlign: 'center', marginTop: '60px' }}>
-            <a href={isEn ? "/en/cpuvs" : "/cpuvs"} style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', padding: '18px 40px', background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)', color: '#fff', borderRadius: '16px', fontWeight: '950', fontSize: '15px', textDecoration: 'none', textTransform: 'uppercase', boxShadow: '0 10px 30px rgba(245, 158, 11, 0.3)' }} className="guru-battle-btn">
-                <Swords size={20} /> {isEn ? 'Launch CPU VS Engine' : 'Spustit CPU VS Engine'} <ArrowRight size={18} />
+            <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="guru-battle-btn">
+                <Swords size={20} /> {isEn ? 'CPU VS ENGINE' : 'CPU VS ENGINE'} <ArrowRight size={18} />
             </a>
         </section>
 
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
+        .analysis-badge { display: inline-flex; align-items: center; gap: 8px; color: #f59e0b; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(245,158,11,0.3); border-radius: 50px; background: rgba(245,158,11,0.05); margin-bottom: 20px; }
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #f59e0b; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(245, 158, 11, 0.3); transition: 0.3s; }
-        .guru-back-btn:hover { background: rgba(245, 158, 11, 0.1); transform: translateX(-5px); }
-
         .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #f59e0b; padding-left: 15px; }
         .res-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
         .res-label { font-size: 11px; font-weight: 950; text-transform: uppercase; color: #6b7280; letter-spacing: 2px; margin-bottom: 10px; }
         .res-val { font-size: 24px; font-weight: 950; color: #fff; }
+        .guru-battle-btn { display: inline-flex; align-items: center; gap: 12px; padding: 18px 40px; background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)'; background: #f59e0b; color: #fff; border-radius: 16px; font-weight: 950; fontSize: 15px; text-decoration: none; text-transform: uppercase; box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3); transition: 0.3s; }
+
+        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
+        @media (max-width: 768px) {
+            .guru-performance-wrapper { padding-top: 80px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+            .main-title { font-size: 1.6rem !important; }
+            .benchmark-result-box { padding: 30px 20px !important; }
+            .specs-grid { grid-template-columns: 1fr !important; gap: 15px; }
+            .guru-battle-btn { width: 100%; justify-content: center; }
+            main { padding: 0 15px !important; }
+        }
       `}} />
     </div>
   );
