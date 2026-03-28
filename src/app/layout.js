@@ -13,9 +13,9 @@ import SeznamAd from '../components/SeznamAd';
 import MobileAnchorAd from '../components/MobileAnchorAd';
 
 /**
- * GURU ROOT LAYOUT V6.9 (THE "GOLDEN RATIO" AD UPDATE)
- * 🚀 CÍL: Maximální zisk bez vizuálních kolizí. 
- * Fixní bannery odsunuty mimo obsah, opraveny z-indexy a centrování.
+ * GURU ROOT LAYOUT V7.0 (ANTI-HELL FOOTER UPDATE)
+ * 🚀 CÍL: Eliminace kolizí v patičce. 
+ * Fixní bannery zajíždějí POD patičku, reklamy v patičce mají vlastní čistý prostor.
  */
 
 export const metadata = {
@@ -86,7 +86,6 @@ export default async function RootLayout({ children, params }) {
           crossOrigin="anonymous"
         ></script>
 
-        {/* 🔥 SEZNAM SSP REKLAMY 🔥 */}
         <Script src="https://ssp.seznam.cz/static/js/ssp.js" strategy="afterInteractive" />
 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
@@ -95,7 +94,6 @@ export default async function RootLayout({ children, params }) {
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Novinky" href="https://thehardwareguru.cz/rss.xml" />
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Srovnání" href="https://thehardwareguru.cz/rss-comparisons.xml" />
         
-        {/* 🔥 ONESIGNAL NOTIFIKACE 🔥 */}
         <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="afterInteractive" />
         <Script id="onesignal-init" strategy="afterInteractive">
           {`
@@ -122,22 +120,20 @@ export default async function RootLayout({ children, params }) {
         <SocialTracker />
         <Tracker />
 
-        {/* 🔥 SVISLÉ REKLAMY NA BOKY (ULTIMÁTNÍ FIX) 🔥 */}
+        {/* 🔥 SVISLÉ REKLAMY 🔥 */}
         <style dangerouslySetInnerHTML={{__html: `
           .skyscraper-left, .skyscraper-right {
             position: fixed;
             top: 120px;
             width: 300px;
             display: none;
-            z-index: 5;
+            z-index: 1; /* 🚀 Sníženo, aby patička mohla překrývat */
           }
           
-          /* Odsunuto na bezpečných 920px od středu pro nulové kolize */
-          .skyscraper-left { left: calc(50% - 920px); }
-          .skyscraper-right { right: calc(50% - 920px); }
+          .skyscraper-left { left: calc(50% - 940px); }
+          .skyscraper-right { right: calc(50% - 940px); }
 
-          /* Pojistka 1850px: Zobrazí se jen tam, kde je dost místa */
-          @media (min-width: 1850px) {
+          @media (min-width: 1880px) {
             .skyscraper-left, .skyscraper-right { display: block; }
           }
         `}} />
@@ -150,15 +146,42 @@ export default async function RootLayout({ children, params }) {
           <SeznamAd zoneId={408655} width={300} height={600} />
         </aside>
 
-        <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden' }}>
+        <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden', zIndex: 10 }}>
           {children}
 
-          <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
+          <div style={{ maxWidth: '1100px', margin: '40px auto', padding: '0 20px' }}>
              <ShareWidget isEn={isEn} />
           </div>
         </main>
 
-        <footer style={{ padding: '60px 20px 40px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto', background: '#0a0b0d' }}>
+        {/* 🚀 ČISTÁ REKLAMNÍ ZÓNA NAD PATIČKOU 🚀 */}
+        <div style={{ width: '100%', background: '#0a0b0d', position: 'relative', zIndex: 20, padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+           <style dangerouslySetInnerHTML={{__html: `
+              .footer-ad-container { display: flex; justify-content: center; width: 100%; }
+              .f-desktop { display: none; }
+              .f-mobile { display: flex; }
+              @media (min-width: 769px) {
+                .f-desktop { display: flex; }
+                .f-mobile { display: none; }
+              }
+           `}} />
+           <div className="footer-ad-container f-desktop">
+              <SeznamAd zoneId={408654} width={970} height={210} />
+           </div>
+           <div className="footer-ad-container f-mobile">
+              <SeznamAd zoneId={408651} width={300} height={250} />
+           </div>
+        </div>
+
+        <footer style={{ 
+          padding: '40px 20px', 
+          textAlign: 'center', 
+          marginTop: 'auto', 
+          background: '#0a0b0d', 
+          position: 'relative', 
+          zIndex: 30, /* 🚀 Tato patička teď překryje boční bannery při scrollu */
+          borderTop: '1px solid rgba(255,255,255,0.05)' 
+        }}>
           <style dangerouslySetInnerHTML={{__html: `
             .guru-footer-link { color: #9ca3af; text-decoration: none; transition: 0.2s; font-size: 13px; font-weight: bold; text-transform: uppercase; }
             .guru-footer-link:hover { color: #fff !important; }
@@ -166,30 +189,11 @@ export default async function RootLayout({ children, params }) {
             .copyright { color: #4b5563; font-size: 12px; margin-top: 20px; font-weight: 600; }
             .eeat-link { color: #6b7280; font-size: 11px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; transition: 0.2s; }
             .eeat-link:hover { color: #d1d5db; }
-            
-            /* GURU RESPONSIVE ADS */
-            .ad-desktop-wrapper, .ad-mobile-wrapper { display: flex; justify-content: center; width: 100%; }
-            .ad-desktop-wrapper { display: none; }
-            
-            @media (min-width: 769px) {
-              .ad-desktop-wrapper { display: flex; }
-              .ad-mobile-wrapper { display: none; }
-            }
           `}} />
           
-          {/* 🔥 GURU MONEY AREA (VYCENTROVÁNO) 🔥 */}
-          <div style={{ width: '100%', margin: '0 auto 40px', display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 99998, padding: '0 20px' }}>
-             <div className="ad-desktop-wrapper" style={{ width: '100%', maxWidth: '970px', display: 'flex', justifyContent: 'center' }}>
-                <SeznamAd zoneId={408654} width={970} height={210} />
-             </div>
-             <div className="ad-mobile-wrapper" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-                <SeznamAd zoneId={408651} width={300} height={250} />
-             </div>
-          </div>
-
           <VisitorCounter locale={locale} />
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', margin: '20px 0' }}>
             <a href={locale === 'en' ? "/en/clanky/jak-vyresit-bottleneck-navod" : "/clanky/jak-vyresit-bottleneck-navod"} className="guru-footer-link">
               {locale === 'en' ? 'How to fix bottleneck' : 'Jak vyřešit Bottleneck'}
             </a>
@@ -204,21 +208,11 @@ export default async function RootLayout({ children, params }) {
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginBottom: '30px' }}>
-            <a href={locale === 'en' ? "/en/about" : "/about"} className="eeat-link">
-              {locale === 'en' ? 'About Us' : 'O nás'}
-            </a>
+            <a href={locale === 'en' ? "/en/about" : "/about"} className="eeat-link">O nás</a>
             <span style={{ color: '#333' }}>•</span>
-            <a href={locale === 'en' ? "/en/contact" : "/contact"} className="eeat-link">
-              {locale === 'en' ? 'Contact' : 'Kontakt'}
-            </a>
+            <a href={locale === 'en' ? "/en/contact" : "/contact"} className="eeat-link">Kontakt</a>
             <span style={{ color: '#333' }}>•</span>
-            <a href={locale === 'en' ? "/en/privacy-policy" : "/privacy-policy"} className="eeat-link">
-              {locale === 'en' ? 'Privacy Policy' : 'Ochrana soukromí'}
-            </a>
-            <span style={{ color: '#333' }}>•</span>
-            <a href={locale === 'en' ? "/en/terms-of-service" : "/terms-of-service"} className="eeat-link">
-              {locale === 'en' ? 'Terms of Service' : 'Podmínky použití'}
-            </a>
+            <a href={locale === 'en' ? "/en/privacy-policy" : "/privacy-policy"} className="eeat-link">Soukromí</a>
           </div>
 
           <div className="copyright">
