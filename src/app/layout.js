@@ -13,9 +13,9 @@ import SeznamAd from '../components/SeznamAd';
 import MobileAnchorAd from '../components/MobileAnchorAd';
 
 /**
- * GURU ROOT LAYOUT V6.8 (Z-INDEX FIX & AD PLACEMENT)
- * 🚀 CÍL: Oprava matematiky postranních bannerů, přidání fallback třídy proti kolizi s UI,
- * a oprava umístění středové reklamy, aby neblokovala nadpis.
+ * GURU ROOT LAYOUT V6.9 (THE "GOLDEN RATIO" AD UPDATE)
+ * 🚀 CÍL: Maximální zisk bez vizuálních kolizí. 
+ * Fixní bannery odsunuty mimo obsah, opraveny z-indexy a centrování.
  */
 
 export const metadata = {
@@ -122,33 +122,26 @@ export default async function RootLayout({ children, params }) {
         <SocialTracker />
         <Tracker />
 
-        {/* 🔥 SVISLÉ REKLAMY NA BOKY (GURU STICKY UPDATE) 🔥 */}
+        {/* 🔥 SVISLÉ REKLAMY NA BOKY (ULTIMÁTNÍ FIX) 🔥 */}
         <style dangerouslySetInnerHTML={{__html: `
           .skyscraper-left, .skyscraper-right {
-            position: fixed; /* 🚀 Ultimátní "Lepidlo na oči" - drží při scrollování */
+            position: fixed;
             top: 120px;
             width: 300px;
             display: none;
             z-index: 5;
           }
           
-          /* 
-            Matematika: 
-            50% = střed obrazovky
-            - 450px = posun na kraj hlavního obsahu (900px / 2)
-            - 320px = šířka banneru (300px) + 20px mezera
-          */
-          .skyscraper-left { left: calc(50% - 770px); }
-          .skyscraper-right { right: calc(50% - 770px); }
+          /* Odsunuto na bezpečných 920px od středu pro nulové kolize */
+          .skyscraper-left { left: calc(50% - 920px); }
+          .skyscraper-right { right: calc(50% - 920px); }
 
-          /* 🚀 GURU MONEY PATCH: Sníženo z 1950px na 1550px! 
-             Nyní to uvidí 90 % hráčů s běžnými 1080p monitory! */
-          @media (min-width: 1550px) {
+          /* Pojistka 1850px: Zobrazí se jen tam, kde je dost místa */
+          @media (min-width: 1850px) {
             .skyscraper-left, .skyscraper-right { display: block; }
           }
         `}} />
 
-        {/* Přidána třída guru-ad-fallback proti z-index kolizi */}
         <aside className="skyscraper-left guru-ad-fallback">
           <SeznamAd zoneId={408655} width={300} height={600} />
         </aside>
@@ -160,11 +153,9 @@ export default async function RootLayout({ children, params }) {
         <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden' }}>
           {children}
 
-          {/* 🚀 GURU VIRÁLNÍ WIDGET */}
           <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
              <ShareWidget isEn={isEn} />
           </div>
-
         </main>
 
         <footer style={{ padding: '60px 20px 40px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto', background: '#0a0b0d' }}>
@@ -176,10 +167,9 @@ export default async function RootLayout({ children, params }) {
             .eeat-link { color: #6b7280; font-size: 11px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; transition: 0.2s; }
             .eeat-link:hover { color: #d1d5db; }
             
-            /* GURU RESPONSIVE ADS FIX */
+            /* GURU RESPONSIVE ADS */
             .ad-desktop-wrapper, .ad-mobile-wrapper { display: flex; justify-content: center; width: 100%; }
             .ad-desktop-wrapper { display: none; }
-            .ad-mobile-wrapper { display: flex; }
             
             @media (min-width: 769px) {
               .ad-desktop-wrapper { display: flex; }
@@ -187,15 +177,11 @@ export default async function RootLayout({ children, params }) {
             }
           `}} />
           
-          {/* 🔥 GURU MONEY AREA (Vycentrovaný náběh, který nezakrývá nadpis) 🔥 */}
+          {/* 🔥 GURU MONEY AREA (VYCENTROVÁNO) 🔥 */}
           <div style={{ width: '100%', margin: '0 auto 40px', display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 99998, padding: '0 20px' }}>
-             
-             {/* Desktop verze (vycentrovaná nudle) */}
              <div className="ad-desktop-wrapper" style={{ width: '100%', maxWidth: '970px', display: 'flex', justifyContent: 'center' }}>
                 <SeznamAd zoneId={408654} width={970} height={210} />
              </div>
-
-             {/* Mobilní verze (čtverec) */}
              <div className="ad-mobile-wrapper" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
                 <SeznamAd zoneId={408651} width={300} height={250} />
              </div>
