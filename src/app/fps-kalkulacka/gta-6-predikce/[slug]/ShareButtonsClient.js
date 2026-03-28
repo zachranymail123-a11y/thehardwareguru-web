@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { Share2, Check, Twitter, Award } from 'lucide-react';
-import SeznamAd from '../../components/SeznamAd';
+import SeznamAd from '../../../../components/SeznamAd';
 
 // Reddit ikona (Guru style)
 const RedditIcon = ({ size = 20 }) => (
@@ -54,8 +54,8 @@ export default function ShareButtonsClient({ shareText, shareUrl }) {
                 .viral-flex-card { display: flex; align-items: center; gap: 15px; padding: 15px 20px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 18px; text-align: left; }
                 .award-icon { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: rgba(244, 63, 94, 0.2); border-radius: 12px; flex-shrink: 0; }
                 .viral-text-box { flex: 1; }
-                .viral-title { fontSize: 13px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
-                .viral-subtitle { fontSize: 10px; color: #f43f5e; font-weight: bold; }
+                .viral-title { font-size: 13px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
+                .viral-subtitle { font-size: 10px; color: #f43f5e; font-weight: bold; }
                 .share-btn-group { display: flex; gap: 8px; }
                 .premium-share-btn { width: 38px; height: 38px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; border: none; color: #fff; transition: 0.2s; }
                 .btn-copy { background: linear-gradient(45deg, #f43f5e, #fda4af); }
