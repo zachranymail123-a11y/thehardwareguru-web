@@ -1,60 +1,88 @@
-'use client';
-import { useEffect, useState, useId } from 'react';
+"use client";
 
-export default function SeznamAd({ zoneId, width, height }) {
-  const [showFallback, setShowFallback] = useState(false);
-  
-  // 🚀 UNIKÁTNÍ ID pro každý render, aby Seznam script nespadl při dvou stejných zoneId
-  const rawId = useId().replace(/:/g, '');
-  const uniqueId = `ssp-zone-${zoneId}-${rawId}`;
+import React, { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
+
+export default function SeznamAd({ zoneId, width, height, className = "" }) {
+  const pathname = usePathname();
+  const [divId, setDivId] = useState("");
+  const [isBlocked, setIsBlocked] = useState(false);
 
   useEffect(() => {
-    const initAd = () => {
-      if (typeof window !== 'undefined' && window.ssp && window.ssp.getAds) {
-        window.ssp.getAds([{
-          zoneId: zoneId,
-          id: uniqueId,
-          width: width,
-          height: height
-        }]);
+    // Generujeme ID na klientovi
+    setDivId(`ssp-zone-${zoneId}-${Math.random().toString(36).substring(2, 9)}`);
+  }, [zoneId]);
 
-        setTimeout(() => {
-          const el = document.getElementById(uniqueId);
-          if (el && el.innerHTML.trim().length === 0) {
-            setShowFallback(true);
+  useEffect(() => {
+    if (!divId) return;
+
+    const loadAd = () => {
+      // OPRAVA: Z tvé zálohy opraveno sssp na ssp
+      if (typeof window !== 'undefined' && window.ssp) {
+        // SPA Tracking - započítání PageView
+        if (!window.guruSspPageTracked || window.guruSspPageTracked !== pathname) {
+          window.ssp.setPageViewId();
+          window.guruSspPageTracked = pathname;
+        }
+
+        // Zavolání reklamy
+        window.ssp.getAds([
+          {
+            zoneId: zoneId,
+            id: divId,
+            width: width,
+            height: height,
           }
-        }, 3500);
-      } else if (typeof window !== 'undefined') {
-        setTimeout(initAd, 500);
+        ]);
+
+        // Inteligentní detekce AdBlocku (žádné problikávání)
+        setTimeout(() => {
+          const el = document.getElementById(divId);
+          if (el && el.innerHTML.trim().length === 0) {
+            setIsBlocked(true);
+          }
+        }, 3000);
+      } else {
+        // Pojistka, pokud se Seznam script načítá pomaleji
+        setTimeout(loadAd, 500);
       }
     };
 
-    initAd();
-  }, [zoneId, width, height, uniqueId]);
+    // 1. Pokus o načtení hned po renderu
+    const timer = setTimeout(loadAd, 400);
+
+    // 2. Posluchač pro návrat tlačítkem ZPĚT (bfcache)
+    const handlePageShow = (event) => {
+      if (event.persisted) {
+        loadAd();
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, [zoneId, width, height, divId, pathname]);
+
+  if (!divId) return <div style={{ minHeight: height }} className="w-full" />;
 
   return (
-    <div style={{ 
-      width: width ? `${width}px` : '100%', 
-      height: height ? `${height}px` : 'auto',
-      minHeight: showFallback ? '200px' : '0',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      <div id={uniqueId} style={{ width: '100%', height: '100%', zIndex: 10 }} />
+    <div className={`relative flex justify-center items-center w-full ${className}`} style={{ minWidth: width, minHeight: height }}>
+      {/* 📺 Reklama - zIndex zaručuje, že překryje fallback */}
+      <div 
+        id={divId} 
+        style={{ width: '100%', height: '100%', zIndex: 10, background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}
+        className="absolute inset-0 overflow-hidden flex justify-center items-center"
+      />
       
-      {showFallback && (
-        <div style={{
-          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', 
-          alignItems: 'center', justifyContent: 'center', background: 'rgba(10, 11, 13, 0.95)', 
-          zIndex: 5, textAlign: 'center', padding: '15px', borderRadius: '8px', 
-          border: '1px solid rgba(0, 255, 204, 0.1)'
-        }}>
-           <div style={{ color: '#00ffcc', fontSize: '24px', marginBottom: '8px' }}>🛡️</div>
-           <div style={{ fontWeight: '900', color: '#fff', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>AdBlock Detekován</div>
-           <div style={{ fontSize: '11px', color: '#00ffcc', fontWeight: 'bold', marginTop: '2px' }}>The Hardware Guru</div>
+      {/* 🛡️ Fallback - vykreslí se AŽ po 3 vteřinách a POUZE pokud je reklama prázdná */}
+      {isBlocked && (
+        <div className="absolute inset-0 z-0 flex flex-col items-center justify-center p-4 text-center rounded-xl" style={{ background: '#0a0b0d', border: '1px solid rgba(0, 255, 204, 0.2)' }}>
+          <div style={{ color: '#00ffcc', fontSize: '24px', marginBottom: '8px' }}>🛡️</div>
+          <div style={{ fontWeight: '900', color: '#fff', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>AdBlock Detekován</div>
+          <div style={{ fontSize: '10px', color: '#00ffcc', fontWeight: 'bold', marginTop: '4px' }}>The Hardware Guru</div>
         </div>
       )}
     </div>
