@@ -1,22 +1,22 @@
 import React from 'react';
 import { 
-  ChevronLeft, 
-  Monitor, 
-  Database, 
-  Activity, 
-  Swords,
-  TrendingUp,
-  Cpu,
-  Flame,
-  Info, 
-  Calendar,
-  Gamepad2
+ ChevronLeft, 
+ Monitor, 
+ Database, 
+ Activity, 
+ Swords,
+ TrendingUp,
+ Cpu,
+ Flame,
+ Info, 
+ Calendar,
+ Gamepad2
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU GPU ENGINE - KATALOG GRAFIK V1.4 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Maximální monetizace katalogu skrze Seznam Partner.
+ * GURU GPU ENGINE - KATALOG GRAFIK V1.5 (MOBILE OPTIMIZED)
+ * 🚀 CÍL: Maximální monetizace katalogu a perfektní mobilní zobrazení.
  */
 
 export const dynamic = 'force-dynamic';
@@ -101,33 +101,40 @@ export default async function GpuIndexPage(props) {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-page-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
-      <main style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+      <main className="inner-container" style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? "/en/gpuvs" : "/gpuvs"} className="guru-back-btn">
-            <ChevronLeft size={16} /> {isEn ? 'BACK TO GPU BATTLES' : 'ZPĚT NA GPU DUELY'}
+            <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
           </a>
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)' }}>
+          <div className="guru-badge">
             <Database size={16} /> GURU HARDWARE DATABASE
           </div>
-          <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
+          <h1 className="main-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
             {isEn ? 'GPU' : 'KATALOG'} <br/>
             <span style={{ color: '#66fcf1', textShadow: '0 0 30px rgba(102, 252, 241, 0.5)' }}>{isEn ? 'DATABASE' : 'GRAFIK'}</span>
           </h1>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginTop: '30px' }}>
+          <div className="quick-links-row" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginTop: '30px' }}>
             <a href={isEn ? "/en/gpuvs/ranking" : "/gpuvs/ranking"} className="quick-link-pill" style={{ borderColor: '#ff0055', color: '#ff0055' }}><TrendingUp size={14} /> {isEn ? 'TIER LIST' : 'ŽEBŘÍČEK'}</a>
             <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="quick-link-pill" style={{ borderColor: '#a855f7', color: '#a855f7' }}><Gamepad2 size={14} /> {isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</a>
             <a href={isEn ? "/en/bottleneck" : "/bottleneck"} className="quick-link-pill" style={{ borderColor: '#66fcf1', color: '#66fcf1' }}><Activity size={14} /> {isEn ? 'BOTTLENECK' : 'BOTTLENECK'}</a>
           </div>
         </header>
 
-        {/* 🔥 SEZNAM AD #1: TOP BANNER POD HLAVIČKOU */}
-        <SeznamAd zoneId={408654} width={970} height={210} />
+        {/* 🔥 SEZNAM AD #1: TOP BANNER (STRIKTNÍ SEPARACE) */}
+        <div style={{ marginBottom: '40px' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
 
         {nvidiaGpus.length > 0 && (
           <section style={{ marginBottom: '40px', marginTop: '40px' }}>
@@ -136,8 +143,10 @@ export default async function GpuIndexPage(props) {
           </section>
         )}
 
-        {/* 🔥 SEZNAM AD #2: MID PLACEMENT MEZI VÝROBCI */}
-        <SeznamAd zoneId={408651} width={300} height={250} />
+        {/* 🔥 SEZNAM AD #2: MID PLACEMENT (POUZE MOBIL) */}
+        <div className="ad-mobile-wrapper" style={{ margin: '20px 0' }}>
+            <SeznamAd zoneId={408651} width={300} height={250} />
+        </div>
 
         {amdGpus.length > 0 && (
           <section style={{ marginBottom: '80px', marginTop: '40px' }}>
@@ -146,7 +155,7 @@ export default async function GpuIndexPage(props) {
           </section>
         )}
 
-        <div style={{ marginTop: '40px', display: 'flex', flexWrap: 'wrap', gap: '20px', marginBottom: '60px' }}>
+        <div className="promo-banner-row" style={{ marginTop: '40px', display: 'flex', flexWrap: 'wrap', gap: '20px', marginBottom: '60px' }}>
             <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="silo-banner-card" style={{ borderLeftColor: '#a855f7', background: 'linear-gradient(145deg, rgba(168, 85, 247, 0.1) 0%, rgba(15, 17, 21, 0.95) 100%)' }}>
                 <div className="silo-banner-icon" style={{ color: '#a855f7', background: '#a855f720' }}><Gamepad2 size={28} /></div>
                 <div className="silo-banner-text">
@@ -157,11 +166,11 @@ export default async function GpuIndexPage(props) {
         </div>
 
         {relatedArticles.length > 0 && (
-            <section style={{ marginBottom: '80px', background: 'rgba(15, 17, 21, 0.95)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <h2 style={{ color: '#fff', fontSize: '1.8rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #66fcf1', paddingLeft: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <section className="related-section" style={{ marginBottom: '80px', background: 'rgba(15, 17, 21, 0.95)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <h2 className="news-h2" style={{ color: '#fff', fontSize: '1.8rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #66fcf1', paddingLeft: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <Info size={28} color="#66fcf1" /> {isEn ? 'LATEST HARDWARE NEWS' : 'NEJNOVĚJŠÍ HW NOVINKY'}
                 </h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+                <div className="news-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
                     {relatedArticles.map((art) => (
                         <a key={art.slug} href={isEn ? `/en/clanky/${art.slug_en || art.slug}` : `/clanky/${art.slug}`} className="related-article-card">
                             <div className="related-img-wrapper"><img src={art.image_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000'} alt={art.title} loading="lazy" /></div>
@@ -175,7 +184,7 @@ export default async function GpuIndexPage(props) {
             </section>
         )}
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+        <div className="footer-silo-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
             <a href={isEn ? "/en/cpu-index" : "/cpu-index"} className="silo-banner-card" style={{ borderLeftColor: '#f59e0b' }}>
                 <div className="silo-banner-icon" style={{ color: '#f59e0b', background: '#f59e0b20' }}><Cpu size={28} /></div>
                 <div className="silo-banner-text">
@@ -186,7 +195,7 @@ export default async function GpuIndexPage(props) {
             <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="silo-banner-card" style={{ borderLeftColor: '#f97316' }}>
                 <div className="silo-banner-icon" style={{ color: '#f97316', background: '#f9731620' }}><Flame size={28} /></div>
                 <div className="silo-banner-text">
-                    <h4>{isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}</h4>
+                    <h4>{isEn ? 'BEST GAME DEALS' : 'NEJLEPŠÍ CENY HER'}</h4>
                     <p>{isEn ? 'Hottest sales right now.' : 'Omrkni nejlepší slevy na hry.'}</p>
                 </div>
             </a>
@@ -194,6 +203,7 @@ export default async function GpuIndexPage(props) {
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
+        .guru-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.05); margin-bottom: 20px; }
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         
         .vendor-h2 { color: #fff; font-size: 2.2rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 5px solid; padding-left: 15px; display: flex; align-items: center; gap: 15px; }
@@ -223,9 +233,26 @@ export default async function GpuIndexPage(props) {
         .related-content { padding: 20px; }
         .related-date { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 950; color: #6b7280; text-transform: uppercase; margin-bottom: 5px; }
         .related-title { margin: 0; font-size: 1.1rem; font-weight: 950; color: #fff; line-height: 1.3; }
-        
+
+        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
         @media (max-width: 768px) { 
-          .silo-banner-card { flex-direction: column; text-align: center; } 
+            .guru-page-wrapper { padding-top: 80px !important; }
+            .inner-container { padding: 0 15px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+            .main-title { font-size: 1.8rem !important; }
+            .vendor-h2 { font-size: 1.5rem !important; margin-bottom: 20px; }
+            .gpu-grid { grid-template-columns: 1fr !important; gap: 15px; }
+            .gpu-card { padding: 15px !important; }
+            .card-header h3 { font-size: 1.1rem; }
+            .related-section { padding: 20px !important; border-radius: 20px !important; }
+            .news-h2 { font-size: 1.4rem !important; }
+            .silo-banner-card { flex-direction: column; text-align: center; min-width: 100%; }
+            .quick-links-row { gap: 10px !important; }
+            .quick-link-pill { width: 100%; justify-content: center; }
         }
       `}} />
     </div>
