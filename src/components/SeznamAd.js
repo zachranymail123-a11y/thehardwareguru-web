@@ -58,14 +58,10 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
 
   return (
     <div className={`flex justify-center items-center my-6 w-full ${className}`}>
-      {/* 🚀 PŘIDÁNO: CSS pravidlo, které zaručí, že se iframe reklamy na mobilu přizpůsobí a neustřihne se z něj ani pixel */}
-      <style>{`#${divId} iframe { max-width: 100% !important; height: auto !important; }`}</style>
-      
       <div 
         id={divId} 
-        /* 🚀 PŘIDÁNO: maxWidth: '100%', aby kontejner nikdy nepřetekl z okraje mobilu */
-        style={{ minWidth: width, maxWidth: '100%', minHeight: height, background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}
-        className="overflow-hidden flex justify-center items-center"
+        style={{ width: '100%', maxWidth: width, minHeight: height, background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}
+        className="overflow-hidden flex justify-center items-center [&_div]:!max-w-full [&_iframe]:!max-w-full [&_iframe]:!h-auto"
       >
       </div>
     </div>
