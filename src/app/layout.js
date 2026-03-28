@@ -13,9 +13,9 @@ import SeznamAd from '../components/SeznamAd';
 import MobileAnchorAd from '../components/MobileAnchorAd';
 
 /**
- * GURU ROOT LAYOUT V7.0 (ANTI-HELL FOOTER UPDATE)
- * 🚀 CÍL: Eliminace kolizí v patičce. 
- * Fixní bannery zajíždějí POD patičku, reklamy v patičce mají vlastní čistý prostor.
+ * GURU ROOT LAYOUT V7.1 (BREAKPOINT OPTIMIZATION)
+ * 🚀 CÍL: Vrácení postranních reklam pro 1440p a 1080p monitory při zachování čistoty.
+ * Snížení breakpointu na 1600px pro lepší pokrytí desktopového trafficu.
  */
 
 export const metadata = {
@@ -127,13 +127,15 @@ export default async function RootLayout({ children, params }) {
             top: 120px;
             width: 300px;
             display: none;
-            z-index: 1; /* 🚀 Sníženo, aby patička mohla překrývat */
+            z-index: 1;
           }
           
-          .skyscraper-left { left: calc(50% - 940px); }
-          .skyscraper-right { right: calc(50% - 940px); }
+          /* Odsazení o 950px od středu - bezpečné pro homepage i články */
+          .skyscraper-left { left: calc(50% - 950px); }
+          .skyscraper-right { right: calc(50% - 950px); }
 
-          @media (min-width: 1880px) {
+          /* Sníženo na 1600px pro plnou podporu 1440p a 1080p monitorů */
+          @media (min-width: 1600px) {
             .skyscraper-left, .skyscraper-right { display: block; }
           }
         `}} />
@@ -179,7 +181,7 @@ export default async function RootLayout({ children, params }) {
           marginTop: 'auto', 
           background: '#0a0b0d', 
           position: 'relative', 
-          zIndex: 30, /* 🚀 Tato patička teď překryje boční bannery při scrollu */
+          zIndex: 30,
           borderTop: '1px solid rgba(255,255,255,0.05)' 
         }}>
           <style dangerouslySetInnerHTML={{__html: `
