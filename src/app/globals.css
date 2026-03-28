@@ -1,3 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 🚀 GURU PROSE STYLES (Tabulky a citace) */
 .prose table {
   width: 100%;
   border-collapse: collapse;
@@ -7,20 +12,35 @@
   border-radius: 8px;
   overflow: hidden;
 }
+
 .prose th {
   background-color: #333;
   color: #00ffcc;
   text-align: left;
   padding: 12px;
 }
+
 .prose td {
   padding: 12px;
   border-bottom: 1px solid #2a2a2a;
 }
+
 .prose blockquote {
   background: linear-gradient(135deg, #1e1e1e 0%, #111 100%);
   border-left: 5px solid #00ffcc;
   margin: 30px 0;
   padding: 20px;
   color: #fff;
+}
+
+/* 🔥 GURU UI WIDGET Z-INDEX FIX (Ochrana překrývání prvků) 🔥 */
+.guru-ui-widget {
+  z-index: 1000 !important; /* Musí být vždy nahoře */
+  position: relative; /* Nutné pro fungování z-indexu */
+}
+
+/* Fallback AdBlocku */
+.guru-ad-fallback {
+  z-index: 5 !important; /* Nižší z-index než UI widget */
+  pointer-events: none; /* Uživatel může klikat "skrz" fallback na prvky pod ním */
 }
