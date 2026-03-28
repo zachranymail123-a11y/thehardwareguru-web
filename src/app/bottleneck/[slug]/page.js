@@ -1,7 +1,7 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { 
-  ChevronLeft, Activity, Zap, ShieldCheck, AlertTriangle, ArrowRight, Cpu, Monitor, Gauge, CheckCircle2, Flame, Heart, Swords, PlugZap, Layers, Database, Info, BarChart3, Gamepad2, ArrowUpCircle, ShoppingCart
+ ChevronLeft, Activity, Zap, ShieldCheck, AlertTriangle, ArrowRight, Cpu, Monitor, Gauge, CheckCircle2, Flame, Heart, Swords, PlugZap, Layers, Database, Info, BarChart3, Gamepad2, ArrowUpCircle, ShoppingCart
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
 
@@ -178,7 +178,7 @@ export default async function BottleneckPage(props) {
       <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <header style={{ textAlign: 'center', marginBottom: '50px' }}>
           <div className="radar-badge"><Gauge size={16} /> GURU BOTTLENECK RADAR</div>
-          <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: 0, lineHeight: '1.1' }}>
+          <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 3.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: 0, lineHeight: '1.1' }}>
             <a href={isEn ? `/en/cpu/${safeCpuSlug}` : `/cpu/${safeCpuSlug}`} style={{ color: cpu.vendor?.toUpperCase() === 'INTEL' ? '#0071c5' : '#ed1c24', textDecoration: 'none' }}>{normalizeName(cpu.name)}</a> <br/>
             <span style={{ color: '#fff', opacity: 0.3, fontSize: '0.4em', display: 'block', margin: '10px 0' }}>WITH</span>
             <a href={isEn ? `/en/gpu/${safeGpuSlug}` : `/gpu/${safeGpuSlug}`} style={{ color: gpu.vendor?.toUpperCase() === 'NVIDIA' ? '#76b900' : '#ed1c24', textDecoration: 'none' }}>{normalizeName(gpu.name)}</a>
@@ -192,16 +192,21 @@ export default async function BottleneckPage(props) {
           )}
         </header>
 
-        {/* 🔥 SEZNAM AD #1: TOP BANNER POD HLAVIČKOU */}
-        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
-            <SeznamAd zoneId={408654} width={970} height={210} />
+        {/* 🔥 SEZNAM AD #1: TOP BANNER (OPRAVENO PRO MOBILY) */}
+        <div style={{ marginBottom: '40px' }}>
+            <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
+              <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
         </div>
 
-        <section style={{ background: 'rgba(15, 17, 21, 0.95)', border: `1px solid ${statusColor}40`, borderRadius: '30px', padding: '50px 40px', textAlign: 'center', marginBottom: '60px', boxShadow: `0 30px 100px ${statusColor}15` }}>
+        <section className="main-analysis-box" style={{ background: 'rgba(15, 17, 21, 0.95)', border: `1px solid ${statusColor}40`, borderRadius: '30px', padding: '50px 40px', textAlign: 'center', marginBottom: '60px', boxShadow: `0 30px 100px ${statusColor}15` }}>
             <div style={{ display: 'grid', gridTemplateColumns: estimatedFps ? 'repeat(auto-fit, minmax(250px, 1fr))' : '1fr', gap: '40px', alignItems: 'center' }}>
                 <div>
                     <div style={{ color: '#6b7280', fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '4px' }}>{isEn ? 'System Bottleneck' : 'Bottleneck systému'}</div>
-                    <div style={{ fontSize: 'clamp(70px, 12vw, 110px)', fontWeight: '950', color: statusColor, lineHeight: '1', margin: '15px 0' }}>{bottleneckScore}%</div>
+                    <div style={{ fontSize: 'clamp(60px, 12vw, 110px)', fontWeight: '950', color: statusColor, lineHeight: '1', margin: '15px 0' }}>{bottleneckScore}%</div>
                     <div className="status-pill" style={{ background: `${statusColor}15`, color: statusColor, border: `1px solid ${statusColor}30` }}>
                         {bottleneckScore < 15 ? (isEn ? 'IDEAL MATCH' : 'IDEÁLNÍ PÁROVÁNÍ') : (isEn ? `${isCpuBottleneck ? 'CPU' : 'GPU'} BOTTLENECK` : `ZJIŠTĚN BOTTLENECK (${isCpuBottleneck ? 'CPU' : 'GPU'})`)}
                     </div>
@@ -209,7 +214,7 @@ export default async function BottleneckPage(props) {
                 {estimatedFps && (
                 <div style={{ borderLeft: '1px solid rgba(255,255,255,0.05)', paddingLeft: '40px' }} className="border-mobile-fix">
                     <div style={{ color: '#6b7280', fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '4px' }}>{isEn ? 'Estimated Average FPS' : 'Odhadovaný průměr FPS'}</div>
-                    <div style={{ fontSize: 'clamp(70px, 12vw, 110px)', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '15px 0' }}>{estimatedFps}</div>
+                    <div style={{ fontSize: 'clamp(60px, 12vw, 110px)', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '15px 0' }}>{estimatedFps}</div>
                 </div>
                 )}
             </div>
@@ -218,9 +223,11 @@ export default async function BottleneckPage(props) {
             </div>
         </section>
 
-        {/* 🔥 SEZNAM AD #2: PŘED DOPORUČENÍM */}
+        {/* 🔥 SEZNAM AD #2: STŘEDOVÁ REKLAMA (VNITŘNÍ FIX) */}
         <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
-            <SeznamAd zoneId={408651} width={300} height={250} />
+            <div style={{ width: '100%', maxWidth: '300px' }}>
+              <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
         </div>
 
         <section style={{ marginBottom: '60px' }}>
@@ -250,7 +257,19 @@ export default async function BottleneckPage(props) {
         .support-btn, .live-btn { display: flex; align-items: center; gap: 12px; padding: 18px 40px; border-radius: 16px; font-weight: 950; text-decoration: none; text-transform: uppercase; transition: 0.3s; }
         .support-btn { background: #eab308; color: #000; }
         .live-btn { background: #000; color: #00ec64; border: 1px solid #00ec64; }
-        @media (max-width: 768px) { .border-mobile-fix { border-left: none !important; padding-left: 0 !important; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 40px; } }
+
+        /* GURU RESPONSIVE ADS */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
+        @media (max-width: 768px) {
+            .ad-desktop-wrapper { display: none; }
+            .ad-mobile-wrapper { display: flex; justify-content: center; }
+            .border-mobile-fix { border-left: none !important; padding-left: 0 !important; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 40px; }
+            .main-analysis-box { padding: 30px 20px !important; border-radius: 20px !important; }
+            .status-pill { padding: 10px 20px; font-size: 12px; }
+            .support-btn, .live-btn { width: 100%; justify-content: center; }
+        }
       `}} />
     </div>
   );
