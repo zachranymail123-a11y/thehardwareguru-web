@@ -1,22 +1,22 @@
 import React from 'react';
 import { 
-  ChevronLeft, 
-  Activity, 
-  CheckCircle2,
-  Monitor,
-  ArrowRight,
-  Cpu,
-  Swords,
-  Zap,
-  Gauge,
-  Crosshair
+ ChevronLeft, 
+ Activity, 
+ CheckCircle2,
+ Monitor,
+ ArrowRight,
+ Cpu,
+ Swords,
+ Zap,
+ Gauge,
+ Crosshair
 } from 'lucide-react';
 import GuruAnalysisText from '../../../../components/GuruAnalysisText';
 import SeznamAd from '../../../../components/SeznamAd';
 
 /**
- * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.5 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Maximální monetizace herních benchmarků skrze Seznam Partner.
+ * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.6 (MOBILE OPTIMIZED)
+ * 🚀 CÍL: Perfektní mobilní zobrazení a striktní separace reklam.
  */
 
 export const runtime = "nodejs";
@@ -109,29 +109,29 @@ export default async function App(props) {
                   (fps1440p >= 60 ? { en: 'SMOOTH GAMING', cz: 'PLYNULÉ HRANÍ', color: '#f59e0b' } : { en: 'PLAYABLE', cz: 'HRATELNÉ', color: '#eab308' });
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-benchmark-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? `/en/cpu/${cpuSlug}` : `/cpu/${cpuSlug}`} className="guru-back-btn">
-            <ChevronLeft size={16} /> {isEn ? 'BACK TO PROFILE' : 'ZPĚT NA PROFIL'}
+            <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
           </a>
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginBottom: '25px' }}>
              <div className="radar-badge"><Gauge size={16} /> GURU CPU RADAR</div>
-             <div className="rtx-badge"><Zap size={14} fill="currentColor" /> {isEn ? 'TESTED ON RTX 5090' : 'TESTOVÁNO S RTX 5090'}</div>
+             <div className="rtx-badge"><Zap size={14} fill="currentColor" /> {isEn ? 'RTX 5090 TESTED' : 'RTX 5090 TEST'}</div>
           </div>
-          <h1 style={{ fontSize: 'clamp(2.2rem, 8vw, 4.2rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1' }}>
+          <h1 className="main-title" style={{ fontSize: 'clamp(2.2rem, 8vw, 4.2rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1' }}>
             {normalizeName(cpu.name)} <br/>
             <span style={{ color: '#f59e0b' }}>{gameSlug.replace(/-/g, ' ')}</span> FPS
           </h1>
         </header>
 
         <section style={{ marginBottom: '30px' }}>
-            <div style={{ background: 'rgba(15, 17, 21, 0.95)', borderLeft: `10px solid ${verdict.color}`, borderRadius: '24px', padding: '50px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
-                <div style={{ fontSize: 'clamp(70px, 18vw, 120px)', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0' }}>
+            <div className="result-main-box" style={{ background: 'rgba(15, 17, 21, 0.95)', borderLeft: `10px solid ${verdict.color}`, borderRadius: '24px', padding: '50px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
+                <div className="fps-value" style={{ fontSize: 'clamp(70px, 18vw, 120px)', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0' }}>
                     {fps1440p} <span style={{ fontSize: '35px', color: verdict.color }}>FPS</span>
                 </div>
                 <div style={{ background: `${verdict.color}20`, color: verdict.color, padding: '12px 30px', borderRadius: '50px', display: 'inline-flex', alignItems: 'center', gap: '10px', fontWeight: '950', border: `1px solid ${verdict.color}50` }}>
@@ -140,12 +140,19 @@ export default async function App(props) {
             </div>
         </section>
 
-        {/* 🔥 SEZNAM AD #1: TOP BANNER POD RADAREM */}
-        <SeznamAd zoneId={408654} width={970} height={210} />
+        {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
+        <div style={{ marginBottom: '40px' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2"><Monitor size={28} /> {isEn ? 'SCALING' : 'ŠKÁLOVÁNÍ'}</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+          <div className="scaling-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                 <div className="res-card"><div className="res-label">1080p Ultra</div><div className="res-val">~{fps1080p} FPS</div></div>
                 <div className="res-card" style={{ borderColor: '#f59e0b', background: 'rgba(245, 158, 11, 0.08)' }}><div className="res-label" style={{ color: '#f59e0b' }}>1440p High</div><div className="res-val" style={{ color: '#fff' }}>{fps1440p} FPS</div></div>
                 <div className="res-card"><div className="res-label">4K Ultra</div><div className="res-val">~{fps4k} FPS</div></div>
@@ -168,8 +175,10 @@ export default async function App(props) {
                       isEn={isEn} 
                     />
                     
-                    {/* 🔥 SEZNAM AD #2: IN-TEXT POD ANALÝZOU */}
-                    <SeznamAd zoneId={408651} width={300} height={250} />
+                    {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE */}
+                    <div className="ad-mobile-wrapper" style={{ marginTop: '30px' }}>
+                        <SeznamAd zoneId={408651} width={300} height={250} />
+                    </div>
 
                 </div>
             </div>
@@ -177,7 +186,7 @@ export default async function App(props) {
 
         <section style={{ textAlign: 'center', marginTop: '60px' }}>
             <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="battle-btn">
-                <Swords size={20} /> {isEn ? 'Launch CPU VS Engine' : 'Spustit CPU VS Engine'} <ArrowRight size={18} />
+                <Swords size={20} /> {isEn ? 'CPU VS ENGINE' : 'CPU VS ENGINE'} <ArrowRight size={18} />
             </a>
         </section>
       </main>
@@ -196,8 +205,21 @@ export default async function App(props) {
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; }
         .battle-btn { display: inline-flex; align-items: center; gap: 12px; padding: 20px 45px; background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); color: #fff; border-radius: 18px; font-weight: 950; text-decoration: none; text-transform: uppercase; }
 
+        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
         @media (max-width: 768px) {
-            .content-box-style { padding: 25px; }
+            .guru-benchmark-wrapper { padding-top: 80px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+            .result-main-box { padding: 30px 20px !important; }
+            .fps-value { font-size: 4rem !important; }
+            .content-box-style { padding: 25px 15px !important; border-radius: 20px !important; }
+            .main-title { font-size: 1.6rem !important; }
+            .scaling-grid { grid-template-columns: 1fr !important; }
+            .res-card { padding: 20px; }
+            main { padding: 0 15px !important; }
         }
       `}} />
     </div>
