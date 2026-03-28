@@ -14,79 +14,60 @@ import MobileAnchorAd from '../components/MobileAnchorAd';
 import SeznamInterstitial from '../components/SeznamInterstitial';
 
 /**
- * GURU ROOT LAYOUT V7.6 (THE ULTIMATE REVENUE UPDATE)
- * 🚀 Z-INDEX FIX: Ads jsou 100% před pozadím.
- * 🚀 MONETIZACE: Viněta & Interstitial aktivní.
+ * GURU ROOT LAYOUT V7.7 (SMART AD RECOVERY)
+ * 🚀 CÍL: Reklamy viditelné, fallbacky skryté (pokud neběží AdBlock).
  */
 
 export const metadata = {
-  title: {
-    default: 'Hardware Guru | PC Benchmarks, Tech News & AI Tools',
-    template: '%s | Hardware Guru'
-  },
+  title: { default: 'Hardware Guru', template: '%s | Hardware Guru' },
   description: 'Exkluzivní novinky ze světa hardwaru, recenze her a streamy s unikátní AI.',
-  metadataBase: new URL('https://thehardwareguru.cz'),
 }
 
 export default async function RootLayout({ children, params }) {
   const resolvedParams = await params;
-  const locale = resolvedParams?.locale || resolvedParams?.lang || 'cs';
+  const locale = resolvedParams?.locale || 'cs';
   const isEn = locale === 'en';
 
   return (
     <html lang={locale}>
       <head>
+        <Script src="https://ssp.seznam.cz/static/js/ssp.js" strategy="beforeInteractive" />
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993" crossOrigin="anonymous"></script>
-        <Script src="https://ssp.seznam.cz/static/js/ssp.js" strategy="afterInteractive" />
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-9W5FBC9P68" strategy="afterInteractive" />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-9W5FBC9P68');`}
-        </Script>
       </head>
 
       <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         
-        {/* 💸 VINĚTA / INTERSTITIAL 💸 */}
         <SeznamInterstitial />
-
         <Navbar />
         <SocialTracker />
         <Tracker />
 
-        {/* 🔥 SVISLÉ REKLAMY (Z-INDEX 100 = PŘED POZADÍM) 🔥 */}
+        {/* CSS PRO REKLAMY */}
         <style dangerouslySetInnerHTML={{__html: `
           .skyscraper-left, .skyscraper-right {
             position: fixed;
             top: 130px;
             width: 300px;
             display: none;
-            z-index: 100;
-            pointer-events: auto;
+            z-index: 9999;
           }
-          
           .skyscraper-left { left: calc(50% - 940px); }
           .skyscraper-right { right: calc(50% - 940px); }
 
-          /* 1080p monitory -> JEN PRAVÁ */
-          @media (min-width: 1550px) {
-            .skyscraper-right { display: block; }
-          }
-
-          /* 1440p+ monitory -> OBĚ STRANY */
-          @media (min-width: 2150px) {
-            .skyscraper-left { display: block; }
-          }
+          @media (min-width: 1550px) { .skyscraper-right { display: block; } }
+          @media (min-width: 2100px) { .skyscraper-left { display: block; } }
         `}} />
 
-        <aside className="skyscraper-left guru-ad-fallback">
+        {/* ŽÁDNÉ RUČNÍ FALLBACKY, VŠE ŘEŠÍ KOMPONENTA SeznamAd */}
+        <aside className="skyscraper-left">
           <SeznamAd zoneId={408655} width={300} height={600} />
         </aside>
 
-        <aside className="skyscraper-right guru-ad-fallback">
+        <aside className="skyscraper-right">
           <SeznamAd zoneId={408655} width={300} height={600} />
         </aside>
 
-        {/* MAIN MÁ Z-INDEX 1, ABY BYL POD REKLAMAMI (POZADÍ NEZACLÁNÍ) */}
         <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden', zIndex: 1 }}>
           {children}
           <div style={{ maxWidth: '1100px', margin: '40px auto', padding: '0 20px' }}>
@@ -94,24 +75,16 @@ export default async function RootLayout({ children, params }) {
           </div>
         </main>
 
-        {/* PATIČKOVÁ ZÓNA (REKLAMA + FOOTER) */}
-        <div style={{ width: '100%', background: '#0a0b0d', position: 'relative', zIndex: 110, padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-           <style dangerouslySetInnerHTML={{__html: `
-              .f-desktop { display: none; justify-content: center; }
-              @media (min-width: 769px) { .f-desktop { display: flex; } .f-mobile { display: none; } }
-           `}} />
-           <div className="f-desktop">
+        <div style={{ width: '100%', background: '#0a0b0d', position: 'relative', zIndex: 10000, padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+           <div style={{ display: 'flex', justifyContent: 'center' }}>
               <SeznamAd zoneId={408654} width={970} height={210} />
-           </div>
-           <div className="f-mobile" style={{ display: 'flex', justifyContent: 'center' }}>
-              <SeznamAd zoneId={408651} width={300} height={250} />
            </div>
         </div>
 
-        <footer style={{ padding: '40px 20px', textAlign: 'center', background: '#0a0b0d', position: 'relative', zIndex: 120, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <footer style={{ padding: '40px 20px', textAlign: 'center', background: '#0a0b0d', position: 'relative', zIndex: 10001, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           <VisitorCounter locale={locale} />
           <div className="copyright" style={{ color: '#4b5563', fontSize: '12px', marginTop: '20px' }}>
-            © {new Date().getFullYear()} The Hardware Guru. Pro hráče, s láskou k železu.
+            © {new Date().getFullYear()} The Hardware Guru.
           </div>
         </footer>
 
