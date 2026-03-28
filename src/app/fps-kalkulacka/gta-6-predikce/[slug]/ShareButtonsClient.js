@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { Share2, Check, Twitter, Award } from 'lucide-react';
+import SeznamAd from '../../components/SeznamAd';
 
 // Reddit ikona (Guru style)
 const RedditIcon = ({ size = 20 }) => (
@@ -13,40 +14,65 @@ export default function ShareButtonsClient({ shareText, shareUrl }) {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(`${shareText} 👉 Změř si to taky na: ${shareUrl}`);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 3000);
+        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+            navigator.clipboard.writeText(`${shareText} 👉 Změř si to taky na: ${shareUrl}`);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 3000);
+        }
     };
 
     const redditLink = `https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(shareText)}`;
 
     return (
-        <div className="viral-flex-card">
-            <div className="award-icon"><Award size={28} color="#fff" /></div>
-            <div className="viral-text-box">
-                <div style={{ fontSize: '13px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '1px' }}>ÚSPĚCH ODEMČEN</div>
-                <div style={{ fontSize: '10px', color: '#f43f5e', fontWeight: 'bold' }}>Pochlub se odhadem pro GTA VI!</div>
+        <div className="guru-viral-container">
+            <div className="viral-flex-card">
+                <div className="award-icon"><Award size={28} color="#fff" /></div>
+                <div className="viral-text-box">
+                    <div className="viral-title">ÚSPĚCH ODEMČEN</div>
+                    <div className="viral-subtitle">Pochlub se odhadem pro GTA VI!</div>
+                </div>
+                <div className="share-btn-group">
+                    <button onClick={handleCopy} className="premium-share-btn btn-copy" title="Kopírovat">
+                        {copied ? <Check size={18} /> : <Share2 size={18} />}
+                    </button>
+                    <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`} target="_blank" className="premium-share-btn btn-x" title="Sdílet na X">
+                        <Twitter size={18} />
+                    </a>
+                    <a href={redditLink} target="_blank" className="premium-share-btn btn-reddit" title="Sdílet na Reddit">
+                        <RedditIcon size={18} />
+                    </a>
+                </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={handleCopy} className="premium-share-btn btn-copy" title="Kopírovat">
-                    {copied ? <Check size={18} /> : <Share2 size={18} />}
-                </button>
-                <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`} target="_blank" className="premium-share-btn btn-x" title="Sdílet na X">
-                    <Twitter size={18} />
-                </a>
-                <a href={redditLink} target="_blank" className="premium-share-btn btn-reddit" title="Sdílet na Reddit">
-                    <RedditIcon size={18} />
-                </a>
+
+            {/* 🔥 REKLAMA POD SDÍLENÍM (STRIKTNĚ PRO MOBIL) */}
+            <div className="ad-mobile-wrapper" style={{ marginTop: '25px' }}>
+                <SeznamAd zoneId={408651} width={300} height={250} />
             </div>
+
             <style jsx>{`
-                .viral-flex-card { display: flex; align-items: center; gap: 15px; max-width: 500px; margin: 25px auto 0; padding: 15px 20px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 18px; text-align: left; }
+                .guru-viral-container { width: 100%; margin: 25px auto 0; max-width: 500px; }
+                .viral-flex-card { display: flex; align-items: center; gap: 15px; padding: 15px 20px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 18px; text-align: left; }
                 .award-icon { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: rgba(244, 63, 94, 0.2); border-radius: 12px; flex-shrink: 0; }
                 .viral-text-box { flex: 1; }
+                .viral-title { fontSize: 13px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
+                .viral-subtitle { fontSize: 10px; color: #f43f5e; font-weight: bold; }
+                .share-btn-group { display: flex; gap: 8px; }
                 .premium-share-btn { width: 38px; height: 38px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; border: none; color: #fff; transition: 0.2s; }
                 .btn-copy { background: linear-gradient(45deg, #f43f5e, #fda4af); }
                 .btn-x { background: #000; border: 1px solid rgba(255,255,255,0.2); }
                 .btn-reddit { background: #ff4500; }
                 .premium-share-btn:hover { transform: translateY(-2px); filter: brightness(1.2); }
+
+                /* 🚀 RESPONSIVE ADS SYSTEM */
+                .ad-mobile-wrapper { display: none; width: 100%; }
+
+                @media (max-width: 768px) {
+                    .ad-mobile-wrapper { display: flex; justify-content: center; }
+                    .viral-flex-card { flex-direction: column; text-align: center; padding: 25px 15px; gap: 12px; }
+                    .viral-text-box { margin-bottom: 5px; }
+                    .share-btn-group { width: 100%; justify-content: center; gap: 15px; }
+                    .premium-share-btn { width: 45px; height: 45px; }
+                }
             `}</style>
         </div>
     );
