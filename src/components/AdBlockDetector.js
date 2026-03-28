@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, X } from 'lucide-react';
+import { ShieldAlert, X, Zap } from 'lucide-react';
 
 /**
- * GURU ADBLOCK DETECTOR V1.1 (MINIMAL & MOBILE OPTIMIZED)
- * 🚀 CÍL: Kompaktní a slušná prosba o podporu podle vizuálního stylu Guru.
+ * GURU ADBLOCK DETECTOR V2.0 (AGGRESSIVE VISIBILITY)
+ * 🚀 CÍL: Maximální viditelnost přes celou obrazovku. Nepřehlédnutelné.
  */
 
 export default function AdBlockDetector() {
@@ -14,12 +14,10 @@ export default function AdBlockDetector() {
     const [isEn, setIsEn] = useState(false);
 
     useEffect(() => {
-        // Detekce jazyka
         if (typeof window !== 'undefined') {
             setIsEn(window.location.pathname.startsWith('/en'));
         }
 
-        // Funkce pro kontrolu AdBlocku
         const checkAdBlock = () => {
             const fakeAd = document.createElement('div');
             fakeAd.innerHTML = '&nbsp;';
@@ -30,7 +28,6 @@ export default function AdBlockDetector() {
 
             window.setTimeout(() => {
                 if (fakeAd.offsetHeight === 0 || !document.body.contains(fakeAd)) {
-                    // AdBlock aktivní
                     const dismissed = sessionStorage.getItem('guru_adblock_dismissed');
                     if (!dismissed) {
                         setIsAdBlockActive(true);
@@ -40,7 +37,7 @@ export default function AdBlockDetector() {
                 if (document.body.contains(fakeAd)) {
                     document.body.removeChild(fakeAd);
                 }
-            }, 150);
+            }, 300);
         };
 
         checkAdBlock();
@@ -54,122 +51,132 @@ export default function AdBlockDetector() {
     if (!isAdBlockActive || !isVisible) return null;
 
     return (
-        <div className="guru-adblock-root">
+        <div className="guru-adblock-overlay">
             <style dangerouslySetInnerHTML={{ __html: `
-                .guru-adblock-root {
+                .guru-adblock-overlay {
                     position: fixed;
-                    bottom: 30px;
-                    right: 30px;
-                    z-index: 10000;
-                    width: 100%;
-                    max-width: 420px;
-                    animation: guruFadeIn 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-                }
-
-                .guru-adblock-box {
-                    background: rgba(10, 11, 13, 0.96);
-                    backdrop-filter: blur(12px);
-                    border: 1px solid #eab308;
-                    border-radius: 20px;
-                    padding: 18px;
-                    display: flex;
-                    align-items: flex-start;
-                    gap: 16px;
-                    box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 15px rgba(234, 179, 8, 0.15);
-                    position: relative;
-                }
-
-                .guru-icon-box {
-                    background: rgba(234, 179, 8, 0.1);
-                    color: #eab308;
-                    padding: 12px;
-                    border-radius: 14px;
+                    inset: 0;
+                    background: rgba(0, 0, 0, 0.9);
+                    backdrop-filter: blur(15px);
+                    z-index: 999999;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    flex-shrink: 0;
+                    padding: 20px;
+                    animation: guruOverlayFade 0.3s ease-out;
                 }
 
-                .guru-content-box {
-                    padding-right: 20px;
+                .guru-adblock-modal {
+                    background: #0a0b0d;
+                    border: 4px solid #eab308;
+                    border-radius: 40px;
+                    max-width: 650px;
+                    width: 100%;
+                    padding: 60px 40px;
+                    text-align: center;
+                    box-shadow: 0 0 100px rgba(234, 179, 8, 0.3);
+                    position: relative;
+                    animation: guruModalPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
                 }
 
-                .guru-content-box h4 {
-                    margin: 0 0 4px 0;
-                    color: #fff;
-                    font-weight: 900;
+                .guru-adblock-icon {
+                    width: 110px;
+                    height: 110px;
+                    background: rgba(234, 179, 8, 0.1);
+                    color: #eab308;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 35px;
+                    border: 2px solid rgba(234, 179, 8, 0.3);
+                }
+
+                .guru-adblock-modal h2 {
+                    font-size: clamp(2rem, 5vw, 3rem);
+                    font-weight: 950;
                     text-transform: uppercase;
-                    font-size: 14px;
-                    letter-spacing: 1.5px;
-                    font-family: 'Segoe UI', Tahoma, sans-serif;
+                    color: #fff;
+                    margin-bottom: 25px;
+                    letter-spacing: 2px;
+                    line-height: 1;
                 }
 
-                .guru-content-box p {
-                    margin: 0;
-                    color: #9ca3af;
-                    font-size: 12px;
-                    line-height: 1.5;
-                    font-weight: 500;
+                .guru-adblock-modal p {
+                    font-size: 1.2rem;
+                    color: #d1d5db;
+                    line-height: 1.8;
+                    margin-bottom: 45px;
+                    max-width: 500px;
+                    margin-left: auto;
+                    margin-right: auto;
                 }
 
-                .guru-close-trigger {
+                .guru-adblock-btn {
+                    background: #eab308;
+                    color: #000;
+                    border: none;
+                    padding: 22px 60px;
+                    border-radius: 20px;
+                    font-size: 18px;
+                    font-weight: 950;
+                    text-transform: uppercase;
+                    cursor: pointer;
+                    transition: 0.3s;
+                    box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4);
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 15px;
+                }
+
+                .guru-adblock-btn:hover {
+                    transform: scale(1.05);
+                    box-shadow: 0 20px 50px rgba(234, 179, 8, 0.6);
+                }
+
+                .guru-close-icon {
                     position: absolute;
-                    top: 12px;
-                    right: 12px;
+                    top: 30px;
+                    right: 30px;
+                    color: #4b5563;
                     background: none;
                     border: none;
-                    color: #4b5563;
                     cursor: pointer;
-                    padding: 4px;
                     transition: 0.2s;
-                    display: flex;
                 }
 
-                .guru-close-trigger:hover {
-                    color: #fff;
-                    transform: rotate(90deg);
-                }
+                .guru-close-icon:hover { color: #fff; transform: rotate(90deg); }
 
-                @keyframes guruFadeIn {
-                    from { transform: translateY(30px) scale(0.95); opacity: 0; }
-                    to { transform: translateY(0) scale(1); opacity: 1; }
-                }
+                @keyframes guruOverlayFade { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes guruModalPop { from { transform: scale(0.7) translateY(100px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
 
                 @media (max-width: 768px) {
-                    .guru-adblock-root {
-                        bottom: 0;
-                        right: 0;
-                        left: 0;
-                        max-width: 100%;
-                        padding: 15px;
-                        box-sizing: border-box;
-                    }
-                    .guru-adblock-box {
-                        border-radius: 16px;
-                        padding: 15px;
-                    }
-                    .guru-content-box h4 { font-size: 13px; }
-                    .guru-content-box p { font-size: 11px; }
+                    .guru-adblock-modal { padding: 50px 25px; border-radius: 30px; }
+                    .guru-adblock-modal h2 { font-size: 1.8rem; }
+                    .guru-adblock-btn { width: 100%; justify-content: center; }
                 }
             `}} />
 
-            <div className="guru-adblock-box">
-                <div className="guru-icon-box">
-                    <ShieldAlert size={24} />
+            <div className="guru-adblock-modal">
+                <button className="guru-close-icon" onClick={handleDismiss}>
+                    <X size={40} />
+                </button>
+
+                <div className="guru-adblock-icon">
+                    <ShieldAlert size={64} />
                 </div>
                 
-                <div className="guru-content-box">
-                    <h4>{isEn ? "SYSTEM OPTIMIZATION" : "POTŘEBUJEME OPTIMALIZACI"}</h4>
-                    <p>
-                        {isEn 
-                          ? "Hey Guru! We noticed you're blocking ads. Pro-grade tech news and databases need resources. Please consider whitelist to keep us running."
-                          : "Čau Guru! Vidíme aktivní AdBlock. Chápeme to, ale provoz téhle mašiny a databáze něco stojí. Pokud ti testy pomáhají, vypni ho prosím."
-                        }
-                    </p>
-                </div>
+                <h2>{isEn ? "SYSTEM OPTIMIZATION" : "OPTIMALIZACE SYSTÉMU"}</h2>
+                
+                <p>
+                    {isEn 
+                      ? "Your AdBlocker is causing resource drops. To keep this machine running with 100% hardware data, please whitelist us. Every ad helps pay for server power."
+                      : "Tvůj AdBlock sráží výkon našeho vývoje. Aby tahle mašina mohla dál sypat 100% data o hardwaru, potřebujeme tvou podporu. Vypni prosím blokování reklam."
+                    }
+                </p>
 
-                <button onClick={handleDismiss} className="guru-close-trigger" aria-label="Close">
-                    <X size={16} />
+                <button onClick={handleDismiss} className="guru-adblock-btn">
+                    <Zap size={22} /> {isEn ? "UNDERSTOOD, GURU" : "ROZUMÍM, GURU"}
                 </button>
             </div>
         </div>
