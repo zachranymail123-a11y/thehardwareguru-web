@@ -220,8 +220,8 @@ export default function BottleneckClient({
                                 <div className="pct-label" style={{ color: statusColor }}>{a.limitedBy} tě brzdí o {a.bottleneckPercent}%</div>
                             </div>
 
-                            {/* 🔥 SEZNAM AD: DYNAMICKÁ REKLAMA POD VÝSLEDKEM */}
-                            <div style={{ margin: '30px 0' }}>
+                            {/* 🔥 SEZNAM AD: MOBILNÍ FIX PRO VNITŘNÍ REKLAMU */}
+                            <div style={{ margin: '30px -20px' }}>
                                 <SeznamAd zoneId={408651} width={300} height={250} />
                             </div>
 
@@ -324,7 +324,9 @@ export default function BottleneckClient({
                 .recommendation p { font-size: 15px; color: #9ca3af; lineHeight: 1.6; }
 
                 @media (max-width: 768px) {
-                  .bn-wrapper { padding: 20px; }
+                  .bn-wrapper { padding: 20px; border-radius: 20px; }
+                  .bn-header h1 { fontSize: 2rem !important; }
+                  .pct-value { fontSize: 5rem !important; }
                 }
             `}} />
         </div>
