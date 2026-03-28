@@ -17,9 +17,9 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
     if (!divId) return;
 
     const loadAd = () => {
-      // OPRAVA: Z tvé zálohy opraveno sssp na ssp
+      // OPRAVA: Tvůj původní sssp překlep byl opraven na ssp
       if (typeof window !== 'undefined' && window.ssp) {
-        // SPA Tracking - započítání PageView
+        // SPA Tracking
         if (!window.guruSspPageTracked || window.guruSspPageTracked !== pathname) {
           window.ssp.setPageViewId();
           window.guruSspPageTracked = pathname;
@@ -35,7 +35,7 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
           }
         ]);
 
-        // Inteligentní detekce AdBlocku (žádné problikávání)
+        // Kontrola AdBlocku (neničí DOM, jen přepne stav)
         setTimeout(() => {
           const el = document.getElementById(divId);
           if (el && el.innerHTML.trim().length === 0) {
@@ -43,15 +43,12 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
           }
         }, 3000);
       } else {
-        // Pojistka, pokud se Seznam script načítá pomaleji
         setTimeout(loadAd, 500);
       }
     };
 
-    // 1. Pokus o načtení hned po renderu
     const timer = setTimeout(loadAd, 400);
 
-    // 2. Posluchač pro návrat tlačítkem ZPĚT (bfcache)
     const handlePageShow = (event) => {
       if (event.persisted) {
         loadAd();
@@ -69,17 +66,18 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
   if (!divId) return <div style={{ minHeight: height }} className="w-full" />;
 
   return (
-    <div className={`relative flex justify-center items-center w-full ${className}`} style={{ minWidth: width, minHeight: height }}>
-      {/* 📺 Reklama - zIndex zaručuje, že překryje fallback */}
+    <div className={`relative flex justify-center items-center my-6 w-full ${className}`} style={{ minHeight: height }}>
+      {/* 📺 PŮVODNÍ FUNKČNÍ SLOT (Bez narušení toku dokumentu) */}
       <div 
         id={divId} 
-        style={{ width: '100%', height: '100%', zIndex: 10, background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}
-        className="absolute inset-0 overflow-hidden flex justify-center items-center"
-      />
-      
-      {/* 🛡️ Fallback - vykreslí se AŽ po 3 vteřinách a POUZE pokud je reklama prázdná */}
+        style={{ minWidth: width, minHeight: height, background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}
+        className="overflow-hidden flex justify-center items-center relative z-10"
+      >
+      </div>
+
+      {/* 🛡️ FALLBACK (Zobrazí se nad slotem, jen když je blokováno) */}
       {isBlocked && (
-        <div className="absolute inset-0 z-0 flex flex-col items-center justify-center p-4 text-center rounded-xl" style={{ background: '#0a0b0d', border: '1px solid rgba(0, 255, 204, 0.2)' }}>
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-4 text-center rounded-xl" style={{ background: '#0a0b0d', border: '1px solid rgba(0, 255, 204, 0.2)', minWidth: width, minHeight: height }}>
           <div style={{ color: '#00ffcc', fontSize: '24px', marginBottom: '8px' }}>🛡️</div>
           <div style={{ fontWeight: '900', color: '#fff', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>AdBlock Detekován</div>
           <div style={{ fontSize: '10px', color: '#00ffcc', fontWeight: 'bold', marginTop: '4px' }}>The Hardware Guru</div>
