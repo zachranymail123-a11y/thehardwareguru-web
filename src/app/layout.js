@@ -14,25 +14,33 @@ import MobileAnchorAd from '../components/MobileAnchorAd';
 import SeznamInterstitial from '../components/SeznamInterstitial';
 
 export const metadata = {
-  title: { default: 'Hardware Guru | PC Benchmarks, Tech News & AI Tools', template: '%s | Hardware Guru' },
+  title: {
+    default: 'Hardware Guru | PC Benchmarks, Tech News & AI Tools',
+    template: '%s | Hardware Guru'
+  },
   description: 'Exkluzivní novinky ze světa hardwaru, recenze her a streamy s unikátní AI.',
   metadataBase: new URL('https://thehardwareguru.cz'),
-  alternates: { canonical: '/' },
-  robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large' } },
+  alternates: {
+    canonical: '/',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
+  },
 }
 
 export default async function RootLayout({ children, params }) {
   const resolvedParams = await params;
-  const locale = resolvedParams?.locale || 'cs';
+  const locale = resolvedParams?.locale || resolvedParams?.lang || 'cs';
   const isEn = locale === 'en';
-  
+
   const envVars = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
   };
 
   const baseUrl = "https://thehardwareguru.cz";
-
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -66,8 +74,14 @@ export default async function RootLayout({ children, params }) {
   return (
     <html lang={locale}>
       <head>
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993" crossOrigin="anonymous"></script>
-        <script async src="https://ssp.seznam.cz/static/js/ssp.js"></script>
+        <script 
+          async 
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993"
+          crossOrigin="anonymous"
+        ></script>
+
+        {/* Návrat k tvému původnímu zápisu přes Next Script */}
+        <Script src="https://ssp.seznam.cz/static/js/ssp.js" strategy="afterInteractive" />
 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(websiteSchema) }} />
@@ -93,41 +107,31 @@ export default async function RootLayout({ children, params }) {
         </Script>
       </head>
 
-      <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         
         <div id="guru-env-bridge" style={{ display: 'none' }} data-url={envVars.NEXT_PUBLIC_SUPABASE_URL} data-key={envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY} />
         
-        {/* 💸 VINĚTA */}
         <SeznamInterstitial />
-
+        
         <Navbar />
         <SocialTracker />
         <Tracker />
 
-        {/* 🔥 SVISLÉ REKLAMY (Upraveno pro Windows 125/150% scaling) 🔥 */}
+        {/* Návrat tvého záložního CSS s původním z-indexem */}
         <style dangerouslySetInnerHTML={{__html: `
           .skyscraper-left, .skyscraper-right {
             position: fixed;
-            top: 130px;
+            top: 120px;
             width: 300px;
             display: none;
-            z-index: 9999 !important;
-            pointer-events: auto;
+            z-index: 5;
           }
           
-          .skyscraper-left { left: calc(50% - 940px); }
-          .skyscraper-right { right: calc(50% - 940px); }
+          .skyscraper-left { left: calc(50% - 600px - 380px); }
+          .skyscraper-right { right: calc(50% - 600px - 380px); }
 
-          @media (min-width: 1350px) { .skyscraper-right { display: block; } }
-          @media (min-width: 1750px) { .skyscraper-left { display: block; } }
-
-          /* 🚀 MOBILNÍ / DESKTOP SPODNÍ REKLAMA */
-          .ad-desktop-wrapper { display: flex; justify-content: center; }
-          .ad-mobile-wrapper { display: none; }
-          
-          @media (max-width: 768px) {
-            .ad-desktop-wrapper { display: none; }
-            .ad-mobile-wrapper { display: flex; justify-content: center; }
+          @media (min-width: 1600px) {
+            .skyscraper-left, .skyscraper-right { display: block; }
           }
         `}} />
 
@@ -139,15 +143,14 @@ export default async function RootLayout({ children, params }) {
           <SeznamAd zoneId={408655} width={300} height={600} />
         </aside>
 
-        <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden', zIndex: 1 }}>
+        <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden' }}>
           {children}
-
           <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
              <ShareWidget isEn={isEn} />
           </div>
         </main>
 
-        <footer style={{ padding: '60px 20px 40px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto', background: '#0a0b0d', position: 'relative', zIndex: 10000 }}>
+        <footer style={{ padding: '60px 20px 40px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto', background: '#0a0b0d' }}>
           <style dangerouslySetInnerHTML={{__html: `
             .guru-footer-link { color: #9ca3af; text-decoration: none; transition: 0.2s; font-size: 13px; font-weight: bold; text-transform: uppercase; }
             .guru-footer-link:hover { color: #fff !important; }
@@ -155,16 +158,24 @@ export default async function RootLayout({ children, params }) {
             .copyright { color: #4b5563; font-size: 12px; margin-top: 20px; font-weight: 600; }
             .eeat-link { color: #6b7280; font-size: 11px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; transition: 0.2s; }
             .eeat-link:hover { color: #d1d5db; }
+            
+            .ad-desktop-wrapper { display: flex; justify-content: center; }
+            .ad-mobile-wrapper { display: none; }
+            
+            @media (max-width: 768px) {
+              .ad-desktop-wrapper { display: none; }
+              .ad-mobile-wrapper { display: flex; justify-content: center; }
+            }
           `}} />
           
           <div className="ad-desktop-wrapper">
-            <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto 40px', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto 40px', display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 99998 }}>
               <SeznamAd zoneId={408654} width={970} height={210} />
             </div>
           </div>
 
           <div className="ad-mobile-wrapper">
-            <div style={{ width: '100%', margin: '0 auto 40px', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ width: '100%', margin: '0 auto 40px', display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 99998 }}>
               <SeznamAd zoneId={408651} width={300} height={250} />
             </div>
           </div>
