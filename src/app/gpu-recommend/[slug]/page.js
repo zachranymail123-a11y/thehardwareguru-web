@@ -18,8 +18,8 @@ import {
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU GPU RECOMMEND ENGINE - DETAIL V4.2 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Maximální monetizace dotazů skrze Seznam Partner.
+ * GURU GPU RECOMMEND ENGINE - DETAIL V4.3 (MOBILE OPTIMIZED)
+ * 🚀 CÍL: Maximální monetizace dotazů a perfektní mobilní UI.
  */
 
 export const runtime = "nodejs";
@@ -97,41 +97,46 @@ export default async function GpuRecommendPage(props) {
   const vendorColor = (gpu.vendor || '').toUpperCase() === 'NVIDIA' ? '#76b900' : ((gpu.vendor || '').toUpperCase() === 'AMD' ? '#ed1c24' : '#66fcf1');
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-recommend-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
-      <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+      <main className="inner-container" style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? `/en/gpu/${safeSlug}` : `/gpu/${safeSlug}`} className="guru-back-btn">
-            <ChevronLeft size={16} /> {isEn ? 'BACK TO GPU PROFILE' : 'ZPĚT NA PROFIL'}
+            <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
           </a>
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(102,252,241,0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)' }}>
+          <div className="recommend-badge">
             <Monitor size={16} /> GURU RECOMMENDATION
           </div>
-          <h1 style={{ fontSize: 'clamp(2rem, 8vw, 4rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.2' }}>
+          <h1 className="main-title" style={{ fontSize: 'clamp(2rem, 8vw, 4rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.2' }}>
             {isEn ? 'SHOULD YOU BUY' : 'VYPLATÍ SE KOUPIT'} <br/>
             <span style={{ color: vendorColor }}>{normalizeName(gpu.name)}?</span>
           </h1>
         </header>
 
-        {/* 🔥 SEZNAM AD #1: TOP PLACEMENT POD HLAVIČKOU */}
-        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
-            <SeznamAd zoneId={408654} width={970} height={210} />
+        {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
+        <div style={{ marginBottom: '40px' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
         </div>
 
         {/* 🚀 VELKÝ HERO BLOK VERDIKTU */}
         <section style={{ marginBottom: '30px' }}>
-            <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255, 255, 255, 0.05)', borderTop: `8px solid ${verdict.color}`, borderRadius: '24px', padding: '60px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
-                <div style={{ color: verdict.color, display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+            <div className="verdict-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255, 255, 255, 0.05)', borderTop: `8px solid ${verdict.color}`, borderRadius: '24px', padding: '60px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
+                <div className="verdict-icon" style={{ color: verdict.color, display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
                     {verdict.icon}
                 </div>
-                <div style={{ fontSize: '40px', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0', textTransform: 'uppercase', letterSpacing: '2px' }}>
+                <div className="verdict-title" style={{ fontSize: '40px', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0', textTransform: 'uppercase', letterSpacing: '2px' }}>
                     {isEn ? verdict.en : verdict.cz}
                 </div>
-                <div style={{ color: '#d1d5db', fontSize: '1.15rem', maxWidth: '600px', margin: '30px auto 0', lineHeight: '1.8' }}>
+                <div className="verdict-desc" style={{ color: '#d1d5db', fontSize: '1.15rem', maxWidth: '600px', margin: '30px auto 0', lineHeight: '1.8' }}>
                     {isEn ? (
                         <p>Based on current market data and benchmarks, the <strong>{gpu.name}</strong> is considered to be a <strong>{verdict.en.toLowerCase()}</strong>.</p>
                     ) : (
@@ -141,13 +146,13 @@ export default async function GpuRecommendPage(props) {
             </div>
         </section>
 
-        {/* 🔥 SEZNAM AD #2: VERDICT AD (POD HLAVNÍM BOXEM) */}
-        <div style={{ marginBottom: '60px' }}>
+        {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE (POUZE MOBIL) */}
+        <div className="ad-mobile-wrapper" style={{ marginBottom: '40px' }}>
             <SeznamAd zoneId={408651} width={300} height={250} />
         </div>
 
         {/* 🚀 QUICK STATS */}
-        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '60px' }}>
+        <section className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '60px' }}>
           <div className="res-card">
               <div className="res-label">PERFORMANCE INDEX</div>
               <div className="res-val" style={{ color: '#66fcf1' }}>{gpu.performance_index || 'N/A'} <span style={{fontSize: '14px'}}>PTS</span></div>
@@ -163,20 +168,21 @@ export default async function GpuRecommendPage(props) {
         </section>
 
         <section style={{ textAlign: 'center', marginTop: '40px' }}>
-            <a href={isEn ? `/en/gpu-performance/${safeSlug}` : `/gpu-performance/${safeSlug}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', padding: '18px 40px', background: 'linear-gradient(135deg, #66fcf1 0%, #45a29e 100%)', color: '#0b0c10', borderRadius: '16px', fontWeight: '950', fontSize: '15px', textDecoration: 'none', textTransform: 'uppercase', boxShadow: '0 10px 30px rgba(102, 252, 241, 0.3)' }} className="launch-btn">
+            <a href={isEn ? `/en/gpu-performance/${safeSlug}` : `/gpu-performance/${safeSlug}`} className="launch-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', padding: '18px 40px', background: 'linear-gradient(135deg, #66fcf1 0%, #45a29e 100%)', color: '#0b0c10', borderRadius: '16px', fontWeight: '950', fontSize: '15px', textDecoration: 'none', textTransform: 'uppercase', boxShadow: '0 10px 30px rgba(102, 252, 241, 0.3)' }}>
                 <Activity size={20} /> <span>{isEn ? 'Full Benchmarks' : 'Kompletní testy'}</span>
             </a>
         </section>
 
-        <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
+        <div className="footer-btns-section" style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
+          <div className="footer-btns" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
             <a href="https://www.hrkgame.com/en/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn"><Flame size={20} /> {isEn ? 'DEALS' : 'SLEVY'}</a>
-            <a href="/support" className="guru-support-btn"><Heart size={20} /> {isEn ? 'SUPPORT' : 'PODPORA'}</a>
+            <a href={isEn ? "/en/support" : "/support"} className="guru-support-btn"><Heart size={20} /> {isEn ? 'SUPPORT' : 'PODPORA'}</a>
           </div>
         </div>
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
+        .recommend-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(102,252,241,0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.05); margin-bottom: 20px; }
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); }
 
@@ -184,11 +190,27 @@ export default async function GpuRecommendPage(props) {
         .res-label { font-size: 10px; font-weight: 950; text-transform: uppercase; color: #6b7280; letter-spacing: 2px; margin-bottom: 10px; }
         .res-val { font-size: 24px; font-weight: 950; color: #fff; }
 
-        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000; font-weight: 950; border-radius: 16px; text-decoration: none; }
-        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-weight: 950; border-radius: 16px; text-decoration: none; }
+        .guru-support-btn, .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; text-decoration: none; transition: 0.3s; text-transform: uppercase; }
+        .guru-support-btn { background: #eab308; color: #000; }
+        .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
+
+        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
 
         @media (max-width: 768px) {
-            .guru-deals-btn, .guru-support-btn { width: 100%; }
+            .guru-recommend-wrapper { padding-top: 80px !important; }
+            .inner-container { padding: 0 15px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+            .main-title { font-size: 1.6rem !important; }
+            .verdict-card { padding: 35px 20px !important; border-radius: 20px !important; }
+            .verdict-title { font-size: 1.8rem !important; }
+            .verdict-desc { font-size: 1rem !important; }
+            .stats-grid { grid-template-columns: 1fr !important; gap: 15px; }
+            .launch-btn { width: 100% !important; justify-content: center; }
+            .footer-btns { flex-direction: column; }
+            .guru-deals-btn, .guru-support-btn { width: 100% !important; }
         }
       `}} />
     </div>
