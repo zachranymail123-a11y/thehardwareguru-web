@@ -58,16 +58,6 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
 
   return (
     <div className={`flex justify-center items-center my-6 w-full ${className}`}>
-      {/* 🚀 ČISTÝ CSS FIX: Pouze na malých mobilech pod 380px aplikuje 85% zmenšení, aby se reklama neořízla. Žádné další divy. */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media (max-width: 380px) {
-          #${divId} {
-            transform: scale(0.85);
-            transform-origin: center center;
-          }
-        }
-      `}} />
-      
       <div 
         id={divId} 
         style={{ minWidth: width, minHeight: height, background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}
