@@ -60,8 +60,10 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
     <div className={`flex justify-center items-center my-6 w-full ${className}`}>
       <div 
         id={divId} 
+        /* OPRAVA ZDE: minWidth nahrazeno za width 100% a maxWidth */
         style={{ width: '100%', maxWidth: width, minHeight: height, background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}
-        className="overflow-hidden flex justify-center items-center [&_div]:!max-w-full [&_iframe]:!max-w-full [&_iframe]:!h-auto"
+        /* OPRAVA ZDE: přidáno [&_*]:!max-w-full pro donucení Seznam obalů ke zmenšení na mobilech */
+        className="overflow-hidden flex justify-center items-center [&_*]:!max-w-full [&_iframe]:!h-auto"
       >
       </div>
     </div>
