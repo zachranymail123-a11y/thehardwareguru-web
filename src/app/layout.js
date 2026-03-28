@@ -18,20 +18,28 @@ export const metadata = {
   description: 'Exkluzivní novinky ze světa hardwaru, recenze her a streamy s unikátní AI.',
   metadataBase: new URL('https://thehardwareguru.cz'),
   alternates: { canonical: '/' },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large' } },
 }
 
 export default async function RootLayout({ children, params }) {
   const resolvedParams = await params;
   const locale = resolvedParams?.locale || 'cs';
   const isEn = locale === 'en';
-  const baseUrl = "https://thehardwareguru.cz";
   
+  const envVars = {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+  };
+
+  const baseUrl = "https://thehardwareguru.cz";
+
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "The Hardware Guru",
     "url": baseUrl,
     "logo": `${baseUrl}/logo.png`,
+    "image": [`${baseUrl}/logo.png`],
     "sameAs": [
       "https://kick.com/thehardwareguru",
       "https://youtube.com/@TheHardwareGuru_Czech"
@@ -58,22 +66,45 @@ export default async function RootLayout({ children, params }) {
   return (
     <html lang={locale}>
       <head>
-        <script async src="https://ssp.seznam.cz/static/js/ssp.js"></script>
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993" crossOrigin="anonymous"></script>
-        
+        <script async src="https://ssp.seznam.cz/static/js/ssp.js"></script>
+
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(websiteSchema) }} />
 
+        <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Novinky" href="https://thehardwareguru.cz/rss.xml" />
+        <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Srovnání" href="https://thehardwareguru.cz/rss-comparisons.xml" />
+        
+        <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="afterInteractive" />
+        <Script id="onesignal-init" strategy="afterInteractive">
+          {`
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            OneSignalDeferred.push(async function(OneSignal) {
+              await OneSignal.init({
+                appId: "1ea5ad89-5f3e-4922-b2c8-e8cd05304047",
+              });
+            });
+          `}
+        </Script>
+
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-9W5FBC9P68" strategy="afterInteractive" />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-9W5FBC9P68');`}
+        </Script>
       </head>
 
       <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         
+        <div id="guru-env-bridge" style={{ display: 'none' }} data-url={envVars.NEXT_PUBLIC_SUPABASE_URL} data-key={envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY} />
+        
+        {/* 💸 VINĚTA */}
         <SeznamInterstitial />
+
         <Navbar />
         <SocialTracker />
         <Tracker />
 
+        {/* 🔥 SVISLÉ REKLAMY (Upraveno pro Windows 125/150% scaling) 🔥 */}
         <style dangerouslySetInnerHTML={{__html: `
           .skyscraper-left, .skyscraper-right {
             position: fixed;
@@ -83,18 +114,20 @@ export default async function RootLayout({ children, params }) {
             z-index: 9999 !important;
             pointer-events: auto;
           }
+          
           .skyscraper-left { left: calc(50% - 940px); }
           .skyscraper-right { right: calc(50% - 940px); }
 
           @media (min-width: 1350px) { .skyscraper-right { display: block; } }
           @media (min-width: 1750px) { .skyscraper-left { display: block; } }
 
-          /* 🚀 Třídy pro mobilní a desktop patičku */
-          .f-desktop { display: none; justify-content: center; width: 100%; }
-          .f-mobile { display: flex; justify-content: center; width: 100%; }
-          @media (min-width: 769px) { 
-            .f-desktop { display: flex; } 
-            .f-mobile { display: none; } 
+          /* 🚀 MOBILNÍ / DESKTOP SPODNÍ REKLAMA */
+          .ad-desktop-wrapper { display: flex; justify-content: center; }
+          .ad-mobile-wrapper { display: none; }
+          
+          @media (max-width: 768px) {
+            .ad-desktop-wrapper { display: none; }
+            .ad-mobile-wrapper { display: flex; justify-content: center; }
           }
         `}} />
 
@@ -108,24 +141,61 @@ export default async function RootLayout({ children, params }) {
 
         <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden', zIndex: 1 }}>
           {children}
-          <div style={{ maxWidth: '1100px', margin: '40px auto', padding: '0 20px' }}>
+
+          <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
              <ShareWidget isEn={isEn} />
           </div>
         </main>
 
-        <div style={{ width: '100%', background: '#0a0b0d', position: 'relative', zIndex: 10000, padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-           {/* 🚀 OPRAVA: Návrat odděleného načítání pro mobil a desktop */}
-           <div className="f-desktop">
+        <footer style={{ padding: '60px 20px 40px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto', background: '#0a0b0d', position: 'relative', zIndex: 10000 }}>
+          <style dangerouslySetInnerHTML={{__html: `
+            .guru-footer-link { color: #9ca3af; text-decoration: none; transition: 0.2s; font-size: 13px; font-weight: bold; text-transform: uppercase; }
+            .guru-footer-link:hover { color: #fff !important; }
+            .guru-footer-sitemap { color: #a855f7 !important; font-weight: 950 !important; }
+            .copyright { color: #4b5563; font-size: 12px; margin-top: 20px; font-weight: 600; }
+            .eeat-link { color: #6b7280; font-size: 11px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; transition: 0.2s; }
+            .eeat-link:hover { color: #d1d5db; }
+          `}} />
+          
+          <div className="ad-desktop-wrapper">
+            <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto 40px', display: 'flex', justifyContent: 'center' }}>
               <SeznamAd zoneId={408654} width={970} height={210} />
-           </div>
-           <div className="f-mobile">
-              <SeznamAd zoneId={408651} width={300} height={250} />
-           </div>
-        </div>
+            </div>
+          </div>
 
-        <footer style={{ padding: '40px 20px', textAlign: 'center', background: '#0a0b0d', position: 'relative', zIndex: 10001, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="ad-mobile-wrapper">
+            <div style={{ width: '100%', margin: '0 auto 40px', display: 'flex', justifyContent: 'center' }}>
+              <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+          </div>
+
           <VisitorCounter locale={locale} />
-          <div className="copyright" style={{ color: '#4b5563', fontSize: '12px', marginTop: '20px' }}>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginBottom: '20px' }}>
+            <a href={locale === 'en' ? "/en/clanky/jak-vyresit-bottleneck-navod" : "/clanky/jak-vyresit-bottleneck-navod"} className="guru-footer-link">
+              {locale === 'en' ? 'How to fix bottleneck' : 'Jak vyřešit Bottleneck'}
+            </a>
+            <span style={{ color: '#333' }}>|</span>
+            <a href={locale === 'en' ? "/en/clanky/nejlepsi-cpu-pro-rtx-5090-5080" : "/clanky/nejlepsi-cpu-pro-rtx-5090-5080"} className="guru-footer-link">
+              {locale === 'en' ? 'Best CPU for RTX 50' : 'Nejlepší CPU pro RTX 50'}
+            </a>
+            <span style={{ color: '#333' }}>|</span>
+            <a href={locale === 'en' ? "/en/sitemap" : "/sitemap"} className="guru-footer-link guru-footer-sitemap">
+              {locale === 'en' ? 'COMPLETE NAVIGATION' : 'KOMPLETNÍ NAVIGACE'}
+            </a>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginBottom: '30px' }}>
+            <a href={locale === 'en' ? "/en/about" : "/about"} className="eeat-link">{locale === 'en' ? 'About Us' : 'O nás'}</a>
+            <span style={{ color: '#333' }}>•</span>
+            <a href={locale === 'en' ? "/en/contact" : "/contact"} className="eeat-link">{locale === 'en' ? 'Contact' : 'Kontakt'}</a>
+            <span style={{ color: '#333' }}>•</span>
+            <a href={locale === 'en' ? "/en/privacy-policy" : "/privacy-policy"} className="eeat-link">{locale === 'en' ? 'Privacy Policy' : 'Ochrana soukromí'}</a>
+            <span style={{ color: '#333' }}>•</span>
+            <a href={locale === 'en' ? "/en/terms-of-service" : "/terms-of-service"} className="eeat-link">{locale === 'en' ? 'Terms of Service' : 'Podmínky použití'}</a>
+          </div>
+
+          <div className="copyright">
             © {new Date().getFullYear()} The Hardware Guru. Pro hráče, s láskou k železu.
           </div>
         </footer>
