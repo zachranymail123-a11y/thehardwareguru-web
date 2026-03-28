@@ -5,8 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU ARTICLE ENGINE V5.3 (CLEAN MODE FOR ADSENSE REVIEW)
- * 🚀 CÍL: Schválení Google AdSense - dočasně skryty reklamní sloty a nápisy.
+ * GURU ARTICLE ENGINE V5.4 (IN-TEXT ADS MAXIMIZER)
+ * 🚀 CÍL: Dynamická injekce Seznam reklam za 3. a 6. odstavcem pro brutální Viewability.
  */
 
 export const runtime = "nodejs";
@@ -95,10 +95,15 @@ export default async function ArticleDetailPage(props) {
     const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}clanky/${post.slug}`;
     const readingTime = getReadingTime(content);
 
+    // 🚀 GURU ADS INJECTION LOGIC (3. a 6. odstavec)
     const contentParts = content ? content.split('</p>') : [];
-    const midPoint = Math.ceil(contentParts.length / 2);
-    const firstHalf = contentParts.slice(0, midPoint).join('</p>');
-    const secondHalf = contentParts.slice(midPoint).join('</p>');
+    
+    // Část 1: Text před 1. reklamou (odstavce 0, 1, 2)
+    const part1 = contentParts.slice(0, 3).join('</p>') + (contentParts.length > 3 ? '</p>' : '');
+    // Část 2: Text mezi 1. a 2. reklamou (odstavce 3, 4, 5)
+    const part2 = contentParts.slice(3, 6).join('</p>') + (contentParts.length > 6 ? '</p>' : '');
+    // Část 3: Zbytek článku po 2. reklamě
+    const part3 = contentParts.slice(6).join('</p>');
 
     const articleSchema = {
       "@context": "https://schema.org",
@@ -156,9 +161,28 @@ export default async function ArticleDetailPage(props) {
                     )}
 
                     <div className="guru-article-content">
-                         <div dangerouslySetInnerHTML={{ __html: firstHalf + (contentParts.length > 1 ? '</p>' : '') }} />
-                         {contentParts.length > 3 && <SeznamAd zoneId={408651} width={300} height={250} />}
-                         <div dangerouslySetInnerHTML={{ __html: secondHalf }} />
+                         {/* Text po 3. odstavec */}
+                         {part1 && <div dangerouslySetInnerHTML={{ __html: part1 }} />}
+                         
+                         {/* 1. InText Reklama */}
+                         {contentParts.length > 3 && (
+                             <div style={{ margin: '40px 0', display: 'flex', justifyContent: 'center', width: '100%' }}>
+                                 <SeznamAd zoneId={408651} width={300} height={250} />
+                             </div>
+                         )}
+                         
+                         {/* Text mezi 3. a 6. odstavcem */}
+                         {part2 && <div dangerouslySetInnerHTML={{ __html: part2 }} />}
+
+                         {/* 2. InText Reklama */}
+                         {contentParts.length > 6 && (
+                             <div style={{ margin: '40px 0', display: 'flex', justifyContent: 'center', width: '100%' }}>
+                                 <SeznamAd zoneId={408651} width={300} height={250} />
+                             </div>
+                         )}
+
+                         {/* Zbytek článku */}
+                         {part3 && <div dangerouslySetInnerHTML={{ __html: part3 }} />}
                     </div>
                     
                     <SeznamAd zoneId={408658} width={480} height={300} />
