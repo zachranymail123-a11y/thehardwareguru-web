@@ -11,11 +11,12 @@ import ShareWidget from '../components/ShareWidget';
 import CookieBanner from '../components/CookieBanner';
 import SeznamAd from '../components/SeznamAd';
 import MobileAnchorAd from '../components/MobileAnchorAd';
+import SeznamInterstitial from '../components/SeznamInterstitial';
 
 /**
- * GURU ROOT LAYOUT V7.4 (THE "FINALLY VISIBLE" UPDATE)
- * 🚀 CÍL: Oprava vrstvení (Z-INDEX). Ads jsou konečně PŘED pozadím.
- * 1080p = jen pravý | 1440p+ = oba.
+ * GURU ROOT LAYOUT V7.5 (INTERSTITIAL & FINAL Z-INDEX FIX)
+ * 🚀 CÍL: Maximální prachy. Ads jsou PŘED pozadím. Viněta aktivována.
+ * 1080p = jen pravá | 1440p+ = obě.
  */
 
 export const metadata = {
@@ -45,8 +46,6 @@ export default async function RootLayout({ children, params }) {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
   };
 
-  const baseUrl = "https://thehardwareguru.cz";
-
   return (
     <html lang={locale}>
       <head>
@@ -61,6 +60,9 @@ export default async function RootLayout({ children, params }) {
 
       <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         
+        {/* 💸 VINĚTA (INTERSTITIAL) 💸 */}
+        <SeznamInterstitial />
+
         <Navbar />
         <SocialTracker />
         <Tracker />
@@ -72,20 +74,19 @@ export default async function RootLayout({ children, params }) {
             top: 130px;
             width: 300px;
             display: none;
-            z-index: 100; /* 🚀 TEĎ JSOU PŘED POZADÍM */
+            z-index: 100; /* 🚀 PŘED POZADÍM */
             pointer-events: auto;
           }
           
-          /* Odsunutí o 920px, aby to na homepage neřezalo do obsahu */
-          .skyscraper-left { left: calc(50% - 920px); }
-          .skyscraper-right { right: calc(50% - 920px); }
+          .skyscraper-left { left: calc(50% - 940px); }
+          .skyscraper-right { right: calc(50% - 940px); }
 
-          /* LEVEL 1: 1080p (Standardní desktop) -> JEN PRAVÁ */
+          /* LEVEL 1: 1080p (Standard) -> JEN PRAVÁ */
           @media (min-width: 1550px) {
             .skyscraper-right { display: block; }
           }
 
-          /* LEVEL 2: 1440p a více -> OBĚ STRANY */
+          /* LEVEL 2: 1440p+ -> OBĚ STRANY */
           @media (min-width: 2150px) {
             .skyscraper-left { display: block; }
           }
