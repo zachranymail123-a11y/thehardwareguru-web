@@ -11,14 +11,12 @@ import {
   Info,
   BookOpen
 } from 'lucide-react';
+import SeznamAd from '../../components/SeznamAd';
 
 /**
  * GURU ARTICLE ARCHIVE ENGINE V3.0 (GOLDEN RICH RESULTS FIX)
  * Cesta: src/app/clanky/page.js
  * 🚀 CÍL: 100% zelená v GSC a blesková indexace všech novinek a recenzí.
- * 🛡️ FIX 1: Přepsáno na Server Component (SSR) pro maximální SEO autoritu.
- * 🛡️ FIX 2: Implementován Golden Rich standard - ItemList a BreadcrumbList JSON-LD.
- * 🛡️ FIX 3: Podpora CZ/EN varianty a absolutních Canonical URL.
  */
 
 export const runtime = "nodejs";
@@ -117,7 +115,28 @@ export default async function ClankyArchivePage(props) {
         .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
         .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
+        
+        /* GURU RESPONSIVE ADS */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
+        @media (max-width: 768px) {
+          .ad-desktop-wrapper { display: none; }
+          .ad-mobile-wrapper { display: flex; justify-content: center; }
+          header { padding-top: 90px !important; margin-bottom: 30px !important; }
+          main { padding: 0 15px !important; }
+        }
       `}} />
+
+      {/* 🔥 TOP REKLAMA (Archiv-Top) */}
+      <div style={{ maxWidth: '1200px', margin: '40px auto 0 auto', padding: '0 20px' }}>
+        <div className="ad-desktop-wrapper">
+          <SeznamAd zoneId={408654} width={970} height={210} />
+        </div>
+        <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
+          <SeznamAd zoneId={408651} width={300} height={250} />
+        </div>
+      </div>
 
       <header style={{ maxWidth: '800px', margin: '20px auto 60px', textAlign: 'center', padding: '0 20px', paddingTop: '120px' }}>
         <h1 style={{ fontSize: 'clamp(32px, 5vw, 56px)', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0 }}>
@@ -136,7 +155,7 @@ export default async function ClankyArchivePage(props) {
             </h2>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '40px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '30px' }}>
             {safePosts.map((post) => {
               const badge = getBadgeInfo(post);
               const displayTitle = (isEn && post.title_en) ? post.title_en : post.title;
