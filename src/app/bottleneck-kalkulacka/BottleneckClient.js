@@ -153,7 +153,7 @@ export default function BottleneckClient({
         <div className="bn-wrapper">
             <div className="bn-header">
                 <div className="pred-badge"><Layers size={16} /> PROFESSIONAL SIMULATOR</div>
-                <h1 style={{ fontSize: '3.5rem', fontWeight: '950', textTransform: 'uppercase', margin: '10px 0', textShadow: '0 0 30px rgba(102, 252, 241, 0.4)' }}>
+                <h1 className="bn-main-title" style={{ fontSize: '3.5rem', fontWeight: '950', textTransform: 'uppercase', margin: '10px 0', textShadow: '0 0 30px rgba(102, 252, 241, 0.4)' }}>
                     {isEn ? 'System Bottleneck' : 'Bottleneck Kalkulačka'}
                 </h1>
                 <p style={{ color: '#9ca3af', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '2px' }}>Najdi nejslabší článek své sestavy.</p>
@@ -220,8 +220,8 @@ export default function BottleneckClient({
                                 <div className="pct-label" style={{ color: statusColor }}>{a.limitedBy} tě brzdí o {a.bottleneckPercent}%</div>
                             </div>
 
-                            {/* 🔥 SEZNAM AD: VNITŘNÍ REKLAMA */}
-                            <div style={{ margin: '30px -20px' }}>
+                            {/* 🔥 SEZNAM AD: VNITŘNÍ REKLAMA (ZOBRAZENA POUZE NA MOBILU) */}
+                            <div className="ad-mobile-wrapper" style={{ margin: '30px -20px' }}>
                                 <SeznamAd zoneId={408651} width={300} height={250} />
                             </div>
 
@@ -323,10 +323,16 @@ export default function BottleneckClient({
                 .recommendation h4 { font-size: 18px; font-weight: 950; text-transform: uppercase; margin-bottom: 15px; color: #fff; }
                 .recommendation p { font-size: 15px; color: #9ca3af; lineHeight: 1.6; }
 
+                /* 🚀 RESPONSIVE ADS SYSTEM */
+                .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+                .ad-mobile-wrapper { display: none; width: 100%; }
+
                 /* 🚀 OPRAVA MOBILNÍHO ZOBRAZENÍ */
                 @media (max-width: 768px) {
+                  .ad-desktop-wrapper { display: none !important; }
+                  .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
                   .bn-wrapper { padding: 15px; border-radius: 20px; }
-                  .bn-header h1 { font-size: 1.8rem !important; }
+                  .bn-main-title { font-size: 1.8rem !important; }
                   .bn-inputs-card { padding: 20px; border-radius: 20px; }
                   .section-title { font-size: 16px; margin-bottom: 25px; }
                   .bn-select { padding: 12px; font-size: 14px; }
