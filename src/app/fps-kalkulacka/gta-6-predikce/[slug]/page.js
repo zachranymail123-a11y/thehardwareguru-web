@@ -6,8 +6,8 @@ import ShareButtonsClient from './ShareButtonsClient';
 import SeznamAd from '../../../../components/SeznamAd';
 
 /**
- * GURU GTA 6 PREDICTOR - V11.3 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Maximální monetizace GTA VI hypu skrze Seznam Partner.
+ * GURU GTA 6 PREDICTOR - V11.4 (MOBILE OPTIMIZED)
+ * 🚀 CÍL: Maximální monetizace GTA VI hypu a perfektní mobilní zobrazení.
  */
 
 export const dynamic = 'force-dynamic';
@@ -39,7 +39,7 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
     const hwComboName = `${cpuName} + ${gpuName}`;
     const resolutionStr = slug.endsWith('2160p') ? '2160p' : slug.endsWith('1440p') ? '1440p' : '1080p';
 
-    // 🚀 GURU GTA 6 FPS ENGINE (Zjednodušená verze pro render)
+    // 🚀 GURU GTA 6 FPS ENGINE
     const GPU_ratio = (gpu.performance_index || 100) / 260;
     const CPU_factor = Math.max(0.7, (cpu.performance_index || 100) / 100);
     const baseFps = resolutionStr === '2160p' ? 45 : (resolutionStr === '1440p' ? 75 : 95);
@@ -49,20 +49,30 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
     const shareUrl = `${baseUrl}/fps-kalkulacka/gta-6-predikce/${slug}?cpuId=${cpuId}&gpuId=${gpuId}`;
 
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
-            <main style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 20px' }}>
-                <header style={{ textAlign: 'center', marginBottom: '50px' }}>
+        <div className="guru-gta-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+            <main className="inner-container" style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+                <header style={{ textAlign: 'center', marginBottom: '40px' }}>
                     <div className="pred-badge"><Sparkles size={16} /> AI PREDIKCE AKTIVNÍ</div>
-                    <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', lineHeight: 1.1, margin: 0 }}>
+                    <h1 className="main-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', lineHeight: 1.1, margin: 0 }}>
                         GTA VI <span style={{ color: '#f43f5e' }}>VÝKON</span>
                     </h1>
-                    <p style={{ fontSize: '18px', fontWeight: '900', color: '#9ca3af', marginTop: '20px', textTransform: 'uppercase' }}>
+                    <p className="hw-label" style={{ fontSize: '18px', fontWeight: '900', color: '#9ca3af', marginTop: '20px', textTransform: 'uppercase' }}>
                         {hwComboName} <span style={{ color: '#f43f5e' }}>({resolutionStr.toUpperCase()})</span>
                     </p>
                 </header>
 
+                {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
+                <div style={{ marginBottom: '40px' }}>
+                    <div className="ad-desktop-wrapper">
+                        <SeznamAd zoneId={408654} width={970} height={210} />
+                    </div>
+                    <div className="ad-mobile-wrapper">
+                        <SeznamAd zoneId={408651} width={300} height={250} />
+                    </div>
+                </div>
+
                 <div className="result-card">
-                    <div className="fps-main">{predictedFps} <span style={{ fontSize: '3rem' }}>FPS</span></div>
+                    <div className="fps-main">{predictedFps} <span className="fps-unit" style={{ fontSize: '3rem' }}>FPS</span></div>
                     <div className="fps-label">PŘEDPOKLÁDANÁ RYCHLOST HRY</div>
                     <div className="stats-row">
                         <div className="stat-pill"><Cpu size={18} color="#f59e0b" /> CPU: {Math.round(predictedFps * 1.1)} FPS</div>
@@ -70,8 +80,8 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                     </div>
                 </div>
 
-                {/* 🔥 SEZNAM AD: GURU MONETIZATION ENGINE (INJEKCE POD VÝSLEDEK) */}
-                <div style={{ marginTop: '30px' }}>
+                {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE (Zobrazeno pouze na mobilu) */}
+                <div className="ad-mobile-wrapper" style={{ marginTop: '30px' }}>
                     <SeznamAd zoneId={408651} width={300} height={250} />
                 </div>
 
@@ -101,11 +111,24 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                 .res-switch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 30px; }
                 .res-nav { padding: 18px; background: rgba(15,17,21,0.8); border-radius: 16px; text-align: center; text-decoration: none; color: #6b7280; font-weight: 950; border: 1px solid #222; transition: 0.3s; }
                 .res-nav.active { border-color: #f43f5e; background: rgba(244, 63, 94, 0.1); color: #f43f5e; }
+
+                /* 🚀 RESPONSIVE ADS SYSTEM */
+                .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+                .ad-mobile-wrapper { display: none; width: 100%; }
                 
                 @media (max-width: 768px) { 
-                    .fps-main { font-size: 5rem; } 
-                    .stats-row { flex-direction: column; align-items: center; }
-                    .res-switch-grid { grid-template-columns: 1fr; }
+                    .guru-gta-wrapper { padding-top: 80px !important; }
+                    .inner-container { padding: 0 15px !important; }
+                    .ad-desktop-wrapper { display: none !important; }
+                    .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+                    .main-title { font-size: 2.2rem !important; }
+                    .hw-label { font-size: 14px !important; }
+                    .result-card { padding: 35px 20px !important; border-radius: 24px !important; }
+                    .fps-main { font-size: 4.5rem !important; } 
+                    .fps-unit { font-size: 1.5rem !important; }
+                    .stats-row { flex-direction: column; align-items: center; gap: 10px; margin-top: 25px; padding-top: 20px; }
+                    .stat-pill { width: 100%; justify-content: center; }
+                    .res-switch-grid { grid-template-columns: 1fr; gap: 10px; }
                 }
             `}} />
         </div>
