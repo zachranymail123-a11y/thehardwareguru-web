@@ -9,8 +9,8 @@ import GuruGpuCompareText from '../../../components/GuruGpuCompareText';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V121.0 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Maximální monetizace GPU upgradů skrze Seznam Partner.
+ * GURU GPU UPGRADE ENGINE - DETAIL V121.1 (MOBILE OPTIMIZED)
+ * 🚀 CÍL: Maximální monetizace GPU upgradů a perfektní mobilní UI.
  */
 
 export const runtime = "nodejs";
@@ -146,47 +146,52 @@ export default async function GpuUpgradePage(props) {
   const moreUpgrades = await getMoreUpgrades(upgrade.slug);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-upgrade-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
-      <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+      <main className="inner-container" style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? '/en/gpuvs' : '/gpuvs'} className="guru-back-btn">
-            <ChevronLeft size={16} /> {isEn ? 'BACK TO VS ENGINE' : 'ZPĚT NA SROVNÁNÍ'}
+            <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
           </a>
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', padding: '6px 16px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.1)' }}>
+          <div className="upgrade-badge">
             <ArrowUpCircle size={14} /> GURU UPGRADE ANALYSIS
           </div>
-          <h1 style={{ fontSize: 'clamp(1.8rem, 4vw, 3rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0', lineHeight: '1.2' }}>
-            <span style={{ color: '#6b7280', fontSize: '0.6em', display: 'block', marginBottom: '10px' }}>{isEn ? 'UPGRADING FROM' : 'UPGRADE Z'}</span>
+          <h1 className="main-title" style={{ fontSize: 'clamp(1.8rem, 4vw, 3rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0', lineHeight: '1.2' }}>
+            <span className="title-prefix" style={{ color: '#6b7280', fontSize: '0.6em', display: 'block', marginBottom: '10px' }}>{isEn ? 'UPGRADING FROM' : 'UPGRADE Z'}</span>
             {normalizeName(gpuA.name)} <br/>
-            <span style={{ color: '#66fcf1', fontSize: '0.6em', display: 'block', margin: '15px 0 10px 0' }}>{isEn ? 'TO' : 'NA'}</span>
+            <span className="title-mid" style={{ color: '#66fcf1', fontSize: '0.6em', display: 'block', margin: '15px 0 10px 0' }}>{isEn ? 'TO' : 'NA'}</span>
             {normalizeName(gpuB.name)}
           </h1>
         </header>
 
         <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '40px' }}>
-            <div className="upgrade-box" style={{ opacity: 0.7 }}>
+            <div className="upgrade-box current-box" style={{ opacity: 0.7 }}>
                 <span className="box-label">{isEn ? 'CURRENT' : 'STÁVAJÍCÍ'}</span>
                 <h2 className="box-title">{normalizeName(gpuA.name)}</h2>
             </div>
             <div className="vs-badge">➜</div>
-            <div className="upgrade-box" style={{ borderTopColor: '#66fcf1', boxShadow: '0 0 40px rgba(102, 252, 241, 0.2)' }}>
+            <div className="upgrade-box target-box" style={{ borderTopColor: '#66fcf1', boxShadow: '0 0 40px rgba(102, 252, 241, 0.2)' }}>
                 <span className="box-label" style={{ color: '#66fcf1' }}>{isEn ? 'NEW UPGRADE' : 'NOVÝ UPGRADE'}</span>
                 <h2 className="box-title">{normalizeName(gpuB.name)}</h2>
                 <div className="perf-gain">+{finalPerfDiff}% {isEn ? 'PERF' : 'VÝKONU'}</div>
             </div>
         </div>
 
-        {/* 🔥 SEZNAM AD #1: TOP BANNER POD BOXAMA */}
-        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
-            <SeznamAd zoneId={408654} width={970} height={210} />
+        {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
+        <div style={{ marginBottom: '40px' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
         </div>
 
         <section style={{ marginBottom: '60px' }}>
-            <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div className="analysis-card" style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <Info size={24} color="#66fcf1" /> {isEn ? 'Upgrade Analysis' : 'Analýza upgradu'}
                 </h2>
@@ -216,8 +221,8 @@ export default async function GpuUpgradePage(props) {
                 </div>
               ))}
 
-              {/* 🔥 SEZNAM AD #2: PROSTŘEDEK TABULKY */}
-              <div style={{ padding: '20px 0', display: 'flex', justifyContent: 'center' }}>
+              {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE (POUZE MOBIL) */}
+              <div className="ad-mobile-wrapper" style={{ margin: '20px 0' }}>
                   <SeznamAd zoneId={408651} width={300} height={250} />
               </div>
 
@@ -269,14 +274,14 @@ export default async function GpuUpgradePage(props) {
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
+        .upgrade-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 16px; border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.1); margin-bottom: 20px; }
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         
-        .guru-grid-ring { display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; }
-        .upgrade-box { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 40px 20px; text-align: center; }
+        .upgrade-box { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 40px 20px; text-align: center; border-top: 5px solid #374151; }
         .box-label { font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; display: block; margin-bottom: 10px; color: #6b7280; }
         .box-title { font-size: clamp(1.4rem, 3vw, 2.2rem); font-weight: 950; color: #d1d5db; text-transform: uppercase; margin: 0; line-height: 1.1; }
         .perf-gain { font-size: 16px; font-weight: 950; color: #66fcf1; margin-top: 10px; text-transform: uppercase; }
-        .vs-badge { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 950; font-size: 24px; color: #66fcf1; border: 2px solid #66fcf1; }
+        .vs-badge { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 950; font-size: 24px; color: #66fcf1; border: 2px solid #66fcf1; background: #0a0b0d; }
 
         .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; display: flex; align-items: center; gap: 12px; }
         .table-wrapper { background: rgba(15, 17, 21, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
@@ -284,7 +289,7 @@ export default async function GpuUpgradePage(props) {
         .spec-val-side { flex: 1; font-size: 16px; }
         .spec-val-side:first-child { text-align: right; }
         .spec-val-side:last-child { text-align: left; }
-        .table-label { width: 150px; text-align: center; font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; }
+        .table-label { width: 150px; text-align: center; font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; }
 
         .related-grid-upgrade { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
         .rel-card { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; text-decoration: none; transition: 0.3s; }
@@ -298,16 +303,30 @@ export default async function GpuUpgradePage(props) {
         .silo-link:hover { background: rgba(255,255,255,0.05); transform: translateX(5px); color: #fff; }
 
         .cta-row-upgrade { display: flex; gap: 20px; justify-content: center; margin-top: 50px; }
-        .btn-guru { flex: 1; max-width: 300px; padding: 18px; border-radius: 16px; font-weight: 950; text-transform: uppercase; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-guru { flex: 1; max-width: 300px; padding: 18px; border-radius: 16px; font-weight: 950; text-transform: uppercase; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.3s; }
         .btn-guru.deals { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
         .btn-guru.support { background: #eab308; color: #000; }
+        .btn-guru:hover { filter: brightness(1.1); transform: scale(1.02); }
+
+        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
 
         @media (max-width: 768px) {
-            .guru-grid-ring { grid-template-columns: 1fr; }
-            .vs-badge { margin: 10px auto; transform: rotate(90deg); }
+            .guru-upgrade-wrapper { padding-top: 80px !important; }
+            .inner-container { padding: 0 15px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+            .main-title { font-size: 1.6rem !important; }
+            .guru-grid-ring { grid-template-columns: 1fr !important; gap: 10px; }
+            .upgrade-box { padding: 25px 15px !important; border-radius: 20px !important; }
+            .vs-badge { margin: 10px auto; transform: rotate(90deg); width: 50px; height: 50px; font-size: 20px; }
+            .analysis-card { padding: 25px 15px !important; border-radius: 20px !important; }
+            .section-h2 { font-size: 1.4rem !important; }
             .spec-row-style { padding: 15px 10px; }
             .table-label { width: 100px; }
-            .cta-row-upgrade { flex-direction: column; }
+            .spec-val-side { font-size: 14px; }
+            .cta-row-upgrade { flex-direction: column; gap: 15px; }
             .btn-guru { max-width: 100%; }
         }
       `}} />
