@@ -53,11 +53,15 @@ export default async function BestGpuPage({ params }) {
           </p>
         </header>
 
-        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD HLAVIČKOU */}
+        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD HLAVIČKOU (OPRAVENO PRO MOBILY) */}
         <div className="guru-best-ad-slot">
             <span className="ad-label">Advertisement</span>
-            <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-            <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+            <div className="ad-desktop-wrapper">
+              <iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe>
+            </div>
+            <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
+              <iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe>
+            </div>
         </div>
 
         <section>
@@ -72,12 +76,16 @@ export default async function BestGpuPage({ params }) {
                     <div style={{ color:'#66fcf1', fontSize:'13px', fontWeight: 'bold' }}>Performance index: {gpu.performance_index}</div>
                   </a>
 
-                  {/* 🔥 ADS SLOT #2: GRID INJECTION (PO 4. KARTĚ) */}
+                  {/* 🔥 ADS SLOT #2: GRID INJECTION (PO 4. KARTĚ - OPRAVENO PRO MOBILY) */}
                   {i === 3 && (
                     <div className="guru-best-ad-slot grid-span-ad">
                       <span className="ad-label">Sponsored Hardware Recommendation</span>
-                      <div className="ad-desktop"><iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
-                      <div className="ad-mobile"><iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe></div>
+                      <div className="ad-desktop-wrapper">
+                        <iframe data-aa='2431217' src='https://acceptable.a-ads.com/2431217/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe>
+                      </div>
+                      <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
+                        <iframe data-aa='2431218' src='https://acceptable.a-ads.com/2431218/?size=Adaptive' style={{border:0, padding:0, width:'100%', height:'100px', overflow:'hidden', display: 'block', margin: 'auto'}}></iframe>
+                      </div>
                     </div>
                   )}
                 </React.Fragment>
@@ -103,11 +111,14 @@ export default async function BestGpuPage({ params }) {
         
         .guru-best-ad-slot { margin: 30px 0; padding: 15px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 20px; text-align: center; }
         .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
-        .ad-desktop { display: block; } .ad-mobile { display: none; }
+        
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
         
         @media (min-width: 768px) { .grid-span-ad { grid-column: 1 / -1; } }
         @media (max-width: 768px) {
-            .ad-desktop { display: none; } .ad-mobile { display: block; }
+            .ad-desktop-wrapper { display: none; } 
+            .ad-mobile-wrapper { display: flex; justify-content: center; }
             .best-gpu-card { padding: 20px; }
         }
       `}} />
