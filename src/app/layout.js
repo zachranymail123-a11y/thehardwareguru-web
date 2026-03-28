@@ -10,13 +10,14 @@ import VisitorCounter from '../components/VisitorCounter';
 import ShareWidget from '../components/ShareWidget';
 import CookieBanner from '../components/CookieBanner';
 import SeznamAd from '../components/SeznamAd';
+import AdBlockDetector from '../components/AdBlockDetector';
 
 import MobileAnchorAd from '../components/MobileAnchorAd';
 import SeznamInterstitial from '../components/SeznamInterstitial';
 
 /**
- * GURU ROOT LAYOUT V6.5 (SIDEBAR POSITION & Z-INDEX FINAL FIX)
- * 🚀 CÍL: Posunutí reklam a snížení z-indexu, aby nepřekážely navigátorovi a menu.
+ * GURU ROOT LAYOUT V6.6 (ADBLOCK DETECTOR INTEGRATION)
+ * 🚀 CÍL: Slušná detekce blokování reklam při zachování stability layoutu.
  */
 
 export const metadata = {
@@ -241,6 +242,7 @@ export default async function RootLayout({ children, params }) {
 
         <SestavyBubble />
         <SupportWidget />
+        <AdBlockDetector />
         <CookieBanner />
         <Analytics />
         
