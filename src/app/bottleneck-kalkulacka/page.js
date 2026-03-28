@@ -35,9 +35,14 @@ export default async function BottleneckPage() {
         <div style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', paddingTop: '100px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
                 
-                {/* 🔥 SEZNAM AD #1: TOP PLACEMENT (NAD NÁSTROJEM) */}
-                <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
-                    <SeznamAd zoneId={408654} width={970} height={210} />
+                {/* 🔥 SEZNAM AD #1: TOP PLACEMENT (OPRAVENO PRO MOBILY) */}
+                <div style={{ marginBottom: '40px' }}>
+                    <div className="ad-desktop-wrapper">
+                        <SeznamAd zoneId={408654} width={970} height={210} />
+                    </div>
+                    <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
+                        <SeznamAd zoneId={408651} width={300} height={250} />
+                    </div>
                 </div>
 
                 <BottleneckClient 
@@ -46,7 +51,7 @@ export default async function BottleneckPage() {
                     games={gamesRes.data || []} 
                 />
 
-                {/* 🔥 SEZNAM AD #2: BOTTOM PLACEMENT (POD NÁSTROJEM) */}
+                {/* 🔥 SEZNAM AD #2: BOTTOM PLACEMENT (300x250 JE OK) */}
                 <div style={{ marginTop: '50px', display: 'flex', justifyContent: 'center' }}>
                     <SeznamAd zoneId={408651} width={300} height={250} />
                 </div>
