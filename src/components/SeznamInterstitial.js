@@ -1,33 +1,25 @@
 'use client';
 import { useEffect } from 'react';
 
-/**
- * GURU SMART INTERSTITIAL V1.0
- * 🚀 Aktivace nejvýdělečnějších formátů podle Seznam Partner IDs.
- */
 export default function SeznamInterstitial() {
   useEffect(() => {
-    const triggerAd = () => {
+    const loadInterstitial = () => {
       if (typeof window !== 'undefined' && window.ssp && window.ssp.getAds) {
         const isMobile = window.innerWidth <= 768;
-        
-        // IDs z tvého screenshotu
-        const zoneId = isMobile ? 408681 : 408684;
-
         window.ssp.getAds([
           {
-            zoneId: zoneId,
-            id: 'szn-interstitial',
+            zoneId: isMobile ? 408681 : 408684,
+            id: 'szn-interstitial-slot',
             type: 'interstitial'
           }
         ]);
+      } else if (typeof window !== 'undefined') {
+        setTimeout(loadInterstitial, 500);
       }
     };
 
-    // Spuštění po 2 vteřinách, aby se user nejdřív nadechl
-    const timer = setTimeout(triggerAd, 2000);
-    return () => clearTimeout(timer);
+    loadInterstitial();
   }, []);
 
-  return null;
+  return <div id="szn-interstitial-slot" style={{ display: 'none' }} />;
 }
