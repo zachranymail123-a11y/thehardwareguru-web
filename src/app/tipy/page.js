@@ -2,14 +2,12 @@ import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { Lightbulb, ChevronRight, Play, Bookmark, Heart, Flame, ShieldCheck } from 'lucide-react';
+import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU TIP ARCHIVE ENGINE V2.0 (GOLDEN RICH RESULTS FIX)
+ * GURU TIP ARCHIVE ENGINE V2.1 (MOBILE OPTIMIZED & ADS)
  * Cesta: src/app/tipy/page.js
- * 🚀 CÍL: 100% zelená v GSC a blesková indexace podstránek.
- * 🛡️ FIX 1: Přepsáno na Server Component (SSR) pro maximální SEO autoritu.
- * 🛡️ FIX 2: Implementován Golden Rich standard - ItemList a BreadcrumbList JSON-LD.
- * 🛡️ FIX 3: Podpora CZ/EN varianty a absolutních Canonical URL.
+ * 🚀 CÍL: 100% zelená v GSC, blesková indexace a maximální monetizace.
  */
 
 export const runtime = "nodejs";
@@ -66,7 +64,8 @@ export default async function TipyArchivePage(props) {
     "itemListElement": safeItems.map((item, index) => ({
       "@type": "ListItem",
       "position": index + 1,
-      "url": `${baseUrl}${isEn ? '/en' : ''}/tipy/${isEn && item.slug_en ? item.slug_en : item.slug}`
+      "url": `${baseUrl}${isEn ? '/en' : ''}/tipy/${isEn && item.slug_en ? item.slug_en : item.slug}`,
+      "name": isEn && item.title_en ? item.title_en : item.title
     }))
   };
 
@@ -82,7 +81,7 @@ export default async function TipyArchivePage(props) {
   const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
   return (
-    <div style={archiveWrapper}>
+    <div className="guru-tip-archive-wrapper" style={archiveWrapper}>
       {/* JSON-LD INJECTIONS */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(itemListSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbSchema) }} />
@@ -97,22 +96,14 @@ export default async function TipyArchivePage(props) {
             height: 100%;
             display: flex;
             flex-direction: column;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
             text-decoration: none;
-            cursor: pointer;
         }
         .tip-card:hover { 
             transform: translateY(-10px) scale(1.02); 
             border-color: #a855f7; 
             box-shadow: 0 20px 60px rgba(168, 85, 247, 0.3); 
-        }
-        .tip-image-container {
-            width: 100%; 
-            height: 220px; 
-            overflow: hidden; 
-            position: relative;
-            background: #000;
         }
         .video-badge { 
             position: absolute; 
@@ -130,20 +121,42 @@ export default async function TipyArchivePage(props) {
             z-index: 5; 
             box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
             letter-spacing: 1px;
+            text-transform: uppercase;
         }
-        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
-        .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
-        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
-        .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
+        
+        .guru-support-btn, .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; font-size: 15px; text-transform: uppercase; text-decoration: none !important; transition: 0.3s; }
+        .guru-support-btn { background: #eab308; color: #000 !important; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
+        .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
+        .guru-support-btn:hover, .guru-deals-btn:hover { transform: translateY(-4px); filter: brightness(1.1); }
+
+        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; margin-bottom: 60px; }
+        .ad-mobile-wrapper { display: none; width: 100%; margin-bottom: 40px; }
+
+        @media (max-width: 768px) {
+            .guru-tip-archive-wrapper { padding-top: 80px !important; }
+            .header-box { padding: 30px 15px !important; border-radius: 24px !important; margin-bottom: 40px !important; }
+            .main-title { font-size: 2.2rem !important; }
+            .main-subtitle { font-size: 1rem !important; margin-top: 15px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; }
+            .tip-grid { gap: 25px !important; }
+            .tip-card { border-radius: 20px !important; }
+            .tip-img-container { height: 180px !important; }
+            .tip-content-box { padding: 20px !important; }
+            .tip-card-title { font-size: 1.3rem !important; }
+            .footer-cta-box { margin-top: 60px !important; padding-top: 40px !important; }
+            .guru-support-btn, .guru-deals-btn { width: 100%; }
+        }
       `}} />
 
       <header style={headerStyle}>
-        <div style={headerContentBox}>
+        <div className="header-box" style={headerContentBox}>
           <Lightbulb size={48} color="#a855f7" style={{ margin: '0 auto 20px', filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.4))' }} />
-          <h1 style={titleStyle}>
+          <h1 className="main-title" style={titleStyle}>
             GURU <span style={{ color: '#a855f7' }}>{isEn ? 'TIPS' : 'TIPY'}</span>
           </h1>
-          <p style={subtitleStyle}>
+          <p className="main-subtitle" style={subtitleStyle}>
             {isEn 
               ? 'Quick hacks and hardware wisdom for every tech enthusiast.' 
               : 'Rychlé hacky a hardwarová moudra pro každého technického nadšence.'}
@@ -151,64 +164,80 @@ export default async function TipyArchivePage(props) {
         </div>
       </header>
 
+      {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
+      <div className="ad-desktop-wrapper">
+          <SeznamAd zoneId={408654} width={970} height={210} />
+      </div>
+      <div className="ad-mobile-wrapper">
+          <SeznamAd zoneId={408651} width={300} height={250} />
+      </div>
+
       <main style={gridContainer}>
         {safeItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '100px', color: '#4b5563', fontWeight: 'bold' }}>
             {isEn ? 'NO TIPS FOUND IN DATABASE' : 'V DATABÁZI NENALEZENY ŽÁDNÉ TIPY'}
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '40px' }}>
-            {safeItems.map((item) => {
+          <div className="tip-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '40px' }}>
+            {safeItems.map((item, index) => {
               const displayTitle = (isEn && item.title_en) ? item.title_en : item.title;
               const displayDesc = (isEn && item.description_en) ? item.description_en : item.description;
               const displaySlug = (isEn && item.slug_en) ? item.slug_en : item.slug;
 
               return (
-                <Link key={item.id} href={isEn ? `/en/tipy/${displaySlug}` : `/tipy/${displaySlug}`} style={{ textDecoration: 'none' }}>
-                  <article className="tip-card">
-                    <div className="tip-image-container">
-                      {item.video_id && item.video_id.length > 5 && (
-                        <div className="video-badge"><Play size={12} fill="#fff" /> VIDEO</div>
-                      )}
-                      <img 
-                        src={item.image_url || 'https://images.unsplash.com/photo-1588702547919-26089e690ecc'} 
-                        alt={displayTitle} 
-                        style={imgStyle} 
-                        loading="lazy"
-                      />
-                    </div>
+                <React.Fragment key={item.id}>
+                  <Link href={isEn ? `/en/tipy/${displaySlug}` : `/tipy/${displaySlug}`} style={{ textDecoration: 'none' }}>
+                    <article className="tip-card">
+                      <div className="tip-img-container" style={imgContainerStyle}>
+                        {item.video_id && item.video_id.length > 5 && (
+                          <div className="video-badge"><Play size={12} fill="#fff" /> VIDEO</div>
+                        )}
+                        <img 
+                          src={item.image_url || 'https://images.unsplash.com/photo-1588702547919-26089e690ecc'} 
+                          alt={displayTitle} 
+                          style={imgStyle} 
+                          loading="lazy"
+                        />
+                      </div>
 
-                    <div style={{ padding: '25px', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                      <div style={categoryBadge}>
-                        <Bookmark size={14} /> {isEn ? (item.category_en || 'OPTIMIZATION') : (item.category || 'OPTIMALIZACE')}
+                      <div className="tip-content-box" style={{ padding: '25px', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                        <div style={categoryBadge}>
+                          <Bookmark size={14} /> {isEn ? (item.category_en || 'OPTIMIZATION') : (item.category || 'OPTIMALIZACE')}
+                        </div>
+                        
+                        <h3 className="tip-card-title" style={cardTitleStyle}>{displayTitle}</h3>
+                        <p style={cardDescStyle}>{displayDesc}</p>
+                        
+                        <div style={moreStyle}>
+                          {isEn ? 'LEARN MORE' : 'ZJISTIT VÍCE'} <ChevronRight size={16} />
+                        </div>
                       </div>
-                      
-                      <h3 style={cardTitleStyle}>{displayTitle}</h3>
-                      <p style={cardDescStyle}>{displayDesc}</p>
-                      
-                      <div style={moreStyle}>
-                        {isEn ? 'LEARN MORE' : 'ZJISTIT VÍCE'} <ChevronRight size={16} />
-                      </div>
+                    </article>
+                  </Link>
+
+                  {/* 🔥 MID AD SLOT - GRID INJECTION (POUZE MOBIL) */}
+                  {index === 1 && (
+                    <div className="ad-mobile-wrapper">
+                        <SeznamAd zoneId={408651} width={300} height={250} />
                     </div>
-                  </article>
-                </Link>
+                  )}
+                </React.Fragment>
               );
             })}
           </div>
         )}
 
-        {/* 🚀 GURU GLOBÁLNÍ CTA TLAČÍTKA (Golden standard) */}
-        <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
+        <div className="footer-cta-box" style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
           <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
             {isEn ? "Did these tips help you? Support us by buying games at the best prices." : "Pomohly ti tyto tipy? Podpoř nás nákupem her za ty nejlepší ceny."}
           </h4>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
-            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn" style={{ flex: '1 1 280px' }}>
+            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn">
               <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
             </a>
-            <a href={isEn ? "/en/support" : "/support"} className="guru-support-btn" style={{ flex: '1 1 280px' }}>
+            <Link href={isEn ? "/en/support" : "/support"} className="guru-support-btn">
               <Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
-            </a>
+            </Link>
           </div>
         </div>
       </main>
@@ -216,7 +245,6 @@ export default async function TipyArchivePage(props) {
   );
 }
 
-// --- GURU MASTER STYLES (Zachovány dle zadání) ---
 const archiveWrapper = { 
     minHeight: '100vh', 
     backgroundColor: '#0a0b0d', 
@@ -226,86 +254,14 @@ const archiveWrapper = {
     padding: '120px 20px 80px' 
 };
 
-const headerStyle = { 
-    maxWidth: '1000px', 
-    margin: '0 auto 60px', 
-    textAlign: 'center' 
-};
-
-const headerContentBox = {
-    background: 'rgba(0,0,0,0.7)',
-    padding: '40px 20px',
-    borderRadius: '32px',
-    backdropFilter: 'blur(12px)',
-    border: '1px solid rgba(168, 85, 247, 0.15)'
-};
-
-const titleStyle = { 
-    fontSize: 'clamp(40px, 8vw, 72px)', 
-    fontWeight: '950', 
-    textTransform: 'uppercase', 
-    letterSpacing: '-1px', 
-    color: '#fff', 
-    lineHeight: '0.9' 
-};
-
-const subtitleStyle = { 
-    marginTop: '25px', 
-    color: '#d1d5db', 
-    fontWeight: '600', 
-    fontSize: '19px',
-    maxWidth: '600px',
-    margin: '25px auto 0'
-};
-
-const gridContainer = { 
-    maxWidth: '1200px', 
-    margin: '0 auto' 
-};
-
-const imgStyle = { 
-    width: '100%', 
-    height: '100%', 
-    objectFit: 'cover', 
-    opacity: 0.9 
-};
-
-const categoryBadge = { 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '8px', 
-    color: '#a855f7', 
-    fontSize: '11px', 
-    fontWeight: '900', 
-    textTransform: 'uppercase', 
-    marginBottom: '18px', 
-    letterSpacing: '1px' 
-};
-
-const cardTitleStyle = { 
-    fontSize: '26px', 
-    fontWeight: '900', 
-    color: '#fff', 
-    marginBottom: '15px', 
-    textTransform: 'uppercase', 
-    lineHeight: '1.2' 
-};
-
-const cardDescStyle = { 
-    color: '#9ca3af', 
-    fontSize: '15px', 
-    lineHeight: '1.6', 
-    flexGrow: 1, 
-    marginBottom: '20px' 
-};
-
-const moreStyle = { 
-    color: '#a855f7', 
-    fontWeight: '900', 
-    fontSize: '14px', 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '5px', 
-    marginTop: 'auto', 
-    textTransform: 'uppercase' 
-};
+const headerStyle = { maxWidth: '1000px', margin: '0 auto 60px', textAlign: 'center' };
+const headerContentBox = { background: 'rgba(0,0,0,0.7)', padding: '40px 20px', borderRadius: '32px', backdropFilter: 'blur(12px)', border: '1px solid rgba(168, 85, 247, 0.15)' };
+const titleStyle = { fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '-1px', color: '#fff', lineHeight: '0.9' };
+const subtitleStyle = { marginTop: '25px', color: '#d1d5db', fontWeight: '600', fontSize: '19px', maxWidth: '600px', margin: '25px auto 0' };
+const gridContainer = { maxWidth: '1200px', margin: '0 auto' };
+const imgContainerStyle = { width: '100%', height: '220px', overflow: 'hidden', position: 'relative', background: '#000' };
+const imgStyle = { width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 };
+const categoryBadge = { display: 'flex', alignItems: 'center', gap: '8px', color: '#a855f7', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '18px', letterSpacing: '1px' };
+const cardTitleStyle = { fontSize: '26px', fontWeight: '900', color: '#fff', marginBottom: '15px', textTransform: 'uppercase', lineHeight: '1.2' };
+const cardDescStyle = { color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', flexGrow: 1, marginBottom: '20px' };
+const moreStyle = { color: '#a855f7', fontWeight: '900', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '5px', marginTop: 'auto', textTransform: 'uppercase' };
