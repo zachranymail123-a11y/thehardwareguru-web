@@ -192,7 +192,6 @@ export default async function BottleneckPage(props) {
           )}
         </header>
 
-        {/* 🔥 SEZNAM AD #1: TOP BANNER (OPRAVENO PRO MOBILY) */}
         <div style={{ marginBottom: '40px' }}>
             <div className="ad-desktop-wrapper">
               <SeznamAd zoneId={408654} width={970} height={210} />
@@ -223,11 +222,9 @@ export default async function BottleneckPage(props) {
             </div>
         </section>
 
-        {/* 🔥 SEZNAM AD #2: STŘEDOVÁ REKLAMA (VNITŘNÍ FIX) */}
-        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ width: '100%', maxWidth: '300px' }}>
-              <SeznamAd zoneId={408651} width={300} height={250} />
-            </div>
+        {/* 🚀 OPRAVA: Vnitřní reklama se teď na desktopu schová (použit wrapper) */}
+        <div className="ad-mobile-wrapper" style={{ marginBottom: '40px' }}>
+            <SeznamAd zoneId={408651} width={300} height={250} />
         </div>
 
         <section style={{ marginBottom: '60px' }}>
@@ -258,13 +255,13 @@ export default async function BottleneckPage(props) {
         .support-btn { background: #eab308; color: #000; }
         .live-btn { background: #000; color: #00ec64; border: 1px solid #00ec64; }
 
-        /* GURU RESPONSIVE ADS */
+        /* GURU RESPONSIVE ADS - STRICT FIX */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
 
         @media (max-width: 768px) {
             .ad-desktop-wrapper { display: none; }
-            .ad-mobile-wrapper { display: flex; justify-content: center; }
+            .ad-mobile-wrapper { display: flex; justify-content: center; width: 100%; }
             .border-mobile-fix { border-left: none !important; padding-left: 0 !important; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 40px; }
             .main-analysis-box { padding: 30px 20px !important; border-radius: 20px !important; }
             .status-pill { padding: 10px 20px; font-size: 12px; }
