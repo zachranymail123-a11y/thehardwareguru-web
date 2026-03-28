@@ -1,5 +1,6 @@
 import React from 'react';
 import { Mail, MessageSquare, Youtube, Activity, Briefcase } from 'lucide-react';
+import SeznamAd from '../../components/SeznamAd';
 
 /**
  * GURU CONTACT ENGINE V3.3 (E-E-A-T & ADSENSE FULL COMPLIANT - REAL DATA)
@@ -69,10 +70,20 @@ export default function ContactPage(props) {
           <div className="contact-badge">
             <Mail size={16} /> {isEn ? 'GET IN TOUCH' : 'OZVĚTE SE NÁM'}
           </div>
-          <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
+          <h1 style={{ fontSize: 'clamp(2.2rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
             {isEn ? 'CONTACT' : 'KONTAKTUJTE'} <span style={{ color: '#66fcf1', textShadow: '0 0 30px rgba(102, 252, 241, 0.5)' }}>{isEn ? 'US' : 'NÁS'}</span>
           </h1>
         </header>
+
+        {/* 🔥 GURU TOP AD BLOCK (RESPONSIVE) */}
+        <div style={{ marginBottom: '40px' }}>
+          <div className="ad-desktop-wrapper">
+            <SeznamAd zoneId={408654} width={970} height={210} />
+          </div>
+          <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
+            <SeznamAd zoneId={408651} width={300} height={250} />
+          </div>
+        </div>
 
         <section className="content-box-style">
           <div className="guru-prose">
@@ -137,7 +148,7 @@ export default function ContactPage(props) {
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
-        .contact-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.1); margin-bottom: 20px; }
+        .contact-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; padding: 6px 20px; border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.1); margin-bottom: 20px; }
         .content-box-style { background: rgba(15, 17, 21, 0.95); padding: 50px 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 20px 50px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; }
         .guru-prose h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin: 1.5em 0 0.8em; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; }
@@ -148,7 +159,19 @@ export default function ContactPage(props) {
         .social-btn.live:hover { background: rgba(83, 252, 24, 0.2); }
         .social-btn.yt { background: rgba(255, 0, 0, 0.1); color: #ff0000; border-color: rgba(255, 0, 0, 0.3); }
         .social-btn.yt:hover { background: rgba(255, 0, 0, 0.2); }
-        @media (max-width: 768px) { .content-box-style { padding: 30px 20px; } }
+        
+        /* GURU RESPONSIVE ADS */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
+        @media (max-width: 768px) { 
+          .ad-desktop-wrapper { display: none; }
+          .ad-mobile-wrapper { display: flex; justify-content: center; }
+          header { margin-bottom: 30px !important; }
+          .content-box-style { padding: 30px 15px !important; border-radius: 20px !important; }
+          .guru-prose h2 { font-size: 1.5rem; }
+          .social-btn { width: 100%; justify-content: center; }
+        }
       `}} />
     </div>
   );
