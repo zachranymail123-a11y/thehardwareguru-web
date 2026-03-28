@@ -95,14 +95,9 @@ export default async function ArticleDetailPage(props) {
     const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}clanky/${post.slug}`;
     const readingTime = getReadingTime(content);
 
-    // 🚀 GURU ADS INJECTION LOGIC (3. a 6. odstavec)
     const contentParts = content ? content.split('</p>') : [];
-    
-    // Část 1: Text před 1. reklamou (odstavce 0, 1, 2)
     const part1 = contentParts.slice(0, 3).join('</p>') + (contentParts.length > 3 ? '</p>' : '');
-    // Část 2: Text mezi 1. a 2. reklamou (odstavce 3, 4, 5)
     const part2 = contentParts.slice(3, 6).join('</p>') + (contentParts.length > 6 ? '</p>' : '');
-    // Část 3: Zbytek článku po 2. reklamě
     const part3 = contentParts.slice(6).join('</p>');
 
     const articleSchema = {
@@ -161,31 +156,27 @@ export default async function ArticleDetailPage(props) {
                     )}
 
                     <div className="guru-article-content">
-                         {/* Text po 3. odstavec */}
                          {part1 && <div dangerouslySetInnerHTML={{ __html: part1 }} />}
                          
-                         {/* 1. InText Reklama */}
+                         {/* 🚀 OPRAVA: InText #1 schován na desktopu */}
                          {contentParts.length > 3 && (
-                             <div style={{ margin: '40px 0', display: 'flex', justifyContent: 'center', width: '100%' }}>
+                             <div className="ad-mobile-wrapper" style={{ margin: '40px 0' }}>
                                  <SeznamAd zoneId={408651} width={300} height={250} />
                              </div>
                          )}
                          
-                         {/* Text mezi 3. a 6. odstavcem */}
                          {part2 && <div dangerouslySetInnerHTML={{ __html: part2 }} />}
 
-                         {/* 2. InText Reklama */}
+                         {/* 🚀 OPRAVA: InText #2 schován na desktopu */}
                          {contentParts.length > 6 && (
-                             <div style={{ margin: '40px 0', display: 'flex', justifyContent: 'center', width: '100%' }}>
+                             <div className="ad-mobile-wrapper" style={{ margin: '40px 0' }}>
                                  <SeznamAd zoneId={408651} width={300} height={250} />
                              </div>
                          )}
 
-                         {/* Zbytek článku */}
                          {part3 && <div dangerouslySetInnerHTML={{ __html: part3 }} />}
                     </div>
                     
-                    {/* 🚀 RESPONSIVE AD BEFORE CTA (OPRAVENO) */}
                     <div style={{ margin: '40px 0' }}>
                         <div className="ad-desktop-wrapper">
                             <SeznamAd zoneId={408658} width={480} height={300} />
@@ -238,7 +229,6 @@ export default async function ArticleDetailPage(props) {
                     </div>
                 </div>
 
-                {/* 🚀 PAST NA ČTENÁŘE (INFINITY LOOP) */}
                 {latestPosts.length > 0 && (
                     <section className="guru-trap-section">
                         <h2 className="trap-title">
@@ -278,8 +268,6 @@ export default async function ArticleDetailPage(props) {
                 .guru-article-content h3 { color: #eab308; font-size: 1.4rem; font-weight: 900; margin: 1.2em 0 0.5em; }
                 .guru-article-content p { margin-bottom: 1.5em; }
                 .guru-article-content strong { color: #fff; font-weight: 900; }
-                .guru-article-content ul, .guru-article-content ol { margin-bottom: 1.5em; padding-left: 20px; }
-                .guru-article-content li { margin-bottom: 0.5em; }
                 .guru-article-content blockquote { border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.05); padding: 20px; margin: 20px 0; font-style: italic; border-radius: 0 15px 15px 0; }
                 .gta6-conversion-box { background: linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(15, 17, 21, 0.98) 100%); border: 1px solid rgba(244, 63, 94, 0.4); padding: 40px; border-radius: 24px; text-align: center; box-shadow: 0 15px 40px rgba(244, 63, 94, 0.1); margin-top: 40px; }
                 .gta6-badge { display: inline-flex; align-items: center; gap: 8px; background: #f43f5e; color: #fff; padding: 6px 15px; border-radius: 8px; font-size: 10px; font-weight: 950; margin-bottom: 20px; text-transform: uppercase; }
@@ -292,7 +280,6 @@ export default async function ArticleDetailPage(props) {
                 .x-bg { background: #000; border: 1px solid #333; }
                 .fb-bg { background: #1877f2; }
                 .reddit-bg { background: #ff4500; }
-                .share-card:hover { transform: translateY(-3px); filter: brightness(1.2); }
                 .duel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
                 .silo-banner-card { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; display: flex; align-items: center; gap: 15px; text-decoration: none; transition: 0.3s; border-left: 5px solid transparent; }
                 .cpu-border { border-left-color: #66fcf1; }
@@ -302,13 +289,11 @@ export default async function ArticleDetailPage(props) {
                 .gpu-icon-bg { color: #ff0055; background: rgba(255, 0, 85, 0.1); }
                 .silo-banner-text h4 { margin: 0; color: #fff; font-size: 1rem; font-weight: 950; text-transform: uppercase; }
                 .silo-banner-text p { margin: 0; color: #9ca3af; font-size: 0.8rem; }
-                .silo-banner-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.02); }
                 
-                /* GURU RESPONSIVE ADS */
+                /* 🚀 GURU RESPONSIVE ADS - STRICT FIX */
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
                 .ad-mobile-wrapper { display: none; width: 100%; }
 
-                /* 🚀 GURU READER TRAP CSS */
                 .guru-trap-section { margin-top: 80px; padding: 40px; background: linear-gradient(to bottom, rgba(168, 85, 247, 0.05) 0%, transparent 100%); border-top: 2px solid rgba(168, 85, 247, 0.3); border-radius: 30px; }
                 .trap-title { font-size: 2.2rem; text-align: center; border: none; padding: 0; color: #fff; text-shadow: 0 0 20px rgba(168, 85, 247, 0.4); margin-bottom: 40px; font-weight: 950; text-transform: uppercase; }
                 .trap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
@@ -320,26 +305,13 @@ export default async function ArticleDetailPage(props) {
                 .trap-info h3 { margin: 0 0 20px 0; color: #fff; font-size: 1.05rem; font-weight: 900; line-height: 1.5; transition: 0.3s; }
                 .read-more-btn { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 12px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
                 
-                /* 🚀 TRAP HOVER EFFECTS */
-                .trap-card:hover { border-color: #a855f7; transform: translateY(-10px); box-shadow: 0 20px 40px rgba(168, 85, 247, 0.2); }
-                .trap-card:hover .trap-img { transform: scale(1.1); }
-                .trap-card:hover .trap-info h3 { color: #a855f7; }
-                .trap-card:hover .read-more-btn { gap: 12px; color: #fff; }
-                
                 .hot-badge { position: absolute; top: 15px; left: 15px; background: #f43f5e; color: #fff; padding: 6px 14px; font-size: 11px; font-weight: 950; border-radius: 8px; z-index: 10; display: flex; align-items: center; gap: 6px; box-shadow: 0 5px 15px rgba(244, 63, 94, 0.4); text-transform: uppercase; animation: pulse 2s infinite; }
                 
-                @keyframes pulse {
-                    0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
-                    70% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
-                    100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
-                }
-
                 @media (max-width: 768px) {
                     .ad-desktop-wrapper { display: none; }
-                    .ad-mobile-wrapper { display: flex; justify-content: center; }
+                    .ad-mobile-wrapper { display: flex; justify-content: center; width: 100%; }
                     .guru-main-article { padding: 30px 15px !important; border-radius: 20px !important; }
                     .guru-article-content { font-size: 1.05rem; }
-                    .guru-article-content h2 { font-size: 1.5rem; }
                     .share-grid, .duel-grid, .trap-grid { grid-template-columns: 1fr; }
                     .gta6-conversion-box { padding: 25px; }
                     .guru-trap-section { padding: 30px 15px; margin-top: 50px; }
