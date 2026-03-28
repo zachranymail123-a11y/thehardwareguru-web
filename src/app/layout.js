@@ -11,7 +11,6 @@ import ShareWidget from '../components/ShareWidget';
 import CookieBanner from '../components/CookieBanner';
 import SeznamAd from '../components/SeznamAd';
 
-// 🔥 PŘIDANÉ IMPORTY 🔥
 import MobileAnchorAd from '../components/MobileAnchorAd';
 import SeznamInterstitial from '../components/SeznamInterstitial';
 
@@ -122,7 +121,6 @@ export default async function RootLayout({ children, params }) {
         
         <Navbar />
         
-        {/* 🔥 PŘIDANÁ VINĚTA 🔥 */}
         <SeznamInterstitial />
 
         <SocialTracker />
@@ -138,11 +136,18 @@ export default async function RootLayout({ children, params }) {
             z-index: 5; /* 🚀 NIŽŠÍ Z-INDEX: GURU NAVIGÁTOR BUDE NAD TÍM */
           }
           
-          .skyscraper-left { left: calc(50% - 600px - 380px); }
-          .skyscraper-right { right: calc(50% - 600px - 380px); }
+          /* Upravená vzdálenost, aby reklama neujela mimo 1080p monitor */
+          .skyscraper-left { left: calc(50% - 940px); }
+          .skyscraper-right { right: calc(50% - 940px); }
 
+          /* Zobrazení na 1080p monitorech (pouze pravá reklama) */
+          @media (min-width: 1550px) {
+            .skyscraper-right { display: block; }
+          }
+
+          /* Ultraširoké monitory (obě reklamy) */
           @media (min-width: 1950px) {
-            .skyscraper-left, .skyscraper-right { display: block; }
+            .skyscraper-left { display: block; }
           }
         `}} />
 
@@ -238,8 +243,7 @@ export default async function RootLayout({ children, params }) {
         <SupportWidget />
         <CookieBanner />
         <Analytics />
-
-        {/* 🔥 PŘIDANÝ MOBILNÍ ANCHOR 🔥 */}
+        
         <MobileAnchorAd />
 
       </body>
