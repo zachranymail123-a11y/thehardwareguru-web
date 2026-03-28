@@ -5,8 +5,8 @@ import { PenTool, ChevronRight, Zap, ShieldCheck, Heart, Flame, Info, Monitor } 
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU GUIDES ARCHIVE ENGINE V2.1 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: 100% monetizace technických návodů skrze Seznam Partner.
+ * GURU GUIDES ARCHIVE ENGINE V2.2 (MOBILE OPTIMIZED & ADS SEPARATION)
+ * 🚀 CÍL: 100% monetizace technických návodů a perfektní mobilní UX.
  */
 
 export const runtime = "nodejs";
@@ -16,7 +16,6 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const baseUrl = "https://thehardwareguru.cz";
 
-// 🚀 GURU SEO: Dynamické Meta Tagy pro archiv rad
 export async function generateMetadata(props) {
   const isEn = props?.isEn === true;
   const title = isEn ? 'Hardware Guru Guides | Technical Knowledge Base' : 'Guru Hardware Rady | Technická základna';
@@ -53,8 +52,23 @@ export default async function RadyArchivePage(props) {
 
   const safeItems = items || [];
 
+  // Google Golden Rich: ItemList Schema
+  const itemListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "itemListElement": safeItems.map((item, index) => ({
+      "@type": "ListItem",
+      "position": index + 1,
+      "url": `${baseUrl}/${isEn ? 'en/' : ''}rady/${isEn ? (item.slug_en || item.slug) : item.slug}`,
+      "name": isEn ? (item.title_en || item.title) : item.title
+    }))
+  };
+
   return (
-    <div style={pageWrapper}>
+    <div className="guru-archive-wrapper" style={pageWrapper}>
+      
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+
       <style dangerouslySetInnerHTML={{ __html: `
         .rada-card { 
             background: rgba(10, 11, 13, 0.9); 
@@ -85,25 +99,48 @@ export default async function RadyArchivePage(props) {
         }
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
+
+        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
+        @media (max-width: 768px) {
+            .guru-archive-wrapper { padding-top: 80px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+            .header-box { margin-bottom: 30px !important; }
+            .title-h1 { font-size: 2.2rem !important; }
+            .subtitle-p { font-size: 1rem !important; }
+            .rada-grid { gap: 20px !important; }
+            .rada-card { padding: 25px !important; border-radius: 20px !important; }
+            .rada-card h2 { font-size: 1.2rem !important; }
+            .footer-box { padding: 60px 20px !important; }
+            .footer-box h2 { font-size: 1.8rem !important; }
+        }
       `}} />
 
       <main style={{ maxWidth: '1300px', margin: '60px auto', padding: '0 20px', width: '100%', flex: '1 0 auto' }}>
-        <header style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <header className="header-box" style={{ textAlign: 'center', marginBottom: '40px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '25px' }}>
-               <ShieldCheck size={56} color="#a855f7" />
-               <Zap size={56} color="#eab308" />
+               <ShieldCheck size={56} color="#a855f7" style={{ filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.4))' }} />
+               <Zap size={56} color="#eab308" style={{ filter: 'drop-shadow(0 0 10px rgba(234, 179, 8, 0.4))' }} />
             </div>
-            <h1 style={titleStyle}>
+            <h1 className="title-h1" style={titleStyle}>
               {isEn ? <>PRACTICAL <span style={{ color: '#a855f7' }}>GUIDES</span></> : <>PRAKTICKÉ <span style={{ color: '#a855f7' }}>RADY</span></>}
             </h1>
-            <p style={{ marginTop: '20px', color: '#d1d5db', fontWeight: '700', fontSize: '20px' }}>
+            <p className="subtitle-p" style={{ marginTop: '20px', color: '#d1d5db', fontWeight: '700', fontSize: '20px' }}>
               {isEn ? 'Field-tested tips and technical solutions for every geek.' : '🛠️ Tipy a triky z praxe. Od diagnostiky až po čištění PC.'}
             </p>
         </header>
 
-        {/* 🔥 SEZNAM AD #1: TOP LEADERBOARD POD HLAVIČKOU */}
-        <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
-            <SeznamAd zoneId={408654} width={970} height={210} />
+        {/* 🔥 SEZNAM AD #1: TOP LEADERBOARD (STRIKTNÍ SEPARACE) */}
+        <div style={{ marginBottom: '60px' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
         </div>
 
         {safeItems.length === 0 ? (
@@ -111,7 +148,7 @@ export default async function RadyArchivePage(props) {
             {isEn ? 'NO GUIDES FOUND IN DATABASE' : 'V DATABÁZI NENALEZENY ŽÁDNÉ RADY'}
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '35px' }}>
+          <div className="rada-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '35px' }}>
             {safeItems.map((rada, index) => {
               const displayTitle = (isEn && rada.title_en) ? rada.title_en : rada.title;
               const displayDesc = (isEn && rada.description_en) ? rada.description_en : rada.description;
@@ -126,17 +163,17 @@ export default async function RadyArchivePage(props) {
                         <h2 style={{ color: '#fff', margin: '0 0 15px 0', fontSize: '24px', fontWeight: '900', textTransform: 'uppercase' }}>
                             {displayTitle}
                         </h2>
-                        <p style={{ color: '#d1d5db', fontSize: '15px', lineHeight: '1.6', margin: '0 0 25px 0', flexGrow: 1 }}>
-                            {displayDesc && displayDesc.length > 140 ? displayDesc.substring(0, 140) + '...' : displayDesc}
+                        <p style={{ color: '#9ca3af', fontSize: '15px', lineHeight: '1.6', margin: '0 0 25px 0', flexGrow: 1, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {displayDesc}
                         </p>
                         <div style={{ color: '#a855f7', fontWeight: '950', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                             {isEn ? 'VIEW GUIDE' : 'ZOBRAZIT NÁVOD'} <ChevronRight size={18} />
                         </div>
                     </Link>
 
-                    {/* 🔥 SEZNAM AD #2: GRID INJECTION PO DRUHÉ RADĚ */}
+                    {/* 🔥 SEZNAM AD #2: GRID INJECTION (POUZE MOBIL) */}
                     {index === 1 && (
-                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <div className="ad-mobile-wrapper" style={{ margin: '10px 0' }}>
                             <SeznamAd zoneId={408651} width={300} height={250} />
                         </div>
                     )}
@@ -162,7 +199,7 @@ export default async function RadyArchivePage(props) {
         </div>
       </main>
 
-      <footer style={footerStyle}>
+      <footer className="footer-box" style={footerStyle}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <h2 style={{ color: '#a855f7', marginBottom: '30px', textTransform: 'uppercase', fontWeight: '950', fontSize: '36px' }}>
             {isEn ? 'ABOUT GURU' : 'O MNĚ'}
@@ -194,12 +231,12 @@ const pageWrapper = {
 };
 
 const titleStyle = { 
-  fontSize: 'clamp(40px, 8vw, 72px)', 
+  fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', 
   fontWeight: '950', 
   textTransform: 'uppercase', 
   letterSpacing: '-2px', 
   margin: 0,
-  lineHeight: '0.9'
+  lineHeight: '1'
 };
 
 const footerStyle = { 
