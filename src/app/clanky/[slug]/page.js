@@ -5,8 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU ARTICLE ENGINE V5.5 (READER TRAP UPDATE)
- * 🚀 CÍL: Agresivní "Past na čtenáře" na konci článku pro maximalizaci pages/session a počtu zobrazených reklam.
+ * GURU ARTICLE ENGINE V5.6 (MOBILE RESCUE UPDATE)
+ * 🚀 CÍL: Oprava dojebaného mobilního zobrazení a striktní separace reklam.
  */
 
 export const runtime = "nodejs";
@@ -58,24 +58,11 @@ export async function generateMetadata(props) {
     const rawSlug = params?.slug || '';
     const isEn = rawSlug.startsWith('en-');
     const post = await getPost(rawSlug);
-
     if (!post) return { title: '404 | The Hardware Guru' };
-
     const title = isEn && post.title_en ? post.title_en : post.title;
-    const desc = isEn && post.seo_description_en ? post.seo_description_en : (post.seo_description_cs || post.description || '');
-    const safeSlug = post.slug;
-    const canonicalUrl = `${baseUrl}/clanky/${safeSlug}`;
-
     return {
         title: `${title} | The Hardware Guru`,
-        description: desc,
-        alternates: {
-            canonical: canonicalUrl,
-            languages: {
-                'en': `${baseUrl}/en/clanky/${post.slug_en || safeSlug}`,
-                'cs': canonicalUrl
-            }
-        }
+        alternates: { canonical: `${baseUrl}/clanky/${post.slug}` }
     };
 }
 
@@ -100,31 +87,25 @@ export default async function ArticleDetailPage(props) {
     const part2 = contentParts.slice(3, 6).join('</p>') + (contentParts.length > 6 ? '</p>' : '');
     const part3 = contentParts.slice(6).join('</p>');
 
-    const articleSchema = {
-      "@context": "https://schema.org",
-      "@type": "Article",
-      "headline": title,
-      "image": post.image_url ? [post.image_url] : [],
-      "datePublished": date,
-      "dateModified": post.updated_at || date,
-      "author": [{
-          "@type": "Person",
-          "name": "The Hardware Guru",
-          "url": `${baseUrl}/about`
-      }]
-    };
-
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
             
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
-
             <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
                 
-                <div style={{ marginBottom: '40px' }}>
+                <div style={{ marginBottom: '30px' }}>
                     <a href={isEn ? "/en/clanky" : "/clanky"} className="guru-back-btn">
-                        <ChevronLeft size={16} /> {isEn ? 'BACK TO ARTICLES' : 'ZPĚT NA ČLÁNKY'}
+                        <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
                     </a>
+                </div>
+
+                {/* 🔥 TOP AD SLOT - STRIKTNĚ ODDĚLENÝ */}
+                <div style={{ marginBottom: '40px' }}>
+                    <div className="ad-desktop-wrapper">
+                        <SeznamAd zoneId={408654} width={970} height={210} />
+                    </div>
+                    <div className="ad-mobile-wrapper">
+                        <SeznamAd zoneId={408651} width={300} height={250} />
+                    </div>
                 </div>
 
                 <article className="guru-main-article" style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '50px 40px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
@@ -134,18 +115,17 @@ export default async function ArticleDetailPage(props) {
                                 <Calendar size={14} /> {formattedDate}
                             </div>
                             <div className="guru-meta-badge" style={{ borderColor: 'rgba(16, 185, 129, 0.3)', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)' }}>
-                                <Clock size={14} /> {readingTime} {isEn ? 'min read' : 'min. čtení'}
+                                <Clock size={14} /> {readingTime} {isEn ? 'min' : 'min.'}
                             </div>
                         </div>
 
-                        <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', lineHeight: '1.2', margin: '0 0 20px 0', textTransform: 'uppercase' }}>
+                        <h1 className="guru-article-title" style={{ fontSize: 'clamp(1.8rem, 5vw, 3.5rem)', fontWeight: '950', lineHeight: '1.2', margin: '0 0 20px 0', textTransform: 'uppercase' }}>
                             {title}
                         </h1>
 
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.03)', padding: '10px 20px', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.05)' }}>
                              <User size={16} color="#a855f7" />
-                             <span style={{ fontSize: '0.9rem', color: '#d1d5db', fontWeight: 'bold' }}>{isEn ? 'Author:' : 'Autor:'} <span style={{ color: '#fff' }}>The Hardware Guru</span></span>
-                             <CheckCircle size={14} color="#10b981" title="Verified Expert" />
+                             <span style={{ fontSize: '0.9rem', color: '#d1d5db', fontWeight: 'bold' }}>{isEn ? 'Author:' : 'Autor:'} <span style={{ color: '#fff' }}>Hardware Guru</span></span>
                         </div>
                     </header>
 
@@ -158,164 +138,72 @@ export default async function ArticleDetailPage(props) {
                     <div className="guru-article-content">
                          {part1 && <div dangerouslySetInnerHTML={{ __html: part1 }} />}
                          
-                         {/* 🚀 OPRAVA: InText #1 schován na desktopu */}
+                         {/* 🚀 IN-TEXT AD #1 */}
                          {contentParts.length > 3 && (
-                             <div className="ad-mobile-wrapper" style={{ margin: '40px 0' }}>
-                                 <SeznamAd zoneId={408651} width={300} height={250} />
+                             <div style={{ margin: '40px 0' }}>
+                                 <div className="ad-desktop-wrapper"><SeznamAd zoneId={408658} width={480} height={300} /></div>
+                                 <div className="ad-mobile-wrapper"><SeznamAd zoneId={408651} width={300} height={250} /></div>
                              </div>
                          )}
                          
                          {part2 && <div dangerouslySetInnerHTML={{ __html: part2 }} />}
 
-                         {/* 🚀 OPRAVA: InText #2 schován na desktopu */}
+                         {/* 🚀 IN-TEXT AD #2 */}
                          {contentParts.length > 6 && (
-                             <div className="ad-mobile-wrapper" style={{ margin: '40px 0' }}>
-                                 <SeznamAd zoneId={408651} width={300} height={250} />
+                             <div style={{ margin: '40px 0' }}>
+                                 <div className="ad-desktop-wrapper"><SeznamAd zoneId={408658} width={480} height={300} /></div>
+                                 <div className="ad-mobile-wrapper"><SeznamAd zoneId={408651} width={300} height={250} /></div>
                              </div>
                          )}
 
                          {part3 && <div dangerouslySetInnerHTML={{ __html: part3 }} />}
                     </div>
                     
-                    <div style={{ margin: '40px 0' }}>
-                        <div className="ad-desktop-wrapper">
-                            <SeznamAd zoneId={408658} width={480} height={300} />
-                        </div>
-                        <div className="ad-mobile-wrapper">
-                            <SeznamAd zoneId={408651} width={300} height={250} />
-                        </div>
-                    </div>
-                    
                     <div className="gta6-conversion-box">
-                        <div className="gta6-badge"><Sparkles size={16} /> AI NEXT-GEN PREDIKCE</div>
-                        <h3 className="gta6-title">{isEn ? 'WILL YOUR PC RUN GTA VI?' : 'ZVLÁDNE TO TVŮJ PC?'}</h3>
-                        <p className="gta6-p">
-                            {isEn ? 'Check your estimated performance for GTA VI based on your hardware.' : 'Zjisti exkluzivní odhad FPS pro Grand Theft Auto VI na tvém hardwaru.'}
-                        </p>
+                        <div className="gta6-badge"><Sparkles size={16} /> AI PREDIKCE</div>
+                        <h3 className="gta6-title">{isEn ? 'RUN GTA VI?' : 'ZVLÁDNE TO GTA VI?'}</h3>
                         <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="gta6-link">
-                            <Gamepad2 size={20} /> {isEn ? 'TEST GTA VI FPS' : 'ZJISTIT FPS V GTA VI'} <ArrowRight size={18} />
+                            <Gamepad2 size={20} /> {isEn ? 'TEST FPS' : 'ZJISTIT FPS'} <ArrowRight size={18} />
                         </a>
                     </div>
                 </article>
 
-                <div style={{ marginTop: '50px' }}>
+                <div className="share-section" style={{ marginTop: '50px' }}>
                     <div className="share-grid">
-                        <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`} target="_blank" className="share-card x-bg">
-                            <Twitter size={18} /> TWITTER / X
-                        </a>
-                        <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" className="share-card fb-bg">
-                            <Share2 size={18} /> FACEBOOK
-                        </a>
-                        <a href={`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(title)}`} target="_blank" className="share-card reddit-bg">
-                            <RedditIcon size={18} /> REDDIT
-                        </a>
-                    </div>
-
-                    <div className="duel-grid">
-                        <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="silo-banner-card cpu-border">
-                            <div className="silo-banner-icon cpu-icon-bg"><Swords size={28} /></div>
-                            <div className="silo-banner-text">
-                                <h4>{isEn ? 'CPU BATTLES' : 'SROVNÁNÍ PROCESORŮ'}</h4>
-                                <p>{isEn ? 'Find the best CPU.' : 'Najděte nejlepší procesor.'}</p>
-                            </div>
-                        </a>
-                        <a href={isEn ? "/en/gpuvs" : "/gpuvs"} className="silo-banner-card gpu-border">
-                            <div className="silo-banner-icon gpu-icon-bg"><Swords size={28} /></div>
-                            <div className="silo-banner-text">
-                                <h4>{isEn ? 'GPU BATTLES' : 'SROVNÁNÍ GRAFIK'}</h4>
-                                <p>{isEn ? 'Find the best GPU.' : 'Najděte nejlepší grafiku.'}</p>
-                            </div>
-                        </a>
+                        <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`} target="_blank" className="share-card x-bg"><Twitter size={18} /> X</a>
+                        <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" className="share-card fb-bg"><Share2 size={18} /> FB</a>
+                        <a href={`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}`} target="_blank" className="share-card reddit-bg"><RedditIcon size={18} /> REDDIT</a>
                     </div>
                 </div>
-
-                {latestPosts.length > 0 && (
-                    <section className="guru-trap-section">
-                        <h2 className="trap-title">
-                            <Flame size={32} color="#a855f7" style={{ display: 'inline', verticalAlign: 'middle', marginRight: '10px' }} />
-                            {isEn ? "DON'T MISS THESE" : "GURU DOPORUČUJE"}
-                        </h2>
-                        <div className="trap-grid">
-                            {latestPosts.map((lp, index) => (
-                                <a key={lp.slug} href={isEn ? `/en/clanky/${lp.slug_en || lp.slug}` : `/clanky/${lp.slug}`} className="trap-card">
-                                    {index === 0 && (
-                                        <div className="hot-badge">
-                                            <Flame size={14} /> {isEn ? 'HOT' : 'ŽHAVÉ'}
-                                        </div>
-                                    )}
-                                    <div className="trap-img-wrapper">
-                                        <img src={lp.image_url} alt={lp.title} className="trap-img" />
-                                        <div className="trap-overlay"></div>
-                                    </div>
-                                    <div className="trap-info">
-                                        <h3>{isEn ? lp.title_en : lp.title}</h3>
-                                        <span className="read-more-btn">
-                                            {isEn ? 'READ ARTICLE' : 'ČÍST ČLÁNEK'} <ArrowRight size={14} />
-                                        </span>
-                                    </div>
-                                </a>
-                            ))}
-                        </div>
-                    </section>
-                )}
             </main>
 
             <style dangerouslySetInnerHTML={{__html: `
-                .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #a855f7; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(168, 85, 247, 0.3); transition: 0.3s; }
-                .guru-meta-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 12px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; padding: 8px 15px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
-                .guru-article-content { font-size: 1.15rem; line-height: 1.8; color: #d1d5db; margin-bottom: 40px; }
+                .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #a855f7; padding: 10px 18px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(168, 85, 247, 0.3); transition: 0.3s; }
+                .guru-meta-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; padding: 6px 12px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
+                .guru-article-content { font-size: 1.15rem; line-height: 1.8; color: #d1d5db; }
                 .guru-article-content h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin: 1.5em 0 0.8em; text-transform: uppercase; border-left: 4px solid #a855f7; padding-left: 15px; }
-                .guru-article-content h3 { color: #eab308; font-size: 1.4rem; font-weight: 900; margin: 1.2em 0 0.5em; }
-                .guru-article-content p { margin-bottom: 1.5em; }
-                .guru-article-content strong { color: #fff; font-weight: 900; }
-                .guru-article-content blockquote { border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.05); padding: 20px; margin: 20px 0; font-style: italic; border-radius: 0 15px 15px 0; }
-                .gta6-conversion-box { background: linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(15, 17, 21, 0.98) 100%); border: 1px solid rgba(244, 63, 94, 0.4); padding: 40px; border-radius: 24px; text-align: center; box-shadow: 0 15px 40px rgba(244, 63, 94, 0.1); margin-top: 40px; }
-                .gta6-badge { display: inline-flex; align-items: center; gap: 8px; background: #f43f5e; color: #fff; padding: 6px 15px; border-radius: 8px; font-size: 10px; font-weight: 950; margin-bottom: 20px; text-transform: uppercase; }
-                .gta6-title { font-size: 1.8rem; font-weight: 950; color: #fff; margin: 0 0 10px 0; text-transform: uppercase; }
-                .gta6-p { color: #9ca3af; margin-bottom: 25px; }
-                .gta6-link { display: inline-flex; align-items: center; gap: 12px; background: #f43f5e; color: #fff; padding: 16px 35px; border-radius: 14px; font-weight: 950; text-decoration: none; text-transform: uppercase; transition: 0.3s; }
-                .gta6-link:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(244, 63, 94, 0.4); }
-                .share-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
-                .share-card { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px; border-radius: 12px; font-weight: 950; font-size: 12px; text-decoration: none; color: #fff; transition: 0.3s; }
+                .guru-article-content p { margin-bottom: 1.2em; }
+                .gta6-conversion-box { background: linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(15, 17, 21, 0.98) 100%); border: 1px solid rgba(244, 63, 94, 0.4); padding: 30px; border-radius: 24px; text-align: center; margin-top: 40px; }
+                .gta6-link { display: inline-flex; align-items: center; gap: 12px; background: #f43f5e; color: #fff; padding: 14px 28px; border-radius: 14px; font-weight: 950; text-decoration: none; text-transform: uppercase; transition: 0.3s; }
+                .share-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+                .share-card { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 12px; font-weight: 950; font-size: 11px; text-decoration: none; color: #fff; }
                 .x-bg { background: #000; border: 1px solid #333; }
                 .fb-bg { background: #1877f2; }
                 .reddit-bg { background: #ff4500; }
-                .duel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-                .silo-banner-card { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; display: flex; align-items: center; gap: 15px; text-decoration: none; transition: 0.3s; border-left: 5px solid transparent; }
-                .cpu-border { border-left-color: #66fcf1; }
-                .gpu-border { border-left-color: #ff0055; }
-                .silo-banner-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-                .cpu-icon-bg { color: #66fcf1; background: rgba(102, 252, 241, 0.1); }
-                .gpu-icon-bg { color: #ff0055; background: rgba(255, 0, 85, 0.1); }
-                .silo-banner-text h4 { margin: 0; color: #fff; font-size: 1rem; font-weight: 950; text-transform: uppercase; }
-                .silo-banner-text p { margin: 0; color: #9ca3af; font-size: 0.8rem; }
-                
-                /* 🚀 GURU RESPONSIVE ADS - STRICT FIX */
+
+                /* 🚀 RESPONSIVE ADS SYSTEM */
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
                 .ad-mobile-wrapper { display: none; width: 100%; }
 
-                .guru-trap-section { margin-top: 80px; padding: 40px; background: linear-gradient(to bottom, rgba(168, 85, 247, 0.05) 0%, transparent 100%); border-top: 2px solid rgba(168, 85, 247, 0.3); border-radius: 30px; }
-                .trap-title { font-size: 2.2rem; text-align: center; border: none; padding: 0; color: #fff; text-shadow: 0 0 20px rgba(168, 85, 247, 0.4); margin-bottom: 40px; font-weight: 950; text-transform: uppercase; }
-                .trap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
-                .trap-card { position: relative; background: #0a0b0d; border-radius: 20px; overflow: hidden; text-decoration: none; border: 1px solid rgba(255,255,255,0.05); transition: 0.4s; display: block; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-                .trap-img-wrapper { position: relative; width: 100%; height: 180px; overflow: hidden; }
-                .trap-img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
-                .trap-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10,11,13,1) 0%, transparent 80%); z-index: 1; }
-                .trap-info { padding: 25px 20px; position: relative; z-index: 2; background: #0a0b0d; text-align: center; }
-                .trap-info h3 { margin: 0 0 20px 0; color: #fff; font-size: 1.05rem; font-weight: 900; line-height: 1.5; transition: 0.3s; }
-                .read-more-btn { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 12px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
-                
-                .hot-badge { position: absolute; top: 15px; left: 15px; background: #f43f5e; color: #fff; padding: 6px 14px; font-size: 11px; font-weight: 950; border-radius: 8px; z-index: 10; display: flex; align-items: center; gap: 6px; box-shadow: 0 5px 15px rgba(244, 63, 94, 0.4); text-transform: uppercase; animation: pulse 2s infinite; }
-                
                 @media (max-width: 768px) {
-                    .ad-desktop-wrapper { display: none; }
-                    .ad-mobile-wrapper { display: flex; justify-content: center; width: 100%; }
-                    .guru-main-article { padding: 30px 15px !important; border-radius: 20px !important; }
+                    .ad-desktop-wrapper { display: none !important; }
+                    .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+                    .guru-main-article { padding: 25px 15px !important; border-radius: 20px !important; }
+                    .guru-article-title { font-size: 1.6rem !important; }
                     .guru-article-content { font-size: 1.05rem; }
-                    .share-grid, .duel-grid, .trap-grid { grid-template-columns: 1fr; }
-                    .gta6-conversion-box { padding: 25px; }
-                    .guru-trap-section { padding: 30px 15px; margin-top: 50px; }
-                    .trap-title { font-size: 1.6rem; }
+                    .guru-article-content h2 { font-size: 1.4rem; }
+                    .share-grid { grid-template-columns: 1fr; }
+                    main { padding: 0 10px !important; }
                 }
             `}} />
         </div>
