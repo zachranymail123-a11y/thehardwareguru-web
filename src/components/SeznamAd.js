@@ -1,100 +1,96 @@
 'use client';
-import React, { useEffect, useRef, useState } from 'react';
-import { ShieldAlert } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 /**
- * GURU SEZNAM AD COMPONENT V2.1 (ADBLOCK SHIELD REFRESH)
- * 🚀 CÍL: Čistší, menší fallback srozumitelnějším textem.
+ * GURU SMART AD COMPONENT V2.0
+ * 🚀 CÍL: Zobrazení fallbacku POUZE pokud je reklama skutečně blokována.
  */
-
 export default function SeznamAd({ zoneId, width, height }) {
-  const adRef = useRef(null);
   const [isBlocked, setIsBlocked] = useState(false);
-  
-  // Stabilní ID pro kontejner (nutné pro Seznam SSP)
-  const [adId] = useState(`szn-ad-${zoneId}-${Math.random().toString(36).substr(2, 9)}`);
 
   useEffect(() => {
-    // 1. Pokus o vykreslení reklamy přes Seznam SSP
-    const loadAd = () => {
-      try {
-        if (window.ssp && window.ssp.getAds) {
-          window.ssp.getAds([
-            {
-              zoneId: zoneId,
-              id: adId,
-              width: width,
-              height: height,
-            }
-          ]);
-        }
-      } catch (e) {
-        console.error('Seznam SSP Error:', e);
+    const checkAd = () => {
+      // 1. Kontrola, zda script ssp.js vůbec existuje
+      if (typeof window !== 'undefined' && !window.ssp) {
+        setIsBlocked(true);
+        return;
+      }
+
+      // 2. Pokus o načtení reklamy
+      if (window.ssp && window.ssp.getAds) {
+        window.ssp.getAds([{
+          zoneId: zoneId,
+          id: `ssp-zone-${zoneId}`,
+          width: width,
+          height: height
+        }]);
+
+        // 3. Kontrola po 2 vteřinách - pokud je kontejner prázdný, zapneme fallback
+        setTimeout(() => {
+          const container = document.getElementById(`ssp-zone-${zoneId}`);
+          if (container && container.innerHTML.trim() === "") {
+            setIsBlocked(true);
+          }
+        }, 2000);
       }
     };
 
-    loadAd();
-
-    // 2. Guru detekce AdBlocku (kontrola po 2.5 vteřinách)
-    const timer = setTimeout(() => {
-      // Pokud skript ssp vůbec neexistuje (blokováno na síti) 
-      // NEBO pokud reklama nedodala obsah (výška kontejneru je menší než 10px)
-      if (!window.ssp || (adRef.current && adRef.current.clientHeight < 10)) {
-        setIsBlocked(true);
-      }
-    }, 2500);
-
-    return () => clearTimeout(timer);
-  }, [zoneId, width, height, adId]);
+    checkAd();
+  }, [zoneId, width, height]);
 
   return (
-    <div 
-      style={{ 
-        width: width ? `${width}px` : '100%', 
-        minHeight: height ? `${height}px` : 'auto', 
-        margin: '0 auto', 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center',
-        overflow: 'hidden',
-        position: 'relative'
-      }}
-    >
-      {!isBlocked ? (
-        // Standardní reklamní kontejner
-        <div id={adId} ref={adRef} style={{ width: '100%', minHeight: height ? `${height}px` : '100%' }} />
-      ) : (
-        // 🔥 GURU ŠTÍT (Menší, diskrétnější fallback) 🔥
-        <div 
-          className="guru-ad-fallback" /* Třída pro CSS fix */
-          style={{
-            width: '100%',
-            height: '100%',
-            minHeight: height ? `${height}px` : '100px',
-            background: 'linear-gradient(135deg, rgba(15, 17, 21, 0.98) 0%, rgba(10, 11, 13, 1) 100%)',
-            border: '1px solid rgba(102, 252, 241, 0.2)',
-            borderRadius: '12px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: '15px',
-            textAlign: 'center',
-            boxShadow: 'inset 0 0 15px rgba(0,0,0,0.5)',
-            color: '#9ca3af',
-            boxSizing: 'border-box',
-            fontFamily: 'sans-serif',
-          }}
-        >
-          <ShieldAlert size={20} color="#66fcf1" style={{ marginBottom: '8px', opacity: 0.8 }} />
-          <strong style={{ color: '#fff', fontSize: '0.9rem', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            ADBLOCK DETEKOVÁN
-          </strong>
-          <p style={{ margin: 0, fontSize: '0.8rem', lineHeight: '1.4', maxWidth: '220px', color: '#d1d5db' }}>
-            <span style={{ color: '#a855f7', fontWeight: 'bold' }}>The Hardware Guru</span> maká pro tebe. Podpoř nás a přidej si nás do výjimek. Díky! 🚀
+    <div style={{ 
+      position: 'relative', 
+      width: width ? `${width}px` : '100%', 
+      height: height ? `${height}px` : 'auto', 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center' 
+    }}>
+      
+      {/* 🛑 FALLBACK UI: Svítí JEN když isBlocked === true */}
+      {isBlocked && (
+        <div style={{
+          width: '100%',
+          height: '100%',
+          background: 'rgba(10, 11, 13, 0.95)',
+          border: '1px solid rgba(0, 255, 204, 0.2)',
+          borderRadius: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+          textAlign: 'center',
+          boxShadow: '0 0 30px rgba(0,0,0,0.5)',
+          zIndex: 1
+        }}>
+          <div style={{ color: '#00ffcc', fontSize: '20px', marginBottom: '12px' }}>🛡️</div>
+          <div style={{ fontWeight: '900', color: '#fff', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            AdBlock Detekován
+          </div>
+          <div style={{ fontSize: '10px', color: '#00ffcc', marginTop: '4px', fontWeight: 'bold' }}>
+            The Hardware Guru
+          </div>
+          <p style={{ fontSize: '10px', color: '#9ca3af', marginTop: '8px', lineHeight: '1.4' }}>
+            Podpoř nás a přidej si nás do výjimek.<br/>Díky! 🚀
           </p>
         </div>
       )}
+
+      {/* 📺 REKLAMNÍ SLOT: Seznam sem vloží iframe */}
+      <div 
+        id={`ssp-zone-${zoneId}`} 
+        style={{ 
+          position: 'absolute', 
+          top: 0, 
+          left: 0, 
+          width: '100%', 
+          height: '100%',
+          display: isBlocked ? 'none' : 'block',
+          zIndex: 2 
+        }} 
+      />
     </div>
   );
 }
