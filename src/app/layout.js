@@ -13,9 +13,9 @@ import SeznamAd from '../components/SeznamAd';
 import MobileAnchorAd from '../components/MobileAnchorAd';
 
 /**
- * GURU ROOT LAYOUT V7.1 (BREAKPOINT OPTIMIZATION)
- * 🚀 CÍL: Vrácení postranních reklam pro 1440p a 1080p monitory při zachování čistoty.
- * Snížení breakpointu na 1600px pro lepší pokrytí desktopového trafficu.
+ * GURU ROOT LAYOUT V7.3 (MONITOR-SPECIFIC PROFIT)
+ * 🚀 CÍL: Inteligentní zobrazení podle rozlišení.
+ * 1080p = pouze pravý banner | 1440p+ = oba bannery.
  */
 
 export const metadata = {
@@ -120,23 +120,28 @@ export default async function RootLayout({ children, params }) {
         <SocialTracker />
         <Tracker />
 
-        {/* 🔥 SVISLÉ REKLAMY 🔥 */}
+        {/* 🔥 SVISLÉ REKLAMY (DYNAMICKÁ VIDITELNOST) 🔥 */}
         <style dangerouslySetInnerHTML={{__html: `
           .skyscraper-left, .skyscraper-right {
             position: fixed;
             top: 120px;
             width: 300px;
-            display: none;
-            z-index: 1;
+            display: none; /* Defaultně skryto */
+            z-index: 20;
           }
           
-          /* Odsazení o 950px od středu - bezpečné pro homepage i články */
-          .skyscraper-left { left: calc(50% - 950px); }
-          .skyscraper-right { right: calc(50% - 950px); }
+          /* Odsazení od středu */
+          .skyscraper-left { left: calc(50% - 850px); }
+          .skyscraper-right { right: calc(50% - 850px); }
 
-          /* Sníženo na 1600px pro plnou podporu 1440p a 1080p monitorů */
-          @media (min-width: 1600px) {
-            .skyscraper-left, .skyscraper-right { display: block; }
+          /* 🚀 LEVEL 1: 1080p monitory - Zobrazíme pouze PRAVÝ banner */
+          @media (min-width: 1550px) {
+            .skyscraper-right { display: block; }
+          }
+
+          /* 🚀 LEVEL 2: 1440p+ monitory - Zobrazíme OBA bannery */
+          @media (min-width: 2100px) {
+            .skyscraper-left { display: block; }
           }
         `}} />
 
@@ -156,8 +161,7 @@ export default async function RootLayout({ children, params }) {
           </div>
         </main>
 
-        {/* 🚀 ČISTÁ REKLAMNÍ ZÓNA NAD PATIČKOU 🚀 */}
-        <div style={{ width: '100%', background: '#0a0b0d', position: 'relative', zIndex: 20, padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ width: '100%', background: '#0a0b0d', position: 'relative', zIndex: 25, padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
            <style dangerouslySetInnerHTML={{__html: `
               .footer-ad-container { display: flex; justify-content: center; width: 100%; }
               .f-desktop { display: none; }
