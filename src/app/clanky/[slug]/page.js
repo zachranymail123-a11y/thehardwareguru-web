@@ -5,8 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU ARTICLE ENGINE V5.4 (IN-TEXT ADS MAXIMIZER)
- * 🚀 CÍL: Dynamická injekce Seznam reklam za 3. a 6. odstavcem pro brutální Viewability.
+ * GURU ARTICLE ENGINE V5.5 (READER TRAP UPDATE)
+ * 🚀 CÍL: Agresivní "Past na čtenáře" na konci článku pro maximalizaci pages/session a počtu zobrazených reklam.
  */
 
 export const runtime = "nodejs";
@@ -230,15 +230,30 @@ export default async function ArticleDetailPage(props) {
                     </div>
                 </div>
 
+                {/* 🚀 PAST NA ČTENÁŘE (INFINITY LOOP) */}
                 {latestPosts.length > 0 && (
-                    <section style={{ marginTop: '60px' }}>
-                        <h2 className="section-title">{isEn ? 'READ NEXT' : 'DALŠÍ ČTENÍ'}</h2>
-                        <div className="related-grid">
-                            {latestPosts.map((lp) => (
-                                <a key={lp.slug} href={isEn ? `/en/clanky/${lp.slug_en || lp.slug}` : `/clanky/${lp.slug}`} className="related-card">
-                                    <img src={lp.image_url} alt={lp.title} />
-                                    <div className="related-info">
+                    <section className="guru-trap-section">
+                        <h2 className="trap-title">
+                            <Flame size={32} color="#a855f7" style={{ display: 'inline', verticalAlign: 'middle', marginRight: '10px' }} />
+                            {isEn ? "DON'T MISS THESE" : "GURU DOPORUČUJE"}
+                        </h2>
+                        <div className="trap-grid">
+                            {latestPosts.map((lp, index) => (
+                                <a key={lp.slug} href={isEn ? `/en/clanky/${lp.slug_en || lp.slug}` : `/clanky/${lp.slug}`} className="trap-card">
+                                    {index === 0 && (
+                                        <div className="hot-badge">
+                                            <Flame size={14} /> {isEn ? 'HOT' : 'ŽHAVÉ'}
+                                        </div>
+                                    )}
+                                    <div className="trap-img-wrapper">
+                                        <img src={lp.image_url} alt={lp.title} className="trap-img" />
+                                        <div className="trap-overlay"></div>
+                                    </div>
+                                    <div className="trap-info">
                                         <h3>{isEn ? lp.title_en : lp.title}</h3>
+                                        <span className="read-more-btn">
+                                            {isEn ? 'READ ARTICLE' : 'ČÍST ČLÁNEK'} <ArrowRight size={14} />
+                                        </span>
                                     </div>
                                 </a>
                             ))}
@@ -280,17 +295,38 @@ export default async function ArticleDetailPage(props) {
                 .silo-banner-text h4 { margin: 0; color: #fff; font-size: 1rem; font-weight: 950; text-transform: uppercase; }
                 .silo-banner-text p { margin: 0; color: #9ca3af; font-size: 0.8rem; }
                 .silo-banner-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.02); }
-                .section-title { color: #fff; font-size: 1.5rem; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; border-left: 4px solid #a855f7; padding-left: 15px; }
-                .related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-                .related-card { background: #000; border-radius: 15px; overflow: hidden; text-decoration: none; border: 1px solid #222; transition: 0.3s; }
-                .related-card img { width: 100%; height: 120px; object-fit: cover; }
-                .related-info { padding: 15px; }
-                .related-info h3 { margin: 0; color: #fff; font-size: 0.9rem; font-weight: 900; line-height: 1.3; }
-                .related-card:hover { border-color: #a855f7; transform: translateY(-5px); }
+                
+                /* 🚀 GURU READER TRAP CSS */
+                .guru-trap-section { margin-top: 80px; padding: 40px; background: linear-gradient(to bottom, rgba(168, 85, 247, 0.05) 0%, transparent 100%); border-top: 2px solid rgba(168, 85, 247, 0.3); border-radius: 30px; }
+                .trap-title { font-size: 2.2rem; text-align: center; border: none; padding: 0; color: #fff; text-shadow: 0 0 20px rgba(168, 85, 247, 0.4); margin-bottom: 40px; font-weight: 950; text-transform: uppercase; }
+                .trap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
+                .trap-card { position: relative; background: #0a0b0d; border-radius: 20px; overflow: hidden; text-decoration: none; border: 1px solid rgba(255,255,255,0.05); transition: 0.4s; display: block; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+                .trap-img-wrapper { position: relative; width: 100%; height: 180px; overflow: hidden; }
+                .trap-img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+                .trap-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10,11,13,1) 0%, transparent 80%); z-index: 1; }
+                .trap-info { padding: 25px 20px; position: relative; z-index: 2; background: #0a0b0d; text-align: center; }
+                .trap-info h3 { margin: 0 0 20px 0; color: #fff; font-size: 1.05rem; font-weight: 900; line-height: 1.5; transition: 0.3s; }
+                .read-more-btn { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 12px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
+                
+                /* 🚀 TRAP HOVER EFFECTS */
+                .trap-card:hover { border-color: #a855f7; transform: translateY(-10px); box-shadow: 0 20px 40px rgba(168, 85, 247, 0.2); }
+                .trap-card:hover .trap-img { transform: scale(1.1); }
+                .trap-card:hover .trap-info h3 { color: #a855f7; }
+                .trap-card:hover .read-more-btn { gap: 12px; color: #fff; }
+                
+                .hot-badge { position: absolute; top: 15px; left: 15px; background: #f43f5e; color: #fff; padding: 6px 14px; font-size: 11px; font-weight: 950; border-radius: 8px; z-index: 10; display: flex; align-items: center; gap: 6px; box-shadow: 0 5px 15px rgba(244, 63, 94, 0.4); text-transform: uppercase; animation: pulse 2s infinite; }
+                
+                @keyframes pulse {
+                    0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+                    70% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+                }
+
                 @media (max-width: 768px) {
                     .content-box-style { padding: 30px 20px; }
-                    .share-grid, .duel-grid, .related-grid { grid-template-columns: 1fr; }
+                    .share-grid, .duel-grid, .trap-grid { grid-template-columns: 1fr; }
                     .gta6-conversion-box { padding: 25px; }
+                    .guru-trap-section { padding: 30px 20px; margin-top: 50px; }
                 }
             `}} />
         </div>
