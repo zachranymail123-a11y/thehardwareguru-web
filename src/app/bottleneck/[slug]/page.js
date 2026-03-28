@@ -6,8 +6,8 @@ import {
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU BOTTLENECK ENGINE V22.8 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Maximální monetizace analýz bottlenecku skrze Seznam Partner.
+ * GURU BOTTLENECK ENGINE V22.9 (MOBILE OPTIMIZED)
+ * 🚀 CÍL: Maximální monetizace a perfektní zobrazení na všech zařízeních.
  */
 
 export const runtime = "nodejs";
@@ -173,12 +173,12 @@ export default async function BottleneckPage(props) {
   const baseComboUrl = gameSlug ? `${safeCpuSlug}-with-${safeGpuSlug}-in-${gameSlug}` : `${safeCpuSlug}-with-${safeGpuSlug}`;
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-bottleneck-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <header style={{ textAlign: 'center', marginBottom: '50px' }}>
           <div className="radar-badge"><Gauge size={16} /> GURU BOTTLENECK RADAR</div>
-          <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 3.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: 0, lineHeight: '1.1' }}>
+          <h1 className="main-title" style={{ fontSize: 'clamp(1.8rem, 5vw, 3.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: 0, lineHeight: '1.1' }}>
             <a href={isEn ? `/en/cpu/${safeCpuSlug}` : `/cpu/${safeCpuSlug}`} style={{ color: cpu.vendor?.toUpperCase() === 'INTEL' ? '#0071c5' : '#ed1c24', textDecoration: 'none' }}>{normalizeName(cpu.name)}</a> <br/>
             <span style={{ color: '#fff', opacity: 0.3, fontSize: '0.4em', display: 'block', margin: '10px 0' }}>WITH</span>
             <a href={isEn ? `/en/gpu/${safeGpuSlug}` : `/gpu/${safeGpuSlug}`} style={{ color: gpu.vendor?.toUpperCase() === 'NVIDIA' ? '#76b900' : '#ed1c24', textDecoration: 'none' }}>{normalizeName(gpu.name)}</a>
@@ -192,11 +192,12 @@ export default async function BottleneckPage(props) {
           )}
         </header>
 
+        {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
         <div style={{ marginBottom: '40px' }}>
             <div className="ad-desktop-wrapper">
               <SeznamAd zoneId={408654} width={970} height={210} />
             </div>
-            <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
+            <div className="ad-mobile-wrapper">
               <SeznamAd zoneId={408651} width={300} height={250} />
             </div>
         </div>
@@ -222,9 +223,11 @@ export default async function BottleneckPage(props) {
             </div>
         </section>
 
-        {/* 🚀 OPRAVA: Vnitřní reklama se teď na desktopu schová (použit wrapper) */}
-        <div className="ad-mobile-wrapper" style={{ marginBottom: '40px' }}>
-            <SeznamAd zoneId={408651} width={300} height={250} />
+        {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE */}
+        <div style={{ marginBottom: '40px' }}>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
         </div>
 
         <section style={{ marginBottom: '60px' }}>
@@ -260,12 +263,14 @@ export default async function BottleneckPage(props) {
         .ad-mobile-wrapper { display: none; width: 100%; }
 
         @media (max-width: 768px) {
-            .ad-desktop-wrapper { display: none; }
-            .ad-mobile-wrapper { display: flex; justify-content: center; width: 100%; }
+            .guru-bottleneck-wrapper { paddingTop: 80px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
             .border-mobile-fix { border-left: none !important; padding-left: 0 !important; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 40px; }
-            .main-analysis-box { padding: 30px 20px !important; border-radius: 20px !important; }
+            .main-analysis-box { padding: 30px 15px !important; border-radius: 20px !important; }
             .status-pill { padding: 10px 20px; font-size: 12px; }
             .support-btn, .live-btn { width: 100%; justify-content: center; }
+            .main-title { font-size: 1.6rem !important; }
         }
       `}} />
     </div>
