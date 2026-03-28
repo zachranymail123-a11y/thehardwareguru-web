@@ -220,7 +220,7 @@ export default function BottleneckClient({
                                 <div className="pct-label" style={{ color: statusColor }}>{a.limitedBy} tě brzdí o {a.bottleneckPercent}%</div>
                             </div>
 
-                            {/* 🔥 SEZNAM AD: MOBILNÍ FIX PRO VNITŘNÍ REKLAMU */}
+                            {/* 🔥 SEZNAM AD: VNITŘNÍ REKLAMA */}
                             <div style={{ margin: '30px -20px' }}>
                                 <SeznamAd zoneId={408651} width={300} height={250} />
                             </div>
@@ -323,10 +323,21 @@ export default function BottleneckClient({
                 .recommendation h4 { font-size: 18px; font-weight: 950; text-transform: uppercase; margin-bottom: 15px; color: #fff; }
                 .recommendation p { font-size: 15px; color: #9ca3af; lineHeight: 1.6; }
 
+                /* 🚀 OPRAVA MOBILNÍHO ZOBRAZENÍ */
                 @media (max-width: 768px) {
-                  .bn-wrapper { padding: 20px; border-radius: 20px; }
-                  .bn-header h1 { fontSize: 2rem !important; }
-                  .pct-value { fontSize: 5rem !important; }
+                  .bn-wrapper { padding: 15px; border-radius: 20px; }
+                  .bn-header h1 { font-size: 1.8rem !important; }
+                  .bn-inputs-card { padding: 20px; border-radius: 20px; }
+                  .section-title { font-size: 16px; margin-bottom: 25px; }
+                  .bn-select { padding: 12px; font-size: 14px; }
+                  .toggle-grid { grid-template-columns: 1fr; }
+                  .pct-value { font-size: 4rem !important; }
+                  .pro-metrics-grid { grid-template-columns: 1fr; gap: 10px; }
+                  .metric-box { padding: 15px; }
+                  .m-val { font-size: 24px; }
+                  .bn-result-card { padding: 20px; min-height: auto; }
+                  .viral-flex-card { flex-direction: column; text-align: center; padding: 20px; gap: 15px; }
+                  .hub-grid { grid-template-columns: 1fr; }
                 }
             `}} />
         </div>
