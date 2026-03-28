@@ -10,8 +10,11 @@ import VisitorCounter from '../components/VisitorCounter';
 import ShareWidget from '../components/ShareWidget';
 import CookieBanner from '../components/CookieBanner';
 import SeznamAd from '../components/SeznamAd';
-import MobileAnchorAd from '../components/MobileAnchorAd';
-import SeznamInterstitial from '../components/SeznamInterstitial';
+
+/**
+ * GURU ROOT LAYOUT V6.5 (SIDEBAR POSITION & Z-INDEX FINAL FIX)
+ * 🚀 CÍL: Posunutí reklam a snížení z-indexu, aby nepřekážely navigátorovi a menu.
+ */
 
 export const metadata = {
   title: {
@@ -74,13 +77,14 @@ export default async function RootLayout({ children, params }) {
   return (
     <html lang={locale}>
       <head>
+        {/* Google AdSense */}
         <script 
           async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993"
           crossOrigin="anonymous"
         ></script>
 
-        {/* Návrat k tvému původnímu zápisu přes Next Script */}
+        {/* 🔥 SEZNAM SSP REKLAMY 🔥 */}
         <Script src="https://ssp.seznam.cz/static/js/ssp.js" strategy="afterInteractive" />
 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
@@ -89,6 +93,7 @@ export default async function RootLayout({ children, params }) {
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Novinky" href="https://thehardwareguru.cz/rss.xml" />
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Srovnání" href="https://thehardwareguru.cz/rss-comparisons.xml" />
         
+        {/* 🔥 ONESIGNAL NOTIFIKACE 🔥 */}
         <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="afterInteractive" />
         <Script id="onesignal-init" strategy="afterInteractive">
           {`
@@ -111,26 +116,24 @@ export default async function RootLayout({ children, params }) {
         
         <div id="guru-env-bridge" style={{ display: 'none' }} data-url={envVars.NEXT_PUBLIC_SUPABASE_URL} data-key={envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY} />
         
-        <SeznamInterstitial />
-        
         <Navbar />
         <SocialTracker />
         <Tracker />
 
-        {/* Návrat tvého záložního CSS s původním z-indexem */}
+        {/* 🔥 SVISLÉ REKLAMY NA BOKY 🔥 */}
         <style dangerouslySetInnerHTML={{__html: `
           .skyscraper-left, .skyscraper-right {
             position: fixed;
-            top: 120px;
+            top: 120px; /* 🚀 POŘÁDNÁ MEZERA POD NAVBAR */
             width: 300px;
             display: none;
-            z-index: 5;
+            z-index: 5; /* 🚀 NIŽŠÍ Z-INDEX: GURU NAVIGÁTOR BUDE NAD TÍM */
           }
           
           .skyscraper-left { left: calc(50% - 600px - 380px); }
           .skyscraper-right { right: calc(50% - 600px - 380px); }
 
-          @media (min-width: 1600px) {
+          @media (min-width: 1950px) {
             .skyscraper-left, .skyscraper-right { display: block; }
           }
         `}} />
@@ -145,9 +148,12 @@ export default async function RootLayout({ children, params }) {
 
         <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden' }}>
           {children}
+
+          {/* 🚀 GURU VIRÁLNÍ WIDGET */}
           <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
              <ShareWidget isEn={isEn} />
           </div>
+
         </main>
 
         <footer style={{ padding: '60px 20px 40px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto', background: '#0a0b0d' }}>
@@ -159,6 +165,7 @@ export default async function RootLayout({ children, params }) {
             .eeat-link { color: #6b7280; font-size: 11px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; transition: 0.2s; }
             .eeat-link:hover { color: #d1d5db; }
             
+            /* GURU RESPONSIVE ADS */
             .ad-desktop-wrapper { display: flex; justify-content: center; }
             .ad-mobile-wrapper { display: none; }
             
@@ -197,13 +204,21 @@ export default async function RootLayout({ children, params }) {
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginBottom: '30px' }}>
-            <a href={locale === 'en' ? "/en/about" : "/about"} className="eeat-link">{locale === 'en' ? 'About Us' : 'O nás'}</a>
+            <a href={locale === 'en' ? "/en/about" : "/about"} className="eeat-link">
+              {locale === 'en' ? 'About Us' : 'O nás'}
+            </a>
             <span style={{ color: '#333' }}>•</span>
-            <a href={locale === 'en' ? "/en/contact" : "/contact"} className="eeat-link">{locale === 'en' ? 'Contact' : 'Kontakt'}</a>
+            <a href={locale === 'en' ? "/en/contact" : "/contact"} className="eeat-link">
+              {locale === 'en' ? 'Contact' : 'Kontakt'}
+            </a>
             <span style={{ color: '#333' }}>•</span>
-            <a href={locale === 'en' ? "/en/privacy-policy" : "/privacy-policy"} className="eeat-link">{locale === 'en' ? 'Privacy Policy' : 'Ochrana soukromí'}</a>
+            <a href={locale === 'en' ? "/en/privacy-policy" : "/privacy-policy"} className="eeat-link">
+              {locale === 'en' ? 'Privacy Policy' : 'Ochrana soukromí'}
+            </a>
             <span style={{ color: '#333' }}>•</span>
-            <a href={locale === 'en' ? "/en/terms-of-service" : "/terms-of-service"} className="eeat-link">{locale === 'en' ? 'Terms of Service' : 'Podmínky použití'}</a>
+            <a href={locale === 'en' ? "/en/terms-of-service" : "/terms-of-service"} className="eeat-link">
+              {locale === 'en' ? 'Terms of Service' : 'Podmínky použití'}
+            </a>
           </div>
 
           <div className="copyright">
@@ -215,7 +230,6 @@ export default async function RootLayout({ children, params }) {
         <SupportWidget />
         <CookieBanner />
         <Analytics />
-        <MobileAnchorAd />
       </body>
     </html>
   )
