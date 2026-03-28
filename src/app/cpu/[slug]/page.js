@@ -6,8 +6,8 @@ import {
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU CPU ENGINE - DETAIL PROCESORU V2.4 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Maximální monetizace CPU profilů skrze Seznam Partner bez ztráty stability.
+ * GURU CPU ENGINE - DETAIL PROCESORU V2.5 (MOBILE OPTIMIZED)
+ * 🚀 CÍL: Maximální monetizace CPU profilů a perfektní mobilní zobrazení.
  */
 
 export const runtime = "nodejs";
@@ -94,11 +94,11 @@ export default async function CpuDetailPage({ params }) {
   const cinebenchScore = fpsData?.cinebench_r23_multi || 'N/A';
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-page-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       <main style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? "/en/cpu-index" : "/cpu-index"} className="guru-back-btn">
-            <ChevronLeft size={16} /> {isEn ? 'BACK TO CPU DATABASE' : 'ZPĚT DO KATALOGU CPU'}
+            <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
           </a>
         </div>
 
@@ -106,7 +106,7 @@ export default async function CpuDetailPage({ params }) {
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: vendorColor, fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: `1px solid ${vendorColor}40`, borderRadius: '50px', background: `${vendorColor}15` }}>
             <Cpu size={16} /> {isEn ? 'CPU PROFILE' : 'PROFIL PROCESORU'}
           </div>
-          <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
+          <h1 className="main-title" style={{ fontSize: 'clamp(2.1rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
             <span style={{ color: '#d1d5db' }}>{cpu.vendor}</span> <br/>
             <span style={{ color: vendorColor, textShadow: `0 0 30px ${vendorColor}80` }}>{normalizeName(cpu.name)}</span>
           </h1>
@@ -115,10 +115,17 @@ export default async function CpuDetailPage({ params }) {
           </div>
         </header>
 
-        {/* 🔥 SEZNAM AD #1: TOP BANNER POD HLAVIČKOU */}
-        <SeznamAd zoneId={408654} width={970} height={210} />
+        {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
+        <div style={{ marginBottom: '40px' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
 
-        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '60px', marginTop: '40px' }}>
+        <section className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '60px', marginTop: '40px' }}>
             <div className="stat-card"><div className="stat-label">{isEn ? 'Boost Clock' : 'Boost Takt'}</div><div className="stat-val">{cpu.boost_clock_mhz ?? '-'} <span style={{ fontSize: '16px', color: '#6b7280' }}>MHz</span></div></div>
             <div className="stat-card"><div className="stat-label">Cinebench R23</div><div className="stat-val">{cinebenchScore} <span style={{ fontSize: '16px', color: '#6b7280' }}>PTS</span></div></div>
             <div className="stat-card"><div className="stat-label">{isEn ? 'Power Draw' : 'Spotřeba (TDP)'}</div><div className="stat-val">{cpu.tdp_w ?? '-'} <span style={{ fontSize: '16px', color: '#6b7280' }}>W</span></div></div>
@@ -126,14 +133,14 @@ export default async function CpuDetailPage({ params }) {
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: vendorColor }}><Database size={28} /> {isEn ? 'DEEP DIVE ANALYSIS' : 'DETAILNÍ ANALÝZA'}</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+          <div className="deep-links-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
               <a href={isEn ? `/en/cpu-performance/${safeSlug}` : `/cpu-performance/${safeSlug}`} className="deep-link-card">
                   <Activity size={32} color="#f59e0b" />
-                  <div><h3>{isEn ? 'Performance & Specs' : 'Výkon a Parametry'}</h3><p>Full technical specs and synthetic benchmarks.</p></div>
+                  <div><h3>{isEn ? 'Performance & Specs' : 'Výkon a Parametry'}</h3><p>Full technical specs and benchmarks.</p></div>
               </a>
               <a href={isEn ? `/en/cpuvs` : `/cpuvs`} className="deep-link-card">
                   <Swords size={32} color="#a855f7" />
-                  <div><h3>{isEn ? 'CPU VS Engine' : 'Srovnávač CPU'}</h3><p>Compare this CPU against any other.</p></div>
+                  <div><h3>{isEn ? 'CPU VS Engine' : 'Srovnávač CPU'}</h3><p>Compare against any other processor.</p></div>
               </a>
           </div>
         </section>
@@ -144,8 +151,10 @@ export default async function CpuDetailPage({ params }) {
                <div className="spec-row-style"><div className="table-label">{isEn ? 'CORES / THREADS' : 'JÁDRA / VLÁKNA'}</div><div className="spec-val-box">{cpu.cores} / {cpu.threads}</div></div>
                <div className="spec-row-style"><div className="table-label">{isEn ? 'BASE CLOCK' : 'ZÁKLADNÍ TAKT'}</div><div className="spec-val-box">{cpu.base_clock_mhz} MHz</div></div>
                
-               {/* 🔥 SEZNAM AD #2: PROSTŘEDEK TABULKY */}
-               <SeznamAd zoneId={408651} width={300} height={250} />
+               {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE (POUZE MOBIL) */}
+               <div className="ad-mobile-wrapper" style={{ margin: '20px 0' }}>
+                   <SeznamAd zoneId={408651} width={300} height={250} />
+               </div>
 
                <div className="spec-row-style"><div className="table-label">L3 CACHE</div><div className="spec-val-box">{cpu.l3_cache_mb} MB</div></div>
                <div className="spec-row-style"><div className="table-label">TDP (SPOTŘEBA)</div><div className="spec-val-box">{cpu.tdp_w} W</div></div>
@@ -153,7 +162,7 @@ export default async function CpuDetailPage({ params }) {
           </div>
         </section>
 
-        <div style={{ marginTop: '80px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
+        <div className="footer-btns" style={{ marginTop: '80px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
           <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn"><Flame size={20} /> DEALS</a>
           <a href="/support" className="guru-support-btn"><Heart size={20} /> SUPPORT</a>
         </div>
@@ -173,11 +182,29 @@ export default async function CpuDetailPage({ params }) {
         .spec-val-box { color: #fff; font-weight: 950; font-size: 18px; }
 
         .deep-link-card { display: flex; align-items: center; gap: 20px; background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; }
+        .deep-link-card h3 { font-size: 18px; font-weight: 950; margin: 0 0 5px 0; }
+        .deep-link-card p { font-size: 13px; color: #9ca3af; margin: 0; }
+        
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000; font-weight: 950; border-radius: 16px; text-decoration: none; }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-weight: 950; border-radius: 16px; text-decoration: none; }
 
+        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
         @media (max-width: 768px) {
-            .spec-row-style { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .guru-page-wrapper { padding-top: 80px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+            .main-title { font-size: 1.6rem !important; }
+            .section-h2 { font-size: 1.4rem !important; }
+            .stat-card { padding: 20px !important; }
+            .stat-val { font-size: 24px !important; }
+            .spec-row-style { flex-direction: column; align-items: flex-start; gap: 10px; padding: 15px 20px !important; }
+            .deep-link-card { padding: 20px !important; }
+            .deep-links-grid { grid-template-columns: 1fr !important; }
+            .footer-btns { gap: 15px !important; }
+            .guru-deals-btn, .guru-support-btn { width: 100% !important; }
         }
       `}} />
     </div>
