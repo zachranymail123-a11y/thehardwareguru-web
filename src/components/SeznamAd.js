@@ -16,15 +16,15 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
     if (!divId) return;
 
     const loadAd = () => {
-      if (typeof window !== 'undefined' && window.sssp) {
+      if (typeof window !== 'undefined' && window.ssp) {
         // SPA Tracking - započítání PageView
         if (!window.guruSspPageTracked || window.guruSspPageTracked !== pathname) {
-          window.sssp.setPageViewId();
+          window.ssp.setPageViewId();
           window.guruSspPageTracked = pathname;
         }
 
         // Zavolání reklamy
-        window.sssp.getAds([
+        window.ssp.getAds([
           {
             zoneId: zoneId,
             id: divId,
@@ -38,9 +38,8 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
     // 1. Pokus o načtení hned po renderu
     const timer = setTimeout(loadAd, 400);
 
-    // 2. OPRAVA BUGU: Posluchač pro návrat tlačítkem ZPĚT (bfcache)
+    // 2. Posluchač pro návrat tlačítkem ZPĚT (bfcache)
     const handlePageShow = (event) => {
-      // event.persisted je true, pokud se stránka načetla z paměti (tlačítko zpět)
       if (event.persisted) {
         loadAd();
       }
@@ -61,7 +60,8 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
       <div 
         id={divId} 
         style={{ minWidth: width, minHeight: height, background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}
-        className="overflow-hidden flex justify-center items-center"
+        // 🚀 OPRAVA: Odstraněno 'overflow-hidden'. Reklama se už nebude na mobilu z boků ořezávat.
+        className="flex justify-center items-center"
       >
       </div>
     </div>
