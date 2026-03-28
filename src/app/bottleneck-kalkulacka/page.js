@@ -33,6 +33,17 @@ export default async function BottleneckPage() {
 
     return (
         <div style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', paddingTop: '100px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+            
+            {/* 🚀 PŘIDÁNO: Definice tříd pro korektní přepínání reklam na mobilu */}
+            <style dangerouslySetInnerHTML={{ __html: `
+                .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+                .ad-mobile-wrapper { display: none; width: 100%; }
+                @media (max-width: 768px) {
+                    .ad-desktop-wrapper { display: none; }
+                    .ad-mobile-wrapper { display: flex; justify-content: center; }
+                }
+            `}} />
+
             <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
                 
                 {/* 🔥 SEZNAM AD #1: TOP PLACEMENT (OPRAVENO PRO MOBILY) */}
