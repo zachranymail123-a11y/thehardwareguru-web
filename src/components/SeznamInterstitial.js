@@ -2,16 +2,21 @@
 import { useEffect } from 'react';
 
 /**
- * GURU INTERSTITIAL TRIGGER (VINĚTA)
- * 🚀 CÍL: Aktivace nejvýdělečnějšího formátu od Seznamu.
+ * GURU SMART INTERSTITIAL V1.0
+ * 🚀 Aktivace nejvýdělečnějších formátů podle Seznam Partner IDs.
  */
 export default function SeznamInterstitial() {
   useEffect(() => {
-    const triggerVineta = () => {
+    const triggerAd = () => {
       if (typeof window !== 'undefined' && window.ssp && window.ssp.getAds) {
+        const isMobile = window.innerWidth <= 768;
+        
+        // IDs z tvého screenshotu
+        const zoneId = isMobile ? 408681 : 408684;
+
         window.ssp.getAds([
           {
-            zoneId: 408659, // 👈 Tady si v Seznam Partner najdi ID pro "Viněta" a vlož ho sem
+            zoneId: zoneId,
             id: 'szn-interstitial',
             type: 'interstitial'
           }
@@ -19,8 +24,8 @@ export default function SeznamInterstitial() {
       }
     };
 
-    // Malý timeout, aby se nejdřív nadechl hlavní obsah
-    const timer = setTimeout(triggerVineta, 1500);
+    // Spuštění po 2 vteřinách, aby se user nejdřív nadechl
+    const timer = setTimeout(triggerAd, 2000);
     return () => clearTimeout(timer);
   }, []);
 
