@@ -6,8 +6,8 @@ import {
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU GPU ENGINE - DETAIL GRAFIKY V2.5 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Maximální vytěžení trafficu z produktových stránek skrze Seznam Partner.
+ * GURU GPU ENGINE - DETAIL GRAFIKY V2.6 (MOBILE OPTIMIZED)
+ * 🚀 CÍL: Maximální monetizace a perfektní mobilní zobrazení produktového detailu.
  */
 
 export const runtime = "nodejs";
@@ -115,21 +115,21 @@ export default async function GpuDetailPage(props) {
   const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-gpu-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(productSchema) }} />
 
-      <main style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+      <main className="inner-container" style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? "/en/gpuvs/ranking" : "/gpuvs/ranking"} className="guru-back-btn">
-            <ChevronLeft size={16} /> {isEn ? 'BACK TO RANKING' : 'ZPĚT DO ŽEBŘÍČKU'}
+            <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
           </a>
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: vendorColor, fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: `1px solid ${vendorColor}40`, borderRadius: '50px', background: `${vendorColor}15` }}>
+          <div className="gpu-badge">
             <Monitor size={16} /> {isEn ? 'GPU PROFILE' : 'PROFIL GRAFIKY'}
           </div>
-          <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
+          <h1 className="main-title" style={{ fontSize: 'clamp(2.1rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
             <span style={{ color: '#d1d5db' }}>{gpu.vendor}</span> <br/>
             <span style={{ color: vendorColor, textShadow: `0 0 30px ${vendorColor}80` }}>{normalizeName(gpu.name)}</span>
           </h1>
@@ -139,41 +139,46 @@ export default async function GpuDetailPage(props) {
             <section style={{ marginBottom: '30px', display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
                 {!isEn && gpu.buy_link_cz && (
                     <a href={gpu.buy_link_cz} target="_blank" rel="nofollow sponsored" className="btn-buy alza">
-                        <ShoppingCart size={20} /> ZKONTROLOVAT CENU NA ALZA.CZ
+                        <ShoppingCart size={20} /> CENY NA ALZA.CZ
                     </a>
                 )}
                 {isEn && gpu.buy_link_en && (
                     <a href={gpu.buy_link_en} target="_blank" rel="nofollow sponsored" className="btn-buy amazon">
-                        <ShoppingCart size={20} /> CHECK PRICE ON AMAZON
+                        <ShoppingCart size={20} /> PRICES ON AMAZON
                     </a>
                 )}
             </section>
         )}
 
-        {/* 🔥 SEZNAM AD #1: TOP PLACEMENT POD NÁKUPEM */}
-        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
-            <SeznamAd zoneId={408654} width={970} height={210} />
+        {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
+        <div style={{ marginBottom: '40px' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
         </div>
 
-        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '60px' }}>
+        <section className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '60px' }}>
             <div className="stat-card"><div className="label">VRAM</div><div className="val">{gpu.vram_gb || '-'} GB</div></div>
             <div className="stat-card"><div className="label">TDP</div><div className="val">{gpu.tdp_w || '-'} W</div></div>
             <div className="stat-card"><div className="label">PERFORMANCE</div><div className="val">{gpu.performance_index || '-'} PTS</div></div>
         </section>
 
-        {/* 🔥 SEZNAM AD #2: PŘED ANALÝZOU */}
-        <div style={{ marginBottom: '40px' }}>
+        {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE (POUZE MOBIL) */}
+        <div className="ad-mobile-wrapper" style={{ marginBottom: '40px' }}>
             <SeznamAd zoneId={408651} width={300} height={250} />
         </div>
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: vendorColor }}><Database size={28} /> {isEn ? 'DEEP DIVE ANALYSIS' : 'DETAILNÍ ANALÝZA'}</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+          <div className="deep-links-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
               <a href={isEn ? `/en/gpu-performance/${safeSlug}` : `/gpu-performance/${safeSlug}`} className="deep-link-card">
                   <Activity size={32} color={vendorColor} />
                   <div>
                       <h3>{isEn ? 'Performance & Specs' : 'Výkon a Parametry'}</h3>
-                      <p>{isEn ? 'Technical specs and benchmarks.' : 'Technické specifikace a testy.'}</p>
+                      <p>{isEn ? 'Full specs and benchmarks.' : 'Technické specifikace a testy.'}</p>
                   </div>
               </a>
               <a href={isEn ? `/en/gpu-recommend/${safeSlug}` : `/gpu-recommend/${safeSlug}`} className="deep-link-card">
@@ -190,7 +195,7 @@ export default async function GpuDetailPage(props) {
         {similarGpus.length > 0 && (
           <section style={{ marginBottom: '60px' }}>
               <h2 className="section-h2" style={{ borderLeftColor: vendorColor }}><Swords size={28} /> {isEn ? 'COMPARISONS' : 'SROVNÁNÍ'}</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+              <div className="silo-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
                   {similarGpus.map(otherGpu => (
                     <a key={otherGpu.slug} href={isEn ? `/en/gpuvs/${safeSlug}-vs-${otherGpu.slug}` : `/gpuvs/${safeSlug}-vs-${otherGpu.slug}`} className="silo-link-card">
                         <span style={{ fontWeight: '900' }}>VS {normalizeName(otherGpu.name)}</span>
@@ -205,7 +210,7 @@ export default async function GpuDetailPage(props) {
         {recommendedCpus.length > 0 && (
           <section style={{ marginBottom: '60px' }}>
               <h2 className="section-h2" style={{ borderLeftColor: vendorColor }}><Zap size={28} /> {isEn ? 'CPU PAIRINGS' : 'PROCESORY K TÉTO GPU'}</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+              <div className="silo-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
                   {recommendedCpus.map(cpu => (
                     <a key={cpu.slug} href={isEn ? `/en/bottleneck/${cpu.slug}-with-${safeSlug}` : `/bottleneck/${cpu.slug}-with-${safeSlug}`} className="silo-link-card" style={{ borderLeftColor: '#a855f7' }}>
                         <span style={{ fontWeight: '900' }}>+ {normalizeName(cpu.name)}</span>
@@ -216,13 +221,14 @@ export default async function GpuDetailPage(props) {
           </section>
         )}
 
-        <div style={{ marginTop: '80px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
+        <div className="footer-btns" style={{ marginTop: '80px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
           <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" className="guru-deals-btn"><Flame size={20} /> DEALS</a>
           <a href="/support" className="guru-support-btn"><Heart size={20} /> SUPPORT</a>
         </div>
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
+        .gpu-badge { display: inline-flex; align-items: center; gap: 8px; color: #fff; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(255,255,255,0.1); border-radius: 50px; background: rgba(255,255,255,0.05); margin-bottom: 20px; }
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         
         .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; display: flex; align-items: center; gap: 12px; }
@@ -235,13 +241,35 @@ export default async function GpuDetailPage(props) {
         .btn-buy.amazon { background: #ff9900; color: #000; }
 
         .deep-link-card { display: flex; align-items: center; gap: 20px; background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; }
+        .deep-link-card h3 { font-size: 18px; font-weight: 950; margin: 0 0 5px 0; }
+        .deep-link-card p { font-size: 13px; color: #9ca3af; margin: 0; }
+        
         .silo-link-card { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 18px 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #d1d5db; transition: 0.3s; border-left: 3px solid #6b7280; }
-        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000; font-weight: 950; border-radius: 16px; text-decoration: none; }
-        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-weight: 950; border-radius: 16px; text-decoration: none; }
+        .silo-link-card:hover { transform: translateX(5px); background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); }
+
+        .guru-support-btn, .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; text-decoration: none; transition: 0.3s; text-transform: uppercase; }
+        .guru-support-btn { background: #eab308; color: #000; }
+        .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
+
+        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
 
         @media (max-width: 768px) {
-            .stat-card { padding: 15px; }
-            .btn-buy { width: 100%; }
+            .guru-gpu-wrapper { padding-top: 80px !important; }
+            .inner-container { padding: 0 15px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+            .main-title { font-size: 1.8rem !important; }
+            .btn-buy { width: 100%; justify-content: center; padding: 15px 20px; font-size: 12px; }
+            .stats-grid { grid-template-columns: 1fr !important; gap: 15px; }
+            .stat-card { padding: 20px !important; border-radius: 18px; }
+            .val { font-size: 24px; }
+            .deep-links-grid { grid-template-columns: 1fr !important; }
+            .deep-link-card { padding: 20px !important; }
+            .silo-grid { grid-template-columns: 1fr !important; }
+            .footer-btns { flex-direction: column; }
+            .guru-deals-btn, .guru-support-btn { width: 100% !important; }
         }
       `}} />
     </div>
