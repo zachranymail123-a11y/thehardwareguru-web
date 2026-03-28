@@ -1,24 +1,33 @@
-'use client';
+"use client";
+
 import { useEffect } from 'react';
+
+/**
+ * GURU OVERLAY AD ENGINE V1.2
+ * 🚀 CÍL: Oprava nulových zobrazení u Vinět a Interstitialů.
+ * Zóny z obrázku: 408681 (Mobilní viněta), 408684 (Interstitial)
+ */
 
 export default function SeznamInterstitial() {
   useEffect(() => {
-    const loadInterstitial = () => {
-      if (typeof window !== 'undefined' && window.ssp && window.ssp.getAds) {
-        const isMobile = window.innerWidth <= 768;
-        window.ssp.getAds([
-          {
-            zoneId: isMobile ? 408681 : 408684,
-            id: 'szn-interstitial-slot',
-            type: 'interstitial'
+    const timer = setTimeout(() => {
+      if (window.sssp && window.sssp.getAds) {
+        // Voláme speciální overlay zóny bez vazby na konkrétní div v HTML
+        window.sssp.getAds([
+          { 
+            zoneId: 408681, // Mobilní viněta
+            callback: (data) => console.log("Guru Viněta status:", data.status)
+          },
+          { 
+            zoneId: 408684, // Interstitial (Desktop/Tablet)
+            callback: (data) => console.log("Guru Interstitial status:", data.status)
           }
         ]);
-      } else if (typeof window !== 'undefined') {
-        setTimeout(loadInterstitial, 500);
       }
-    };
-    loadInterstitial();
+    }, 2000); // 2 vteřiny delay, aby se nejdřív načetl hlavní obsah webu
+
+    return () => clearTimeout(timer);
   }, []);
 
-  return <div id="szn-interstitial-slot" style={{ display: 'none' }} />;
+  return null; // Komponenta je neviditelná, jen spouští skript
 }
