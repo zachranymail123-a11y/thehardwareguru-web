@@ -1,22 +1,22 @@
 import React, { cache } from 'react';
 import { 
-  ChevronLeft, 
-  Monitor, 
-  Gamepad2, 
-  Zap, 
-  Activity, 
-  ShieldCheck, 
-  Crosshair, 
-  Swords, 
-  BarChart3,
-  Flame,
-  Heart
+ ChevronLeft, 
+ Monitor, 
+ Gamepad2, 
+ Zap, 
+ Activity, 
+ ShieldCheck, 
+ Crosshair, 
+ Swords, 
+ BarChart3,
+ Flame,
+ Heart
 } from 'lucide-react';
 import SeznamAd from '../../../../../components/SeznamAd';
 
 /**
- * GURU GPU PERFORMANCE ENGINE V2.3 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Maximální monetizace trafficu z FPS Radaru skrze Seznam Partner.
+ * GURU GPU PERFORMANCE ENGINE V2.4 (MOBILE OPTIMIZED)
+ * 🚀 CÍL: Maximální monetizace trafficu a perfektní mobilní UI pro FPS benchmarky.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -136,28 +136,28 @@ export default async function GpuPerformancePage({ params }) {
     else if (finalFps >= 30) { verdictColor = '#eab308'; verdictTextEn = 'PLAYABLE'; verdictTextCs = 'HRATELNÉ'; }
 
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
-            <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+        <div className="guru-performance-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+            <main className="inner-container" style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
                 
                 <div style={{ marginBottom: '30px' }}>
                     <a href={isEn ? `/en/gpu/${safeSlug}` : `/gpu/${safeSlug}`} className="guru-back-btn">
-                        <ChevronLeft size={16} /> {isEn ? 'BACK TO PROFILE' : 'ZPĚT NA PROFIL'}
+                        <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
                     </a>
                 </div>
 
                 <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(102,252,241,0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)' }}>
+                    <div className="radar-badge">
                         <Activity size={16} /> GURU FPS RADAR
                     </div>
-                    <h1 style={{ fontSize: 'clamp(2rem, 6vw, 3.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
+                    <h1 className="main-title" style={{ fontSize: 'clamp(2rem, 6vw, 3.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
                         <span style={{ color: vendorColor }}>{cleanGpuName}</span> <br/>
                         <span style={{ color: '#66fcf1' }}>{gameLabel}</span> FPS
                     </h1>
                 </header>
 
                 <section style={{ marginBottom: '30px' }}>
-                    <div style={{ background: 'rgba(15, 17, 21, 0.95)', borderLeft: `8px solid ${verdictColor}`, borderRadius: '24px', padding: '50px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
-                        <div style={{ fontSize: 'clamp(80px, 15vw, 120px)', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0' }}>
+                    <div className="fps-result-card" style={{ background: 'rgba(15, 17, 21, 0.95)', borderLeft: `8px solid ${verdictColor}`, borderRadius: '24px', padding: '50px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
+                        <div className="fps-main-number" style={{ fontSize: 'clamp(80px, 15vw, 120px)', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0' }}>
                             {finalFps > 0 ? finalFps : 'N/A'} {finalFps > 0 && <span style={{ fontSize: '30px', color: verdictColor }}>FPS</span>}
                         </div>
                         <div style={{ background: `${verdictColor}20`, color: verdictColor, padding: '10px 25px', borderRadius: '50px', display: 'inline-flex', alignItems: 'center', gap: '10px', fontWeight: '950', fontSize: '14px', border: `1px solid ${verdictColor}40` }}>
@@ -166,25 +166,30 @@ export default async function GpuPerformancePage({ params }) {
                     </div>
                 </section>
 
-                {/* 🔥 SEZNAM AD #1: TOP PLACEMENT POD RADAREM */}
-                <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
-                    <SeznamAd zoneId={408654} width={970} height={210} />
+                {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
+                <div style={{ marginBottom: '40px' }}>
+                    <div className="ad-desktop-wrapper">
+                        <SeznamAd zoneId={408654} width={970} height={210} />
+                    </div>
+                    <div className="ad-mobile-wrapper">
+                        <SeznamAd zoneId={408651} width={300} height={250} />
+                    </div>
                 </div>
 
-                <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '60px' }}>
+                <section className="specs-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '60px' }}>
                     <div className="res-card"><div className="res-label">RESOLUTION</div><div className="res-val" style={{ color: '#66fcf1' }}>{resLabel}</div></div>
                     <div className="res-card"><div className="res-label">GPU VRAM</div><div className="res-val">{gpu.vram_gb} GB</div></div>
                     <div className="res-card"><div className="res-label">ARCHITECTURE</div><div className="res-val">{gpu.architecture}</div></div>
                 </section>
 
-                {/* 🔥 SEZNAM AD #2: PŘED DETAILNÍ ANALÝZOU */}
-                <div style={{ marginBottom: '40px' }}>
+                {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE (POUZE MOBIL) */}
+                <div className="ad-mobile-wrapper" style={{ marginBottom: '40px' }}>
                     <SeznamAd zoneId={408651} width={300} height={250} />
                 </div>
 
                 <section style={{ marginBottom: '60px' }}>
                   <h2 className="section-h2" style={{ borderLeftColor: vendorColor }}><Activity size={28} /> {isEn ? 'DEEP DIVE' : 'DETAILNÍ ANALÝZA'}</h2>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                  <div className="deep-links-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                       <a href={isEn ? `/en/gpu-performance/${safeSlug}` : `/gpu-performance/${safeSlug}`} className="deep-link-card">
                           <BarChart3 size={32} color={vendorColor} />
                           <div><h3>{isEn ? 'Performance Specs' : 'Výkon a Parametry'}</h3><p>Full specs and HW index.</p></div>
@@ -196,27 +201,47 @@ export default async function GpuPerformancePage({ params }) {
                   </div>
                 </section>
 
-                <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
+                <div className="footer-btns" style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
                     <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn"><Flame size={20} /> DEALS</a>
                     <a href="/support" className="guru-support-btn"><Heart size={20} /> SUPPORT</a>
                 </div>
             </main>
 
             <style dangerouslySetInnerHTML={{__html: `
+                .radar-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(102,252,241,0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.05); margin-bottom: 20px; }
                 .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
                 .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); }
 
-                .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; }
-                .res-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; text-align: center; }
+                .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; display: flex; align-items: center; gap: 12px; }
+                .res-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
                 .res-label { font-size: 11px; font-weight: 950; text-transform: uppercase; color: #4b5563; margin-bottom: 10px; }
                 .res-val { font-size: 24px; font-weight: 950; }
 
                 .deep-link-card { display: flex; align-items: center; gap: 20px; background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; }
-                .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000; font-weight: 950; border-radius: 16px; text-decoration: none; }
-                .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-weight: 950; border-radius: 16px; text-decoration: none; }
+                .deep-link-card h3 { font-size: 18px; font-weight: 950; margin: 0 0 5px 0; }
+                .deep-link-card p { font-size: 13px; color: #9ca3af; margin: 0; }
+
+                .guru-support-btn, .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; text-decoration: none; text-transform: uppercase; transition: 0.3s; }
+                .guru-support-btn { background: #eab308; color: #000; }
+                .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
+
+                /* 🚀 RESPONSIVE ADS SYSTEM */
+                .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+                .ad-mobile-wrapper { display: none; width: 100%; }
 
                 @media (max-width: 768px) {
-                    .guru-deals-btn, .guru-support-btn { width: 100%; }
+                    .guru-performance-wrapper { padding-top: 80px !important; }
+                    .inner-container { padding: 0 15px !important; }
+                    .ad-desktop-wrapper { display: none !important; }
+                    .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+                    .main-title { font-size: 1.6rem !important; }
+                    .fps-result-card { padding: 35px 20px !important; border-radius: 20px !important; }
+                    .fps-main-number { font-size: 4.5rem !important; }
+                    .specs-grid { grid-template-columns: 1fr !important; gap: 15px; }
+                    .deep-links-grid { grid-template-columns: 1fr !important; }
+                    .section-h2 { font-size: 1.4rem !important; }
+                    .footer-btns { flex-direction: column; }
+                    .guru-deals-btn, .guru-support-btn { width: 100% !important; }
                 }
             `}} />
         </div>
