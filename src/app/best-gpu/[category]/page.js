@@ -41,11 +41,11 @@ export default async function BestGpuPage({ params }) {
   if (!gpus) return null;
 
   return (
-    <div style={{ minHeight:'100vh', background:'#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop:'120px', paddingBottom:'100px', color:'#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-page-container" style={{ minHeight:'100vh', background:'#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop:'120px', paddingBottom:'100px', color:'#fff', fontFamily: 'sans-serif' }}>
       
-      <main style={{ maxWidth:'1000px', margin:'0 auto', padding:'0 20px' }}>
+      <main className="guru-main-content" style={{ maxWidth:'1000px', margin:'0 auto', padding:'0 20px' }}>
         <header style={{ textAlign:'center', marginBottom:'40px' }}>
-          <h1 style={{ fontSize:'clamp(2rem,5vw,3rem)', fontWeight:'900', textTransform:'uppercase', margin: 0 }}>
+          <h1 className="guru-category-title" style={{ fontSize:'clamp(1.8rem,5vw,3rem)', fontWeight:'950', textTransform:'uppercase', margin: 0, lineHeight: '1.1' }}>
             Best GPU for {category.replace('-', ' ')}
           </h1>
           <p style={{ color:'#9ca3af', marginTop:'20px', fontSize: '1.1rem' }}>
@@ -53,7 +53,7 @@ export default async function BestGpuPage({ params }) {
           </p>
         </header>
 
-        {/* 🔥 ADS SLOT #1: TOP PLACEMENT POD HLAVIČKOU (OPRAVENO PRO MOBILY) */}
+        {/* 🔥 ADS SLOT #1: TOP PLACEMENT (OPRAVENO PRO MOBILY) */}
         <div className="guru-best-ad-slot">
             <span className="ad-label">Advertisement</span>
             <div className="ad-desktop-wrapper">
@@ -76,7 +76,7 @@ export default async function BestGpuPage({ params }) {
                     <div style={{ color:'#66fcf1', fontSize:'13px', fontWeight: 'bold' }}>Performance index: {gpu.performance_index}</div>
                   </a>
 
-                  {/* 🔥 ADS SLOT #2: GRID INJECTION (PO 4. KARTĚ - OPRAVENO PRO MOBILY) */}
+                  {/* 🔥 ADS SLOT #2: GRID INJECTION (OPRAVENO PRO MOBILY) */}
                   {i === 3 && (
                     <div className="guru-best-ad-slot grid-span-ad">
                       <span className="ad-label">Sponsored Hardware Recommendation</span>
@@ -112,14 +112,19 @@ export default async function BestGpuPage({ params }) {
         .guru-best-ad-slot { margin: 30px 0; padding: 15px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 20px; text-align: center; }
         .ad-label { display: block; font-size: 9px; color: #444; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
         
+        /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
         
         @media (min-width: 768px) { .grid-span-ad { grid-column: 1 / -1; } }
+        
         @media (max-width: 768px) {
-            .ad-desktop-wrapper { display: none; } 
-            .ad-mobile-wrapper { display: flex; justify-content: center; }
+            .guru-page-container { padding-top: 90px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
             .best-gpu-card { padding: 20px; }
+            .guru-category-title { font-size: 1.6rem !important; }
+            .guru-main-content { padding: 0 15px !important; }
         }
       `}} />
     </div>
