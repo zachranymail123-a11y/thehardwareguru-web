@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Swords, Zap, RefreshCw, ChevronRight, ArrowLeftRight, ShieldCheck, Flame, AlertTriangle
+ Swords, Zap, RefreshCw, ChevronRight, ArrowLeftRight, ShieldCheck, Flame, AlertTriangle
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU CPU DUELS ENGINE - MASTER HUB V1.3 (SEZNAM ADS UPDATE)
- * 🚀 CÍL: Kompletní monetizace CPU generátoru skrze Seznam Partner.
+ * GURU CPU DUELS ENGINE - MASTER HUB V1.4 (MOBILE OPTIMIZED)
+ * 🚀 CÍL: Maximální monetizace a perfektní mobilní zobrazení CPU generátoru.
  */
 
 export default function CpuVsHub() {
@@ -71,11 +71,11 @@ export default function CpuVsHub() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', backgroundPosition: 'center', paddingTop: '140px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-hub-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', backgroundPosition: 'center', paddingTop: '140px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <style dangerouslySetInnerHTML={{__html: `
         .guru-hub-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-        .guru-main-title { font-size: clamp(3rem, 6vw, 4.5rem); font-weight: 950; font-style: italic; color: #fff; text-transform: uppercase; line-height: 1; margin: 0; }
+        .guru-main-title { font-size: clamp(2.2rem, 6vw, 4.5rem); font-weight: 950; font-style: italic; color: #fff; text-transform: uppercase; line-height: 1; margin: 0; }
         .guru-highlight-title { color: #66fcf1; display: block; }
         .guru-desc-text { color: #d1d5db; font-size: 1.15rem; line-height: 1.6; max-width: 600px; margin-top: 15px; }
 
@@ -89,8 +89,23 @@ export default function CpuVsHub() {
         .compact-duel-item { background: rgba(15, 17, 21, 0.7); border: 1px solid rgba(255,255,255,0.05); padding: 14px 18px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; transition: 0.3s; margin-bottom: 10px; }
         .compact-duel-item:hover { border-color: #66fcf1; transform: translateX(5px); }
 
+        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
         @media (max-width: 1024px) { 
-          .hub-grid { grid-template-columns: 1fr; } 
+          .hub-grid { grid-template-columns: 1fr; gap: 30px; } 
+        }
+
+        @media (max-width: 768px) {
+            .guru-hub-wrapper { padding-top: 80px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+            .guru-hub-container { padding: 0 15px !important; }
+            .generator-panel { padding: 25px 20px !important; border-radius: 20px !important; }
+            .guru-main-title { font-size: 1.8rem !important; }
+            .guru-desc-text { font-size: 1rem; }
+            .history-panel h2 { font-size: 16px !important; }
         }
       `}} />
 
@@ -107,8 +122,15 @@ export default function CpuVsHub() {
           </p>
         </header>
 
-        {/* 🔥 SEZNAM AD #1: TOP BANNER POD HLAVIČKOU */}
-        <SeznamAd zoneId={408654} width={970} height={210} />
+        {/* 🔥 SEZNAM AD #1: TOP BANNER (STRIKTNÍ SEPARACE) */}
+        <div style={{ marginBottom: '40px' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
 
         <div className="hub-grid">
             <section className="generator-panel">
@@ -138,8 +160,10 @@ export default function CpuVsHub() {
                 </a>
               ))}
 
-              {/* 🔥 SEZNAM AD #2: SIDEBAR ČTVEREC POD HISTORIÍ */}
-              <SeznamAd zoneId={408651} width={300} height={250} />
+              {/* 🔥 SEZNAM AD #2: SIDEBAR / BOTTOM ČTVEREC (POUZE MOBIL DLE KONTEXTU) */}
+              <div className="ad-mobile-wrapper" style={{ marginTop: '20px' }}>
+                <SeznamAd zoneId={408651} width={300} height={250} />
+              </div>
             </section>
         </div>
       </div>
