@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 export default function SeznamAd({ zoneId, width, height, className = "" }) {
   const pathname = usePathname();
   const [divId, setDivId] = useState("");
-  const [isBlocked, setIsBlocked] = useState(false);
 
   useEffect(() => {
     // Generujeme ID na klientovi
@@ -17,16 +16,15 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
     if (!divId) return;
 
     const loadAd = () => {
-      // OPRAVA: Tvůj původní sssp překlep byl opraven na ssp
-      if (typeof window !== 'undefined' && window.ssp) {
-        // SPA Tracking
+      if (typeof window !== 'undefined' && window.sssp) {
+        // SPA Tracking - započítání PageView
         if (!window.guruSspPageTracked || window.guruSspPageTracked !== pathname) {
-          window.ssp.setPageViewId();
+          window.sssp.setPageViewId();
           window.guruSspPageTracked = pathname;
         }
 
         // Zavolání reklamy
-        window.ssp.getAds([
+        window.sssp.getAds([
           {
             zoneId: zoneId,
             id: divId,
@@ -34,22 +32,15 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
             height: height,
           }
         ]);
-
-        // Kontrola AdBlocku (neničí DOM, jen přepne stav)
-        setTimeout(() => {
-          const el = document.getElementById(divId);
-          if (el && el.innerHTML.trim().length === 0) {
-            setIsBlocked(true);
-          }
-        }, 3000);
-      } else {
-        setTimeout(loadAd, 500);
       }
     };
 
+    // 1. Pokus o načtení hned po renderu
     const timer = setTimeout(loadAd, 400);
 
+    // 2. OPRAVA BUGU: Posluchač pro návrat tlačítkem ZPĚT (bfcache)
     const handlePageShow = (event) => {
+      // event.persisted je true, pokud se stránka načetla z paměti (tlačítko zpět)
       if (event.persisted) {
         loadAd();
       }
@@ -66,23 +57,13 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
   if (!divId) return <div style={{ minHeight: height }} className="w-full" />;
 
   return (
-    <div className={`relative flex justify-center items-center my-6 w-full ${className}`} style={{ minHeight: height }}>
-      {/* 📺 PŮVODNÍ FUNKČNÍ SLOT (Bez narušení toku dokumentu) */}
+    <div className={`flex justify-center items-center my-6 w-full ${className}`}>
       <div 
         id={divId} 
         style={{ minWidth: width, minHeight: height, background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}
-        className="overflow-hidden flex justify-center items-center relative z-10"
+        className="overflow-hidden flex justify-center items-center"
       >
       </div>
-
-      {/* 🛡️ FALLBACK (Zobrazí se nad slotem, jen když je blokováno) */}
-      {isBlocked && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-4 text-center rounded-xl" style={{ background: '#0a0b0d', border: '1px solid rgba(0, 255, 204, 0.2)', minWidth: width, minHeight: height }}>
-          <div style={{ color: '#00ffcc', fontSize: '24px', marginBottom: '8px' }}>🛡️</div>
-          <div style={{ fontWeight: '900', color: '#fff', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>AdBlock Detekován</div>
-          <div style={{ fontSize: '10px', color: '#00ffcc', fontWeight: 'bold', marginTop: '4px' }}>The Hardware Guru</div>
-        </div>
-      )}
     </div>
   );
 }
