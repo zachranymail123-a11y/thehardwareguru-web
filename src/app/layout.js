@@ -14,30 +14,25 @@ import MobileAnchorAd from '../components/MobileAnchorAd';
 import SeznamInterstitial from '../components/SeznamInterstitial';
 
 /**
- * GURU ROOT LAYOUT V7.8 (FINAL STACKING & SEO FIX)
- * 🚀 CÍL: Ads viditelné před pozadím, dynamické fallbacky, Golden Rich SEO.
+ * GURU ROOT LAYOUT V7.9 (SILENT FALLBACK UPDATE)
+ * 🚀 CÍL: Fixnutí "fallback pekla" - hláška se ukáže jen při AdBlocku.
+ * 🚀 SEO: Aplikováno Google Golden Rich na všechny stránky.
  */
 
 export const metadata = {
-  title: { 
-    default: 'Hardware Guru | PC Benchmarks, Tech News & AI Tools', 
-    template: '%s | Hardware Guru' 
-  },
+  title: { default: 'Hardware Guru | PC Benchmarks, Tech News & AI Tools', template: '%s | Hardware Guru' },
   description: 'Exkluzivní novinky ze světa hardwaru, recenze her a streamy s unikátní AI.',
   metadataBase: new URL('https://thehardwareguru.cz'),
-  alternates: {
-    canonical: '/',
-  },
+  alternates: { canonical: '/' },
 }
 
 export default async function RootLayout({ children, params }) {
   const resolvedParams = await params;
   const locale = resolvedParams?.locale || 'cs';
   const isEn = locale === 'en';
-
   const baseUrl = "https://thehardwareguru.cz";
   
-  // Google Golden Rich Schema
+  // Google Golden Rich Data
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -70,29 +65,25 @@ export default async function RootLayout({ children, params }) {
   return (
     <html lang={locale}>
       <head>
-        {/* SSP Script s nejvyšší prioritou pro Vinětu */}
+        {/* SSP Script s prioritou */}
         <Script src="https://ssp.seznam.cz/static/js/ssp.js" strategy="beforeInteractive" />
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993" crossOrigin="anonymous"></script>
         
+        {/* Golden Rich Injection */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(websiteSchema) }} />
 
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-9W5FBC9P68" strategy="afterInteractive" />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-9W5FBC9P68');`}
-        </Script>
       </head>
 
       <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
         
-        {/* 💸 VINĚTA / INTERSTITIAL */}
         <SeznamInterstitial />
-
         <Navbar />
         <SocialTracker />
         <Tracker />
 
-        {/* CSS PRO POSTRANNÍ ADS (Z-INDEX 9999 = VŽDY NAHOŘE) */}
+        {/* CSS PRO ADS (Vždy před backgroundem) */}
         <style dangerouslySetInnerHTML={{__html: `
           .skyscraper-left, .skyscraper-right {
             position: fixed;
@@ -105,10 +96,7 @@ export default async function RootLayout({ children, params }) {
           .skyscraper-left { left: calc(50% - 940px); }
           .skyscraper-right { right: calc(50% - 940px); }
 
-          /* 1080p monitory -> JEN PRAVÁ */
           @media (min-width: 1550px) { .skyscraper-right { display: block; } }
-          
-          /* 1440p+ monitory -> OBĚ */
           @media (min-width: 2100px) { .skyscraper-left { display: block; } }
         `}} />
 
@@ -127,7 +115,6 @@ export default async function RootLayout({ children, params }) {
           </div>
         </main>
 
-        {/* SPODNÍ REKLAMNÍ ZÓNA */}
         <div style={{ width: '100%', background: '#0a0b0d', position: 'relative', zIndex: 10000, padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
            <div style={{ display: 'flex', justifyContent: 'center' }}>
               <SeznamAd zoneId={408654} width={970} height={210} />
@@ -137,7 +124,7 @@ export default async function RootLayout({ children, params }) {
         <footer style={{ padding: '40px 20px', textAlign: 'center', background: '#0a0b0d', position: 'relative', zIndex: 10001, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           <VisitorCounter locale={locale} />
           <div className="copyright" style={{ color: '#4b5563', fontSize: '12px', marginTop: '20px' }}>
-            © {new Date().getFullYear()} The Hardware Guru.
+            © {new Date().getFullYear()} The Hardware Guru. Pro hráče, s láskou k železu.
           </div>
         </footer>
 
