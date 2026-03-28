@@ -13,12 +13,6 @@ import SeznamAd from '../components/SeznamAd';
 import MobileAnchorAd from '../components/MobileAnchorAd';
 import SeznamInterstitial from '../components/SeznamInterstitial';
 
-/**
- * GURU ROOT LAYOUT V7.9 (SILENT FALLBACK UPDATE)
- * 🚀 CÍL: Fixnutí "fallback pekla" - hláška se ukáže jen při AdBlocku.
- * 🚀 SEO: Aplikováno Google Golden Rich na všechny stránky.
- */
-
 export const metadata = {
   title: { default: 'Hardware Guru | PC Benchmarks, Tech News & AI Tools', template: '%s | Hardware Guru' },
   description: 'Exkluzivní novinky ze světa hardwaru, recenze her a streamy s unikátní AI.',
@@ -32,7 +26,6 @@ export default async function RootLayout({ children, params }) {
   const isEn = locale === 'en';
   const baseUrl = "https://thehardwareguru.cz";
   
-  // Google Golden Rich Data
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -65,11 +58,9 @@ export default async function RootLayout({ children, params }) {
   return (
     <html lang={locale}>
       <head>
-        {/* SSP Script s prioritou */}
-        <Script src="https://ssp.seznam.cz/static/js/ssp.js" strategy="beforeInteractive" />
+        <script async src="https://ssp.seznam.cz/static/js/ssp.js"></script>
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993" crossOrigin="anonymous"></script>
         
-        {/* Golden Rich Injection */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(websiteSchema) }} />
 
@@ -83,7 +74,6 @@ export default async function RootLayout({ children, params }) {
         <SocialTracker />
         <Tracker />
 
-        {/* CSS PRO ADS (Vždy před backgroundem) */}
         <style dangerouslySetInnerHTML={{__html: `
           .skyscraper-left, .skyscraper-right {
             position: fixed;
@@ -96,8 +86,16 @@ export default async function RootLayout({ children, params }) {
           .skyscraper-left { left: calc(50% - 940px); }
           .skyscraper-right { right: calc(50% - 940px); }
 
-          @media (min-width: 1550px) { .skyscraper-right { display: block; } }
-          @media (min-width: 2100px) { .skyscraper-left { display: block; } }
+          @media (min-width: 1350px) { .skyscraper-right { display: block; } }
+          @media (min-width: 1750px) { .skyscraper-left { display: block; } }
+
+          /* 🚀 Třídy pro mobilní a desktop patičku */
+          .f-desktop { display: none; justify-content: center; width: 100%; }
+          .f-mobile { display: flex; justify-content: center; width: 100%; }
+          @media (min-width: 769px) { 
+            .f-desktop { display: flex; } 
+            .f-mobile { display: none; } 
+          }
         `}} />
 
         <aside className="skyscraper-left">
@@ -116,8 +114,12 @@ export default async function RootLayout({ children, params }) {
         </main>
 
         <div style={{ width: '100%', background: '#0a0b0d', position: 'relative', zIndex: 10000, padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-           <div style={{ display: 'flex', justifyContent: 'center' }}>
+           {/* 🚀 OPRAVA: Návrat odděleného načítání pro mobil a desktop */}
+           <div className="f-desktop">
               <SeznamAd zoneId={408654} width={970} height={210} />
+           </div>
+           <div className="f-mobile">
+              <SeznamAd zoneId={408651} width={300} height={250} />
            </div>
         </div>
 
