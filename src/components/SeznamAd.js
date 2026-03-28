@@ -16,15 +16,15 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
     if (!divId) return;
 
     const loadAd = () => {
-      if (typeof window !== 'undefined' && window.ssp) {
+      if (typeof window !== 'undefined' && window.sssp) {
         // SPA Tracking - započítání PageView
         if (!window.guruSspPageTracked || window.guruSspPageTracked !== pathname) {
-          window.ssp.setPageViewId();
+          window.sssp.setPageViewId();
           window.guruSspPageTracked = pathname;
         }
 
         // Zavolání reklamy
-        window.ssp.getAds([
+        window.sssp.getAds([
           {
             zoneId: zoneId,
             id: divId,
@@ -38,8 +38,9 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
     // 1. Pokus o načtení hned po renderu
     const timer = setTimeout(loadAd, 400);
 
-    // 2. Posluchač pro návrat tlačítkem ZPĚT (bfcache)
+    // 2. OPRAVA BUGU: Posluchač pro návrat tlačítkem ZPĚT (bfcache)
     const handlePageShow = (event) => {
+      // event.persisted je true, pokud se stránka načetla z paměti (tlačítko zpět)
       if (event.persisted) {
         loadAd();
       }
@@ -57,11 +58,14 @@ export default function SeznamAd({ zoneId, width, height, className = "" }) {
 
   return (
     <div className={`flex justify-center items-center my-6 w-full ${className}`}>
+      {/* 🚀 PŘIDÁNO: CSS pravidlo, které zaručí, že se iframe reklamy na mobilu přizpůsobí a neustřihne se z něj ani pixel */}
+      <style>{`#${divId} iframe { max-width: 100% !important; height: auto !important; }`}</style>
+      
       <div 
         id={divId} 
-        style={{ minWidth: width, minHeight: height, background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}
-        // 🚀 OPRAVA: Odstraněno 'overflow-hidden'. Reklama se už nebude na mobilu z boků ořezávat.
-        className="flex justify-center items-center"
+        /* 🚀 PŘIDÁNO: maxWidth: '100%', aby kontejner nikdy nepřetekl z okraje mobilu */
+        style={{ minWidth: width, maxWidth: '100%', minHeight: height, background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}
+        className="overflow-hidden flex justify-center items-center"
       >
       </div>
     </div>
