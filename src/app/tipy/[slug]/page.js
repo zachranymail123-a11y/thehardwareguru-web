@@ -9,8 +9,8 @@ import {
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU TIP ENGINE V5.3 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Maximální zisk z Tipů a triků skrze Seznam Partner. Odstraněny A-Ads.
+ * GURU TIP ENGINE V5.4 (MOBILE OPTIMIZED & ADS SEPARATION)
+ * 🚀 CÍL: Maximální zisk z Tipů a triků skrze Seznam Partner a perfektní mobilní UI.
  */
 
 const supabase = createClient(
@@ -71,7 +71,7 @@ export default async function TipDetail({ params }) {
   const content = isEn && tip.content_en ? tip.content_en : tip.content;
   const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}tipy/${slug}`;
 
-  // 🚀 GURU ADS INJECTION: Rozdělení obsahu
+  // 🚀 GURU ADS INJECTION LOGIC
   const contentParts = content ? content.split('</p>') : [];
   const midPoint = Math.ceil(contentParts.length / 2);
   const firstHalf = contentParts.slice(0, midPoint).join('</p>');
@@ -93,43 +93,52 @@ export default async function TipDetail({ params }) {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px' }}>
+    <div className="guru-tip-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px' }}>
       
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema).replace(/</g, '\\u003c') }} />
 
-      <main style={{ maxWidth: '900px', margin: '0 auto', background: 'rgba(15, 17, 21, 0.95)', borderRadius: '30px', border: '1px solid rgba(102, 252, 241, 0.2)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)', overflow: 'hidden', backdropFilter: 'blur(15px)' }}>
+      <main className="inner-container" style={{ maxWidth: '900px', margin: '0 auto', background: 'rgba(15, 17, 21, 0.95)', borderRadius: '30px', border: '1px solid rgba(102, 252, 241, 0.2)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)', overflow: 'hidden', backdropFilter: 'blur(15px)' }}>
         
         {tip.image_url && (
-          <div style={{ width: '100%', height: '450px', position: 'relative' }}>
+          <div className="tip-hero-img" style={{ width: '100%', height: '450px', position: 'relative' }}>
             <img src={tip.image_url} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15, 17, 21, 1) 0%, transparent 100%)' }}></div>
             <div style={{ position: 'absolute', top: '30px', left: '30px' }}>
               <Link href={isEn ? '/en/tipy' : '/tipy'} className="guru-back-btn">
-                <ChevronLeft size={16} /> {isEn ? 'BACK TO TIPS' : 'ZPĚT NA TIPY'}
+                <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
               </Link>
             </div>
           </div>
         )}
 
-        <div style={{ padding: '40px 50px 60px 50px' }}>
+        <div className="content-padding-box" style={{ padding: '40px 50px 60px 50px' }}>
           <header style={{ marginBottom: '50px', textAlign: 'center' }}>
             <div className="guru-header-meta">
               <span className="guru-badge"><ShieldCheck size={16} /> GURU ENGINE</span>
-              <span>•</span>
+              <span className="separator">•</span>
               <span className="date-span"><Calendar size={16} /> {new Date(tip.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
             </div>
             <h1 className="tip-h1">{title}</h1>
           </header>
 
-          {/* 🔥 SEZNAM AD #1: POD NADPISEM */}
-          <SeznamAd zoneId={408651} width={300} height={250} />
+          {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
+          <div style={{ marginBottom: '40px' }}>
+              <div className="ad-desktop-wrapper">
+                  <SeznamAd zoneId={408654} width={970} height={210} />
+              </div>
+              <div className="ad-mobile-wrapper">
+                  <SeznamAd zoneId={408651} width={300} height={250} />
+              </div>
+          </div>
 
           <div className="guru-prose">
              <div dangerouslySetInnerHTML={{ __html: firstHalf + (contentParts.length > 1 ? '</p>' : '') }} />
 
-             {/* 🔥 SEZNAM AD #2: UPROSTŘED OBSAHU (POUZE U DELŠÍCH TEXTŮ) */}
+             {/* 🔥 IN-CONTENT AD SLOT (POUZE DELŠÍ TEXTY + MOBIL) */}
              {contentParts.length > 3 && (
-                <SeznamAd zoneId={408651} width={300} height={250} />
+                <div className="ad-mobile-wrapper" style={{ margin: '30px 0' }}>
+                   <SeznamAd zoneId={408651} width={300} height={250} />
+                </div>
              )}
 
              <div dangerouslySetInnerHTML={{ __html: secondHalf }} />
@@ -142,13 +151,13 @@ export default async function TipDetail({ params }) {
                   {isEn ? 'Get an exclusive FPS prediction for Grand Theft Auto VI based on your hardware.' : 'Získej exkluzivní odhad FPS pro Grand Theft Auto VI na tvém hardwaru.'}
               </p>
               <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="gta6-link">
-                  <Gamepad2 size={20} /> {isEn ? 'TEST GTA VI PERFORMANCE' : 'ZJISTIT FPS V GTA VI'} <ArrowRight size={18} />
+                  <Gamepad2 size={20} /> {isEn ? 'TEST GTA VI FPS' : 'ZJISTIT FPS V GTA VI'} <ArrowRight size={18} />
               </a>
           </div>
 
           <div className="share-grid">
               <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`} target="_blank" className="share-card x-bg">
-                  <Twitter size={18} /> X / TWITTER
+                  <Twitter size={18} /> TWITTER / X
               </a>
               <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" className="share-card fb-bg">
                   <Share2 size={18} /> FACEBOOK
@@ -163,14 +172,14 @@ export default async function TipDetail({ params }) {
                   <div className="silo-icon cpu-bg"><Swords size={24} /></div>
                   <div className="silo-text">
                       <h4>{isEn ? 'CPU BATTLES' : 'SROVNÁNÍ PROCESORŮ'}</h4>
-                      <p>{isEn ? 'Find the best CPU.' : 'Najděte nejlepší procesor.'}</p>
+                      <p>{isEn ? 'Best CPUs.' : 'Nejlepší procesory.'}</p>
                   </div>
               </Link>
               <Link href={isEn ? "/en/gpuvs" : "/gpuvs"} className="silo-card gpu-border">
                   <div className="silo-icon gpu-bg"><Swords size={24} /></div>
                   <div className="silo-text">
                       <h4>{isEn ? 'GPU BATTLES' : 'SROVNÁNÍ GRAFIK'}</h4>
-                      <p>{isEn ? 'Find the best GPU.' : 'Najděte nejlepší grafiku.'}</p>
+                      <p>{isEn ? 'Best GPUs.' : 'Nejlepší grafiky.'}</p>
                   </div>
               </Link>
           </div>
@@ -191,33 +200,44 @@ export default async function TipDetail({ params }) {
             </section>
           )}
 
-          {/* 🔥 SEZNAM AD #3: KONEC STRÁNKY */}
-          <SeznamAd zoneId={408658} width={480} height={300} />
+          {/* 🔥 BOTTOM AD SLOT - STRIKTNÍ SEPARACE */}
+          <div style={{ marginTop: '50px' }}>
+              <div className="ad-desktop-wrapper">
+                  <SeznamAd zoneId={408658} width={480} height={300} />
+              </div>
+              <div className="ad-mobile-wrapper">
+                  <SeznamAd zoneId={408651} width={300} height={250} />
+              </div>
+          </div>
 
           <div className="global-cta">
-              <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" className="deals-btn"><Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}</a>
-              <Link href={isEn ? "/en/support" : "/support"} className="support-btn"><Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}</Link>
+              <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" className="deals-btn"><Flame size={20} /> {isEn ? 'BEST DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}</a>
+              <Link href={isEn ? "/en/support" : "/support"} className="support-btn"><Heart size={20} /> {isEn ? 'SUPPORT' : 'PODPOŘIT GURU'}</Link>
           </div>
         </div>
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
+        .guru-back-btn:hover { background: #66fcf1; color: #000; transform: scale(1.05); }
         .guru-header-meta { display: flex; align-items: center; justify-content: center; gap: 15px; color: #9ca3af; font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 25px; }
         .guru-badge { color: #66fcf1; display: flex; align-items: center; gap: 6px; }
         .tip-h1 { font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 950; color: #fff; text-transform: uppercase; line-height: 1.1; margin: 0; }
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; margin-bottom: 40px; }
+        .guru-prose h2 { color: #fff; font-size: 2rem; font-weight: 950; margin: 1.5em 0 0.8em; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; }
+        .guru-prose p { margin-bottom: 1.5em; }
         
-        /* GURU ADS STYLES (CLEANED) */
         .gta6-bait-box { background: linear-gradient(135deg, rgba(244, 63, 94, 0.15) 0%, rgba(15, 17, 21, 0.98) 100%); border: 1px solid rgba(244, 63, 94, 0.4); padding: 40px; border-radius: 24px; text-align: center; margin: 40px 0; }
         .gta6-badge { display: inline-flex; align-items: center; gap: 8px; background: #f43f5e; color: #fff; padding: 6px 15px; border-radius: 8px; font-size: 10px; font-weight: 950; margin-bottom: 15px; text-transform: uppercase; }
         .gta6-title { font-size: 1.8rem; font-weight: 950; color: #fff; margin: 0 0 10px 0; text-transform: uppercase; }
         .gta6-link { display: inline-flex; align-items: center; gap: 12px; background: #f43f5e; color: #fff; padding: 16px 30px; border-radius: 12px; font-weight: 950; text-decoration: none; text-transform: uppercase; transition: 0.3s; }
+        
         .share-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
         .share-card { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 15px; border-radius: 12px; font-weight: 950; font-size: 11px; text-decoration: none; color: #fff; transition: 0.3s; }
         .x-bg { background: #000; border: 1px solid #333; }
         .fb-bg { background: #1877f2; }
         .reddit-bg { background: #ff4500; }
+        
         .duel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .silo-card { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 15px; padding: 15px; display: flex; align-items: center; gap: 15px; text-decoration: none; border-left: 4px solid transparent; transition: 0.3s; }
         .cpu-border { border-left-color: #66fcf1; }
@@ -226,20 +246,39 @@ export default async function TipDetail({ params }) {
         .cpu-bg { color: #66fcf1; background: rgba(102, 252, 241, 0.1); }
         .gpu-bg { color: #ff0055; background: rgba(255, 0, 85, 0.1); }
         .silo-text h4 { margin: 0; color: #fff; font-size: 0.9rem; font-weight: 950; text-transform: uppercase; }
+        
         .section-title { color: #fff; font-size: 1.5rem; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; border-left: 4px solid #66fcf1; padding-left: 15px; }
         .related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
         .related-card { background: #000; border-radius: 12px; overflow: hidden; text-decoration: none; border: 1px solid #222; transition: 0.3s; }
         .related-card img { width: 100%; height: 110px; object-fit: cover; }
         .related-info { padding: 12px; }
         .related-info h3 { margin: 0; color: #fff; font-size: 0.85rem; font-weight: 900; }
+        
         .global-cta { margin-top: 50px; display: flex; gap: 15px; }
         .deals-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px; border-radius: 12px; font-weight: 950; text-decoration: none; text-transform: uppercase; background: #ea580c; color: #fff; transition: 0.3s; }
         .support-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px; border-radius: 12px; font-weight: 950; text-decoration: none; text-transform: uppercase; background: #eab308; color: #000; transition: 0.3s; }
 
+        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
         @media (max-width: 768px) {
+            .guru-tip-wrapper { padding-top: 80px !important; }
+            .inner-container { border-radius: 0 !important; border: none !important; }
+            .tip-hero-img { height: 250px !important; }
+            .content-padding-box { padding: 30px 20px 60px 20px !important; }
+            .tip-h1 { font-size: 1.8rem !important; }
+            .separator { display: none; }
+            .guru-header-meta { flex-wrap: wrap; gap: 8px !important; }
+            .guru-prose { font-size: 1.05rem !important; line-height: 1.7 !important; }
+            .guru-prose h2 { font-size: 1.4rem !important; }
+            .gta6-bait-box { padding: 25px 15px !important; }
+            .gta6-title { font-size: 1.4rem !important; }
+            .gta6-link { width: 100%; justify-content: center; padding: 15px !important; }
             .share-grid, .duel-grid, .related-grid, .global-cta { grid-template-columns: 1fr; flex-direction: column; }
-            .gta6-bait-box { padding: 25px; }
-            .guru-prose { font-size: 1.05rem; }
+            .share-card, .deals-btn, .support-btn { width: 100%; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
         }
       `}} />
     </div>
