@@ -5,8 +5,8 @@ import BottleneckClient from '../BottleneckClient';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU BOTTLENECK CALCULATOR RESULT - V1.2 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Monetizace výsledků kalkulačky skrze Seznam Partner.
+ * GURU BOTTLENECK CALCULATOR RESULT - V1.3 (MOBILE RESCUE UPDATE)
+ * 🚀 CÍL: Oprava mobilního zobrazení a striktní separace reklam.
  */
 
 export const dynamic = 'force-dynamic';
@@ -43,21 +43,24 @@ export default async function BottleneckResultPage({ params, searchParams }) {
     else if (p.slug.includes('valorant')) selectedGameSlug = 'valorant';
 
     return (
-        <div style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', paddingTop: '100px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+        <div className="guru-page-wrapper" style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', paddingTop: '100px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
             
-            {/* 🚀 PŘIDÁNO: Definice tříd pro korektní přepínání reklam na mobilu */}
+            {/* 🚀 RESPONSIVE ADS & MOBILE FIXES */}
             <style dangerouslySetInnerHTML={{ __html: `
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
                 .ad-mobile-wrapper { display: none; width: 100%; }
+                
                 @media (max-width: 768px) {
-                    .ad-desktop-wrapper { display: none; }
-                    .ad-mobile-wrapper { display: flex; justify-content: center; }
+                    .guru-page-wrapper { paddingTop: 80px !important; }
+                    .ad-desktop-wrapper { display: none !important; }
+                    .ad-mobile-wrapper { display: flex !important; justify-content: center; }
+                    .inner-container { padding: 0 15px !important; }
                 }
             `}} />
 
-            <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+            <div className="inner-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
                 
-                {/* 🔥 SEZNAM AD #1: TOP PLACEMENT (NAD KALKULAČKOU - OPRAVENO PRO MOBILY) */}
+                {/* 🔥 SEZNAM AD #1: TOP PLACEMENT (OPRAVENO PRO MOBILY) */}
                 <div style={{ marginBottom: '40px' }}>
                     <div className="ad-desktop-wrapper">
                         <SeznamAd zoneId={408654} width={970} height={210} />
@@ -77,8 +80,8 @@ export default async function BottleneckResultPage({ params, searchParams }) {
                     initialResolution={resolutionStr}
                 />
 
-                {/* 🔥 SEZNAM AD #2: BOTTOM PLACEMENT (POD KALKULAČKOU - 300x250 JE OK) */}
-                <div style={{ marginTop: '50px', display: 'flex', justifyContent: 'center' }}>
+                {/* 🔥 SEZNAM AD #2: BOTTOM PLACEMENT (ZOBRAZENÍ POUZE NA MOBILU DLE SCREENU) */}
+                <div className="ad-mobile-wrapper" style={{ marginTop: '50px' }}>
                     <SeznamAd zoneId={408651} width={300} height={250} />
                 </div>
 
