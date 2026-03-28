@@ -15,8 +15,8 @@ import {
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU CPU ENGINE - KATALOG PROCESORŮ V1.7 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Kompletní monetizace CPU katalogu skrze strategické Seznam Partner sloty.
+ * GURU CPU ENGINE - KATALOG PROCESORŮ V1.8 (MOBILE OPTIMIZED)
+ * 🚀 CÍL: Kompletní monetizace a perfektní mobilní zobrazení katalogu.
  */
 
 export const dynamic = 'force-dynamic';
@@ -101,14 +101,14 @@ export default async function CpuIndexPage(props) {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-page-container" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
-      <main style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+      <main className="inner-container" style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 25px', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '50px', background: 'rgba(245,158,11,0.05)' }}>
             <Database size={16} /> GURU HARDWARE DATABASE
           </div>
-          <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
+          <h1 className="main-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
             {isEn ? 'CPU' : 'KATALOG'} <br/>
             <span style={{ color: '#f59e0b', textShadow: '0 0 30px rgba(245,158,11,0.5)' }}>{isEn ? 'DATABASE' : 'PROCESORŮ'}</span>
           </h1>
@@ -119,8 +119,15 @@ export default async function CpuIndexPage(props) {
           </div>
         </header>
 
-        {/* 🔥 SEZNAM AD #1: TOP BANNER POD HLAVIČKOU */}
-        <SeznamAd zoneId={408654} width={970} height={210} />
+        {/* 🔥 SEZNAM AD #1: TOP BANNER (STRIKTNÍ SEPARACE) */}
+        <div style={{ marginBottom: '40px' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
 
         {amdCpus.length > 0 && (
           <section style={{ marginBottom: '40px', marginTop: '40px' }}>
@@ -129,8 +136,10 @@ export default async function CpuIndexPage(props) {
           </section>
         )}
 
-        {/* 🔥 SEZNAM AD #2: MID PLACEMENT MEZI AMD A INTEL */}
-        <SeznamAd zoneId={408651} width={300} height={250} />
+        {/* 🔥 SEZNAM AD #2: MID PLACEMENT (POUZE MOBIL) */}
+        <div className="ad-mobile-wrapper" style={{ margin: '20px 0' }}>
+            <SeznamAd zoneId={408651} width={300} height={250} />
+        </div>
 
         {intelCpus.length > 0 && (
           <section style={{ marginBottom: '80px', marginTop: '40px' }}>
@@ -140,14 +149,14 @@ export default async function CpuIndexPage(props) {
         )}
 
         {relatedArticles.length > 0 && (
-            <section style={{ marginBottom: '80px', background: 'rgba(15, 17, 21, 0.95)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <h2 style={{ color: '#fff', fontSize: '1.8rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #f59e0b', paddingLeft: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <section className="related-articles-section" style={{ marginBottom: '80px', background: 'rgba(15, 17, 21, 0.95)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <h2 className="news-h2" style={{ color: '#fff', fontSize: '1.8rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #f59e0b', paddingLeft: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <Info size={28} color="#f59e0b" /> {isEn ? 'CPU NEWS & REVIEWS' : 'NOVINKY A RECENZE CPU'}
                 </h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
                     {relatedArticles.map((art) => (
                         <a key={art.slug} href={isEn ? `/en/clanky/${art.slug_en || art.slug}` : `/clanky/${art.slug}`} className="related-article-card">
-                            <div className="related-img-wrapper"><img src={art.image_url} alt={art.title} loading="lazy" /></div>
+                            <div className="related-article-img-wrapper"><img src={art.image_url} alt={art.title} loading="lazy" /></div>
                             <div className="related-content">
                                 <div className="related-date"><Calendar size={12} /> {new Date(art.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</div>
                                 <h3 className="related-title">{isEn && art.title_en ? art.title_en : art.title}</h3>
@@ -158,7 +167,7 @@ export default async function CpuIndexPage(props) {
             </section>
         )}
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+        <div className="footer-silo-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
             <a href={isEn ? "/en/gpu-index" : "/gpu-index"} className="silo-banner-card" style={{ borderLeftColor: '#66fcf1' }}>
                 <div className="silo-banner-icon" style={{ color: '#66fcf1', background: '#66fcf120' }}><Monitor size={28} /></div>
                 <div className="silo-banner-text">
@@ -192,13 +201,27 @@ export default async function CpuIndexPage(props) {
         .quick-link-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 50px; font-weight: 950; font-size: 11px; text-transform: uppercase; text-decoration: none; border: 1px solid; background: rgba(255,255,255,0.02); transition: 0.3s; }
         .silo-banner-card { flex: 1; min-width: 300px; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; align-items: center; gap: 20px; text-decoration: none; transition: 0.3s; border-left-width: 5px; }
         .related-article-card { display: flex; flex-direction: column; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; overflow: hidden; text-decoration: none; transition: 0.3s; }
-        .related-img-wrapper { height: 140px; overflow: hidden; }
-        .related-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        .related-article-img-wrapper { height: 140px; overflow: hidden; }
+        .related-article-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
         .related-content { padding: 20px; }
         .related-title { margin: 10px 0 0 0; font-size: 1rem; font-weight: 950; color: #fff; line-height: 1.3; }
 
+        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
         @media (max-width: 768px) { 
-          .silo-banner-card { flex-direction: column; text-align: center; } 
+            .guru-page-container { padding-top: 80px !important; }
+            .inner-container { padding: 0 15px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+            .main-title { font-size: 1.8rem !important; }
+            .vendor-h2 { font-size: 1.5rem !important; margin-bottom: 20px; }
+            .cpu-grid { grid-template-columns: 1fr !important; gap: 15px; }
+            .cpu-card { padding: 15px !important; }
+            .related-articles-section { padding: 20px !important; border-radius: 20px !important; }
+            .news-h2 { font-size: 1.4rem !important; }
+            .silo-banner-card { flex-direction: column; text-align: center; min-width: 100%; } 
         }
       `}} />
     </div>
