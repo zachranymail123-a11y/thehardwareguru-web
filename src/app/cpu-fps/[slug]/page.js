@@ -1,23 +1,23 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { 
-  Gamepad2, 
-  ChevronRight, 
-  Zap, 
-  Swords, 
-  Activity, 
-  ArrowRight,
-  Flame,
-  Heart,
-  Gauge,
-  Cpu
+ Gamepad2, 
+ ChevronRight, 
+ Zap, 
+ Swords, 
+ Activity, 
+ ArrowRight,
+ Flame,
+ Heart,
+ Gauge,
+ Cpu
 } from 'lucide-react';
 import GuruAnalysisText from '../../../components/GuruAnalysisText';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU CPU FPS HUB V1.1 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Rozcestník procesoru (oprava 404) + generátor textu pro Bing + Seznam Reklamy.
+ * GURU CPU FPS HUB V1.2 (MOBILE OPTIMIZED)
+ * 🚀 CÍL: Rozcestník procesoru s perfektním mobilním zobrazením a separací reklam.
  * Cesta: src/app/cpu-fps/[slug]/page.js
  */
 
@@ -93,28 +93,35 @@ export default async function CpuFpsHubPage(props) {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-hub-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
-      <main style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+      <main className="inner-container" style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: vendorColor, fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: `1px solid ${vendorColor}40`, borderRadius: '50px', background: `${vendorColor}15` }}>
             <Cpu size={16} /> GURU CPU FPS RADAR
           </div>
-          <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
+          <h1 className="main-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
             <span style={{ color: '#d1d5db' }}>{normalizeName(cpu.name)}</span> <br/>
             <span style={{ color: vendorColor, textShadow: `0 0 30px ${vendorColor}80` }}>{isEn ? 'CPU GAMING PERFORMANCE' : 'HERNÍ VÝKON CPU'}</span>
           </h1>
           <div style={{ marginTop: '15px', color: '#76b900', fontSize: '12px', fontWeight: '950', letterSpacing: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
-             <Zap size={14} fill="currentColor" /> {isEn ? 'TESTED ON RTX 5090' : 'TESTOVÁNO S RTX 5090'}
+             <Zap size={14} fill="currentColor" /> {isEn ? 'RTX 5090 TESTED' : 'RTX 5090 TEST'}
           </div>
         </header>
 
-        {/* 🔥 SEZNAM AD #1: TOP PLACEMENT POD HLAVIČKOU */}
-        <SeznamAd zoneId={408654} width={970} height={210} />
+        {/* 🔥 SEZNAM AD #1: TOP BANNER (STRIKTNÍ SEPARACE) */}
+        <div style={{ marginBottom: '40px' }}>
+            <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
 
-        {/* 🚀 HLAVNÍ FPS MATRIX S REKLAMOU UPROSTŘED */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px', marginBottom: '60px', marginTop: '40px' }}>
+        {/* 🚀 HLAVNÍ FPS MATRIX */}
+        <div className="fps-matrix-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px', marginBottom: '60px', marginTop: '40px' }}>
           {gamesToShow.map((game, index) => {
             let fpsBase = Number(fpsData[`${game.key}_1440p`] || fpsData[`${game.key}_1080p`] || 0);
             
@@ -139,7 +146,7 @@ export default async function CpuFpsHubPage(props) {
                       <h3 style={{ fontSize: '18px', fontWeight: '950', textTransform: 'uppercase', margin: 0 }}>{game.name}</h3>
                       <span style={{ fontSize: '10px', fontWeight: '950', color: verdict.color, letterSpacing: '1px' }}>1440p HIGH</span>
                     </div>
-                    <div style={{ fontSize: '64px', fontWeight: '950', color: '#fff', lineHeight: '1' }}>
+                    <div className="fps-value-main" style={{ fontSize: '64px', fontWeight: '950', color: '#fff', lineHeight: '1' }}>
                       {fpsBase > 0 ? fpsBase : 'N/A'} <span style={{ fontSize: '20px', color: '#4b5563' }}>FPS</span>
                     </div>
                     <div style={{ marginTop: '15px', color: verdict.color, fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -149,9 +156,11 @@ export default async function CpuFpsHubPage(props) {
                   </div>
                 </a>
 
-                {/* 🔥 SEZNAM AD #2: GRID INJECTION PO 2. KARTĚ */}
+                {/* 🔥 SEZNAM AD #2: GRID INJECTION (POUZE MOBIL) */}
                 {index === 1 && (
-                  <SeznamAd zoneId={408651} width={300} height={250} />
+                  <div className="ad-mobile-wrapper" style={{ margin: '10px 0' }}>
+                    <SeznamAd zoneId={408651} width={300} height={250} />
+                  </div>
                 )}
               </React.Fragment>
             );
@@ -160,7 +169,7 @@ export default async function CpuFpsHubPage(props) {
 
         {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT */}
         <section style={{ marginBottom: '60px' }}>
-            <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div className="analysis-box" style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950' }}>{isEn ? 'Performance Analysis' : 'Analýza výkonu'}</h2>
                 <GuruAnalysisText 
                     cpuName={cpu.name} 
@@ -173,16 +182,16 @@ export default async function CpuFpsHubPage(props) {
                     isEn={isEn} 
                 />
 
-                {/* 🔥 SEZNAM AD #3: POD ANALÝZOU */}
-                <div style={{ marginTop: '40px' }}>
+                {/* 🔥 SEZNAM AD #3: POD ANALÝZOU (POUZE MOBIL) */}
+                <div className="ad-mobile-wrapper" style={{ marginTop: '40px' }}>
                   <SeznamAd zoneId={408651} width={300} height={250} />
                 </div>
             </div>
         </section>
 
         {/* 🚀 SÉMANTICKÝ ROZCESTNÍK */}
-        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '60px' }}>
-            <a href={`/${isEn ? 'en/' : ''}bottleneck/core-i9-14900k-with-geforce-rtx-5080`} className="deep-link-card" style={{ borderTop: '4px solid #ff0055' }}>
+        <section className="semantic-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '60px' }}>
+            <a href={`/${isEn ? 'en/' : ''}bottleneck/${safeSlug}-with-geforce-rtx-5080`} className="deep-link-card" style={{ borderTop: '4px solid #ff0055' }}>
                 <Gauge size={32} color="#ff0055" />
                 <h3>Bottleneck Radar</h3>
                 <p>{isEn ? 'Test this CPU with different GPUs.' : 'Otestuj tento CPU s různými grafikami.'}</p>
@@ -210,17 +219,29 @@ export default async function CpuFpsHubPage(props) {
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
-        
         .game-fps-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.2) !important; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
         .deep-link-card { background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; position: relative; }
         .deep-link-card h3 { font-size: 18px; fontWeight: 950; margin: 15px 0 10px 0; text-transform: uppercase; }
         .deep-link-card p { font-size: 13px; color: #9ca3af; line-height: 1.5; margin: 0; }
         .deep-link-card .arrow { position: absolute; bottom: 30px; right: 30px; opacity: 0.2; }
-
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000; font-weight: 950; border-radius: 16px; text-decoration: none; }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-weight: 950; border-radius: 16px; text-decoration: none; }
 
+        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
         @media (max-width: 768px) {
+            .guru-hub-wrapper { padding-top: 80px !important; }
+            .inner-container { padding: 0 15px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+            .main-title { font-size: 1.6rem !important; }
+            .fps-matrix-grid { grid-template-columns: 1fr !important; gap: 15px; }
+            .game-fps-card { padding: 20px !important; }
+            .fps-value-main { font-size: 3.5rem !important; }
+            .analysis-box { padding: 25px 15px !important; border-radius: 20px !important; }
+            .semantic-grid { grid-template-columns: 1fr !important; }
             .guru-deals-btn, .guru-support-btn { width: 100%; }
         }
       `}} />
