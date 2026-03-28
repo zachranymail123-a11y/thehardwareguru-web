@@ -6,8 +6,8 @@ import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU FPS ENGINE CLIENT - V11.2 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Maximální vytěžení CTR z každého výpočtu výkonu skrze Seznam Partner.
+ * GURU FPS ENGINE CLIENT - V11.3 (MOBILE OPTIMIZED)
+ * 🚀 CÍL: Maximální monetizace a perfektní mobilní zobrazení kalkulačky.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -47,7 +47,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
     return (
         <div className="guru-calc-box">
-            <div className="guru-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+            <div className="guru-inputs-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                 <div className="input-field">
                     <label><Gamepad2 size={14} /> {isEn ? 'GAME' : 'HRA'}</label>
                     <select value={selectedGameSlug} onChange={(e) => setSelectedGameSlug(e.target.value)} className="guru-select">
@@ -89,11 +89,16 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             {result && !isCalculating && (
                 <div className="result-area" style={{ marginTop: '40px', textAlign: 'center', animation: 'fadeIn 0.7s ease-out' }}>
                     <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px' }}>{isEn ? 'EXPECTED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
-                    <div style={{ fontSize: '6rem', fontWeight: '950', color: '#fff', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)', margin: '15px 0' }}>{result.fps} FPS</div>
+                    <div className="fps-value" style={{ fontSize: '6rem', fontWeight: '950', color: '#fff', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)', margin: '15px 0' }}>{result.fps} FPS</div>
 
-                    {/* 🔥 SEZNAM AD: GURU MONETIZATION ENGINE (INJEKCE MEZI VÝSLEDKY) */}
+                    {/* 🔥 SEZNAM AD: GURU MONETIZATION ENGINE (STRIKTNÍ SEPARACE) */}
                     <div style={{ margin: '30px 0' }}>
-                        <SeznamAd zoneId={408651} width={300} height={250} />
+                        <div className="ad-desktop-wrapper">
+                            <SeznamAd zoneId={408658} width={480} height={300} />
+                        </div>
+                        <div className="ad-mobile-wrapper">
+                            <SeznamAd zoneId={408651} width={300} height={250} />
+                        </div>
                     </div>
 
                     <div className="viral-flex-card">
@@ -102,7 +107,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                             <div style={{ fontSize: '15px', fontWeight: '900', color: '#fff', textTransform: 'uppercase' }}>{isEn ? 'ACHIEVEMENT LOCKED' : 'ÚSPĚCH ODEMČEN'}</div>
                             <div style={{ fontSize: '11px', color: '#a855f7', fontWeight: 'bold' }}>{isEn ? 'Share your result' : 'Pochlub se výsledkem'}</div>
                         </div>
-                        <div style={{ display: 'flex', gap: '10px' }}>
+                        <div className="viral-btns" style={{ display: 'flex', gap: '10px' }}>
                             <button className="premium-share-btn btn-copy"><Share2 size={20} /></button>
                             <button className="premium-share-btn btn-x"><Twitter size={20} /></button>
                         </div>
@@ -110,8 +115,8 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
                     <div className="gta-hype-box" style={{ marginTop: '30px' }}>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f43f5e', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase' }}><Sparkles size={14} /> GTA VI PREDICTOR</span>
-                        <h3 style={{ fontSize: '20px', fontWeight: '950', marginTop: '10px', color: '#fff' }}>{isEn ? 'Will this rig run GTA VI?' : 'Rozjede tohle železo GTA VI?'}</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '20px' }}>
+                        <h3 className="gta-title" style={{ fontSize: '20px', fontWeight: '950', marginTop: '10px', color: '#fff' }}>{isEn ? 'Will this rig run GTA VI?' : 'Rozjede tohle železo GTA VI?'}</h3>
+                        <div className="gta-res-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '20px' }}>
                             <a href={getGtaPredictionPath('1080p')} className="gta-res-btn">1080p</a>
                             <a href={getGtaPredictionPath('1440p')} className="gta-res-btn">1440p</a>
                             <a href={getGtaPredictionPath('2160p')} className="gta-res-btn">4K</a>
@@ -123,20 +128,37 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-calc-box { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
                 .guru-select { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; font-weight: 900; appearance: none; cursor: pointer; }
-                .input-field label { display: block; margin-bottom: 10px; }
+                .input-field label { display: block; margin-bottom: 10px; font-size: 11px; font-weight: 950; text-transform: uppercase; color: #9ca3af; letter-spacing: 1px; }
                 .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: 0.3s; }
                 .calc-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4); }
 
-                .viral-flex-card { display: flex; align-items: center; gap: 20px; max-width: 520px; margin: 40px auto 0; padding: 25px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 20px; }
-                .premium-share-btn { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; border: none; color: #fff; background: rgba(255,255,255,0.05); }
+                .viral-flex-card { display: flex; align-items: center; gap: 20px; max-width: 520px; margin: 40px auto 0; padding: 25px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 20px; text-align: left; }
+                .premium-share-btn { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; border: none; color: #fff; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+                .premium-share-btn:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
                 .btn-copy { background: #a855f7; }
 
                 .gta-hype-box { max-width: 520px; margin: 0 auto; background: rgba(244, 63, 94, 0.05); border: 1px solid rgba(244, 63, 94, 0.2); border-radius: 20px; padding: 25px; }
-                .gta-res-btn { background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.2); padding: 12px; border-radius: 12px; text-decoration: none; color: #fff; font-weight: 950; transition: 0.3s; }
+                .gta-res-btn { background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.2); padding: 12px; border-radius: 12px; text-decoration: none; color: #fff; font-weight: 950; transition: 0.3s; text-align: center; }
                 .gta-res-btn:hover { background: #f43f5e; transform: translateY(-2px); }
 
+                /* 🚀 RESPONSIVE ADS SYSTEM */
+                .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+                .ad-mobile-wrapper { display: none; width: 100%; }
+
                 @media (max-width: 768px) { 
-                    .result-area { margin-top: 20px; }
+                    .guru-calc-box { padding: 20px !important; border-radius: 20px !important; }
+                    .ad-desktop-wrapper { display: none !important; }
+                    .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+                    .fps-value { font-size: 3.5rem !important; }
+                    .viral-flex-card { flex-direction: column; text-align: center; gap: 15px; }
+                    .viral-btns { width: 100%; justify-content: center; gap: 15px !important; }
+                    .gta-res-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
+                    .calc-btn { width: 100%; justify-content: center; }
+                }
+
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
             `}} />
         </div>
