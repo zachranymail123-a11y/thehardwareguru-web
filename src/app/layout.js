@@ -10,10 +10,11 @@ import VisitorCounter from '../components/VisitorCounter';
 import ShareWidget from '../components/ShareWidget';
 import CookieBanner from '../components/CookieBanner';
 import SeznamAd from '../components/SeznamAd';
+import MobileAnchorAd from '../components/MobileAnchorAd';
 
 /**
- * GURU ROOT LAYOUT V6.5 (SIDEBAR POSITION & Z-INDEX FINAL FIX)
- * 🚀 CÍL: Posunutí reklam a snížení z-indexu, aby nepřekážely navigátorovi a menu.
+ * GURU ROOT LAYOUT V6.6 (MOBILE ANCHOR AD UPDATE)
+ * 🚀 CÍL: Posunutí reklam a snížení z-indexu, přidání mobilního Anchor banneru.
  */
 
 export const metadata = {
@@ -230,6 +231,7 @@ export default async function RootLayout({ children, params }) {
         <SupportWidget />
         <CookieBanner />
         <Analytics />
+        <MobileAnchorAd />
       </body>
     </html>
   )
