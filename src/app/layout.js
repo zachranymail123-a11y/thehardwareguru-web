@@ -13,9 +13,9 @@ import SeznamAd from '../components/SeznamAd';
 import MobileAnchorAd from '../components/MobileAnchorAd';
 
 /**
- * GURU ROOT LAYOUT V6.7 (STICKY EYE-GLUE UPDATE)
- * 🚀 CÍL: Oprava matematiky postranních bannerů. Snížení breakpointu na 1550px 
- * pro masivní nárůst desktop Viewability u standardních 1080p a 1440p monitorů.
+ * GURU ROOT LAYOUT V6.8 (Z-INDEX FIX & AD PLACEMENT)
+ * 🚀 CÍL: Oprava matematiky postranních bannerů, přidání fallback třídy proti kolizi s UI,
+ * a oprava umístění středové reklamy, aby neblokovala nadpis.
  */
 
 export const metadata = {
@@ -148,11 +148,12 @@ export default async function RootLayout({ children, params }) {
           }
         `}} />
 
-        <aside className="skyscraper-left">
+        {/* Přidána třída guru-ad-fallback proti z-index kolizi */}
+        <aside className="skyscraper-left guru-ad-fallback">
           <SeznamAd zoneId={408655} width={300} height={600} />
         </aside>
 
-        <aside className="skyscraper-right">
+        <aside className="skyscraper-right guru-ad-fallback">
           <SeznamAd zoneId={408655} width={300} height={600} />
         </aside>
 
@@ -175,26 +176,29 @@ export default async function RootLayout({ children, params }) {
             .eeat-link { color: #6b7280; font-size: 11px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; transition: 0.2s; }
             .eeat-link:hover { color: #d1d5db; }
             
-            /* GURU RESPONSIVE ADS */
-            .ad-desktop-wrapper { display: flex; justify-content: center; }
-            .ad-mobile-wrapper { display: none; }
+            /* GURU RESPONSIVE ADS FIX */
+            .ad-desktop-wrapper, .ad-mobile-wrapper { display: flex; justify-content: center; width: 100%; }
+            .ad-desktop-wrapper { display: none; }
+            .ad-mobile-wrapper { display: flex; }
             
-            @media (max-width: 768px) {
-              .ad-desktop-wrapper { display: none; }
-              .ad-mobile-wrapper { display: flex; justify-content: center; }
+            @media (min-width: 769px) {
+              .ad-desktop-wrapper { display: flex; }
+              .ad-mobile-wrapper { display: none; }
             }
           `}} />
           
-          <div className="ad-desktop-wrapper">
-            <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto 40px', display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 99998 }}>
-              <SeznamAd zoneId={408654} width={970} height={210} />
-            </div>
-          </div>
+          {/* 🔥 GURU MONEY AREA (Vycentrovaný náběh, který nezakrývá nadpis) 🔥 */}
+          <div style={{ width: '100%', margin: '0 auto 40px', display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 99998, padding: '0 20px' }}>
+             
+             {/* Desktop verze (vycentrovaná nudle) */}
+             <div className="ad-desktop-wrapper" style={{ width: '100%', maxWidth: '970px', display: 'flex', justifyContent: 'center' }}>
+                <SeznamAd zoneId={408654} width={970} height={210} />
+             </div>
 
-          <div className="ad-mobile-wrapper">
-            <div style={{ width: '100%', margin: '0 auto 40px', display: 'flex', justifyContent: 'center', position: 'relative', zIndex: 99998 }}>
-              <SeznamAd zoneId={408651} width={300} height={250} />
-            </div>
+             {/* Mobilní verze (čtverec) */}
+             <div className="ad-mobile-wrapper" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <SeznamAd zoneId={408651} width={300} height={250} />
+             </div>
           </div>
 
           <VisitorCounter locale={locale} />
