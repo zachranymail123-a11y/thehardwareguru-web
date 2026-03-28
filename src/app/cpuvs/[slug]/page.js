@@ -1,16 +1,16 @@
 import React, { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { 
-  ChevronLeft, ShieldCheck, Flame, Heart, Swords, Calendar,
-  Trophy, Zap, Cpu, Activity, BarChart3, Gamepad2, LayoutList,
-  TrendingUp, ArrowRight, ExternalLink, Info
+ ChevronLeft, ShieldCheck, Flame, Heart, Swords, Calendar,
+ Trophy, Zap, Cpu, Activity, BarChart3, Gamepad2, LayoutList,
+ TrendingUp, ArrowRight, ExternalLink, Info
 } from 'lucide-react';
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; 
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V76.0 (SEZNAM ADS INTEGRATION)
- * 🚀 CÍL: Maximální monetizace skrze Seznam Partner. Odstraněny A-Ads.
+ * GURU CPU DUELS ENGINE - DETAIL V76.1 (MOBILE OPTIMIZED)
+ * 🚀 CÍL: Maximální monetizace skrze Seznam Partner a perfektní mobilní UI.
  */
 
 export const runtime = "nodejs";
@@ -163,22 +163,22 @@ export default async function CpuDuelDetail(props) {
   const relatedArticles = await getRelatedArticles(cpuA.name, cpuB.name);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-duel-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
-      <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+      <main className="inner-container" style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
         <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <a href={backLink} className="guru-back-btn"><ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}</a>
-          <a href={isEn ? '/en/cpuvs/ranking' : '/cpuvs/ranking'} className="guru-ranking-link"><TrendingUp size={16} /> {isEn ? 'CPU TIER LIST' : 'ŽEBŘÍČEK PROCESORŮ'}</a>
+          <a href={isEn ? '/en/cpuvs/ranking' : '/cpuvs/ranking'} className="guru-ranking-link"><TrendingUp size={16} /> {isEn ? 'TIER LIST' : 'ŽEBŘÍČEK'}</a>
         </div>
 
         <header style={{ marginBottom: '50px', textAlign: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', color: '#9ca3af', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '15px', color: '#9ca3af', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#ff0055' }}><Swords size={16} /> ELITNÍ SOUBOJ</span>
             <span style={{ opacity: 0.3 }}>|</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Calendar size={16} /> {formattedDate}</span>
           </div>
-          <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', color: '#fff', lineHeight: '1.1', margin: '0' }}>
+          <h1 className="main-h1" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', color: '#fff', lineHeight: '1.1', margin: '0' }}>
             {cpuA.name} <span style={{ color: '#ff0055' }}>vs</span> {cpuB.name}
           </h1>
           {perfWinner && <div className="guru-verdict">{perfWinner.name} {isEn ? 'is about' : 'je přibližně'} <strong>{perfDiff}%</strong> {isEn ? 'faster in games' : 'výkonnější ve hrách'}</div>}
@@ -192,8 +192,15 @@ export default async function CpuDuelDetail(props) {
           )}
         </header>
 
-        {/* 🔥 SEZNAM AD #1: POD NADPISEM */}
-        <SeznamAd zoneId={408651} width={300} height={250} />
+        {/* 🔥 SEZNAM AD #1: TOP PLACEMENT (STRIKTNÍ SEPARACE) */}
+        <div style={{ marginBottom: '40px' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
 
         <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '60px' }}>
             <div className="cpu-box" style={{ borderTop: `5px solid ${getVendorColor(cpuA.vendor)}` }}>
@@ -207,11 +214,18 @@ export default async function CpuDuelDetail(props) {
             </div>
         </div>
 
-        {/* 🔥 SEZNAM AD #2: MEZI BOXEM A ANALÝZOU */}
-        <SeznamAd zoneId={408651} width={300} height={250} />
+        {/* 🔥 SEZNAM AD #2: MID PLACEMENT (STRIKTNÍ SEPARACE) */}
+        <div style={{ marginBottom: '60px' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
 
         <section style={{ marginBottom: '60px' }}>
-            <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div className="analysis-card" style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <Info size={24} color="#f59e0b" /> {isEn ? 'Performance Analysis' : 'Analýza výkonu'}
                 </h2>
@@ -235,16 +249,16 @@ export default async function CpuDuelDetail(props) {
                   { label: 'TDP', valA: `${cpuA.tdp_w}W`, valB: `${cpuB.tdp_w}W`, winA: cpuA.tdp_w, winB: cpuB.tdp_w, lower: true }
                 ].map((row, i) => (
                   <div key={i} className="spec-row-style">
-                    <div style={{ ...getWinnerStyle(row.winA, row.winB, row.lower), flex: 1, textAlign: 'right', fontSize: '18px' }}>{row.valA}</div>
+                    <div className="spec-val-box" style={{ ...getWinnerStyle(row.winA, row.winB, row.lower), flex: 1, textAlign: 'right', fontSize: '18px' }}>{row.valA}</div>
                     <div className="table-label">{row.label}</div>
-                    <div style={{ ...getWinnerStyle(row.winB, row.winA, row.lower), flex: 1, textAlign: 'left', fontSize: '18px' }}>{row.valB}</div>
+                    <div className="spec-val-box" style={{ ...getWinnerStyle(row.winB, row.winA, row.lower), flex: 1, textAlign: 'left', fontSize: '18px' }}>{row.valB}</div>
                   </div>
                 ))}
           </div>
         </section>
 
         <section style={{ marginBottom: '60px' }}>
-            <div style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+            <div className="bottleneck-cta" style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
                 <div>
                     <h3 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase' }}>{isEn ? 'BOTTLENECK CHECK' : 'KONTROLA BOTTLENECKU'}</h3>
                     <p style={{ color: '#9ca3af', margin: 0 }}>{isEn ? `Will your GPU handle the ${normalizeName((perfWinner || cpuA).name)}?` : `Bude tvá grafika stačit na procesor ${normalizeName((perfWinner || cpuA).name)}?`}</p>
@@ -256,7 +270,7 @@ export default async function CpuDuelDetail(props) {
         {relatedArticles.length > 0 && (
             <section style={{ marginBottom: '60px' }}>
                 <h2 className="section-h2" style={{ borderLeftColor: '#a855f7' }}><Info size={28} color="#a855f7" /> {isEn ? 'GURU NEWS' : 'GURU NOVINKY'}</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+                <div className="articles-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
                     {relatedArticles.map((art) => (
                         <a key={art.slug} href={isEn ? `/en/clanky/${art.slug_en || art.slug}` : `/clanky/${art.slug}`} className="related-card-style">
                             <div className="related-img-box"><img src={art.image_url} alt={art.title} loading="lazy" /></div>
@@ -270,10 +284,17 @@ export default async function CpuDuelDetail(props) {
             </section>
         )}
 
-        {/* 🔥 SEZNAM AD #3: KONEC STRÁNKY PŘED CTA */}
-        <SeznamAd zoneId={408658} width={480} height={300} />
+        {/* 🔥 SEZNAM AD #3: KONEC STRÁNKY (STRIKTNÍ SEPARACE) */}
+        <div style={{ marginBottom: '40px' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408658} width={480} height={300} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%', marginTop: '50px' }}>
+        <div className="footer-btns" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%', marginTop: '50px' }}>
           <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" className="guru-deals-btn"><Flame size={20} /> {isEn ? 'DEALS' : 'SLEVY'}</a>
           <a href="/support" className="guru-support-btn"><Heart size={20} /> {isEn ? 'SUPPORT' : 'PODPORA'}</a>
         </div>
@@ -301,11 +322,28 @@ export default async function CpuDuelDetail(props) {
         .guru-deals-btn, .guru-support-btn { flex: 1; max-width: 300px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px; border-radius: 16px; font-weight: 950; text-decoration: none; text-transform: uppercase; transition: 0.3s; }
         .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
         .guru-support-btn { background: #eab308; color: #000; }
+
+        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
         @media (max-width: 768px) {
-            .guru-grid-ring { grid-template-columns: 1fr !important; }
-            .vs-badge { margin: 10px auto; }
+            .guru-duel-wrapper { padding-top: 80px !important; }
+            .inner-container { padding: 0 15px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+            .main-h1 { font-size: 1.8rem !important; }
+            .guru-verdict { font-size: 14px; padding: 8px 15px; }
+            .guru-grid-ring { grid-template-columns: 1fr !important; gap: 10px; }
+            .cpu-box { padding: 25px 15px; }
+            .vs-badge { margin: 10px auto; width: 50px; height: 50px; font-size: 18px; }
+            .analysis-card { padding: 25px 15px !important; border-radius: 20px !important; }
             .spec-row-style { flex-direction: column !important; gap: 10px; padding: 15px 10px !important; }
             .table-label { width: 100%; }
+            .spec-val-box { font-size: 16px !important; }
+            .section-h2 { font-size: 1.4rem !important; }
+            .bottleneck-cta { padding: 25px 15px !important; text-align: center; justify-content: center !important; }
+            .guru-deals-btn, .guru-support-btn { max-width: 100% !important; }
         }
       `}} />
     </div>
