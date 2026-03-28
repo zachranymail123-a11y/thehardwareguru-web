@@ -17,7 +17,6 @@ export default function SeznamInterstitial() {
         setTimeout(loadInterstitial, 500);
       }
     };
-
     loadInterstitial();
   }, []);
 
