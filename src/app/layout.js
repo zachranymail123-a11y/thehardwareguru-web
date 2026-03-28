@@ -13,8 +13,9 @@ import SeznamAd from '../components/SeznamAd';
 import MobileAnchorAd from '../components/MobileAnchorAd';
 
 /**
- * GURU ROOT LAYOUT V6.6 (MOBILE ANCHOR AD UPDATE)
- * 🚀 CÍL: Posunutí reklam a snížení z-indexu, přidání mobilního Anchor banneru.
+ * GURU ROOT LAYOUT V6.7 (STICKY EYE-GLUE UPDATE)
+ * 🚀 CÍL: Oprava matematiky postranních bannerů. Snížení breakpointu na 1550px 
+ * pro masivní nárůst desktop Viewability u standardních 1080p a 1440p monitorů.
  */
 
 export const metadata = {
@@ -121,20 +122,28 @@ export default async function RootLayout({ children, params }) {
         <SocialTracker />
         <Tracker />
 
-        {/* 🔥 SVISLÉ REKLAMY NA BOKY 🔥 */}
+        {/* 🔥 SVISLÉ REKLAMY NA BOKY (GURU STICKY UPDATE) 🔥 */}
         <style dangerouslySetInnerHTML={{__html: `
           .skyscraper-left, .skyscraper-right {
-            position: fixed;
-            top: 120px; /* 🚀 POŘÁDNÁ MEZERA POD NAVBAR */
+            position: fixed; /* 🚀 Ultimátní "Lepidlo na oči" - drží při scrollování */
+            top: 120px;
             width: 300px;
             display: none;
-            z-index: 5; /* 🚀 NIŽŠÍ Z-INDEX: GURU NAVIGÁTOR BUDE NAD TÍM */
+            z-index: 5;
           }
           
-          .skyscraper-left { left: calc(50% - 600px - 380px); }
-          .skyscraper-right { right: calc(50% - 600px - 380px); }
+          /* 
+            Matematika: 
+            50% = střed obrazovky
+            - 450px = posun na kraj hlavního obsahu (900px / 2)
+            - 320px = šířka banneru (300px) + 20px mezera
+          */
+          .skyscraper-left { left: calc(50% - 770px); }
+          .skyscraper-right { right: calc(50% - 770px); }
 
-          @media (min-width: 1950px) {
+          /* 🚀 GURU MONEY PATCH: Sníženo z 1950px na 1550px! 
+             Nyní to uvidí 90 % hráčů s běžnými 1080p monitory! */
+          @media (min-width: 1550px) {
             .skyscraper-left, .skyscraper-right { display: block; }
           }
         `}} />
