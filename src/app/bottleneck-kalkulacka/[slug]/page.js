@@ -5,8 +5,8 @@ import BottleneckClient from '../BottleneckClient';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU BOTTLENECK CALCULATOR RESULT - V1.3 (MOBILE RESCUE UPDATE)
- * 🚀 CÍL: Oprava mobilního zobrazení a striktní separace reklam.
+ * GURU BOTTLENECK CALCULATOR RESULT - V1.4 (DYNAMIC GAME MATCHING)
+ * 🚀 CÍL: Dynamické rozpoznání jakékoliv hry z URL podle databáze bez natvrdo psaných podmínek.
  */
 
 export const dynamic = 'force-dynamic';
@@ -36,11 +36,18 @@ export default async function BottleneckResultPage({ params, searchParams }) {
     ]);
 
     const resolutionStr = p.slug.includes('2160p') ? '2160p' : p.slug.includes('1440p') ? '1440p' : '1080p';
+    
+    // 🚀 GURU DYNAMICKÁ DETEKCE HRY: Místo natvrdo napsaných her prohledáme celou DB
     let selectedGameSlug = 'generic';
-    if (p.slug.includes('cyberpunk')) selectedGameSlug = 'cyberpunk-2077';
-    else if (p.slug.includes('cs2')) selectedGameSlug = 'cs2';
-    else if (p.slug.includes('alan-wake')) selectedGameSlug = 'alan-wake-2';
-    else if (p.slug.includes('valorant')) selectedGameSlug = 'valorant';
+    if (gamesRes.data && gamesRes.data.length > 0) {
+        // Seřadíme hry od nejdelšího slugu po nejkratší pro přesný match (např. aby se nepletlo gta-v a gta-v-online)
+        const sortedGames = [...gamesRes.data].sort((a, b) => (b.slug?.length || 0) - (a.slug?.length || 0));
+        const matchedGame = sortedGames.find(g => g.slug && p.slug.includes(g.slug));
+        
+        if (matchedGame) {
+            selectedGameSlug = matchedGame.slug;
+        }
+    }
 
     return (
         <div className="guru-page-wrapper" style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', paddingTop: '100px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
