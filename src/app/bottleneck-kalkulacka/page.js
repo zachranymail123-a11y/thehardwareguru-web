@@ -4,11 +4,12 @@ import BottleneckClient from './BottleneckClient';
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU BOTTLENECK CALCULATOR - HUB V1.3 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Monetizace hlavního hubu kalkulačky skrze Seznam Partner s čistým mobilním zobrazením.
+ * GURU BOTTLENECK CALCULATOR - HUB V1.5 (CACHE KILLER UPDATE)
+ * 🚀 CÍL: Zabít Next.js Data Cache. Od teď se každá nová hra v DB načte okamžitě.
  */
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0; // 🚀 GURU FIX: Absolutní zákaz cache pro tuto stránku
 
 export const metadata = {
     title: 'PC Bottleneck Kalkulačka 2026 | The Hardware Guru',
@@ -23,7 +24,11 @@ export default async function BottleneckPage() {
         return <div style={{ color: '#fff', textAlign: 'center', padding: '100px' }}>Chyba konfigurace (Missing ENV).</div>;
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // 🚀 GURU FIX: Supabase klient s vynuceným 'no-store', aby ignoroval Vercel Cache
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: { persistSession: false },
+        global: { fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' }) }
+    });
 
     const [gpusRes, cpusRes, gamesRes] = await Promise.all([
         supabase.from('gpus').select('id, name, vendor, performance_index, vram_gb').order('performance_index', { ascending: false }),
