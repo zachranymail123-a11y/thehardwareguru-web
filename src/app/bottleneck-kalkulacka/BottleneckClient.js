@@ -49,11 +49,13 @@ export default function BottleneckClient({
         const cpuName = String(cpu.name || '').toLowerCase();
         const gpuName = String(gpu.name || '').toLowerCase();
 
+        // 🚀 GURU FIX: Přidán profil pro GTA V do enginu kalkulačky
         const gameDataMap = {
             'cyberpunk-2077': { thread_scaling: 0.85, cpu_weight: 1.2, gpu_weight: 1.5, fps_scale: 1.2 },
             'cs2': { thread_scaling: 0.3, cpu_weight: 0.5, gpu_weight: 0.4, fps_scale: 3.5 },
             'alan-wake-2': { thread_scaling: 0.8, cpu_weight: 1.1, gpu_weight: 1.8, fps_scale: 0.9 },
             'valorant': { thread_scaling: 0.25, cpu_weight: 0.4, gpu_weight: 0.3, fps_scale: 4.0 },
+            'gta-v': { thread_scaling: 0.65, cpu_weight: 1.3, gpu_weight: 1.1, fps_scale: 1.5 },
             'generic': { thread_scaling: 0.6, cpu_weight: 1.0, gpu_weight: 1.0, fps_scale: 1.4 }
         };
         const game = gameDataMap[baseGame?.slug] || gameDataMap['generic'];
