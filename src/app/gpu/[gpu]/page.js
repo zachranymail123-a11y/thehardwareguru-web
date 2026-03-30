@@ -4,10 +4,11 @@ import {
  Activity, CheckCircle2, Swords, LayoutList, ShoppingCart, Flame, Heart, Info, Cpu, Zap
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU GPU ENGINE - DETAIL GRAFIKY V2.7 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU GPU ENGINE - DETAIL GRAFIKY V2.8 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka konverze.
  */
 
 export const runtime = "nodejs";
@@ -135,20 +136,26 @@ export default async function GpuDetailPage(props) {
           </h1>
         </header>
 
-        {(gpu.buy_link_cz || gpu.buy_link_en) && (
-            <section style={{ marginBottom: '30px', display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
-                {!isEn && gpu.buy_link_cz && (
-                    <a href={gpu.buy_link_cz} target="_blank" rel="nofollow sponsored" className="btn-buy alza">
-                        <ShoppingCart size={20} /> CENY NA ALZA.CZ
-                    </a>
-                )}
-                {isEn && gpu.buy_link_en && (
-                    <a href={gpu.buy_link_en} target="_blank" rel="nofollow sponsored" className="btn-buy amazon">
-                        <ShoppingCart size={20} /> PRICES ON AMAZON
-                    </a>
-                )}
-            </section>
-        )}
+        <section style={{ marginBottom: '30px', display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
+            {(gpu.buy_link_cz || gpu.buy_link_en) && (
+                <>
+                    {!isEn && gpu.buy_link_cz && (
+                        <a href={gpu.buy_link_cz} target="_blank" rel="nofollow sponsored" className="btn-buy alza">
+                            <ShoppingCart size={20} /> CENY NA ALZA.CZ
+                        </a>
+                    )}
+                    {isEn && gpu.buy_link_en && (
+                        <a href={gpu.buy_link_en} target="_blank" rel="nofollow sponsored" className="btn-buy amazon">
+                            <ShoppingCart size={20} /> PRICES ON AMAZON
+                        </a>
+                    )}
+                </>
+            )}
+            {/* 🔥 PŘIDÁNO: Heureka tlačítka hned pod hlavní nákupní odkazy 🔥 */}
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
+                <HeurekaButtons isEn={isEn} />
+            </div>
+        </section>
 
         {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
         <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
