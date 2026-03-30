@@ -1,17 +1,18 @@
 import React, { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { 
- ChevronLeft, ShieldCheck, Flame, Heart, Swords, Calendar,
- Trophy, Zap, Gamepad2, LayoutList, BarChart3, TrendingUp,
- ArrowRight, ExternalLink, ArrowUpCircle, Monitor, Crosshair,
- Cpu, Info, AlertTriangle
+  ChevronLeft, ShieldCheck, Flame, Heart, Swords, Calendar,
+  Trophy, Zap, Gamepad2, LayoutList, BarChart3, TrendingUp,
+  ArrowRight, ExternalLink, ArrowUpCircle, Monitor, Crosshair,
+  Cpu, Info, AlertTriangle
 } from 'lucide-react';
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; 
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU CPU UPGRADE - DETAIL V2.2 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU CPU UPGRADE - DETAIL V2.3 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka konverze.
  */
 
 export const runtime = "nodejs";
@@ -218,6 +219,11 @@ export default async function App(props) {
                 />
             </div>
         </section>
+
+        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek pod analýzu upgradu 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: '#f59e0b' }}><LayoutList size={28} style={{ display: 'inline', marginRight: '10px' }} /> {isEn ? 'UPGRADE SPECIFICATIONS' : 'POROVNÁNÍ PARAMETRŮ'}</h2>
