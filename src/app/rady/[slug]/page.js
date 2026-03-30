@@ -4,10 +4,11 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart, Info, BookOpen, Share2, Cpu, Monitor } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU GUIDE ENGINE - DETAIL V2.5 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU GUIDE ENGINE - DETAIL V2.6 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka konverze.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -155,6 +156,11 @@ export default async function RadaDetail({ params }) {
 
           <div className="guru-prose">
               <div dangerouslySetInnerHTML={{ __html: content }} />
+          </div>
+
+          {/* 🔥 PŘIDÁNO: Heureka tlačítka pod textem článku 🔥 */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
+              <HeurekaButtons isEn={isEn} />
           </div>
 
           {radaItem.affiliate_link && (
