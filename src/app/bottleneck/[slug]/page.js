@@ -1,13 +1,13 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { 
- ChevronLeft, Activity, Zap, ShieldCheck, AlertTriangle, ArrowRight, Cpu, Monitor, Gauge, CheckCircle2, Flame, Heart, Swords, PlugZap, Layers, Database, Info, BarChart3, Gamepad2, ArrowUpCircle, ShoppingCart
+ ChevronLeft, Activity, Zap, ShieldCheck, AlertTriangle, ArrowRight, Cpu, Monitor, Gauge, CheckCircle2, Flame, Heart, Swords, PlugZap, Layers, Database, Info, BarChart3, Gamepad2, ArrowUpCircle, ShoppingCart, ChevronRight
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU BOTTLENECK ENGINE V22.9 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Maximální monetizace a perfektní zobrazení na všech zařízeních.
+ * GURU BOTTLENECK ENGINE V22.10 (SEO HUB & ALGORITHMIC FIX)
+ * 🚀 CÍL: Brutální interní prolinkování pro 400k vygenerovaných stránek. Snížení bounce rate.
  */
 
 export const runtime = "nodejs";
@@ -168,6 +168,36 @@ export default async function BottleneckPage(props) {
       if (gFps > 0 && cFps > 0) estimatedFps = Math.min(gFps, cFps);
   }
 
+  // 🚀 GURU ALGORITHMIC FALLBACK
+  if (!estimatedFps && gameSlug) {
+      const gameDataMap = {
+          'cyberpunk-2077': { thread_scaling: 0.85, cpu_weight: 1.2, gpu_weight: 1.5, fps_scale: 1.2 },
+          'cs2': { thread_scaling: 0.3, cpu_weight: 0.5, gpu_weight: 0.4, fps_scale: 3.5 },
+          'alan-wake-2': { thread_scaling: 0.8, cpu_weight: 1.1, gpu_weight: 1.8, fps_scale: 0.9 },
+          'valorant': { thread_scaling: 0.25, cpu_weight: 0.4, gpu_weight: 0.3, fps_scale: 4.0 },
+          'gta-v': { thread_scaling: 0.65, cpu_weight: 1.3, gpu_weight: 1.1, fps_scale: 1.5 },
+          'generic': { thread_scaling: 0.6, cpu_weight: 1.0, gpu_weight: 1.0, fps_scale: 1.4 }
+      };
+      const game = gameDataMap[gameSlug] || gameDataMap['generic'];
+      
+      const cpuNameLower = String(cpu.name || '').toLowerCase();
+      let ipcBase = 100; 
+      let archEfficiency = 1.0;
+      if (cpuNameLower.includes('x3d')) archEfficiency *= 1.4;
+      if (cpuNameLower.includes('9800x3d')) ipcBase = 135;
+      else if (cpuNameLower.includes('7800x3d')) ipcBase = 115;
+      
+      let cpuEffective = (ipcBase * (1 - game.thread_scaling) + (Number(cpu.performance_index) || 100) * game.thread_scaling) * archEfficiency;
+      
+      const resMultiplier = { '1080p': 1.0, '1440p': 1.5, '2160p': 2.4 }[resolution] || 1.5;
+      let gpuEffective = (Number(gpu.performance_index) || 100) / resMultiplier;
+      
+      const rawCpuFps = (cpuEffective / (game.cpu_weight || 1)) * game.fps_scale;
+      const rawGpuFps = (gpuEffective / (game.gpu_weight || 1)) * game.fps_scale;
+      
+      estimatedFps = Math.max(1, Math.round(Math.min(rawCpuFps, rawGpuFps)));
+  }
+
   const safeCpuSlug = (cpu.slug || slugify(cpu.name)).replace(/^en-/, '');
   const safeGpuSlug = (gpu.slug || slugify(gpu.name)).replace(/^en-/, '');
   const baseComboUrl = gameSlug ? `${safeCpuSlug}-with-${safeGpuSlug}-in-${gameSlug}` : `${safeCpuSlug}-with-${safeGpuSlug}`;
@@ -239,7 +269,34 @@ export default async function BottleneckPage(props) {
           </div>
         </section>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginTop: '60px' }}>
+        {/* 🚀 MASSIVE SEO HUB PRO ELIMINACI DEAD ENDU A BOUNCE RATE */}
+        <section className="massive-seo-hub" style={{ marginTop: '80px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '60px' }}>
+            <h2 className="section-h2" style={{ borderLeft: '4px solid #a855f7', marginBottom: '40px' }}>
+                {isEn ? 'EXPLORE GURU DATABASE' : 'PROZKOUMEJ GURU DATABÁZI'}
+            </h2>
+            <div className="hub-grid">
+                <div className="hub-column">
+                    <div className="hub-col-header"><Swords size={20} color="#ff0055" /> {isEn ? 'Hardware Battles' : 'HW Souboje'}</div>
+                    <ul className="hub-links-list">
+                        <li><a href={isEn ? "/en/gpuvs" : "/gpuvs"}><ChevronRight size={16} /> {isEn ? 'Graphics Card Battles' : 'Souboje Grafických Karet'}</a></li>
+                        <li><a href={isEn ? "/en/cpuvs" : "/cpuvs"}><ChevronRight size={16} /> {isEn ? 'Processor Battles' : 'Souboje Procesorů'}</a></li>
+                        <li><a href={isEn ? `/en/cpu/${safeCpuSlug}` : `/cpu/${safeCpuSlug}`}><ChevronRight size={16} /> {isEn ? `More about ${cpu.name}` : `Detail procesoru ${cpu.name}`}</a></li>
+                        <li><a href={isEn ? `/en/gpu/${safeGpuSlug}` : `/gpu/${safeGpuSlug}`}><ChevronRight size={16} /> {isEn ? `More about ${gpu.name}` : `Detail grafiky ${gpu.name}`}</a></li>
+                    </ul>
+                </div>
+                <div className="hub-column">
+                    <div className="hub-col-header"><Gamepad2 size={20} color="#66fcf1" /> {isEn ? 'Guru Ecosystem' : 'Guru Ekosystém'}</div>
+                    <ul className="hub-links-list">
+                        <li><a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"}><ChevronRight size={16} /> {isEn ? 'New Bottleneck Test' : 'Nový Bottleneck Test'}</a></li>
+                        <li><a href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"}><ChevronRight size={16} /> {isEn ? 'Game Archive' : 'Archiv her'}</a></li>
+                        <li><a href={isEn ? "/en/clanky" : "/clanky"}><ChevronRight size={16} /> {isEn ? 'News & Articles' : 'Články a Novinky'}</a></li>
+                        <li><a href={isEn ? "/en/tipy" : "/tipy"}><ChevronRight size={16} /> {isEn ? 'GURU Tips' : 'GURU Tipy'}</a></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginTop: '80px' }}>
             <a href="https://kick.com/thehardwareguru" target="_blank" rel="nofollow sponsored" className="live-btn"><Flame size={20} /> {isEn ? 'WATCH LIVE' : 'SLEDOVAT LIVE'}</a>
             <a href={isEn ? "/en/support" : "/support"} className="support-btn"><Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}</a>
         </div>
@@ -258,6 +315,14 @@ export default async function BottleneckPage(props) {
         .support-btn { background: #eab308; color: #000; }
         .live-btn { background: #000; color: #00ec64; border: 1px solid #00ec64; }
 
+        /* 🚀 SEO HUB CSS */
+        .hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+        .hub-column { background: rgba(255,255,255,0.02); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); }
+        .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 30px; font-size: 18px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
+        .hub-links-list { list-style: none; padding: 0; }
+        .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 16px; display: flex; align-items: center; margin-bottom: 18px; font-weight: bold; transition: 0.3s; }
+        .hub-links-list a:hover { color: #66fcf1; transform: translateX(10px); }
+
         /* GURU RESPONSIVE ADS - STRICT FIX */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
@@ -271,6 +336,8 @@ export default async function BottleneckPage(props) {
             .status-pill { padding: 10px 20px; font-size: 12px; }
             .support-btn, .live-btn { width: 100%; justify-content: center; }
             .main-title { font-size: 1.6rem !important; }
+            .hub-grid { grid-template-columns: 1fr; }
+            .hub-column { padding: 25px; }
         }
       `}} />
     </div>
