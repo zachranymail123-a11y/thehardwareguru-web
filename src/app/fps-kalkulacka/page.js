@@ -5,8 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU FPS ENGINE - V6.6 (CACHE KILLER & MASSIVE SEO HUB)
- * 🚀 CÍL: Oprava mizejících her (zabití cache) a integrace masivního prolinkování.
+ * GURU FPS ENGINE - V6.7 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, ochrana cache-killer enginu.
  */
 
 export const dynamic = 'force-dynamic';
@@ -48,10 +48,20 @@ export default async function FpsKalkulackaPage(props) {
   ]);
 
   return (
-    <div className="guru-page-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '100px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-page-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '100px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <main className="inner-container" style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
+        {/* 🔥 GURU MONEY FIX: TOP BANNER ABOVE FOLD (Přesunut úplně nahoru před hlavičku) */}
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
+
         <header style={{ textAlign: 'center', marginBottom: '30px' }}>
           <div className="guru-badge"><Gamepad2 size={16} /> GURU FPS ENGINE</div>
           <h1 className="main-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
@@ -65,23 +75,8 @@ export default async function FpsKalkulackaPage(props) {
           </div>
         </header>
 
-        {/* 🔥 SEZNAM AD #1: TOP BANNER (STRIKTNÍ SEPARACE) */}
-        <div style={{ marginBottom: '40px' }}>
-            <div className="ad-desktop-wrapper">
-                <SeznamAd zoneId={408654} width={970} height={210} />
-            </div>
-            <div className="ad-mobile-wrapper">
-                <SeznamAd zoneId={408651} width={300} height={250} />
-            </div>
-        </div>
-
         <div style={{ marginTop: '30px' }}>
           <FpsCalculatorClient gpus={gpuRes.data || []} cpus={cpuRes.data || []} games={gameRes.data || []} isEn={isEn} />
-        </div>
-
-        {/* 🔥 SEZNAM AD #2: BOTTOM BANNER (POUZE MOBIL) */}
-        <div className="ad-mobile-wrapper" style={{ marginTop: '50px' }}>
-          <SeznamAd zoneId={408651} width={300} height={250} />
         </div>
 
         {/* TVŮJ PŮVODNÍ SILO GRID (Ponechán beze změny) */}
@@ -120,6 +115,16 @@ export default async function FpsKalkulackaPage(props) {
 
       </main>
 
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
+
       <style dangerouslySetInnerHTML={{__html: `
         .guru-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
         
@@ -139,6 +144,21 @@ export default async function FpsKalkulackaPage(props) {
         .hub-links-list { list-style: none; padding: 0; }
         .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 14px; display: flex; align-items: center; margin-bottom: 15px; font-weight: bold; transition: 0.3s; }
         .hub-links-list a:hover { color: #66fcf1; transform: translateX(10px); }
+
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
 
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
