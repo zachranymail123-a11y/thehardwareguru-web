@@ -6,8 +6,8 @@ import {
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU BOTTLENECK ENGINE V22.10 (SEO HUB & ALGORITHMIC FIX)
- * 🚀 CÍL: Brutální interní prolinkování pro 400k vygenerovaných stránek. Snížení bounce rate.
+ * GURU BOTTLENECK ENGINE V22.11 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchor, ochrana SEO/Algoritmu.
  */
 
 export const runtime = "nodejs";
@@ -203,9 +203,20 @@ export default async function BottleneckPage(props) {
   const baseComboUrl = gameSlug ? `${safeCpuSlug}-with-${safeGpuSlug}-in-${gameSlug}` : `${safeCpuSlug}-with-${safeGpuSlug}`;
 
   return (
-    <div className="guru-bottleneck-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-bottleneck-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+        
+        {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD (Před hlavičkou pro 100% viditelnost) */}
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+            <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
+
         <header style={{ textAlign: 'center', marginBottom: '50px' }}>
           <div className="radar-badge"><Gauge size={16} /> GURU BOTTLENECK RADAR</div>
           <h1 className="main-title" style={{ fontSize: 'clamp(1.8rem, 5vw, 3.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: 0, lineHeight: '1.1' }}>
@@ -221,16 +232,6 @@ export default async function BottleneckPage(props) {
              </div>
           )}
         </header>
-
-        {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
-        <div style={{ marginBottom: '40px' }}>
-            <div className="ad-desktop-wrapper">
-              <SeznamAd zoneId={408654} width={970} height={210} />
-            </div>
-            <div className="ad-mobile-wrapper">
-              <SeznamAd zoneId={408651} width={300} height={250} />
-            </div>
-        </div>
 
         <section className="main-analysis-box" style={{ background: 'rgba(15, 17, 21, 0.95)', border: `1px solid ${statusColor}40`, borderRadius: '30px', padding: '50px 40px', textAlign: 'center', marginBottom: '60px', boxShadow: `0 30px 100px ${statusColor}15` }}>
             <div style={{ display: 'grid', gridTemplateColumns: estimatedFps ? 'repeat(auto-fit, minmax(250px, 1fr))' : '1fr', gap: '40px', alignItems: 'center' }}>
@@ -254,7 +255,7 @@ export default async function BottleneckPage(props) {
         </section>
 
         {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE */}
-        <div style={{ marginBottom: '40px' }}>
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
             <div className="ad-mobile-wrapper">
                 <SeznamAd zoneId={408651} width={300} height={250} />
             </div>
@@ -302,6 +303,16 @@ export default async function BottleneckPage(props) {
         </div>
       </main>
 
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
+
       <style dangerouslySetInnerHTML={{__html: `
         .radar-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.05); }
         .status-pill { padding: 12px 35px; border-radius: 50px; display: inline-block; font-weight: 950; font-size: 14px; text-transform: uppercase; }
@@ -322,6 +333,21 @@ export default async function BottleneckPage(props) {
         .hub-links-list { list-style: none; padding: 0; }
         .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 16px; display: flex; align-items: center; margin-bottom: 18px; font-weight: bold; transition: 0.3s; }
         .hub-links-list a:hover { color: #66fcf1; transform: translateX(10px); }
+
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
 
         /* GURU RESPONSIVE ADS - STRICT FIX */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
