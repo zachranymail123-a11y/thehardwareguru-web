@@ -4,10 +4,11 @@ import React, { useState, useMemo } from 'react';
 import { Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Check, Award, Twitter, Sparkles } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
+import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU FPS ENGINE CLIENT - V11.5 (MONEY FIX UPDATE)
- * 🚀 CÍL: Implementace High-CTR zón v interaktivním formuláři a optimalizace pro mobilní Sklik.
+ * GURU FPS ENGINE CLIENT - V11.6 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Implementace High-CTR zón v interaktivním formuláři a optimalizace pro mobilní Sklik + Heureka konverze.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -145,6 +146,11 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                         <div className="ad-mobile-wrapper">
                             <SeznamAd zoneId={408651} width={300} height={250} />
                         </div>
+                    </div>
+
+                    {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (zobrazeno pouze po kalkulaci) 🔥 */}
+                    <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
+                        <HeurekaButtons isEn={isEn} />
                     </div>
 
                     <div className="viral-flex-card">
