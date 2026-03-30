@@ -3,10 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { PenTool, ChevronRight, Zap, ShieldCheck, Heart, Flame, Info, Monitor } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
+import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU GUIDES ARCHIVE ENGINE V2.3 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU GUIDES ARCHIVE ENGINE V2.4 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchor, eliminace hluchých míst + Heureka konverze.
  */
 
 export const runtime = "nodejs";
@@ -72,8 +73,8 @@ export default async function RadyArchivePage(props) {
       <main style={{ maxWidth: '1300px', margin: '60px auto', padding: '0 20px', width: '100%', flex: '1 0 auto' }}>
         <header className="header-box" style={{ textAlign: 'center', marginBottom: '40px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '25px' }}>
-               <ShieldCheck size={56} color="#a855f7" style={{ filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.4))' }} />
-               <Zap size={56} color="#eab308" style={{ filter: 'drop-shadow(0 0 10px rgba(234, 179, 8, 0.4))' }} />
+                <ShieldCheck size={56} color="#a855f7" style={{ filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.4))' }} />
+                <Zap size={56} color="#eab308" style={{ filter: 'drop-shadow(0 0 10px rgba(234, 179, 8, 0.4))' }} />
             </div>
             <h1 className="title-h1" style={titleStyle}>
               {isEn ? <>PRACTICAL <span style={{ color: '#a855f7' }}>GUIDES</span></> : <>PRAKTICKÉ <span style={{ color: '#a855f7' }}>RADY</span></>}
@@ -82,6 +83,11 @@ export default async function RadyArchivePage(props) {
               {isEn ? 'Field-tested tips and technical solutions for every geek.' : '🛠️ Tipy a triky z praxe. Od diagnostiky až po čištění PC.'}
             </p>
         </header>
+
+        {/* 🔥 PŘIDÁNO: Heureka tlačítka pod hlavičkou 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
 
         {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
         <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
