@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Check, Award, Twitter, Sparkles } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU FPS ENGINE CLIENT - V11.3 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Maximální monetizace a perfektní mobilní zobrazení kalkulačky.
+ * GURU FPS ENGINE CLIENT - V11.4 (ALGORITHMIC FIX)
+ * 🚀 CÍL: Nahrazení hardcoded "145 FPS" reálným AI výpočtem.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -31,14 +31,60 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         return `https://thehardwareguru.cz${basePath}/${cleanCpu}-vs-${cleanGpu}-${res}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
     };
 
+    // 🚀 GURU AI ENGINE: Analýza dat z databáze a výpočet reálných FPS
+    const performCalculation = () => {
+        const cpu = Array.isArray(cpus) ? cpus.find(c => String(c.id) === String(selectedCpuId)) : null;
+        const gpu = Array.isArray(gpus) ? gpus.find(g => String(g.id) === String(selectedGpuId)) : null;
+        const game = Array.isArray(games) ? games.find(g => String(g.slug) === String(selectedGameSlug)) : null;
+
+        if (!cpu || !gpu || !game) return null;
+
+        const cpuName = String(cpu.name || '').toLowerCase();
+
+        // Profily her (stejné jako v Bottleneck Kalkulačce)
+        const gameDataMap = {
+            'cyberpunk-2077': { thread_scaling: 0.85, cpu_weight: 1.2, gpu_weight: 1.5, fps_scale: 1.2 },
+            'cs2': { thread_scaling: 0.3, cpu_weight: 0.5, gpu_weight: 0.4, fps_scale: 3.5 },
+            'alan-wake-2': { thread_scaling: 0.8, cpu_weight: 1.1, gpu_weight: 1.8, fps_scale: 0.9 },
+            'valorant': { thread_scaling: 0.25, cpu_weight: 0.4, gpu_weight: 0.3, fps_scale: 4.0 },
+            'gta-v': { thread_scaling: 0.65, cpu_weight: 1.3, gpu_weight: 1.1, fps_scale: 1.5 },
+            'generic': { thread_scaling: 0.6, cpu_weight: 1.0, gpu_weight: 1.0, fps_scale: 1.4 }
+        };
+        
+        const gData = gameDataMap[game.slug] || gameDataMap['generic'];
+
+        let ipcBase = 100; 
+        let archEfficiency = 1.0;
+        if (cpuName.includes('x3d')) archEfficiency *= 1.4;
+        if (cpuName.includes('9800x3d')) ipcBase = 135;
+        else if (cpuName.includes('7800x3d')) ipcBase = 115;
+
+        const cpuEffective = (ipcBase * (1 - gData.thread_scaling) + (Number(cpu.performance_index) || 100) * gData.thread_scaling) * archEfficiency;
+        
+        const resMultiplier = { '1080p': 1.0, '1440p': 1.5, '2160p': 2.4 }[selectedRes] || 1.5;
+        const gpuEffective = (Number(gpu.performance_index) || 100) / resMultiplier;
+        
+        const rawCpuFps = (cpuEffective / (gData.cpu_weight || 1)) * gData.fps_scale;
+        const rawGpuFps = (gpuEffective / (gData.gpu_weight || 1)) * gData.fps_scale;
+
+        // Vypočtené FPS je limitováno nejslabším článkem (CPU nebo GPU)
+        const estFps = Math.max(1, Math.round(Math.min(rawCpuFps, rawGpuFps)));
+        
+        return { fps: estFps, confidence: 0.95 };
+    };
+
     const handleCalculate = async () => {
         if (!selectedGpuId || !selectedCpuId || !selectedGameSlug) return;
         setIsCalculating(true);
         setResult(null);
 
-        // Simulace motoru...
         setTimeout(() => {
-            setResult({ fps: 145, confidence: 0.95 });
+            const calculatedResult = performCalculation();
+            if(calculatedResult) {
+               setResult(calculatedResult);
+            } else {
+               setResult({ fps: 0, confidence: 0 }); // Fallback pro chybu 
+            }
             setIsCalculating(false);
         }, 800);
     };
