@@ -1,22 +1,23 @@
 import React from 'react';
 import { 
- ChevronLeft, 
- Activity, 
- CheckCircle2,
- Monitor,
- ArrowRight,
- Cpu,
- Swords,
- Zap,
- Gauge,
- Crosshair
+  ChevronLeft, 
+  Activity, 
+  CheckCircle2,
+  Monitor,
+  ArrowRight,
+  Cpu,
+  Swords,
+  Zap,
+  Gauge,
+  Crosshair
 } from 'lucide-react';
 import GuruAnalysisText from '../../../../components/GuruAnalysisText';
 import SeznamAd from '../../../../components/SeznamAd';
+import HeurekaButtons from '../../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.7 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.8 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Vložení Heureka konverze.
  */
 
 export const runtime = "nodejs";
@@ -148,6 +149,12 @@ export default async function App(props) {
                     <CheckCircle2 size={20} /> {isEn ? verdict.en : verdict.cz}
                 </div>
             </div>
+
+            {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (bezpečně vložené pod výsledkový box) 🔥 */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
+                <HeurekaButtons isEn={isEn} />
+            </div>
+            
         </section>
 
         <section style={{ marginBottom: '60px' }}>
