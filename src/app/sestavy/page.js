@@ -8,8 +8,8 @@ import SeznamAd from '../../components/SeznamAd';
 import Link from 'next/link';
 
 /**
- * GURU HARDWARE HUB V2.0 (THE MONEY MAKER & SEO SILO)
- * 🚀 CÍL: Agresivní konverze na eHUB (Shopcom 16% / Cubenest 8%) a silný SEO Siloing.
+ * GURU HARDWARE HUB V2.1 (COMMISSION HIDDEN)
+ * 🚀 CÍL: Skryta procenta provizí, nahrazeno marketingovými labely.
  */
 
 export const runtime = "nodejs";
@@ -37,35 +37,12 @@ export async function generateMetadata(props) {
 export default function HardwareHubPage(props) {
   const isEn = props.isEn === true;
 
-  // 🔥 OSTRÉ EHUB TRACKING LINKY (ID: 71c85dea)
   const SHOPCOM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=3ea952dd";
   const CUBENEST_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=231eaccc";
-
-  // Google Golden Rich: Breadcrumb & CollectionPage
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Guru", "item": baseUrl },
-          { "@type": "ListItem", "position": 2, "name": isEn ? "Hardware Hub" : "Hardware Hub", "item": `${baseUrl}/sestavy` }
-        ]
-      },
-      {
-        "@type": "CollectionPage",
-        "name": isEn ? "Guru Hardware Selection" : "Guru Hardware Výběr",
-        "description": isEn ? "Curated list of hardware partners." : "Kurátorský výběr hardwarových partnerů."
-      }
-    ]
-  };
 
   return (
     <div className="guru-hub-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '100px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-
-      {/* 🧭 GURU NAVIGACE (PŘEVZATO ZE STARÉ VERZE, ALE UPGRADOVÁNO) */}
       <nav className="nav-sestavy">
         <Link href={isEn ? "/en" : "/"} className="nav-item"><Home size={16} /> {isEn ? "HOME" : "DOMŮ"}</Link>
         <Link href={isEn ? "/en/clanky" : "/clanky"} className="nav-item"><Newspaper size={16} /> {isEn ? "ARTICLES" : "ČLÁNKY"}</Link>
@@ -89,7 +66,6 @@ export default function HardwareHubPage(props) {
           </p>
         </header>
 
-        {/* 🔥 TOP MONEY FIX: SEZNAM AD ABOVE THE FOLD */}
         <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
             <div className="ad-desktop-wrapper">
                 <SeznamAd zoneId={408654} width={970} height={210} />
@@ -100,12 +76,10 @@ export default function HardwareHubPage(props) {
         </div>
 
         <div className="hub-grid">
-          
-          {/* HLAVNÍ KARTA: SHOPCOM (Provize až 16%) */}
           <section className="hub-card premium-border">
             <div className="card-header">
               <div className="vendor-logo">SHOPCOM</div>
-              <div className="commission-badge">{isEn ? 'UP TO 16% COMM.' : 'AŽ 16% PROVIZE'}</div>
+              <div className="commission-badge">{isEn ? 'GURU EXCLUSIVE' : 'GURU EXKLUZIVNĚ'}</div>
             </div>
             <div className="card-body">
               <Cpu size={50} color="#a855f7" />
@@ -114,7 +88,7 @@ export default function HardwareHubPage(props) {
               <ul className="hub-list">
                 <li><Zap size={14} /> {isEn ? 'GPUs in stock' : 'Grafické karty skladem'}</li>
                 <li><Zap size={14} /> {isEn ? 'Fair priced Gaming PCs' : 'Gaming PC za férový ceny'}</li>
-                <li><Zap size={14} /> {isEn ? 'Exclusive configurations' : 'Exkluzivní Guru konfigurace'}</li>
+                <li><Zap size={14} /> {isEn ? 'Verified pricing' : 'Guruem prověřené ceny'}</li>
               </ul>
             </div>
             <a href={SHOPCOM_LINK} target="_blank" rel="nofollow sponsored" className="hub-cta-btn shopcom-bg">
@@ -122,11 +96,10 @@ export default function HardwareHubPage(props) {
             </a>
           </section>
 
-          {/* DRUHÁ KARTA: CUBENEST (Provize 8%) */}
           <section className="hub-card desk-border">
             <div className="card-header">
               <div className="vendor-logo">CUBENEST</div>
-              <div className="commission-badge">8% PROVIZE</div>
+              <div className="commission-badge">{isEn ? 'VERIFIED DEAL' : 'OVĚŘENÝ DEAL'}</div>
             </div>
             <div className="card-body">
               <Smartphone size={50} color="#66fcf1" />
@@ -135,17 +108,15 @@ export default function HardwareHubPage(props) {
               <ul className="hub-list">
                 <li><Zap size={14} /> {isEn ? '3-in-1 chargers' : '3v1 bezdrátové nabíječky'}</li>
                 <li><Zap size={14} /> {isEn ? 'Magnetic iPad stands' : 'Magnetické stojany pro iPad'}</li>
-                <li><Zap size={14} /> {isEn ? 'Powerbanks with style' : 'Powerbanky, co mají styl'}</li>
+                <li><Zap size={14} /> {isEn ? 'Premium materials' : 'Prémiové materiály'}</li>
               </ul>
             </div>
             <a href={CUBENEST_LINK} target="_blank" rel="nofollow sponsored" className="hub-cta-btn cubenest-bg">
               <ShoppingCart size={20} /> {isEn ? 'EQUIP SETUP' : 'VYBAVIT DESK SETUP'}
             </a>
           </section>
-
         </div>
 
-        {/* 🔗 SEO HUB (SILOING) */}
         <section className="seo-hub">
           <h2 className="hub-title">{isEn ? 'GURU KNOWLEDGE BASE' : 'GURU KNIHOVNA ZNALOSTÍ'}</h2>
           <div className="hub-silo-grid">
@@ -170,7 +141,6 @@ export default function HardwareHubPage(props) {
 
       </main>
 
-      {/* 🔥 STICKY BOTTOM ANCHOR */}
       <div className="sticky-bottom-anchor">
           <div className="ad-desktop-wrapper-fixed">
               <SeznamAd zoneId={408654} width={970} height={90} />
@@ -184,45 +154,32 @@ export default function HardwareHubPage(props) {
         .nav-sestavy { display: flex; justify-content: center; gap: 25px; padding: 20px; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(168, 85, 247, 0.2); position: fixed; top: 0; left:0; width: 100%; z-index: 100; }
         .nav-item { color: #9ca3af; text-decoration: none; font-size: 13px; font-weight: 900; display: flex; align-items: center; gap: 8px; transition: 0.2s; text-transform: uppercase; }
         .nav-item:hover, .nav-item.active { color: #a855f7; }
-
         .main-title { font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 950; text-transform: uppercase; letter-spacing: -2px; margin: 0; line-height: 1; text-align: center; }
         .main-subtitle { margin-top: 20px; color: #9ca3af; font-size: 20px; max-width: 800px; margin-inline: auto; text-align: center; }
         .money-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.4); padding: 8px 20px; border-radius: 50px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px; }
-        
         .hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 40px; margin-top: 60px; }
         .hub-card { background: rgba(15, 17, 21, 0.95); border-radius: 32px; border: 1px solid rgba(255,255,255,0.05); padding: 40px; display: flex; flex-direction: column; transition: 0.3s; position: relative; overflow: hidden; backdrop-filter: blur(20px); }
         .hub-card:hover { transform: translateY(-10px); box-shadow: 0 30px 60px rgba(0,0,0,0.8); }
         .premium-border { border-top: 4px solid #a855f7; }
         .desk-border { border-top: 4px solid #66fcf1; }
-
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .vendor-logo { font-size: 24px; font-weight: 950; letter-spacing: -1px; }
         .commission-badge { background: #10b981; color: #000; padding: 4px 12px; border-radius: 8px; font-size: 10px; font-weight: 950; }
-
         .card-body h2 { font-size: 28px; font-weight: 950; margin: 20px 0 10px 0; text-transform: uppercase; }
         .card-body p { color: #9ca3af; line-height: 1.6; margin-bottom: 25px; }
-
         .hub-list { list-style: none; padding: 0; margin: 0 0 35px 0; display: flex; flex-direction: column; gap: 10px; }
-        .hub-list li { display: flex; align-items: center; gap: 10px; color: #d1d5db; font-size: 14px; font-weight: 600; }
-
+        .hub-list li { display: flex; alignItems: center; gap: 10px; color: #d1d5db; font-size: 14px; fontWeight: 600; }
         .hub-cta-btn { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 20px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: 0.3s; }
         .shopcom-bg { background: #a855f7; color: #fff; }
         .cubenest-bg { background: #66fcf1; color: #000; }
-        .hub-cta-btn:hover { filter: brightness(1.1); transform: scale(1.02); }
-
         .seo-hub { margin-top: 80px; padding: 40px; background: rgba(0,0,0,0.4); border-radius: 32px; border: 1px solid rgba(255,255,255,0.05); }
         .hub-title { font-size: 16px; font-weight: 950; text-align: center; margin-bottom: 30px; color: #4b5563; text-transform: uppercase; }
         .hub-silo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; }
         .hub-item { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-decoration: none; transition: 0.3s; border: 1px solid transparent; }
         .hub-item span { font-size: 12px; font-weight: 900; color: #9ca3af; text-transform: uppercase; }
-        .hub-item:hover { background: rgba(255,255,255,0.07); border-color: rgba(168, 85, 247, 0.3); transform: translateY(-5px); }
-
         .sticky-bottom-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); }
         .ad-desktop-wrapper { display: flex; justify-content: center; }
         .ad-mobile-wrapper { display: none; }
-        .ad-desktop-wrapper-fixed { display: flex; }
-        .ad-mobile-wrapper-fixed { display: none; }
-
         @media (max-width: 768px) {
             .nav-sestavy { justify-content: flex-start !important; overflow-x: auto; padding: 15px !important; }
             .ad-desktop-wrapper, .ad-desktop-wrapper-fixed { display: none !important; }
