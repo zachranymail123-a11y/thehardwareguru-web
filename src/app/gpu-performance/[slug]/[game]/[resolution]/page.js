@@ -15,8 +15,8 @@ import {
 import SeznamAd from '../../../../../components/SeznamAd';
 
 /**
- * GURU GPU PERFORMANCE ENGINE V2.4 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Maximální monetizace trafficu a perfektní mobilní UI pro FPS benchmarky.
+ * GURU GPU PERFORMANCE ENGINE V2.5 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -88,7 +88,6 @@ export async function generateMetadata({ params }) {
     const rawSlug = p?.slug || p?.gpu || '';
     const gameSlug = p?.game || '';
     const resolution = p?.resolution || '';
-    const isEn = rawSlug.startsWith('en-');
     const gpuSlug = rawSlug.replace(/^en-/, '');
 
     const data = await getPerformanceData(gpuSlug, gameSlug, resolution);
@@ -136,13 +135,23 @@ export default async function GpuPerformancePage({ params }) {
     else if (finalFps >= 30) { verdictColor = '#eab308'; verdictTextEn = 'PLAYABLE'; verdictTextCs = 'HRATELNÉ'; }
 
     return (
-        <div className="guru-performance-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+        <div className="guru-performance-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
             <main className="inner-container" style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
                 
                 <div style={{ marginBottom: '30px' }}>
                     <a href={isEn ? `/en/gpu/${safeSlug}` : `/gpu/${safeSlug}`} className="guru-back-btn">
                         <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
                     </a>
+                </div>
+
+                {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD (Před hlavičkou pro 100% viditelnost) */}
+                <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+                    <div className="ad-desktop-wrapper">
+                        <SeznamAd zoneId={408654} width={970} height={210} />
+                    </div>
+                    <div className="ad-mobile-wrapper">
+                        <SeznamAd zoneId={408651} width={300} height={250} />
+                    </div>
                 </div>
 
                 <header style={{ textAlign: 'center', marginBottom: '40px' }}>
@@ -155,7 +164,7 @@ export default async function GpuPerformancePage({ params }) {
                     </h1>
                 </header>
 
-                <section style={{ marginBottom: '30px' }}>
+                <section style={{ marginBottom: '60px' }}>
                     <div className="fps-result-card" style={{ background: 'rgba(15, 17, 21, 0.95)', borderLeft: `8px solid ${verdictColor}`, borderRadius: '24px', padding: '50px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
                         <div className="fps-main-number" style={{ fontSize: 'clamp(80px, 15vw, 120px)', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0' }}>
                             {finalFps > 0 ? finalFps : 'N/A'} {finalFps > 0 && <span style={{ fontSize: '30px', color: verdictColor }}>FPS</span>}
@@ -166,26 +175,11 @@ export default async function GpuPerformancePage({ params }) {
                     </div>
                 </section>
 
-                {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
-                <div style={{ marginBottom: '40px' }}>
-                    <div className="ad-desktop-wrapper">
-                        <SeznamAd zoneId={408654} width={970} height={210} />
-                    </div>
-                    <div className="ad-mobile-wrapper">
-                        <SeznamAd zoneId={408651} width={300} height={250} />
-                    </div>
-                </div>
-
                 <section className="specs-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '60px' }}>
                     <div className="res-card"><div className="res-label">RESOLUTION</div><div className="res-val" style={{ color: '#66fcf1' }}>{resLabel}</div></div>
                     <div className="res-card"><div className="res-label">GPU VRAM</div><div className="res-val">{gpu.vram_gb} GB</div></div>
                     <div className="res-card"><div className="res-label">ARCHITECTURE</div><div className="res-val">{gpu.architecture}</div></div>
                 </section>
-
-                {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE (POUZE MOBIL) */}
-                <div className="ad-mobile-wrapper" style={{ marginBottom: '40px' }}>
-                    <SeznamAd zoneId={408651} width={300} height={250} />
-                </div>
 
                 <section style={{ marginBottom: '60px' }}>
                   <h2 className="section-h2" style={{ borderLeftColor: vendorColor }}><Activity size={28} /> {isEn ? 'DEEP DIVE' : 'DETAILNÍ ANALÝZA'}</h2>
@@ -207,8 +201,18 @@ export default async function GpuPerformancePage({ params }) {
                 </div>
             </main>
 
+            {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+            <div className="sticky-bottom-anchor">
+                <div className="ad-desktop-wrapper">
+                    <SeznamAd zoneId={408654} width={970} height={90} />
+                </div>
+                <div className="ad-mobile-wrapper">
+                    <SeznamAd zoneId={408651} width={300} height={100} />
+                </div>
+            </div>
+
             <style dangerouslySetInnerHTML={{__html: `
-                .radar-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(102,252,241,0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.05); margin-bottom: 20px; }
+                .radar-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(102,252,241,0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.05); }
                 .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
                 .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); }
 
@@ -224,6 +228,21 @@ export default async function GpuPerformancePage({ params }) {
                 .guru-support-btn, .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; text-decoration: none; text-transform: uppercase; transition: 0.3s; }
                 .guru-support-btn { background: #eab308; color: #000; }
                 .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
+
+                /* 🔥 STICKY BOTTOM ANCHOR CSS */
+                .sticky-bottom-anchor {
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    width: 100%;
+                    background: rgba(10, 11, 13, 0.98);
+                    border-top: 1px solid rgba(255, 255, 255, 0.1);
+                    z-index: 9999;
+                    padding: 10px 0;
+                    display: flex;
+                    justify-content: center;
+                    box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+                }
 
                 /* 🚀 RESPONSIVE ADS SYSTEM */
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
