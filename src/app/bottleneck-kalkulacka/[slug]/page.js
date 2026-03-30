@@ -3,10 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import BottleneckClient from '../BottleneckClient';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU BOTTLENECK CALCULATOR RESULT - V1.5 (MONEY FIX UPDATE)
- * 🚀 CÍL: Dynamické rozpoznání hry, Top Banner viewability a zavedení Sticky Bottom Anchoru.
+ * GURU BOTTLENECK CALCULATOR RESULT - V1.6 (HEUREKA BUTTONS UPDATE)
+ * 🚀 CÍL: Dynamické rozpoznání hry, Top Banner viewability a zavedení Sticky Bottom Anchoru + Heureka konverze.
  */
 
 export const dynamic = 'force-dynamic';
@@ -101,6 +102,11 @@ export default async function BottleneckResultPage({ params, searchParams }) {
                     initialGameSlug={selectedGameSlug}
                     initialResolution={resolutionStr}
                 />
+
+                {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (bezpečně vložené pod kalkulačku) 🔥 */}
+                <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
+                    <HeurekaButtons />
+                </div>
 
             </div>
 
