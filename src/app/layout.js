@@ -5,7 +5,7 @@ import Tracker from '../components/Tracker';
 import SocialTracker from '../components/SocialTracker';
 import SupportWidget from '../components/SupportWidget';
 import Navbar from '../components/Navbar'; 
-import { Analytics } from '@vercel/analytics/react';
+import { Analytics } from '@vercel analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
 import ShareWidget from '../components/ShareWidget';
 import CookieBanner from '../components/CookieBanner';
@@ -17,8 +17,8 @@ import SeznamInterstitial from '../components/SeznamInterstitial';
 import AdTracker from '../components/AdTracker';
 
 /**
- * GURU ROOT LAYOUT V6.7 (AD TRACKER INTEGRATION)
- * 🚀 CÍL: Slušná detekce blokování reklam při zachování stability layoutu + SPA Ad Tracker pro mobilní Viněty.
+ * GURU ROOT LAYOUT V6.8 (HEUREKA AFFILIATE READY)
+ * 🚀 CÍL: Integrace Heureka trixam.min.js při zachování 100% stability layoutu.
  */
 
 export const metadata = {
@@ -91,6 +91,14 @@ export default async function RootLayout({ children, params }) {
 
         {/* 🔥 SEZNAM SSP REKLAMY 🔥 */}
         <Script src="https://ssp.seznam.cz/static/js/ssp.js" strategy="afterInteractive" />
+
+        {/* 🔥 HEUREKA AFFILIATE SKRIPT 🔥 */}
+        <Script 
+          async 
+          type="text/javascript" 
+          src="//serve.affiliate.heureka.cz/js/trixam.min.js" 
+          strategy="lazyOnload" 
+        />
 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(websiteSchema) }} />
