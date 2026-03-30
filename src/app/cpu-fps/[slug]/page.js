@@ -1,23 +1,24 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { 
- Gamepad2, 
- ChevronRight, 
- Zap, 
- Swords, 
- Activity, 
- ArrowRight,
- Flame,
- Heart,
- Gauge,
- Cpu
+  Gamepad2, 
+  ChevronRight, 
+  Zap, 
+  Swords, 
+  Activity, 
+  ArrowRight,
+  Flame,
+  Heart,
+  Gauge,
+  Cpu
 } from 'lucide-react';
 import GuruAnalysisText from '../../../components/GuruAnalysisText';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU CPU FPS HUB V1.3 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru Above Fold, přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU CPU FPS HUB V1.4 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru Above Fold, přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka konverze.
  * Cesta: src/app/cpu-fps/[slug]/page.js
  */
 
@@ -172,6 +173,11 @@ export default async function CpuFpsHubPage(props) {
                 />
             </div>
         </section>
+
+        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
 
         <section className="semantic-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '60px' }}>
             <a href={`/${isEn ? 'en/' : ''}bottleneck/${safeSlug}-with-geforce-rtx-5080`} className="deep-link-card" style={{ borderTop: '4px solid #ff0055' }}>
