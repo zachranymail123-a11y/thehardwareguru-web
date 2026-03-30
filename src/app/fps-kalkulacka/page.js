@@ -3,10 +3,11 @@ import { Gamepad2, Monitor, Cpu, Info, ArrowRight, ChevronLeft, Zap, Sparkles, S
 import FpsCalculatorClient from './FpsCalculatorClient';
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
+import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU FPS ENGINE - V6.7 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, ochrana cache-killer enginu.
+ * GURU FPS ENGINE - V6.8 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, ochrana cache-killer enginu + Heureka konverze.
  */
 
 export const dynamic = 'force-dynamic';
@@ -77,6 +78,11 @@ export default async function FpsKalkulackaPage(props) {
 
         <div style={{ marginTop: '30px' }}>
           <FpsCalculatorClient gpus={gpuRes.data || []} cpus={cpuRes.data || []} games={gameRes.data || []} isEn={isEn} />
+        </div>
+
+        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (zobrazí se na hlavní stránce pod kalkulačkou) 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
+            <HeurekaButtons isEn={isEn} />
         </div>
 
         {/* TVŮJ PŮVODNÍ SILO GRID (Ponechán beze změny) */}
