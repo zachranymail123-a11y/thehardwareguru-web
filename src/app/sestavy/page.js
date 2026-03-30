@@ -9,8 +9,8 @@ import SeznamAd from '../../components/SeznamAd';
 import Link from 'next/link';
 
 /**
- * GURU HARDWARE HUB V3.2 (AFFILIATE FIX)
- * 🚀 CÍL: Agresivní affiliate konverze s přesnými a_bid parametry.
+ * GURU HARDWARE HUB V3.3 (HEUREKA TRACKING FIX)
+ * 🚀 CÍL: Přidána klíčová třída 'heureka-hn-link' k Heureka CTA.
  * 💰 EHUB ID: 71c85dea
  */
 
@@ -45,8 +45,6 @@ export default function HardwareHubPage(props) {
   const CUBENEST_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=231eaccc";
   const IPHONE_MARKET_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=2bcd6f9d";
   const JABKOLEVNE_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=85731c2c";
-  
-  // 🔥 OPRAVENÉ LINKY PODLE SCREENSHOTŮ
   const SMARTY_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06";
   const XM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=0ff74973";
 
@@ -110,10 +108,11 @@ export default function HardwareHubPage(props) {
               </ul>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="hub-cta-btn heureka-bg" data-trixam-positionid="276027">
+                {/* 🔥 PŘIDÁNA TŘÍDA heureka-hn-link */}
+                <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="hub-cta-btn heureka-bg heureka-hn-link" data-trixam-positionid="276027">
                   <Cpu size={20} /> {isEn ? "COMPARE CPUS" : "SROVNAT PROCESORY"}
                 </a>
-                <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="hub-cta-btn heureka-bg" data-trixam-positionid="276027">
+                <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="hub-cta-btn heureka-bg heureka-hn-link" data-trixam-positionid="276027">
                   <Monitor size={20} /> {isEn ? "COMPARE GPUS" : "SROVNAT GRAFIKY"}
                 </a>
             </div>
