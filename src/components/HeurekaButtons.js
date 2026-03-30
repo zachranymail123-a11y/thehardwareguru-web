@@ -1,15 +1,15 @@
 "use client";
 import React from 'react';
-import { Cpu, Monitor, Layers, Database, Search } from 'lucide-react';
+import { Cpu, Monitor, Layers, Database } from 'lucide-react';
 
 /**
- * GURU HEUREKA GLOBAL BUTTONS V1.4 (FIXED SEARCH PARAMETERS)
- * 🚀 CÍL: Svatá čtveřice PC buildu + Funkční vyhledávací bar ID 276035.
- * ✅ FIX: Parametr 'z' změněn na 1 (Display Type: Search), aby API neházelo chybu.
+ * GURU HEUREKA GLOBAL BUTTONS V1.6 (OFFICIAL TRIXAM UPDATE)
+ * 🚀 CÍL: Svatá čtveřice PC buildu + Oficiální Heureka Search Panel.
+ * ✅ FIX: Použití oficiálního Trixam skriptu a kontejneru pro ID 276035.
  */
 
 export default function HeurekaButtons({ isEn = false }) {
-  // 🔥 HEUREKA DEEP LINKS S UTM
+  // 🔥 HEUREKA DEEP LINKS S UTM (Zůstávají pro tlačítka)
   const hUtm = "utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
   const HEUREKA_CPU = `https://www.heureka.cz/?h%5Bfraze%5D=procesor#${hUtm}`;
   const HEUREKA_GPU = `https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta#${hUtm}`;
@@ -86,79 +86,27 @@ export default function HeurekaButtons({ isEn = false }) {
           font-family: sans-serif;
         }
 
-        /* 🔥 GURU SEARCH STYLY */
-        .h-search-wrap {
+        /* Styl pro oficiální Heureka widget, aby seděl do designu */
+        .heureka-search-container {
           margin-top: 10px;
-          padding: 20px;
-          background: rgba(255, 255, 255, 0.03);
-          border-radius: 24px;
-          border: 1px solid rgba(234, 179, 8, 0.2);
-        }
-
-        .h-search-label {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          color: #eab308;
-          font-size: 11px;
-          font-weight: 900;
-          text-transform: uppercase;
-          margin-bottom: 12px;
-          letter-spacing: 1px;
-        }
-
-        .h-search-form {
-          display: flex;
-          gap: 10px;
-        }
-
-        .h-search-input {
-          flex: 1;
-          padding: 12px 16px;
-          background: #0a0b0d;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 12px;
-          color: #fff;
-          font-size: 14px;
-          font-weight: 600;
-          outline: none;
-          transition: 0.3s;
-        }
-
-        .h-search-input:focus {
-          border-color: #eab308;
-        }
-
-        .h-search-submit {
-          background: #eab308;
-          border: none;
-          border-radius: 12px;
-          padding: 0 16px;
-          color: #000;
-          cursor: pointer;
-          transition: 0.3s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .h-search-submit:hover {
-          filter: brightness(1.1);
-          transform: scale(1.05);
+          width: 100%;
+          min-height: 100px;
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: 20px;
+          padding: 5px;
+          border: 1px dashed rgba(234, 179, 8, 0.3);
         }
         
         @media (max-width: 480px) {
           .h-banner-btn { padding: 14px 18px; gap: 15px; }
           .h-icon-box { width: 45px; height: 45px; }
-          .h-icon-box svg { width: 22px; height: 22px; }
           .h-title { font-size: 18px; }
           .h-subtitle { font-size: 11px; }
-          .h-search-wrap { padding: 15px; }
         }
       `}} />
 
-      {/* TLAČÍTKA ZE ZÁLOHY */}
-      <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="h-banner-btn heureka-hn-link" data-trixam-positionid="276027">
+      {/* Tlačítka ze zálohy */}
+      <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="h-banner-btn" data-trixam-positionid="276027">
         <div className="h-icon-box"><Cpu size={26} /></div>
         <div className="h-text-col">
           <span className="h-title">{isEn ? 'Processors' : 'Procesory'}</span>
@@ -166,7 +114,7 @@ export default function HeurekaButtons({ isEn = false }) {
         </div>
       </a>
 
-      <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="h-banner-btn heureka-hn-link" data-trixam-positionid="276026">
+      <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="h-banner-btn" data-trixam-positionid="276026">
         <div className="h-icon-box"><Monitor size={26} /></div>
         <div className="h-text-col">
           <span className="h-title">{isEn ? 'Graphic Cards' : 'Grafické karty'}</span>
@@ -174,7 +122,7 @@ export default function HeurekaButtons({ isEn = false }) {
         </div>
       </a>
 
-      <a href={HEUREKA_MB} target="_blank" rel="nofollow sponsored" className="h-banner-btn heureka-hn-link" data-trixam-positionid="276033">
+      <a href={HEUREKA_MB} target="_blank" rel="nofollow sponsored" className="h-banner-btn" data-trixam-positionid="276033">
         <div className="h-icon-box"><Layers size={26} /></div>
         <div className="h-text-col">
           <span className="h-title">{isEn ? 'Motherboards' : 'Základní desky'}</span>
@@ -182,7 +130,7 @@ export default function HeurekaButtons({ isEn = false }) {
         </div>
       </a>
 
-      <a href={HEUREKA_RAM} target="_blank" rel="nofollow sponsored" className="h-banner-btn heureka-hn-link" data-trixam-positionid="276034">
+      <a href={HEUREKA_RAM} target="_blank" rel="nofollow sponsored" className="h-banner-btn" data-trixam-positionid="276034">
         <div className="h-icon-box"><Database size={26} /></div>
         <div className="h-text-col">
           <span className="h-title">{isEn ? 'RAM Memory' : 'Operační paměti'}</span>
@@ -190,31 +138,23 @@ export default function HeurekaButtons({ isEn = false }) {
         </div>
       </a>
 
-      {/* 🔥 OPRAVENÝ VYHLEDÁVACÍ PANEL */}
+      {/* 🔥 OFICIÁLNÍ HEUREKA SEARCH PANEL DLE SCREENSHOTU */}
       {!isEn && (
-        <div className="h-search-wrap">
-          <div className="h-search-label">
-            <Search size={14} /> Hledat jiný hardware na Heurece:
-          </div>
-          <form 
-            action="https://www.heureka.cz/exit/276035/" 
-            method="GET" 
-            target="_blank" 
-            className="h-search-form"
-          >
-            {/* TADY BYL PROBLÉM: 'z' musí být 1, ne tvoje ID pozice */}
-            <input type="hidden" name="z" value="1" />
-            <input 
-              name="q" 
-              type="text" 
-              placeholder="Např. RTX 5080, Ryzen 9..." 
-              autoComplete="off"
-              className="h-search-input"
-            />
-            <button type="submit" className="h-search-submit">
-              <Search size={20} strokeWidth={3} />
-            </button>
-          </form>
+        <div className="heureka-search-container">
+          {/* Kód umístění */}
+          <div 
+            className="heureka-affiliate-searchpanel" 
+            data-trixam-positionid="276035" 
+            data-trixam-codetype="iframe" 
+            data-trixam-linktarget="top"
+          ></div>
+          
+          {/* Hlavní kód (Skript) */}
+          <script 
+            async 
+            type="text/javascript" 
+            src="//serve.affiliate.heureka.cz/js/trixam.min.js"
+          ></script>
         </div>
       )}
     </div>
