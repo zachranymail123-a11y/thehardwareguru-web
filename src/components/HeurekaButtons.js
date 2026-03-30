@@ -1,20 +1,38 @@
 "use client";
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Cpu, Monitor, Layers, Database } from 'lucide-react';
 
 /**
- * GURU HEUREKA GLOBAL BUTTONS V1.6 (OFFICIAL TRIXAM UPDATE)
- * 🚀 CÍL: Svatá čtveřice PC buildu + Oficiální Heureka Search Panel.
- * ✅ FIX: Použití oficiálního Trixam skriptu a kontejneru pro ID 276035.
+ * GURU HEUREKA GLOBAL BUTTONS V1.7 (RELIABLE LOAD FIX)
+ * 🚀 CÍL: Svatá čtveřice PC buildu + Vyhledávání, které naskočí hned napoprvé.
+ * ✅ FIX: Použití useEffect pro spolehlivé nahrání Trixam skriptu po vykreslení DOMu.
  */
 
 export default function HeurekaButtons({ isEn = false }) {
-  // 🔥 HEUREKA DEEP LINKS S UTM (Zůstávají pro tlačítka)
+  // 🔥 HEUREKA DEEP LINKS S UTM
   const hUtm = "utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
   const HEUREKA_CPU = `https://www.heureka.cz/?h%5Bfraze%5D=procesor#${hUtm}`;
   const HEUREKA_GPU = `https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta#${hUtm}`;
   const HEUREKA_MB = `https://www.heureka.cz/?h%5Bfraze%5D=zakladni+deska#${hUtm}`;
   const HEUREKA_RAM = `https://www.heureka.cz/?h%5Bfraze%5D=ram+pamet#${hUtm}`;
+
+  // Mechanismus pro spolehlivé načtení skriptu
+  useEffect(() => {
+    if (!isEn) {
+      const script = document.createElement('script');
+      script.src = "//serve.affiliate.heureka.cz/js/trixam.min.js";
+      script.async = true;
+      script.type = "text/javascript";
+      document.body.appendChild(script);
+
+      return () => {
+        // Úklid při opuštění stránky (volitelné)
+        if (document.body.contains(script)) {
+          document.body.removeChild(script);
+        }
+      };
+    }
+  }, [isEn]);
 
   return (
     <div className="heureka-global-buttons">
@@ -86,15 +104,17 @@ export default function HeurekaButtons({ isEn = false }) {
           font-family: sans-serif;
         }
 
-        /* Styl pro oficiální Heureka widget, aby seděl do designu */
         .heureka-search-container {
           margin-top: 10px;
           width: 100%;
-          min-height: 100px;
+          min-height: 110px;
           background: rgba(0, 0, 0, 0.2);
-          border-radius: 20px;
-          padding: 5px;
-          border: 1px dashed rgba(234, 179, 8, 0.3);
+          border-radius: 24px;
+          padding: 10px;
+          border: 1px dashed rgba(234, 179, 8, 0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         
         @media (max-width: 480px) {
@@ -105,7 +125,7 @@ export default function HeurekaButtons({ isEn = false }) {
         }
       `}} />
 
-      {/* Tlačítka ze zálohy */}
+      {/* TLAČÍTKA ZE ZÁLOHY - NEDOTČENO */}
       <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="h-banner-btn" data-trixam-positionid="276027">
         <div className="h-icon-box"><Cpu size={26} /></div>
         <div className="h-text-col">
@@ -138,23 +158,15 @@ export default function HeurekaButtons({ isEn = false }) {
         </div>
       </a>
 
-      {/* 🔥 OFICIÁLNÍ HEUREKA SEARCH PANEL DLE SCREENSHOTU */}
+      {/* 🔥 VYHLEDÁVAČ S OPRAVENÝM NAČÍTÁNÍM */}
       {!isEn && (
         <div className="heureka-search-container">
-          {/* Kód umístění */}
           <div 
             className="heureka-affiliate-searchpanel" 
             data-trixam-positionid="276035" 
             data-trixam-codetype="iframe" 
             data-trixam-linktarget="top"
           ></div>
-          
-          {/* Hlavní kód (Skript) */}
-          <script 
-            async 
-            type="text/javascript" 
-            src="//serve.affiliate.heureka.cz/js/trixam.min.js"
-          ></script>
         </div>
       )}
     </div>
