@@ -1,10 +1,11 @@
 import React from 'react';
 import { Trophy, Zap, ShieldCheck, Star, Swords, ChevronRight, TrendingUp } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU GPU RANKING ENGINE V2.1 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Maximální monetizace žebříčku a perfektní mobilní UI.
+ * GURU GPU RANKING ENGINE V2.2 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Maximální monetizace žebříčku a perfektní mobilní UI + Heureka konverze.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -57,10 +58,15 @@ export default async function GpuRankingPage({ searchParams }) {
                     <div className="ranking-badge">
                         <TrendingUp size={16} /> GURU RANKING ENGINE
                     </div>
-                    <h1 className="main-title" style={{ fontSize: 'clamp(2.5rem, 8vw, 4.5rem)', fontWeight: '950', fontStyle: 'italic', textTransform: 'uppercase', margin: '0 0 20px 0', lineHeight: '1', textShadow: '0 10px 40px rgba(0,0,0,0.8)' }}>
+                    <h1 className="main-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', fontStyle: 'italic', textTransform: 'uppercase', margin: '0 0 20px 0', lineHeight: '1', textShadow: '0 10px 40px rgba(0,0,0,0.8)' }}>
                         GPU <span style={{ color: '#66fcf1' }}>HIERARCHY</span> 2026
                     </h1>
                 </header>
+
+                {/* 🔥 PŘIDÁNO: Heureka tlačítka pod titulkem 🔥 */}
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+                    <HeurekaButtons isEn={isEn} />
+                </div>
 
                 {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
                 <div style={{ marginBottom: '50px' }}>
@@ -126,7 +132,7 @@ export default async function GpuRankingPage({ searchParams }) {
 
             </main>
             <style dangerouslySetInnerHTML={{__html: `
-                .ranking-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(102,252,241,0.3); border-radius: 50px; background: rgba(102,252,241,0.05); margin-bottom: 20px; }
+                .ranking-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(102,252,241,0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.05); margin-bottom: 20px; }
                 .ranking-row { transition: 0.2s; cursor: pointer; }
                 .ranking-row:hover { background: rgba(255,255,255,0.03) !important; }
                 .ranking-row:hover .gpu-name-text { color: #66fcf1 !important; transform: translateX(5px); }
