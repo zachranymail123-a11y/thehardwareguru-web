@@ -1,5 +1,6 @@
 import React from 'react';
 import Script from 'next/script';
+import Link from 'next/link'; // 🔥 OPRAVA: Chybějící import Linku
 import { 
   Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, 
   Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, 
@@ -9,8 +10,8 @@ import {
 import SeznamAd from '../components/SeznamAd';
 
 /**
- * GURU HOMEPAGE V18.8 - ULTIMATE MONEY MAKER
- * 🚀 CÍL: Maximální CTR na Sklik, eHUB provize (ID: 71c85dea) a SEO dominance.
+ * GURU HOMEPAGE V18.9 - BUILD FIX & MONEY MAKER
+ * 🚀 CÍL: Oprava ReferenceError a zachování maximální monetizace (ID: 71c85dea).
  */
 
 export async function generateMetadata({ params }) {
@@ -45,17 +46,10 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 12000) => {
   }
 };
 
-const getThumbnail = (post, supabaseUrl) => {
+const getThumbnail = (post) => {
   if (post.image_url) return post.image_url;
   if (post.video_id && post.video_id.length > 5) return `https://img.youtube.com/vi/${post.video_id}/hqdefault.jpg`;
   return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000';
-};
-
-const getBadgeInfo = (post, isEn) => {
-  const typeStr = (post.type || '').toLowerCase().trim();
-  if (typeStr.includes('leak')) return { text: 'LEAK', color: '#66fcf1', textColor: '#0b0c10', isLeak: true };
-  if (post.video_id && post.video_id.length > 5) return { text: 'VIDEO / SHORT', color: '#66fcf1', textColor: '#0b0c10' };
-  return { text: isEn ? 'HW NEWS' : 'HW NOVINKA', color: '#ff0000', textColor: '#fff' };
 };
 
 export default async function HomePage({ params }) {
@@ -69,23 +63,17 @@ export default async function HomePage({ params }) {
   const SHOPCOM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=3ea952dd";
   const CUBENEST_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=231eaccc";
 
-  let p = [], duelsRes = [], cpuDuelsRes = [], exp = [], t = [], tw = [], feat = [];
+  let p = [], duelsRes = [], cpuDuelsRes = [];
 
   try {
-    [p, duelsRes, cpuDuelsRes, exp, t, tw, feat] = await Promise.all([
+    [p, duelsRes, cpuDuelsRes] = await Promise.all([
       fetchWithTimeout(`${supabaseUrl}/rest/v1/posts?select=id,title,title_en,slug,slug_en,created_at,image_url,video_id,type&type=neq.expected&order=created_at.desc&limit=35`, fetchOpts),
       fetchWithTimeout(`${supabaseUrl}/rest/v1/gpu_duels?select=id,title_cs,title_en,slug,slug_en,created_at&order=created_at.desc&limit=11`, fetchOpts),
-      fetchWithTimeout(`${supabaseUrl}/rest/v1/cpu_duels?select=id,title_cs,title_en,slug,slug_en,created_at&order=created_at.desc&limit=11`, fetchOpts),
-      fetchWithTimeout(`${supabaseUrl}/rest/v1/posts?select=*&type=eq.expected&order=created_at.desc&limit=3`, fetchOpts),
-      fetchWithTimeout(`${supabaseUrl}/rest/v1/tipy?select=*&order=created_at.desc&limit=3`, fetchOpts),
-      fetchWithTimeout(`${supabaseUrl}/rest/v1/tweaky?select=*&order=created_at.desc&limit=3`, fetchOpts),
-      fetchWithTimeout(`${supabaseUrl}/rest/v1/game_deals?select=*&order=created_at.desc&limit=3`, fetchOpts)
+      fetchWithTimeout(`${supabaseUrl}/rest/v1/cpu_duels?select=id,title_cs,title_en,slug,slug_en,created_at&order=created_at.desc&limit=11`, fetchOpts)
     ]);
   } catch (err) {}
 
   const latestPosts = p || [];
-  const visualGpuDuels = (duelsRes || []).slice(0, 3);
-  const visualCpuDuels = (cpuDuelsRes || []).slice(0, 3);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#fff', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', fontFamily: 'sans-serif' }}>
@@ -143,7 +131,7 @@ export default async function HomePage({ params }) {
             <Link href="/cpuvs" className="btn-main cpu-btn"><Cpu size={14}/> CPU VS</Link>
             <Link href="/fps-kalkulacka" className="btn-main hub-btn"><Gamepad2 size={14}/> ROZJEDU TO?</Link>
             <Link href="/bottleneck-kalkulacka" className="btn-main cpu-btn"><Layers size={14}/> BOTTLENECK</Link>
-            <Link href="/support" className="btn-main active"><MessageSquare size={14}/> PORADNA</Link>
+            <Link href="/support" className="btn-main"><MessageSquare size={14}/> PORADNA</Link>
             <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" className="btn-main deal-btn"><Flame size={14}/> SLEVY HRY</a>
             <Link href="/sestavy" className="btn-main hub-btn"><ShoppingCart size={14}/> HW HUB</Link>
           </div>
@@ -169,12 +157,11 @@ export default async function HomePage({ params }) {
         </div>
       </section>
 
-      {/* --- 🚀 CONTENT GRID (EXISTUJÍCÍ LOGIKA) --- */}
+      {/* --- 🚀 CONTENT GRID --- */}
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px 100px' }}>
-        {/* Články, Duely, Tipy atd. - Používáme tvůj existující snapshot systém pro stabilitu */}
         <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px' }}>
           {latestPosts.slice(0, 6).map(post => (
-            <a key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
+            <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
               <div style={{ background: 'rgba(31, 40, 51, 0.95)', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(102, 252, 241, 0.1)' }}>
                 <img src={getThumbnail(post)} alt={post.title} style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
                 <div style={{ padding: '20px' }}>
@@ -182,7 +169,7 @@ export default async function HomePage({ params }) {
                   <div style={{ marginTop: '15px', color: '#66fcf1', fontWeight: 'bold', fontSize: '12px' }}>ČÍST VÍCE →</div>
                 </div>
               </div>
-            </a>
+            </Link>
           ))}
         </section>
       </main>
