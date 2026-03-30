@@ -15,8 +15,8 @@ import GuruAnalysisText from '../../../../components/GuruAnalysisText';
 import SeznamAd from '../../../../components/SeznamAd';
 
 /**
- * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.6 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Perfektní mobilní zobrazení a striktní separace reklam.
+ * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.7 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
  */
 
 export const runtime = "nodejs";
@@ -109,13 +109,23 @@ export default async function App(props) {
                   (fps1440p >= 60 ? { en: 'SMOOTH GAMING', cz: 'PLYNULÉ HRANÍ', color: '#f59e0b' } : { en: 'PLAYABLE', cz: 'HRATELNÉ', color: '#eab308' });
 
   return (
-    <div className="guru-benchmark-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-benchmark-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? `/en/cpu/${cpuSlug}` : `/cpu/${cpuSlug}`} className="guru-back-btn">
             <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
           </a>
+        </div>
+
+        {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
@@ -129,7 +139,7 @@ export default async function App(props) {
           </h1>
         </header>
 
-        <section style={{ marginBottom: '30px' }}>
+        <section style={{ marginBottom: '60px' }}>
             <div className="result-main-box" style={{ background: 'rgba(15, 17, 21, 0.95)', borderLeft: `10px solid ${verdict.color}`, borderRadius: '24px', padding: '50px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
                 <div className="fps-value" style={{ fontSize: 'clamp(70px, 18vw, 120px)', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0' }}>
                     {fps1440p} <span style={{ fontSize: '35px', color: verdict.color }}>FPS</span>
@@ -139,16 +149,6 @@ export default async function App(props) {
                 </div>
             </div>
         </section>
-
-        {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
-        <div style={{ marginBottom: '40px' }}>
-            <div className="ad-desktop-wrapper">
-                <SeznamAd zoneId={408654} width={970} height={210} />
-            </div>
-            <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
-                <SeznamAd zoneId={408651} width={300} height={250} />
-            </div>
-        </div>
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2"><Monitor size={28} /> {isEn ? 'SCALING' : 'ŠKÁLOVÁNÍ'}</h2>
@@ -163,7 +163,6 @@ export default async function App(props) {
             <div className="content-box-style">
                 <div className="guru-prose">
                     <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950' }}>{isEn ? `Performance Analysis` : `Analýza výkonu`}</h2>
-                    
                     <GuruAnalysisText 
                       cpuName={cpu.name} 
                       gpuName="GeForce RTX 5090" 
@@ -174,12 +173,6 @@ export default async function App(props) {
                       fps={fps1440p} 
                       isEn={isEn} 
                     />
-                    
-                    {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE */}
-                    <div className="ad-mobile-wrapper" style={{ marginTop: '30px' }}>
-                        <SeznamAd zoneId={408651} width={300} height={250} />
-                    </div>
-
                 </div>
             </div>
         </section>
@@ -190,6 +183,16 @@ export default async function App(props) {
             </a>
         </section>
       </main>
+
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #f59e0b; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(245, 158, 11, 0.3); transition: 0.3s; }
@@ -204,6 +207,21 @@ export default async function App(props) {
         .content-box-style { background: rgba(15, 17, 21, 0.95); padding: 45px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); }
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; }
         .battle-btn { display: inline-flex; align-items: center; gap: 12px; padding: 20px 45px; background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); color: #fff; border-radius: 18px; font-weight: 950; text-decoration: none; text-transform: uppercase; }
+
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
 
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
