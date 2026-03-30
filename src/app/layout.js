@@ -4,8 +4,9 @@ import SestavyBubble from '../components/SestavyBubble';
 import Tracker from '../components/Tracker'; 
 import SocialTracker from '../components/SocialTracker';
 import SupportWidget from '../components/SupportWidget';
+import PartnerWidget from '../components/PartnerWidget'; // 🔥 NOVÝ IMPORT
 import Navbar from '../components/Navbar'; 
-import { Analytics } from '@vercel analytics/react';
+import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
 import ShareWidget from '../components/ShareWidget';
 import CookieBanner from '../components/CookieBanner';
@@ -17,8 +18,8 @@ import SeznamInterstitial from '../components/SeznamInterstitial';
 import AdTracker from '../components/AdTracker';
 
 /**
- * GURU ROOT LAYOUT V6.8 (HEUREKA AFFILIATE READY)
- * 🚀 CÍL: Integrace Heureka trixam.min.js při zachování 100% stability layoutu.
+ * GURU ROOT LAYOUT V7.0 (MAX MONETIZATION)
+ * 🚀 CÍL: Integrace Heureky a nového PartnerWidgetu na každou stránku.
  */
 
 export const metadata = {
@@ -127,7 +128,6 @@ export default async function RootLayout({ children, params }) {
 
       <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         
-        {/* 🚀 GURU FIX: Sledovač změn URL pro mobilní Viněty a Interstitial */}
         <AdTracker />
 
         <div id="guru-env-bridge" style={{ display: 'none' }} data-url={envVars.NEXT_PUBLIC_SUPABASE_URL} data-key={envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY} />
@@ -143,25 +143,15 @@ export default async function RootLayout({ children, params }) {
         <style dangerouslySetInnerHTML={{__html: `
           .skyscraper-left, .skyscraper-right {
             position: fixed;
-            top: 120px; /* 🚀 POŘÁDNÁ MEZERA POD NAVBAR */
+            top: 120px;
             width: 300px;
             display: none;
-            z-index: 5; /* 🚀 NIŽŠÍ Z-INDEX: GURU NAVIGÁTOR BUDE NAD TÍM */
+            z-index: 5;
           }
-          
-          /* Upravená vzdálenost, aby reklama neujela mimo 1080p monitor */
           .skyscraper-left { left: calc(50% - 940px); }
           .skyscraper-right { right: calc(50% - 940px); }
-
-          /* Zobrazení na 1080p monitorech (pouze pravá reklama) */
-          @media (min-width: 1550px) {
-            .skyscraper-right { display: block; }
-          }
-
-          /* Ultraširoké monitory (obě reklamy) */
-          @media (min-width: 1950px) {
-            .skyscraper-left { display: block; }
-          }
+          @media (min-width: 1550px) { .skyscraper-right { display: block; } }
+          @media (min-width: 1950px) { .skyscraper-left { display: block; } }
         `}} />
 
         <aside className="skyscraper-left">
@@ -174,12 +164,9 @@ export default async function RootLayout({ children, params }) {
 
         <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden' }}>
           {children}
-
-          {/* 🚀 GURU VIRÁLNÍ WIDGET */}
           <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
              <ShareWidget isEn={isEn} />
           </div>
-
         </main>
 
         <footer style={{ padding: '60px 20px 40px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto', background: '#0a0b0d' }}>
@@ -190,11 +177,8 @@ export default async function RootLayout({ children, params }) {
             .copyright { color: #4b5563; font-size: 12px; margin-top: 20px; font-weight: 600; }
             .eeat-link { color: #6b7280; font-size: 11px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; transition: 0.2s; }
             .eeat-link:hover { color: #d1d5db; }
-            
-            /* GURU RESPONSIVE ADS */
             .ad-desktop-wrapper { display: flex; justify-content: center; }
             .ad-mobile-wrapper { display: none; }
-            
             @media (max-width: 768px) {
               .ad-desktop-wrapper { display: none; }
               .ad-mobile-wrapper { display: flex; justify-content: center; }
@@ -230,21 +214,13 @@ export default async function RootLayout({ children, params }) {
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginBottom: '30px' }}>
-            <a href={locale === 'en' ? "/en/about" : "/about"} className="eeat-link">
-              {locale === 'en' ? 'About Us' : 'O nás'}
-            </a>
+            <a href={locale === 'en' ? "/en/about" : "/about"} className="eeat-link">{locale === 'en' ? 'About Us' : 'O nás'}</a>
             <span style={{ color: '#333' }}>•</span>
-            <a href={locale === 'en' ? "/en/contact" : "/contact"} className="eeat-link">
-              {locale === 'en' ? 'Contact' : 'Kontakt'}
-            </a>
+            <a href={locale === 'en' ? "/en/contact" : "/contact"} className="eeat-link">{locale === 'en' ? 'Contact' : 'Kontakt'}</a>
             <span style={{ color: '#333' }}>•</span>
-            <a href={locale === 'en' ? "/en/privacy-policy" : "/privacy-policy"} className="eeat-link">
-              {locale === 'en' ? 'Privacy Policy' : 'Ochrana soukromí'}
-            </a>
+            <a href={locale === 'en' ? "/en/privacy-policy" : "/privacy-policy"} className="eeat-link">{locale === 'en' ? 'Privacy Policy' : 'Ochrana soukromí'}</a>
             <span style={{ color: '#333' }}>•</span>
-            <a href={locale === 'en' ? "/en/terms-of-service" : "/terms-of-service"} className="eeat-link">
-              {locale === 'en' ? 'Terms of Service' : 'Podmínky použití'}
-            </a>
+            <a href={locale === 'en' ? "/en/terms-of-service" : "/terms-of-service"} className="eeat-link">{locale === 'en' ? 'Terms of Service' : 'Podmínky použití'}</a>
           </div>
 
           <div className="copyright">
@@ -254,12 +230,11 @@ export default async function RootLayout({ children, params }) {
 
         <SestavyBubble />
         <SupportWidget />
+        <PartnerWidget /> {/* 🔥 NOVÝ VLEZLÝ WIDGET */}
         <AdBlockDetector />
         <CookieBanner />
         <Analytics />
-        
         <MobileAnchorAd />
-
       </body>
     </html>
   )
