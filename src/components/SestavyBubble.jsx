@@ -1,19 +1,13 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Brain, ChevronRight, X, Activity, Target, Cpu, Gamepad2, Flame, Lightbulb, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Brain, ChevronRight, X, Activity, Target, Cpu, Gamepad2, Flame, Lightbulb, RefreshCw, CheckCircle2, ShoppingCart } from 'lucide-react';
 
 /**
- * GURU AI NAVIGATOR - ULTIMATE PERFECTION EDITION (Fix, Filter & Mobile UX)
- * * Změny:
- * 1. Expand to 5: Nyní nabízí 5 článků pro vyšší CTR.
- * 2. Syntax Fix: Opraven mismatch tagu span/h4, který shazoval build.
- * 3. Module Recovery: Robustní fallback pro next/link a supabase v Canvasu.
- * 4. Supreme Anti-Cron Filter: Totální filtrace streamů (🔴) a shorts.
- * 5. UX: Zachován osobní pozdrav GURU průvodce.
- * 6. Mobile UX Fix: Panel je na mobilech (<768px) KOMPLETNĚ SKRYTÝ.
+ * GURU AI NAVIGATOR - MONEY MAKER EDITION V3.0
+ * 🚀 CÍL: Integrace nativního "Money Slotu" na 3. pozici pro maximální affiliate zisk.
  */
 
-// --- 🛡️ GURU SAFE MODULE LOADER (Fix pro chyby resolve/build) ---
+// --- 🛡️ GURU SAFE MODULE LOADER ---
 let Link = ({ children, ...props }) => <a {...props}>{children}</a>;
 let usePathname = () => '';
 let createClient = () => {
@@ -42,7 +36,7 @@ try {
   createClient = Supa.createClient;
 } catch (e) {}
 
-// --- GURU INIT: Základní nastavení ---
+// --- GURU INIT ---
 let initialUrl = '';
 let initialKey = '';
 if (typeof process !== 'undefined') {
@@ -89,7 +83,7 @@ export default function SestavyBubble() {
     }
   }, [pathname, isAdmin]);
 
-  // 🚀 GURU ULTIMATE AI ENGINE
+  // 🚀 GURU ULTIMATE AI ENGINE WITH MONEY SLOT
   useEffect(() => {
     if (isAdmin || typeof window === 'undefined') return;
 
@@ -132,7 +126,7 @@ export default function SestavyBubble() {
         const currentSlug = pathname.split('/').pop() || '';
         const keywords = currentSlug.split('-').filter(w => w.length > 3);
 
-        // 2. Fetch Data (Pool pro 5 doporučení)
+        // 2. Fetch Data
         const safeFetch = async (promise) => {
           const res = await promise;
           return { data: res.data || [] };
@@ -149,7 +143,7 @@ export default function SestavyBubble() {
         (dealsRes.data || []).forEach(d => combinedPool.push({ ...d, type: 'deal', source: 'deals', finalUrl: d.affiliate_link || `${langPrefix}/deals`, slug: d.title }));
         (tipsRes.data || []).forEach(t => combinedPool.push({ ...t, type: 'tip', source: 'tipy', finalUrl: `${langPrefix}/tipy/${isEn ? (t.slug_en || t.slug) : t.slug}` }));
 
-        // 🚀 3. SUPREME ANTI-CRON FILTER
+        // 3. Filtering
         let filteredItems = combinedPool.filter(item => {
           const title = (item.title || '').toLowerCase();
           const isCurrent = item.slug === currentSlug || item.slug_en === currentSlug;
@@ -176,8 +170,20 @@ export default function SestavyBubble() {
           return { ...item, score };
         });
 
-        // 🚀 GURU FIX: TOP 5 místo TOP 3
-        const top5 = scoredItems.sort((a, b) => b.score - a.score).slice(0, 5);
+        // 🚀 GURU MONEY SLOT LOGIC
+        const finalRecs = scoredItems.sort((a, b) => b.score - a.score).slice(0, 4);
+        
+        // Affiliate tip dne (Money Slot)
+        const guruSpecialOffer = {
+          title: isEn ? "GURU PICK: RTX 5080 16GB Stock Check" : "GURU TIP: RTX 5080 skladem za super cenu!",
+          image_url: "https://images.unsplash.com/photo-1591488320449-011701bb6704?w=100&q=80",
+          finalUrl: "https://www.hrkgame.com/#a_aid=TheHardwareGuru", // Sem dej svůj hlavní affiliate link
+          type: 'money-slot',
+          isExternal: true
+        };
+
+        // Vložíme reklamu na 3. pozici (index 2)
+        finalRecs.splice(2, 0, guruSpecialOffer);
         
         setTimeout(() => {
           if (!isMounted) return;
@@ -186,7 +192,7 @@ export default function SestavyBubble() {
           else if (dominantType === 'deals') { setUserProfile(isEn ? 'Deal Hunter' : 'Lovec Slev'); setArchetypeIcon(<Flame size={12} color="#f97316" />); }
           else { setUserProfile(isEn ? 'Tech Padawan' : 'Tech Učeň'); setArchetypeIcon(<Lightbulb size={12} color="#a855f7" />); }
           
-          setRecommendations(top5);
+          setRecommendations(finalRecs);
           setIsScanning(false);
         }, 800);
 
@@ -210,7 +216,6 @@ export default function SestavyBubble() {
         @keyframes scanBar { 0% { width: 0%; opacity: 1; } 90% { width: 100%; opacity: 1; } 100% { width: 100%; opacity: 0; } }
         @keyframes fadeInStagger { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 
-        /* 🚀 GURU MOBILE UX FIX: Zcela skryje celou lištu na mobilech */
         .guru-ai-container { position: fixed; bottom: 20px; left: 20px; z-index: 9998; animation: guruSlideUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; font-family: sans-serif; }
         @media (max-width: 768px) { .guru-ai-container { display: none !important; } }
 
@@ -237,7 +242,10 @@ export default function SestavyBubble() {
         .guru-ai-rec-item:nth-child(5) { animation-delay: 0.5s; }
 
         .guru-ai-rec-item:hover { background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); transform: translateX(5px); }
-        .guru-ai-rec-item:last-child { margin-bottom: 0; }
+        
+        /* Special style for Money Slot */
+        .guru-money-slot { border: 1px solid rgba(249, 115, 22, 0.3) !important; background: rgba(249, 115, 22, 0.05) !important; }
+        .guru-money-slot:hover { border-color: #f97316 !important; background: rgba(249, 115, 22, 0.15) !important; }
 
         .guru-reroll-btn {
           background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #9ca3af;
@@ -252,7 +260,6 @@ export default function SestavyBubble() {
           box-shadow: 0 10px 20px rgba(168, 85, 247, 0.4); animation: guruPulse 2s infinite;
           border: 2px solid #e9d5ff; transition: 0.3s;
         }
-        .guru-ai-minimized:hover { transform: scale(1.1) rotate(5deg); }
       `}</style>
 
       {isMinimized ? (
@@ -311,12 +318,16 @@ export default function SestavyBubble() {
               <>
                 {recommendations.map((post, idx) => {
                   const title = isEn ? (post.title_en || post.title) : post.title;
-                  const isExternal = post.finalUrl.startsWith('http');
+                  const isExternal = post.finalUrl?.startsWith('http') || post.isExternal;
                   
                   let badgeText = isEn ? 'READ MORE' : 'ČÍST VÍCE';
                   let badgeColor = '#a855f7'; 
+                  let isMoney = post.type === 'money-slot';
                   
-                  if (post.type === 'deal') {
+                  if (isMoney) {
+                    badgeText = isEn ? 'GURU PICK' : 'GURU DOPORUČUJE';
+                    badgeColor = '#f97316';
+                  } else if (post.type === 'deal') {
                     badgeText = isEn ? `BUY (${post.price_en || ''})` : `KOUPIT (${post.price_cs || ''})`;
                     badgeColor = '#f97316'; 
                   } else if (post.type === 'game' || post.type === 'expected') {
@@ -333,28 +344,28 @@ export default function SestavyBubble() {
                     <WrapperTag 
                       key={idx + rerollTrigger}
                       {...wrapperProps}
-                      className="guru-ai-rec-item"
+                      className={`guru-ai-rec-item ${isMoney ? 'guru-money-slot' : ''}`}
                     >
                       <img 
                         src={post.image_url || 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?w=100&q=80'} 
                         alt={title}
-                        style={{ width: '45px', height: '45px', borderRadius: '6px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.15)' }}
+                        style={{ width: '45px', height: '45px', borderRadius: '6px', objectFit: 'cover', border: isMoney ? '1px solid rgba(249,115,22,0.4)' : '1px solid rgba(255,255,255,0.15)' }}
                       />
                       <div style={{ flex: 1 }}>
-                        <h5 style={{ color: '#e5e7eb', fontSize: '12px', fontWeight: 'bold', margin: '0 0 3px 0', lineHeight: '1.2', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        <h5 style={{ color: isMoney ? '#fff' : '#e5e7eb', fontSize: '12px', fontWeight: 'bold', margin: '0 0 3px 0', lineHeight: '1.2', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                           {title}
                         </h5>
-                        <span style={{ color: badgeColor, fontSize: '9px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                          {badgeText}
+                        <span style={{ color: badgeColor, fontSize: '9px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          {isMoney && <ShoppingCart size={10} />} {badgeText}
                         </span>
                       </div>
-                      <ChevronRight size={16} color="#9ca3af" />
+                      <ChevronRight size={16} color={isMoney ? "#f97316" : "#9ca3af"} />
                     </WrapperTag>
                   )
                 })}
                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
                   <button className="guru-reroll-btn" onClick={() => setRerollTrigger(prev => prev + 1)}>
-                    <RefreshCw size={10} className="reroll-icon" /> {isEn ? 'REROLL' : 'PŘEGENEROVAT'}
+                    <RefreshCw size={10} /> {isEn ? 'REROLL' : 'PŘEGENEROVAT'}
                   </button>
                 </div>
               </>
