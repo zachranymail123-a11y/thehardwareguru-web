@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { ShoppingCart, Zap, Apple, RefreshCw, Cpu, Award, ChevronRight, ChevronLeft, X, Search, Flame, Monitor, Gamepad2, Smartphone } from 'lucide-react';
 
 /**
- * GURU PARTNER WIDGET V2.4 - DATA INTEGRATION FIX
- * 🚀 CÍL: Sjednocena ID pro Smarty a XM s reálnými screenshoty z eHUBu.
+ * GURU PARTNER WIDGET V2.5 - HEUREKA TRACKING FIX
+ * 🚀 CÍL: Přidána klíčová třída 'heureka-hn-link' pro trixam.min.js.
  * 💰 EHUB ID: 71c85dea | Heureka ID: 276027
  */
 
@@ -26,7 +26,7 @@ export default function PartnerWidget() {
   const IPHONE_MARKET_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=2bcd6f9d";
   const JABKOLEVNE_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=85731c2c";
   
-  // 🔥 EHUB TRACKING LINKS - OPRAVENÁ ID DLE SCREENSHOTŮ (V2.4)
+  // 🔥 EHUB TRACKING LINKS - OPRAVENÁ ID
   const SMARTY_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06";
   const XM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=0ff74973";
   
@@ -201,8 +201,8 @@ export default function PartnerWidget() {
 
         <div className="panel-content-scrollable">
           
-          {/* 🔥 HEUREKA DEEP LINKS - PROCESORY (affiliate) */}
-          <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="money-row heureka-gold" data-trixam-positionid="276027">
+          {/* 🔥 HEUREKA DEEP LINKS - Přidána třída heureka-hn-link */}
+          <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="money-row heureka-gold heureka-hn-link" data-trixam-positionid="276027">
             <div className="m-icon" style={{ backgroundColor: '#eab30820', color: '#eab308' }}>
               <Cpu size={22} />
             </div>
@@ -212,8 +212,8 @@ export default function PartnerWidget() {
             </div>
           </a>
 
-          {/* 🔥 HEUREKA DEEP LINKS - GRAFIKY (affiliate) */}
-          <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="money-row heureka-gold" data-trixam-positionid="276027">
+          {/* 🔥 HEUREKA DEEP LINKS - Přidána třída heureka-hn-link */}
+          <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="money-row heureka-gold heureka-hn-link" data-trixam-positionid="276027">
             <div className="m-icon" style={{ backgroundColor: '#eab30820', color: '#eab308' }}>
               <Monitor size={22} />
             </div>
