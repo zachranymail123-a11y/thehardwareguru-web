@@ -4,10 +4,11 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart, Info, Share2, Cpu, Monitor } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU TWEAK ENGINE - DETAIL V2.5 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU TWEAK ENGINE - DETAIL V2.6 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchor, eliminace hluchých míst + Heureka konverze.
  */
 
 const supabase = createClient(
@@ -177,6 +178,11 @@ export default async function TweakDetail({ params }) {
 
           <div className="guru-prose">
               <div dangerouslySetInnerHTML={{ __html: content }} />
+          </div>
+
+          {/* 🔥 PŘIDÁNO: Heureka tlačítka pod textem návodu 🔥 */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
+              <HeurekaButtons isEn={isEn} />
           </div>
 
           {tweak.affiliate_link && (
