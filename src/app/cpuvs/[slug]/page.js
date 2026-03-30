@@ -7,10 +7,11 @@ import {
 } from 'lucide-react';
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; 
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V76.3 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", smazání dead-zóny na konci, přidání Sticky Bottom Anchor.
+ * GURU CPU DUELS ENGINE - DETAIL V76.4 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", smazání dead-zóny na konci, přidání Sticky Bottom Anchor + Heureka konverze.
  */
 
 export const runtime = "nodejs";
@@ -257,8 +258,13 @@ export default async function CpuDuelDetail(props) {
           </div>
         </section>
 
+        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (CTA pod tabulkou specifikací) 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
+
         <section style={{ marginBottom: '60px' }}>
-            <div className="bottleneck-cta" style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+            <div className="bottleneck-cta" style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', alignItems: 'center', justify-content: 'space-between', flexWrap: 'wrap', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
                 <div>
                     <h3 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase' }}>{isEn ? 'BOTTLENECK CHECK' : 'KONTROLA BOTTLENECKU'}</h3>
                     <p style={{ color: '#9ca3af', margin: 0 }}>{isEn ? `Will your GPU handle the ${normalizeName((perfWinner || cpuA).name)}?` : `Bude tvá grafika stačit na procesor ${normalizeName((perfWinner || cpuA).name)}?`}</p>
