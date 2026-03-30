@@ -5,8 +5,8 @@ import { Book, ChevronRight, Search, Heart, Flame, ShieldCheck } from 'lucide-re
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU GLOSSARY ENGINE V2.2 (MOBILE OPTIMIZED & ADS SEPARATION)
- * 🚀 CÍL: 100% monetizace slovníku a perfektní mobilní přístup k technickým znalostem.
+ * GURU GLOSSARY ENGINE V2.3 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
  */
 
 export const runtime = "nodejs";
@@ -78,6 +78,115 @@ export default async function SlovnikPage(props) {
     <div className="guru-glossary-wrapper" style={pageWrapper}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
 
+      <main className="inner-container" style={{ maxWidth: '1300px', margin: '60px auto', padding: '0 20px', width: '100%', flex: '1 0 auto' }}>
+        <header className="header-box" style={{ textAlign: 'center', marginBottom: '60px' }}>
+            <Book size={64} color="#a855f7" style={{ margin: '0 auto 25px', filter: 'drop-shadow(0 0 15px rgba(168, 85, 247, 0.4))' }} />
+            <h1 className="title-h1" style={titleStyle}>
+              {isEn ? <>GURU <span style={{ color: '#a855f7' }}>GLOSSARY</span></> : <>GURU HARDWARE <span style={{ color: '#a855f7' }}>SLOVNÍK</span></>}
+            </h1>
+            <p className="subtitle-p" style={{ marginTop: '20px', color: '#d1d5db', fontWeight: '700', fontSize: '20px' }}>
+              {isEn ? 'Elite technical knowledge starts here.' : 'Tvé technické znalosti začínají zde.'}
+            </p>
+        </header>
+
+        <form action={isEn ? "/en/slovnik" : "/slovnik"} method="GET" className="search-container">
+          <Search size={24} color="#a855f7" style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)' }} />
+          <input 
+            name="q"
+            type="text" 
+            defaultValue={query}
+            placeholder={isEn ? "Decode technical terms..." : "Hledat v databázi pojmů..."} 
+            className="search-input"
+          />
+        </form>
+
+        {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+        <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
+
+        {filteredItems.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '100px', color: '#4b5563', fontWeight: 'bold' }}>
+            {isEn ? 'NO TERMS MATCH YOUR SEARCH' : 'HLEDANÝ POJEM NENALEZEN'}
+          </div>
+        ) : (
+          <div className="term-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '30px' }}>
+            {filteredItems.map((pojem) => {
+              const displayTitle = (isEn && pojem.title_en) ? pojem.title_en : pojem.title;
+              const displayDesc = (isEn && pojem.description_en) ? pojem.description_en : pojem.description;
+              const displaySlug = (isEn && pojem.slug_en) ? pojem.slug_en : pojem.slug;
+
+              return (
+                    <Link key={pojem.id} href={isEn ? `/en/slovnik/${displaySlug}` : `/slovnik/${displaySlug}`} className="term-card">
+                        <h2 style={{ color: '#a855f7', margin: '0 0 15px 0', fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
+                            {displayTitle}
+                        </h2>
+                        <p style={{ color: '#d1d5db', fontSize: '15px', lineHeight: '1.6', margin: '0 0 25px 0', flexGrow: 1, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {displayDesc}
+                        </p>
+                        <div style={{ color: '#a855f7', fontWeight: '950', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                            {isEn ? 'DECRYPT DETAIL' : 'ZOBRAZIT DETAIL'} <ChevronRight size={18} />
+                        </div>
+                    </Link>
+              );
+            })}
+          </div>
+        )}
+
+        <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
+          <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
+            {isEn ? "Want to expand your hardware knowledge? Support the Guru project." : "Chceš dál rozšiřovat své HW znalosti? Podpoř projekt Guru."}
+          </h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
+            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn" style={{ flex: '1 1 280px' }}>
+              <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
+            </a>
+            <Link href={isEn ? "/en/support" : "/support"} className="guru-support-btn" style={{ flex: '1 1 280px' }}>
+              <Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
+            </Link>
+          </div>
+        </div>
+      </main>
+
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
+
+      <footer className="footer-box" style={footerStyle}>
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <h2 style={{ color: '#a855f7', marginBottom: '30px', textTransform: 'uppercase', fontWeight: '950', fontSize: '36px', letterSpacing: '-1px' }}>
+            {isEn ? 'ABOUT GURU PROJECT' : 'O PROJEKTU'}
+          </h2>
+          <p style={{ lineHeight: '1.9', fontSize: '18px', color: '#e5e7eb', marginBottom: '45px', fontWeight: '500' }}>
+            {isEn 
+              ? "Welcome to The Hardware Guru! I am your guide to modern technology and hardcore hardware. Mission: help you build better PCs and understand complex technical systems."
+              : "Vítej ve světě The Hardware Guru! Jsem tvůj průvodce moderní technologií a hardwarem. Moje mise je jednoduchá: pomáhat ti stavět lepší PC a chápat složité pojmy."
+            }
+          </p>
+          
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', marginBottom: '50px' }}>
+            <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ color: '#53fc18' }}>KICK STREAM</a>
+            <a href="https://www.youtube.com/@thehardwareguru_czech" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ color: '#ff0000' }}>YOUTUBE</a>
+            <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ color: '#5865F2' }}>DISCORD</a>
+          </div>
+          
+          <p style={{ fontSize: '13px', color: '#444', fontWeight: 'bold', letterSpacing: '2px' }}>
+            © {new Date().getFullYear()} THE HARDWARE GURU SYSTEM • ELITE TECH DATABASE
+          </p>
+        </div>
+      </footer>
+
       <style dangerouslySetInnerHTML={{ __html: `
         .term-card { 
             background: rgba(10, 11, 13, 0.9); 
@@ -106,12 +215,26 @@ export default async function SlovnikPage(props) {
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
 
-        /* 🚀 RESPONSIVE ADS SYSTEM */
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
+
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
 
         @media (max-width: 768px) {
-            .guru-glossary-wrapper { padding-top: 80px !important; }
+            .guru-glossary-wrapper { padding-top: 80px !important; padding-bottom: 160px !important; }
             .ad-desktop-wrapper { display: none !important; }
             .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
             .header-box { margin-bottom: 40px !important; }
@@ -125,115 +248,6 @@ export default async function SlovnikPage(props) {
             .footer-box h2 { font-size: 1.8rem !important; }
         }
       `}} />
-
-      <main className="inner-container" style={{ maxWidth: '1300px', margin: '60px auto', padding: '0 20px', width: '100%', flex: '1 0 auto' }}>
-        <header className="header-box" style={{ textAlign: 'center', marginBottom: '60px' }}>
-            <Book size={64} color="#a855f7" style={{ margin: '0 auto 25px', filter: 'drop-shadow(0 0 15px rgba(168, 85, 247, 0.4))' }} />
-            <h1 className="title-h1" style={titleStyle}>
-              {isEn ? <>GURU <span style={{ color: '#a855f7' }}>GLOSSARY</span></> : <>GURU HARDWARE <span style={{ color: '#a855f7' }}>SLOVNÍK</span></>}
-            </h1>
-            <p className="subtitle-p" style={{ marginTop: '20px', color: '#d1d5db', fontWeight: '700', fontSize: '20px' }}>
-              {isEn ? 'Elite technical knowledge starts here.' : 'Tvé technické znalosti začínají zde.'}
-            </p>
-        </header>
-
-        <form action={isEn ? "/en/slovnik" : "/slovnik"} method="GET" className="search-container">
-          <Search size={24} color="#a855f7" style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)' }} />
-          <input 
-            name="q"
-            type="text" 
-            defaultValue={query}
-            placeholder={isEn ? "Decode technical terms..." : "Hledat v databázi pojmů..."} 
-            className="search-input"
-          />
-        </form>
-
-        {/* 🔥 SEZNAM AD #1: TOP LEADERBOARD (STRIKTNÍ SEPARACE) */}
-        <div style={{ marginBottom: '60px' }}>
-            <div className="ad-desktop-wrapper">
-                <SeznamAd zoneId={408654} width={970} height={210} />
-            </div>
-            <div className="ad-mobile-wrapper">
-                <SeznamAd zoneId={408651} width={300} height={250} />
-            </div>
-        </div>
-
-        {filteredItems.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '100px', color: '#4b5563', fontWeight: 'bold' }}>
-            {isEn ? 'NO TERMS MATCH YOUR SEARCH' : 'HLEDANÝ POJEM NENALEZEN'}
-          </div>
-        ) : (
-          <div className="term-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '30px' }}>
-            {filteredItems.map((pojem, index) => {
-              const displayTitle = (isEn && pojem.title_en) ? pojem.title_en : pojem.title;
-              const displayDesc = (isEn && pojem.description_en) ? pojem.description_en : pojem.description;
-              const displaySlug = (isEn && pojem.slug_en) ? pojem.slug_en : pojem.slug;
-
-              return (
-                <React.Fragment key={pojem.id}>
-                    <Link href={isEn ? `/en/slovnik/${displaySlug}` : `/slovnik/${displaySlug}`} className="term-card">
-                        <h2 style={{ color: '#a855f7', margin: '0 0 15px 0', fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
-                            {displayTitle}
-                        </h2>
-                        <p style={{ color: '#d1d5db', fontSize: '15px', lineHeight: '1.6', margin: '0 0 25px 0', flexGrow: 1, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                            {displayDesc}
-                        </p>
-                        <div style={{ color: '#a855f7', fontWeight: '950', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                            {isEn ? 'DECRYPT DETAIL' : 'ZOBRAZIT DETAIL'} <ChevronRight size={18} />
-                        </div>
-                    </Link>
-
-                    {/* 🔥 SEZNAM AD #2: GRID INJECTION (POUZE MOBIL PO 2. POJMU) */}
-                    {index === 1 && (
-                        <div className="ad-mobile-wrapper" style={{ margin: '10px 0' }}>
-                            <SeznamAd zoneId={408651} width={300} height={250} />
-                        </div>
-                    )}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        )}
-
-        {/* 🚀 GURU GLOBÁLNÍ CTA TLAČÍTKA */}
-        <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
-          <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
-            {isEn ? "Want to expand your hardware knowledge? Support the Guru project." : "Chceš dál rozšiřovat své HW znalosti? Podpoř projekt Guru."}
-          </h4>
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
-            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn" style={{ flex: '1 1 280px' }}>
-              <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
-            </a>
-            <Link href={isEn ? "/en/support" : "/support"} className="guru-support-btn" style={{ flex: '1 1 280px' }}>
-              <Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
-            </Link>
-          </div>
-        </div>
-      </main>
-
-      <footer className="footer-box" style={footerStyle}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <h2 style={{ color: '#a855f7', marginBottom: '30px', textTransform: 'uppercase', fontWeight: '950', fontSize: '36px', letterSpacing: '-1px' }}>
-            {isEn ? 'ABOUT GURU PROJECT' : 'O PROJEKTU'}
-          </h2>
-          <p style={{ lineHeight: '1.9', fontSize: '18px', color: '#e5e7eb', marginBottom: '45px', fontWeight: '500' }}>
-            {isEn 
-              ? "Welcome to The Hardware Guru! I am your guide to modern technology and hardcore hardware. Mission: help you build better PCs and understand complex technical systems."
-              : "Vítej ve světě The Hardware Guru! Jsem tvůj průvodce moderní technologií a hardwarem. Moje mise je jednoduchá: pomáhat ti stavět lepší PC a chápat složité pojmy."
-            }
-          </p>
-          
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', marginBottom: '50px' }}>
-            <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ color: '#53fc18' }}>KICK STREAM</a>
-            <a href="https://www.youtube.com/@thehardwareguru_czech" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ color: '#ff0000' }}>YOUTUBE</a>
-            <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" className="social-btn" style={{ color: '#5865F2' }}>DISCORD</a>
-          </div>
-          
-          <p style={{ fontSize: '13px', color: '#444', fontWeight: 'bold', letterSpacing: '2px' }}>
-            © {new Date().getFullYear()} THE HARDWARE GURU SYSTEM • ELITE TECH DATABASE
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }
