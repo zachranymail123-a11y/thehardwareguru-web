@@ -25,8 +25,8 @@ import GuruAnalysisText from '../../../../components/GuruAnalysisText';
 import SeznamAd from '../../../../components/SeznamAd';
 
 /**
- * GURU FPS HUNTER V1.6 (MOBILE OPTIMIZED + ALGO FALLBACK + SEO HUB)
- * 🚀 CÍL: Dynamické počítání chybějících her (např. GTA V) a zaplátování dead-endů SEO hubem.
+ * GURU FPS HUNTER V1.7 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP reklamy Above Fold, přidání Sticky Bottom Anchoru, odstranění hluchých zón.
  */
 
 export const runtime = "nodejs";
@@ -102,10 +102,20 @@ export default async function GpuFpsHunterPage(props) {
   };
 
   return (
-    <div className="guru-hunter-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-hunter-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <main className="inner-container" style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
+        {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
+
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div className="hunter-badge">
             <Gamepad2 size={16} /> GURU FPS HUNTER
@@ -116,22 +126,11 @@ export default async function GpuFpsHunterPage(props) {
           </h1>
         </header>
 
-        {/* 🔥 SEZNAM AD #1: TOP PLACEMENT (STRIKTNÍ SEPARACE) */}
-        <div style={{ marginBottom: '40px' }}>
-            <div className="ad-desktop-wrapper">
-                <SeznamAd zoneId={408654} width={970} height={210} />
-            </div>
-            <div className="ad-mobile-wrapper">
-                <SeznamAd zoneId={408651} width={300} height={250} />
-            </div>
-        </div>
-
-        {/* 🚀 HLAVNÍ FPS MATRIX S ALGORITMICKÝM FALLBACKEM PRO CHYBĚJÍCÍ DATA */}
+        {/* 🚀 HLAVNÍ FPS MATRIX S ALGORITMICKÝM FALLBACKEM */}
         <div className="fps-matrix-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px', marginBottom: '60px', marginTop: '40px' }}>
-          {gamesToShow.map((game, index) => {
+          {gamesToShow.map((game) => {
             let fpsValue = Number(fpsData[`${game.key}_1440p`] || fpsData[`${game.key}_1080p`] || 0);
 
-            // 🚀 GURU ALGORITHMIC FALLBACK: Pokud hra nemá uložená data v DB (např. nově přidané GTA V), vypočítej je na letu.
             if (fpsValue === 0) {
                 const gameDataMap = {
                     'cyberpunk_2077': { gpu_weight: 1.5, fps_scale: 1.2 },
@@ -142,46 +141,34 @@ export default async function GpuFpsHunterPage(props) {
                     'generic': { gpu_weight: 1.0, fps_scale: 1.4 }
                 };
                 const gData = gameDataMap[game.key] || gameDataMap['generic'];
-                // Předpokládáme 1440p pro výchozí zobrazení (resMultiplier = 1.5)
                 const gpuEffective = (Number(gpu.performance_index) || 100) / 1.5;
                 const rawGpuFps = (gpuEffective / (gData.gpu_weight || 1)) * gData.fps_scale;
-                // Pro GPU FPS Hunter nepředpokládáme CPU bottleneck, takže počítáme jen čistý GPU tah
                 fpsValue = Math.max(1, Math.round(rawGpuFps));
             }
 
             const verdict = getVerdict(fpsValue);
 
             return (
-              <React.Fragment key={game.id}>
-                <a href={`/${isEn ? 'en/' : ''}gpu-fps/${safeSlug}/${game.id.replace(/_/g, '-')}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <div className="game-fps-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '30px', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: '0.3s' }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: verdict.color }}></div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-                      <h3 style={{ fontSize: '18px', fontWeight: '950', textTransform: 'uppercase', margin: 0 }}>{game.name}</h3>
-                      <span style={{ fontSize: '10px', fontWeight: '950', color: verdict.color, letterSpacing: '1px' }}>1440p ULTRA</span>
-                    </div>
-                    <div className="fps-main-val" style={{ fontSize: '64px', fontWeight: '950', color: '#fff', lineHeight: '1' }}>
-                      {fpsValue > 0 ? fpsValue : 'N/A'} <span style={{ fontSize: '20px', color: '#4b5563' }}>FPS</span>
-                    </div>
-                    <div style={{ marginTop: '15px', color: verdict.color, fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>{verdict.text}</span>
-                      <ChevronRight size={16} />
-                    </div>
+              <a key={game.id} href={`/${isEn ? 'en/' : ''}gpu-fps/${safeSlug}/${game.id.replace(/_/g, '-')}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div className="game-fps-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '30px', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: '0.3s' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: verdict.color }}></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: '950', textTransform: 'uppercase', margin: 0 }}>{game.name}</h3>
+                    <span style={{ fontSize: '10px', fontWeight: '950', color: verdict.color, letterSpacing: '1px' }}>1440p ULTRA</span>
                   </div>
-                </a>
-
-                {/* 🔥 SEZNAM AD #2: GRID INJECTION (POUZE MOBIL) */}
-                {index === 1 && (
-                  <div className="ad-mobile-wrapper" style={{ margin: '10px 0' }}>
-                    <SeznamAd zoneId={408651} width={300} height={250} />
+                  <div className="fps-main-val" style={{ fontSize: '64px', fontWeight: '950', color: '#fff', lineHeight: '1' }}>
+                    {fpsValue > 0 ? fpsValue : 'N/A'} <span style={{ fontSize: '20px', color: '#4b5563' }}>FPS</span>
                   </div>
-                )}
-              </React.Fragment>
+                  <div style={{ marginTop: '15px', color: verdict.color, fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{verdict.text}</span>
+                    <ChevronRight size={16} />
+                  </div>
+                </div>
+              </a>
             );
           })}
         </div>
 
-        {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT */}
         <section style={{ marginBottom: '60px' }}>
             <div className="analysis-box" style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950' }}>{isEn ? 'Performance Analysis' : 'Analýza výkonu'}</h2>
@@ -195,15 +182,9 @@ export default async function GpuFpsHunterPage(props) {
                     fps={Number(fpsData['cyberpunk_2077_1440p'] || 0)} 
                     isEn={isEn} 
                 />
-
-                {/* 🔥 SEZNAM AD #3: POD ANALÝZOU (POUZE MOBIL) */}
-                <div className="ad-mobile-wrapper" style={{ marginTop: '40px' }}>
-                  <SeznamAd zoneId={408651} width={300} height={250} />
-                </div>
             </div>
         </section>
 
-        {/* 🚀 SÉMANTICKÝ ROZCESTNÍK */}
         <section className="semantic-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '60px' }}>
             <a href={`/${isEn ? 'en/' : ''}bottleneck/${safeSlug}-with-ryzen-7-7800x3d`} className="deep-link-card" style={{ borderTop: '4px solid #ff0055' }}>
                 <Gauge size={32} color="#ff0055" />
@@ -225,7 +206,6 @@ export default async function GpuFpsHunterPage(props) {
             </a>
         </section>
 
-        {/* 🚀 MASSIVE SEO HUB PRO ELIMINACI DEAD ENDU A BOUNCE RATE */}
         <section className="massive-seo-hub" style={{ marginBottom: '60px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '60px' }}>
             <h2 style={{ fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: `4px solid ${vendorColor}`, paddingLeft: '15px' }}>
                 {isEn ? 'EXPLORE GURU DATABASE' : 'PROZKOUMEJ GURU DATABÁZI'}
@@ -258,10 +238,21 @@ export default async function GpuFpsHunterPage(props) {
         </div>
       </main>
 
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
+
       <style dangerouslySetInnerHTML={{__html: `
-        .hunter-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.05); }
+        .hunter-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         
+        .game-fps-card { transition: 0.3s; }
         .game-fps-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.2) !important; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
         .deep-link-card { background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; position: relative; }
         .deep-link-card h3 { font-size: 18px; font-weight: 950; margin: 15px 0 10px 0; text-transform: uppercase; }
@@ -279,6 +270,21 @@ export default async function GpuFpsHunterPage(props) {
         .guru-support-btn, .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; border: none; text-decoration: none; transition: 0.3s; }
         .guru-support-btn { background: #eab308; color: #000; }
         .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
+
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
 
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
