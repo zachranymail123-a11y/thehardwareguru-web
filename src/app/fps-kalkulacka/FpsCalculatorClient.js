@@ -6,8 +6,8 @@ import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU FPS ENGINE CLIENT - V11.4 (ALGORITHMIC FIX)
- * 🚀 CÍL: Nahrazení hardcoded "145 FPS" reálným AI výpočtem.
+ * GURU FPS ENGINE CLIENT - V11.5 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Implementace High-CTR zón v interaktivním formuláři a optimalizace pro mobilní Sklik.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -137,8 +137,8 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                     <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px' }}>{isEn ? 'EXPECTED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
                     <div className="fps-value" style={{ fontSize: '6rem', fontWeight: '950', color: '#fff', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)', margin: '15px 0' }}>{result.fps} FPS</div>
 
-                    {/* 🔥 SEZNAM AD: GURU MONETIZATION ENGINE (STRIKTNÍ SEPARACE) */}
-                    <div style={{ margin: '30px 0' }}>
+                    {/* 🔥 GURU MONETIZATION FIX: Reklama přímo pod výsledkem (Nejvyšší CTR zóna) */}
+                    <div style={{ margin: '30px 0', display: 'flex', justifyContent: 'center' }}>
                         <div className="ad-desktop-wrapper">
                             <SeznamAd zoneId={408658} width={480} height={300} />
                         </div>
