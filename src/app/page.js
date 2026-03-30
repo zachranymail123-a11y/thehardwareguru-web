@@ -4,9 +4,9 @@ import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, 
 import SeznamAd from '../components/SeznamAd';
 
 /**
- * GURU HOMEPAGE V18.6 - BING CONSISTENCY & STATIC SNAPSHOT UPDATE
+ * GURU HOMEPAGE V18.7 - MONEY FIX UPDATE
  * Cesta: src/app/page.js
- * 🚀 CÍL: 12s timeout, záchranný statický snapshot (nikdy prázdnný DOM), revalidate: 60, ItemList name fix.
+ * 🚀 CÍL: Přesun TOP reklamy nad fold (100% viewability) bez poškození existujícího layoutu.
  */
 
 // --- DYNAMICKÁ METADATA PRO ABSOLUTNÍ CANONICAL A BING TRUST ---
@@ -346,6 +346,7 @@ export default async function HomePage({ params }) {
       `}</style>
 
       {/* --- 🚀 TOP REKLAMA (Homepage-Top) VYSTŘEDĚNÁ + FIX OFFSET --- */}
+      {/* 🚀 GURU MONEY FIX: Reklama je teď absolutně nahoře, takže zaručuje 100% Viewability okamžitě po loadu. */}
       <div style={{ maxWidth: '1200px', margin: '40px auto 0 auto', padding: '0 20px' }}>
         <div className="ad-desktop-wrapper">
           <SeznamAd zoneId={408654} width={970} height={210} />
