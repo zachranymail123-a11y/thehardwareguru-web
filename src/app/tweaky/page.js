@@ -3,10 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { Settings, ChevronRight, Smartphone, Monitor, Heart, Flame, ShieldCheck } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
+import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU TWEAKS ARCHIVE ENGINE V2.2 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU TWEAKS ARCHIVE ENGINE V2.3 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchor, eliminace hluchých míst + Heureka konverze.
  */
 
 export const runtime = "nodejs";
@@ -93,6 +94,11 @@ export default async function TweaksArchivePage(props) {
           </p>
         </header>
 
+        {/* 🔥 PŘIDÁNO: Heureka tlačítka pod hlavičkou 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
+
         {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
         <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
             <div className="ad-desktop-wrapper">
@@ -176,8 +182,8 @@ export default async function TweaksArchivePage(props) {
             padding: 30px; 
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
             height: 100%;
-            display: flex;
-            flex-direction: column;
+            display: flex; 
+            flex-direction: column; 
             text-decoration: none;
             backdrop-filter: blur(10px);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
