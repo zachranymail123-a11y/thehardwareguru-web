@@ -1,9 +1,10 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { 
- ChevronLeft, Activity, Zap, ShieldCheck, AlertTriangle, ArrowRight, Cpu, Monitor, Gauge, CheckCircle2, Flame, Heart, Swords, PlugZap, Layers, Database, Info, BarChart3, Gamepad2, ArrowUpCircle, ShoppingCart, ChevronRight
+  ChevronLeft, Activity, Zap, ShieldCheck, AlertTriangle, ArrowRight, Cpu, Monitor, Gauge, CheckCircle2, Flame, Heart, Swords, PlugZap, Layers, Database, Info, BarChart3, Gamepad2, ArrowUpCircle, ShoppingCart, ChevronRight
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
  * GURU BOTTLENECK ENGINE V22.11 (MONEY FIX UPDATE)
@@ -253,6 +254,11 @@ export default async function BottleneckPage(props) {
               <AlgorithmicSeoText cpuName={cpu.name} gpuName={gpu.name} gameName={gameName} resolution={displayResolution} bottleneckPercent={bottleneckScore} isCpuBound={isCpuBottleneck} fps={estimatedFps} isEn={isEn} />
             </div>
         </section>
+
+        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (bezpečně mezi bloky) 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
 
         {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE */}
         <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
