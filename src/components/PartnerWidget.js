@@ -1,11 +1,11 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, Zap, Apple, RefreshCw, Cpu, Award, ChevronLeft, X, Search, Flame, Monitor } from 'lucide-react';
+import { ShoppingCart, Zap, Apple, RefreshCw, Cpu, Award, ChevronRight, ChevronLeft, X, Search, Flame, Monitor } from 'lucide-react';
 
 /**
- * GURU PARTNER WIDGET V2.0 - RIGHT SIDE CTR MONSTER
- * 🚀 CÍL: Agresivní proklik, maximální velikost, Heureka deep links.
+ * GURU PARTNER WIDGET V2.1 - CRITICAL VISIBILITY FIX
+ * 🚀 CÍL: 100% přesné zasouvání (translateX 100%) + bezchybný vertikální úchyt.
  * 💰 EHUB ID: 71c85dea | Heureka ID: 276027
  */
 
@@ -24,7 +24,6 @@ export default function PartnerWidget() {
   const ALZA_SK_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=4d8d02fb";
   const CUBENEST_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=231eaccc";
   const IPHONE_MARKET_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=2bcd6f9d";
-  const JABKOLEVNE_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=85731c2c";
   
   // HEUREKA DEEP LINKS
   const hUtm = "utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
@@ -38,7 +37,8 @@ export default function PartnerWidget() {
           position: fixed;
           right: 0;
           top: 50%;
-          transform: translateY(-50%) translateX(350px);
+          /* 🚀 FIX: Přesné skrytí o 100% šířky elementu */
+          transform: translateY(-50%) translateX(100%);
           width: 350px;
           background: rgba(10, 11, 13, 0.98);
           border: 2px solid rgba(168, 85, 247, 0.5);
@@ -49,30 +49,48 @@ export default function PartnerWidget() {
           box-shadow: -20px 0 60px rgba(0,0,0,0.9);
           backdrop-filter: blur(30px);
           padding: 35px 25px;
+          /* 🚀 FIX: Border-box zabrání roztažení panelu paddingem */
+          box-sizing: border-box;
         }
+        
         .guru-side-panel.is-open {
           transform: translateY(-50%) translateX(0);
         }
 
         .panel-trigger-handle {
           position: absolute;
-          left: -52px;
+          /* 🚀 FIX: Trčí přesně 50px do obrazovky */
+          left: -50px;
           top: 50%;
-          transform: translateY(-50%) rotate(-90deg);
-          background: linear-gradient(90deg, #a855f7 0%, #7e22ce 100%);
+          transform: translateY(-50%);
+          width: 50px;
+          height: 180px;
+          background: linear-gradient(180deg, #a855f7 0%, #7e22ce 100%);
           color: #fff;
-          padding: 15px 30px;
-          border-radius: 20px 20px 0 0;
+          border-radius: 16px 0 0 16px;
+          cursor: pointer;
+          box-shadow: -5px 0 20px rgba(168, 85, 247, 0.5);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          transition: 0.3s;
+        }
+        .panel-trigger-handle:hover {
+          background: linear-gradient(180deg, #b975f8 0%, #8b25e6 100%);
+          width: 55px;
+          left: -55px;
+        }
+
+        .trigger-text {
+          writing-mode: vertical-rl;
+          transform: rotate(180deg);
           font-weight: 950;
           font-size: 14px;
-          letter-spacing: 3px;
+          letter-spacing: 2px;
           text-transform: uppercase;
-          cursor: pointer;
           white-space: nowrap;
-          box-shadow: -10px 0 30px rgba(168, 85, 247, 0.6);
-          display: flex;
-          align-items: center;
-          gap: 12px;
         }
 
         .money-row {
@@ -86,6 +104,8 @@ export default function PartnerWidget() {
           background: rgba(255,255,255,0.04);
           border: 1px solid rgba(255,255,255,0.08);
           transition: 0.3s;
+          box-sizing: border-box;
+          width: 100%;
         }
         .money-row:hover {
           background: rgba(168, 85, 247, 0.15);
@@ -107,26 +127,56 @@ export default function PartnerWidget() {
           width: 42px; height: 42px;
           display: flex; align-items: center; justify-content: center;
           border-radius: 12px;
+          flex-shrink: 0;
         }
 
-        .m-info { display: flex; flex-direction: column; flex: 1; }
-        .m-title { color: #fff; font-weight: 900; font-size: 14px; line-height: 1.2; text-transform: uppercase; }
-        .m-label { color: #9ca3af; font-size: 11px; font-weight: 700; margin-top: 3px; }
+        .m-info { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+        .m-title { color: #fff; font-weight: 900; font-size: 14px; line-height: 1.2; text-transform: uppercase; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+        .m-label { color: #9ca3af; font-size: 11px; font-weight: 700; margin-top: 3px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+
+        .close-icon-wrap {
+          position: absolute;
+          top: 15px;
+          right: 15px;
+          color: #9ca3af;
+          cursor: pointer;
+          transition: 0.2s;
+          padding: 5px;
+        }
+        .close-icon-wrap:hover { color: #fff; transform: rotate(90deg); }
 
         @media (max-width: 768px) {
           .guru-side-panel { width: 310px; padding: 25px 15px; }
-          .panel-trigger-handle { font-size: 11px; padding: 12px 20px; left: -42px; }
+          .panel-trigger-handle { width: 40px; left: -40px; height: 150px; }
+          .panel-trigger-handle:hover { width: 45px; left: -45px; }
+          .trigger-text { font-size: 12px; }
         }
       `}} />
 
       <div className={`guru-side-panel ${isOpen ? 'is-open' : ''}`}>
+        
+        {/* 🔥 MASIVNÍ ÚCHYT */}
         <div className="panel-trigger-handle" onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? <X size={20} /> : (isEn ? '🔥 GURU PARTNERS' : '🔥 GURU PARTNEŘI')}
+          {isOpen ? (
+            <ChevronRight size={24} />
+          ) : (
+            <>
+              <Award size={20} />
+              <span className="trigger-text">{isEn ? 'GURU PARTNERS' : 'GURU PARTNEŘI'}</span>
+            </>
+          )}
         </div>
+
+        {/* Křížek pro zavření uvnitř */}
+        {isOpen && (
+          <div className="close-icon-wrap" onClick={() => setIsOpen(false)}>
+            <X size={20} />
+          </div>
+        )}
 
         <div style={{ marginBottom: '25px', textAlign: 'center' }}>
           <h4 style={{ margin: 0, fontSize: '18px', fontStyle: 'italic', fontWeight: 950, color: '#a855f7', textTransform: 'uppercase' }}>
-            {isEn ? 'Elite Hardware' : 'Elitní Hardware'}
+            {isEn ? 'Elite Hardware' : 'Elitní výběr'}
           </h4>
           <p style={{ fontSize: '11px', color: '#4b5563', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '5px' }}>
             {isEn ? 'Verified sources only' : 'Pouze prověřené zdroje'}
@@ -202,20 +252,6 @@ export default function PartnerWidget() {
           </a>
 
         </div>
-
-        <Link 
-          href={isEn ? "/en/sestavy" : "/sestavy"} 
-          onClick={() => setIsOpen(false)}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-            marginTop: '20px', padding: '15px', borderRadius: '18px',
-            fontSize: '13px', color: '#fff', background: 'rgba(168, 85, 247, 0.3)', 
-            fontWeight: 950, textDecoration: 'none', border: '1px solid rgba(168, 85, 247, 0.5)',
-            textTransform: 'uppercase'
-          }}
-        >
-          {isEn ? 'View All Partners' : 'Všichni partneři'} <ChevronLeft size={16} style={{transform: 'rotate(180deg)'}} />
-        </Link>
       </div>
     </>
   );
