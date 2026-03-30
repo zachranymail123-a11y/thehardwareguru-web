@@ -4,10 +4,11 @@ import { usePathname } from "next/navigation";
 import React from 'react';
 import SeznamAd from "../../components/SeznamAd";
 import { Gamepad2 } from 'lucide-react';
+import HeurekaButtons from "../../components/HeurekaButtons"; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU GAME INDEX V1.4 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, zachování designu karet.
+ * GURU GAME INDEX V1.5 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, zachování designu karet + Heureka konverze.
  */
 
 export default function GameIndexPage() {
@@ -46,6 +47,11 @@ export default function GameIndexPage() {
             </header>
 
             <main style={main}>
+                {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek nad grid her 🔥 */}
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
+                    <HeurekaButtons isEn={isEn} />
+                </div>
+
                 <div className="game-grid" style={grid}>
                     {games.map((game, index) => (
                         <React.Fragment key={game}>
