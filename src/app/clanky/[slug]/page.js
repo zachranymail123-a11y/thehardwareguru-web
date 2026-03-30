@@ -5,8 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU ARTICLE ENGINE V5.7 (MOBILE RESCUE + MASSIVE SEO HUB)
- * 🚀 CÍL: Oprava dojebaného mobilního zobrazení a eliminace dead endu na konci článků.
+ * GURU ARTICLE ENGINE V5.8 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", zachování in-text reklamy, přidání Sticky Bottom Anchor.
  */
 
 export const runtime = "nodejs";
@@ -88,7 +88,7 @@ export default async function ArticleDetailPage(props) {
     const part3 = contentParts.slice(6).join('</p>');
 
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+        <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
             
             <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
                 
@@ -98,12 +98,12 @@ export default async function ArticleDetailPage(props) {
                     </a>
                 </div>
 
-                {/* 🔥 TOP AD SLOT - STRIKTNĚ ODDĚLENÝ */}
-                <div style={{ marginBottom: '40px' }}>
+                {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD (Před hlavičkou pro 100% viditelnost) */}
+                <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
                     <div className="ad-desktop-wrapper">
                         <SeznamAd zoneId={408654} width={970} height={210} />
                     </div>
-                    <div className="ad-mobile-wrapper">
+                    <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
                         <SeznamAd zoneId={408651} width={300} height={250} />
                     </div>
                 </div>
@@ -140,7 +140,7 @@ export default async function ArticleDetailPage(props) {
                          
                          {/* 🚀 IN-TEXT AD #1 */}
                          {contentParts.length > 3 && (
-                             <div style={{ margin: '40px 0' }}>
+                             <div style={{ margin: '40px 0', display: 'flex', justifyContent: 'center' }}>
                                  <div className="ad-desktop-wrapper"><SeznamAd zoneId={408658} width={480} height={300} /></div>
                                  <div className="ad-mobile-wrapper"><SeznamAd zoneId={408651} width={300} height={250} /></div>
                              </div>
@@ -150,7 +150,7 @@ export default async function ArticleDetailPage(props) {
 
                          {/* 🚀 IN-TEXT AD #2 */}
                          {contentParts.length > 6 && (
-                             <div style={{ margin: '40px 0' }}>
+                             <div style={{ margin: '40px 0', display: 'flex', justifyContent: 'center' }}>
                                  <div className="ad-desktop-wrapper"><SeznamAd zoneId={408658} width={480} height={300} /></div>
                                  <div className="ad-mobile-wrapper"><SeznamAd zoneId={408651} width={300} height={250} /></div>
                              </div>
@@ -205,6 +205,16 @@ export default async function ArticleDetailPage(props) {
 
             </main>
 
+            {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+            <div className="sticky-bottom-anchor">
+                <div className="ad-desktop-wrapper">
+                    <SeznamAd zoneId={408654} width={970} height={90} />
+                </div>
+                <div className="ad-mobile-wrapper">
+                    <SeznamAd zoneId={408651} width={300} height={100} />
+                </div>
+            </div>
+
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #a855f7; padding: 10px 18px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(168, 85, 247, 0.3); transition: 0.3s; }
                 .guru-meta-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; padding: 6px 12px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
@@ -226,6 +236,21 @@ export default async function ArticleDetailPage(props) {
                 .hub-links-list { list-style: none; padding: 0; margin: 0; }
                 .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 14px; display: flex; align-items: center; margin-bottom: 15px; font-weight: bold; transition: 0.3s; }
                 .hub-links-list a:hover { color: #a855f7; transform: translateX(10px); }
+
+                /* 🔥 STICKY BOTTOM ANCHOR CSS */
+                .sticky-bottom-anchor {
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    width: 100%;
+                    background: rgba(10, 11, 13, 0.98);
+                    border-top: 1px solid rgba(255, 255, 255, 0.1);
+                    z-index: 9999;
+                    padding: 10px 0;
+                    display: flex;
+                    justify-content: center;
+                    box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+                }
 
                 /* 🚀 RESPONSIVE ADS SYSTEM */
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
