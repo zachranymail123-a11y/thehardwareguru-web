@@ -6,8 +6,8 @@ import {
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU CPU ENGINE - DETAIL PROCESORU V2.5 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Maximální monetizace CPU profilů a perfektní mobilní zobrazení.
+ * GURU CPU ENGINE - DETAIL PROCESORU V2.6 (BULLETPROOF LOOKUP FIX)
+ * 🚀 CÍL: Eliminace 404 chyb zkompletováním vyhledávacího enginu.
  */
 
 export const runtime = "nodejs";
@@ -20,11 +20,14 @@ const baseUrl = "https://thehardwareguru.cz";
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 const slugify = (text) => text ? text.toLowerCase().replace(/processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
-const findCpuBySlug = async (cpuSlug) => {
-  if (!supabaseUrl || !cpuSlug || cpuSlug === 'undefined') return null;
+// 🚀 GURU FIX: Sjednocený, neprůstřelný vyhledávací engine z Bottleneck Kalkulačky
+const findCpuBySlug = async (rawSlugPart) => {
+  if (!supabaseUrl || !rawSlugPart || rawSlugPart === 'undefined') return null;
+  const cpuSlug = rawSlugPart.replace(/^en-/, '');
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
 
   try {
+      // 1. Pokus: Přesná shoda
       const res1 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&slug=eq.${cpuSlug}&limit=1`, { headers, cache: 'force-cache' });
       let cpu = null;
       if (res1.ok) { 
@@ -32,6 +35,7 @@ const findCpuBySlug = async (cpuSlug) => {
           if (data1?.length) cpu = data1[0]; 
       }
       
+      // 2. Pokus: Částečná shoda (obsahuje slug)
       if (!cpu) {
         const res2 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&slug=ilike.*${cpuSlug}*&limit=1`, { headers, cache: 'force-cache' });
         if (res2.ok) { 
@@ -40,6 +44,22 @@ const findCpuBySlug = async (cpuSlug) => {
         }
       }
 
+      // 3. Pokus (GURU FALLBACK): Rozsekání slugu na klíčová slova (stejné jako v kalkulačce)
+      if (!cpu) {
+          const filter = /amd|intel|ryzen|core|ultra|processor|cpu/gi;
+          const clean = cpuSlug.replace(/-/g, ' ').replace(filter, '').trim();
+          const tokens = clean.split(/\s+/).filter(t => t.length > 0);
+          if (tokens.length > 0) {
+              const cond = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
+              const r3 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&and=(${cond})&limit=1`, { headers, cache: 'force-cache' });
+              if (r3.ok) { 
+                  const d3 = await r3.json(); 
+                  if (d3?.length) cpu = d3[0]; 
+              }
+          }
+      }
+
+      // Pokud CPU najdeme, stáhneme i FPS data
       if (cpu) {
           const fpsRes = await fetch(`${supabaseUrl}/rest/v1/cpu_game_fps?select=*&cpu_id=eq.${cpu.id}&limit=1`, { headers, cache: 'force-cache' });
           if (fpsRes.ok) {
