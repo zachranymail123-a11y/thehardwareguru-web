@@ -7,8 +7,8 @@ import Link from 'next/link';
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU HTML SITEMAP V2.8 (MOBILE OPTIMIZED & ADS SEPARATION)
- * 🚀 CÍL: Maximální monetizace navigace a perfektní mobilní přehled o struktuře webu.
+ * GURU HTML SITEMAP V2.9 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
  */
 
 export const runtime = "nodejs";
@@ -76,7 +76,7 @@ export default async function SitemapPage(props) {
   ];
 
   return (
-    <div className="guru-sitemap-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-sitemap-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <main className="inner-container" style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
         
@@ -89,8 +89,8 @@ export default async function SitemapPage(props) {
           </h1>
         </header>
 
-        {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
-        <div style={{ marginBottom: '60px' }}>
+        {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+        <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
             <div className="ad-desktop-wrapper">
                 <SeznamAd zoneId={408654} width={970} height={210} />
             </div>
@@ -101,30 +101,21 @@ export default async function SitemapPage(props) {
 
         <div className="sitemap-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px' }}>
             {sections.map((section, i) => (
-                <React.Fragment key={i}>
-                    <div className="sitemap-section-card" style={{ background: 'rgba(15, 17, 21, 0.98)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '32px', padding: '45px 35px', boxShadow: '0 30px 60px rgba(0,0,0,0.6)', backdropFilter: 'blur(20px)', borderTop: `3px solid ${section.icon.props.color}` }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '30px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '20px' }}>
-                            {section.icon}
-                            <h2 style={{ fontSize: '1.4rem', fontWeight: '950', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>{section.title}</h2>
-                        </div>
-                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                            {section.links.map((link, j) => (
-                                <li key={j}>
-                                    <Link href={isEn ? `/en${link.url === '/' ? '' : link.url}` : link.url} className="sitemap-link">
-                                        <ChevronRight size={16} style={{ color: section.icon.props.color }} /> {link.name}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
+                <div key={i} className="sitemap-section-card" style={{ background: 'rgba(15, 17, 21, 0.98)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '32px', padding: '45px 35px', boxShadow: '0 30px 60px rgba(0,0,0,0.6)', backdropFilter: 'blur(20px)', borderTop: `3px solid ${section.icon.props.color}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '30px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '20px' }}>
+                        {section.icon}
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: '950', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>{section.title}</h2>
                     </div>
-
-                    {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE (POUZE MOBIL PO 2. SEKCI) */}
-                    {i === 1 && (
-                        <div className="ad-mobile-wrapper" style={{ margin: '10px 0' }}>
-                            <SeznamAd zoneId={408651} width={300} height={250} />
-                        </div>
-                    )}
-                </React.Fragment>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                        {section.links.map((link, j) => (
+                            <li key={j}>
+                                <Link href={isEn ? `/en${link.url === '/' ? '' : link.url}` : link.url} className="sitemap-link">
+                                    <ChevronRight size={16} style={{ color: section.icon.props.color }} /> {link.name}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             ))}
         </div>
 
@@ -135,6 +126,16 @@ export default async function SitemapPage(props) {
 
       </main>
 
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
+
       <style dangerouslySetInnerHTML={{__html: `
         .sitemap-link { color: #9ca3af; text-decoration: none; font-weight: 900; font-size: 16px; transition: 0.3s; display: flex; align-items: center; gap: 12px; line-height: 1.4; }
         .sitemap-link:hover { color: #fff; transform: translateX(8px); }
@@ -143,6 +144,21 @@ export default async function SitemapPage(props) {
         .guru-support-btn { background: #eab308; color: #000 !important; box-shadow: 0 10px 30px rgba(234, 179, 8, 0.3); }
         .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4); border: 1px solid rgba(255,255,255,0.1); }
         .guru-support-btn:hover, .guru-deals-btn:hover { transform: translateY(-5px); filter: brightness(1.1); }
+
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
 
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
