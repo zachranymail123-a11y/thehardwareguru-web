@@ -6,8 +6,8 @@ import { ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart, Info, B
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU GLOSSARY ENGINE - DETAIL V2.4 (MOBILE OPTIMIZED & ADS SEPARATION)
- * 🚀 CÍL: 100% monetizace slovníkových pojmů a perfektní mobilní UX pro technický výklad.
+ * GURU GLOSSARY ENGINE - DETAIL V2.5 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -91,13 +91,7 @@ export default async function SlovnikDetail({ params }) {
   const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}slovnik/${slug}`;
   const dateObj = term.created_at ? new Date(term.created_at) : new Date();
 
-  // 🚀 GURU ADS INJECTION LOGIC
-  const contentParts = content ? content.split('</p>') : [];
-  const midPoint = Math.ceil(contentParts.length / 2);
-  const firstHalf = contentParts.slice(0, midPoint).join('</p>');
-  const secondHalf = contentParts.slice(midPoint).join('</p>');
-
-  // Google Golden Rich: Combined Article & Product Schema
+  // Google Golden Rich Schema
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -113,7 +107,7 @@ export default async function SlovnikDetail({ params }) {
   return (
     <div className="guru-term-wrapper" style={{ 
         minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', 
-        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px' 
+        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px' 
     }}>
       
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(articleSchema) }} />
@@ -149,8 +143,8 @@ export default async function SlovnikDetail({ params }) {
             </h1>
           </header>
 
-          {/* 🔥 SEZNAM AD #1: TOP LEADERBOARD (STRIKTNÍ SEPARACE) */}
-          <div style={{ marginBottom: '40px' }}>
+          {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+          <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
               <div className="ad-desktop-wrapper">
                   <SeznamAd zoneId={408654} width={970} height={210} />
               </div>
@@ -160,16 +154,7 @@ export default async function SlovnikDetail({ params }) {
           </div>
 
           <div className="guru-prose">
-             <div dangerouslySetInnerHTML={{ __html: firstHalf + (contentParts.length > 1 ? '</p>' : '') }} />
-
-             {/* 🔥 SEZNAM AD #2: IN-CONTENT BANNER (POUZE MOBIL) */}
-             {contentParts.length > 2 && (
-               <div className="ad-mobile-wrapper" style={{ margin: '30px 0' }}>
-                  <SeznamAd zoneId={408651} width={300} height={250} />
-               </div>
-             )}
-
-             <div dangerouslySetInnerHTML={{ __html: secondHalf }} />
+              <div dangerouslySetInnerHTML={{ __html: content }} />
           </div>
 
           {term.affiliate_link && (
@@ -194,7 +179,6 @@ export default async function SlovnikDetail({ params }) {
             </div>
           )}
 
-          {/* SHARE BUTTONS */}
           <div className="share-row" style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginTop: '50px' }}>
               <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`} target="_blank" rel="nofollow noopener" className="share-btn-x">
                   <Share2 size={16} /> TWITTER / X
@@ -204,7 +188,6 @@ export default async function SlovnikDetail({ params }) {
               </a>
           </div>
 
-          {/* SILOING BANNERS */}
           <div className="silo-row" style={{ marginTop: '60px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
               <a href={isEn ? "/en/cpu-index" : "/cpu-index"} className="silo-banner-card" style={{ borderLeftColor: '#66fcf1' }}>
                   <div className="silo-banner-icon" style={{ color: '#66fcf1', background: '#66fcf120' }}><Cpu size={28} /></div>
@@ -225,6 +208,16 @@ export default async function SlovnikDetail({ params }) {
         </div>
       </main>
 
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
+
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; backdrop-filter: blur(5px); }
         .guru-back-btn:hover { background: #66fcf1; color: #000; transform: scale(1.05); }
@@ -233,7 +226,6 @@ export default async function SlovnikDetail({ params }) {
         .share-btn-fb { display: flex; align-items: center; gap: 8px; background: #1877f220; color: #1877f2; border: 1px solid #1877f250; padding: 10px 20px; border-radius: 12px; font-weight: 950; text-decoration: none; transition: 0.3s; }
 
         .guru-affiliate-cta { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 22px 45px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 18px; text-transform: uppercase; border-radius: 18px; text-decoration: none !important; transition: 0.3s; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(249, 115, 22, 0.3); }
-        .guru-affiliate-cta:hover { transform: scale(1.02); filter: brightness(1.1); box-shadow: 0 15px 40px rgba(249, 115, 22, 0.5); }
         
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.9; }
         .guru-prose h2 { color: #fff; font-size: 2rem; font-weight: 950; margin-top: 2.5em; text-transform: uppercase; border-left: 5px solid #66fcf1; padding-left: 20px; }
@@ -243,10 +235,22 @@ export default async function SlovnikDetail({ params }) {
         .silo-banner-card { flex: 1; min-width: 300px; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; align-items: center; gap: 20px; text-decoration: none; transition: 0.3s; border-left-width: 5px; border-left-style: solid; }
         .silo-banner-card:hover { background: rgba(255,255,255,0.03); transform: translateY(-5px); }
         .silo-banner-icon { width: 55px; height: 55px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .silo-banner-text h4 { margin: 0; color: #fff; font-size: 1.1rem; font-weight: 950; text-transform: uppercase; }
-        .silo-banner-text p { margin: 0; color: #9ca3af; font-size: 0.85rem; }
 
-        /* 🚀 RESPONSIVE ADS SYSTEM */
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
+
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
 
