@@ -3,10 +3,11 @@ import { notFound } from 'next/navigation';
 import { ChevronLeft, Info, Calendar, Flame, Heart, Share2, Swords, Gauge, ArrowRight, Sparkles, Gamepad2, Twitter, Cpu, Monitor, User, Clock, CheckCircle } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU EXPECTED GAMES ENGINE V5.7 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, perfektní čitelnost.
+ * GURU EXPECTED GAMES ENGINE V5.8 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, čitelnost + Heureka konverze.
  */
 
 export const runtime = "nodejs";
@@ -174,6 +175,11 @@ export default async function ExpectedGameDetailPage(props) {
                         <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="gta6-link">
                             <Gamepad2 size={20} /> {isEn ? 'TEST GTA VI FPS' : 'ZJISTIT FPS V GTA VI'} <ArrowRight size={18} />
                         </a>
+                    </div>
+
+                    {/* 🔥 PŘIDÁNO: Heureka tlačítka pod GTA VI konverzním boxem 🔥 */}
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
+                        <HeurekaButtons isEn={isEn} />
                     </div>
                 </article>
 
