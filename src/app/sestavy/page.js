@@ -2,14 +2,16 @@ import React from 'react';
 import { 
   ShoppingCart, Zap, ShieldCheck, Flame, Heart, 
   Cpu, Monitor, Smartphone, ChevronRight, Award, 
-  Layers, BookOpen, Swords, Home, Newspaper, Lightbulb
+  Layers, BookOpen, Swords, Home, Newspaper, Lightbulb,
+  Apple, RefreshCw, Truck
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
 import Link from 'next/link';
 
 /**
- * GURU HARDWARE HUB V2.1 (COMMISSION HIDDEN)
- * 🚀 CÍL: Skryta procenta provizí, nahrazeno marketingovými labely.
+ * GURU HARDWARE HUB V3.0 (EXTENDED PARTNERS)
+ * 🚀 CÍL: Agresivní affiliate konverze s nulovými halucinacemi.
+ * 💰 EHUB ID: 71c85dea
  */
 
 export const runtime = "nodejs";
@@ -19,10 +21,10 @@ const baseUrl = "https://thehardwareguru.cz";
 
 export async function generateMetadata(props) {
   const isEn = props.isEn === true;
-  const title = isEn ? 'Guru Hardware Hub | Best PC Components' : 'Guru Hardware Hub | Elitní výběr komponent';
+  const title = isEn ? 'Guru Hardware Hub | Best Tech Deals' : 'Guru Hardware Hub | Kde nakupuje Guru?';
   const desc = isEn 
-    ? 'Verified hardware and accessories recommended by Guru. Get the best prices with exclusive deals.' 
-    : 'Prověřený hardware a doplňky doporučené Guruem. Nakupuj tam, kde dostaneš nejvíc za svý prachy.';
+    ? 'Expertly curated hardware, iPhones, and accessories. Verified links for the best market prices.' 
+    : 'Prověřené PC komponenty, Apple produkty a herní doplňky. Guru výběr s nejlepšími cenami na trhu.';
 
   return {
     title: `${title} | The Hardware Guru`,
@@ -37,8 +39,12 @@ export async function generateMetadata(props) {
 export default function HardwareHubPage(props) {
   const isEn = props.isEn === true;
 
+  // 🔥 OSTRÉ EHUB TRACKING LINKY (Všechny ověřeny dle screenshotu)
   const SHOPCOM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=3ea952dd";
+  const ALZA_SK_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=4d8d02fb";
   const CUBENEST_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=231eaccc";
+  const IPHONE_MARKET_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=2bcd6f9d";
+  const JABKOLEVNE_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=85731c2c";
 
   return (
     <div className="guru-hub-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '100px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -54,18 +60,19 @@ export default function HardwareHubPage(props) {
         
         <header style={{ textAlign: 'center', marginBottom: '60px' }}>
           <div className="money-badge">
-            <Award size={18} /> GURU VERIFIED SHOPPING
+            <Award size={18} /> GURU VERIFIED PARTNERS
           </div>
           <h1 className="main-title">
             GURU <span style={{ color: '#a855f7' }}>HARDWARE</span> HUB
           </h1>
           <p className="main-subtitle">
             {isEn 
-              ? "Forget overpriced shops. Here are components and accessories that Guru actually recommends." 
-              : "Zapomeň na předražené e-shopy. Tady jsou komponenty a doplňky, které Guru reálně doporučuje."}
+              ? "No hallucinations. Only verified partners where Guru actually shops for components and gear." 
+              : "Žádné nesmysly. Pouze prověření partneři, u kterých Guru reálně nakupuje komponenty a vybavení."}
           </p>
         </header>
 
+        {/* TOP AD SLOT */}
         <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
             <div className="ad-desktop-wrapper">
                 <SeznamAd zoneId={408654} width={970} height={210} />
@@ -76,47 +83,115 @@ export default function HardwareHubPage(props) {
         </div>
 
         <div className="hub-grid">
+          
+          {/* SHOPCOM.CZ - Hardware Guru Main Choice */}
           <section className="hub-card premium-border">
             <div className="card-header">
-              <div className="vendor-logo">SHOPCOM</div>
-              <div className="commission-badge">{isEn ? 'GURU EXCLUSIVE' : 'GURU EXKLUZIVNĚ'}</div>
+              <div className="vendor-logo">SHOPCOM.CZ</div>
+              <div className="commission-badge">GURU VOLBA</div>
             </div>
             <div className="card-body">
               <Cpu size={50} color="#a855f7" />
-              <h2>{isEn ? 'Hardware & Builds' : 'Hardware & Buildy'}</h2>
-              <p>{isEn ? 'Looking for a GPU or CPU? Shopcom has the best deals now.' : 'Hledáš grafiku, procesor nebo celou mašinu? Na Shopcomu teď Guru drží nejlepší dealy.'}</p>
+              <h2>Komponenty & PC Buildy</h2>
+              <p>Specialista na grafické karty a procesory za bezkonkurenční ceny. Tady Guru staví ty nejvýkonnější herní mašiny.</p>
               <ul className="hub-list">
-                <li><Zap size={14} /> {isEn ? 'GPUs in stock' : 'Grafické karty skladem'}</li>
-                <li><Zap size={14} /> {isEn ? 'Fair priced Gaming PCs' : 'Gaming PC za férový ceny'}</li>
-                <li><Zap size={14} /> {isEn ? 'Verified pricing' : 'Guruem prověřené ceny'}</li>
+                <li><Zap size={14} /> Grafiky a CPU skladem</li>
+                <li><Zap size={14} /> Individuální herní sestavy</li>
+                <li><Zap size={14} /> Odborná podpora při výběru</li>
               </ul>
             </div>
             <a href={SHOPCOM_LINK} target="_blank" rel="nofollow sponsored" className="hub-cta-btn shopcom-bg">
-              <ShoppingCart size={20} /> {isEn ? 'GO TO SHOPCOM' : 'DO OBCHODU SHOPCOM'}
+              <ShoppingCart size={20} /> DO OBCHODU SHOPCOM
             </a>
           </section>
 
+          {/* ALZA.SK - Slovak Market Leader */}
+          <section className="hub-card desk-border">
+            <div className="card-header">
+              <div className="vendor-logo">ALZA.SK</div>
+              <div className="commission-badge">SK GIGANT</div>
+            </div>
+            <div className="card-body">
+              <RefreshCw size={50} color="#66fcf1" />
+              <h2>Elektronika pro Slovensko</h2>
+              <p>Lídr trhu s nejširší nabídkou hardwaru. Pokud jsi ze Slovenska a chceš mít komponenty doma hned druhý den, vol Alzu.</p>
+              <ul className="hub-list">
+                <li><Truck size={14} /> Nejrychlejší doprava (AlzaBoxy)</li>
+                <li><Zap size={14} /> Obrovský výběr herních periferií</li>
+                <li><Zap size={14} /> Bezproblémové reklamace</li>
+              </ul>
+            </div>
+            <a href={ALZA_SK_LINK} target="_blank" rel="nofollow sponsored" className="hub-cta-btn alza-bg">
+              <ShoppingCart size={20} /> NAKUPOVAT NA ALZA.SK
+            </a>
+          </section>
+
+          {/* CUBENEST - Premium Accessories */}
           <section className="hub-card desk-border">
             <div className="card-header">
               <div className="vendor-logo">CUBENEST</div>
-              <div className="commission-badge">{isEn ? 'VERIFIED DEAL' : 'OVĚŘENÝ DEAL'}</div>
+              <div className="commission-badge">DESK SETUP</div>
             </div>
             <div className="card-body">
               <Smartphone size={50} color="#66fcf1" />
-              <h2>{isEn ? 'Elite Desk Setup' : 'Elitní Desk Setup'}</h2>
-              <p>{isEn ? 'Mess on the desk? Cubenest makes the sexiest MagSafe stands.' : 'Máš na stole bordel? Cubenest dělá ty nejvíc sexy stojánky a MagSafe nabíječky.'}</p>
+              <h2>Elite Apple doplňky</h2>
+              <p>Prémiové MagSafe nabíječky, hliníkové stojany a doplňky, které dělají z obyčejného stolu Guru herní doupě.</p>
               <ul className="hub-list">
-                <li><Zap size={14} /> {isEn ? '3-in-1 chargers' : '3v1 bezdrátové nabíječky'}</li>
-                <li><Zap size={14} /> {isEn ? 'Magnetic iPad stands' : 'Magnetické stojany pro iPad'}</li>
-                <li><Zap size={14} /> {isEn ? 'Premium materials' : 'Prémiové materiály'}</li>
+                <li><Zap size={14} /> 3v1 bezdrátové stanice</li>
+                <li><Zap size={14} /> Designové iPad stojany</li>
+                <li><Zap size={14} /> Kvalitní hliníkové zpracování</li>
               </ul>
             </div>
             <a href={CUBENEST_LINK} target="_blank" rel="nofollow sponsored" className="hub-cta-btn cubenest-bg">
-              <ShoppingCart size={20} /> {isEn ? 'EQUIP SETUP' : 'VYBAVIT DESK SETUP'}
+              <ShoppingCart size={20} /> VYBAVIT DESK SETUP
             </a>
           </section>
+
+          {/* IPHONEMARKET.CZ - Used iPhones with warranty */}
+          <section className="hub-card premium-border">
+            <div className="card-header">
+              <div className="vendor-logo">IPHONEMARKET</div>
+              <div className="commission-badge">IPHONY SE ZÁRUKOU</div>
+            </div>
+            <div className="card-body">
+              <Apple size={50} color="#a855f7" />
+              <h2>Prověřené použité iPhony</h2>
+              <p>Nejlepší cesta k iPhonu za zlomek ceny. Každý kus je profesionálně otestován a prodáván se zárukou.</p>
+              <ul className="hub-list">
+                <li><Zap size={14} /> 100% funkčnost zaručena</li>
+                <li><Zap size={14} /> Záruka na každý kus</li>
+                <li><Zap size={14} /> Ekologická a levná volba</li>
+              </ul>
+            </div>
+            <a href={IPHONE_MARKET_LINK} target="_blank" rel="nofollow sponsored" className="hub-cta-btn shopcom-bg">
+              <ShoppingCart size={20} /> VYBRAT IPHONE
+            </a>
+          </section>
+
+          {/* JABKOLEVNE.CZ - Affordable Apple Ecosystem */}
+          <section className="hub-card desk-border">
+            <div className="card-header">
+              <div className="vendor-logo">JABKOLEVNE.CZ</div>
+              <div className="commission-badge">APPLE EKOSYSTÉM</div>
+            </div>
+            <div className="card-body">
+              <RefreshCw size={50} color="#66fcf1" />
+              <h2>MacBooky & iPady levně</h2>
+              <p>Široká nabídka použitých Maců, iPadů a Apple Watch. Ideální místo, pokud chceš doplnit svůj Apple ekosystém a ušetřit.</p>
+              <ul className="hub-list">
+                <li><Zap size={14} /> MacBooky pro práci i střih</li>
+                <li><Zap size={14} /> iPady pro studenty i hráče</li>
+                <li><Zap size={14} /> Férové posouzení stavu</li>
+              </ul>
+            </div>
+            <a href={JABKOLEVNE_LINK} target="_blank" rel="nofollow sponsored" className="hub-cta-btn jabko-bg">
+              <ShoppingCart size={20} /> KOUPIT LEVNÝ APPLE
+            </a>
+          </section>
+
         </div>
 
+        {/* SEO HUB */}
         <section className="seo-hub">
           <h2 className="hub-title">{isEn ? 'GURU KNOWLEDGE BASE' : 'GURU KNIHOVNA ZNALOSTÍ'}</h2>
           <div className="hub-silo-grid">
@@ -141,6 +216,7 @@ export default function HardwareHubPage(props) {
 
       </main>
 
+      {/* STICKY BOTTOM ANCHOR */}
       <div className="sticky-bottom-anchor">
           <div className="ad-desktop-wrapper-fixed">
               <SeznamAd zoneId={408654} width={970} height={90} />
@@ -157,21 +233,29 @@ export default function HardwareHubPage(props) {
         .main-title { font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 950; text-transform: uppercase; letter-spacing: -2px; margin: 0; line-height: 1; text-align: center; }
         .main-subtitle { margin-top: 20px; color: #9ca3af; font-size: 20px; max-width: 800px; margin-inline: auto; text-align: center; }
         .money-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.4); padding: 8px 20px; border-radius: 50px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px; }
+        
         .hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 40px; margin-top: 60px; }
         .hub-card { background: rgba(15, 17, 21, 0.95); border-radius: 32px; border: 1px solid rgba(255,255,255,0.05); padding: 40px; display: flex; flex-direction: column; transition: 0.3s; position: relative; overflow: hidden; backdrop-filter: blur(20px); }
         .hub-card:hover { transform: translateY(-10px); box-shadow: 0 30px 60px rgba(0,0,0,0.8); }
         .premium-border { border-top: 4px solid #a855f7; }
         .desk-border { border-top: 4px solid #66fcf1; }
+
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .vendor-logo { font-size: 24px; font-weight: 950; letter-spacing: -1px; }
         .commission-badge { background: #10b981; color: #000; padding: 4px 12px; border-radius: 8px; font-size: 10px; font-weight: 950; }
+
         .card-body h2 { font-size: 28px; font-weight: 950; margin: 20px 0 10px 0; text-transform: uppercase; }
         .card-body p { color: #9ca3af; line-height: 1.6; margin-bottom: 25px; }
+
         .hub-list { list-style: none; padding: 0; margin: 0 0 35px 0; display: flex; flex-direction: column; gap: 10px; }
         .hub-list li { display: flex; alignItems: center; gap: 10px; color: #d1d5db; font-size: 14px; fontWeight: 600; }
+
         .hub-cta-btn { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 20px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: 0.3s; }
         .shopcom-bg { background: #a855f7; color: #fff; }
         .cubenest-bg { background: #66fcf1; color: #000; }
+        .alza-bg { background: #22c55e; color: #fff; }
+        .jabko-bg { background: #fff; color: #000; }
+
         .seo-hub { margin-top: 80px; padding: 40px; background: rgba(0,0,0,0.4); border-radius: 32px; border: 1px solid rgba(255,255,255,0.05); }
         .hub-title { font-size: 16px; font-weight: 950; text-align: center; margin-bottom: 30px; color: #4b5563; text-transform: uppercase; }
         .hub-silo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; }
