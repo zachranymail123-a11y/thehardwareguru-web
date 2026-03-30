@@ -1,16 +1,16 @@
 import React, { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { 
-  ChevronLeft, Zap, ArrowRight, Activity, ArrowUpCircle, LayoutList, 
-  BarChart3, Gamepad2, Coins, CheckCircle2, Swords, Flame, Heart, 
-  Monitor, ExternalLink, Info, HelpCircle, Trophy
+ ChevronLeft, Zap, ArrowRight, Activity, ArrowUpCircle, LayoutList, 
+ BarChart3, Gamepad2, Coins, CheckCircle2, Swords, Flame, Heart, 
+ Monitor, ExternalLink, Info, HelpCircle, Trophy
 } from 'lucide-react';
 import GuruGpuCompareText from '../../../components/GuruGpuCompareText';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V121.1 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Maximální monetizace GPU upgradů a perfektní mobilní UI.
+ * GURU GPU UPGRADE ENGINE - DETAIL V121.2 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
  */
 
 export const runtime = "nodejs";
@@ -146,13 +146,23 @@ export default async function GpuUpgradePage(props) {
   const moreUpgrades = await getMoreUpgrades(upgrade.slug);
 
   return (
-    <div className="guru-upgrade-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-upgrade-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <main className="inner-container" style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? '/en/gpuvs' : '/gpuvs'} className="guru-back-btn">
             <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
           </a>
+        </div>
+
+        {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '60px' }}>
@@ -177,16 +187,6 @@ export default async function GpuUpgradePage(props) {
                 <span className="box-label" style={{ color: '#66fcf1' }}>{isEn ? 'NEW UPGRADE' : 'NOVÝ UPGRADE'}</span>
                 <h2 className="box-title">{normalizeName(gpuB.name)}</h2>
                 <div className="perf-gain">+{finalPerfDiff}% {isEn ? 'PERF' : 'VÝKONU'}</div>
-            </div>
-        </div>
-
-        {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
-        <div style={{ marginBottom: '40px' }}>
-            <div className="ad-desktop-wrapper">
-                <SeznamAd zoneId={408654} width={970} height={210} />
-            </div>
-            <div className="ad-mobile-wrapper">
-                <SeznamAd zoneId={408651} width={300} height={250} />
             </div>
         </div>
 
@@ -220,11 +220,6 @@ export default async function GpuUpgradePage(props) {
                   <div style={getWinnerStyle(row.winB, row.winA, row.lower)} className="spec-val-side">{row.valB}</div>
                 </div>
               ))}
-
-              {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE (POUZE MOBIL) */}
-              <div className="ad-mobile-wrapper" style={{ margin: '20px 0' }}>
-                  <SeznamAd zoneId={408651} width={300} height={250} />
-              </div>
 
               {[
                 { label: 'ARCHITECTURE', valA: gpuA.architecture, valB: gpuB.architecture },
@@ -273,6 +268,16 @@ export default async function GpuUpgradePage(props) {
         </div>
       </main>
 
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
+
       <style dangerouslySetInnerHTML={{__html: `
         .upgrade-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 16px; border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.1); margin-bottom: 20px; }
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
@@ -307,6 +312,21 @@ export default async function GpuUpgradePage(props) {
         .btn-guru.deals { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
         .btn-guru.support { background: #eab308; color: #000; }
         .btn-guru:hover { filter: brightness(1.1); transform: scale(1.02); }
+
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
 
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
