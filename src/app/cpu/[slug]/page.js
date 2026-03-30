@@ -4,10 +4,11 @@ import {
   Activity, CheckCircle2, Swords, LayoutList, ShoppingCart, Flame, Heart, Zap
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU CPU ENGINE - DETAIL PROCESORU V2.7 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU CPU ENGINE - DETAIL PROCESORU V2.8 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka CTA.
  */
 
 export const runtime = "nodejs";
@@ -159,6 +160,11 @@ export default async function CpuDetailPage({ params }) {
               </a>
           </div>
         </section>
+
+        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (CTA pod rozcestníkem analýzy) 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: vendorColor }}><LayoutList size={28} /> {isEn ? 'TECHNICAL SPECIFICATIONS' : 'TECHNICKÉ SPECIFIKACE'}</h2>
