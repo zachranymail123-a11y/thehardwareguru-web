@@ -16,8 +16,8 @@ import GuruAnalysisText from '../../../components/GuruAnalysisText';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU CPU FPS HUB V1.2 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Rozcestník procesoru s perfektním mobilním zobrazením a separací reklam.
+ * GURU CPU FPS HUB V1.3 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru Above Fold, přidání Sticky Bottom Anchoru, eliminace hluchých míst.
  * Cesta: src/app/cpu-fps/[slug]/page.js
  */
 
@@ -93,10 +93,20 @@ export default async function CpuFpsHubPage(props) {
   };
 
   return (
-    <div className="guru-hub-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-hub-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <main className="inner-container" style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
+        {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD (Před hlavičkou pro 100% viditelnost) */}
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
+
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: vendorColor, fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: `1px solid ${vendorColor}40`, borderRadius: '50px', background: `${vendorColor}15` }}>
             <Cpu size={16} /> GURU CPU FPS RADAR
@@ -110,19 +120,8 @@ export default async function CpuFpsHubPage(props) {
           </div>
         </header>
 
-        {/* 🔥 SEZNAM AD #1: TOP BANNER (STRIKTNÍ SEPARACE) */}
-        <div style={{ marginBottom: '40px' }}>
-            <div className="ad-desktop-wrapper">
-              <SeznamAd zoneId={408654} width={970} height={210} />
-            </div>
-            <div className="ad-mobile-wrapper">
-              <SeznamAd zoneId={408651} width={300} height={250} />
-            </div>
-        </div>
-
-        {/* 🚀 HLAVNÍ FPS MATRIX */}
         <div className="fps-matrix-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px', marginBottom: '60px', marginTop: '40px' }}>
-          {gamesToShow.map((game, index) => {
+          {gamesToShow.map((game) => {
             let fpsBase = Number(fpsData[`${game.key}_1440p`] || fpsData[`${game.key}_1080p`] || 0);
             
             if (fpsBase === 0 && cpu.performance_index > 0) {
@@ -138,8 +137,7 @@ export default async function CpuFpsHubPage(props) {
             const verdict = getVerdict(fpsBase);
 
             return (
-              <React.Fragment key={game.id}>
-                <a href={`/${isEn ? 'en/' : ''}cpu-fps/${safeSlug}/${game.id.replace(/_/g, '-')}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <a key={game.id} href={`/${isEn ? 'en/' : ''}cpu-fps/${safeSlug}/${game.id.replace(/_/g, '-')}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                   <div className="game-fps-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '30px', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: '0.3s' }}>
                     <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: verdict.color }}></div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
@@ -155,19 +153,10 @@ export default async function CpuFpsHubPage(props) {
                     </div>
                   </div>
                 </a>
-
-                {/* 🔥 SEZNAM AD #2: GRID INJECTION (POUZE MOBIL) */}
-                {index === 1 && (
-                  <div className="ad-mobile-wrapper" style={{ margin: '10px 0' }}>
-                    <SeznamAd zoneId={408651} width={300} height={250} />
-                  </div>
-                )}
-              </React.Fragment>
             );
           })}
         </div>
 
-        {/* 🚀 GURU: UNIKÁTNÍ SEO TEXT */}
         <section style={{ marginBottom: '60px' }}>
             <div className="analysis-box" style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950' }}>{isEn ? 'Performance Analysis' : 'Analýza výkonu'}</h2>
@@ -181,15 +170,9 @@ export default async function CpuFpsHubPage(props) {
                     fps={Number(fpsData['cyberpunk_2077_1440p'] || 0)} 
                     isEn={isEn} 
                 />
-
-                {/* 🔥 SEZNAM AD #3: POD ANALÝZOU (POUZE MOBIL) */}
-                <div className="ad-mobile-wrapper" style={{ marginTop: '40px' }}>
-                  <SeznamAd zoneId={408651} width={300} height={250} />
-                </div>
             </div>
         </section>
 
-        {/* 🚀 SÉMANTICKÝ ROZCESTNÍK */}
         <section className="semantic-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '60px' }}>
             <a href={`/${isEn ? 'en/' : ''}bottleneck/${safeSlug}-with-geforce-rtx-5080`} className="deep-link-card" style={{ borderTop: '4px solid #ff0055' }}>
                 <Gauge size={32} color="#ff0055" />
@@ -217,15 +200,41 @@ export default async function CpuFpsHubPage(props) {
         </div>
       </main>
 
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
+
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
+        .game-fps-card { transition: 0.3s; }
         .game-fps-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.2) !important; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
         .deep-link-card { background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; position: relative; }
-        .deep-link-card h3 { font-size: 18px; fontWeight: 950; margin: 15px 0 10px 0; text-transform: uppercase; }
+        .deep-link-card h3 { font-size: 18px; font-weight: 950; margin: 15px 0 10px 0; text-transform: uppercase; }
         .deep-link-card p { font-size: 13px; color: #9ca3af; line-height: 1.5; margin: 0; }
         .deep-link-card .arrow { position: absolute; bottom: 30px; right: 30px; opacity: 0.2; }
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000; font-weight: 950; border-radius: 16px; text-decoration: none; }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-weight: 950; border-radius: 16px; text-decoration: none; }
+
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
 
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
