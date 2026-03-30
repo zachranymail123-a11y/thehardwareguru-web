@@ -3,14 +3,14 @@ import {
   ShoppingCart, Zap, ShieldCheck, Flame, Heart, 
   Cpu, Monitor, Smartphone, ChevronRight, Award, 
   Layers, BookOpen, Swords, Home, Newspaper, Lightbulb,
-  Apple, RefreshCw, Truck
+  Apple, RefreshCw, Truck, Gamepad2, Search
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
 import Link from 'next/link';
 
 /**
- * GURU HARDWARE HUB V3.0 (EXTENDED PARTNERS)
- * 🚀 CÍL: Agresivní affiliate konverze s nulovými halucinacemi.
+ * GURU HARDWARE HUB V3.1 (ULTIMATE EXPANSION)
+ * 🚀 CÍL: Agresivní affiliate konverze. Přidána Heureka, Smarty, XM.
  * 💰 EHUB ID: 71c85dea
  */
 
@@ -39,12 +39,19 @@ export async function generateMetadata(props) {
 export default function HardwareHubPage(props) {
   const isEn = props.isEn === true;
 
-  // 🔥 OSTRÉ EHUB TRACKING LINKY (Všechny ověřeny dle screenshotu)
+  // 🔥 OSTRÉ EHUB TRACKING LINKY
   const SHOPCOM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=3ea952dd";
   const ALZA_SK_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=4d8d02fb";
   const CUBENEST_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=231eaccc";
   const IPHONE_MARKET_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=2bcd6f9d";
   const JABKOLEVNE_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=85731c2c";
+  const SMARTY_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=4456574a";
+  const XM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=90708688";
+
+  // 🔥 HEUREKA DEEP LINKS
+  const hUtm = "utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
+  const HEUREKA_CPU = `https://www.heureka.cz/?h%5Bfraze%5D=procesor#${hUtm}`;
+  const HEUREKA_GPU = `https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta#${hUtm}`;
 
   return (
     <div className="guru-hub-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '100px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -84,6 +91,32 @@ export default function HardwareHubPage(props) {
 
         <div className="hub-grid">
           
+          {/* 🔥 HEUREKA.CZ - DUAL CTA CARD */}
+          <section className="hub-card heureka-border">
+            <div className="card-header">
+              <div className="vendor-logo">HEUREKA.CZ</div>
+              <div className="commission-badge" style={{background: '#eab308', color: '#000'}}>NEJNIŽŠÍ CENY</div>
+            </div>
+            <div className="card-body">
+              <Search size={50} color="#eab308" />
+              <h2>{isEn ? "Compare Hardware Prices" : "Cenový srovnávač"}</h2>
+              <p>{isEn ? "Don't overpay. Compare the market and find the absolute lowest prices for CPUs and GPUs." : "Neplať víc, než musíš. Srovnej si nabídky e-shopů a nakup procesory nebo grafiky za tu absolutně nejnižší cenu."}</p>
+              <ul className="hub-list">
+                <li><Zap size={14} /> {isEn ? "Independent comparison" : "Nezávislé srovnání cen"}</li>
+                <li><Zap size={14} /> {isEn ? "Thousands of stores" : "Tisíce ověřených e-shopů"}</li>
+                <li><Zap size={14} /> {isEn ? "Real user reviews" : "Reálné recenze uživatelů"}</li>
+              </ul>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="hub-cta-btn heureka-bg" data-trixam-positionid="276027">
+                  <Cpu size={20} /> {isEn ? "COMPARE CPUS" : "SROVNAT PROCESORY"}
+                </a>
+                <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="hub-cta-btn heureka-bg" data-trixam-positionid="276027">
+                  <Monitor size={20} /> {isEn ? "COMPARE GPUS" : "SROVNAT GRAFIKY"}
+                </a>
+            </div>
+          </section>
+
           {/* SHOPCOM.CZ - Hardware Guru Main Choice */}
           <section className="hub-card premium-border">
             <div className="card-header">
@@ -105,6 +138,27 @@ export default function HardwareHubPage(props) {
             </a>
           </section>
 
+          {/* SMARTY.CZ - Gaming & Tech */}
+          <section className="hub-card smarty-border">
+            <div className="card-header">
+              <div className="vendor-logo">SMARTY.CZ</div>
+              <div className="commission-badge" style={{background: '#ec4899', color: '#fff'}}>GAMING GEAR</div>
+            </div>
+            <div className="card-body">
+              <Gamepad2 size={50} color="#ec4899" />
+              <h2>{isEn ? "Gaming & Electronics" : "Gaming & Elektronika"}</h2>
+              <p>{isEn ? "Top destination for gaming gear, consoles, and smart tech to level up your setup." : "Specialista na herní železo, konzole a chytrou elektroniku. Ideální pro rozšíření tvého herního doupěte."}</p>
+              <ul className="hub-list">
+                <li><Zap size={14} /> {isEn ? "Premium gaming peripherals" : "Prémiové herní periferie"}</li>
+                <li><Zap size={14} /> {isEn ? "Consoles and games" : "Konzole a nejnovější hry"}</li>
+                <li><Zap size={14} /> {isEn ? "Fast delivery" : "Expresní doručení na pobočky"}</li>
+              </ul>
+            </div>
+            <a href={SMARTY_LINK} target="_blank" rel="nofollow sponsored" className="hub-cta-btn smarty-bg">
+              <ShoppingCart size={20} /> {isEn ? "SHOP AT SMARTY" : "NAKUPOVAT NA SMARTY"}
+            </a>
+          </section>
+
           {/* ALZA.SK - Slovak Market Leader */}
           <section className="hub-card desk-border">
             <div className="card-header">
@@ -123,6 +177,27 @@ export default function HardwareHubPage(props) {
             </div>
             <a href={ALZA_SK_LINK} target="_blank" rel="nofollow sponsored" className="hub-cta-btn alza-bg">
               <ShoppingCart size={20} /> NAKUPOVAT NA ALZA.SK
+            </a>
+          </section>
+
+          {/* XM.CZ - Smart Home */}
+          <section className="hub-card xm-border">
+            <div className="card-header">
+              <div className="vendor-logo">XM.CZ</div>
+              <div className="commission-badge" style={{background: '#f97316', color: '#fff'}}>CHYTRÝ DOMOV</div>
+            </div>
+            <div className="card-body">
+              <Smartphone size={50} color="#f97316" />
+              <h2>{isEn ? "Smart Home & Phones" : "Chytrá elektronika"}</h2>
+              <p>{isEn ? "From Xiaomi phones to robotic vacuums. Everything you need for a fully automated smart home." : "Od Xiaomi telefonů po robotické vysavače. Špičkový e-shop pro kompletní vybavení tvé chytré domácnosti."}</p>
+              <ul className="hub-list">
+                <li><Zap size={14} /> {isEn ? "Smart home ecosystems" : "Chytré domácí ekosystémy"}</li>
+                <li><Zap size={14} /> {isEn ? "Phones and wearables" : "Telefony a nositelná elektronika"}</li>
+                <li><Zap size={14} /> {isEn ? "Great price/performance" : "Skvělý poměr cena/výkon"}</li>
+              </ul>
+            </div>
+            <a href={XM_LINK} target="_blank" rel="nofollow sponsored" className="hub-cta-btn xm-bg">
+              <ShoppingCart size={20} /> {isEn ? "SHOP AT XM.CZ" : "VYBAVIT CHYTRÝ DOMOV"}
             </a>
           </section>
 
@@ -237,8 +312,13 @@ export default function HardwareHubPage(props) {
         .hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 40px; margin-top: 60px; }
         .hub-card { background: rgba(15, 17, 21, 0.95); border-radius: 32px; border: 1px solid rgba(255,255,255,0.05); padding: 40px; display: flex; flex-direction: column; transition: 0.3s; position: relative; overflow: hidden; backdrop-filter: blur(20px); }
         .hub-card:hover { transform: translateY(-10px); box-shadow: 0 30px 60px rgba(0,0,0,0.8); }
+        
+        /* CARD BORDERS */
         .premium-border { border-top: 4px solid #a855f7; }
         .desk-border { border-top: 4px solid #66fcf1; }
+        .heureka-border { border-top: 4px solid #eab308; }
+        .smarty-border { border-top: 4px solid #ec4899; }
+        .xm-border { border-top: 4px solid #f97316; }
 
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .vendor-logo { font-size: 24px; font-weight: 950; letter-spacing: -1px; }
@@ -250,11 +330,16 @@ export default function HardwareHubPage(props) {
         .hub-list { list-style: none; padding: 0; margin: 0 0 35px 0; display: flex; flex-direction: column; gap: 10px; }
         .hub-list li { display: flex; alignItems: center; gap: 10px; color: #d1d5db; font-size: 14px; fontWeight: 600; }
 
+        /* BUTTONS */
         .hub-cta-btn { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 20px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: 0.3s; }
+        .hub-cta-btn:hover { filter: brightness(1.1); transform: scale(1.02); }
         .shopcom-bg { background: #a855f7; color: #fff; }
         .cubenest-bg { background: #66fcf1; color: #000; }
         .alza-bg { background: #22c55e; color: #fff; }
         .jabko-bg { background: #fff; color: #000; }
+        .heureka-bg { background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); color: #000; }
+        .smarty-bg { background: #ec4899; color: #fff; }
+        .xm-bg { background: #f97316; color: #fff; }
 
         .seo-hub { margin-top: 80px; padding: 40px; background: rgba(0,0,0,0.4); border-radius: 32px; border: 1px solid rgba(255,255,255,0.05); }
         .hub-title { font-size: 16px; font-weight: 950; text-align: center; margin-bottom: 30px; color: #4b5563; text-transform: uppercase; }
