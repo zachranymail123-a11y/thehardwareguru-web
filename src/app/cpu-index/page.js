@@ -15,8 +15,8 @@ import {
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU CPU ENGINE - KATALOG PROCESORŮ V1.8 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Kompletní monetizace a perfektní mobilní zobrazení katalogu.
+ * GURU CPU ENGINE - KATALOG PROCESORŮ V1.9 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
  */
 
 export const dynamic = 'force-dynamic';
@@ -101,9 +101,20 @@ export default async function CpuIndexPage(props) {
   };
 
   return (
-    <div className="guru-page-container" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-page-container" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <main className="inner-container" style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+        
+        {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
+
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 25px', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '50px', background: 'rgba(245,158,11,0.05)' }}>
             <Database size={16} /> GURU HARDWARE DATABASE
@@ -119,30 +130,15 @@ export default async function CpuIndexPage(props) {
           </div>
         </header>
 
-        {/* 🔥 SEZNAM AD #1: TOP BANNER (STRIKTNÍ SEPARACE) */}
-        <div style={{ marginBottom: '40px' }}>
-            <div className="ad-desktop-wrapper">
-                <SeznamAd zoneId={408654} width={970} height={210} />
-            </div>
-            <div className="ad-mobile-wrapper">
-                <SeznamAd zoneId={408651} width={300} height={250} />
-            </div>
-        </div>
-
         {amdCpus.length > 0 && (
-          <section style={{ marginBottom: '40px', marginTop: '40px' }}>
+          <section style={{ marginBottom: '60px' }}>
             <h2 className="vendor-h2" style={{ borderLeftColor: '#ed1c24' }}><span style={{ color: '#ed1c24' }}>AMD</span> RYZEN</h2>
             <div className="cpu-grid">{renderCpuCards(amdCpus, '#ed1c24')}</div>
           </section>
         )}
 
-        {/* 🔥 SEZNAM AD #2: MID PLACEMENT (POUZE MOBIL) */}
-        <div className="ad-mobile-wrapper" style={{ margin: '20px 0' }}>
-            <SeznamAd zoneId={408651} width={300} height={250} />
-        </div>
-
         {intelCpus.length > 0 && (
-          <section style={{ marginBottom: '80px', marginTop: '40px' }}>
+          <section style={{ marginBottom: '80px' }}>
             <h2 className="vendor-h2" style={{ borderLeftColor: '#0071c5' }}><span style={{ color: '#0071c5' }}>INTEL</span> CORE</h2>
             <div className="cpu-grid">{renderCpuCards(intelCpus, '#0071c5')}</div>
           </section>
@@ -185,6 +181,16 @@ export default async function CpuIndexPage(props) {
         </div>
       </main>
 
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
+
       <style dangerouslySetInnerHTML={{__html: `
         .vendor-h2 { color: #fff; font-size: 2.2rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 5px solid; padding-left: 15px; display: flex; align-items: center; gap: 15px; }
         .cpu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
@@ -205,6 +211,21 @@ export default async function CpuIndexPage(props) {
         .related-article-img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
         .related-content { padding: 20px; }
         .related-title { margin: 10px 0 0 0; font-size: 1rem; font-weight: 950; color: #fff; line-height: 1.3; }
+
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
 
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
