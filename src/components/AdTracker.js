@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
 /**
- * GURU MONETIZATION ENGINE - AD TRACKER V1.0
+ * GURU MONETIZATION ENGINE - AD TRACKER V1.1 (SUSPENSE FIX)
  * 🚀 CÍL: Záchrana 0 zobrazení u mobilních Vinět a Interstitial reklam v Next.js SPA.
  */
 
-export default function AdTracker() {
+function AdTrackerLogic() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
@@ -37,5 +37,14 @@ export default function AdTracker() {
         return () => clearTimeout(timer);
     }, [pathname, searchParams]);
 
-    return null; // Komponenta nemá žádné UI, běží jen na pozadí
+    return null; // Logika nemá UI
+}
+
+export default function AdTracker() {
+    return (
+        // 🚀 GURU FIX: Next.js 14 vyžaduje Suspense pro useSearchParams při buildu
+        <Suspense fallback={null}>
+            <AdTrackerLogic />
+        </Suspense>
+    );
 }
