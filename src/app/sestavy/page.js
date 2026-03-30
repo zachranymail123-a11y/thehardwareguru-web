@@ -1,4 +1,6 @@
-import React from 'react';
+"use client"; // 🔥 PŘIDÁNO: Musí to být client component kvůli usePathname a useEffect
+import React, { useEffect } from 'react';
+import { usePathname } from 'next/navigation'; // 🔥 PŘIDÁNO
 import { 
   ShoppingCart, Zap, ShieldCheck, Flame, Heart, 
   Cpu, Monitor, Smartphone, ChevronRight, Award, 
@@ -9,35 +11,37 @@ import SeznamAd from '../../components/SeznamAd';
 import Link from 'next/link';
 
 /**
- * GURU HARDWARE HUB V3.4 - HEUREKA POSITION ID FIX
- * 🚀 CÍL: Rozdělení data-trixam-positionid pro CPU (276027) a GPU (276026).
+ * GURU HARDWARE HUB V3.5 - HEUREKA SPA FIX
+ * 🚀 CÍL: Nucená reinjekce trixam.min.js pro započítání prokliků v Next.js SPA.
  * 💰 EHUB ID: 71c85dea
  */
 
-export const runtime = "nodejs";
-export const revalidate = 3600; 
+// ⚠️ Odebráno export const runtime = "nodejs"; a revalidate = 3600; 
+// Protože "use client" komponenty nemohou exportovat tyto configy stejným způsobem.
 
 const baseUrl = "https://thehardwareguru.cz";
 
-export async function generateMetadata(props) {
-  const isEn = props.isEn === true;
-  const title = isEn ? 'Guru Hardware Hub | Best Tech Deals' : 'Guru Hardware Hub | Kde nakupuje Guru?';
-  const desc = isEn 
-    ? 'Expertly curated hardware, iPhones, and accessories. Verified links for the best market prices.' 
-    : 'Prověřené PC komponenty, Apple produkty a herní doplňky. Guru výběr s nejlepšími cenami na trhu.';
-
-  return {
-    title: `${title} | The Hardware Guru`,
-    description: desc,
-    alternates: {
-      canonical: `${baseUrl}/sestavy`,
-      languages: { 'en': `${baseUrl}/en/sestavy`, 'cs': `${baseUrl}/sestavy` }
-    }
-  };
-}
-
 export default function HardwareHubPage(props) {
   const isEn = props.isEn === true;
+  const pathname = usePathname(); // 🔥 PŘIDÁNO
+
+  // 🔥 HEUREKA SPA FIX: Brutální reinjekce skriptu po načtení stránky
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const scriptId = 'guru-heureka-reinjector-page';
+      const oldScript = document.getElementById(scriptId);
+      if (oldScript) {
+        oldScript.remove();
+      }
+      
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.type = 'text/javascript';
+      script.src = "//serve.affiliate.heureka.cz/js/trixam.min.js";
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, [pathname]);
 
   // 🔥 OSTRÉ EHUB TRACKING LINKY
   const SHOPCOM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=3ea952dd";
@@ -108,11 +112,11 @@ export default function HardwareHubPage(props) {
               </ul>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {/* 🔥 CPU = 276027 */}
+                {/* 🔥 CPU = 276027 + heureka-hn-link */}
                 <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="hub-cta-btn heureka-bg heureka-hn-link" data-trixam-positionid="276027">
                   <Cpu size={20} /> {isEn ? "COMPARE CPUS" : "SROVNAT PROCESORY"}
                 </a>
-                {/* 🔥 GPU = 276026 */}
+                {/* 🔥 GPU = 276026 + heureka-hn-link */}
                 <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="hub-cta-btn heureka-bg heureka-hn-link" data-trixam-positionid="276026">
                   <Monitor size={20} /> {isEn ? "COMPARE GPUS" : "SROVNAT GRAFIKY"}
                 </a>
@@ -333,7 +337,7 @@ export default function HardwareHubPage(props) {
         .hub-list li { display: flex; alignItems: center; gap: 10px; color: #d1d5db; font-size: 14px; fontWeight: 600; }
 
         /* BUTTONS */
-        .hub-cta-btn { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 20px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: 0.3s; }
+        .hub-cta-btn { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 20px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: 0.3s; cursor: pointer; }
         .hub-cta-btn:hover { filter: brightness(1.1); transform: scale(1.02); }
         .shopcom-bg { background: #a855f7; color: #fff; }
         .cubenest-bg { background: #66fcf1; color: #000; }
