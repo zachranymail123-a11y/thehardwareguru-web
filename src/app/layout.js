@@ -14,10 +14,11 @@ import AdBlockDetector from '../components/AdBlockDetector';
 
 import MobileAnchorAd from '../components/MobileAnchorAd';
 import SeznamInterstitial from '../components/SeznamInterstitial';
+import AdTracker from '../components/AdTracker';
 
 /**
- * GURU ROOT LAYOUT V6.6 (ADBLOCK DETECTOR INTEGRATION)
- * 🚀 CÍL: Slušná detekce blokování reklam při zachování stability layoutu.
+ * GURU ROOT LAYOUT V6.7 (AD TRACKER INTEGRATION)
+ * 🚀 CÍL: Slušná detekce blokování reklam při zachování stability layoutu + SPA Ad Tracker pro mobilní Viněty.
  */
 
 export const metadata = {
@@ -118,6 +119,9 @@ export default async function RootLayout({ children, params }) {
 
       <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         
+        {/* 🚀 GURU FIX: Sledovač změn URL pro mobilní Viněty a Interstitial */}
+        <AdTracker />
+
         <div id="guru-env-bridge" style={{ display: 'none' }} data-url={envVars.NEXT_PUBLIC_SUPABASE_URL} data-key={envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY} />
         
         <Navbar />
