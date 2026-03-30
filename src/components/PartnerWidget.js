@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { ShoppingCart, Zap, Apple, RefreshCw, Cpu, Award, ChevronRight, ChevronLeft, X, Search, Flame, Monitor, Gamepad2, Smartphone } from 'lucide-react';
 
 /**
- * GURU PARTNER WIDGET V2.3 - DATA INTEGRATION
- * 🚀 CÍL: Doplněny a_bid z eHUBu pro Smarty a XM.
+ * GURU PARTNER WIDGET V2.4 - DATA INTEGRATION FIX
+ * 🚀 CÍL: Sjednocena ID pro Smarty a XM s reálnými screenshoty z eHUBu.
  * 💰 EHUB ID: 71c85dea | Heureka ID: 276027
  */
 
@@ -26,9 +26,9 @@ export default function PartnerWidget() {
   const IPHONE_MARKET_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=2bcd6f9d";
   const JABKOLEVNE_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=85731c2c";
   
-  // 🔥 EHUB TRACKING LINKS - DOPLNĚNÉ ÚDAJE (V2.3)
-  const SMARTY_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=4456574a";
-  const XM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=90708688";
+  // 🔥 EHUB TRACKING LINKS - OPRAVENÁ ID DLE SCREENSHOTŮ (V2.4)
+  const SMARTY_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06";
+  const XM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=0ff74973";
   
   // HEUREKA DEEP LINKS (Affiliate campaign 25842)
   const hUtm = "utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
