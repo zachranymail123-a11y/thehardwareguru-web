@@ -5,9 +5,8 @@ import { Lightbulb, ChevronRight, Play, Bookmark, Heart, Flame, ShieldCheck } fr
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU TIP ARCHIVE ENGINE V2.1 (MOBILE OPTIMIZED & ADS)
- * Cesta: src/app/tipy/page.js
- * 🚀 CÍL: 100% zelená v GSC, blesková indexace a maximální monetizace.
+ * GURU TIP ARCHIVE ENGINE V2.2 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
  */
 
 export const runtime = "nodejs";
@@ -17,7 +16,6 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const baseUrl = "https://thehardwareguru.cz";
 
-// 🚀 GURU SEO: Dynamické Meta Tagy pro archiv
 export async function generateMetadata(props) {
   const isEn = props?.isEn === true;
   const title = isEn ? 'Hardware Guru Tips | Tech Knowledge Base' : 'Guru Hardware Tipy | Databáze moudrosti';
@@ -43,7 +41,6 @@ export default async function TipyArchivePage(props) {
   const isEn = props?.isEn === true;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. GURU FETCH: Získání dat přímo na serveru
   const { data: items, error } = await supabase
     .from('tipy')
     .select('*')
@@ -55,7 +52,6 @@ export default async function TipyArchivePage(props) {
 
   const safeItems = items || [];
 
-  // 🚀 ZLATÁ GSC SEO SCHÉMATA (ItemList pro seznam rad)
   const itemListSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -82,73 +78,8 @@ export default async function TipyArchivePage(props) {
 
   return (
     <div className="guru-tip-archive-wrapper" style={archiveWrapper}>
-      {/* JSON-LD INJECTIONS */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(itemListSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbSchema) }} />
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        .tip-card { 
-            background: rgba(10, 11, 13, 0.92); 
-            border: 1px solid rgba(168, 85, 247, 0.25); 
-            border-radius: 28px; 
-            overflow: hidden; 
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            backdrop-filter: blur(15px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-            text-decoration: none;
-        }
-        .tip-card:hover { 
-            transform: translateY(-10px) scale(1.02); 
-            border-color: #a855f7; 
-            box-shadow: 0 20px 60px rgba(168, 85, 247, 0.3); 
-        }
-        .video-badge { 
-            position: absolute; 
-            top: 15px; 
-            right: 15px; 
-            background: #ff0000; 
-            color: #fff; 
-            padding: 6px 12px; 
-            border-radius: 8px; 
-            font-weight: 900; 
-            font-size: 10px; 
-            display: flex; 
-            align-items: center; 
-            gap: 5px; 
-            z-index: 5; 
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        
-        .guru-support-btn, .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; font-size: 15px; text-transform: uppercase; text-decoration: none !important; transition: 0.3s; }
-        .guru-support-btn { background: #eab308; color: #000 !important; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
-        .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
-        .guru-support-btn:hover, .guru-deals-btn:hover { transform: translateY(-4px); filter: brightness(1.1); }
-
-        /* 🚀 RESPONSIVE ADS SYSTEM */
-        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; margin-bottom: 60px; }
-        .ad-mobile-wrapper { display: none; width: 100%; margin-bottom: 40px; }
-
-        @media (max-width: 768px) {
-            .guru-tip-archive-wrapper { padding-top: 80px !important; }
-            .header-box { padding: 30px 15px !important; border-radius: 24px !important; margin-bottom: 40px !important; }
-            .main-title { font-size: 2.2rem !important; }
-            .main-subtitle { font-size: 1rem !important; margin-top: 15px !important; }
-            .ad-desktop-wrapper { display: none !important; }
-            .ad-mobile-wrapper { display: flex !important; justify-content: center; }
-            .tip-grid { gap: 25px !important; }
-            .tip-card { border-radius: 20px !important; }
-            .tip-img-container { height: 180px !important; }
-            .tip-content-box { padding: 20px !important; }
-            .tip-card-title { font-size: 1.3rem !important; }
-            .footer-cta-box { margin-top: 60px !important; padding-top: 40px !important; }
-            .guru-support-btn, .guru-deals-btn { width: 100%; }
-        }
-      `}} />
 
       <header style={headerStyle}>
         <div className="header-box" style={headerContentBox}>
@@ -164,12 +95,14 @@ export default async function TipyArchivePage(props) {
         </div>
       </header>
 
-      {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
-      <div className="ad-desktop-wrapper">
-          <SeznamAd zoneId={408654} width={970} height={210} />
-      </div>
-      <div className="ad-mobile-wrapper">
-          <SeznamAd zoneId={408651} width={300} height={250} />
+      {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+      <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={210} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={250} />
+          </div>
       </div>
 
       <main style={gridContainer}>
@@ -179,14 +112,13 @@ export default async function TipyArchivePage(props) {
           </div>
         ) : (
           <div className="tip-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '40px' }}>
-            {safeItems.map((item, index) => {
+            {safeItems.map((item) => {
               const displayTitle = (isEn && item.title_en) ? item.title_en : item.title;
               const displayDesc = (isEn && item.description_en) ? item.description_en : item.description;
               const displaySlug = (isEn && item.slug_en) ? item.slug_en : item.slug;
 
               return (
-                <React.Fragment key={item.id}>
-                  <Link href={isEn ? `/en/tipy/${displaySlug}` : `/tipy/${displaySlug}`} style={{ textDecoration: 'none' }}>
+                  <Link key={item.id} href={isEn ? `/en/tipy/${displaySlug}` : `/tipy/${displaySlug}`} style={{ textDecoration: 'none' }}>
                     <article className="tip-card">
                       <div className="tip-img-container" style={imgContainerStyle}>
                         {item.video_id && item.video_id.length > 5 && (
@@ -214,14 +146,6 @@ export default async function TipyArchivePage(props) {
                       </div>
                     </article>
                   </Link>
-
-                  {/* 🔥 MID AD SLOT - GRID INJECTION (POUZE MOBIL) */}
-                  {index === 1 && (
-                    <div className="ad-mobile-wrapper">
-                        <SeznamAd zoneId={408651} width={300} height={250} />
-                    </div>
-                  )}
-                </React.Fragment>
               );
             })}
           </div>
@@ -241,6 +165,51 @@ export default async function TipyArchivePage(props) {
           </div>
         </div>
       </main>
+
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper-fixed">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper-fixed">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .tip-card { transition: 0.3s; }
+        .tip-card:hover { transform: translateY(-10px); border-color: #a855f7; }
+        
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
+
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+        .ad-desktop-wrapper-fixed { display: flex; }
+        .ad-mobile-wrapper-fixed { display: none; }
+
+        @media (max-width: 768px) {
+            .guru-tip-archive-wrapper { padding-top: 80px !important; padding-bottom: 160px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+            .ad-desktop-wrapper-fixed { display: none !important; }
+            .ad-mobile-wrapper-fixed { display: flex !important; }
+            .main-title { font-size: 2.2rem !important; }
+            .tip-grid { grid-template-columns: 1fr !important; }
+        }
+      `}} />
     </div>
   );
 }
