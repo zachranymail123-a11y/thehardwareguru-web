@@ -9,10 +9,11 @@ import {
   AlertTriangle 
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU CPU RECOMMEND ENGINE V2.2 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU CPU RECOMMEND ENGINE V2.3 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka konverze.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -132,6 +133,11 @@ export default async function CpuRecommendPage({ params }) {
                 </div>
             </div>
         </section>
+
+        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek bezpečně pod verdikt 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
 
         <section style={{ textAlign: 'center', marginTop: '40px' }}>
             <div style={{ color: '#9ca3af', marginBottom: '20px', fontWeight: 'bold', fontSize: '14px', textTransform: 'uppercase' }}>
