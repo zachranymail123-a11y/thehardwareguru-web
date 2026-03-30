@@ -1,12 +1,12 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { ChevronLeft, Info, Calendar, Flame, Heart, Share2, Swords, Gauge, ArrowRight, Sparkles, Gamepad2, Twitter, Cpu, Monitor, User, Clock, CheckCircle } from 'lucide-react';
+import { ChevronLeft, Info, Calendar, Flame, Heart, Share2, Swords, Gauge, ArrowRight, Sparkles, Gamepad2, Twitter, Cpu, Monitor, User, Clock, CheckCircle, ChevronRight } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU ARTICLE ENGINE V5.6 (MOBILE RESCUE UPDATE)
- * 🚀 CÍL: Oprava dojebaného mobilního zobrazení a striktní separace reklam.
+ * GURU ARTICLE ENGINE V5.7 (MOBILE RESCUE + MASSIVE SEO HUB)
+ * 🚀 CÍL: Oprava dojebaného mobilního zobrazení a eliminace dead endu na konci článků.
  */
 
 export const runtime = "nodejs";
@@ -175,6 +175,34 @@ export default async function ArticleDetailPage(props) {
                         <a href={`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}`} target="_blank" className="share-card reddit-bg"><RedditIcon size={18} /> REDDIT</a>
                     </div>
                 </div>
+
+                {/* 🚀 MASSIVE SEO HUB PRO ELIMINACI DEAD ENDU A BOUNCE RATE */}
+                <section className="massive-seo-hub" style={{ marginTop: '80px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '60px' }}>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #a855f7', paddingLeft: '15px' }}>
+                        {isEn ? 'EXPLORE GURU DATABASE' : 'PROZKOUMEJ GURU DATABÁZI'}
+                    </h2>
+                    <div className="seo-hub-grid">
+                        <div className="hub-column">
+                            <div className="hub-col-header"><Swords size={20} color="#ff0055" /> {isEn ? 'Hardware Battles' : 'HW Souboje'}</div>
+                            <ul className="hub-links-list">
+                                <li><a href={isEn ? "/en/cpuvs" : "/cpuvs"}><ChevronRight size={16} /> {isEn ? 'Processor Battles' : 'Souboje Procesorů'}</a></li>
+                                <li><a href={isEn ? "/en/gpuvs" : "/gpuvs"}><ChevronRight size={16} /> {isEn ? 'Graphics Card Battles' : 'Souboje Grafických Karet'}</a></li>
+                                <li><a href={isEn ? "/en/cpu-index" : "/cpu-index"}><ChevronRight size={16} /> {isEn ? 'Processor Database' : 'Katalog Procesorů'}</a></li>
+                                <li><a href={isEn ? "/en/gpu-index" : "/gpu-index"}><ChevronRight size={16} /> {isEn ? 'Graphics Cards Database' : 'Katalog Grafických Karet'}</a></li>
+                            </ul>
+                        </div>
+                        <div className="hub-column">
+                            <div className="hub-col-header"><Gamepad2 size={20} color="#66fcf1" /> {isEn ? 'Guru Ecosystem' : 'Guru Ekosystém'}</div>
+                            <ul className="hub-links-list">
+                                <li><a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"}><ChevronRight size={16} /> {isEn ? 'Bottleneck Test' : 'Bottleneck Test'}</a></li>
+                                <li><a href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"}><ChevronRight size={16} /> {isEn ? 'Game Archive' : 'Archiv her'}</a></li>
+                                <li><a href={isEn ? "/en/clanky" : "/clanky"}><ChevronRight size={16} /> {isEn ? 'News & Articles' : 'Články a Novinky'}</a></li>
+                                <li><a href={isEn ? "/en/tipy" : "/tipy"}><ChevronRight size={16} /> {isEn ? 'GURU Tips' : 'GURU Tipy'}</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
             </main>
 
             <style dangerouslySetInnerHTML={{__html: `
@@ -191,6 +219,14 @@ export default async function ArticleDetailPage(props) {
                 .fb-bg { background: #1877f2; }
                 .reddit-bg { background: #ff4500; }
 
+                /* 🚀 SEO HUB CSS */
+                .seo-hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+                .hub-column { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
+                .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
+                .hub-links-list { list-style: none; padding: 0; margin: 0; }
+                .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 14px; display: flex; align-items: center; margin-bottom: 15px; font-weight: bold; transition: 0.3s; }
+                .hub-links-list a:hover { color: #a855f7; transform: translateX(10px); }
+
                 /* 🚀 RESPONSIVE ADS SYSTEM */
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
                 .ad-mobile-wrapper { display: none; width: 100%; }
@@ -203,6 +239,8 @@ export default async function ArticleDetailPage(props) {
                     .guru-article-content { font-size: 1.05rem; }
                     .guru-article-content h2 { font-size: 1.4rem; }
                     .share-grid { grid-template-columns: 1fr; }
+                    .seo-hub-grid { grid-template-columns: 1fr; }
+                    .hub-column { padding: 25px; }
                     main { padding: 0 10px !important; }
                 }
             `}} />
