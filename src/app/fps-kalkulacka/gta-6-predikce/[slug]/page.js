@@ -1,13 +1,13 @@
 import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
-import { Sparkles, Zap, Monitor, Cpu, ChevronRight } from 'lucide-react';
+import { Sparkles, Zap, Monitor, Cpu, ChevronRight, Swords, Gamepad2 } from 'lucide-react';
 import ShareButtonsClient from './ShareButtonsClient';
 import SeznamAd from '../../../../components/SeznamAd';
 
 /**
- * GURU GTA 6 PREDICTOR - V11.4 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Maximální monetizace GTA VI hypu a perfektní mobilní zobrazení.
+ * GURU GTA 6 PREDICTOR - V11.5 (MOBILE OPTIMIZED + MASSIVE SEO HUB)
+ * 🚀 CÍL: Eliminace mrtvého bodu po zobrazení výsledku.
  */
 
 export const dynamic = 'force-dynamic';
@@ -98,6 +98,34 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                         );
                     })}
                 </div>
+
+                {/* 🚀 MASSIVE SEO HUB PRO ELIMINACI DEAD ENDU */}
+                <section className="massive-seo-hub" style={{ marginTop: '80px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '60px' }}>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #f43f5e', paddingLeft: '15px' }}>
+                        PROZKOUMEJ GURU DATABÁZI
+                    </h2>
+                    <div className="seo-hub-grid">
+                        <div className="hub-column">
+                            <div className="hub-col-header"><Swords size={20} color="#ff0055" /> Hardware Souboje</div>
+                            <ul className="hub-links-list">
+                                <li><a href="/cpuvs"><ChevronRight size={16} /> Souboje Procesorů</a></li>
+                                <li><a href="/gpuvs"><ChevronRight size={16} /> Souboje Grafických Karet</a></li>
+                                <li><a href="/cpu-index"><ChevronRight size={16} /> Katalog Procesorů</a></li>
+                                <li><a href="/gpu-index"><ChevronRight size={16} /> Katalog Grafických Karet</a></li>
+                            </ul>
+                        </div>
+                        <div className="hub-column">
+                            <div className="hub-col-header"><Gamepad2 size={20} color="#66fcf1" /> Guru Ekosystém</div>
+                            <ul className="hub-links-list">
+                                <li><a href="/bottleneck-kalkulacka"><ChevronRight size={16} /> Kompletní Bottleneck Test</a></li>
+                                <li><a href="/fps-kalkulacka"><ChevronRight size={16} /> Nový odhad pro GTA VI</a></li>
+                                <li><a href="/ocekavane-hry"><ChevronRight size={16} /> Archiv a slevy her</a></li>
+                                <li><a href="/clanky"><ChevronRight size={16} /> Články a Novinky</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
             </main>
 
             <style dangerouslySetInnerHTML={{__html: `
@@ -111,6 +139,14 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                 .res-switch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 30px; }
                 .res-nav { padding: 18px; background: rgba(15,17,21,0.8); border-radius: 16px; text-align: center; text-decoration: none; color: #6b7280; font-weight: 950; border: 1px solid #222; transition: 0.3s; }
                 .res-nav.active { border-color: #f43f5e; background: rgba(244, 63, 94, 0.1); color: #f43f5e; }
+
+                /* 🚀 SEO HUB CSS */
+                .seo-hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+                .hub-column { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
+                .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
+                .hub-links-list { list-style: none; padding: 0; }
+                .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 14px; display: flex; align-items: center; margin-bottom: 15px; font-weight: bold; transition: 0.3s; }
+                .hub-links-list a:hover { color: #f43f5e; transform: translateX(10px); }
 
                 /* 🚀 RESPONSIVE ADS SYSTEM */
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
@@ -129,6 +165,8 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                     .stats-row { flex-direction: column; align-items: center; gap: 10px; margin-top: 25px; padding-top: 20px; }
                     .stat-pill { width: 100%; justify-content: center; }
                     .res-switch-grid { grid-template-columns: 1fr; gap: 10px; }
+                    .seo-hub-grid { grid-template-columns: 1fr; }
+                    .hub-column { padding: 25px; }
                 }
             `}} />
         </div>
