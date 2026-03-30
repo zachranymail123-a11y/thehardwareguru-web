@@ -6,8 +6,8 @@ import { ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart, Info, S
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU TWEAK ENGINE - DETAIL V2.4 (MOBILE OPTIMIZED & ADS SEPARATION)
- * 🚀 CÍL: 100% monetizace Tweaků a perfektní mobilní UX pro technické optimalizace.
+ * GURU TWEAK ENGINE - DETAIL V2.5 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
  */
 
 const supabase = createClient(
@@ -88,12 +88,6 @@ export default async function TweakDetail({ params }) {
   const backLinkPath = isEn ? '/en/tweaky' : '/tweaky';
   const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}tweaky/${slug}`;
 
-  // 🚀 GURU ADS INJECTION LOGIC
-  const contentParts = content ? content.split('</p>') : [];
-  const midPoint = Math.ceil(contentParts.length / 2);
-  const firstHalf = contentParts.slice(0, midPoint).join('</p>');
-  const secondHalf = contentParts.slice(midPoint).join('</p>');
-
   // Google Golden Rich schemas
   const commonOfferDetails = {
     "priceValidUntil": "2026-12-31", 
@@ -134,7 +128,7 @@ export default async function TweakDetail({ params }) {
   return (
     <div className="guru-tweak-wrapper" style={{ 
         minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', 
-        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px' 
+        backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px' 
     }}>
       
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(productSchema) }} />
@@ -171,8 +165,8 @@ export default async function TweakDetail({ params }) {
             </h1>
           </header>
 
-          {/* 🔥 SEZNAM AD #1: TOP LEADERBOARD (STRIKTNÍ SEPARACE) */}
-          <div style={{ marginBottom: '40px' }}>
+          {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+          <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
               <div className="ad-desktop-wrapper">
                   <SeznamAd zoneId={408654} width={970} height={210} />
               </div>
@@ -182,16 +176,7 @@ export default async function TweakDetail({ params }) {
           </div>
 
           <div className="guru-prose">
-              <div dangerouslySetInnerHTML={{ __html: firstHalf + (contentParts.length > 1 ? '</p>' : '') }} />
-
-              {/* 🔥 SEZNAM AD #2: IN-CONTENT BANNER (POUZE MOBIL) */}
-              {contentParts.length > 2 && (
-                <div className="ad-mobile-wrapper" style={{ margin: '30px 0' }}>
-                   <SeznamAd zoneId={408651} width={300} height={250} />
-                </div>
-              )}
-
-              <div dangerouslySetInnerHTML={{ __html: secondHalf }} />
+              <div dangerouslySetInnerHTML={{ __html: content }} />
           </div>
 
           {tweak.affiliate_link && (
@@ -245,12 +230,22 @@ export default async function TweakDetail({ params }) {
         </div>
       </main>
 
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
+
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #eab308; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(234, 179, 8, 0.3); transition: 0.3s; backdrop-filter: blur(5px); }
         .guru-back-btn:hover { background: #eab308; color: #000; transform: scale(1.05); }
 
-        .share-link-x { display: flex; align-items: center; gap: 8px; background: #1da1f220; color: #1da1f2; border: 1px solid #1da1f250; padding: 10px 20px; border-radius: 12px; fontWeight: 950; text-decoration: none; transition: 0.3s; }
-        .share-link-fb { display: flex; align-items: center; gap: 8px; background: #1877f220; color: #1877f2; border: 1px solid #1877f250; padding: 10px 20px; border-radius: 12px; fontWeight: 950; text-decoration: none; transition: 0.3s; }
+        .share-link-x { display: flex; align-items: center; gap: 8px; background: #1da1f220; color: #1da1f2; border: 1px solid #1da1f250; padding: 10px 20px; border-radius: 12px; font-weight: 950; text-decoration: none; transition: 0.3s; }
+        .share-link-fb { display: flex; align-items: center; gap: 8px; background: #1877f220; color: #1877f2; border: 1px solid #1877f250; padding: 10px 20px; border-radius: 12px; font-weight: 950; text-decoration: none; transition: 0.3s; }
 
         .guru-affiliate-cta { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 22px 45px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 18px; text-transform: uppercase; border-radius: 18px; text-decoration: none !important; transition: 0.3s; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(249, 115, 22, 0.3); }
         .guru-affiliate-cta:hover { transform: scale(1.02); filter: brightness(1.1); box-shadow: 0 15px 40px rgba(249, 115, 22, 0.5); }
@@ -265,6 +260,21 @@ export default async function TweakDetail({ params }) {
         .silo-banner-icon { width: 55px; height: 55px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .silo-banner-text h4 { margin: 0; color: #fff; font-size: 1.1rem; font-weight: 950; text-transform: uppercase; }
         .silo-banner-text p { margin: 0; color: #9ca3af; font-size: 0.85rem; }
+
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
 
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
