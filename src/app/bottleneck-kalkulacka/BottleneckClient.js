@@ -222,8 +222,8 @@ export default function BottleneckClient({
                                 <div className="pct-label" style={{ color: statusColor }}>{a.limitedBy} tě brzdí o {a.bottleneckPercent}%</div>
                             </div>
 
-                            {/* 🔥 SEZNAM AD: VNITŘNÍ REKLAMA (ZOBRAZENA POUZE NA MOBILU) */}
-                            <div className="ad-mobile-wrapper" style={{ margin: '30px -20px' }}>
+                            {/* 🔥 SEZNAM AD: VNITŘNÍ REKLAMA (ZOBRAZENA POUZE NA MOBILU, CENTROVÁNO) */}
+                            <div className="ad-mobile-wrapper" style={{ margin: '30px -20px', display: 'flex', justifyContent: 'center' }}>
                                 <SeznamAd zoneId={408651} width={300} height={250} />
                             </div>
 
