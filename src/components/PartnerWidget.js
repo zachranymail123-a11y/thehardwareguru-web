@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { ShoppingCart, Zap, Apple, RefreshCw, Cpu, Award, ChevronRight, ChevronLeft, X, Search, Flame, Monitor, Gamepad2, Smartphone } from 'lucide-react';
 
 /**
- * GURU PARTNER WIDGET V2.5 - HEUREKA TRACKING FIX
- * 🚀 CÍL: Přidána klíčová třída 'heureka-hn-link' pro trixam.min.js.
- * 💰 EHUB ID: 71c85dea | Heureka ID: 276027
+ * GURU PARTNER WIDGET V2.6 - HEUREKA POSITION ID FIX
+ * 🚀 CÍL: Rozdělení data-trixam-positionid pro CPU (276027) a GPU (276026).
+ * 💰 EHUB ID: 71c85dea
  */
 
 export default function PartnerWidget() {
@@ -19,18 +19,16 @@ export default function PartnerWidget() {
     }
   }, []);
 
-  // EHUB TRACKING LINKS - ZÁKLADNÍ
+  // EHUB TRACKING LINKS
   const SHOPCOM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=3ea952dd";
   const ALZA_SK_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=4d8d02fb";
   const CUBENEST_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=231eaccc";
   const IPHONE_MARKET_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=2bcd6f9d";
   const JABKOLEVNE_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=85731c2c";
-  
-  // 🔥 EHUB TRACKING LINKS - OPRAVENÁ ID
   const SMARTY_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06";
   const XM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=0ff74973";
   
-  // HEUREKA DEEP LINKS (Affiliate campaign 25842)
+  // HEUREKA DEEP LINKS
   const hUtm = "utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
   const HEUREKA_CPU = `https://www.heureka.cz/?h%5Bfraze%5D=procesor#${hUtm}`;
   const HEUREKA_GPU = `https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta#${hUtm}`;
@@ -201,7 +199,7 @@ export default function PartnerWidget() {
 
         <div className="panel-content-scrollable">
           
-          {/* 🔥 HEUREKA DEEP LINKS - Přidána třída heureka-hn-link */}
+          {/* 🔥 HEUREKA PROCESORY -> ID 276027 */}
           <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="money-row heureka-gold heureka-hn-link" data-trixam-positionid="276027">
             <div className="m-icon" style={{ backgroundColor: '#eab30820', color: '#eab308' }}>
               <Cpu size={22} />
@@ -212,8 +210,8 @@ export default function PartnerWidget() {
             </div>
           </a>
 
-          {/* 🔥 HEUREKA DEEP LINKS - Přidána třída heureka-hn-link */}
-          <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="money-row heureka-gold heureka-hn-link" data-trixam-positionid="276027">
+          {/* 🔥 HEUREKA GRAFIKY -> ID 276026 */}
+          <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="money-row heureka-gold heureka-hn-link" data-trixam-positionid="276026">
             <div className="m-icon" style={{ backgroundColor: '#eab30820', color: '#eab308' }}>
               <Monitor size={22} />
             </div>
