@@ -7,8 +7,8 @@ import {
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU CPU DUELS ENGINE - MASTER HUB V1.5 (MOBILE OPTIMIZED + HOLE FILLER SEO HUB)
- * 🚀 CÍL: Maximální monetizace, perfektní mobilní zobrazení a vyplnění prázdného prostoru pod generátorem.
+ * GURU CPU DUELS ENGINE - MASTER HUB V1.6 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchor, zachování SEO Hubu.
  */
 
 export default function CpuVsHub() {
@@ -71,7 +71,7 @@ export default function CpuVsHub() {
   };
 
   return (
-    <div className="guru-hub-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', backgroundPosition: 'center', paddingTop: '140px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-hub-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', backgroundPosition: 'center', paddingTop: '140px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <style dangerouslySetInnerHTML={{__html: `
         .guru-hub-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
@@ -97,6 +97,21 @@ export default function CpuVsHub() {
         .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 14px; display: flex; align-items: center; margin-bottom: 15px; font-weight: bold; transition: 0.3s; }
         .hub-links-list a:hover { color: #66fcf1; transform: translateX(10px); }
 
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
+
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
@@ -120,6 +135,16 @@ export default function CpuVsHub() {
       `}} />
 
       <div className="guru-hub-container">
+        {/* 🔥 GURU MONEY FIX: TOP BANNER ABOVE FOLD (Přesunut úplně nahoru před hlavičku) */}
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
+        </div>
+
         <header style={{ marginBottom: '20px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', padding: '6px 16px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)' }}>
             <ShieldCheck size={14} /> GURU VS ENGINE
@@ -131,16 +156,6 @@ export default function CpuVsHub() {
             {isEn ? "Technical analysis and raw CPU benchmarks." : "Technické analýzy a hrubý výkon procesorů."}
           </p>
         </header>
-
-        {/* 🔥 SEZNAM AD #1: TOP BANNER (STRIKTNÍ SEPARACE) */}
-        <div style={{ marginBottom: '40px' }}>
-            <div className="ad-desktop-wrapper">
-                <SeznamAd zoneId={408654} width={970} height={210} />
-            </div>
-            <div className="ad-mobile-wrapper">
-                <SeznamAd zoneId={408651} width={300} height={250} />
-            </div>
-        </div>
 
         <div className="hub-grid">
             {/* LEVÝ SLOUPEC: Generátor + Vyplnění díry SEO Hubem */}
@@ -207,6 +222,16 @@ export default function CpuVsHub() {
               </div>
             </section>
         </div>
+      </div>
+
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
       </div>
     </div>
   );
