@@ -23,10 +23,11 @@ import {
 } from 'lucide-react';
 import GuruAnalysisText from '../../../components/GuruAnalysisText';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU FPS HUNTER V1.6 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP reklamy Above Fold, přidání Sticky Bottom Anchoru, odstranění hluchých zón.
+ * GURU FPS HUNTER V1.6 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP reklamy Above Fold, přidání Sticky Bottom Anchoru, odstranění hluchých zón + Heureka konverze.
  */
 
 export const runtime = "nodejs";
@@ -166,6 +167,11 @@ export default async function GpuFpsHunterPage(props) {
             </div>
         </section>
 
+        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (pod analýzu výkonu) 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
+
         <section className="semantic-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '60px' }}>
             <a href={`/${isEn ? 'en/' : ''}bottleneck/${safeSlug}-with-ryzen-7-7800x3d`} className="deep-link-card" style={{ borderTop: '4px solid #ff0055' }}>
                 <Gauge size={32} color="#ff0055" />
@@ -213,7 +219,7 @@ export default async function GpuFpsHunterPage(props) {
         .deep-link-card p { font-size: 13px; color: #9ca3af; line-height: 1.5; margin: 0; }
         .deep-link-card .arrow { position: absolute; bottom: 30px; right: 30px; opacity: 0.2; }
 
-        .guru-support-btn, .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; text-decoration: none; transition: 0.3s; text-transform: uppercase; }
+        .guru-support-btn, .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; border: none; text-decoration: none; transition: 0.3s; }
         .guru-support-btn { background: #eab308; color: #000; }
         .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
 
@@ -241,7 +247,7 @@ export default async function GpuFpsHunterPage(props) {
             .inner-container { padding: 0 15px !important; }
             .ad-desktop-wrapper { display: none !important; }
             .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
-            .main-title { font-size: 1.6rem !important; }
+            .main-h1 { font-size: 1.6rem !important; }
             .fps-matrix-grid { grid-template-columns: 1fr !important; gap: 15px; }
             .game-fps-card { padding: 20px !important; border-radius: 18px !important; }
             .fps-val-main { font-size: 3.5rem !important; }
