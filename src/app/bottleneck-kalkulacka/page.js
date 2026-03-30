@@ -2,6 +2,7 @@ import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import BottleneckClient from './BottleneckClient';
 import SeznamAd from '../../components/SeznamAd';
+import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
  * GURU BOTTLENECK CALCULATOR - HUB V1.6 (MONEY FIX UPDATE)
@@ -84,6 +85,11 @@ export default async function BottleneckPage() {
                     cpus={cpusRes.data || []} 
                     games={gamesRes.data || []} 
                 />
+
+                {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (bezpečně pod kalkulačku) 🔥 */}
+                <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
+                    <HeurekaButtons />
+                </div>
 
             </div>
 
