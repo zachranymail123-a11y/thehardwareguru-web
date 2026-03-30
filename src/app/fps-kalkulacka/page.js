@@ -1,15 +1,17 @@
 import React from 'react';
-import { Gamepad2, Monitor, Cpu, Info, ArrowRight, ChevronLeft, Zap, Sparkles } from 'lucide-react';
+import { Gamepad2, Monitor, Cpu, Info, ArrowRight, ChevronLeft, Zap, Sparkles, Swords, ChevronRight } from 'lucide-react';
 import FpsCalculatorClient from './FpsCalculatorClient';
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU FPS ENGINE - V6.5 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Maximální monetizace skrze Seznam Partner a perfektní mobilní zobrazení.
+ * GURU FPS ENGINE - V6.6 (CACHE KILLER & MASSIVE SEO HUB)
+ * 🚀 CÍL: Oprava mizejících her (zabití cache) a integrace masivního prolinkování.
  */
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0; // 🚀 GURU FIX: Absolutní zákaz cache pro Vercel
+
 const baseUrl = "https://thehardwareguru.cz";
 
 export async function generateMetadata(props) {
@@ -30,7 +32,14 @@ export default async function FpsKalkulackaPage(props) {
   const p = await props.params;
   const s = await props.searchParams;
   const isEn = p?.lang === 'en' || s?.lang === 'en' || false;
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  
+  // 🚀 GURU FIX: Supabase klient s vynuceným 'no-store', aby ignoroval starou paměť a stáhl i GTA V
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false },
+      global: { fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' }) }
+  });
 
   const [gpuRes, cpuRes, gameRes] = await Promise.all([
     supabase.from('gpus').select('id,name,vendor,slug').order('name'),
@@ -75,11 +84,40 @@ export default async function FpsKalkulackaPage(props) {
           <SeznamAd zoneId={408651} width={300} height={250} />
         </div>
 
+        {/* TVŮJ PŮVODNÍ SILO GRID (Ponechán beze změny) */}
         <div className="silo-grid" style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
             <a href="/cpu-index" className="silo-mini-card"><Cpu size={20} color="#f59e0b" /> KATALOG PROCESORŮ <ArrowRight size={16} /></a>
             <a href="/gpu-index" className="silo-mini-card"><Monitor size={20} color="#66fcf1" /> KATALOG GRAFIK <ArrowRight size={16} /></a>
             <a href="/cpuvs" className="silo-mini-card highlight"><Zap size={20} color="#a855f7" /> BOTTLENECK NÁSTROJ <ArrowRight size={16} /></a>
         </div>
+
+        {/* 🚀 MASSIVE SEO HUB PŘIDANÝ NA KONEC (Eliminace Dead Endu) */}
+        <section className="massive-seo-hub" style={{ marginTop: '60px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '50px' }}>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #a855f7', paddingLeft: '15px' }}>
+                {isEn ? 'EXPLORE GURU DATABASE' : 'PROZKOUMEJ GURU DATABÁZI'}
+            </h2>
+            <div className="seo-hub-grid">
+                <div className="hub-column">
+                    <div className="hub-col-header"><Swords size={20} color="#ff0055" /> {isEn ? 'Hardware Battles' : 'HW Souboje'}</div>
+                    <ul className="hub-links-list">
+                        <li><a href={isEn ? "/en/gpuvs" : "/gpuvs"}><ChevronRight size={16} /> {isEn ? 'Graphics Card Battles' : 'Souboje Grafických Karet'}</a></li>
+                        <li><a href={isEn ? "/en/cpuvs" : "/cpuvs"}><ChevronRight size={16} /> {isEn ? 'Processor Battles' : 'Souboje Procesorů'}</a></li>
+                        <li><a href={isEn ? "/en/gpu-index" : "/gpu-index"}><ChevronRight size={16} /> {isEn ? 'Graphics Cards Database' : 'Katalog Grafických Karet'}</a></li>
+                        <li><a href={isEn ? "/en/cpu-index" : "/cpu-index"}><ChevronRight size={16} /> {isEn ? 'Processor Database' : 'Katalog Procesorů'}</a></li>
+                    </ul>
+                </div>
+                <div className="hub-column">
+                    <div className="hub-col-header"><Gamepad2 size={20} color="#66fcf1" /> {isEn ? 'Guru Ecosystem' : 'Guru Ekosystém'}</div>
+                    <ul className="hub-links-list">
+                        <li><a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"}><ChevronRight size={16} /> {isEn ? 'Bottleneck Test' : 'Bottleneck Test'}</a></li>
+                        <li><a href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"}><ChevronRight size={16} /> {isEn ? 'Game Archive' : 'Archiv her'}</a></li>
+                        <li><a href={isEn ? "/en/clanky" : "/clanky"}><ChevronRight size={16} /> {isEn ? 'News & Articles' : 'Články a Novinky'}</a></li>
+                        <li><a href={isEn ? "/en/tipy" : "/tipy"}><ChevronRight size={16} /> {isEn ? 'GURU Tips' : 'GURU Tipy'}</a></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
@@ -93,6 +131,14 @@ export default async function FpsKalkulackaPage(props) {
         .silo-mini-card { display: flex; align-items: center; justify-content: space-between; background: rgba(15,17,21,0.9); padding: 25px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; font-weight: 950; font-size: 13px; transition: 0.3s; }
         .silo-mini-card:hover { transform: translateY(-3px); border-color: #a855f7; }
         .silo-mini-card.highlight { border-color: rgba(168, 85, 247, 0.5); }
+
+        /* 🚀 SEO HUB CSS */
+        .seo-hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .hub-column { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
+        .hub-links-list { list-style: none; padding: 0; }
+        .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 14px; display: flex; align-items: center; margin-bottom: 15px; font-weight: bold; transition: 0.3s; }
+        .hub-links-list a:hover { color: #66fcf1; transform: translateX(10px); }
 
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
@@ -108,6 +154,8 @@ export default async function FpsKalkulackaPage(props) {
             .bait-title { font-size: 18px !important; }
             .silo-grid { grid-template-columns: 1fr !important; gap: 15px !important; }
             .silo-mini-card { padding: 20px !important; }
+            .seo-hub-grid { grid-template-columns: 1fr; }
+            .hub-column { padding: 25px; }
         }
       `}} />
     </div>
