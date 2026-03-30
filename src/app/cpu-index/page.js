@@ -13,10 +13,11 @@ import {
   Gamepad2
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
+import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU CPU ENGINE - KATALOG PROCESORŮ V1.9 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU CPU ENGINE - KATALOG PROCESORŮ V1.10 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka konverze.
  */
 
 export const dynamic = 'force-dynamic';
@@ -129,6 +130,11 @@ export default async function CpuIndexPage(props) {
             <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="quick-link-pill" style={{ borderColor: '#a855f7', color: '#a855f7' }}><Gamepad2 size={14} /> {isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</a>
           </div>
         </header>
+
+        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek nad výpis procesorů 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
 
         {amdCpus.length > 0 && (
           <section style={{ marginBottom: '60px' }}>
