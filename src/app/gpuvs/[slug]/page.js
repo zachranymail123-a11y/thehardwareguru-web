@@ -3,14 +3,14 @@ import { notFound } from 'next/navigation';
 import { 
  ChevronLeft, Zap, ArrowRight, Activity, ArrowUpCircle, LayoutList, 
  BarChart3, Gamepad2, Coins, CheckCircle2, Swords, Flame, Heart, 
- Monitor, ExternalLink, Info, HelpCircle
+ Monitor, ExternalLink, Info, HelpCircle, ChevronRight
 } from 'lucide-react';
 import GuruGpuCompareText from '../../../components/GuruGpuCompareText';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU GPU DUELS ENGINE - V6.3 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Maximální monetizace srovnávače a perfektní mobilní UX.
+ * GURU GPU DUELS ENGINE - V6.4 (MOBILE OPTIMIZED + MASSIVE SEO HUB)
+ * 🚀 CÍL: Maximální monetizace srovnávače, perfektní mobilní UX a eliminace dead endů.
  */
 
 export const runtime = "nodejs";
@@ -247,6 +247,32 @@ export default async function GpuVsDetailPage(props) {
             </div>
         </section>
 
+        {/* 🚀 MASSIVE SEO HUB PRO ELIMINACI DEAD ENDU A BOUNCE RATE */}
+        <section className="massive-seo-hub" style={{ marginBottom: '60px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '60px' }}>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #a855f7', paddingLeft: '15px' }}>
+                {isEn ? 'EXPLORE GURU DATABASE' : 'PROZKOUMEJ GURU DATABÁZI'}
+            </h2>
+            <div className="seo-hub-grid">
+                <div className="hub-column">
+                    <div className="hub-col-header"><Swords size={20} color="#ff0055" /> {isEn ? 'Hardware Battles' : 'HW Souboje'}</div>
+                    <ul className="hub-links-list">
+                        <li><a href={isEn ? "/en/cpuvs" : "/cpuvs"}><ChevronRight size={16} /> {isEn ? 'Processor Battles' : 'Souboje Procesorů'}</a></li>
+                        <li><a href={isEn ? "/en/gpu-index" : "/gpu-index"}><ChevronRight size={16} /> {isEn ? 'Graphics Cards Database' : 'Katalog Grafických Karet'}</a></li>
+                        <li><a href={isEn ? "/en/cpu-index" : "/cpu-index"}><ChevronRight size={16} /> {isEn ? 'Processor Database' : 'Katalog Procesorů'}</a></li>
+                    </ul>
+                </div>
+                <div className="hub-column">
+                    <div className="hub-col-header"><Gamepad2 size={20} color="#66fcf1" /> {isEn ? 'Guru Ecosystem' : 'Guru Ekosystém'}</div>
+                    <ul className="hub-links-list">
+                        <li><a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"}><ChevronRight size={16} /> {isEn ? 'Bottleneck Test' : 'Bottleneck Test'}</a></li>
+                        <li><a href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"}><ChevronRight size={16} /> {isEn ? 'Game Archive' : 'Archiv her'}</a></li>
+                        <li><a href={isEn ? "/en/clanky" : "/clanky"}><ChevronRight size={16} /> {isEn ? 'News & Articles' : 'Články a Novinky'}</a></li>
+                        <li><a href={isEn ? "/en/tipy" : "/tipy"}><ChevronRight size={16} /> {isEn ? 'GURU Tips' : 'GURU Tipy'}</a></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
         {relatedArticles.length > 0 && (
             <section style={{ marginBottom: '60px' }}>
                 <h2 className="section-h2" style={{ borderLeftColor: '#a855f7' }}><Info size={28} color="#a855f7" /> {isEn ? 'GURU NEWS' : 'GURU NOVINKY'}</h2>
@@ -286,6 +312,14 @@ export default async function GpuVsDetailPage(props) {
         .related-tag { color: #a855f7; font-size: 10px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 10px; }
         .related-title-text { color: #fff; font-size: 1.1rem; font-weight: 950; margin: 0; line-height: 1.3; }
 
+        /* 🚀 SEO HUB CSS */
+        .seo-hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .hub-column { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
+        .hub-links-list { list-style: none; padding: 0; }
+        .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 14px; display: flex; align-items: center; margin-bottom: 15px; font-weight: bold; transition: 0.3s; }
+        .hub-links-list a:hover { color: #66fcf1; transform: translateX(10px); }
+
         .guru-deals-btn, .guru-support-btn { flex: 1; max-width: 300px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px; border-radius: 16px; font-weight: 950; text-decoration: none; text-transform: uppercase; transition: 0.3s; }
         .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
         .guru-support-btn { background: #eab308; color: #000; }
@@ -314,6 +348,8 @@ export default async function GpuVsDetailPage(props) {
             .bottleneck-cta { padding: 25px 15px !important; text-align: center; }
             .footer-btns { flex-direction: column; gap: 15px !important; }
             .guru-deals-btn, .guru-support-btn { max-width: 100% !important; }
+            .seo-hub-grid { grid-template-columns: 1fr; }
+            .hub-column { padding: 25px; }
         }
       `}} />
     </div>
