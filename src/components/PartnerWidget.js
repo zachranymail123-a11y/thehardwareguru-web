@@ -1,11 +1,11 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, Zap, Apple, RefreshCw, Cpu, Award, ChevronRight, ChevronLeft, X, Search, Flame, Monitor } from 'lucide-react';
+import { ShoppingCart, Zap, Apple, RefreshCw, Cpu, Award, ChevronRight, ChevronLeft, X, Search, Flame, Monitor, Gamepad2, Smartphone } from 'lucide-react';
 
 /**
- * GURU PARTNER WIDGET V2.1 - CRITICAL VISIBILITY FIX
- * 🚀 CÍL: 100% přesné zasouvání (translateX 100%) + bezchybný vertikální úchyt.
+ * GURU PARTNER WIDGET V2.3 - DATA INTEGRATION
+ * 🚀 CÍL: Doplněny a_bid z eHUBu pro Smarty a XM.
  * 💰 EHUB ID: 71c85dea | Heureka ID: 276027
  */
 
@@ -19,13 +19,18 @@ export default function PartnerWidget() {
     }
   }, []);
 
-  // EHUB TRACKING LINKS
+  // EHUB TRACKING LINKS - ZÁKLADNÍ
   const SHOPCOM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=3ea952dd";
   const ALZA_SK_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=4d8d02fb";
   const CUBENEST_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=231eaccc";
   const IPHONE_MARKET_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=2bcd6f9d";
+  const JABKOLEVNE_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=85731c2c";
   
-  // HEUREKA DEEP LINKS
+  // 🔥 EHUB TRACKING LINKS - DOPLNĚNÉ ÚDAJE (V2.3)
+  const SMARTY_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=4456574a";
+  const XM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=90708688";
+  
+  // HEUREKA DEEP LINKS (Affiliate campaign 25842)
   const hUtm = "utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
   const HEUREKA_CPU = `https://www.heureka.cz/?h%5Bfraze%5D=procesor#${hUtm}`;
   const HEUREKA_GPU = `https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta#${hUtm}`;
@@ -37,7 +42,6 @@ export default function PartnerWidget() {
           position: fixed;
           right: 0;
           top: 50%;
-          /* 🚀 FIX: Přesné skrytí o 100% šířky elementu */
           transform: translateY(-50%) translateX(100%);
           width: 350px;
           background: rgba(10, 11, 13, 0.98);
@@ -49,17 +53,31 @@ export default function PartnerWidget() {
           box-shadow: -20px 0 60px rgba(0,0,0,0.9);
           backdrop-filter: blur(30px);
           padding: 35px 25px;
-          /* 🚀 FIX: Border-box zabrání roztažení panelu paddingem */
           box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
+          max-height: 90vh;
         }
         
         .guru-side-panel.is-open {
           transform: translateY(-50%) translateX(0);
         }
 
+        .panel-content-scrollable {
+          flex: 1;
+          overflow-y: auto;
+          overflow-x: hidden;
+          padding-right: 5px;
+          margin-bottom: 10px;
+        }
+
+        .panel-content-scrollable::-webkit-scrollbar { width: 4px; }
+        .panel-content-scrollable::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); border-radius: 10px; }
+        .panel-content-scrollable::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.5); border-radius: 10px; }
+        .panel-content-scrollable::-webkit-scrollbar-thumb:hover { background: rgba(168, 85, 247, 0.8); }
+
         .panel-trigger-handle {
           position: absolute;
-          /* 🚀 FIX: Trčí přesně 50px do obrazovky */
           left: -50px;
           top: 50%;
           transform: translateY(-50%);
@@ -113,7 +131,6 @@ export default function PartnerWidget() {
           border-color: rgba(168, 85, 247, 0.6);
         }
 
-        /* 🔥 HEUREKA SPECIAL CTR */
         .heureka-gold {
           background: linear-gradient(135deg, rgba(234, 179, 8, 0.2) 0%, rgba(234, 179, 8, 0.05) 100%) !important;
           border: 1px solid rgba(234, 179, 8, 0.4) !important;
@@ -142,11 +159,12 @@ export default function PartnerWidget() {
           cursor: pointer;
           transition: 0.2s;
           padding: 5px;
+          z-index: 10;
         }
         .close-icon-wrap:hover { color: #fff; transform: rotate(90deg); }
 
         @media (max-width: 768px) {
-          .guru-side-panel { width: 310px; padding: 25px 15px; }
+          .guru-side-panel { width: 310px; padding: 25px 15px; max-height: 85vh; }
           .panel-trigger-handle { width: 40px; left: -40px; height: 150px; }
           .panel-trigger-handle:hover { width: 45px; left: -45px; }
           .trigger-text { font-size: 12px; }
@@ -155,7 +173,6 @@ export default function PartnerWidget() {
 
       <div className={`guru-side-panel ${isOpen ? 'is-open' : ''}`}>
         
-        {/* 🔥 MASIVNÍ ÚCHYT */}
         <div className="panel-trigger-handle" onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? (
             <ChevronRight size={24} />
@@ -167,14 +184,13 @@ export default function PartnerWidget() {
           )}
         </div>
 
-        {/* Křížek pro zavření uvnitř */}
         {isOpen && (
           <div className="close-icon-wrap" onClick={() => setIsOpen(false)}>
             <X size={20} />
           </div>
         )}
 
-        <div style={{ marginBottom: '25px', textAlign: 'center' }}>
+        <div style={{ marginBottom: '25px', textAlign: 'center', flexShrink: 0 }}>
           <h4 style={{ margin: 0, fontSize: '18px', fontStyle: 'italic', fontWeight: 950, color: '#a855f7', textTransform: 'uppercase' }}>
             {isEn ? 'Elite Hardware' : 'Elitní výběr'}
           </h4>
@@ -183,9 +199,9 @@ export default function PartnerWidget() {
           </p>
         </div>
 
-        <div className="panel-content">
+        <div className="panel-content-scrollable">
           
-          {/* 🔥 HEUREKA DEEP LINKS - PROCESORY */}
+          {/* 🔥 HEUREKA DEEP LINKS - PROCESORY (affiliate) */}
           <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="money-row heureka-gold" data-trixam-positionid="276027">
             <div className="m-icon" style={{ backgroundColor: '#eab30820', color: '#eab308' }}>
               <Cpu size={22} />
@@ -196,7 +212,7 @@ export default function PartnerWidget() {
             </div>
           </a>
 
-          {/* 🔥 HEUREKA DEEP LINKS - GRAFIKY */}
+          {/* 🔥 HEUREKA DEEP LINKS - GRAFIKY (affiliate) */}
           <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="money-row heureka-gold" data-trixam-positionid="276027">
             <div className="m-icon" style={{ backgroundColor: '#eab30820', color: '#eab308' }}>
               <Monitor size={22} />
@@ -207,7 +223,29 @@ export default function PartnerWidget() {
             </div>
           </a>
 
-          {/* EHUB PARTNER - SHOPCOM */}
+          {/* SMARTY.CZ */}
+          <a href={SMARTY_LINK} target="_blank" rel="nofollow sponsored" className="money-row">
+            <div className="m-icon" style={{ backgroundColor: '#ec489920', color: '#ec4899' }}>
+              <Gamepad2 size={22} />
+            </div>
+            <div className="m-info">
+              <span className="m-title">Smarty.cz</span>
+              <span className="m-label">Gaming & Elektronika</span>
+            </div>
+          </a>
+
+          {/* XM.CZ */}
+          <a href={XM_LINK} target="_blank" rel="nofollow sponsored" className="money-row">
+            <div className="m-icon" style={{ backgroundColor: '#f9731620', color: '#f97316' }}>
+              <Smartphone size={22} />
+            </div>
+            <div className="m-info">
+              <span className="m-title">XM.cz</span>
+              <span className="m-label">Chytrá elektronika</span>
+            </div>
+          </a>
+
+          {/* SHOPCOM */}
           <a href={SHOPCOM_LINK} target="_blank" rel="nofollow sponsored" className="money-row">
             <div className="m-icon" style={{ backgroundColor: '#a855f720', color: '#a855f7' }}>
               <Flame size={22} />
@@ -218,7 +256,7 @@ export default function PartnerWidget() {
             </div>
           </a>
 
-          {/* EHUB PARTNER - ALZA.SK */}
+          {/* ALZA.SK */}
           <a href={ALZA_SK_LINK} target="_blank" rel="nofollow sponsored" className="money-row">
             <div className="m-icon" style={{ backgroundColor: '#22c55e20', color: '#22c55e' }}>
               <Zap size={22} />
@@ -229,18 +267,18 @@ export default function PartnerWidget() {
             </div>
           </a>
 
-          {/* EHUB PARTNER - CUBENEST */}
-          <a href={CUBENEST_LINK} target="_blank" rel="nofollow sponsored" className="money-row">
-            <div className="m-icon" style={{ backgroundColor: '#66fcf120', color: '#66fcf1' }}>
-              <Award size={22} />
+          {/* JABKOLEVNE */}
+          <a href={JABKOLEVNE_LINK} target="_blank" rel="nofollow sponsored" className="money-row">
+            <div className="m-icon" style={{ backgroundColor: '#84cc1620', color: '#84cc16' }}>
+              <Apple size={22} />
             </div>
             <div className="m-info">
-              <span className="m-title">Cubenest</span>
-              <span className="m-label">Prémiové doplňky setupu</span>
+              <span className="m-title">Jabkolevne.cz</span>
+              <span className="m-label">Dostupné iPhony</span>
             </div>
           </a>
 
-          {/* EHUB PARTNER - IPHONEMARKET */}
+          {/* IPHONEMARKET */}
           <a href={IPHONE_MARKET_LINK} target="_blank" rel="nofollow sponsored" className="money-row">
             <div className="m-icon" style={{ backgroundColor: '#a855f720', color: '#a855f7' }}>
               <Apple size={22} />
@@ -251,7 +289,32 @@ export default function PartnerWidget() {
             </div>
           </a>
 
+          {/* CUBENEST */}
+          <a href={CUBENEST_LINK} target="_blank" rel="nofollow sponsored" className="money-row">
+            <div className="m-icon" style={{ backgroundColor: '#66fcf120', color: '#66fcf1' }}>
+              <Award size={22} />
+            </div>
+            <div className="m-info">
+              <span className="m-title">Cubenest</span>
+              <span className="m-label">Prémiové doplňky setupu</span>
+            </div>
+          </a>
+
         </div>
+
+        <Link 
+          href={isEn ? "/en/sestavy" : "/sestavy"} 
+          onClick={() => setIsOpen(false)}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+            marginTop: '10px', padding: '15px', borderRadius: '18px', flexShrink: 0,
+            fontSize: '13px', color: '#fff', background: 'rgba(168, 85, 247, 0.3)', 
+            fontWeight: 950, textDecoration: 'none', border: '1px solid rgba(168, 85, 247, 0.5)',
+            textTransform: 'uppercase'
+          }}
+        >
+          {isEn ? 'View All Partners' : 'Všichni partneři'} <ChevronLeft size={16} style={{transform: 'rotate(180deg)'}} />
+        </Link>
       </div>
     </>
   );
