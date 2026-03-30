@@ -16,10 +16,11 @@ import {
   HelpCircle
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU GPU RECOMMEND ENGINE - DETAIL V4.4 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU GPU RECOMMEND ENGINE - DETAIL V4.5 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka konverze.
  */
 
 export const runtime = "nodejs";
@@ -145,6 +146,11 @@ export default async function GpuRecommendPage(props) {
                 </div>
             </div>
         </section>
+
+        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (CTA pod verdiktem) 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
 
         {/* 🚀 QUICK STATS */}
         <section className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '60px' }}>
