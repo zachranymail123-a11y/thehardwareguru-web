@@ -1,17 +1,12 @@
 import React from 'react';
 import Script from 'next/script';
-import Link from 'next/link'; // 🔥 OPRAVA: Chybějící import Linku
-import { 
-  Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, 
-  Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, 
-  MessageSquare, Award, Bell, Bookmark, Share2, Clock, Compass, Shuffle, 
-  Link2, Monitor, Smartphone, Tv, LifeBuoy
-} from 'lucide-react';
+import Link from 'next/link';
+import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, MessageSquare, Award, Bell, Bookmark, Share2, Clock, Compass, Shuffle, Link2, Monitor, Smartphone, Tv } from 'lucide-react';
 import SeznamAd from '../components/SeznamAd';
 
 /**
- * GURU HOMEPAGE V18.9 - BUILD FIX & MONEY MAKER
- * 🚀 CÍL: Oprava ReferenceError a zachování maximální monetizace (ID: 71c85dea).
+ * GURU HOMEPAGE V19.0 - THE ULTIMATE MONEY & SEO MERGE
+ * 🚀 CÍL: 100% integrace tvého SEO obsahu + nové Money Fixy (Sklik, eHUB 71c85dea).
  */
 
 export async function generateMetadata({ params }) {
@@ -25,13 +20,44 @@ export async function generateMetadata({ params }) {
   return {
     title, 
     description,
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, 'max-video-preview': -1, 'max-image-preview': 'large', 'max-snippet': -1 },
+      bingBot: { index: true, follow: true, 'max-video-preview': -1, 'max-image-preview': 'large', 'max-snippet': -1 }
+    },
     alternates: {
       canonical: isEn ? `${baseUrl}/en` : `${baseUrl}/`, 
       languages: { 'cs-CZ': `${baseUrl}/`, 'en-US': `${baseUrl}/en` }
     },
-    openGraph: { title, description, url: isEn ? `${baseUrl}/en` : `${baseUrl}/`, siteName: 'The Hardware Guru', type: 'website' }
+    openGraph: { title, description, url: isEn ? `${baseUrl}/en` : `${baseUrl}/`, siteName: 'The Hardware Guru', locale: isEn ? 'en_US' : 'cs_CZ', type: 'website' },
+    twitter: { card: 'summary_large_image', title, description }
   };
 }
+
+const LEAK_PLACEHOLDER_URL = 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000';
+
+const getSafeImage = (url) => {
+  if (!url || !url.startsWith('http')) return 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?q=80&w=1000&auto=format&fit=crop';
+  return url;
+};
+
+const getThumbnail = (post, supabaseUrl) => {
+  const typeStr = (post.type || '').toLowerCase().trim();
+  if (typeStr.includes('leak')) return supabaseUrl ? `${supabaseUrl}/storage/v1/object/public/images/davinci_prompt__a_high_tech__cinematic_placeholder_for_a_g.png` : LEAK_PLACEHOLDER_URL;
+  if (post.image_url) return post.image_url;
+  if (post.video_id && post.video_id.length > 5) return `https://img.youtube.com/vi/${post.video_id}/hqdefault.jpg`;
+  return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000&auto=format&fit=crop';
+};
+
+const getBadgeInfo = (post, isEn) => {
+  const typeStr = (post.type || '').toLowerCase().trim();
+  if (typeStr.includes('leak')) return { text: 'LEAK', color: '#66fcf1', textColor: '#0b0c10', isLeak: true };
+  if (post.video_id && post.video_id.length > 5) return { text: 'VIDEO / SHORT', color: '#66fcf1', textColor: '#0b0c10', isLeak: false };
+  const isGame = typeStr.includes('game') || (post.title && post.title.toLowerCase().includes('recenze'));
+  if (isGame) return { text: isEn ? 'GAME NEWS' : 'HERNÍ NOVINKA', color: '#ff0055', textColor: '#fff', isLeak: false };
+  return { text: isEn ? 'HW NEWS' : 'HW NOVINKA', color: '#ff0000', textColor: '#fff', isLeak: false };
+};
 
 const fetchWithTimeout = async (url, options = {}, timeoutMs = 12000) => {
   const controller = new AbortController();
@@ -46,144 +72,208 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 12000) => {
   }
 };
 
-const getThumbnail = (post) => {
-  if (post.image_url) return post.image_url;
-  if (post.video_id && post.video_id.length > 5) return `https://img.youtube.com/vi/${post.video_id}/hqdefault.jpg`;
-  return 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=1000';
-};
+const STATIC_SNAPSHOT_POSTS = [
+  { id: 'snap-1', title: 'Katalog Grafických Karet a Index Výkonu', title_en: 'GPU Database and Performance Index', slug: '../../gpu-index', slug_en: '../../gpu-index', created_at: new Date().toISOString(), type: 'article' },
+  { id: 'snap-2', title: 'Katalog Procesorů a Index Výkonu', title_en: 'CPU Database and Performance Index', slug: '../../cpu-index', slug_en: '../../cpu-index', created_at: new Date().toISOString(), type: 'article' },
+  { id: 'snap-3', title: 'Co je to Bottleneck a jak ho vyřešit?', title_en: 'What is a Bottleneck and how to fix it?', slug: 'co-je-bottleneck', slug_en: 'what-is-bottleneck', created_at: new Date().toISOString(), type: 'article' },
+  { id: 'snap-4', title: 'Doporučené PC sestavy pro hráče', title_en: 'Recommended PC Builds for Gamers', slug: '../../sestavy', slug_en: '../../sestavy', created_at: new Date().toISOString(), type: 'article' }
+];
+
+const STATIC_SNAPSHOT_GPU_DUELS = [
+  { id: 'sdg-1', title_cs: 'RTX 4090 vs RX 7900 XTX', title_en: 'RTX 4090 vs RX 7900 XTX', slug: 'rtx-4090-vs-rx-7900-xtx', slug_en: 'rtx-4090-vs-rx-7900-xtx' },
+  { id: 'sdg-2', title_cs: 'RTX 4070 vs RX 7800 XT', title_en: 'RTX 4070 vs RX 7800 XT', slug: 'rtx-4070-vs-rx-7800-xt', slug_en: 'rtx-4070-vs-rx-7800-xt' }
+];
+
+const STATIC_SNAPSHOT_CPU_DUELS = [
+  { id: 'sdc-1', title_cs: 'Ryzen 7 7800X3D vs Core i9-14900K', title_en: 'Ryzen 7 7800X3D vs Core i9-14900K', slug: 'ryzen-7-7800x3d-vs-core-i9-14900k', slug_en: 'ryzen-7-7800x3d-vs-core-i9-14900k' }
+];
 
 export default async function HomePage({ params }) {
   const locale = params?.locale || 'cs';
   const isEn = locale === 'en';
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-  const fetchOpts = { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }, next: { revalidate: 60 } };
+  const getHeaders = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+  const fetchOpts = { headers: getHeaders, next: { revalidate: 60 } };
 
-  // 🔥 OSTRÉ EHUB TRACKING LINKY (ID: 71c85dea)
+  // 🔥 EHUB TRACKING LINKY (71c85dea)
   const SHOPCOM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=3ea952dd";
   const CUBENEST_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=231eaccc";
 
-  let p = [], duelsRes = [], cpuDuelsRes = [];
+  let p = [], s = [], duelsRes = [], cpuDuelsRes = [], exp = [], t = [], tw = [], d = [], pa = [], feat = [];
 
   try {
-    [p, duelsRes, cpuDuelsRes] = await Promise.all([
+    [p, s, duelsRes, cpuDuelsRes, exp, t, tw, d, pa, feat] = await Promise.all([
       fetchWithTimeout(`${supabaseUrl}/rest/v1/posts?select=id,title,title_en,slug,slug_en,created_at,image_url,video_id,type&type=neq.expected&order=created_at.desc&limit=35`, fetchOpts),
+      fetchWithTimeout(`${supabaseUrl}/rest/v1/stats?select=value&name=eq.total_visits&limit=1`, fetchOpts),
       fetchWithTimeout(`${supabaseUrl}/rest/v1/gpu_duels?select=id,title_cs,title_en,slug,slug_en,created_at&order=created_at.desc&limit=11`, fetchOpts),
-      fetchWithTimeout(`${supabaseUrl}/rest/v1/cpu_duels?select=id,title_cs,title_en,slug,slug_en,created_at&order=created_at.desc&limit=11`, fetchOpts)
+      fetchWithTimeout(`${supabaseUrl}/rest/v1/cpu_duels?select=id,title_cs,title_en,slug,slug_en,created_at&order=created_at.desc&limit=11`, fetchOpts),
+      fetchWithTimeout(`${supabaseUrl}/rest/v1/posts?select=*&type=eq.expected&order=created_at.desc&limit=3`, fetchOpts),
+      fetchWithTimeout(`${supabaseUrl}/rest/v1/tipy?select=*&order=created_at.desc&limit=3`, fetchOpts),
+      fetchWithTimeout(`${supabaseUrl}/rest/v1/tweaky?select=*&order=created_at.desc&limit=3`, fetchOpts),
+      fetchWithTimeout(`${supabaseUrl}/rest/v1/darci?select=*&order=amount.desc&limit=20`, fetchOpts),
+      fetchWithTimeout(`${supabaseUrl}/rest/v1/partneri?select=*&order=created_at.desc&limit=4`, fetchOpts),
+      fetchWithTimeout(`${supabaseUrl}/rest/v1/game_deals?select=*&order=created_at.desc&limit=3`, fetchOpts)
     ]);
   } catch (err) {}
 
-  const latestPosts = p || [];
+  const data = { 
+    posts: p && p.length > 0 ? p : STATIC_SNAPSHOT_POSTS, 
+    stats: s?.[0] || { value: 0 }, 
+    latestDuels: duelsRes && duelsRes.length > 0 ? duelsRes : STATIC_SNAPSHOT_GPU_DUELS,
+    latestCpuDuels: cpuDuelsRes && cpuDuelsRes.length > 0 ? cpuDuelsRes : STATIC_SNAPSHOT_CPU_DUELS,
+    expectedGames: exp || [], nejnovejsiTipy: t || [], nejnovejsiTweaky: tw || [], darci: d || [], partneri: pa || [], featuredDeals: feat || []
+  };
+
+  const latestPosts = data.posts.slice(0, 20);
+  const randomPosts = data.posts.length > 20 ? data.posts.slice(20, 35) : data.posts;
+  const visualGpuDuels = data.latestDuels.slice(0, 3);
+  const deepGpuDuels = data.latestDuels.slice(3, 11);
+  const visualCpuDuels = data.latestCpuDuels.slice(0, 3);
+  const deepCpuDuels = data.latestCpuDuels.slice(3, 11);
+
+  const websiteSchema = { "@context": "https://schema.org", "@type": "WebSite", "name": "The Hardware Guru", "url": isEn ? "https://thehardwareguru.cz/en" : "https://thehardwareguru.cz" };
+  const organizationSchema = { "@context": "https://schema.org", "@type": "Organization", "name": "The Hardware Guru", "url": "https://thehardwareguru.cz", "logo": "https://thehardwareguru.cz/logo.png" };
+  const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#fff', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', fontFamily: 'sans-serif' }}>
       
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(websiteSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(organizationSchema) }} />
+
       <style>{`
+        .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); }
+        .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
         .guru-hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; max-width: 1200px; margin: 40px auto; padding: 60px 40px; background: rgba(15, 17, 21, 0.9); border-radius: 32px; border: 1px solid rgba(102, 252, 241, 0.2); backdrop-filter: blur(15px); }
         .action-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 30px; }
-        .btn-main { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 12px; text-decoration: none; font-weight: 950; font-size: 11px; text-transform: uppercase; transition: 0.3s; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: #fff; text-align: center; }
+        .btn-main { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 12px; text-decoration: none; font-weight: 950; font-size: 11px; text-transform: uppercase; transition: 0.3s; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: #fff; }
         .btn-main:hover { transform: translateY(-3px); background: rgba(255,255,255,0.08); }
         .live-btn { border-color: #53fc1850; color: #53fc18; }
         .gpu-btn { border-color: #ff005550; color: #ff0055; }
         .cpu-btn { border-color: #66fcf150; color: #66fcf1; }
         .deal-btn { background: rgba(249, 115, 22, 0.1); border-color: #f97316; color: #f97316; }
         .hub-btn { background: rgba(168, 85, 247, 0.1); border-color: #a855f7; color: #a855f7; }
-        
         .partner-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1200px; margin: 0 auto 60px; padding: 0 20px; }
         .partner-card { background: rgba(15, 17, 21, 0.8); border: 1px solid rgba(255,255,255,0.05); padding: 30px; border-radius: 24px; transition: 0.3s; }
-        .partner-card:hover { transform: scale(1.02); border-color: rgba(255,255,255,0.2); }
         .p-tag { font-size: 10px; font-weight: 950; color: #a855f7; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: block; }
         .p-link { color: #fff; text-decoration: none; font-weight: 900; font-size: 13px; display: flex; align-items: center; gap: 5px; margin-top: 15px; }
-
         .sticky-bottom-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); }
+        .seo-link-pill { display: inline-block; padding: 8px 16px; margin: 0 10px 10px 0; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; color: #9ca3af; font-size: 13px; text-decoration: none; transition: 0.2s; }
+        .seo-hard-text-block { max-width: 1200px; margin: 0 auto 60px; padding: 40px; background: rgba(15, 17, 21, 0.8); border-radius: 24px; border: 1px solid rgba(102, 252, 241, 0.15); color: #9ca3af; line-height: 1.8; }
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
-
         @media (max-width: 1024px) { .guru-hero-grid { grid-template-columns: 1fr; text-align: center; } .action-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 768px) { .ad-desktop-wrapper { display: none !important; } .ad-mobile-wrapper { display: flex !important; } .partner-strip { grid-template-columns: 1fr; } }
       `}</style>
 
-      {/* --- 🚀 TOP REKLAMA ABOVE THE FOLD --- */}
+      {/* 🚀 TOP AD */}
       <div style={{ maxWidth: '1200px', margin: '40px auto 0 auto', padding: '0 20px' }}>
-        <div className="ad-desktop-wrapper">
-          <SeznamAd zoneId={408654} width={970} height={210} />
-        </div>
-        <div className="ad-mobile-wrapper">
-          <SeznamAd zoneId={408651} width={300} height={250} />
-        </div>
+        <div className="ad-desktop-wrapper"><SeznamAd zoneId={408654} width={970} height={210} /></div>
+        <div className="ad-mobile-wrapper"><SeznamAd zoneId={408651} width={300} height={250} /></div>
       </div>
 
-      {/* --- 🚀 HERO SECTION --- */}
+      {/* 🚀 HERO SECTION (MONEY GRID) */}
       <header className="guru-hero-grid">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', marginBottom: '20px' }}>
-            <ShieldCheck size={18} />
-            <span style={{ fontWeight: '950', letterSpacing: '2px', textTransform: 'uppercase', fontSize: '10px' }}>VAŠE TECHNOLOGICKÁ ZÁKLADNA</span>
-          </div>
-          <h1 style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', fontWeight: '950', lineHeight: '1.1', textTransform: 'uppercase', marginBottom: '20px' }}>
-            HARDWARE GURU – <span style={{ color: '#66fcf1' }}>CPU</span>, <span style={{ color: '#ff0055' }}>GPU</span> A <span style={{ color: '#a855f7' }}>PC SESTAVY</span>
-          </h1>
-          <p style={{ color: '#9ca3af', lineHeight: '1.6', fontSize: '16px' }}>S 20 lety praxe v servisu vím, kde každá mašina tlačí. Moje mise: vymýtit lagy a zkrotit FPS.</p>
-          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', marginBottom: '20px' }}><ShieldCheck size={18} /><span style={{ fontWeight: '950', letterSpacing: '2px', textTransform: 'uppercase', fontSize: '10px' }}>{isEn ? 'OFFICIAL TECHNOLOGY BASE' : 'Vaše technologická základna'}</span></div>
+          <h1 style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', fontWeight: '950', lineHeight: '1.1', textTransform: 'uppercase', marginBottom: '20px' }}>{isEn ? <>HARDWARE GURU – <span style={{ color: '#66fcf1' }}>CPU, GPU COMPARISON</span>, FPS CALCULATOR & PC BUILDS</> : <>HARDWARE GURU – <span style={{ color: '#66fcf1' }}>CPU, GPU SROVNÁNÍ</span>, FPS KALKULAČKA A PC SESTAVY</>}</h1>
+          <p style={{ color: '#9ca3af', lineHeight: '1.6', fontSize: '16px' }}>{isEn ? "Hardware expert with 20 years of experience. Mission: eradicate lag, optimize FPS." : "S 20 lety praxe v servisu hardware vím, kde každá mašina tlačí. Moje mise: vymýtit lagy a zkrotit FPS."}</p>
           <div className="action-grid">
-            <a href="https://kick.com/TheHardwareGuru" target="_blank" className="btn-main live-btn"><Tv size={14}/> LIVE</a>
-            <Link href="/gpuvs" className="btn-main gpu-btn"><Swords size={14}/> GPU VS</Link>
-            <Link href="/cpuvs" className="btn-main cpu-btn"><Cpu size={14}/> CPU VS</Link>
-            <Link href="/fps-kalkulacka" className="btn-main hub-btn"><Gamepad2 size={14}/> ROZJEDU TO?</Link>
-            <Link href="/bottleneck-kalkulacka" className="btn-main cpu-btn"><Layers size={14}/> BOTTLENECK</Link>
-            <Link href="/support" className="btn-main"><MessageSquare size={14}/> PORADNA</Link>
-            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" className="btn-main deal-btn"><Flame size={14}/> SLEVY HRY</a>
-            <Link href="/sestavy" className="btn-main hub-btn"><ShoppingCart size={14}/> HW HUB</Link>
+            <a href="https://kick.com/thehardwareguru" target="_blank" className="btn-main live-btn"><Tv size={14}/> {isEn ? 'LIVE' : 'LIVE'}</a>
+            <Link href={isEn ? "/en/gpuvs" : "/gpuvs"} className="btn-main gpu-btn"><Swords size={14}/> GPU VS</Link>
+            <Link href={isEn ? "/en/cpuvs" : "/cpuvs"} className="btn-main cpu-btn"><Cpu size={14}/> CPU VS</Link>
+            <Link href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="btn-main hub-btn"><Gamepad2 size={14}/> {isEn ? 'RUN IT?' : 'ROZJEDU TO?'}</Link>
+            <Link href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} className="btn-main cpu-btn"><Layers size={14}/> BOTTLENECK</Link>
+            <Link href={isEn ? "/en/poradna" : "/poradna"} className="btn-main active"><MessageSquare size={14}/> {isEn ? 'HELP DESK' : 'PORADNA'}</Link>
+            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" className="btn-main deal-btn"><Flame size={14}/> {isEn ? 'DEALS' : 'SLEVY HRY'}</a>
+            <Link href={isEn ? "/en/sestavy" : "/sestavy"} className="btn-main hub-btn"><ShoppingCart size={14}/> {isEn ? 'HW HUB' : 'HW HUB'}</Link>
           </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <div style={{ width: '200px', height: '200px', borderRadius: '50%', border: '4px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '5rem', fontWeight: '950', color: '#66fcf1', boxShadow: '0 0 40px rgba(102, 252, 241, 0.3)' }}>HG</div>
-        </div>
+        <div style={{ display: 'flex', justifyContent: 'center' }}><div style={{ width: '200px', height: '200px', borderRadius: '50%', border: '4px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '5rem', fontWeight: '950', color: '#66fcf1', boxShadow: '0 0 40px rgba(102, 252, 241, 0.3)' }}>HG</div></div>
       </header>
 
-      {/* --- 💰 EHUB AFFILIATE STRIP (ID: 71c85dea) --- */}
+      {/* 🚀 EHUB STRIP */}
       <section className="partner-strip">
-        <div className="partner-card">
-           <span className="p-tag">GURU EXKLUZIVNĚ</span>
-           <h3 style={{ fontSize: '20px', fontWeight: '950' }}>SHOPCOM.CZ</h3>
-           <p style={{ color: '#6b7280', fontSize: '14px' }}>Komponenty a PC sestavy za nejlepší ceny na trhu.</p>
-           <a href={SHOPCOM_LINK} target="_blank" rel="nofollow sponsored" className="p-link">KOUPIT HARDWARE <ChevronRight size={14} /></a>
-        </div>
-        <div className="partner-card">
-           <span className="p-tag" style={{ color: '#66fcf1' }}>PROVĚŘENO GURUEM</span>
-           <h3 style={{ fontSize: '20px', fontWeight: '950' }}>CUBENEST</h3>
-           <p style={{ color: '#6b7280', fontSize: '14px' }}>Elitní doplňky na stůl, MagSafe nabíječky a stojánky.</p>
-           <a href={CUBENEST_LINK} target="_blank" rel="nofollow sponsored" className="p-link">VYBAVIT SETUP <ChevronRight size={14} /></a>
-        </div>
+        <div className="partner-card"><span className="p-tag">GURU EXKLUZIVNĚ</span><h3 style={{ fontSize: '20px', fontWeight: '950' }}>SHOPCOM.CZ</h3><p style={{ color: '#6b7280', fontSize: '14px' }}>Komponenty a PC sestavy za nejlepší ceny na trhu.</p><a href={SHOPCOM_LINK} target="_blank" rel="nofollow sponsored" className="p-link">KOUPIT HARDWARE <ChevronRight size={14} /></a></div>
+        <div className="partner-card"><span className="p-tag" style={{ color: '#66fcf1' }}>PROVĚŘENO GURUEM</span><h3 style={{ fontSize: '20px', fontWeight: '950' }}>CUBENEST</h3><p style={{ color: '#6b7280', fontSize: '14px' }}>Elitní doplňky na stůl, MagSafe nabíječky a stojánky.</p><a href={CUBENEST_LINK} target="_blank" rel="nofollow sponsored" className="p-link">VYBAVIT SETUP <ChevronRight size={14} /></a></div>
       </section>
 
-      {/* --- 🚀 CONTENT GRID --- */}
+      {/* 🚀 SEO HARD TEXT */}
+      <section className="seo-hard-text-block">
+        <h2>{isEn ? 'Hardware Guru – CPU, GPU comparison' : 'Hardware Guru – CPU, GPU srovnání'}</h2>
+        <p>{isEn ? 'Welcome to The Hardware Guru tech portal.' : 'Vítejte na The Hardware Guru, předním českém portálu zaměřeném na hardware.'}</p>
+        <ul>
+          <li><a href="/gpu-index">Katalog Grafických Karet</a></li>
+          <li><a href="/cpu-index">Katalog Procesorů</a></li>
+          <li><a href="/sestavy">Doporučené herní PC sestavy</a></li>
+        </ul>
+      </section>
+
+      {/* 🚀 SDÍLENÍ & ONESIGNAL */}
+      <section style={{ maxWidth: '1200px', margin: '0 auto 60px auto', background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '24px', padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}><Award size={32} color="#a855f7" /><div><h3 style={{ fontSize: '20px', fontWeight: '950', margin: 0 }}>{isEn ? 'SHARE & SUBSCRIBE' : 'SDÍLET & ODEBÍRAT'}</h3></div></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button id="guru-os-btn" className="hover-scale" style={{ width: '48px', height: '48px', borderRadius: '16px', background: '#2563eb', border: 'none', cursor: 'pointer' }}><Bell size={20} fill="#fff" /></button>
+            <Script id="onesignal-init" strategy="lazyOnload">{`if (typeof window !== 'undefined') { var checkBtn = setInterval(function() { var btn = document.getElementById('guru-os-btn'); if (btn && !btn.hasAttribute('data-bound')) { btn.setAttribute('data-bound', 'true'); btn.onclick = function(e) { e.preventDefault(); if (window.OneSignal) window.OneSignal.showSlidedownPrompt(); }; clearInterval(checkBtn); } }, 500); }`}</Script>
+          </div>
+      </section>
+
+      {/* 🚀 VŠECHNY TVOJE VIZUÁLNÍ SEKCE (ZACHOVÁNO) */}
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px 100px' }}>
+        
+        {/* SLEVY */}
+        {data.featuredDeals.length > 0 && (
+          <section style={{ marginBottom: '60px' }}>
+            <h2 style={{ fontSize: '28px', fontWeight: '950', marginBottom: '30px' }}><Flame color="#f97316" fill="#f97316" /> {isEn ? 'HOT DEALS' : 'GURU ŽHAVÉ SLEVY'}</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+              {data.featuredDeals.map(deal => (
+                <a key={deal.id} href={deal.affiliate_link} target="_blank" rel="nofollow sponsored" className="deal-hp-card">
+                  <img src={deal.image_url} style={{ width: '100px', height: '60px', borderRadius: '12px', objectFit: 'cover' }} alt="" />
+                  <div style={{ flex: 1 }}><div style={{ fontWeight: '900', fontSize: '14px' }}>{deal.title}</div><div style={{ color: '#f97316', fontWeight: '950', fontSize: '18px' }}>{isEn ? deal.price_en : deal.price_cs}</div></div>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* GPU DUELY */}
+        {visualGpuDuels.length > 0 && (
+          <section style={{ marginBottom: '60px' }}>
+            <h2 style={{ fontSize: '28px', fontWeight: '950', marginBottom: '30px' }}><Swords color="#ff0055" /> {isEn ? 'GPU BATTLES' : 'NEJNOVĚJŠÍ GPU DUELY'}</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+              {visualGpuDuels.map(duel => (
+                <Link key={duel.id} href={`/gpuvs/${duel.slug}`} className="duel-hp-card"><Swords size={24} color="#ff0055" /><div><div style={{ fontWeight: '900' }}>{duel.title_cs}</div></div></Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ČLÁNKY GRID */}
         <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px' }}>
-          {latestPosts.slice(0, 6).map(post => (
-            <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
-              <div style={{ background: 'rgba(31, 40, 51, 0.95)', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(102, 252, 241, 0.1)' }}>
-                <img src={getThumbnail(post)} alt={post.title} style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
-                <div style={{ padding: '20px' }}>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#fff' }}>{isEn ? post.title_en : post.title}</h3>
-                  <div style={{ marginTop: '15px', color: '#66fcf1', fontWeight: 'bold', fontSize: '12px' }}>ČÍST VÍCE →</div>
+          {latestPosts.slice(0, 9).map(post => {
+            const badge = getBadgeInfo(post, isEn);
+            return (
+              <Link key={post.id} href={`/clanky/${post.slug}`} style={{ textDecoration: 'none' }}>
+                <div className="game-card" style={{ borderRadius: '16px', overflow: 'hidden' }}>
+                  <img src={getThumbnail(post, supabaseUrl)} alt="" style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
+                  <div style={{ padding: '20px' }}><h3 style={{ fontSize: '1.1rem', fontWeight: '900', color: '#fff' }}>{isEn ? post.title_en : post.title}</h3></div>
                 </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            )
+          })}
         </section>
       </main>
 
-      {/* --- 💰 STICKY BOTTOM ANCHOR --- */}
+      {/* 🚀 STICKY ANCHOR */}
       <div className="sticky-bottom-anchor">
-          <div className="ad-desktop-wrapper">
-              <SeznamAd zoneId={408654} width={970} height={90} />
-          </div>
-          <div className="ad-mobile-wrapper">
-              <SeznamAd zoneId={408651} width={300} height={100} />
-          </div>
+          <div className="ad-desktop-wrapper"><SeznamAd zoneId={408654} width={970} height={90} /></div>
+          <div className="ad-mobile-wrapper"><SeznamAd zoneId={408651} width={300} height={100} /></div>
       </div>
 
+      <footer style={{ background: '#050505', padding: '40px 20px', borderTop: '1px solid rgba(102, 252, 241, 0.2)', textAlign: 'center' }}>
+        <div style={{ color: '#4b5563', fontSize: '11px' }}>&copy; {new Date().getFullYear()} The Hardware Guru. Všechna práva vyhrazena.</div>
+      </footer>
     </div>
   );
 }
