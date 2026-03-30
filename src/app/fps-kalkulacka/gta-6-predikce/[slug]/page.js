@@ -6,8 +6,8 @@ import ShareButtonsClient from './ShareButtonsClient';
 import SeznamAd from '../../../../components/SeznamAd';
 
 /**
- * GURU GTA 6 PREDICTOR - V11.5 (MOBILE OPTIMIZED + MASSIVE SEO HUB)
- * 🚀 CÍL: Eliminace mrtvého bodu po zobrazení výsledku.
+ * GURU GTA 6 PREDICTOR - V11.6 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP reklamy Above Fold, přidání Sticky Bottom Anchoru, ochrana FPS enginu.
  */
 
 export const dynamic = 'force-dynamic';
@@ -49,8 +49,19 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
     const shareUrl = `${baseUrl}/fps-kalkulacka/gta-6-predikce/${slug}?cpuId=${cpuId}&gpuId=${gpuId}`;
 
     return (
-        <div className="guru-gta-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+        <div className="guru-gta-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
             <main className="inner-container" style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+                
+                {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+                <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+                    <div className="ad-desktop-wrapper">
+                        <SeznamAd zoneId={408654} width={970} height={210} />
+                    </div>
+                    <div className="ad-mobile-wrapper">
+                        <SeznamAd zoneId={408651} width={300} height={250} />
+                    </div>
+                </div>
+
                 <header style={{ textAlign: 'center', marginBottom: '40px' }}>
                     <div className="pred-badge"><Sparkles size={16} /> AI PREDIKCE AKTIVNÍ</div>
                     <h1 className="main-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', lineHeight: 1.1, margin: 0 }}>
@@ -60,16 +71,6 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                         {hwComboName} <span style={{ color: '#f43f5e' }}>({resolutionStr.toUpperCase()})</span>
                     </p>
                 </header>
-
-                {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
-                <div style={{ marginBottom: '40px' }}>
-                    <div className="ad-desktop-wrapper">
-                        <SeznamAd zoneId={408654} width={970} height={210} />
-                    </div>
-                    <div className="ad-mobile-wrapper">
-                        <SeznamAd zoneId={408651} width={300} height={250} />
-                    </div>
-                </div>
 
                 <div className="result-card">
                     <div className="fps-main">{predictedFps} <span className="fps-unit" style={{ fontSize: '3rem' }}>FPS</span></div>
@@ -81,7 +82,7 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                 </div>
 
                 {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE (Zobrazeno pouze na mobilu) */}
-                <div className="ad-mobile-wrapper" style={{ marginTop: '30px' }}>
+                <div className="ad-mobile-wrapper" style={{ marginTop: '30px', display: 'flex', justifyContent: 'center' }}>
                     <SeznamAd zoneId={408651} width={300} height={250} />
                 </div>
 
@@ -121,12 +122,23 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                                 <li><a href="/fps-kalkulacka"><ChevronRight size={16} /> Nový odhad pro GTA VI</a></li>
                                 <li><a href="/ocekavane-hry"><ChevronRight size={16} /> Archiv a slevy her</a></li>
                                 <li><a href="/clanky"><ChevronRight size={16} /> Články a Novinky</a></li>
+                                <li><a href="/tipy"><ChevronRight size={16} /> GURU Tipy</a></li>
                             </ul>
                         </div>
                     </div>
                 </section>
 
             </main>
+
+            {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+            <div className="sticky-bottom-anchor">
+                <div className="ad-desktop-wrapper">
+                    <SeznamAd zoneId={408654} width={970} height={90} />
+                </div>
+                <div className="ad-mobile-wrapper">
+                    <SeznamAd zoneId={408651} width={300} height={100} />
+                </div>
+            </div>
 
             <style dangerouslySetInnerHTML={{__html: `
                 .pred-badge { display: inline-flex; align-items: center; gap: 8px; color: #f43f5e; font-weight: 950; padding: 6px 20px; border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 50px; background: rgba(244, 63, 94, 0.1); margin-bottom: 25px; text-transform: uppercase; font-size: 11px; }
@@ -148,12 +160,27 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                 .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 14px; display: flex; align-items: center; margin-bottom: 15px; font-weight: bold; transition: 0.3s; }
                 .hub-links-list a:hover { color: #f43f5e; transform: translateX(10px); }
 
+                /* 🔥 STICKY BOTTOM ANCHOR CSS */
+                .sticky-bottom-anchor {
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    width: 100%;
+                    background: rgba(10, 11, 13, 0.98);
+                    border-top: 1px solid rgba(255, 255, 255, 0.1);
+                    z-index: 9999;
+                    padding: 10px 0;
+                    display: flex;
+                    justify-content: center;
+                    box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+                }
+
                 /* 🚀 RESPONSIVE ADS SYSTEM */
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
                 .ad-mobile-wrapper { display: none; width: 100%; }
                 
                 @media (max-width: 768px) { 
-                    .guru-gta-wrapper { padding-top: 80px !important; }
+                    .guru-gta-wrapper { paddingTop: 80px !important; }
                     .inner-container { padding: 0 15px !important; }
                     .ad-desktop-wrapper { display: none !important; }
                     .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
