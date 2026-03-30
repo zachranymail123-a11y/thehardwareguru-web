@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
- Swords, Zap, RefreshCw, ChevronRight, ArrowLeftRight, ShieldCheck, Flame, AlertTriangle
+ Swords, Zap, RefreshCw, ChevronRight, ArrowLeftRight, ShieldCheck, Flame, AlertTriangle, Gamepad2
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU GPU DUELS ENGINE - MASTER HUB V67.4 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Maximální monetizace srovnávače grafik a perfektní mobilní UX.
+ * GURU GPU DUELS ENGINE - MASTER HUB V67.6 (MOBILE OPTIMIZED + HOLE FILLER SEO HUB)
+ * 🚀 CÍL: Vyplnění prázdného prostoru pod generátorem pro brutální interní linkbuilding.
  */
 
 export default function GpuVsHub() {
@@ -97,8 +97,16 @@ export default function GpuVsHub() {
         .guru-battle-btn:disabled { opacity: 0.4; }
 
         .history-panel { display: flex; flex-direction: column; gap: 12px; }
-        .compact-duel-item { background: rgba(15, 17, 21, 0.7); border: 1px solid rgba(255,255,255,0.05); padding: 14px 18px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; transition: 0.3s; }
-        .compact-duel-item:hover { transform: translateX(5px); border-color: #66fcf1; }
+        .compact-duel-item { background: rgba(15, 17, 21, 0.7); border: 1px solid rgba(255,255,255,0.05); padding: 14px 18px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; transition: 0.3s; color: #fff; }
+        .compact-duel-item:hover { transform: translateX(5px); border-color: #66fcf1; color: #66fcf1; }
+
+        /* 🚀 SEO HUB CSS */
+        .seo-hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .hub-column { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
+        .hub-links-list { list-style: none; padding: 0; }
+        .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 14px; display: flex; align-items: center; margin-bottom: 15px; font-weight: bold; transition: 0.3s; }
+        .hub-links-list a:hover { color: #66fcf1; transform: translateX(10px); }
 
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
@@ -117,6 +125,8 @@ export default function GpuVsHub() {
             .guru-main-title { font-size: 1.8rem !important; }
             .guru-desc-text { font-size: 1rem; }
             .history-panel h2 { font-size: 16px !important; }
+            .seo-hub-grid { grid-template-columns: 1fr; }
+            .hub-column { padding: 25px; }
         }
       `}} />
 
@@ -144,24 +154,54 @@ export default function GpuVsHub() {
         </div>
 
         <div className="hub-grid">
-            <section className="generator-panel">
-              {error && <div style={{ color: '#ef4444', textAlign: 'center', marginBottom: '20px' }}>{error}</div>}
-              <select className="guru-dropdown" value={gpuA} onChange={e => setGpuA(e.target.value)}>
-                <option value="">{isEn ? "-- Select GPU --" : "-- Vyber grafiku --"}</option>
-                {gpus.map(g => <option key={g.id} value={String(g.id)}>{g.name}</option>)}
-              </select>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-                <button onClick={() => {const t=gpuA; setGpuA(gpuB); setGpuB(t);}} style={{ background: 'none', border: '1px solid #333', color: '#66fcf1', padding: '10px', borderRadius: '50%' }}><ArrowLeftRight size={20}/></button>
-              </div>
-              <select className="guru-dropdown" value={gpuB} onChange={e => setGpuB(e.target.value)}>
-                <option value="">{isEn ? "-- Select GPU --" : "-- Vyber grafiku --"}</option>
-                {gpus.map(g => <option key={g.id} value={String(g.id)} disabled={String(g.id) === gpuA}>{g.name}</option>)}
-              </select>
-              <button className="guru-battle-btn" onClick={handleStartDuel} disabled={!gpuA || !gpuB || loading}>
-                <Zap fill="currentColor" size={24} /> {isEn ? "START DUEL" : "SPUSTIT SOUBOJ"}
-              </button>
-            </section>
+            {/* LEVÝ SLOUPEC: Generátor + Vyplnění díry SEO Hubem */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+                <section className="generator-panel">
+                  {error && <div style={{ color: '#ef4444', textAlign: 'center', marginBottom: '20px' }}>{error}</div>}
+                  <select className="guru-dropdown" value={gpuA} onChange={e => setGpuA(e.target.value)}>
+                    <option value="">{isEn ? "-- Select GPU --" : "-- Vyber grafiku --"}</option>
+                    {gpus.map(g => <option key={g.id} value={String(g.id)}>{g.name}</option>)}
+                  </select>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+                    <button onClick={() => {const t=gpuA; setGpuA(gpuB); setGpuB(t);}} style={{ background: 'none', border: '1px solid #333', color: '#66fcf1', padding: '10px', borderRadius: '50%', cursor: 'pointer' }}><ArrowLeftRight size={20}/></button>
+                  </div>
+                  <select className="guru-dropdown" value={gpuB} onChange={e => setGpuB(e.target.value)}>
+                    <option value="">{isEn ? "-- Select GPU --" : "-- Vyber grafiku --"}</option>
+                    {gpus.map(g => <option key={g.id} value={String(g.id)} disabled={String(g.id) === gpuA}>{g.name}</option>)}
+                  </select>
+                  <button className="guru-battle-btn" onClick={handleStartDuel} disabled={!gpuA || !gpuB || loading}>
+                    <Zap fill="currentColor" size={24} /> {isEn ? "START DUEL" : "SPUSTIT SOUBOJ"}
+                  </button>
+                </section>
 
+                {/* 🚀 MASSIVE SEO HUB PŘESUNUTÝ PŘÍMO POD VÝBĚR (Zaplňuje díru) */}
+                <section className="massive-seo-hub" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '30px' }}>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #a855f7', paddingLeft: '15px' }}>
+                        {isEn ? 'EXPLORE GURU DATABASE' : 'PROZKOUMEJ GURU DATABÁZI'}
+                    </h2>
+                    <div className="seo-hub-grid">
+                        <div className="hub-column">
+                            <div className="hub-col-header"><Swords size={20} color="#ff0055" /> {isEn ? 'Hardware Battles' : 'HW Souboje'}</div>
+                            <ul className="hub-links-list">
+                                <li><a href={isEn ? "/en/cpuvs" : "/cpuvs"}><ChevronRight size={16} /> {isEn ? 'Processor Battles' : 'Souboje Procesorů'}</a></li>
+                                <li><a href={isEn ? "/en/gpu-index" : "/gpu-index"}><ChevronRight size={16} /> {isEn ? 'Graphics Cards Database' : 'Katalog Grafických Karet'}</a></li>
+                                <li><a href={isEn ? "/en/cpu-index" : "/cpu-index"}><ChevronRight size={16} /> {isEn ? 'Processor Database' : 'Katalog Procesorů'}</a></li>
+                            </ul>
+                        </div>
+                        <div className="hub-column">
+                            <div className="hub-col-header"><Gamepad2 size={20} color="#66fcf1" /> {isEn ? 'Guru Ecosystem' : 'Guru Ekosystém'}</div>
+                            <ul className="hub-links-list">
+                                <li><a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"}><ChevronRight size={16} /> {isEn ? 'Bottleneck Test' : 'Bottleneck Test'}</a></li>
+                                <li><a href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"}><ChevronRight size={16} /> {isEn ? 'Game Archive' : 'Archiv her'}</a></li>
+                                <li><a href={isEn ? "/en/clanky" : "/clanky"}><ChevronRight size={16} /> {isEn ? 'News & Articles' : 'Články a Novinky'}</a></li>
+                                <li><a href={isEn ? "/en/tipy" : "/tipy"}><ChevronRight size={16} /> {isEn ? 'GURU Tips' : 'GURU Tipy'}</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            {/* PRAVÝ SLOUPEC: Historie + Reklama */}
             <section className="history-panel">
               <h2 style={{ fontSize: '18px', fontWeight: '950', textTransform: 'uppercase', marginBottom: '15px' }}><Flame size={20} color="#f97316" style={{display:'inline', marginRight:'10px'}}/> {isEn ? "RECENT" : "POSLEDNÍ"}</h2>
               {existingDuels.map((duel) => (
@@ -177,6 +217,7 @@ export default function GpuVsHub() {
               </div>
             </section>
         </div>
+
       </div>
     </div>
   );
