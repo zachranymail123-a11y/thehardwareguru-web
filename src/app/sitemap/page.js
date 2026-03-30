@@ -1,14 +1,15 @@
 import React from 'react';
 import { 
-  Map, Layers, Cpu, Monitor, FileText, Swords, TrendingUp, 
-  Flame, Heart, Info, BookOpen, Wrench, CheckCircle2, ChevronRight
+ Map, Layers, Cpu, Monitor, FileText, Swords, TrendingUp, 
+ Flame, Heart, Info, BookOpen, Wrench, CheckCircle2, ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 import SeznamAd from '../../components/SeznamAd';
+import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU HTML SITEMAP V2.9 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU HTML SITEMAP V3.0 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchor, eliminace hluchých míst + Heureka konverze.
  */
 
 export const runtime = "nodejs";
@@ -88,6 +89,11 @@ export default async function SitemapPage(props) {
             {isEn ? 'SITE' : 'MAPA'} <span style={{ color: '#a855f7', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)' }}>{isEn ? 'MAP' : 'STRÁNEK'}</span>
           </h1>
         </header>
+
+        {/* 🔥 PŘIDÁNO: Heureka tlačítka pod hlavičkou 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
 
         {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
         <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
