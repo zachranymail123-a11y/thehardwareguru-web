@@ -6,8 +6,8 @@ import SeznamAd from "../../components/SeznamAd";
 import { Gamepad2 } from 'lucide-react';
 
 /**
- * GURU GAME INDEX V1.3 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Maximální monetizace a perfektní mobilní zobrazení katalogu her.
+ * GURU GAME INDEX V1.4 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, zachování designu karet.
  */
 
 export default function GameIndexPage() {
@@ -22,6 +22,17 @@ export default function GameIndexPage() {
 
     return (
         <div className="guru-page-wrapper" style={globalStyles}>
+            
+            {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+            <div style={{ maxWidth: '1200px', margin: '0 auto 40px', padding: '0 20px', display: 'flex', justifyContent: 'center' }}>
+                <div className="ad-desktop-wrapper">
+                    <SeznamAd zoneId={408654} width={970} height={210} />
+                </div>
+                <div className="ad-mobile-wrapper">
+                    <SeznamAd zoneId={408651} width={300} height={250} />
+                </div>
+            </div>
+
             <header style={header}>
                 <div className="guru-badge">
                     <Gamepad2 size={16} /> {isEn ? 'DATABASE' : 'DATABÁZE'}
@@ -33,16 +44,6 @@ export default function GameIndexPage() {
                     {isEn ? 'Hardware benchmarks and performance analysis for modern titles.' : 'Hardwarové benchmarky a analýzy výkonu pro moderní tituly.'}
                 </p>
             </header>
-
-            {/* 🔥 SEZNAM AD #1: TOP PLACEMENT (STRIKTNÍ SEPARACE) */}
-            <div style={{ marginBottom: '40px' }}>
-                <div className="ad-desktop-wrapper">
-                    <SeznamAd zoneId={408654} width={970} height={210} />
-                </div>
-                <div className="ad-mobile-wrapper">
-                    <SeznamAd zoneId={408651} width={300} height={250} />
-                </div>
-            </div>
 
             <main style={main}>
                 <div className="game-grid" style={grid}>
@@ -59,7 +60,7 @@ export default function GameIndexPage() {
 
                             {/* 🔥 SEZNAM AD #2: GRID INJECTION (POUZE MOBIL) */}
                             {index === 3 && (
-                                <div className="ad-mobile-wrapper" style={{ margin: '10px 0' }}>
+                                <div className="ad-mobile-wrapper" style={{ margin: '10px 0', justifyContent: 'center' }}>
                                     <SeznamAd zoneId={408651} width={300} height={250} />
                                 </div>
                             )}
@@ -68,6 +69,16 @@ export default function GameIndexPage() {
                 </div>
             </main>
 
+            {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+            <div className="sticky-bottom-anchor">
+                <div className="ad-desktop-wrapper">
+                    <SeznamAd zoneId={408654} width={970} height={90} />
+                </div>
+                <div className="ad-mobile-wrapper">
+                    <SeznamAd zoneId={408651} width={300} height={100} />
+                </div>
+            </div>
+
             <style dangerouslySetInnerHTML={{ __html: `
                 .guru-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.05); }
                 .game-card { transition: all .3s cubic-bezier(.4,0,.2,1); }
@@ -75,6 +86,21 @@ export default function GameIndexPage() {
                     transform: translateY(-8px);
                     box-shadow: 0 0 30px rgba(168, 85, 247,.3);
                     border-color: #a855f7 !important;
+                }
+
+                /* 🔥 STICKY BOTTOM ANCHOR CSS */
+                .sticky-bottom-anchor {
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    width: 100%;
+                    background: rgba(10, 11, 13, 0.98);
+                    border-top: 1px solid rgba(255, 255, 255, 0.1);
+                    z-index: 9999;
+                    padding: 10px 0;
+                    display: flex;
+                    justify-content: center;
+                    box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
                 }
 
                 /* 🚀 RESPONSIVE ADS SYSTEM */
@@ -96,7 +122,7 @@ export default function GameIndexPage() {
 const header = { maxWidth: "800px", margin: "40px auto 20px", textAlign: "center", padding: "0 20px" };
 const title = { fontSize: "clamp(2.2rem, 5vw, 3.5rem)", fontWeight: "950", textTransform: "uppercase", letterSpacing: "1px", margin: 0, lineHeight: 1.1 };
 const subtitle = { color: '#9ca3af', fontSize: '1.1rem', marginTop: '15px' };
-const main = { maxWidth: "1200px", margin: "0 auto 80px", padding: "0 20px" };
+const main = { maxWidth: "1200px", margin: "0 auto 20px", padding: "0 20px" };
 const grid = { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: "30px" };
 
 const card = { borderRadius: "12px", padding: "40px", textAlign: "center", background: "rgba(17,19,24,0.85)", border: "1px solid rgba(255,255,255,0.05)", height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' };
@@ -109,5 +135,6 @@ const globalStyles = {
     backgroundImage: 'url("/bg-guru.png")',
     backgroundSize: "cover",
     backgroundAttachment: "fixed",
-    paddingTop: "100px"
+    paddingTop: "120px",
+    paddingBottom: "160px"
 };
