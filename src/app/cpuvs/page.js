@@ -5,10 +5,11 @@ import {
  Swords, Zap, RefreshCw, ChevronRight, ArrowLeftRight, ShieldCheck, Flame, AlertTriangle, Gamepad2
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
+import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU CPU DUELS ENGINE - MASTER HUB V1.6 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchor, zachování SEO Hubu.
+ * GURU CPU DUELS ENGINE - MASTER HUB V1.7 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchor, zachování SEO Hubu + Heureka konverze.
  */
 
 export default function CpuVsHub() {
@@ -176,6 +177,11 @@ export default function CpuVsHub() {
                   <button className="guru-battle-btn" onClick={handleStartDuel} disabled={!cpuA || !cpuB || loading}>
                     <Zap fill="currentColor" size={24} /> {isEn ? "START BATTLE" : "SPUSTIT SOUBOJ"}
                   </button>
+
+                  {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek pod generátor soubojů 🔥 */}
+                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
+                      <HeurekaButtons isEn={isEn} />
+                  </div>
                 </section>
 
                 {/* 🚀 MASSIVE SEO HUB PŘESUNUTÝ PŘÍMO POD VÝBĚR (Zaplňuje díru) */}
