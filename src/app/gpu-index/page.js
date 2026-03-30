@@ -15,8 +15,8 @@ import {
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU GPU ENGINE - KATALOG GRAFIK V1.5 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Maximální monetizace katalogu a perfektní mobilní zobrazení.
+ * GURU GPU ENGINE - KATALOG GRAFIK V1.6 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
  */
 
 export const dynamic = 'force-dynamic';
@@ -101,13 +101,23 @@ export default async function GpuIndexPage(props) {
   };
 
   return (
-    <div className="guru-page-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-page-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <main className="inner-container" style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? "/en/gpuvs" : "/gpuvs"} className="guru-back-btn">
             <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
           </a>
+        </div>
+
+        {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
@@ -126,30 +136,15 @@ export default async function GpuIndexPage(props) {
           </div>
         </header>
 
-        {/* 🔥 SEZNAM AD #1: TOP BANNER (STRIKTNÍ SEPARACE) */}
-        <div style={{ marginBottom: '40px' }}>
-            <div className="ad-desktop-wrapper">
-                <SeznamAd zoneId={408654} width={970} height={210} />
-            </div>
-            <div className="ad-mobile-wrapper">
-                <SeznamAd zoneId={408651} width={300} height={250} />
-            </div>
-        </div>
-
         {nvidiaGpus.length > 0 && (
-          <section style={{ marginBottom: '40px', marginTop: '40px' }}>
+          <section style={{ marginBottom: '60px' }}>
             <h2 className="vendor-h2" style={{ borderLeftColor: '#76b900' }}><span style={{ color: '#76b900' }}>NVIDIA</span> GEFORCE</h2>
             <div className="gpu-grid">{renderGpuCards(nvidiaGpus, '#76b900')}</div>
           </section>
         )}
 
-        {/* 🔥 SEZNAM AD #2: MID PLACEMENT (POUZE MOBIL) */}
-        <div className="ad-mobile-wrapper" style={{ margin: '20px 0' }}>
-            <SeznamAd zoneId={408651} width={300} height={250} />
-        </div>
-
         {amdGpus.length > 0 && (
-          <section style={{ marginBottom: '80px', marginTop: '40px' }}>
+          <section style={{ marginBottom: '80px' }}>
             <h2 className="vendor-h2" style={{ borderLeftColor: '#ed1c24' }}><span style={{ color: '#ed1c24' }}>AMD</span> RADEON</h2>
             <div className="gpu-grid">{renderGpuCards(amdGpus, '#ed1c24')}</div>
           </section>
@@ -202,6 +197,16 @@ export default async function GpuIndexPage(props) {
         </div>
       </main>
 
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
+
       <style dangerouslySetInnerHTML={{__html: `
         .guru-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.05); margin-bottom: 20px; }
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
@@ -233,6 +238,21 @@ export default async function GpuIndexPage(props) {
         .related-content { padding: 20px; }
         .related-date { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 950; color: #6b7280; text-transform: uppercase; margin-bottom: 5px; }
         .related-title { margin: 0; font-size: 1.1rem; font-weight: 950; color: #fff; line-height: 1.3; }
+
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
 
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
