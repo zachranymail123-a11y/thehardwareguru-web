@@ -9,8 +9,8 @@ import SeznamAd from '../../components/SeznamAd';
 import Link from 'next/link';
 
 /**
- * GURU HARDWARE HUB V3.1 (ULTIMATE EXPANSION)
- * 🚀 CÍL: Agresivní affiliate konverze. Přidána Heureka, Smarty, XM.
+ * GURU HARDWARE HUB V3.2 (AFFILIATE FIX)
+ * 🚀 CÍL: Agresivní affiliate konverze s přesnými a_bid parametry.
  * 💰 EHUB ID: 71c85dea
  */
 
@@ -45,8 +45,10 @@ export default function HardwareHubPage(props) {
   const CUBENEST_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=231eaccc";
   const IPHONE_MARKET_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=2bcd6f9d";
   const JABKOLEVNE_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=85731c2c";
-  const SMARTY_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=4456574a";
-  const XM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=90708688";
+  
+  // 🔥 OPRAVENÉ LINKY PODLE SCREENSHOTŮ
+  const SMARTY_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06";
+  const XM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=0ff74973";
 
   // 🔥 HEUREKA DEEP LINKS
   const hUtm = "utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
