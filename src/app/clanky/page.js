@@ -14,9 +14,9 @@ import {
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU ARTICLE ARCHIVE ENGINE V3.0 (GOLDEN RICH RESULTS FIX)
+ * GURU ARTICLE ARCHIVE ENGINE V3.1 (MONEY FIX UPDATE)
  * Cesta: src/app/clanky/page.js
- * 🚀 CÍL: 100% zelená v GSC a blesková indexace všech novinek a recenzí.
+ * 🚀 CÍL: Přesun TOP reklamy Above Fold, přidání Sticky Bottom Anchoru. Zachování Golden GSC Fixu.
  */
 
 export const runtime = "nodejs";
@@ -116,9 +116,24 @@ export default async function ClankyArchivePage(props) {
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
         .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
         
-        /* GURU RESPONSIVE ADS */
+        /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
+
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
 
         @media (max-width: 768px) {
           .ad-desktop-wrapper { display: none; }
@@ -128,7 +143,7 @@ export default async function ClankyArchivePage(props) {
         }
       `}} />
 
-      {/* 🔥 TOP REKLAMA (Archiv-Top) */}
+      {/* 🔥 TOP REKLAMA (Archiv-Top) - 100% Viewability Above Fold */}
       <div style={{ maxWidth: '1200px', margin: '40px auto 0 auto', padding: '0 20px' }}>
         <div className="ad-desktop-wrapper">
           <SeznamAd zoneId={408654} width={970} height={210} />
@@ -147,7 +162,7 @@ export default async function ClankyArchivePage(props) {
         </p>
       </header>
 
-      <main style={{ maxWidth: '1200px', margin: '0 auto 80px', padding: '0 20px' }}>
+      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px', paddingBottom: '160px' }}>
         {safePosts.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '100px 20px', background: 'rgba(15, 17, 21, 0.8)', borderRadius: '24px', border: '1px dashed rgba(255,255,255,0.1)' }}>
             <h2 style={{ fontSize: '24px', fontWeight: '950', color: '#d1d5db', textTransform: 'uppercase' }}>
@@ -209,6 +224,17 @@ export default async function ClankyArchivePage(props) {
           </div>
         </div>
       </main>
+
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
+
     </div>
   );
 }
