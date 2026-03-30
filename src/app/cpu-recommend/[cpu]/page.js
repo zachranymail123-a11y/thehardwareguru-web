@@ -2,17 +2,17 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import { 
   ChevronLeft, 
-  CheckCircle2,
-  Cpu,
-  ArrowRight,
-  ThumbsUp,
-  AlertTriangle
+  CheckCircle2, 
+  Cpu, 
+  ArrowRight, 
+  ThumbsUp, 
+  AlertTriangle 
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU CPU RECOMMEND ENGINE V2.1 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Maximální monetizace a perfektní mobilní zobrazení CPU verdiktů.
+ * GURU CPU RECOMMEND ENGINE V2.2 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -27,13 +27,13 @@ const findCpuBySlug = async (cpuSlug) => {
 
   try {
       const url1 = `${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=eq.${cpuSlug}&limit=1`;
-      const res1 = await fetch(url1, { headers, cache: 'no-store' });
+      const res1 = await fetch(url1, { headers, cache: 'force-cache' });
       if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
   } catch(e) {}
 
   try {
       const url2 = `${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=ilike.*${cpuSlug}*&order=slug.asc`;
-      const res2 = await fetch(url2, { headers, cache: 'no-store' });
+      const res2 = await fetch(url2, { headers, cache: 'force-cache' });
       if (res2.ok) { const data2 = await res2.json(); if (data2?.length) return data2[0]; }
   } catch(e) {}
 
@@ -43,7 +43,7 @@ const findCpuBySlug = async (cpuSlug) => {
       if (tokens.length > 0) {
           const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
           const url3 = `${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&and=(${conditions})&order=name.asc`;
-          const res3 = await fetch(url3, { headers, cache: 'no-store' });
+          const res3 = await fetch(url3, { headers, cache: 'force-cache' });
           if (res3.ok) { const data3 = await res3.json(); return data3?.[0] || null; }
       }
   } catch(e) {}
@@ -86,13 +86,23 @@ export default async function CpuRecommendPage({ params }) {
   const verdict = getVerdict();
 
   return (
-    <div className="recommend-page-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="recommend-page-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? `/en/cpu/${cpuSlug}` : `/cpu/${cpuSlug}`} className="guru-back-btn">
             <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
           </a>
+        </div>
+
+        {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
@@ -105,19 +115,9 @@ export default async function CpuRecommendPage({ params }) {
           </h1>
         </header>
 
-        {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
-        <div style={{ marginBottom: '40px' }}>
-            <div className="ad-desktop-wrapper">
-                <SeznamAd zoneId={408654} width={970} height={210} />
-            </div>
-            <div className="ad-mobile-wrapper">
-                <SeznamAd zoneId={408651} width={300} height={250} />
-            </div>
-        </div>
-
-        <section style={{ marginBottom: '30px' }}>
+        <section style={{ marginBottom: '60px' }}>
             <div className="verdict-main-box" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255, 255, 255, 0.05)', borderTop: `8px solid ${verdict.color}`, borderRadius: '24px', padding: '60px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center' }}>
-                <div style={{ color: verdict.color, display: 'flex', justifycontent: 'center', marginBottom: '20px', justifyContent: 'center' }}>
+                <div style={{ color: verdict.color, display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
                     {verdict.icon}
                 </div>
                 <div className="verdict-title" style={{ fontSize: '40px', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0', textTransform: 'uppercase', letterSpacing: '2px' }}>
@@ -133,11 +133,6 @@ export default async function CpuRecommendPage({ params }) {
             </div>
         </section>
 
-        {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE (POUZE MOBIL) */}
-        <div className="ad-mobile-wrapper" style={{ marginBottom: '40px' }}>
-            <SeznamAd zoneId={408651} width={300} height={250} />
-        </div>
-
         <section style={{ textAlign: 'center', marginTop: '40px' }}>
             <div style={{ color: '#9ca3af', marginBottom: '20px', fontWeight: 'bold', fontSize: '14px', textTransform: 'uppercase' }}>
               {isEn ? 'Compare this CPU with others' : 'Porovnejte tento procesor s ostatními'}
@@ -149,12 +144,37 @@ export default async function CpuRecommendPage({ params }) {
 
       </main>
 
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
+
       <style dangerouslySetInnerHTML={{__html: `
         .recommendation-badge { display: inline-flex; align-items: center; gap: 8px; color: #f59e0b; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(245,158,11,0.3); border-radius: 50px; background: rgba(245,158,11,0.05); margin-bottom: 20px; }
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #f59e0b; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(245, 158, 11, 0.3); transition: 0.3s; }
         .guru-back-btn:hover { background: rgba(245,158,11,0.1); transform: translateX(-5px); }
         .guru-battle-btn { display: inline-flex; align-items: center; gap: 12px; padding: 18px 40px; background: #f59e0b; color: #fff; border-radius: 16px; font-weight: 950; fontSize: 15px; text-decoration: none; text-transform: uppercase; box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3); transition: 0.3s; }
         .guru-battle-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
+
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
 
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
