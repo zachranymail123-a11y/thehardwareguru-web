@@ -6,8 +6,8 @@ import {
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU CPU ENGINE - DETAIL PROCESORU V2.6 (BULLETPROOF LOOKUP FIX)
- * 🚀 CÍL: Eliminace 404 chyb zkompletováním vyhledávacího enginu.
+ * GURU CPU ENGINE - DETAIL PROCESORU V2.7 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
  */
 
 export const runtime = "nodejs";
@@ -20,14 +20,12 @@ const baseUrl = "https://thehardwareguru.cz";
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 const slugify = (text) => text ? text.toLowerCase().replace(/processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
-// 🚀 GURU FIX: Sjednocený, neprůstřelný vyhledávací engine z Bottleneck Kalkulačky
 const findCpuBySlug = async (rawSlugPart) => {
   if (!supabaseUrl || !rawSlugPart || rawSlugPart === 'undefined') return null;
   const cpuSlug = rawSlugPart.replace(/^en-/, '');
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
 
   try {
-      // 1. Pokus: Přesná shoda
       const res1 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&slug=eq.${cpuSlug}&limit=1`, { headers, cache: 'force-cache' });
       let cpu = null;
       if (res1.ok) { 
@@ -35,7 +33,6 @@ const findCpuBySlug = async (rawSlugPart) => {
           if (data1?.length) cpu = data1[0]; 
       }
       
-      // 2. Pokus: Částečná shoda (obsahuje slug)
       if (!cpu) {
         const res2 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&slug=ilike.*${cpuSlug}*&limit=1`, { headers, cache: 'force-cache' });
         if (res2.ok) { 
@@ -44,7 +41,6 @@ const findCpuBySlug = async (rawSlugPart) => {
         }
       }
 
-      // 3. Pokus (GURU FALLBACK): Rozsekání slugu na klíčová slova (stejné jako v kalkulačce)
       if (!cpu) {
           const filter = /amd|intel|ryzen|core|ultra|processor|cpu/gi;
           const clean = cpuSlug.replace(/-/g, ' ').replace(filter, '').trim();
@@ -59,7 +55,6 @@ const findCpuBySlug = async (rawSlugPart) => {
           }
       }
 
-      // Pokud CPU najdeme, stáhneme i FPS data
       if (cpu) {
           const fpsRes = await fetch(`${supabaseUrl}/rest/v1/cpu_game_fps?select=*&cpu_id=eq.${cpu.id}&limit=1`, { headers, cache: 'force-cache' });
           if (fpsRes.ok) {
@@ -114,12 +109,22 @@ export default async function CpuDetailPage({ params }) {
   const cinebenchScore = fpsData?.cinebench_r23_multi || 'N/A';
 
   return (
-    <div className="guru-page-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-page-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       <main style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
           <a href={isEn ? "/en/cpu-index" : "/cpu-index"} className="guru-back-btn">
             <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
           </a>
+        </div>
+
+        {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
@@ -134,16 +139,6 @@ export default async function CpuDetailPage({ params }) {
              {cpu.cores} Cores • {cpu.threads} Threads • {cpu.architecture}
           </div>
         </header>
-
-        {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
-        <div style={{ marginBottom: '40px' }}>
-            <div className="ad-desktop-wrapper">
-                <SeznamAd zoneId={408654} width={970} height={210} />
-            </div>
-            <div className="ad-mobile-wrapper">
-                <SeznamAd zoneId={408651} width={300} height={250} />
-            </div>
-        </div>
 
         <section className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '60px', marginTop: '40px' }}>
             <div className="stat-card"><div className="stat-label">{isEn ? 'Boost Clock' : 'Boost Takt'}</div><div className="stat-val">{cpu.boost_clock_mhz ?? '-'} <span style={{ fontSize: '16px', color: '#6b7280' }}>MHz</span></div></div>
@@ -170,12 +165,6 @@ export default async function CpuDetailPage({ params }) {
           <div className="table-wrapper">
                <div className="spec-row-style"><div className="table-label">{isEn ? 'CORES / THREADS' : 'JÁDRA / VLÁKNA'}</div><div className="spec-val-box">{cpu.cores} / {cpu.threads}</div></div>
                <div className="spec-row-style"><div className="table-label">{isEn ? 'BASE CLOCK' : 'ZÁKLADNÍ TAKT'}</div><div className="spec-val-box">{cpu.base_clock_mhz} MHz</div></div>
-               
-               {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE (POUZE MOBIL) */}
-               <div className="ad-mobile-wrapper" style={{ margin: '20px 0' }}>
-                   <SeznamAd zoneId={408651} width={300} height={250} />
-               </div>
-
                <div className="spec-row-style"><div className="table-label">L3 CACHE</div><div className="spec-val-box">{cpu.l3_cache_mb} MB</div></div>
                <div className="spec-row-style"><div className="table-label">TDP (SPOTŘEBA)</div><div className="spec-val-box">{cpu.tdp_w} W</div></div>
                <div className="spec-row-style"><div className="table-label">{isEn ? 'ARCHITECTURE' : 'ARCHITEKTURA'}</div><div className="spec-val-box">{cpu.architecture}</div></div>
@@ -188,9 +177,18 @@ export default async function CpuDetailPage({ params }) {
         </div>
       </main>
 
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
+
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #f59e0b; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(245, 158, 11, 0.3); transition: 0.3s; }
-        
         .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #f59e0b; padding-left: 15px; display: flex; align-items: center; gap: 12px; }
         .stat-card { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 30px; text-align: center; }
         .stat-label { color: #6b7280; font-size: 10px; font-weight: 950; letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase; }
@@ -207,6 +205,21 @@ export default async function CpuDetailPage({ params }) {
         
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000; font-weight: 950; border-radius: 16px; text-decoration: none; }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-weight: 950; border-radius: 16px; text-decoration: none; }
+
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
 
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
