@@ -8,6 +8,7 @@ import {
   Twitter, Award, Swords, Gamepad2, ChevronRight, Play, Newspaper, Lightbulb
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
+import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 const RedditIcon = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -239,6 +240,12 @@ export default function BottleneckClient({
                             {gta6DynamicLink ? (
                                 <a href={gta6DynamicLink} className="gta-cta"><Sparkles size={20} /> ROZJEDE TO GTA VI?</a>
                             ) : null}
+
+                            {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (bezpečně vložené do výsledků kalkulačky) 🔥 */}
+                            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
+                                <HeurekaButtons isEn={isEn} />
+                            </div>
+                            
                         </div>
                     )}
                 </div>
