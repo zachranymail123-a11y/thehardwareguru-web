@@ -25,8 +25,8 @@ import GuruAnalysisText from '../../../../components/GuruAnalysisText';
 import SeznamAd from '../../../../components/SeznamAd';
 
 /**
- * GURU FPS HUNTER V1.5 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Maximální monetizace skrze Seznam Partner a perfektní mobilní UX.
+ * GURU FPS HUNTER V1.6 (MOBILE OPTIMIZED + ALGO FALLBACK + SEO HUB)
+ * 🚀 CÍL: Dynamické počítání chybějících her (např. GTA V) a zaplátování dead-endů SEO hubem.
  */
 
 export const runtime = "nodejs";
@@ -84,12 +84,14 @@ export default async function GpuFpsHunterPage(props) {
   const vendorColor = (gpu.vendor || '').toUpperCase() === 'NVIDIA' ? '#76b900' : ((gpu.vendor || '').toUpperCase() === 'AMD' ? '#ed1c24' : '#66fcf1');
   const safeSlug = gpu.slug || slugify(gpu.name);
 
+  // 🚀 GURU FIX: Přidáno GTA V do iterátoru zobrazených her
   const gamesToShow = [
     { id: 'resident_evil_requiem', name: 'Resident Evil Requiem', key: 'resident_evil_requiem' },
     { id: 'cyberpunk', name: 'Cyberpunk 2077', key: 'cyberpunk_2077' },
     { id: 'warzone', name: 'CoD: Warzone', key: 'warzone' },
     { id: 'starfield', name: 'Starfield', key: 'starfield' },
-    { id: 'cs2', name: 'Counter-Strike 2', key: 'cs2' }
+    { id: 'cs2', name: 'Counter-Strike 2', key: 'cs2' },
+    { id: 'gta-v', name: 'GTA V', key: 'gta_v' } 
   ];
 
   const getVerdict = (fps) => {
@@ -124,10 +126,29 @@ export default async function GpuFpsHunterPage(props) {
             </div>
         </div>
 
-        {/* 🚀 HLAVNÍ FPS MATRIX */}
+        {/* 🚀 HLAVNÍ FPS MATRIX S ALGORITMICKÝM FALLBACKEM PRO CHYBĚJÍCÍ DATA */}
         <div className="fps-matrix-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px', marginBottom: '60px', marginTop: '40px' }}>
           {gamesToShow.map((game, index) => {
-            const fpsValue = Number(fpsData[`${game.key}_1440p`] || fpsData[`${game.key}_1080p`] || 0);
+            let fpsValue = Number(fpsData[`${game.key}_1440p`] || fpsData[`${game.key}_1080p`] || 0);
+
+            // 🚀 GURU ALGORITHMIC FALLBACK: Pokud hra nemá uložená data v DB (např. nově přidané GTA V), vypočítej je na letu.
+            if (fpsValue === 0) {
+                const gameDataMap = {
+                    'cyberpunk_2077': { gpu_weight: 1.5, fps_scale: 1.2 },
+                    'cs2': { gpu_weight: 0.4, fps_scale: 3.5 },
+                    'alan_wake_2': { gpu_weight: 1.8, fps_scale: 0.9 },
+                    'valorant': { gpu_weight: 0.3, fps_scale: 4.0 },
+                    'gta_v': { gpu_weight: 1.1, fps_scale: 1.5 },
+                    'generic': { gpu_weight: 1.0, fps_scale: 1.4 }
+                };
+                const gData = gameDataMap[game.key] || gameDataMap['generic'];
+                // Předpokládáme 1440p pro výchozí zobrazení (resMultiplier = 1.5)
+                const gpuEffective = (Number(gpu.performance_index) || 100) / 1.5;
+                const rawGpuFps = (gpuEffective / (gData.gpu_weight || 1)) * gData.fps_scale;
+                // Pro GPU FPS Hunter nepředpokládáme CPU bottleneck, takže počítáme jen čistý GPU tah
+                fpsValue = Math.max(1, Math.round(rawGpuFps));
+            }
+
             const verdict = getVerdict(fpsValue);
 
             return (
@@ -204,6 +225,33 @@ export default async function GpuFpsHunterPage(props) {
             </a>
         </section>
 
+        {/* 🚀 MASSIVE SEO HUB PRO ELIMINACI DEAD ENDU A BOUNCE RATE */}
+        <section className="massive-seo-hub" style={{ marginBottom: '60px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '60px' }}>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: `4px solid ${vendorColor}`, paddingLeft: '15px' }}>
+                {isEn ? 'EXPLORE GURU DATABASE' : 'PROZKOUMEJ GURU DATABÁZI'}
+            </h2>
+            <div className="seo-hub-grid">
+                <div className="hub-column">
+                    <div className="hub-col-header"><Swords size={20} color="#ff0055" /> {isEn ? 'Hardware Battles' : 'HW Souboje'}</div>
+                    <ul className="hub-links-list">
+                        <li><a href={isEn ? "/en/cpuvs" : "/cpuvs"}><ChevronRight size={16} /> {isEn ? 'Processor Battles' : 'Souboje Procesorů'}</a></li>
+                        <li><a href={isEn ? "/en/gpuvs" : "/gpuvs"}><ChevronRight size={16} /> {isEn ? 'Graphics Card Battles' : 'Souboje Grafických Karet'}</a></li>
+                        <li><a href={isEn ? "/en/cpu-index" : "/cpu-index"}><ChevronRight size={16} /> {isEn ? 'Processor Database' : 'Katalog Procesorů'}</a></li>
+                        <li><a href={isEn ? "/en/gpu-index" : "/gpu-index"}><ChevronRight size={16} /> {isEn ? 'Graphics Cards Database' : 'Katalog Grafických Karet'}</a></li>
+                    </ul>
+                </div>
+                <div className="hub-column">
+                    <div className="hub-col-header"><Gamepad2 size={20} color="#66fcf1" /> {isEn ? 'Guru Ecosystem' : 'Guru Ekosystém'}</div>
+                    <ul className="hub-links-list">
+                        <li><a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"}><ChevronRight size={16} /> {isEn ? 'Bottleneck Test' : 'Bottleneck Test'}</a></li>
+                        <li><a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"}><ChevronRight size={16} /> {isEn ? 'GTA VI FPS Predictor' : 'GTA VI FPS Kalkulačka'}</a></li>
+                        <li><a href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"}><ChevronRight size={16} /> {isEn ? 'Game Archive' : 'Archiv her'}</a></li>
+                        <li><a href={isEn ? "/en/clanky" : "/clanky"}><ChevronRight size={16} /> {isEn ? 'News & Articles' : 'Články a Novinky'}</a></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
         <div className="footer-btns" style={{ marginTop: '80px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
           <a href="https://www.hrkgame.com/en/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn"><Flame size={20} /> DEALS</a>
           <a href="/support" className="guru-support-btn"><Heart size={20} /> SUPPORT</a>
@@ -219,6 +267,14 @@ export default async function GpuFpsHunterPage(props) {
         .deep-link-card h3 { font-size: 18px; font-weight: 950; margin: 15px 0 10px 0; text-transform: uppercase; }
         .deep-link-card p { font-size: 13px; color: #9ca3af; line-height: 1.5; margin: 0; }
         .deep-link-card .arrow { position: absolute; bottom: 30px; right: 30px; opacity: 0.2; }
+
+        /* 🚀 SEO HUB CSS */
+        .seo-hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .hub-column { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
+        .hub-links-list { list-style: none; padding: 0; margin: 0; }
+        .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 14px; display: flex; align-items: center; margin-bottom: 15px; font-weight: bold; transition: 0.3s; }
+        .hub-links-list a:hover { color: #66fcf1; transform: translateX(10px); }
 
         .guru-support-btn, .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; border: none; text-decoration: none; transition: 0.3s; }
         .guru-support-btn { background: #eab308; color: #000; }
@@ -241,6 +297,8 @@ export default async function GpuFpsHunterPage(props) {
             .semantic-grid { grid-template-columns: 1fr !important; }
             .deep-link-card { padding: 20px !important; }
             .guru-deals-btn, .guru-support-btn { width: 100% !important; }
+            .seo-hub-grid { grid-template-columns: 1fr; }
+            .hub-column { padding: 25px; }
         }
       `}} />
     </div>
