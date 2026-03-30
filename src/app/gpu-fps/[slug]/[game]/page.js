@@ -23,10 +23,11 @@ import {
 } from 'lucide-react';
 import GuruAnalysisText from '../../../../components/GuruAnalysisText';
 import SeznamAd from '../../../../components/SeznamAd';
+import HeurekaButtons from '../../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU FPS HUNTER V1.7 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP reklamy Above Fold, přidání Sticky Bottom Anchoru, odstranění hluchých zón.
+ * GURU FPS HUNTER V1.8 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP reklamy Above Fold, přidání Sticky Bottom Anchoru, odstranění hluchých zón + Heureka konverze.
  */
 
 export const runtime = "nodejs";
@@ -184,6 +185,11 @@ export default async function GpuFpsHunterPage(props) {
                 />
             </div>
         </section>
+
+        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
 
         <section className="semantic-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '60px' }}>
             <a href={`/${isEn ? 'en/' : ''}bottleneck/${safeSlug}-with-ryzen-7-7800x3d`} className="deep-link-card" style={{ borderTop: '4px solid #ff0055' }}>
