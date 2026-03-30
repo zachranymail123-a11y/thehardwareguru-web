@@ -1,10 +1,11 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Brain, ChevronRight, X, Activity, Target, Cpu, Gamepad2, Flame, Lightbulb, RefreshCw, CheckCircle2, ShoppingCart } from 'lucide-react';
+import { Brain, ChevronRight, X, Activity, Cpu, Gamepad2, Flame, Lightbulb, RefreshCw, CheckCircle2 } from 'lucide-react';
+import SeznamAd from './SeznamAd';
 
 /**
- * GURU AI NAVIGATOR - MONEY MAKER EDITION V3.0
- * 🚀 CÍL: Integrace nativního "Money Slotu" na 3. pozici pro maximální affiliate zisk.
+ * GURU AI NAVIGATOR - SEZNAM AD & GAME AFFILIATE EDITION
+ * 🚀 CÍL: 100% integrace Seznam reklamy a herního affiliate obsahu.
  */
 
 // --- 🛡️ GURU SAFE MODULE LOADER ---
@@ -69,24 +70,8 @@ export default function SestavyBubble() {
     return () => clearTimeout(timer);
   }, [isAdmin]);
 
-  // 👁️ GURU SITE-WIDE TRACKING
   useEffect(() => {
     if (isAdmin || typeof window === 'undefined') return;
-    const currentSlug = pathname.split('/').pop();
-    if (currentSlug && (pathname.includes('/clanky') || pathname.includes('/tipy') || pathname.includes('/tweaky'))) {
-      let seenItems = JSON.parse(localStorage.getItem('guru_ai_seen') || '[]');
-      if (!seenItems.includes(currentSlug)) {
-        seenItems.push(currentSlug);
-        if (seenItems.length > 100) seenItems.shift();
-        localStorage.setItem('guru_ai_seen', JSON.stringify(seenItems));
-      }
-    }
-  }, [pathname, isAdmin]);
-
-  // 🚀 GURU ULTIMATE AI ENGINE WITH MONEY SLOT
-  useEffect(() => {
-    if (isAdmin || typeof window === 'undefined') return;
-
     let isMounted = true;
 
     const fetchAndAnalyze = async () => {
@@ -112,9 +97,6 @@ export default function SestavyBubble() {
         if (pathname.includes('/deals')) profile.deals += 2.0; 
         if (pathname.includes('/tipy')) profile.tips += 1.0;
 
-        if (profile.hw > 15 || profile.games > 15 || profile.deals > 15 || profile.tips > 15) {
-           profile.hw *= 0.7; profile.games *= 0.7; profile.deals *= 0.7; profile.tips *= 0.7;
-        }
         localStorage.setItem('guru_archetype', JSON.stringify(profile));
 
         let dominantType = 'hw';
@@ -123,67 +105,22 @@ export default function SestavyBubble() {
           if (value > maxScore) { maxScore = value; dominantType = key; }
         }
 
-        const currentSlug = pathname.split('/').pop() || '';
-        const keywords = currentSlug.split('-').filter(w => w.length > 3);
-
-        // 2. Fetch Data
-        const safeFetch = async (promise) => {
-          const res = await promise;
-          return { data: res.data || [] };
-        };
-
-        const [postsRes, dealsRes, tipsRes] = await Promise.all([
-          safeFetch(activeSupabase.from('posts').select('title, title_en, slug, slug_en, image_url, type').order('created_at', { ascending: false }).limit(40)),
-          safeFetch(activeSupabase.from('game_deals').select('title, image_url, price_cs, price_en, affiliate_link').order('created_at', { ascending: false }).limit(10)),
-          safeFetch(activeSupabase.from('tipy').select('title, title_en, slug, slug_en, image_url').order('created_at', { ascending: false }).limit(10))
+        // 2. Fetch Data (Získáváme mix pro herní weby)
+        const [postsRes, tipsRes] = await Promise.all([
+          activeSupabase.from('posts').select('title, title_en, slug, slug_en, image_url, type').order('created_at', { ascending: false }).limit(30),
+          activeSupabase.from('tipy').select('title, title_en, slug, slug_en, image_url').order('created_at', { ascending: false }).limit(10)
         ]);
 
         let combinedPool = [];
         (postsRes.data || []).forEach(p => combinedPool.push({ ...p, source: 'posts', finalUrl: `${langPrefix}/${p.type === 'expected' ? 'ocekavane-hry' : 'clanky'}/${isEn ? (p.slug_en || p.slug) : p.slug}` }));
-        (dealsRes.data || []).forEach(d => combinedPool.push({ ...d, type: 'deal', source: 'deals', finalUrl: d.affiliate_link || `${langPrefix}/deals`, slug: d.title }));
         (tipsRes.data || []).forEach(t => combinedPool.push({ ...t, type: 'tip', source: 'tipy', finalUrl: `${langPrefix}/tipy/${isEn ? (t.slug_en || t.slug) : t.slug}` }));
 
-        // 3. Filtering
-        let filteredItems = combinedPool.filter(item => {
-          const title = (item.title || '').toLowerCase();
-          const isCurrent = item.slug === currentSlug || item.slug_en === currentSlug;
-          const isSeen = seenItems.includes(item.slug) || seenItems.includes(item.slug_en);
-          const trashWords = ['🔴', 'live', 'guru je live', 'stream', 'shorts', '#shorts', 'záznam'];
-          const isTrash = trashWords.some(word => title.includes(word));
-          return !isCurrent && !isSeen && !isTrash;
-        });
+        // 3. Filter & Score
+        let scoredItems = combinedPool
+          .filter(item => !seenItems.includes(item.slug))
+          .map(item => ({ ...item, score: Math.random() * 10 }));
 
-        if (filteredItems.length < 5) filteredItems = combinedPool.slice(0, 15);
-
-        // 4. Scoring
-        let scoredItems = filteredItems.map(item => {
-          let score = Math.random() * 5; 
-          const title = (item.title || '').toLowerCase();
-          const titleEn = (item.title_en || '').toLowerCase();
-
-          if (dominantType === 'hw' && item.type === 'hardware') score += 15;
-          if (dominantType === 'games' && (item.type === 'game' || item.type === 'expected')) score += 15;
-          if (dominantType === 'deals' && item.type === 'deal') score += 20;
-          if (dominantType === 'tips' && item.type === 'tip') score += 15;
-
-          keywords.forEach(kw => { if (title.includes(kw) || titleEn.includes(kw)) score += 10; });
-          return { ...item, score };
-        });
-
-        // 🚀 GURU MONEY SLOT LOGIC
-        const finalRecs = scoredItems.sort((a, b) => b.score - a.score).slice(0, 4);
-        
-        // Affiliate tip dne (Money Slot)
-        const guruSpecialOffer = {
-          title: isEn ? "GURU PICK: RTX 5080 16GB Stock Check" : "GURU TIP: RTX 5080 skladem za super cenu!",
-          image_url: "https://images.unsplash.com/photo-1591488320449-011701bb6704?w=100&q=80",
-          finalUrl: "https://www.hrkgame.com/#a_aid=TheHardwareGuru", // Sem dej svůj hlavní affiliate link
-          type: 'money-slot',
-          isExternal: true
-        };
-
-        // Vložíme reklamu na 3. pozici (index 2)
-        finalRecs.splice(2, 0, guruSpecialOffer);
+        const finalRecs = scoredItems.sort((a, b) => b.score - a.score).slice(0, 5);
         
         setTimeout(() => {
           if (!isMounted) return;
@@ -197,184 +134,70 @@ export default function SestavyBubble() {
         }, 800);
 
       } catch (error) {
-        console.error("Guru AI Navigator Error:", error);
         if (isMounted) setIsScanning(false);
       }
     };
 
     fetchAndAnalyze();
     return () => { isMounted = false; };
-  }, [pathname, isAdmin, isEn, rerollTrigger]);
+  }, [pathname, isAdmin, rerollTrigger]);
 
   if (!isClient || isAdmin || !isVisible) return null;
 
   return (
     <div className="guru-ai-container">
       <style>{`
-        @keyframes guruSlideUp { from { transform: translateY(150px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes guruPulse { 0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); } 70% { box-shadow: 0 0 0 12px rgba(168, 85, 247, 0); } 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); } }
-        @keyframes scanBar { 0% { width: 0%; opacity: 1; } 90% { width: 100%; opacity: 1; } 100% { width: 100%; opacity: 0; } }
-        @keyframes fadeInStagger { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
-
-        .guru-ai-container { position: fixed; bottom: 20px; left: 20px; z-index: 9998; animation: guruSlideUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; font-family: sans-serif; }
+        .guru-ai-container { position: fixed; bottom: 20px; left: 20px; z-index: 9998; font-family: sans-serif; }
         @media (max-width: 768px) { .guru-ai-container { display: none !important; } }
-
-        .guru-ai-panel {
-          background: rgba(12, 14, 18, 0.98); border: 1px solid rgba(168, 85, 247, 0.4);
-          border-radius: 16px; padding: 15px; width: 280px;
-          box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(168, 85, 247, 0.05);
-          backdrop-filter: blur(20px); transition: all 0.4s ease; position: relative; overflow: hidden;
-        }
-
-        .guru-ai-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; margin-bottom: 12px; }
-        .guru-scan-line { position: absolute; top: 0; left: 0; height: 2px; background: #a855f7; animation: scanBar 0.8s ease-out forwards; box-shadow: 0 0 10px #a855f7; }
-
-        .guru-ai-rec-item {
-          display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px;
-          text-decoration: none; transition: 0.3s; background: rgba(0,0,0,0.4);
-          border: 1px solid transparent; margin-bottom: 8px;
-          animation: fadeInStagger 0.4s ease forwards; opacity: 0;
-        }
-        .guru-ai-rec-item:nth-child(1) { animation-delay: 0.1s; }
-        .guru-ai-rec-item:nth-child(2) { animation-delay: 0.2s; }
-        .guru-ai-rec-item:nth-child(3) { animation-delay: 0.3s; }
-        .guru-ai-rec-item:nth-child(4) { animation-delay: 0.4s; }
-        .guru-ai-rec-item:nth-child(5) { animation-delay: 0.5s; }
-
-        .guru-ai-rec-item:hover { background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.4); transform: translateX(5px); }
-        
-        /* Special style for Money Slot */
-        .guru-money-slot { border: 1px solid rgba(249, 115, 22, 0.3) !important; background: rgba(249, 115, 22, 0.05) !important; }
-        .guru-money-slot:hover { border-color: #f97316 !important; background: rgba(249, 115, 22, 0.15) !important; }
-
-        .guru-reroll-btn {
-          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #9ca3af;
-          border-radius: 8px; padding: 4px 8px; font-size: 9px; font-weight: 900; cursor: pointer;
-          display: flex; align-items: center; gap: 4px; transition: 0.2s; text-transform: uppercase;
-        }
-        .guru-reroll-btn:hover { background: rgba(168, 85, 247, 0.2); color: #fff; border-color: #a855f7; }
-
-        .guru-ai-minimized {
-          width: 50px; height: 50px; background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
-          border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
-          box-shadow: 0 10px 20px rgba(168, 85, 247, 0.4); animation: guruPulse 2s infinite;
-          border: 2px solid #e9d5ff; transition: 0.3s;
-        }
+        .guru-ai-panel { background: rgba(12, 14, 18, 0.98); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 16px; padding: 15px; width: 300px; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9); backdrop-filter: blur(20px); position: relative; }
+        .guru-ai-header { display: flex; gap: 12px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; }
+        .guru-ai-rec-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px; text-decoration: none; background: rgba(0,0,0,0.4); margin-bottom: 8px; transition: 0.2s; border: 1px solid transparent; }
+        .guru-ai-rec-item:hover { background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.3); }
+        .guru-ad-slot { margin: 10px 0; background: #000; border-radius: 8px; overflow: hidden; display: flex; justify-content: center; border: 1px solid rgba(255,255,255,0.05); }
       `}</style>
 
       {isMinimized ? (
-        <div className="guru-ai-minimized" onClick={() => setIsMinimized(false)} title={isEn ? "Open GURU Guide" : "Otevřít GURU průvodce"}>
+        <div className="guru-ai-minimized" onClick={() => setIsMinimized(false)} style={{ width: '50px', height: '50px', background: '#a855f7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
           <Brain color="#fff" size={24} />
         </div>
       ) : (
         <div className="guru-ai-panel">
-          {isScanning && <div className="guru-scan-line"></div>}
-          <button 
-            onClick={() => setIsMinimized(true)}
-            style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: '5px' }}
-          >
-            <X size={16} />
-          </button>
-
+          <button onClick={() => setIsMinimized(true)} style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer' }}><X size={16} /></button>
+          
           <div className="guru-ai-header">
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <div style={{ background: isScanning ? '#374151' : '#a855f7', padding: '8px', borderRadius: '10px', display: 'flex', transition: '0.3s', alignItems: 'center' }}>
-                <Brain color="#fff" size={20} className={isScanning ? "animate-pulse" : ""} />
-              </div>
-              <div style={{ paddingTop: '2px', paddingRight: '15px' }}>
-                <h4 style={{ color: '#fff', margin: 0, fontSize: '11px', fontWeight: '950', letterSpacing: '0.2px', lineHeight: '1.4' }}>
-                  {isEn 
-                    ? "HI, I'M GURU, YOUR PERSONAL GUIDE THROUGH THIS AWESOME SITE." 
-                    : "AHOJ, JSEM GURU, TVŮJ OSOBNÍ PRŮVODCE TÍMTO VYMAKANÝM WEBEM."}
-                </h4>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '6px' }}>
-                  {isScanning ? (
-                    <span style={{ color: '#9ca3af', fontSize: '9px', fontFamily: 'monospace', fontWeight: 'bold' }}>
-                      {isEn ? '> scanning profile...' : '> skenuji profil...'}
-                    </span>
-                  ) : (
-                    <>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.05)', padding: '2px 4px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                        {archetypeIcon}
-                        <span style={{ color: '#e5e7eb', fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', fontFamily: 'monospace' }}>
-                           {userProfile}
-                        </span>
-                      </span>
-                      <CheckCircle2 size={10} color="#10b981" />
-                    </>
-                  )}
-                </div>
-              </div>
+            <div style={{ background: '#a855f7', padding: '8px', borderRadius: '10px' }}><Brain color="#fff" size={20} /></div>
+            <div>
+              <h4 style={{ color: '#fff', margin: 0, fontSize: '11px', fontWeight: '950' }}>{isEn ? "GURU AI GUIDE" : "AHOJ, JSEM GURU PRŮVODCE"}</h4>
+              <span style={{ color: '#9ca3af', fontSize: '9px', textTransform: 'uppercase' }}>{userProfile}</span>
             </div>
           </div>
 
-          <div className="guru-ai-list" style={{ minHeight: '270px' }}>
-            {isScanning ? (
-              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '12px', opacity: 0.5, paddingTop: '100px' }}>
-                <Activity className="animate-spin" size={24} color="#a855f7" />
-                <span style={{ fontFamily: 'monospace', fontSize: '10px', color: '#a855f7' }}>{isEn ? "COMPUTING..." : "HLEDÁM OBSAH..."}</span>
-              </div>
-            ) : recommendations.length > 0 ? (
-              <>
-                {recommendations.map((post, idx) => {
-                  const title = isEn ? (post.title_en || post.title) : post.title;
-                  const isExternal = post.finalUrl?.startsWith('http') || post.isExternal;
-                  
-                  let badgeText = isEn ? 'READ MORE' : 'ČÍST VÍCE';
-                  let badgeColor = '#a855f7'; 
-                  let isMoney = post.type === 'money-slot';
-                  
-                  if (isMoney) {
-                    badgeText = isEn ? 'GURU PICK' : 'GURU DOPORUČUJE';
-                    badgeColor = '#f97316';
-                  } else if (post.type === 'deal') {
-                    badgeText = isEn ? `BUY (${post.price_en || ''})` : `KOUPIT (${post.price_cs || ''})`;
-                    badgeColor = '#f97316'; 
-                  } else if (post.type === 'game' || post.type === 'expected') {
-                    badgeText = isEn ? 'GAME NEWS' : 'HERNÍ INFO';
-                    badgeColor = '#ff0055'; 
-                  }
+          <div className="guru-ai-list">
+            {recommendations.slice(0, 2).map((post, idx) => (
+              <Link key={idx} href={post.finalUrl} className="guru-ai-rec-item">
+                <img src={post.image_url} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} alt="" />
+                <div style={{ flex: 1 }}><h5 style={{ color: '#fff', fontSize: '11px', margin: 0 }}>{isEn ? (post.title_en || post.title) : post.title}</h5></div>
+                <ChevronRight size={14} color="#9ca3af" />
+              </Link>
+            ))}
 
-                  const WrapperTag = isExternal ? 'a' : Link;
-                  const wrapperProps = isExternal 
-                    ? { href: post.finalUrl, target: "_blank", rel: "nofollow sponsored" }
-                    : { href: post.finalUrl };
+            {/* 🔥 GURU MONEY MAKER: SEZNAM REKLAMA UVNITŘ PANELU */}
+            <div className="guru-ad-slot">
+              <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
 
-                  return (
-                    <WrapperTag 
-                      key={idx + rerollTrigger}
-                      {...wrapperProps}
-                      className={`guru-ai-rec-item ${isMoney ? 'guru-money-slot' : ''}`}
-                    >
-                      <img 
-                        src={post.image_url || 'https://images.unsplash.com/photo-1588702547919-26089e690ecc?w=100&q=80'} 
-                        alt={title}
-                        style={{ width: '45px', height: '45px', borderRadius: '6px', objectFit: 'cover', border: isMoney ? '1px solid rgba(249,115,22,0.4)' : '1px solid rgba(255,255,255,0.15)' }}
-                      />
-                      <div style={{ flex: 1 }}>
-                        <h5 style={{ color: isMoney ? '#fff' : '#e5e7eb', fontSize: '12px', fontWeight: 'bold', margin: '0 0 3px 0', lineHeight: '1.2', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                          {title}
-                        </h5>
-                        <span style={{ color: badgeColor, fontSize: '9px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          {isMoney && <ShoppingCart size={10} />} {badgeText}
-                        </span>
-                      </div>
-                      <ChevronRight size={16} color={isMoney ? "#f97316" : "#9ca3af"} />
-                    </WrapperTag>
-                  )
-                })}
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px' }}>
-                  <button className="guru-reroll-btn" onClick={() => setRerollTrigger(prev => prev + 1)}>
-                    <RefreshCw size={10} /> {isEn ? 'REROLL' : 'PŘEGENEROVAT'}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '11px', marginTop: '40px', fontWeight: 'bold' }}>
-                {isEn ? "NO NEW CONTENT" : "ŽÁDNÝ NOVÝ OBSAH"}
-              </div>
-            )}
+            {recommendations.slice(2, 5).map((post, idx) => (
+              <Link key={idx + 2} href={post.finalUrl} className="guru-ai-rec-item">
+                <img src={post.image_url} style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} alt="" />
+                <div style={{ flex: 1 }}><h5 style={{ color: '#fff', fontSize: '11px', margin: 0 }}>{isEn ? (post.title_en || post.title) : post.title}</h5></div>
+                <ChevronRight size={14} color="#9ca3af" />
+              </Link>
+            ))}
           </div>
+
+          <button onClick={() => setRerollTrigger(prev => prev + 1)} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: 'none', color: '#9ca3af', fontSize: '9px', padding: '8px', cursor: 'pointer', borderRadius: '8px', marginTop: '5px' }}>
+            <RefreshCw size={10} style={{ marginRight: '5px' }} /> {isEn ? 'REFRESH TIPS' : 'PŘEGENEROVAT TIPY'}
+          </button>
         </div>
       )}
     </div>
