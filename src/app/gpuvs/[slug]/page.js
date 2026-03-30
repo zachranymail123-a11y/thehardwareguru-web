@@ -7,10 +7,11 @@ import {
 } from 'lucide-react';
 import GuruGpuCompareText from '../../../components/GuruGpuCompareText';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU GPU DUELS ENGINE - V6.5 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", smazání dead-zóny na konci, přidání Sticky Bottom Anchor.
+ * GURU GPU DUELS ENGINE - V6.6 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", smazání dead-zóny na konci, přidání Sticky Bottom Anchor + Heureka konverze.
  */
 
 export const runtime = "nodejs";
@@ -214,6 +215,11 @@ export default async function GpuVsDetailPage(props) {
                 />
             </div>
         </section>
+
+        {/* 🔥 PŘIDÁNO: Heureka tlačítka pod analýzou výkonu 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: '#ff0055' }}><LayoutList size={28} /> {isEn ? 'TECHNICAL SPECS' : 'GURU SPECIFIKACE'}</h2>
