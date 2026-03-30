@@ -7,10 +7,11 @@ import {
  Share2, Swords, ArrowRight, Gamepad2, Twitter, Sparkles 
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU TIP ENGINE V5.5 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU TIP ENGINE V5.6 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchor, eliminace hluchých míst + Heureka konverze.
  */
 
 const supabase = createClient(
@@ -127,6 +128,11 @@ export default async function TipDetail({ params }) {
 
           <div className="guru-prose">
               <div dangerouslySetInnerHTML={{ __html: content }} />
+          </div>
+
+          {/* 🔥 PŘIDÁNO: Heureka tlačítka pod obsahem tipu 🔥 */}
+          <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
+              <HeurekaButtons isEn={isEn} />
           </div>
 
           <div className="gta6-bait-box">
