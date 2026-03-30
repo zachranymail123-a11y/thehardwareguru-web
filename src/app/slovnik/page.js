@@ -3,10 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { Book, ChevronRight, Search, Heart, Flame, ShieldCheck } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
+import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU GLOSSARY ENGINE V2.3 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU GLOSSARY ENGINE V2.4 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchor, eliminace hluchých míst + Heureka konverze.
  */
 
 export const runtime = "nodejs";
@@ -99,6 +100,11 @@ export default async function SlovnikPage(props) {
             className="search-input"
           />
         </form>
+
+        {/* 🔥 PŘIDÁNO: Heureka tlačítka pod vyhledáváním 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
 
         {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
         <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
