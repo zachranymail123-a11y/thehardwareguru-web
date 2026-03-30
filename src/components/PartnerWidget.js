@@ -1,23 +1,41 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation'; // 🔥 PŘIDÁNO: Sledování změny URL
 import { ShoppingCart, Zap, Apple, RefreshCw, Cpu, Award, ChevronRight, ChevronLeft, X, Search, Flame, Monitor, Gamepad2, Smartphone } from 'lucide-react';
 
 /**
- * GURU PARTNER WIDGET V2.6 - HEUREKA POSITION ID FIX
- * 🚀 CÍL: Rozdělení data-trixam-positionid pro CPU (276027) a GPU (276026).
+ * GURU PARTNER WIDGET V2.7 - HEUREKA SPA FIX
+ * 🚀 CÍL: Nucená reinjekce trixam.min.js při každé změně URL (obchází React hydrataci).
  * 💰 EHUB ID: 71c85dea
  */
 
 export default function PartnerWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [isEn, setIsEn] = useState(false);
+  const pathname = usePathname(); // 🔥 PŘIDÁNO
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setIsEn(window.location.pathname.startsWith('/en'));
+
+      // 🔥 HEUREKA SPA FIX: Brutální reinjekce skriptu
+      // Smaže starý skript a natáhne ho znovu. Tím donutí Heureku naskenovat nové
+      // React elementy s třídou 'heureka-hn-link' a nalepit na ně tracking.
+      const scriptId = 'guru-heureka-reinjector';
+      const oldScript = document.getElementById(scriptId);
+      if (oldScript) {
+        oldScript.remove();
+      }
+      
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.type = 'text/javascript';
+      script.src = "//serve.affiliate.heureka.cz/js/trixam.min.js";
+      script.async = true;
+      document.body.appendChild(script);
     }
-  }, []);
+  }, [pathname]); // 🔥 Spustí se znovu po každém překliknutí na webu!
 
   // EHUB TRACKING LINKS
   const SHOPCOM_LINK = "https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=3ea952dd";
