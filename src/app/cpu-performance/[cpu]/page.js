@@ -1,17 +1,18 @@
 import React from 'react';
 import { 
- ChevronLeft, 
- Activity, 
- Swords,
- CheckCircle2,
- Database,
- ArrowRight
+  ChevronLeft, 
+  Activity, 
+  Swords,
+  CheckCircle2,
+  Database,
+  ArrowRight
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU CPU PERFORMANCE ENGINE V2.2 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU CPU PERFORMANCE ENGINE V2.3 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka konverze.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -127,6 +128,11 @@ export default async function CpuPerformancePage({ params }) {
                 </div>
             </div>
         </section>
+
+        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (bezpečně pod benchmarkem) 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
