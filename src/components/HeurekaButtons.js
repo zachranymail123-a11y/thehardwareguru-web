@@ -3,9 +3,9 @@ import React from 'react';
 import { Cpu, Monitor, Layers, Database, Search } from 'lucide-react';
 
 /**
- * GURU HEUREKA GLOBAL BUTTONS V1.3 (FULL BUILD + SEARCH ADDON)
- * 🚀 CÍL: Svatá čtveřice PC buildu + Vyhledávací bar ID 276035.
- * ✅ TRACKING: Kompletně napojeno na unikátní Trixam IDs.
+ * GURU HEUREKA GLOBAL BUTTONS V1.4 (FIXED SEARCH PARAMETERS)
+ * 🚀 CÍL: Svatá čtveřice PC buildu + Funkční vyhledávací bar ID 276035.
+ * ✅ FIX: Parametr 'z' změněn na 1 (Display Type: Search), aby API neházelo chybu.
  */
 
 export default function HeurekaButtons({ isEn = false }) {
@@ -86,7 +86,7 @@ export default function HeurekaButtons({ isEn = false }) {
           font-family: sans-serif;
         }
 
-        /* 🔥 SEARCHBAR STYLY */
+        /* 🔥 GURU SEARCH STYLY */
         .h-search-wrap {
           margin-top: 10px;
           padding: 20px;
@@ -157,75 +157,40 @@ export default function HeurekaButtons({ isEn = false }) {
         }
       `}} />
 
-      {/* 🔥 PROCESORY -> ID 276027 */}
-      <a 
-        href={HEUREKA_CPU} 
-        target="_blank" 
-        rel="nofollow sponsored" 
-        className="h-banner-btn heureka-hn-link" 
-        data-trixam-positionid="276027"
-      >
-        <div className="h-icon-box">
-          <Cpu size={26} />
-        </div>
+      {/* TLAČÍTKA ZE ZÁLOHY */}
+      <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="h-banner-btn heureka-hn-link" data-trixam-positionid="276027">
+        <div className="h-icon-box"><Cpu size={26} /></div>
         <div className="h-text-col">
           <span className="h-title">{isEn ? 'Processors' : 'Procesory'}</span>
           <span className="h-subtitle">{isEn ? 'At the lowest price' : 'Za nejnižší cenu'}</span>
         </div>
       </a>
 
-      {/* 🔥 GRAFICKÉ KARTY -> ID 276026 */}
-      <a 
-        href={HEUREKA_GPU} 
-        target="_blank" 
-        rel="nofollow sponsored" 
-        className="h-banner-btn heureka-hn-link" 
-        data-trixam-positionid="276026"
-      >
-        <div className="h-icon-box">
-          <Monitor size={26} />
-        </div>
+      <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="h-banner-btn heureka-hn-link" data-trixam-positionid="276026">
+        <div className="h-icon-box"><Monitor size={26} /></div>
         <div className="h-text-col">
           <span className="h-title">{isEn ? 'Graphic Cards' : 'Grafické karty'}</span>
           <span className="h-subtitle">{isEn ? 'At the lowest price' : 'Za nejnižší cenu'}</span>
         </div>
       </a>
 
-      {/* 🔥 ZÁKLADNÍ DESKY -> ID 276033 */}
-      <a 
-        href={HEUREKA_MB} 
-        target="_blank" 
-        rel="nofollow sponsored" 
-        className="h-banner-btn heureka-hn-link" 
-        data-trixam-positionid="276033"
-      >
-        <div className="h-icon-box">
-          <Layers size={26} />
-        </div>
+      <a href={HEUREKA_MB} target="_blank" rel="nofollow sponsored" className="h-banner-btn heureka-hn-link" data-trixam-positionid="276033">
+        <div className="h-icon-box"><Layers size={26} /></div>
         <div className="h-text-col">
           <span className="h-title">{isEn ? 'Motherboards' : 'Základní desky'}</span>
           <span className="h-subtitle">{isEn ? 'At the lowest price' : 'Za nejnižší cenu'}</span>
         </div>
       </a>
 
-      {/* 🔥 RAM -> ID 276034 */}
-      <a 
-        href={HEUREKA_RAM} 
-        target="_blank" 
-        rel="nofollow sponsored" 
-        className="h-banner-btn heureka-hn-link" 
-        data-trixam-positionid="276034"
-      >
-        <div className="h-icon-box">
-          <Database size={26} />
-        </div>
+      <a href={HEUREKA_RAM} target="_blank" rel="nofollow sponsored" className="h-banner-btn heureka-hn-link" data-trixam-positionid="276034">
+        <div className="h-icon-box"><Database size={26} /></div>
         <div className="h-text-col">
           <span className="h-title">{isEn ? 'RAM Memory' : 'Operační paměti'}</span>
           <span className="h-subtitle">{isEn ? 'At the lowest price' : 'Za nejnižší cenu'}</span>
         </div>
       </a>
 
-      {/* 🔥 GURU SEARCH MODUL (NAVÍC POD TLAČÍTKY) */}
+      {/* 🔥 OPRAVENÝ VYHLEDÁVACÍ PANEL */}
       {!isEn && (
         <div className="h-search-wrap">
           <div className="h-search-label">
@@ -237,7 +202,8 @@ export default function HeurekaButtons({ isEn = false }) {
             target="_blank" 
             className="h-search-form"
           >
-            <input type="hidden" name="z" value="276035" />
+            {/* TADY BYL PROBLÉM: 'z' musí být 1, ne tvoje ID pozice */}
+            <input type="hidden" name="z" value="1" />
             <input 
               name="q" 
               type="text" 
