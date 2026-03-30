@@ -1,13 +1,14 @@
 import React from 'react';
 import { 
- ChevronLeft, Trophy, Zap, Cpu, Medal, Monitor, ChevronRight
+  ChevronLeft, Trophy, Zap, Cpu, Medal, Monitor, ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU CPU RANKING V2.1 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Maximální monetizace CPU žebříčku a perfektní mobilní zobrazení.
+ * GURU CPU RANKING V2.2 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Maximální monetizace CPU žebříčku a perfektní mobilní zobrazení + Heureka CTA.
  */
 
 export const dynamic = 'force-dynamic';
@@ -51,6 +52,11 @@ export default async function CpuRankingPage(props) {
             {isEn ? 'CPU' : 'ŽEBŘÍČEK'} <span style={{ color: '#f59e0b', textShadow: '0 0 40px rgba(245, 158, 11, 0.4)' }}>{isEn ? 'TIER LIST' : 'PROCESORŮ'}</span>
           </h1>
         </header>
+
+        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (CTA nad výpisem žebříčku) 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
 
         {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
         <div style={{ marginBottom: '40px' }}>
