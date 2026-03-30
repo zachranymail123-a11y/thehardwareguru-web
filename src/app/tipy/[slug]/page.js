@@ -3,14 +3,14 @@ import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart, 
-  Share2, Swords, ArrowRight, Gamepad2, Twitter, Sparkles 
+ ShoppingCart, ChevronLeft, Calendar, ShieldCheck, Flame, Heart, 
+ Share2, Swords, ArrowRight, Gamepad2, Twitter, Sparkles 
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU TIP ENGINE V5.4 (MOBILE OPTIMIZED & ADS SEPARATION)
- * 🚀 CÍL: Maximální zisk z Tipů a triků skrze Seznam Partner a perfektní mobilní UI.
+ * GURU TIP ENGINE V5.5 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
  */
 
 const supabase = createClient(
@@ -71,12 +71,6 @@ export default async function TipDetail({ params }) {
   const content = isEn && tip.content_en ? tip.content_en : tip.content;
   const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}tipy/${slug}`;
 
-  // 🚀 GURU ADS INJECTION LOGIC
-  const contentParts = content ? content.split('</p>') : [];
-  const midPoint = Math.ceil(contentParts.length / 2);
-  const firstHalf = contentParts.slice(0, midPoint).join('</p>');
-  const secondHalf = contentParts.slice(midPoint).join('</p>');
-
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -93,7 +87,7 @@ export default async function TipDetail({ params }) {
   };
 
   return (
-    <div className="guru-tip-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px' }}>
+    <div className="guru-tip-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px' }}>
       
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema).replace(/</g, '\\u003c') }} />
 
@@ -121,8 +115,8 @@ export default async function TipDetail({ params }) {
             <h1 className="tip-h1">{title}</h1>
           </header>
 
-          {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
-          <div style={{ marginBottom: '40px' }}>
+          {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+          <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
               <div className="ad-desktop-wrapper">
                   <SeznamAd zoneId={408654} width={970} height={210} />
               </div>
@@ -132,16 +126,7 @@ export default async function TipDetail({ params }) {
           </div>
 
           <div className="guru-prose">
-             <div dangerouslySetInnerHTML={{ __html: firstHalf + (contentParts.length > 1 ? '</p>' : '') }} />
-
-             {/* 🔥 IN-CONTENT AD SLOT (POUZE DELŠÍ TEXTY + MOBIL) */}
-             {contentParts.length > 3 && (
-                <div className="ad-mobile-wrapper" style={{ margin: '30px 0' }}>
-                   <SeznamAd zoneId={408651} width={300} height={250} />
-                </div>
-             )}
-
-             <div dangerouslySetInnerHTML={{ __html: secondHalf }} />
+              <div dangerouslySetInnerHTML={{ __html: content }} />
           </div>
 
           <div className="gta6-bait-box">
@@ -200,22 +185,22 @@ export default async function TipDetail({ params }) {
             </section>
           )}
 
-          {/* 🔥 BOTTOM AD SLOT - STRIKTNÍ SEPARACE */}
-          <div style={{ marginTop: '50px' }}>
-              <div className="ad-desktop-wrapper">
-                  <SeznamAd zoneId={408658} width={480} height={300} />
-              </div>
-              <div className="ad-mobile-wrapper">
-                  <SeznamAd zoneId={408651} width={300} height={250} />
-              </div>
-          </div>
-
           <div className="global-cta">
               <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" className="deals-btn"><Flame size={20} /> {isEn ? 'BEST DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}</a>
               <Link href={isEn ? "/en/support" : "/support"} className="support-btn"><Heart size={20} /> {isEn ? 'SUPPORT' : 'PODPOŘIT GURU'}</Link>
           </div>
         </div>
       </main>
+
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
@@ -258,12 +243,28 @@ export default async function TipDetail({ params }) {
         .deals-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px; border-radius: 12px; font-weight: 950; text-decoration: none; text-transform: uppercase; background: #ea580c; color: #fff; transition: 0.3s; }
         .support-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px; border-radius: 12px; font-weight: 950; text-decoration: none; text-transform: uppercase; background: #eab308; color: #000; transition: 0.3s; }
 
-        /* 🚀 RESPONSIVE ADS SYSTEM */
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
+
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
 
         @media (max-width: 768px) {
             .guru-tip-wrapper { padding-top: 80px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
             .inner-container { border-radius: 0 !important; border: none !important; }
             .tip-hero-img { height: 250px !important; }
             .content-padding-box { padding: 30px 20px 60px 20px !important; }
@@ -277,8 +278,6 @@ export default async function TipDetail({ params }) {
             .gta6-link { width: 100%; justify-content: center; padding: 15px !important; }
             .share-grid, .duel-grid, .related-grid, .global-cta { grid-template-columns: 1fr; flex-direction: column; }
             .share-card, .deals-btn, .support-btn { width: 100%; }
-            .ad-desktop-wrapper { display: none !important; }
-            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
         }
       `}} />
     </div>
