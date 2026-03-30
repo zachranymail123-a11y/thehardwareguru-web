@@ -13,10 +13,11 @@ import {
  Heart
 } from 'lucide-react';
 import SeznamAd from '../../../../../components/SeznamAd';
+import HeurekaButtons from '../../../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU GPU PERFORMANCE ENGINE V2.5 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU GPU PERFORMANCE ENGINE V2.6 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka CTA.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -174,6 +175,11 @@ export default async function GpuPerformancePage({ params }) {
                         </div>
                     </div>
                 </section>
+
+                {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (CTA pod hlavním výsledkem FPS) 🔥 */}
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+                    <HeurekaButtons isEn={isEn} />
+                </div>
 
                 <section className="specs-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '60px' }}>
                     <div className="res-card"><div className="res-label">RESOLUTION</div><div className="res-val" style={{ color: '#66fcf1' }}>{resLabel}</div></div>
