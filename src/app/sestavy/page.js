@@ -9,8 +9,8 @@ import SeznamAd from '../../components/SeznamAd';
 import Link from 'next/link';
 
 /**
- * GURU HARDWARE HUB V3.3 (HEUREKA TRACKING FIX)
- * 🚀 CÍL: Přidána klíčová třída 'heureka-hn-link' k Heureka CTA.
+ * GURU HARDWARE HUB V3.4 - HEUREKA POSITION ID FIX
+ * 🚀 CÍL: Rozdělení data-trixam-positionid pro CPU (276027) a GPU (276026).
  * 💰 EHUB ID: 71c85dea
  */
 
@@ -108,17 +108,18 @@ export default function HardwareHubPage(props) {
               </ul>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {/* 🔥 PŘIDÁNA TŘÍDA heureka-hn-link */}
+                {/* 🔥 CPU = 276027 */}
                 <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="hub-cta-btn heureka-bg heureka-hn-link" data-trixam-positionid="276027">
                   <Cpu size={20} /> {isEn ? "COMPARE CPUS" : "SROVNAT PROCESORY"}
                 </a>
-                <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="hub-cta-btn heureka-bg heureka-hn-link" data-trixam-positionid="276027">
+                {/* 🔥 GPU = 276026 */}
+                <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="hub-cta-btn heureka-bg heureka-hn-link" data-trixam-positionid="276026">
                   <Monitor size={20} /> {isEn ? "COMPARE GPUS" : "SROVNAT GRAFIKY"}
                 </a>
             </div>
           </section>
 
-          {/* SHOPCOM.CZ - Hardware Guru Main Choice */}
+          {/* SHOPCOM.CZ */}
           <section className="hub-card premium-border">
             <div className="card-header">
               <div className="vendor-logo">SHOPCOM.CZ</div>
@@ -139,7 +140,7 @@ export default function HardwareHubPage(props) {
             </a>
           </section>
 
-          {/* SMARTY.CZ - Gaming & Tech */}
+          {/* SMARTY.CZ */}
           <section className="hub-card smarty-border">
             <div className="card-header">
               <div className="vendor-logo">SMARTY.CZ</div>
@@ -160,7 +161,7 @@ export default function HardwareHubPage(props) {
             </a>
           </section>
 
-          {/* ALZA.SK - Slovak Market Leader */}
+          {/* ALZA.SK */}
           <section className="hub-card desk-border">
             <div className="card-header">
               <div className="vendor-logo">ALZA.SK</div>
@@ -181,7 +182,7 @@ export default function HardwareHubPage(props) {
             </a>
           </section>
 
-          {/* XM.CZ - Smart Home */}
+          {/* XM.CZ */}
           <section className="hub-card xm-border">
             <div className="card-header">
               <div className="vendor-logo">XM.CZ</div>
@@ -202,7 +203,7 @@ export default function HardwareHubPage(props) {
             </a>
           </section>
 
-          {/* CUBENEST - Premium Accessories */}
+          {/* CUBENEST */}
           <section className="hub-card desk-border">
             <div className="card-header">
               <div className="vendor-logo">CUBENEST</div>
@@ -223,7 +224,7 @@ export default function HardwareHubPage(props) {
             </a>
           </section>
 
-          {/* IPHONEMARKET.CZ - Used iPhones with warranty */}
+          {/* IPHONEMARKET.CZ */}
           <section className="hub-card premium-border">
             <div className="card-header">
               <div className="vendor-logo">IPHONEMARKET</div>
@@ -244,7 +245,7 @@ export default function HardwareHubPage(props) {
             </a>
           </section>
 
-          {/* JABKOLEVNE.CZ - Affordable Apple Ecosystem */}
+          {/* JABKOLEVNE.CZ */}
           <section className="hub-card desk-border">
             <div className="card-header">
               <div className="vendor-logo">JABKOLEVNE.CZ</div>
