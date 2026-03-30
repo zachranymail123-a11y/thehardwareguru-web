@@ -3,10 +3,11 @@ import { notFound } from 'next/navigation';
 import { ChevronLeft, Info, Calendar, Flame, Heart, Share2, Swords, Gauge, ArrowRight, Sparkles, Gamepad2, Twitter, Cpu, Monitor, User, Clock, CheckCircle, ChevronRight } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU ARTICLE ENGINE V5.8 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", zachování in-text reklamy, přidání Sticky Bottom Anchor.
+ * GURU ARTICLE ENGINE V5.9 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Vložení Heureka konverzních tlačítek na konec článku.
  */
 
 export const runtime = "nodejs";
@@ -157,6 +158,11 @@ export default async function ArticleDetailPage(props) {
                          )}
 
                          {part3 && <div dangerouslySetInnerHTML={{ __html: part3 }} />}
+                    </div>
+
+                    {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (na konec článku) 🔥 */}
+                    <div style={{ display: 'flex', justifyContent: 'center', margin: '50px 0 30px' }}>
+                        <HeurekaButtons isEn={isEn} />
                     </div>
                     
                     <div className="gta6-conversion-box">
