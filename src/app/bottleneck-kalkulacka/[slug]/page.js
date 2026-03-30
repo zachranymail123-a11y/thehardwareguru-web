@@ -5,8 +5,8 @@ import BottleneckClient from '../BottleneckClient';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU BOTTLENECK CALCULATOR RESULT - V1.4 (DYNAMIC GAME MATCHING)
- * 🚀 CÍL: Dynamické rozpoznání jakékoliv hry z URL podle databáze bez natvrdo psaných podmínek.
+ * GURU BOTTLENECK CALCULATOR RESULT - V1.5 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Dynamické rozpoznání hry, Top Banner viewability a zavedení Sticky Bottom Anchoru.
  */
 
 export const dynamic = 'force-dynamic';
@@ -50,13 +50,28 @@ export default async function BottleneckResultPage({ params, searchParams }) {
     }
 
     return (
-        <div className="guru-page-wrapper" style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', paddingTop: '100px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+        <div className="guru-page-wrapper" style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', paddingTop: '100px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
             
             {/* 🚀 RESPONSIVE ADS & MOBILE FIXES */}
             <style dangerouslySetInnerHTML={{ __html: `
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
                 .ad-mobile-wrapper { display: none; width: 100%; }
                 
+                /* 🔥 STICKY BOTTOM ANCHOR CSS */
+                .sticky-bottom-anchor {
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    width: 100%;
+                    background: rgba(10, 11, 13, 0.98);
+                    border-top: 1px solid rgba(255, 255, 255, 0.1);
+                    z-index: 9999;
+                    padding: 10px 0;
+                    display: flex;
+                    justify-content: center;
+                    box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+                }
+
                 @media (max-width: 768px) {
                     .guru-page-wrapper { paddingTop: 80px !important; }
                     .ad-desktop-wrapper { display: none !important; }
@@ -67,8 +82,8 @@ export default async function BottleneckResultPage({ params, searchParams }) {
 
             <div className="inner-container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
                 
-                {/* 🔥 SEZNAM AD #1: TOP PLACEMENT (OPRAVENO PRO MOBILY) */}
-                <div style={{ marginBottom: '40px' }}>
+                {/* 🔥 GURU MONEY FIX: TOP BANNER ABOVE FOLD */}
+                <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
                     <div className="ad-desktop-wrapper">
                         <SeznamAd zoneId={408654} width={970} height={210} />
                     </div>
@@ -87,11 +102,16 @@ export default async function BottleneckResultPage({ params, searchParams }) {
                     initialResolution={resolutionStr}
                 />
 
-                {/* 🔥 SEZNAM AD #2: BOTTOM PLACEMENT (ZOBRAZENÍ POUZE NA MOBILU DLE SCREENU) */}
-                <div className="ad-mobile-wrapper" style={{ marginTop: '50px' }}>
-                    <SeznamAd zoneId={408651} width={300} height={250} />
-                </div>
+            </div>
 
+            {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+            <div className="sticky-bottom-anchor">
+                <div className="ad-desktop-wrapper">
+                    <SeznamAd zoneId={408654} width={970} height={90} />
+                </div>
+                <div className="ad-mobile-wrapper">
+                    <SeznamAd zoneId={408651} width={300} height={100} />
+                </div>
             </div>
         </div>
     );
