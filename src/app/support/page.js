@@ -1,10 +1,11 @@
 import React from 'react';
-import { ChevronLeft, ShieldCheck, Heart, Flame, ShoppingCart, Info, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ShieldCheck, Heart, Flame, ShoppingCart, Info, CheckCircle2, Award, ChevronRight } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
+import Link from 'next/link';
 
 /**
- * GURU SUPPORT ENGINE V2.5 (MOBILE OPTIMIZED & ADS SEPARATION)
- * 🚀 CÍL: Maximální monetizace podpory a perfektní mobilní UX pro komunitu.
+ * GURU SUPPORT ENGINE V2.6 (PARTNERS & CTR OPTIMIZED)
+ * 🚀 CÍL: Maximální konverze na podporu a Hardware Hub.
  */
 
 export const runtime = "nodejs";
@@ -60,9 +61,24 @@ export default async function SupportPage(props) {
       <style dangerouslySetInnerHTML={{ __html: `
         .guru-support-card { background: rgba(17, 19, 24, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(234, 179, 8, 0.2); border-radius: 32px; padding: 40px; maxWidth: 520px; width: 100%; textAlign: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .guru-btn-hover { transition: 0.3s; }
-        .guru-btn-hover:hover { transform: translateY(-3px) scale(1.02); filter: brightness(1.1); }
-        .guru-affiliate-cta { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important; }
+        .guru-btn-hover:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .guru-affiliate-cta { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important; margin-top: 10px; }
         
+        /* 🔥 CTR OPTIMIZED LONG PARTNER BUTTON */
+        .guru-long-partner-btn {
+          width: 100%; max-width: 520px; margin-top: 25px;
+          background: linear-gradient(90deg, rgba(234, 179, 8, 0.1) 0%, rgba(234, 179, 8, 0.05) 100%);
+          border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 20px;
+          padding: 20px 25px; display: flex; align-items: center; justify-content: space-between;
+          text-decoration: none; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .guru-long-partner-btn:hover { border-color: #eab308; background: rgba(234, 179, 8, 0.15); transform: scale(1.02); }
+        .p-btn-content { display: flex; align-items: center; gap: 15px; text-align: left; }
+        .p-btn-text { display: flex; flex-direction: column; }
+        .p-btn-main { color: #eab308; font-weight: 950; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        .p-btn-sub { color: #9ca3af; font-size: 11px; font-weight: 600; margin-top: 2px; }
+
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; margin-bottom: 40px; }
         .ad-mobile-wrapper { display: none; width: 100%; margin-bottom: 30px; }
 
@@ -70,10 +86,9 @@ export default async function SupportPage(props) {
             .guru-support-wrapper { padding-top: 80px !important; }
             .ad-desktop-wrapper { display: none !important; }
             .ad-mobile-wrapper { display: flex !important; justify-content: center; }
-            .guru-support-card { padding: 30px 20px !important; border-radius: 24px !important; }
+            .guru-support-card, .guru-long-partner-btn { padding: 25px 20px !important; border-radius: 24px !important; }
             .main-h1 { font-size: 2.2rem !important; }
-            .qr-image { width: 180px !important; height: 180px !important; }
-            .method-btn { padding: 15px 20px !important; font-size: 14px !important; }
+            .p-btn-main { font-size: 11px !important; }
         }
       `}} />
 
@@ -89,7 +104,7 @@ export default async function SupportPage(props) {
         </p>
       </header>
 
-      {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
+      {/* 🔥 TOP AD SLOT */}
       <div className="ad-desktop-wrapper">
           <SeznamAd zoneId={408654} width={970} height={210} />
       </div>
@@ -106,11 +121,6 @@ export default async function SupportPage(props) {
           <div style={{ background: '#fff', padding: '15px', borderRadius: '20px', display: 'inline-block', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
             <img src="/qr-platba.png" alt="QR Platba" className="qr-image" style={{ width: '220px', height: '220px', display: 'block' }} />
           </div>
-        </div>
-
-        {/* 🔥 MID AD SLOT - STRIKTNÍ SEPARACE (POUZE MOBIL) */}
-        <div className="ad-mobile-wrapper" style={{ margin: '20px 0' }}>
-            <SeznamAd zoneId={408651} width={300} height={250} />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -136,13 +146,31 @@ export default async function SupportPage(props) {
             </a>
         </div>
 
-        <div style={{ margin: '30px 0', opacity: '0.1', height: '1px', background: '#fff' }}></div>
+        <div style={{ margin: '25px 0', opacity: '0.1', height: '1px', background: '#fff' }}></div>
 
         {/* AFFILIATE */}
         <a href={hrkLink} target="_blank" rel="nofollow sponsored" className="guru-btn-hover guru-affiliate-cta method-btn" style={buttonBaseStyle}>
           <span style={{ fontSize: '20px' }}>🔥</span> {isEn ? "Buy a game - Best Deal" : "Koupit hru za nejlepší cenu"}
         </a>
       </div>
+
+      {/* --- 🚀 GURU PARTNER CTA (Internal Link to /sestavy) --- */}
+      <Link href={isEn ? "/en/sestavy" : "/sestavy"} className="guru-long-partner-btn">
+          <div className="p-btn-content">
+            <Award color="#eab308" size={32} />
+            <div className="p-btn-text">
+                <span className="p-btn-main">
+                  {isEn ? "Our verified partners" : "naši partneri"}
+                </span>
+                <span className="p-btn-sub">
+                  {isEn 
+                    ? "Support us by shopping through our links" 
+                    : "nákupem přes naše odkazy podpoříte provoz webu"}
+                </span>
+            </div>
+          </div>
+          <ChevronRight color="#eab308" size={24} />
+      </Link>
 
       <div style={{ marginTop: '50px', fontSize: '10px', color: '#4b5563', letterSpacing: '2px', fontWeight: 'bold', textAlign: 'center' }}>
         © {new Date().getFullYear()} THE HARDWARE GURU • MISSION: BUILD THE BEST DB
@@ -156,5 +184,5 @@ const containerStyle = {
 };
 
 const buttonBaseStyle = {
-  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', padding: '18px 24px', borderRadius: '18px', textDecoration: 'none', fontWeight: '950', fontSize: '15px', marginBottom: '4px', width: '100%', boxSizing: 'border-box', border: '1px solid rgba(255, 255, 255, 0.05)', color: '#fff', textTransform: 'uppercase'
+  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', padding: '18px 24px', borderRadius: '18px', textDecoration: 'none', fontWeight: '950', fontSize: '14px', marginBottom: '4px', width: '100%', boxSizing: 'border-box', border: '1px solid rgba(255, 255, 255, 0.05)', color: '#fff', textTransform: 'uppercase'
 };
