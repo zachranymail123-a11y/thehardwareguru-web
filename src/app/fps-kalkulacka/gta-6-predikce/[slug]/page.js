@@ -4,10 +4,11 @@ import { notFound } from 'next/navigation';
 import { Sparkles, Zap, Monitor, Cpu, ChevronRight, Swords, Gamepad2 } from 'lucide-react';
 import ShareButtonsClient from './ShareButtonsClient';
 import SeznamAd from '../../../../components/SeznamAd';
+import HeurekaButtons from '../../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU GTA 6 PREDICTOR - V11.6 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP reklamy Above Fold, přidání Sticky Bottom Anchoru, ochrana FPS enginu.
+ * GURU GTA 6 PREDICTOR - V11.7 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP reklamy Above Fold, přidání Sticky Bottom Anchoru, ochrana FPS enginu + Heureka konverze.
  */
 
 export const dynamic = 'force-dynamic';
@@ -87,6 +88,11 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                 </div>
 
                 <ShareButtonsClient shareText={shareText} shareUrl={shareUrl} />
+
+                {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (CTA po zjištění slabého výkonu) 🔥 */}
+                <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
+                    <HeurekaButtons />
+                </div>
 
                 <div className="res-switch-grid">
                     {['1080p', '1440p', '2160p'].map(res => {
