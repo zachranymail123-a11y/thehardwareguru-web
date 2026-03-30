@@ -5,8 +5,8 @@ import { Monitor, Info, Play, Heart, Flame, ShieldCheck, ArrowRight, Zap, Calend
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU EXPECTED GAMES ARCHIVE - V5.7 (MOBILE OPTIMIZED & ADS SEPARATION)
- * 🚀 CÍL: Maximální monetizace archivu her skrze Seznam Partner a perfektní mobilní UX.
+ * GURU EXPECTED GAMES ARCHIVE - V5.8 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
  */
 
 export const runtime = "nodejs";
@@ -66,9 +66,102 @@ export default async function ExpectedGamesArchive(props) {
   };
 
   return (
-    <div className="guru-archive-wrapper" style={{ minHeight: '100vh', padding: '120px 20px 80px', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed' }}>
+    <div className="guru-archive-wrapper" style={{ minHeight: '100vh', padding: '120px 20px 160px', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed' }}>
       
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+
+      <header style={headerStyle}>
+        <div className="header-box" style={headerContentBox}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '20px' }}>
+            <Monitor size={48} color="#66fcf1" style={{ filter: 'drop-shadow(0 0 10px rgba(102, 252, 241, 0.5))' }} />
+          </div>
+          <h1 className="title-h1" style={titleStyle}>
+            {isEn ? <>EXPECTED <span style={{ color: '#66fcf1' }}>GAMES</span></> : <>OČEKÁVANÉ <span style={{ color: '#66fcf1' }}>HRY</span></>}
+          </h1>
+          <p className="subtitle-p" style={subtitleStyle}>
+            {isEn ? 'Technical breakdowns and next-gen predictions.' : 'Technické rozbory a predikce výkonu herní budoucnosti.'}
+          </p>
+        </div>
+      </header>
+
+      {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+      <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={210} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={250} />
+          </div>
+      </div>
+
+      <main style={gridContainer}>
+        <div className="archive-grid" style={grid}>
+          {safeItems.map((item) => {
+            const actualSlug = (isEn && item.slug_en) ? item.slug_en : item.slug;
+            const displayTitle = (isEn && item.title_en) ? item.title_en : item.title;
+            const hasVideo = item.trailer || (item.video_id && item.video_id.length > 5);
+            const hasMp4 = item.trailer && item.trailer.includes('.mp4');
+
+            return (
+                <Link key={item.id} href={isEn ? `/en/ocekavane-hry/${actualSlug}` : `/ocekavane-hry/${actualSlug}`} style={{ textDecoration: 'none' }}>
+                  <article className="expected-card">
+                    <div className="card-image-wrapper">
+                      <img 
+                        src={item.image_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e'} 
+                        alt={displayTitle} 
+                        className="card-poster"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8, transition: '0.3s' }} 
+                      />
+                      {hasMp4 && (
+                        <video className="card-video-hover" src={item.trailer} muted loop playsInline autoPlay />
+                      )}
+                      {hasVideo && <div className="video-badge"><Play size={12} fill="#fff" /> VIDEO</div>}
+                      <div style={techBadge}><Zap size={12} /> {isEn ? 'TECH PREVIEW' : 'TECHNICKÝ ROZBOR'}</div>
+                    </div>
+                    
+                    <div className="card-content" style={{ padding: '30px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      <h3 className="card-title" style={cardTitleStyle}>{displayTitle}</h3>
+                      {item.release_date && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontSize: '12px', fontWeight: '950', marginBottom: '15px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                          <CalendarDays size={14} />
+                          {isEn ? 'RELEASE: ' : 'VYDÁNÍ: '} {new Date(item.release_date).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}
+                        </div>
+                      )}
+                      <p className="desc-text" style={{ color: '#9ca3af', fontSize: '14px', lineHeight: '1.6', marginBottom: '25px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {(isEn ? item.description_en : item.description) || (isEn ? 'Detailed technical analysis.' : 'Detailní technický rozbor.')}
+                      </p>
+                      <div style={moreBtn}>{isEn ? 'VIEW ANALYSIS' : 'ZOBRAZIT ROZBOR'} <ArrowRight size={18} /></div>
+                    </div>
+                  </article>
+                </Link>
+            );
+          })}
+        </div>
+
+        <div className="footer-silo" style={{ marginTop: '100px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
+          <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
+            {isEn ? "Want to see more hardware tests? Support the Guru project." : "Chceš vidět další technické rozbory? Podpoř projekt Guru."}
+          </h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
+            <a href="https://www.hrkgame.com/en/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn" style={{ flex: '1 1 280px' }}>
+              <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
+            </a>
+            <Link href={isEn ? "/en/support" : "/support"} className="guru-support-btn" style={{ flex: '1 1 280px' }}>
+              <Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
+            </Link>
+          </div>
+        </div>
+      </main>
+
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
 
       <style dangerouslySetInnerHTML={{__html: `
         .expected-card { 
@@ -102,12 +195,26 @@ export default async function ExpectedGamesArchive(props) {
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000 !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.2); }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
 
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
+
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
 
         @media (max-width: 768px) {
-            .guru-archive-wrapper { padding-top: 80px !important; }
             .ad-desktop-wrapper { display: none !important; }
             .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
             .header-box { padding: 30px 15px !important; border-radius: 24px !important; }
@@ -121,98 +228,6 @@ export default async function ExpectedGamesArchive(props) {
             .footer-silo { margin-top: 60px !important; padding-top: 30px !important; }
         }
       `}} />
-
-      <header style={headerStyle}>
-        <div className="header-box" style={headerContentBox}>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '20px' }}>
-            <Monitor size={48} color="#66fcf1" style={{ filter: 'drop-shadow(0 0 10px rgba(102, 252, 241, 0.5))' }} />
-          </div>
-          <h1 className="title-h1" style={titleStyle}>
-            {isEn ? <>EXPECTED <span style={{ color: '#66fcf1' }}>GAMES</span></> : <>OČEKÁVANÉ <span style={{ color: '#66fcf1' }}>HRY</span></>}
-          </h1>
-          <p className="subtitle-p" style={subtitleStyle}>
-            {isEn ? 'Technical breakdowns and next-gen predictions.' : 'Technické rozbory a predikce výkonu herní budoucnosti.'}
-          </p>
-        </div>
-      </header>
-
-      {/* 🔥 SEZNAM AD #1: TOP LEADERBOARD (STRIKTNÍ SEPARACE) */}
-      <div style={{ marginBottom: '60px' }}>
-          <div className="ad-desktop-wrapper">
-              <SeznamAd zoneId={408654} width={970} height={210} />
-          </div>
-          <div className="ad-mobile-wrapper">
-              <SeznamAd zoneId={408651} width={300} height={250} />
-          </div>
-      </div>
-
-      <main style={gridContainer}>
-        <div className="archive-grid" style={grid}>
-          {safeItems.map((item, index) => {
-            const actualSlug = (isEn && item.slug_en) ? item.slug_en : item.slug;
-            const displayTitle = (isEn && item.title_en) ? item.title_en : item.title;
-            const hasVideo = item.trailer || (item.video_id && item.video_id.length > 5);
-            const hasMp4 = item.trailer && item.trailer.includes('.mp4');
-
-            return (
-              <React.Fragment key={item.id}>
-                <Link href={isEn ? `/en/ocekavane-hry/${actualSlug}` : `/ocekavane-hry/${actualSlug}`} style={{ textDecoration: 'none' }}>
-                  <article className="expected-card">
-                    <div className="card-image-wrapper">
-                      <img 
-                        src={item.image_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e'} 
-                        alt={displayTitle} 
-                        className="card-poster"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8, transition: '0.3s' }} 
-                      />
-                      {hasMp4 && (
-                        <video className="card-video-hover" src={item.trailer} muted loop playsInline autoPlay />
-                      )}
-                      {hasVideo && <div className="video-badge"><Play size={12} fill="#fff" /> VIDEO</div>}
-                      <div style={techBadge}><Zap size={12} /> {isEn ? 'TECH PREVIEW' : 'TECHNICKÝ ROZBOR'}</div>
-                    </div>
-                    
-                    <div className="card-content" style={{ padding: '30px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <h3 className="card-title" style={cardTitleStyle}>{displayTitle}</h3>
-                      {item.release_date && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#eab308', fontSize: '12px', fontWeight: '950', marginBottom: '15px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                          <CalendarDays size={14} />
-                          {isEn ? 'RELEASE: ' : 'VYDÁNÍ: '} {new Date(item.release_date).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}
-                        </div>
-                      )}
-                      <p className="desc-text" style={{ color: '#9ca3af', fontSize: '14px', lineHeight: '1.6', marginBottom: '25px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                          {(isEn ? item.description_en : item.description) || (isEn ? 'Detailed technical analysis.' : 'Detailní technický rozbor.')}
-                      </p>
-                      <div style={moreBtn}>{isEn ? 'VIEW ANALYSIS' : 'ZOBRAZIT ROZBOR'} <ArrowRight size={18} /></div>
-                    </div>
-                  </article>
-                </Link>
-
-                {/* 🔥 SEZNAM AD #2: GRID INJECTION (POUZE MOBIL) */}
-                {index === 1 && (
-                  <div className="ad-mobile-wrapper" style={{ margin: '10px 0' }}>
-                    <SeznamAd zoneId={408651} width={300} height={250} />
-                  </div>
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
-
-        <div className="footer-silo" style={{ marginTop: '100px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
-          <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
-            {isEn ? "Want to see more hardware tests? Support the Guru project." : "Chceš vidět další technické rozbory? Podpoř projekt Guru."}
-          </h4>
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
-            <a href="https://www.hrkgame.com/en/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn" style={{ flex: '1 1 280px' }}>
-              <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
-            </a>
-            <Link href={isEn ? "/en/support" : "/support"} className="guru-support-btn" style={{ flex: '1 1 280px' }}>
-              <Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
-            </Link>
-          </div>
-        </div>
-      </main>
     </div>
   );
 }
