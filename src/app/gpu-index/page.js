@@ -13,10 +13,11 @@ import {
  Gamepad2
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
+import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU GPU ENGINE - KATALOG GRAFIK V1.6 (MONEY FIX UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst.
+ * GURU GPU ENGINE - KATALOG GRAFIK V1.7 (HEUREKA CTA UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka konverze.
  */
 
 export const dynamic = 'force-dynamic';
@@ -135,6 +136,11 @@ export default async function GpuIndexPage(props) {
             <a href={isEn ? "/en/bottleneck" : "/bottleneck"} className="quick-link-pill" style={{ borderColor: '#66fcf1', color: '#66fcf1' }}><Activity size={14} /> {isEn ? 'BOTTLENECK' : 'BOTTLENECK'}</a>
           </div>
         </header>
+
+        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (CTA pod hlavičkou, nad výpisem) 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
 
         {nvidiaGpus.length > 0 && (
           <section style={{ marginBottom: '60px' }}>
