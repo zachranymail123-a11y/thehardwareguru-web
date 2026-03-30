@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link'; // 🔥 FIX: PŘIDÁN CHYBĚJÍCÍ IMPORT
 import { ShoppingCart, Zap, Apple, RefreshCw, Cpu, Award, ChevronRight, X, Search } from 'lucide-react';
 
 /**
- * GURU PARTNER WIDGET V1.0 (CTR MONSTER)
+ * GURU PARTNER WIDGET V1.1 (BUILD FIX)
  * 🚀 CÍL: Agresivní proklik na eHUB a Heureku z každé stránky.
  * 💰 EHUB ID: 71c85dea | Heureka ID: 276027
  */
