@@ -5,8 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../../components/SeznamAd';
 
 /**
- * GURU EXPECTED GAMES ENGINE V5.6 (MOBILE OPTIMIZED)
- * 🚀 CÍL: Maximální monetizace skrze Seznam Partner a perfektní čitelnost článků na mobilu.
+ * GURU EXPECTED GAMES ENGINE V5.7 (MONEY FIX UPDATE)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, perfektní čitelnost.
  */
 
 export const runtime = "nodejs";
@@ -96,11 +96,6 @@ export default async function ExpectedGameDetailPage(props) {
     const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}ocekavane-hry/${post.slug}`;
     const readingTime = getReadingTime(content);
 
-    const contentParts = content ? content.split('</p>') : [];
-    const midPoint = Math.ceil(contentParts.length / 2);
-    const firstHalf = contentParts.slice(0, midPoint).join('</p>');
-    const secondHalf = contentParts.slice(midPoint).join('</p>');
-
     const articleSchema = {
       "@context": "https://schema.org",
       "@type": "Article",
@@ -116,7 +111,7 @@ export default async function ExpectedGameDetailPage(props) {
     };
 
     return (
-        <div className="guru-article-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+        <div className="guru-article-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
             
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
 
@@ -126,6 +121,16 @@ export default async function ExpectedGameDetailPage(props) {
                     <a href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"} className="guru-back-btn">
                         <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
                     </a>
+                </div>
+
+                {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
+                <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+                    <div className="ad-desktop-wrapper">
+                        <SeznamAd zoneId={408654} width={970} height={210} />
+                    </div>
+                    <div className="ad-mobile-wrapper">
+                        <SeznamAd zoneId={408651} width={300} height={250} />
+                    </div>
                 </div>
 
                 <article className="main-article-card" style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '50px 40px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)' }}>
@@ -150,16 +155,6 @@ export default async function ExpectedGameDetailPage(props) {
                         </div>
                     </header>
 
-                    {/* 🔥 TOP AD SLOT - STRIKTNÍ SEPARACE */}
-                    <div style={{ marginBottom: '40px' }}>
-                        <div className="ad-desktop-wrapper">
-                            <SeznamAd zoneId={408654} width={970} height={210} />
-                        </div>
-                        <div className="ad-mobile-wrapper">
-                            <SeznamAd zoneId={408651} width={300} height={250} />
-                        </div>
-                    </div>
-
                     {post.image_url && (
                         <div style={{ marginBottom: '40px', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
                             <img src={post.image_url} alt={title} style={{ width: '100%', height: 'auto', display: 'block' }} />
@@ -167,14 +162,7 @@ export default async function ExpectedGameDetailPage(props) {
                     )}
 
                     <div className="guru-article-content">
-                         <div dangerouslySetInnerHTML={{ __html: firstHalf + (contentParts.length > 1 ? '</p>' : '') }} />
-                         
-                         {/* 🔥 IN-CONTENT AD SLOT (POUZE MOBIL) */}
-                         <div className="ad-mobile-wrapper" style={{ margin: '30px 0' }}>
-                            <SeznamAd zoneId={408651} width={300} height={250} />
-                         </div>
-
-                         <div dangerouslySetInnerHTML={{ __html: secondHalf }} />
+                         <div dangerouslySetInnerHTML={{ __html: content }} />
                     </div>
                     
                     <div className="gta6-conversion-box">
@@ -189,16 +177,7 @@ export default async function ExpectedGameDetailPage(props) {
                     </div>
                 </article>
 
-                {/* 🔥 BOTTOM AD SLOT - STRIKTNÍ SEPARACE */}
-                <div style={{ margin: '40px 0' }}>
-                    <div className="ad-desktop-wrapper">
-                        <SeznamAd zoneId={408654} width={970} height={210} />
-                    </div>
-                    <div className="ad-mobile-wrapper">
-                        <SeznamAd zoneId={408651} width={300} height={250} />
-                    </div>
-                </div>
-
+                {/* SDÍLENÍ A SILOING */}
                 <div style={{ marginTop: '50px' }}>
                     <div className="share-grid">
                         <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`} target="_blank" rel="noopener noreferrer" className="share-card x-bg">
@@ -247,6 +226,16 @@ export default async function ExpectedGameDetailPage(props) {
                 )}
             </main>
 
+            {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+            <div className="sticky-bottom-anchor">
+                <div className="ad-desktop-wrapper">
+                    <SeznamAd zoneId={408654} width={970} height={90} />
+                </div>
+                <div className="ad-mobile-wrapper">
+                    <SeznamAd zoneId={408651} width={300} height={100} />
+                </div>
+            </div>
+
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #a855f7; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(168, 85, 247, 0.3); transition: 0.3s; }
                 .guru-meta-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 12px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; padding: 8px 15px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
@@ -288,6 +277,21 @@ export default async function ExpectedGameDetailPage(props) {
                 .related-card img { width: 100%; height: 120px; object-fit: cover; }
                 .related-info { padding: 15px; }
                 .related-info h3 { margin: 0; color: #fff; font-size: 0.9rem; font-weight: 900; line-height: 1.3; }
+
+                /* 🔥 STICKY BOTTOM ANCHOR CSS */
+                .sticky-bottom-anchor {
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    width: 100%;
+                    background: rgba(10, 11, 13, 0.98);
+                    border-top: 1px solid rgba(255, 255, 255, 0.1);
+                    z-index: 9999;
+                    padding: 10px 0;
+                    display: flex;
+                    justify-content: center;
+                    box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+                }
 
                 /* 🚀 RESPONSIVE ADS SYSTEM */
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
