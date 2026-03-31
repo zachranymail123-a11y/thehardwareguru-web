@@ -17,8 +17,8 @@ import AdTracker from '../components/AdTracker';
 import { Cpu, ShieldCheck, Layers, Gamepad2, Lightbulb, Bookmark, ShoppingCart } from 'lucide-react';
 
 /**
- * GURU ROOT LAYOUT V9.0 (HARD AFFILIATE & CLEAN MODE)
- * 🚀 CÍL: Kompletní odstranění Mozku (SestavyBubble/SupportWidget) z celého webu. Fix ořezání VIP boxu. Dokonalé sladění šířky Smarty banneru.
+ * GURU ROOT LAYOUT V9.1 (HARD AFFILIATE & CLEAN MODE)
+ * 🚀 CÍL: Rozšíření VIP boxu pro celé názvy komponent (380px) a přizpůsobení/roztažení Smarty banneru na jeho šířku.
  */
 
 export const metadata = {
@@ -44,14 +44,14 @@ const GuruBuildItem = ({ icon, name, link }) => (
         <div style={{ background: 'rgba(102, 252, 241, 0.05)', padding: '8px', borderRadius: '10px', border: '1px solid rgba(102, 252, 241, 0.1)', flexShrink: 0, color: '#66fcf1' }}>
             {icon}
         </div>
+        {/* ✅ OPRAVA: Odstraněno osekávání (ellipsis) a nowrap. Text má prostor! */}
         <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+            <div style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold', lineHeight: '1.3' }}>{name}</div>
         </div>
-        <a href={link} target="_blank" rel="nofollow sponsored" style={{ background: 'rgba(102, 252, 241, 0.1)', color: '#66fcf1', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', textDecoration: 'none', border: '1px solid rgba(102, 252, 241, 0.3)', transition: '0.3s', whiteSpace: 'nowrap' }} className="hover-scale">KOUPIT</a>
+        <a href={link} target="_blank" rel="nofollow sponsored" style={{ background: 'rgba(102, 252, 241, 0.1)', color: '#66fcf1', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', textDecoration: 'none', border: '1px solid rgba(102, 252, 241, 0.3)', transition: '0.3s', whiteSpace: 'nowrap', flexShrink: 0 }} className="hover-scale">KOUPIT</a>
     </li>
 );
 
-// ✅ OPRAVA: Komponenta GlobalVIPBox upravena pro perfektní sladění banneru
 const GlobalVIPBox = ({ isEn }) => {
   const links = {
     cpu: `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=https%3A%2F%2Fwww.smarty.cz%2FAMD-Ryzen-7-9800X3D-4p200972`,
@@ -97,7 +97,7 @@ const GlobalVIPBox = ({ isEn }) => {
         </ul>
       </aside>
 
-      {/* 🔥 ALIGNED CTR BOX A SMARTY BANNER (Perfektně sladěno na šířku 320px) 🔥 */}
+      {/* 🔥 ALIGNED CTR BOX A SMARTY BANNER (Perfektně sladěno na šířku VIP boxu) 🔥 */}
       <div className="smarty-banner-aligned">
           <div className="smarty-ctr-text-aligned">
               <p style={{ margin: 0, color: '#eab308', fontSize: '14px', fontWeight: 'bold', lineHeight: '1.4' }}>
@@ -211,20 +211,19 @@ export default async function RootLayout({ children, params }) {
         <SocialTracker />
         <Tracker />
 
-        {/* ✅ OPRAVA CSS: Fix ořezání VIP boxu a sladění banneru na bok 🔥 */}
+        {/* ✅ OPRAVA CSS: Rozšíření kontejneru na 380px a roztažení banneru 🔥 */}
         <style dangerouslySetInnerHTML={{__html: `
           .global-vip-container {
             position: fixed;
             top: 100px;
             left: 20px;
-            width: 320px; /* Šířka kontejneru na boku */
+            width: 380px; /* ZVĚTŠENO NA 380px: Plný prostor pro názvy komponent */
             display: none;
             z-index: 50;
             max-height: calc(100vh - 120px);
             overflow-y: auto;
             -ms-overflow-style: none;
             scrollbar-width: none;
-            /* Přidán padding pro prevenci ořezu vpravo a dole při scrollu */
             padding-right: 2px;
             padding-bottom: 20px; 
           }
@@ -240,22 +239,22 @@ export default async function RootLayout({ children, params }) {
             border: 1px solid rgba(102, 252, 241, 0.2);
             color: #fff;
             box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(102, 252, 241, 0.05);
-            width: 100%; /* Box sestavy roztáhne kontejner */
+            width: 100%; 
             font-family: sans-serif;
             display: flex;
             flex-direction: column;
             position: relative;
             overflow: hidden;
             border-top: 4px solid #eab308;
-            margin-bottom: 20px; /* Mezera před bannerem */
-            box-sizing: border-box; /* Zahrne padding do šířky */
+            margin-bottom: 20px; 
+            box-sizing: border-box; 
           }
           .hover-scale { transition: transform 0.3s ease; }
           .hover-scale:hover { transform: scale(1.05); }
 
-          /* 🔥 NOVÉ CSS PRO SLADĚNÝ BANNER 🔥 */
+          /* 🔥 NOVÉ CSS PRO ROZTAŽENÝ BANNER 🔥 */
           .smarty-banner-aligned {
-              width: 100%; /* Banner kopíruje šířku kontejneru/sestavy */
+              width: 100%; /* Banner se natáhne na celých 380px kontejneru */
               display: flex;
               flex-direction: column;
               box-sizing: border-box;
@@ -265,23 +264,23 @@ export default async function RootLayout({ children, params }) {
               background: rgba(234, 179, 8, 0.05);
               border: 1px solid rgba(234, 179, 8, 0.2);
               padding: 15px;
-              border-radius: 16px 16px 0 0; /* Zaoblení jen nahoře */
+              border-radius: 16px 16px 0 0; 
               width: 100%;
               box-sizing: border-box;
           }
           .smarty-image-link-aligned {
               display: inline-block;
-              border-radius: 0 0 16px 16px; /* Zaoblení jen dole */
+              border-radius: 0 0 16px 16px; 
               overflow: hidden;
               box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-              width: 100%; /* Obrázek roztáhne kontejner */
+              width: 100%; 
               border: 1px solid rgba(234, 179, 8, 0.2);
-              border-top: none; /* Combine borders smoothly */
+              border-top: none; 
               box-sizing: border-box;
           }
           .smarty-image-link-aligned img {
               display: block;
-              width: 100%; /* Obrázek je přesně 320px široký */
+              width: 100%; /* Obrázek se poslušně roztáhne z 300px na 380px */
               height: auto;
           }
         `}} />
@@ -337,8 +336,6 @@ export default async function RootLayout({ children, params }) {
           </div>
         </footer>
 
-        {/* ✅ LIKVIDACE MOZKU: SestavyBubble a SupportWidget ODSTRANĚNY GLOBÁLNĚ ZDE */}
-        
         <PartnerWidget /> {/* 🔥 PONECHÁN DLE PŘÁNÍ (VLEZLÝ WIDGET) */}
         <AdBlockDetector />
         <CookieBanner />
