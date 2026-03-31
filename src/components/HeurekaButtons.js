@@ -3,20 +3,20 @@ import React, { useEffect } from 'react';
 import { Cpu, Monitor, Layers, Database } from 'lucide-react';
 
 /**
- * GURU HEUREKA GLOBAL BUTTONS V1.7 (RELIABLE LOAD FIX)
- * 🚀 CÍL: Svatá čtveřice PC buildu + Vyhledávání, které naskočí hned napoprvé.
- * ✅ FIX: Použití useEffect pro spolehlivé nahrání Trixam skriptu po vykreslení DOMu.
+ * GURU HEUREKA GLOBAL BUTTONS V1.8 (DIRECT LINK HAFF FIX)
+ * 🚀 CÍL: Svatá čtveřice PC buildu + Vyhledávání.
+ * ✅ FIX: Napojení oficiálních Heureka přímých odkazů (haff=276039) pro 100% měření konverzí.
  */
 
 export default function HeurekaButtons({ isEn = false }) {
-  // 🔥 HEUREKA DEEP LINKS S UTM
-  const hUtm = "utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
-  const HEUREKA_CPU = `https://www.heureka.cz/?h%5Bfraze%5D=procesor#${hUtm}`;
-  const HEUREKA_GPU = `https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta#${hUtm}`;
-  const HEUREKA_MB = `https://www.heureka.cz/?h%5Bfraze%5D=zakladni+deska#${hUtm}`;
-  const HEUREKA_RAM = `https://www.heureka.cz/?h%5Bfraze%5D=ram+pamet#${hUtm}`;
+  // 🔥 HEUREKA PŘÍMÉ ODKAZY (OFICIÁLNÍ HAFF PARAMETR)
+  const haffParam = "haff=276039&utm_medium=affiliate";
+  const HEUREKA_CPU = `https://www.heureka.cz/?h%5Bfraze%5D=procesor&${haffParam}`;
+  const HEUREKA_GPU = `https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta&${haffParam}`;
+  const HEUREKA_MB = `https://www.heureka.cz/?h%5Bfraze%5D=zakladni+deska&${haffParam}`;
+  const HEUREKA_RAM = `https://www.heureka.cz/?h%5Bfraze%5D=ram+pamet&${haffParam}`;
 
-  // Mechanismus pro spolehlivé načtení skriptu
+  // Mechanismus pro spolehlivé načtení skriptu vyhledávače
   useEffect(() => {
     if (!isEn) {
       const script = document.createElement('script');
@@ -26,7 +26,7 @@ export default function HeurekaButtons({ isEn = false }) {
       document.body.appendChild(script);
 
       return () => {
-        // Úklid při opuštění stránky (volitelné)
+        // Úklid při opuštění stránky
         if (document.body.contains(script)) {
           document.body.removeChild(script);
         }
@@ -125,7 +125,7 @@ export default function HeurekaButtons({ isEn = false }) {
         }
       `}} />
 
-      {/* TLAČÍTKA ZE ZÁLOHY - NEDOTČENO */}
+      {/* 🔥 TLAČÍTKA S NOVÝM PŘÍMÝM HAFF ODKAZEM */}
       <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="h-banner-btn" data-trixam-positionid="276027">
         <div className="h-icon-box"><Cpu size={26} /></div>
         <div className="h-text-col">
@@ -158,7 +158,7 @@ export default function HeurekaButtons({ isEn = false }) {
         </div>
       </a>
 
-      {/* 🔥 VYHLEDÁVAČ S OPRAVENÝM NAČÍTÁNÍM */}
+      {/* 🔥 OFICIÁLNÍ HEUREKA SEARCH PANEL */}
       {!isEn && (
         <div className="heureka-search-container">
           <div 
