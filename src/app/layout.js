@@ -17,8 +17,8 @@ import AdTracker from '../components/AdTracker';
 import { Cpu, ShieldCheck, Layers, Gamepad2, Lightbulb, Bookmark, ShoppingCart, Rocket } from 'lucide-react';
 
 /**
- * GURU ROOT LAYOUT V10.0 (FULL AFFILIATE WALLS)
- * 🚀 CÍL: Rozšíření affiliate strategie na pravý sloupec (GURU PARTNEŘI) s automatickým zarovnáním bannerů a responzivitou.
+ * GURU ROOT LAYOUT V10.1 (FULL AFFILIATE WALLS - 2 COLUMNS)
+ * 🚀 CÍL: Rozšíření affiliate strategie na pravý sloupec (GURU PARTNEŘI) s automatickým zarovnáním bannerů do 2 SLOUPCŮ a responzivitou.
  */
 
 export const metadata = {
@@ -259,9 +259,10 @@ export default async function RootLayout({ children, params }) {
           /* Skrýt scrollbary a definovat responzivní grid pro mobily/notebooky */
           .global-vip-container::-webkit-scrollbar, .global-partners-container::-webkit-scrollbar { display: none; }
           
+          /* Zde zůstává grid i pro menší rozlišení, když to není na boku */
           .global-partners-container .partners-grid {
               display: grid;
-              grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+              grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
               gap: 15px;
           }
 
@@ -334,7 +335,7 @@ export default async function RootLayout({ children, params }) {
               height: auto;
           }
 
-          /* 🚨 BREAKPOINT 1950px: Dost místa pro oba sloupce (380px levý, 1200px střed, 320px pravý = 1900px minimum) */
+          /* 🚨 BREAKPOINT 1950px: ZDE SE TO FIXUJE DO BOKU A DO DVOU SLOUPCŮ */
           @media (min-width: 1950px) {
               .global-vip-container {
                   position: fixed;
@@ -351,17 +352,19 @@ export default async function RootLayout({ children, params }) {
                   position: fixed;
                   top: 100px;
                   right: 20px;
-                  width: 320px; /* Perfektní šířka pro standardní bannery */
+                  width: 320px; 
                   margin: 0;
                   padding: 0 0 20px 2px;
                   max-height: calc(100vh - 120px);
                   overflow-y: auto;
                   z-index: 50;
               }
+              
+              /* 🔥 MAGIE DVOU SLOUPCŮ (2 COLUMNS) 🔥 */
               .global-partners-container .partners-grid {
-                  display: flex;
-                  flex-direction: column;
-                  gap: 15px;
+                  display: grid;
+                  grid-template-columns: repeat(2, 1fr); /* 2 sloupce vedle sebe */
+                  gap: 15px; /* Rovnoměrná mezera */
               }
           }
         `}} />
