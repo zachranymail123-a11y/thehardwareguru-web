@@ -1,10 +1,8 @@
 import './globals.css'; 
 import Script from 'next/script';
-import SestavyBubble from '../components/SestavyBubble'; 
 import Tracker from '../components/Tracker'; 
 import SocialTracker from '../components/SocialTracker';
-import SupportWidget from '../components/SupportWidget';
-import PartnerWidget from '../components/PartnerWidget'; // 🔥 NOVÝ IMPORT
+import PartnerWidget from '../components/PartnerWidget'; // 🔥 PONECHÁN DLE PŘÁNÍ
 import Navbar from '../components/Navbar'; 
 import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
@@ -19,8 +17,8 @@ import AdTracker from '../components/AdTracker';
 import { Cpu, ShieldCheck, Layers, Gamepad2, Lightbulb, Bookmark, ShoppingCart } from 'lucide-react';
 
 /**
- * GURU ROOT LAYOUT V8.0 (HARD AFFILIATE MODE)
- * 🚀 CÍL: Smazání všech Seznam reklam z layoutu. Přidání globální V.I.P. Sestavy + Smarty banneru na všechny stránky.
+ * GURU ROOT LAYOUT V9.0 (HARD AFFILIATE & CLEAN MODE)
+ * 🚀 CÍL: Kompletní odstranění Mozku (SestavyBubble/SupportWidget) z celého webu. Fix ořezání VIP boxu. Dokonalé sladění šířky Smarty banneru.
  */
 
 export const metadata = {
@@ -53,6 +51,7 @@ const GuruBuildItem = ({ icon, name, link }) => (
     </li>
 );
 
+// ✅ OPRAVA: Komponenta GlobalVIPBox upravena pro perfektní sladění banneru
 const GlobalVIPBox = ({ isEn }) => {
   const links = {
     cpu: `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=https%3A%2F%2Fwww.smarty.cz%2FAMD-Ryzen-7-9800X3D-4p200972`,
@@ -65,6 +64,7 @@ const GlobalVIPBox = ({ isEn }) => {
 
   return (
     <div className="global-vip-container">
+      {/* 🚀 VIP SESTAVA BOX */}
       <aside className="guru-build-box-vip group">
         <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '200px', height: '200px', background: 'rgba(102, 252, 241, 0.15)', filter: 'blur(80px)', borderRadius: '50%', zIndex: 0 }} />
         
@@ -97,15 +97,17 @@ const GlobalVIPBox = ({ isEn }) => {
         </ul>
       </aside>
 
-      {/* 🔥 CTR BOX A SMARTY BANNER 🔥 */}
-      <div style={{ marginTop: '20px', textAlign: 'center', background: 'rgba(234, 179, 8, 0.05)', border: '1px solid rgba(234, 179, 8, 0.2)', padding: '15px', borderRadius: '16px' }}>
-        <p style={{ margin: '0 0 10px 0', color: '#eab308', fontSize: '14px', fontWeight: 'bold', lineHeight: '1.4' }}>
-          {isEn ? "Don't like this build? Configure your own with our partner." : "Nezdá se ti zrovna tato sestava? Nakonfiguruj si svou u našeho partnera."}
-        </p>
-        <a href="https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=74f145c2" target="_top" style={{ display: 'inline-block', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', width: '100%' }}>
-            <img src="https://doc.ehub.cz/b/6b6bfd74/74f145c2.jpg" alt="Smarty.cz - Lítáme v tom spolu" style={{ display: 'block', width: '100%', height: 'auto' }} />
-        </a>
-        <img style={{ border: 0 }} src="https://ehub.cz/system/scripts/imp.php?a_aid=71c85dea&a_bid=74f145c2" width="1" height="1" alt="" />
+      {/* 🔥 ALIGNED CTR BOX A SMARTY BANNER (Perfektně sladěno na šířku 320px) 🔥 */}
+      <div className="smarty-banner-aligned">
+          <div className="smarty-ctr-text-aligned">
+              <p style={{ margin: 0, color: '#eab308', fontSize: '14px', fontWeight: 'bold', lineHeight: '1.4' }}>
+                  {isEn ? "Don't like this build? Configure your own with our partner." : "Nezdá se ti zrovna tato sestava? Nakonfiguruj si svou u našeho partnera."}
+              </p>
+          </div>
+          <a href="https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=74f145c2" target="_top" className="smarty-image-link-aligned">
+              <img src="https://doc.ehub.cz/b/6b6bfd74/74f145c2.jpg" alt="Smarty.cz - Lítáme v tom spolu" />
+          </a>
+          <img style={{ border: 0 }} src="https://ehub.cz/system/scripts/imp.php?a_aid=71c85dea&a_bid=74f145c2" width="1" height="1" alt="" />
       </div>
     </div>
   );
@@ -209,19 +211,22 @@ export default async function RootLayout({ children, params }) {
         <SocialTracker />
         <Tracker />
 
-        {/* 🔥 GLOBÁLNÍ VIP SESTAVA A SMARTY BANNER NA BOKU 🔥 */}
+        {/* ✅ OPRAVA CSS: Fix ořezání VIP boxu a sladění banneru na bok 🔥 */}
         <style dangerouslySetInnerHTML={{__html: `
           .global-vip-container {
             position: fixed;
             top: 100px;
             left: 20px;
-            width: 320px;
+            width: 320px; /* Šířka kontejneru na boku */
             display: none;
             z-index: 50;
             max-height: calc(100vh - 120px);
             overflow-y: auto;
             -ms-overflow-style: none;
             scrollbar-width: none;
+            /* Přidán padding pro prevenci ořezu vpravo a dole při scrollu */
+            padding-right: 2px;
+            padding-bottom: 20px; 
           }
           .global-vip-container::-webkit-scrollbar { display: none; }
           @media (min-width: 1650px) {
@@ -235,18 +240,53 @@ export default async function RootLayout({ children, params }) {
             border: 1px solid rgba(102, 252, 241, 0.2);
             color: #fff;
             box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(102, 252, 241, 0.05);
-            width: 100%;
+            width: 100%; /* Box sestavy roztáhne kontejner */
             font-family: sans-serif;
             display: flex;
             flex-direction: column;
             position: relative;
             overflow: hidden;
             border-top: 4px solid #eab308;
+            margin-bottom: 20px; /* Mezera před bannerem */
+            box-sizing: border-box; /* Zahrne padding do šířky */
           }
           .hover-scale { transition: transform 0.3s ease; }
           .hover-scale:hover { transform: scale(1.05); }
+
+          /* 🔥 NOVÉ CSS PRO SLADĚNÝ BANNER 🔥 */
+          .smarty-banner-aligned {
+              width: 100%; /* Banner kopíruje šířku kontejneru/sestavy */
+              display: flex;
+              flex-direction: column;
+              box-sizing: border-box;
+          }
+          .smarty-ctr-text-aligned {
+              text-align: center;
+              background: rgba(234, 179, 8, 0.05);
+              border: 1px solid rgba(234, 179, 8, 0.2);
+              padding: 15px;
+              border-radius: 16px 16px 0 0; /* Zaoblení jen nahoře */
+              width: 100%;
+              box-sizing: border-box;
+          }
+          .smarty-image-link-aligned {
+              display: inline-block;
+              border-radius: 0 0 16px 16px; /* Zaoblení jen dole */
+              overflow: hidden;
+              box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+              width: 100%; /* Obrázek roztáhne kontejner */
+              border: 1px solid rgba(234, 179, 8, 0.2);
+              border-top: none; /* Combine borders smoothly */
+              box-sizing: border-box;
+          }
+          .smarty-image-link-aligned img {
+              display: block;
+              width: 100%; /* Obrázek je přesně 320px široký */
+              height: auto;
+          }
         `}} />
 
+        {/* Volání GlobalVIPBox v layoutu těsně před children */}
         <GlobalVIPBox isEn={isEn} />
 
         <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden' }}>
@@ -297,9 +337,9 @@ export default async function RootLayout({ children, params }) {
           </div>
         </footer>
 
-        <SestavyBubble />
-        <SupportWidget />
-        <PartnerWidget /> {/* 🔥 NOVÝ VLEZLÝ WIDGET */}
+        {/* ✅ LIKVIDACE MOZKU: SestavyBubble a SupportWidget ODSTRANĚNY GLOBÁLNĚ ZDE */}
+        
+        <PartnerWidget /> {/* 🔥 PONECHÁN DLE PŘÁNÍ (VLEZLÝ WIDGET) */}
         <AdBlockDetector />
         <CookieBanner />
         <Analytics />
