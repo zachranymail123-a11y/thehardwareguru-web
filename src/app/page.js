@@ -2,10 +2,11 @@ import React from 'react';
 import Script from 'next/script';
 import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, MessageSquare, Award, Bell, Bookmark, Share2, Clock, Compass, Shuffle, Link2 } from 'lucide-react';
 import SeznamAd from '../components/SeznamAd';
+import HeurekaButtons from '../components/HeurekaButtons';
 
 /**
- * GURU HOMEPAGE V19.6 - STRICT INTEGRITY & MONEY UPDATE
- * 🚀 CÍL: 100% zachování zálohy V18.6 + Seznam Ad + Dlouhé Partner CTA pod Hero.
+ * GURU HOMEPAGE V19.7 - HEUREKA HERO INTEGRATION
+ * 🚀 CÍL: 100% zachování zálohy V19.6 + Nahrazení pravého prostoru v Hero sekci Heureka tlačítky.
  */
 
 // --- DYNAMICKÁ METADATA PRO ABSOLUTNÍ CANONICAL A BING TRUST ---
@@ -369,7 +370,7 @@ export default async function HomePage({ params }) {
         </div>
       </div>
 
-      {/* --- 🚀 HERO SEKCE --- */}
+      {/* --- 🚀 HERO SEKCE S HEUREKA TLAČÍTKY NA OČÍCH --- */}
       <header className="guru-hero-section">
         <div style={{ flex: '1', minWidth: '300px', position: 'relative', zIndex: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', marginBottom: '20px' }}>
@@ -410,13 +411,11 @@ export default async function HomePage({ params }) {
               <a href={isEn ? "/en/support" : "/support"} className="social-btn-main support"><Heart size={18}/> {isEn ? 'SUPPORT' : 'PODPOŘIT GURU'}</a>
             </div>
         </div>
-        <div style={{
-            width: '180px', height: '180px', background: 'linear-gradient(135deg, #0b0c10 0%, #1a1c23 100%)',
-            borderRadius: '50%', border: '4px solid #66fcf1', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#66fcf1', fontSize: '4rem', fontWeight: '950', flexShrink: 0,
-            boxShadow: '0 0 40px rgba(102, 252, 241, 0.4), inset 0 0 20px rgba(102, 252, 241, 0.2)',
-            textShadow: '0 0 20px rgba(102, 252, 241, 0.6)'
-        }}>HG</div>
+        
+        {/* TADY JE TEN BOX MÍSTO HG LOGA - 100% PŘIPRAVENO VYDĚLÁVAT HNED NA OČÍCH */}
+        <div style={{ flexShrink: 0, width: '100%', maxWidth: '420px', zIndex: 10, alignSelf: 'center' }}>
+            <HeurekaButtons isEn={isEn} />
+        </div>
       </header>
 
       {/* --- 🚀 NOVÉ DLOUHÉ PARTNER TLAČÍTKO (CTR OPTIMIZED) --- */}
