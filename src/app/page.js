@@ -1,12 +1,11 @@
 import React from 'react';
 import Script from 'next/script';
 import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, MessageSquare, Award, Bell, Bookmark, Share2, Clock, Compass, Shuffle, Link2 } from 'lucide-react';
-import SeznamAd from '../components/SeznamAd';
 import HeurekaButtons from '../components/HeurekaButtons';
 
 /**
- * GURU HOMEPAGE V21.1 - SMARTY VIP BUILD & AD KILLER
- * 🚀 CÍL: Přidáno chybějící GPU (RTX 5070). Agresivní CSS pro skrytí postranních reklam Seznamu. Upravený breakpoint proti překrývání.
+ * GURU HOMEPAGE V22.0 - FULL VIP PARTNER MODE
+ * 🚀 CÍL: Odstranění všech Seznam reklam. Skrytí AI mozku. Přidání 300x250 Smarty banneru pod VIP Sestavu.
  */
 
 // --- DYNAMICKÁ METADATA PRO ABSOLUTNÍ CANONICAL A BING TRUST ---
@@ -102,7 +101,7 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 12000) => {
   } catch (error) {
     clearTimeout(id);
     console.warn(`[TIMEOUT OR FETCH ERROR] ${url}`);
-    return null; // Vracíme null, abychom poznali, že fetch selhal a musíme použít fallback snapshot
+    return null; 
   }
 };
 
@@ -307,6 +306,13 @@ export default async function HomePage({ params }) {
         body > div[id^="ssp-zone"] { display: none !important; opacity: 0 !important; pointer-events: none !important; }
         body > iframe[id^="ssp-zone"], body > iframe[name^="ssp-zone"] { display: none !important; opacity: 0 !important; pointer-events: none !important; }
         .ssp-branding, .branding-ssp { display: none !important; }
+        
+        /* 🤖 SKRYTÍ AI MOZKU (GURU PRŮVODCE) POUZE NA HOMEPAGE */
+        #guru-chat, #guru-pruvodce, .guru-pruvodce, .chat-widget, [id*="chat"], [class*="chat"], [id*="mozek"], [class*="mozek"], iframe[src*="chat"] {
+            display: none !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
 
         .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); }
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
@@ -397,10 +403,6 @@ export default async function HomePage({ params }) {
         .seo-hard-text-block a { color: #66fcf1; text-decoration: none; font-weight: bold; transition: 0.2s; border-bottom: 1px solid rgba(102, 252, 241, 0.3); padding-bottom: 1px; }
         .seo-hard-text-block a:hover { color: #fff; border-bottom-color: #fff; }
 
-        /* GURU RESPONSIVE ADS */
-        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
-        .ad-mobile-wrapper { display: none; width: 100%; }
-
         /* 🔥 GURU PARTNER CTA BUTTON */
         .guru-partner-button {
           background: linear-gradient(90deg, rgba(168, 85, 247, 0.15) 0%, rgba(102, 252, 241, 0.15) 100%);
@@ -438,7 +440,7 @@ export default async function HomePage({ params }) {
             z-index: 90;
         }
 
-        /* 🚨 ZVÝŠENÝ BREAKPOINT NA 1920px: Box už nebude najíždět přes web na normálních monitorech */
+        /* 🚨 BREAKPOINT: Box najíždí dolů, pokud není dost místa, + se skryje fixování */
         @media (max-width: 1920px) {
             .vip-floating-container {
                 position: relative;
@@ -454,29 +456,24 @@ export default async function HomePage({ params }) {
         @media (max-width: 768px) {
           .guru-hero-section { padding: 40px 20px; text-align: center; justify-content: center; margin-bottom: 20px; }
           .social-btn-main { width: 100%; }
-          .ad-desktop-wrapper { display: none; }
-          .ad-mobile-wrapper { display: flex; justify-content: center; }
           .guru-partner-button { padding: 20px; }
         }
       `}} />
 
-      {/* --- 🚀 VIP GURU SESTAVA (S přidanou RTX 5070 GPU) --- */}
+      {/* --- 🚀 VIP GURU SESTAVA & SMARTY BANNER --- */}
       <div className="vip-floating-container">
          <GuruBuildBox isEn={isEn} />
-      </div>
-
-      {/* --- 🚀 TOP REKLAMA (Homepage-Top) VYSTŘEDĚNÁ + FIX OFFSET --- */}
-      <div style={{ maxWidth: '1200px', margin: '40px auto 0 auto', padding: '0 20px' }}>
-        <div className="ad-desktop-wrapper">
-          <SeznamAd zoneId={408654} width={970} height={210} />
-        </div>
-        <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
-          <SeznamAd zoneId={408651} width={300} height={250} />
-        </div>
+         
+         {/* SMARTY PARTNER BANNER 300x250 (eHub ID: 74f145c2) */}
+         <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+             <a href="https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=74f145c2" target="_blank" rel="noreferrer">
+                 <img src="https://ehub.cz/system/scripts/imp.php?a_aid=71c85dea&a_bid=74f145c2" alt="Smarty.cz - Lítáme v tom spolu" style={{ borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', border: '1px solid rgba(255, 255, 255, 0.1)' }} />
+             </a>
+         </div>
       </div>
 
       {/* --- 🚀 HERO SEKCE S HEUREKA TLAČÍTKY NA OČÍCH --- */}
-      <header className="guru-hero-section">
+      <header className="guru-hero-section" style={{ marginTop: '40px' }}>
         <div style={{ flex: '1', minWidth: '300px', position: 'relative', zIndex: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', marginBottom: '20px' }}>
               <ShieldCheck size={20} />
@@ -688,16 +685,6 @@ export default async function HomePage({ params }) {
             </a>
         </section>
       )}
-
-      {/* --- 🚀 MEZI-KATEGORIÁLNÍ REKLAMA --- */}
-      <div style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
-        <div className="ad-desktop-wrapper">
-          <SeznamAd zoneId={408654} width={970} height={210} />
-        </div>
-        <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
-          <SeznamAd zoneId={408651} width={300} height={250} />
-        </div>
-      </div>
 
       {/* --- SLEVY --- */}
       {data.featuredDeals.length > 0 && (
@@ -918,16 +905,6 @@ export default async function HomePage({ params }) {
           </div>
         </section>
       )}
-
-      {/* --- 🚀 DRUHÁ MEZI-KATEGORIÁLNÍ REKLAMA --- */}
-      <div style={{ maxWidth: '1200px', margin: '60px auto 0 auto', padding: '0 20px' }}>
-        <div className="ad-desktop-wrapper">
-          <SeznamAd zoneId={408654} width={970} height={210} />
-        </div>
-        <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
-          <SeznamAd zoneId={408651} width={300} height={250} />
-        </div>
-      </div>
 
       {/* ČLÁNKY (Content Grid) */}
       {latestPosts.length > 0 && (
