@@ -1,19 +1,21 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Check, Award, Twitter, Sparkles } from 'lucide-react';
+import { Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Check, Award, Twitter, Sparkles, ShoppingCart } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
-import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
+import HeurekaButtons from '../../components/HeurekaButtons'; 
 
 /**
- * GURU FPS ENGINE CLIENT - V11.6 (HEUREKA CTA UPDATE)
- * 🚀 CÍL: Implementace High-CTR zón v interaktivním formuláři a optimalizace pro mobilní Sklik + Heureka konverze.
+ * GURU FPS ENGINE CLIENT - V11.7 (AFFILIATE BOMB UPDATE)
+ * 🚀 CÍL: Dynamické affiliate linky (Smarty + Heureka) pro aktuálně vybrané CPU a GPU ihned po výpočtu.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon |Intel |Ryzen |Core /gi, '').trim();
 
 export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], isEn = false }) {
     const [selectedGameSlug, setSelectedGameSlug] = useState('');
@@ -24,15 +26,14 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
     const [result, setResult] = useState(null);
 
     const getGtaUrl = (res) => {
-        const cpuName = cpus.find(c => c.id === selectedCpuId)?.name || 'cpu';
-        const gpuName = gpus.find(g => g.id === selectedGpuId)?.name || 'gpu';
+        const cpuName = cpus.find(c => String(c.id) === String(selectedCpuId))?.name || 'cpu';
+        const gpuName = gpus.find(g => String(g.id) === String(selectedGpuId))?.name || 'gpu';
         const cleanCpu = cpuName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         const cleanGpu = gpuName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         const basePath = isEn ? '/en/fps-calculator/gta-6-prediction' : '/fps-kalkulacka/gta-6-predikce';
         return `https://thehardwareguru.cz${basePath}/${cleanCpu}-vs-${cleanGpu}-${res}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}`;
     };
 
-    // 🚀 GURU AI ENGINE: Analýza dat z databáze a výpočet reálných FPS
     const performCalculation = () => {
         const cpu = Array.isArray(cpus) ? cpus.find(c => String(c.id) === String(selectedCpuId)) : null;
         const gpu = Array.isArray(gpus) ? gpus.find(g => String(g.id) === String(selectedGpuId)) : null;
@@ -42,7 +43,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
         const cpuName = String(cpu.name || '').toLowerCase();
 
-        // Profily her (stejné jako v Bottleneck Kalkulačce)
         const gameDataMap = {
             'cyberpunk-2077': { thread_scaling: 0.85, cpu_weight: 1.2, gpu_weight: 1.5, fps_scale: 1.2 },
             'cs2': { thread_scaling: 0.3, cpu_weight: 0.5, gpu_weight: 0.4, fps_scale: 3.5 },
@@ -60,6 +60,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         if (cpuName.includes('9800x3d')) ipcBase = 135;
         else if (cpuName.includes('7800x3d')) ipcBase = 115;
 
+        // Tady se spoléhá na performance_index z props!
         const cpuEffective = (ipcBase * (1 - gData.thread_scaling) + (Number(cpu.performance_index) || 100) * gData.thread_scaling) * archEfficiency;
         
         const resMultiplier = { '1080p': 1.0, '1440p': 1.5, '2160p': 2.4 }[selectedRes] || 1.5;
@@ -68,7 +69,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         const rawCpuFps = (cpuEffective / (gData.cpu_weight || 1)) * gData.fps_scale;
         const rawGpuFps = (gpuEffective / (gData.gpu_weight || 1)) * gData.fps_scale;
 
-        // Vypočtené FPS je limitováno nejslabším článkem (CPU nebo GPU)
         const estFps = Math.max(1, Math.round(Math.min(rawCpuFps, rawGpuFps)));
         
         return { fps: estFps, confidence: 0.95 };
@@ -84,13 +84,23 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             if(calculatedResult) {
                setResult(calculatedResult);
             } else {
-               setResult({ fps: 0, confidence: 0 }); // Fallback pro chybu 
+               setResult({ fps: 0, confidence: 0 }); 
             }
             setIsCalculating(false);
         }, 800);
     };
 
     const getGtaPredictionPath = (targetRes) => getGtaUrl(targetRes).replace('https://thehardwareguru.cz', '');
+
+    // 🔥 GENERÁTOR AFFILIATE LINKŮ 🔥
+    const selectedCpu = cpus.find(c => String(c.id) === String(selectedCpuId));
+    const selectedGpu = gpus.find(g => String(g.id) === String(selectedGpuId));
+    
+    const cleanCpuName = selectedCpu ? normalizeName(selectedCpu.name) : '';
+    const cleanGpuName = selectedGpu ? normalizeName(selectedGpu.name) : '';
+
+    const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
+    const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}`;
 
     return (
         <div className="guru-calc-box">
@@ -138,7 +148,36 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                     <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px' }}>{isEn ? 'EXPECTED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
                     <div className="fps-value" style={{ fontSize: '6rem', fontWeight: '950', color: '#fff', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)', margin: '15px 0' }}>{result.fps} FPS</div>
 
-                    {/* 🔥 GURU MONETIZATION FIX: Reklama přímo pod výsledkem (Nejvyšší CTR zóna) */}
+                    {/* 🔥 GURU AFFILIATE BOMB 🔥 */}
+                    <div className="affiliate-cta-grid">
+                        <div className="affiliate-col">
+                            <div className="affiliate-col-title">
+                                <Monitor size={16} /> {isEn ? 'BUY SELECTED GPU' : 'KOUPIT ZVOLENOU GRAFIKU'}
+                            </div>
+                            <div className="affiliate-btn-wrap">
+                                <a href={getSmartyLink(cleanGpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
+                                    <ShoppingCart size={16} /> Smarty.cz
+                                </a>
+                                <a href={getHeurekaLink(cleanGpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn">
+                                    <ShoppingCart size={16} /> Heureka.cz
+                                </a>
+                            </div>
+                        </div>
+                        <div className="affiliate-col">
+                            <div className="affiliate-col-title">
+                                <Cpu size={16} /> {isEn ? 'BUY SELECTED CPU' : 'KOUPIT ZVOLENÝ PROCESOR'}
+                            </div>
+                            <div className="affiliate-btn-wrap">
+                                <a href={getSmartyLink(cleanCpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
+                                    <ShoppingCart size={16} /> Smarty.cz
+                                </a>
+                                <a href={getHeurekaLink(cleanCpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn">
+                                    <ShoppingCart size={16} /> Heureka.cz
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
                     <div style={{ margin: '30px 0', display: 'flex', justifyContent: 'center' }}>
                         <div className="ad-desktop-wrapper">
                             <SeznamAd zoneId={408658} width={480} height={300} />
@@ -148,7 +187,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                         </div>
                     </div>
 
-                    {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (zobrazeno pouze po kalkulaci) 🔥 */}
                     <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
                         <HeurekaButtons isEn={isEn} />
                     </div>
@@ -184,6 +222,21 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: 0.3s; }
                 .calc-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4); }
 
+                /* 🔥 CSS PRO AFFILIATE GRID A TLAČÍTKA 🔥 */
+                .affiliate-cta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; padding: 25px; background: rgba(0,0,0,0.4); border-radius: 20px; border: 1px solid rgba(168, 85, 247, 0.2); }
+                .affiliate-col { display: flex; flex-direction: column; align-items: center; }
+                .affiliate-col-title { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 950; color: #a855f7; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; }
+                .affiliate-btn-wrap { display: flex; gap: 10px; width: 100%; justify-content: center; }
+                
+                @keyframes pulse-smarty { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
+                @keyframes pulse-heureka { 0% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(0, 120, 212, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0); } }
+                
+                .guru-buy-winner-btn { flex: 1; display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 12px 15px; border-radius: 12px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 0.5px; }
+                .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
+                .smarty-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(234, 179, 8, 0.5); }
+                .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
+                .heureka-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
+
                 .viral-flex-card { display: flex; align-items: center; gap: 20px; max-width: 520px; margin: 40px auto 0; padding: 25px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 20px; text-align: left; }
                 .premium-share-btn { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; border: none; color: #fff; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; transition: 0.2s; }
                 .premium-share-btn:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
@@ -193,7 +246,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 .gta-res-btn { background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.2); padding: 12px; border-radius: 12px; text-decoration: none; color: #fff; font-weight: 950; transition: 0.3s; text-align: center; }
                 .gta-res-btn:hover { background: #f43f5e; transform: translateY(-2px); }
 
-                /* 🚀 RESPONSIVE ADS SYSTEM */
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
                 .ad-mobile-wrapper { display: none; width: 100%; }
 
@@ -202,6 +254,12 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                     .ad-desktop-wrapper { display: none !important; }
                     .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
                     .fps-value { font-size: 3.5rem !important; }
+                    
+                    /* Responzivita Affiliate tlačítek */
+                    .affiliate-cta-grid { grid-template-columns: 1fr; gap: 20px; padding: 15px; }
+                    .affiliate-btn-wrap { flex-direction: column; }
+                    .guru-buy-winner-btn { width: 100%; }
+
                     .viral-flex-card { flex-direction: column; text-align: center; gap: 15px; }
                     .viral-btns { width: 100%; justify-content: center; gap: 15px !important; }
                     .gta-res-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
