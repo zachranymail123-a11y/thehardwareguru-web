@@ -5,8 +5,8 @@ import SeznamAd from '../components/SeznamAd';
 import HeurekaButtons from '../components/HeurekaButtons';
 
 /**
- * GURU HOMEPAGE V19.7 - HEUREKA HERO INTEGRATION
- * 🚀 CÍL: 100% zachování zálohy V19.6 + Nahrazení pravého prostoru v Hero sekci Heureka tlačítky.
+ * GURU HOMEPAGE V19.8 - FOOTER OVERLAP FIX
+ * 🚀 CÍL: Oprava překrývání patičky (kontakt, o nás) sticky bannerem přidáním ochranné mezery dolů.
  */
 
 // --- DYNAMICKÁ METADATA PRO ABSOLUTNÍ CANONICAL A BING TRUST ---
@@ -888,6 +888,9 @@ export default async function HomePage({ params }) {
           &copy; {new Date().getFullYear()} The Hardware Guru. Všechna práva vyhrazena.
         </div>
       </footer>
+      
+      {/* 🚀 GURU FIX: Ochranná mezera, aby sticky banner po odskrolování dolů nepřekrýval globální layout patičku */}
+      <div style={{ height: '120px', width: '100%' }}></div>
     </div>
   );
 }
