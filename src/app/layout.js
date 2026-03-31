@@ -2,7 +2,7 @@ import './globals.css';
 import Script from 'next/script';
 import Tracker from '../components/Tracker'; 
 import SocialTracker from '../components/SocialTracker';
-import PartnerWidget from '../components/PartnerWidget'; // 🔥 PONECHÁN DLE PŘÁNÍ
+import PartnerWidget from '../components/PartnerWidget'; 
 import Navbar from '../components/Navbar'; 
 import { Analytics } from '@vercel/analytics/react';
 import VisitorCounter from '../components/VisitorCounter';
@@ -13,12 +13,11 @@ import AdBlockDetector from '../components/AdBlockDetector';
 import MobileAnchorAd from '../components/MobileAnchorAd';
 import AdTracker from '../components/AdTracker';
 
-// 🔥 IMPORTY PRO VIP SESTAVU A PARTNERY
 import { Cpu, ShieldCheck, Layers, Gamepad2, Lightbulb, Bookmark, ShoppingCart, Rocket } from 'lucide-react';
 
 /**
- * GURU ROOT LAYOUT V10.1 (FULL AFFILIATE WALLS - 2 COLUMNS)
- * 🚀 CÍL: Rozšíření affiliate strategie na pravý sloupec (GURU PARTNEŘI) s automatickým zarovnáním bannerů do 2 SLOUPCŮ a responzivitou.
+ * GURU ROOT LAYOUT V10.2 (STEALTH AFFILIATE MODE)
+ * 🚀 CÍL: Obejítí AdBlocku pomocí proxy serveru (wsrv.nl) a přejmenování CSS tříd. Vizuálně se tváří jako nativní obsah ("Guru Doporučuje").
  */
 
 export const metadata = {
@@ -38,7 +37,7 @@ export const metadata = {
   },
 }
 
-// --- GURU VIP BOX COMPONENT (GLOBÁLNÍ PRO LAYOUT - LEVÁ STRANA) ---
+// --- GURU VIP BOX COMPONENT ---
 const GuruBuildItem = ({ icon, name, link }) => (
     <li style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.03)', padding: '10px 15px', display: 'flex', alignItems: 'center', gap: '15px' }}>
         <div style={{ background: 'rgba(102, 252, 241, 0.05)', padding: '8px', borderRadius: '10px', border: '1px solid rgba(102, 252, 241, 0.1)', flexShrink: 0, color: '#66fcf1' }}>
@@ -62,7 +61,7 @@ const GlobalVIPBox = ({ isEn }) => {
   };
 
   return (
-    <div className="global-vip-container">
+    <div className="guru-main-left-wrap">
       <aside className="guru-build-box-vip group">
         <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '200px', height: '200px', background: 'rgba(102, 252, 241, 0.15)', filter: 'blur(80px)', borderRadius: '50%', zIndex: 0 }} />
         
@@ -95,51 +94,52 @@ const GlobalVIPBox = ({ isEn }) => {
         </ul>
       </aside>
 
-      <div className="smarty-banner-aligned">
-          <div className="smarty-ctr-text-aligned">
+      <div className="guru-vip-addon">
+          <div className="guru-vip-desc">
               <p style={{ margin: 0, color: '#eab308', fontSize: '14px', fontWeight: 'bold', lineHeight: '1.4' }}>
-                  {isEn ? "Don't like this build? Configure your own with our partner." : "Nezdá se ti zrovna tato sestava? Nakonfiguruj si svou u našeho partnera."}
+                  {isEn ? "Don't like this build? Configure your own." : "Nezdá se ti zrovna tato sestava? Nakonfiguruj si vlastní."}
               </p>
           </div>
-          <a href="https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=74f145c2" target="_top" className="smarty-image-link-aligned">
-              <img src="https://doc.ehub.cz/b/6b6bfd74/74f145c2.jpg" alt="Smarty.cz - Lítáme v tom spolu" />
+          <a href="https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=74f145c2" target="_top" className="guru-vip-link">
+              {/* OBRÁZEK JE ZAMASKOVÁN PŘES PROXY WSRV.NL PROTI ADBLOCKU */}
+              <img src="https://wsrv.nl/?url=doc.ehub.cz/b/6b6bfd74/74f145c2.jpg&output=webp" alt="Smarty" />
           </a>
-          <img style={{ border: 0, display: 'none' }} src="https://ehub.cz/system/scripts/imp.php?a_aid=71c85dea&a_bid=74f145c2" width="1" height="1" alt="" />
       </div>
     </div>
   );
 };
 
-// --- GURU PARTNERS BOX COMPONENT (GLOBÁLNÍ PRO LAYOUT - PRAVÁ STRANA) ---
+// --- GURU DOPORUČUJE (PRAVÁ STRANA - STEALTH MODE) ---
 const GlobalPartnersBox = ({ isEn }) => {
-  const partnerBanners = [
-    { bid: '96e7ab3f', hash: '1326470c', ext: 'png' },
-    { bid: 'e4b93c4e', hash: '002222e6', ext: 'jpg' },
-    { bid: '09a93de3', hash: 'ff360e3f', ext: 'jpg' },
-    { bid: '44ce6d67', hash: '3337b1fb', ext: 'jpg' },
-    { bid: '85ac6758', hash: '09b05422', ext: 'png' },
-    { bid: '40ba2316', hash: '05c13202', ext: 'png' },
-    { bid: 'dc46f460', hash: 'c0824462', ext: 'jpg' }
+  const extLinks = [
+    { id: '96e7ab3f', hash: '1326470c', ext: 'png' },
+    { id: 'e4b93c4e', hash: '002222e6', ext: 'jpg' },
+    { id: '09a93de3', hash: 'ff360e3f', ext: 'jpg' },
+    { id: '44ce6d67', hash: '3337b1fb', ext: 'jpg' },
+    { id: '85ac6758', hash: '09b05422', ext: 'png' },
+    { id: '40ba2316', hash: '05c13202', ext: 'png' },
+    { id: 'dc46f460', hash: 'c0824462', ext: 'jpg' }
   ];
 
   return (
-    <div className="global-partners-container">
+    <div className="guru-main-right-wrap">
       <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px', padding: '0 5px' }}>
         <div style={{ background: 'rgba(168, 85, 247, 0.1)', padding: '10px', borderRadius: '12px', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
           <Rocket size={20} color="#a855f7" style={{ filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.6))' }} />
         </div>
+        {/* Nativní nadpis místo "Partneři" */}
         <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: '950', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
-          {isEn ? 'GURU PARTNERS' : 'GURU PARTNEŘI'}
+          {isEn ? 'GURU CHOICES' : 'GURU DOPORUČUJE'}
         </h2>
       </div>
 
-      <div className="partners-grid">
-        {partnerBanners.map(banner => (
-          <div key={banner.bid} className="partner-banner-wrapper hover-scale">
-            <a href={`https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=${banner.bid}`} target="_top" rel="nofollow sponsored" style={{ display: 'block', width: '100%', height: '100%' }}>
-              <img src={`https://doc.ehub.cz/b/${banner.hash}/${banner.bid}.${banner.ext}`} alt="Hardware Guru Partner" style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }} />
+      <div className="guru-hub-grid">
+        {extLinks.map(link => (
+          <div key={link.id} className="guru-hub-item hover-scale">
+            <a href={`https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=${link.id}`} target="_top" rel="nofollow sponsored" style={{ display: 'block', width: '100%', height: '100%' }}>
+              {/* VŠECHNY OBRÁZKY JSOU ZAMASKOVÁNY PŘES PROXY PROTI ADBLOCKU A PŘEVEDENY DO WEBP */}
+              <img src={`https://wsrv.nl/?url=doc.ehub.cz/b/${link.hash}/${link.id}.${link.ext}&output=webp`} alt="Guru Doporučuje" style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }} />
             </a>
-            <img style={{ border: 0, display: 'none' }} src={`https://ehub.cz/system/scripts/imp.php?a_aid=71c85dea&a_bid=${banner.bid}`} width="1" height="1" alt="" />
           </div>
         ))}
       </div>
@@ -198,10 +198,10 @@ export default async function RootLayout({ children, params }) {
           crossOrigin="anonymous"
         ></script>
 
-        {/* 🔥 SEZNAM SSP REKLAMY (Skript zachován pro vnitřní články, ale bez layout bannerů) 🔥 */}
+        {/* SEZNAM SSP REKLAMY (Skript zachován pro vnitřní články, ale bez layout reklam) */}
         <Script src="https://ssp.seznam.cz/static/js/ssp.js" strategy="afterInteractive" />
 
-        {/* 🔥 HEUREKA AFFILIATE SKRIPT 🔥 */}
+        {/* HEUREKA AFFILIATE SKRIPT */}
         <Script 
           async 
           type="text/javascript" 
@@ -215,7 +215,6 @@ export default async function RootLayout({ children, params }) {
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Novinky" href="https://thehardwareguru.cz/rss.xml" />
         <link rel="alternate" type="application/rss+xml" title="The Hardware Guru RSS - Srovnání" href="https://thehardwareguru.cz/rss-comparisons.xml" />
         
-        {/* 🔥 ONESIGNAL NOTIFIKACE 🔥 */}
         <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="afterInteractive" />
         <Script id="onesignal-init" strategy="afterInteractive">
           {`
@@ -245,9 +244,9 @@ export default async function RootLayout({ children, params }) {
         <SocialTracker />
         <Tracker />
 
-        {/* ✅ CHYTRÉ CSS: Dva sloupce pro affiliate, které se srovnají inline, pokud je málo místa 🔥 */}
+        {/* ✅ CHYTRÉ CSS: Čisté názvy tříd pro obejetí AdBlocku 🔥 */}
         <style dangerouslySetInnerHTML={{__html: `
-          .global-vip-container, .global-partners-container {
+          .guru-main-left-wrap, .guru-main-right-wrap {
               display: block;
               width: 100%;
               max-width: 1200px;
@@ -256,18 +255,15 @@ export default async function RootLayout({ children, params }) {
               box-sizing: border-box;
           }
           
-          /* Skrýt scrollbary a definovat responzivní grid pro mobily/notebooky */
-          .global-vip-container::-webkit-scrollbar, .global-partners-container::-webkit-scrollbar { display: none; }
+          .guru-main-left-wrap::-webkit-scrollbar, .guru-main-right-wrap::-webkit-scrollbar { display: none; }
           
-          /* Zde zůstává grid i pro menší rozlišení, když to není na boku */
-          .global-partners-container .partners-grid {
+          .guru-main-right-wrap .guru-hub-grid {
               display: grid;
               grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
               gap: 15px;
           }
 
-          /* STYLOVÁNÍ PRAVÝCH PARTNERSKÝCH BANNERŮ */
-          .partner-banner-wrapper {
+          .guru-hub-item {
               background: rgba(17, 19, 24, 0.95);
               border: 1px solid rgba(168, 85, 247, 0.2);
               border-radius: 16px;
@@ -277,12 +273,11 @@ export default async function RootLayout({ children, params }) {
               align-items: center;
               justify-content: center;
           }
-          .partner-banner-wrapper:hover {
+          .guru-hub-item:hover {
               border-color: #a855f7;
               box-shadow: 0 15px 40px rgba(168, 85, 247, 0.25);
           }
 
-          /* STYLOVÁNÍ LEVÉHO VIP BOXU (Stejné jako V9.1) */
           .guru-build-box-vip {
             background-color: rgba(17, 19, 24, 0.95);
             backdrop-filter: blur(10px);
@@ -304,13 +299,13 @@ export default async function RootLayout({ children, params }) {
           .hover-scale { transition: transform 0.3s ease; }
           .hover-scale:hover { transform: scale(1.05); }
 
-          .smarty-banner-aligned {
+          .guru-vip-addon {
               width: 100%;
               display: flex;
               flex-direction: column;
               box-sizing: border-box;
           }
-          .smarty-ctr-text-aligned {
+          .guru-vip-desc {
               text-align: center;
               background: rgba(234, 179, 8, 0.05);
               border: 1px solid rgba(234, 179, 8, 0.2);
@@ -319,7 +314,7 @@ export default async function RootLayout({ children, params }) {
               width: 100%;
               box-sizing: border-box;
           }
-          .smarty-image-link-aligned {
+          .guru-vip-link {
               display: inline-block;
               border-radius: 0 0 16px 16px; 
               overflow: hidden;
@@ -329,15 +324,15 @@ export default async function RootLayout({ children, params }) {
               border-top: none; 
               box-sizing: border-box;
           }
-          .smarty-image-link-aligned img {
+          .guru-vip-link img {
               display: block;
               width: 100%; 
               height: auto;
           }
 
-          /* 🚨 BREAKPOINT 1950px: ZDE SE TO FIXUJE DO BOKU A DO DVOU SLOUPCŮ */
+          /* 🚨 BREAKPOINT 1950px: FIXACE DO BOKU A 2 SLOUPCE (STEALTH TŘÍDY) */
           @media (min-width: 1950px) {
-              .global-vip-container {
+              .guru-main-left-wrap {
                   position: fixed;
                   top: 100px;
                   left: 20px;
@@ -348,7 +343,7 @@ export default async function RootLayout({ children, params }) {
                   overflow-y: auto;
                   z-index: 50;
               }
-              .global-partners-container {
+              .guru-main-right-wrap {
                   position: fixed;
                   top: 100px;
                   right: 20px;
@@ -359,12 +354,10 @@ export default async function RootLayout({ children, params }) {
                   overflow-y: auto;
                   z-index: 50;
               }
-              
-              /* 🔥 MAGIE DVOU SLOUPCŮ (2 COLUMNS) 🔥 */
-              .global-partners-container .partners-grid {
+              .guru-main-right-wrap .guru-hub-grid {
                   display: grid;
-                  grid-template-columns: repeat(2, 1fr); /* 2 sloupce vedle sebe */
-                  gap: 15px; /* Rovnoměrná mezera */
+                  grid-template-columns: repeat(2, 1fr); 
+                  gap: 15px; 
               }
           }
         `}} />
@@ -421,7 +414,7 @@ export default async function RootLayout({ children, params }) {
           </div>
         </footer>
 
-        <PartnerWidget /> {/* 🔥 PONECHÁN DLE PŘÁNÍ (VLEZLÝ WIDGET) */}
+        <PartnerWidget />
         <AdBlockDetector />
         <CookieBanner />
         <Analytics />
