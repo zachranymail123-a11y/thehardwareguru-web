@@ -3,15 +3,15 @@ import { Gamepad2, Monitor, Cpu, Info, ArrowRight, ChevronLeft, Zap, Sparkles, S
 import FpsCalculatorClient from './FpsCalculatorClient';
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
-import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
+import HeurekaButtons from '../../components/HeurekaButtons'; 
 
 /**
- * GURU FPS ENGINE - V6.8 (HEUREKA CTA UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, ochrana cache-killer enginu + Heureka konverze.
+ * GURU FPS ENGINE - V6.9 (FIXED DATABASE FETCH)
+ * 🚀 CÍL: Přidání 'performance_index' do dotazů na databázi pro zprovoznění dynamického výpočtu FPS.
  */
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0; // 🚀 GURU FIX: Absolutní zákaz cache pro Vercel
+export const revalidate = 0; 
 
 const baseUrl = "https://thehardwareguru.cz";
 
@@ -34,7 +34,6 @@ export default async function FpsKalkulackaPage(props) {
   const s = await props.searchParams;
   const isEn = p?.lang === 'en' || s?.lang === 'en' || false;
   
-  // 🚀 GURU FIX: Supabase klient s vynuceným 'no-store', aby ignoroval starou paměť a stáhl i GTA V
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabase = createClient(supabaseUrl, supabaseKey, {
@@ -43,8 +42,8 @@ export default async function FpsKalkulackaPage(props) {
   });
 
   const [gpuRes, cpuRes, gameRes] = await Promise.all([
-    supabase.from('gpus').select('id,name,vendor,slug').order('name'),
-    supabase.from('cpus').select('id,name').order('name'),
+    supabase.from('gpus').select('id,name,vendor,slug,performance_index').order('name'),
+    supabase.from('cpus').select('id,name,performance_index').order('name'),
     supabase.from('games').select('id,name,slug').order('name')
   ]);
 
@@ -53,7 +52,6 @@ export default async function FpsKalkulackaPage(props) {
       
       <main className="inner-container" style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
-        {/* 🔥 GURU MONEY FIX: TOP BANNER ABOVE FOLD (Přesunut úplně nahoru před hlavičku) */}
         <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
             <div className="ad-desktop-wrapper">
                 <SeznamAd zoneId={408654} width={970} height={210} />
@@ -80,19 +78,16 @@ export default async function FpsKalkulackaPage(props) {
           <FpsCalculatorClient gpus={gpuRes.data || []} cpus={cpuRes.data || []} games={gameRes.data || []} isEn={isEn} />
         </div>
 
-        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (zobrazí se na hlavní stránce pod kalkulačkou) 🔥 */}
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
             <HeurekaButtons isEn={isEn} />
         </div>
 
-        {/* TVŮJ PŮVODNÍ SILO GRID (Ponechán beze změny) */}
         <div className="silo-grid" style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
             <a href="/cpu-index" className="silo-mini-card"><Cpu size={20} color="#f59e0b" /> KATALOG PROCESORŮ <ArrowRight size={16} /></a>
             <a href="/gpu-index" className="silo-mini-card"><Monitor size={20} color="#66fcf1" /> KATALOG GRAFIK <ArrowRight size={16} /></a>
             <a href="/cpuvs" className="silo-mini-card highlight"><Zap size={20} color="#a855f7" /> BOTTLENECK NÁSTROJ <ArrowRight size={16} /></a>
         </div>
 
-        {/* 🚀 MASSIVE SEO HUB PŘIDANÝ NA KONEC (Eliminace Dead Endu) */}
         <section className="massive-seo-hub" style={{ marginTop: '60px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '50px' }}>
             <h2 style={{ fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #a855f7', paddingLeft: '15px' }}>
                 {isEn ? 'EXPLORE GURU DATABASE' : 'PROZKOUMEJ GURU DATABÁZI'}
@@ -121,7 +116,6 @@ export default async function FpsKalkulackaPage(props) {
 
       </main>
 
-      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
       <div className="sticky-bottom-anchor">
           <div className="ad-desktop-wrapper">
               <SeznamAd zoneId={408654} width={970} height={90} />
@@ -143,7 +137,6 @@ export default async function FpsKalkulackaPage(props) {
         .silo-mini-card:hover { transform: translateY(-3px); border-color: #a855f7; }
         .silo-mini-card.highlight { border-color: rgba(168, 85, 247, 0.5); }
 
-        /* 🚀 SEO HUB CSS */
         .seo-hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
         .hub-column { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
         .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
@@ -151,7 +144,6 @@ export default async function FpsKalkulackaPage(props) {
         .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 14px; display: flex; align-items: center; margin-bottom: 15px; font-weight: bold; transition: 0.3s; }
         .hub-links-list a:hover { color: #66fcf1; transform: translateX(10px); }
 
-        /* 🔥 STICKY BOTTOM ANCHOR CSS */
         .sticky-bottom-anchor {
             position: fixed;
             bottom: 0;
@@ -166,7 +158,6 @@ export default async function FpsKalkulackaPage(props) {
             box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
         }
 
-        /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
 
