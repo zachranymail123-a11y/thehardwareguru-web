@@ -5,8 +5,8 @@ import SeznamAd from '../components/SeznamAd';
 import HeurekaButtons from '../components/HeurekaButtons';
 
 /**
- * GURU HOMEPAGE V19.9 - CRITICAL FOOTER FIX
- * 🚀 CÍL: Odstranění špatného divu dole a vyřešení překryvu globální patičky čistě přes padding na body.
+ * GURU HOMEPAGE V20.0 - CLEANUP UPDATE
+ * 🚀 CÍL: Odstranění nefunkčního a překážejícího sticky banneru dole. Čistý layout.
  */
 
 // --- DYNAMICKÁ METADATA PRO ABSOLUTNÍ CANONICAL A BING TRUST ---
@@ -164,7 +164,7 @@ export default async function HomePage({ params }) {
   const data = { 
     posts: p && Array.isArray(p) && p.length > 0 ? p : STATIC_SNAPSHOT_POSTS, 
     stats: (s && Array.isArray(s) && s.length > 0) ? s[0] : { value: 0 }, 
-    latestDuels: duelsRes && Array.isArray(duelsRes) && duelsRes.length > 0 ? duelsRes : STATIC_SNAPSHOT_GPU_DUELS,
+    latestDuels: duelsRes && Array.isArray(duelsRes) && duelsRes.length > 0 ? duelsRes : STATIC_SNAPSHOT_CPU_DUELS,
     latestCpuDuels: cpuDuelsRes && Array.isArray(cpuDuelsRes) && cpuDuelsRes.length > 0 ? cpuDuelsRes : STATIC_SNAPSHOT_CPU_DUELS,
     expectedGames: exp && Array.isArray(exp) ? exp : [],
     nejnovejsiTipy: t && Array.isArray(t) ? t : [],
@@ -243,7 +243,6 @@ export default async function HomePage({ params }) {
       ))}
 
       <style dangerouslySetInnerHTML={{ __html: `
-        body { padding-bottom: 120px !important; }
         .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); }
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
         
@@ -348,9 +347,6 @@ export default async function HomePage({ params }) {
         .guru-partner-button:hover { transform: scale(1.02); border-color: #a855f7; background: rgba(168, 85, 247, 0.25); }
         .partner-btn-text { font-size: clamp(14px, 2vw, 17px); font-weight: 950; color: #fff; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 15px; }
 
-        /* 🔥 STICKY ANCHOR CSS */
-        .sticky-bottom-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); }
-
         @media (max-width: 768px) {
           .guru-hero-section { padding: 40px 20px; text-align: center; justify-content: center; margin-bottom: 20px; }
           .social-btn-main { width: 100%; }
@@ -361,7 +357,6 @@ export default async function HomePage({ params }) {
       `}} />
 
       {/* --- 🚀 TOP REKLAMA (Homepage-Top) VYSTŘEDĚNÁ + FIX OFFSET --- */}
-      {/* 🚀 GURU MONEY FIX: Reklama je teď absolutně nahoře, takže zaručuje 100% Viewability okamžitě po loadu. */}
       <div style={{ maxWidth: '1200px', margin: '40px auto 0 auto', padding: '0 20px' }}>
         <div className="ad-desktop-wrapper">
           <SeznamAd zoneId={408654} width={970} height={210} />
@@ -869,12 +864,6 @@ export default async function HomePage({ params }) {
           </div>
         </main>
       )}
-
-      {/* --- 🚀 STICKY BOTTOM ANCHOR (Money-Fix) --- */}
-      <div className="sticky-bottom-anchor">
-          <div className="ad-desktop-wrapper"><SeznamAd zoneId={408654} width={970} height={90} /></div>
-          <div className="ad-mobile-wrapper"><SeznamAd zoneId={408651} width={300} height={100} /></div>
-      </div>
 
       <footer style={{ background: '#050505', padding: '40px 20px', borderTop: '1px solid rgba(102, 252, 241, 0.2)', textAlign: 'center' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', fontSize: '12px', color: '#6b7280' }}>
