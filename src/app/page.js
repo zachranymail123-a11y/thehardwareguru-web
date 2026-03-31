@@ -5,8 +5,8 @@ import SeznamAd from '../components/SeznamAd';
 import HeurekaButtons from '../components/HeurekaButtons';
 
 /**
- * GURU HOMEPAGE V21.0 - SMARTY VIP BUILD INTEGRATION
- * 🚀 CÍL: Přidání VIP Guru Sestavy s přímými affiliate odkazy (Smarty/eHub) do levého prostoru.
+ * GURU HOMEPAGE V21.1 - SMARTY VIP BUILD & AD KILLER
+ * 🚀 CÍL: Přidáno chybějící GPU (RTX 5070). Agresivní CSS pro skrytí postranních reklam Seznamu. Upravený breakpoint proti překrývání.
  */
 
 // --- DYNAMICKÁ METADATA PRO ABSOLUTNÍ CANONICAL A BING TRUST ---
@@ -140,10 +140,12 @@ const GuruBuildItem = ({ icon, name, link }) => (
 );
 
 const GuruBuildBox = ({ isEn }) => {
+  // 🔥 TVOJE OFICIÁLNÍ SMARTY DEEPLINKY VČETNĚ GPU 🔥
   const links = {
     cpu: `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=https%3A%2F%2Fwww.smarty.cz%2FAMD-Ryzen-7-9800X3D-4p200972`,
     mobo: `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=https%3A%2F%2Fwww.smarty.cz%2FGIGABYTE-X870E-AORUS-ELITE-X3D-4p249878`,
     ram: `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=https%3A%2F%2Fwww.smarty.cz%2FKingston-FURY-Beast-Black-DDR5-32GB-6000MT-s-CL30-DIMM-2x16GB-EXPO-XMP-4p205565`,
+    gpu: `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=https%3A%2F%2Fwww.smarty.cz%2FZOTAC-NVIDIA-GeForce-RTX-5070-Twin-Edge-4p242198`,
     disk: `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=https%3A%2F%2Fwww.smarty.cz%2FMSI-SPATIUM-M461-M-2-2TB-4p116277`,
     case: `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=https%3A%2F%2Fwww.smarty.cz%2FVyhledavani%2Fpocitacove-skrine%3Fquery%3Datx%26s%3Dp`
   };
@@ -175,6 +177,7 @@ const GuruBuildBox = ({ isEn }) => {
         <GuruBuildItem icon={<Cpu size={18}/>} name="AMD Ryzen 7 9800X3D" link={links.cpu} />
         <GuruBuildItem icon={<ShieldCheck size={18}/>} name="GIGABYTE X870E AORUS ELITE" link={links.mobo} />
         <GuruBuildItem icon={<Layers size={18}/>} name="Kingston 32GB 6000MT/s" link={links.ram} />
+        <GuruBuildItem icon={<Gamepad2 size={18}/>} name="ZOTAC RTX 5070 Twin Edge" link={links.gpu} />
         <GuruBuildItem icon={<Lightbulb size={18}/>} name="MSI SPATIUM M461 2TB" link={links.disk} />
         <GuruBuildItem icon={<Bookmark size={18}/>} name="Case dle výběru" link={links.case} />
       </ul>
@@ -300,6 +303,11 @@ export default async function HomePage({ params }) {
       ))}
 
       <style dangerouslySetInnerHTML={{ __html: `
+        /* 🔥 AGRESIVNÍ SKRYTÍ POSTRANNÍCH SKLIK REKLAM (BRANDING/SKIN) NA HOMEPAGE 🔥 */
+        body > div[id^="ssp-zone"] { display: none !important; opacity: 0 !important; pointer-events: none !important; }
+        body > iframe[id^="ssp-zone"], body > iframe[name^="ssp-zone"] { display: none !important; opacity: 0 !important; pointer-events: none !important; }
+        .ssp-branding, .branding-ssp { display: none !important; }
+
         .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); }
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
         
@@ -404,7 +412,7 @@ export default async function HomePage({ params }) {
         .guru-partner-button:hover { transform: scale(1.02); border-color: #a855f7; background: rgba(168, 85, 247, 0.25); }
         .partner-btn-text { font-size: clamp(14px, 2vw, 17px); font-weight: 950; color: #fff; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 15px; }
 
-        /* 🔥 VIP BOX CSS (Nahrazuje levý banner) */
+        /* 🔥 VIP BOX CSS */
         .guru-build-box-vip {
             background-color: rgba(17, 19, 24, 0.95);
             backdrop-filter: blur(10px);
@@ -430,7 +438,8 @@ export default async function HomePage({ params }) {
             z-index: 90;
         }
 
-        @media (max-width: 1650px) {
+        /* 🚨 ZVÝŠENÝ BREAKPOINT NA 1920px: Box už nebude najíždět přes web na normálních monitorech */
+        @media (max-width: 1920px) {
             .vip-floating-container {
                 position: relative;
                 left: auto;
@@ -451,7 +460,7 @@ export default async function HomePage({ params }) {
         }
       `}} />
 
-      {/* --- 🚀 VIP GURU SESTAVA (Nahrazuje levou reklamu) --- */}
+      {/* --- 🚀 VIP GURU SESTAVA (S přidanou RTX 5070 GPU) --- */}
       <div className="vip-floating-container">
          <GuruBuildBox isEn={isEn} />
       </div>
