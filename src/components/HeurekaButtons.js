@@ -3,19 +3,19 @@ import React, { useEffect } from 'react';
 import { Cpu, Monitor, Layers, Database } from 'lucide-react';
 
 /**
- * GURU HEUREKA GLOBAL BUTTONS V1.9 (PERFECT HAFF MAPPING)
+ * GURU HEUREKA GLOBAL BUTTONS V2.1 (TRIXAM CONFLICT FIX)
  * 🚀 CÍL: Svatá čtveřice PC buildu + Vyhledávání.
- * ✅ FIX: Každé tlačítko má svůj specifický přímý odkaz (haff) dle ID v tabulce pro detailní statistiky.
+ * ✅ FIX: Odstraněny 'data-trixam-positionid' z <a> tagů. Tlačítka jsou nyní čisté přímé odkazy a Trixam JS je nepřepisuje!
  */
 
 export default function HeurekaButtons({ isEn = false }) {
-  // 🔥 HEUREKA PŘÍMÉ ODKAZY S UNIKÁTNÍMI ID DLE TVÉ TABULKY
-  const HEUREKA_CPU = "https://www.heureka.cz/?h%5Bfraze%5D=procesor&haff=276027&utm_medium=affiliate";
-  const HEUREKA_GPU = "https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta&haff=276026&utm_medium=affiliate";
-  const HEUREKA_MB  = "https://www.heureka.cz/?h%5Bfraze%5D=zakladni+deska&haff=276033&utm_medium=affiliate";
-  const HEUREKA_RAM = "https://www.heureka.cz/?h%5Bfraze%5D=ram+pamet&haff=276034&utm_medium=affiliate";
+  // 🔥 HEUREKA PŘÍMÉ ODKAZY NA KATEGORIE S UNIKÁTNÍMI ID DLE TVÉ TABULKY
+  const HEUREKA_CPU = "https://procesory.heureka.cz/?haff=276027&utm_medium=affiliate";
+  const HEUREKA_GPU = "https://graficke-karty.heureka.cz/?haff=276026&utm_medium=affiliate";
+  const HEUREKA_MB  = "https://zakladni-desky.heureka.cz/?haff=276033&utm_medium=affiliate";
+  const HEUREKA_RAM = "https://pameti.heureka.cz/?haff=276034&utm_medium=affiliate";
 
-  // Mechanismus pro spolehlivé načtení skriptu vyhledávače (ID 276035)
+  // Mechanismus pro spolehlivé načtení skriptu POUZE pro vyhledávač
   useEffect(() => {
     if (!isEn) {
       const script = document.createElement('script');
@@ -123,8 +123,8 @@ export default function HeurekaButtons({ isEn = false }) {
         }
       `}} />
 
-      {/* 🔥 TLAČÍTKA SE SVÝMI UNIKÁTNÍMI HAFF PARAMETRY */}
-      <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="h-banner-btn" data-trixam-positionid="276027">
+      {/* 🔥 ČISTÉ TLAČÍTKA BEZ TRIXAM ATRIBUTŮ (Už to skript nepřebije) */}
+      <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="h-banner-btn">
         <div className="h-icon-box"><Cpu size={26} /></div>
         <div className="h-text-col">
           <span className="h-title">{isEn ? 'Processors' : 'Procesory'}</span>
@@ -132,7 +132,7 @@ export default function HeurekaButtons({ isEn = false }) {
         </div>
       </a>
 
-      <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="h-banner-btn" data-trixam-positionid="276026">
+      <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="h-banner-btn">
         <div className="h-icon-box"><Monitor size={26} /></div>
         <div className="h-text-col">
           <span className="h-title">{isEn ? 'Graphic Cards' : 'Grafické karty'}</span>
@@ -140,7 +140,7 @@ export default function HeurekaButtons({ isEn = false }) {
         </div>
       </a>
 
-      <a href={HEUREKA_MB} target="_blank" rel="nofollow sponsored" className="h-banner-btn" data-trixam-positionid="276033">
+      <a href={HEUREKA_MB} target="_blank" rel="nofollow sponsored" className="h-banner-btn">
         <div className="h-icon-box"><Layers size={26} /></div>
         <div className="h-text-col">
           <span className="h-title">{isEn ? 'Motherboards' : 'Základní desky'}</span>
@@ -148,7 +148,7 @@ export default function HeurekaButtons({ isEn = false }) {
         </div>
       </a>
 
-      <a href={HEUREKA_RAM} target="_blank" rel="nofollow sponsored" className="h-banner-btn" data-trixam-positionid="276034">
+      <a href={HEUREKA_RAM} target="_blank" rel="nofollow sponsored" className="h-banner-btn">
         <div className="h-icon-box"><Database size={26} /></div>
         <div className="h-text-col">
           <span className="h-title">{isEn ? 'RAM Memory' : 'Operační paměti'}</span>
@@ -156,7 +156,7 @@ export default function HeurekaButtons({ isEn = false }) {
         </div>
       </a>
 
-      {/* 🔥 OFICIÁLNÍ HEUREKA SEARCH PANEL (Zůstává na ID 276035) */}
+      {/* 🔥 TRIXAM ATRIBUT ZŮSTÁVÁ JEN ZDE PRO VYHLEDÁVAČ */}
       {!isEn && (
         <div className="heureka-search-container">
           <div 
