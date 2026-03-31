@@ -5,8 +5,8 @@ import SeznamAd from '../components/SeznamAd';
 import HeurekaButtons from '../components/HeurekaButtons';
 
 /**
- * GURU HOMEPAGE V19.8 - FOOTER OVERLAP FIX
- * 🚀 CÍL: Oprava překrývání patičky (kontakt, o nás) sticky bannerem přidáním ochranné mezery dolů.
+ * GURU HOMEPAGE V19.9 - CRITICAL FOOTER FIX
+ * 🚀 CÍL: Odstranění špatného divu dole a vyřešení překryvu globální patičky čistě přes padding na body.
  */
 
 // --- DYNAMICKÁ METADATA PRO ABSOLUTNÍ CANONICAL A BING TRUST ---
@@ -242,7 +242,8 @@ export default async function HomePage({ params }) {
          <script key={`article-schema-${i}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(schema) }} />
       ))}
 
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
+        body { padding-bottom: 120px !important; }
         .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); }
         .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
         
@@ -357,7 +358,7 @@ export default async function HomePage({ params }) {
           .ad-mobile-wrapper { display: flex; justify-content: center; }
           .guru-partner-button { padding: 20px; }
         }
-      `}</style>
+      `}} />
 
       {/* --- 🚀 TOP REKLAMA (Homepage-Top) VYSTŘEDĚNÁ + FIX OFFSET --- */}
       {/* 🚀 GURU MONEY FIX: Reklama je teď absolutně nahoře, takže zaručuje 100% Viewability okamžitě po loadu. */}
@@ -889,8 +890,6 @@ export default async function HomePage({ params }) {
         </div>
       </footer>
       
-      {/* 🚀 GURU FIX: Ochranná mezera, aby sticky banner po odskrolování dolů nepřekrýval globální layout patičku */}
-      <div style={{ height: '120px', width: '100%' }}></div>
     </div>
   );
 }
