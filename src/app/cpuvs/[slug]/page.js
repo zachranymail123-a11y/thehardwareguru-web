@@ -10,8 +10,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V76.5 (DYNAMIC AFFILIATE INTEGRATION)
- * 🚀 CÍL: Přidání dynamických nákupních tlačítek (Smarty + Heureka) pro vítěze duelu ihned pod verdikt.
+ * GURU CPU DUELS ENGINE - DETAIL V76.6 (HEUREKA FIX & PULSING BUTTONS)
+ * 🚀 CÍL: Oprava Heureka redirectu (použití čistého linku pro Trixam) + Pulzující/výraznější tlačítka.
  */
 
 export const runtime = "nodejs";
@@ -167,14 +167,13 @@ export default async function CpuDuelDetail(props) {
   const winnerName = perfWinner ? perfWinner.name : cpuA.name;
   const encodedQuery = encodeURIComponent(winnerName);
   
-  // Smarty hledání přes eHub (Původní 1651aa06 pro Smarty)
+  // Smarty hledání přes eHub (Kampaň 1651aa06 je vyhrazena pro Smarty.cz)
   const smartyUrl = `https://www.smarty.cz/Vyhledavani?query=${encodedQuery}`;
   const smartyAffiliateLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(smartyUrl)}`;
   
-  // Heureka hledání (Standardní hledání, můžeš upravit na přesný eHub pokud pro Heureku máš speciální)
-  const heurekaUrl = `https://www.heureka.cz/?h%5Bfraze%5D=${encodedQuery}`;
-  // Pokud pro Heureku používáš jiný a_bid v eHubu, tady ho můžeš změnit. Zde jako fallback čistý odkaz nebo upravený.
-  const heurekaAffiliateLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(heurekaUrl)}`;
+  // Heureka hledání - OPRAVA: Kampaň 1651aa06 nelze použít pro Heureku, eHub by přesměroval na Smarty.
+  // Necháme čistý odkaz na Heureku, skript trixam.min.js v layout.js z něj affiliate udělá sám na straně klienta.
+  const heurekaAffiliateLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodedQuery}`;
 
 
   return (
@@ -207,18 +206,18 @@ export default async function CpuDuelDetail(props) {
           </h1>
           {perfWinner && <div className="guru-verdict">{perfWinner.name} {isEn ? 'is about' : 'je přibližně'} <strong>{perfDiff}%</strong> {isEn ? 'faster in games' : 'výkonnější ve hrách'}</div>}
           
-          {/* 🔥 DYNAMICKÁ AFFILIATE TLAČÍTKA PRO VÍTĚZE 🔥 */}
-          <div style={{ marginTop: '30px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px' }}>
+          {/* 🔥 DYNAMICKÁ AFFILIATE TLAČÍTKA PRO VÍTĚZE (NYNÍ PULZUJÍCÍ A VÝRAZNĚJŠÍ) 🔥 */}
+          <div style={{ marginTop: '30px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
               <a href={smartyAffiliateLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
-                  <ShoppingCart size={18} /> {isEn ? 'Buy on Smarty.cz' : 'Koupit na Smarty.cz'}
+                  <ShoppingCart size={20} /> {isEn ? 'Buy on Smarty.cz' : 'Koupit na Smarty.cz'}
               </a>
               <a href={heurekaAffiliateLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn">
-                  <ShoppingCart size={18} /> {isEn ? 'Buy on Heureka.cz' : 'Koupit na Heureka.cz'}
+                  <ShoppingCart size={20} /> {isEn ? 'Buy on Heureka.cz' : 'Koupit na Heureka.cz'}
               </a>
           </div>
 
           {upgradeUrl && (
-            <div style={{ marginTop: '25px' }}>
+            <div style={{ marginTop: '35px' }}>
               <a href={upgradeUrl} className="guru-upgrade-pill">
                   <Zap size={14} fill="currentColor" /> {isEn ? `WORTH UPGRADING?` : `VYPLATÍ SE UPGRADE?`} <ArrowRight size={14} />
               </a>
@@ -357,13 +356,22 @@ export default async function CpuDuelDetail(props) {
         .guru-ranking-link { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
         .guru-verdict { margin-top: 25px; color: #66fcf1; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 10px 25px; background: rgba(102, 252, 241, 0.05); border: 1px solid rgba(102, 252, 241, 0.2); border-radius: 50px; display: inline-block; }
         
-        /* 🔥 CSS PRO NOVÁ AFFILIATE TLAČÍTKA 🔥 */
-        .guru-buy-winner-btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 30px; border-radius: 14px; text-decoration: none; font-weight: 950; font-size: 14px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; }
-        .guru-buy-winner-btn:hover { transform: translateY(-3px); }
-        .smarty-btn { background: #eab308; color: #000; border: 1px solid rgba(234, 179, 8, 0.4); box-shadow: 0 10px 20px rgba(234, 179, 8, 0.2); }
-        .smarty-btn:hover { box-shadow: 0 15px 30px rgba(234, 179, 8, 0.4); }
-        .heureka-btn { background: #0078d4; color: #fff; border: 1px solid rgba(0, 120, 212, 0.4); box-shadow: 0 10px 20px rgba(0, 120, 212, 0.2); }
-        .heureka-btn:hover { box-shadow: 0 15px 30px rgba(0, 120, 212, 0.4); }
+        /* 🔥 CSS PRO NOVÁ PULZUJÍCÍ AFFILIATE TLAČÍTKA 🔥 */
+        @keyframes pulse-smarty {
+            0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(234, 179, 8, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+        }
+        @keyframes pulse-heureka {
+            0% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(0, 120, 212, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0); }
+        }
+        .guru-buy-winner-btn { display: inline-flex; align-items: center; gap: 12px; padding: 18px 36px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 15px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 1px; }
+        .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
+        .smarty-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(234, 179, 8, 0.5); }
+        .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
+        .heureka-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(0, 120, 212, 0.5); }
 
         .guru-upgrade-pill { display: inline-flex; align-items: center; gap: 10px; padding: 12px 30px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 50px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
         .cpu-box { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 40px 20px; text-align: center; flex: 1; }
