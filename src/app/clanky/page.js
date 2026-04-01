@@ -15,7 +15,7 @@ import SeznamAd from '../../components/SeznamAd';
 
 /**
  * GURU ARTICLE ARCHIVE ENGINE V3.2 (MULTILANG FIX)
- * 🚀 CÍL: Oprava detekce jazyka a překlad textů v archivu.
+ * 🚀 CÍL: 100% funkční EN verze archivu při zachování designu a reklam.
  */
 
 export const runtime = "nodejs";
@@ -25,10 +25,10 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const baseUrl = "https://thehardwareguru.cz";
 
-export async function generateMetadata({ params, isEn: isEnProp }) {
-  const locale = params?.locale || params?.lang || 'cs';
-  const isEn = isEnProp === true || locale === 'en';
-  
+// 🚀 GURU SEO: Dynamické Meta Tagy
+export async function generateMetadata(props) {
+  const params = await props.params;
+  const isEn = props?.isEn === true || params?.locale === 'en' || params?.lang === 'en';
   const title = isEn ? 'Article Archive & Tech News | The Hardware Guru' : 'Archiv Článků a Hardwarové Novinky | The Hardware Guru';
   const desc = isEn 
     ? 'Complete database of all hardware reviews, tech breakdowns, and gaming news verified by Hardware Guru.' 
@@ -48,9 +48,10 @@ export async function generateMetadata({ params, isEn: isEnProp }) {
   };
 }
 
-export default async function ClankyArchivePage({ params, isEn: isEnProp }) {
-  const locale = params?.locale || params?.lang || 'cs';
-  const isEn = isEnProp === true || locale === 'en';
+export default async function ClankyArchivePage(props) {
+  const params = await props.params;
+  // ✅ DETEKCE: Jistější kontrola jazyka
+  const isEn = props?.isEn === true || params?.locale === 'en' || params?.lang === 'en';
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   const { data: posts, error } = await supabase
@@ -89,24 +90,15 @@ export default async function ClankyArchivePage({ params, isEn: isEnProp }) {
         .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
         .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
-        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
-        .ad-mobile-wrapper { display: none; width: 100%; }
         .sticky-bottom-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); }
         @media (max-width: 768px) {
-          .ad-desktop-wrapper { display: none; }
-          .ad-mobile-wrapper { display: flex; justify-content: center; }
           header { padding-top: 90px !important; margin-bottom: 30px !important; }
           main { padding: 0 15px !important; }
         }
       `}} />
 
       <div style={{ maxWidth: '1200px', margin: '40px auto 0 auto', padding: '0 20px' }}>
-        <div className="ad-desktop-wrapper">
-          <SeznamAd zoneId={408654} width={970} height={210} />
-        </div>
-        <div className="ad-mobile-wrapper" style={{ margin: '0 -20px' }}>
-          <SeznamAd zoneId={408651} width={300} height={250} />
-        </div>
+        <SeznamAd zoneId={408654} width={970} height={210} />
       </div>
 
       <header style={{ maxWidth: '800px', margin: '20px auto 60px', textAlign: 'center', padding: '0 20px', paddingTop: '120px' }}>
@@ -175,13 +167,22 @@ export default async function ClankyArchivePage({ params, isEn: isEnProp }) {
         </div>
       </main>
 
+      <footer style={{ background: '#050505', padding: '40px 20px', borderTop: '1px solid rgba(102, 252, 241, 0.2)', textAlign: 'center' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', fontSize: '12px', color: '#6b7280' }}>
+            <a href={isEn ? "/en/gpu-index" : "/gpu-index"} style={{ color: '#6b7280', textDecoration: 'none' }}>{isEn ? "GPU Catalog & Index" : "Katalog Grafických Karet a Index Výkonu"}</a>
+            <a href={isEn ? "/en/cpu-index" : "/cpu-index"} style={{ color: '#6b7280', textDecoration: 'none' }}>{isEn ? "CPU Catalog & Index" : "Katalog Procesorů a Index Výkonu"}</a>
+            <a href={isEn ? "/en/slovnik" : "/slovnik"} style={{ color: '#6b7280', textDecoration: 'none' }}>{isEn ? "HW Glossary" : "HW Slovník"}</a>
+            <a href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"} style={{ color: '#6b7280', textDecoration: 'none' }}>{isEn ? "Expected Games" : "Očekávané Hry"}</a>
+            <a href={isEn ? "/en/deals" : "/deals"} style={{ color: '#6b7280', textDecoration: 'none' }}>{isEn ? "Deals" : "Slevy"}</a>
+            <a href={isEn ? "/en/bottleneck-kalkulacka" : "/bottleneck-kalkulacka"} style={{ color: '#6b7280', textDecoration: 'none' }}>{isEn ? "Bottleneck Calculator" : "Bottleneck Kalkulačka"}</a>
+        </div>
+        <div style={{ marginTop: '20px', color: '#4b5563', fontSize: '11px' }}>
+          &copy; {new Date().getFullYear()} The Hardware Guru. {isEn ? "All rights reserved." : "Všechna práva vyhrazena."}
+        </div>
+      </footer>
+
       <div className="sticky-bottom-anchor">
-        <div className="ad-desktop-wrapper">
-          <SeznamAd zoneId={408654} width={970} height={90} />
-        </div>
-        <div className="ad-mobile-wrapper">
-          <SeznamAd zoneId={408651} width={300} height={100} />
-        </div>
+        <SeznamAd zoneId={408654} width={970} height={90} />
       </div>
     </div>
   );
