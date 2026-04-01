@@ -26,8 +26,8 @@ import SeznamAd from '../../../../components/SeznamAd';
 import HeurekaButtons from '../../../../components/HeurekaButtons'; 
 
 /**
- * GURU FPS HUNTER V1.9 (AFFILIATE BOMB UPDATE)
- * 🚀 CÍL: Vložení pulzujících affiliate tlačítek (Smarty+Heureka) pod FPS výsledek.
+ * GURU FPS HUNTER V2.0 (AFFILIATE BOMB FIXED)
+ * 🚀 CÍL: Oprava modrých Heureka tlačítek - doplnění UTM, Trixam ID a HN třídy.
  */
 
 export const runtime = "nodejs";
@@ -104,7 +104,7 @@ export default async function GpuFpsHunterPage(props) {
     return { text: isEn ? 'NOT RECOMMENDED' : 'NEDOSTATEČNÝ VÝKON', color: '#ef4444' };
   };
 
-  // 🔥 GENERÁTOR AFFILIATE LINKŮ 🔥
+  // 🔥 OPRAVENÝ GENERÁTOR AFFILIATE LINKŮ 🔥
   const searchName = getCleanSearchName(gpu.name);
   const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
   const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
@@ -134,7 +134,7 @@ export default async function GpuFpsHunterPage(props) {
           </h1>
         </header>
 
-        {/* 🔥 NOVÝ GURU AFFILIATE BOMB GRID (Hned pod hlavičkou) 🔥 */}
+        {/* 🔥 OPRAVENÝ GURU AFFILIATE BOMB GRID 🔥 */}
         <div className="affiliate-cta-grid" style={{ marginBottom: '50px', borderColor: `${vendorColor}40` }}>
             <div className="affiliate-col">
                 <div className="affiliate-col-title" style={{ color: vendorColor }}>
@@ -144,7 +144,15 @@ export default async function GpuFpsHunterPage(props) {
                     <a href={getSmartyLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
                         <ShoppingCart size={16} /> Smarty.cz
                     </a>
-                    <a href={getHeurekaLink(searchName)} data-trixam-positionid="276026" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
+                    {/* OPRAVA: Heureka link s UTM, Trixam ID a HN třídou */}
+                    <a 
+                        href={getHeurekaLink(searchName)} 
+                        data-trixam-positionid="276026" 
+                        data-trixam-codetype="link" 
+                        target="_blank" 
+                        rel="nofollow sponsored" 
+                        className="guru-buy-winner-btn heureka-btn heureka-hn-link"
+                    >
                         <ShoppingCart size={16} /> Heureka.cz
                     </a>
                 </div>
@@ -210,7 +218,7 @@ export default async function GpuFpsHunterPage(props) {
             </div>
         </section>
 
-        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek 🔥 */}
+        {/* 🔥 OPRAVA: HeurekaButtons komponenta s manuálním vyhledáváním a správným ID 🔥 */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
             <HeurekaButtons isEn={isEn} manualSearch={gpu.name} positionId="276026" />
         </div>
@@ -268,7 +276,6 @@ export default async function GpuFpsHunterPage(props) {
         </div>
       </main>
 
-      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
       <div className="sticky-bottom-anchor">
           <div className="ad-desktop-wrapper">
               <SeznamAd zoneId={408654} width={970} height={90} />
@@ -289,7 +296,6 @@ export default async function GpuFpsHunterPage(props) {
         .deep-link-card p { font-size: 13px; color: #9ca3af; line-height: 1.5; margin: 0; }
         .deep-link-card .arrow { position: absolute; bottom: 30px; right: 30px; opacity: 0.2; }
 
-        /* 🔥 CSS PRO AFFILIATE GRID A TLAČÍTKA 🔥 */
         .affiliate-cta-grid { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 35px; background: rgba(0,0,0,0.4); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; box-sizing: border-box; }
         .affiliate-col { display: flex; flex-direction: column; align-items: center; width: 100%; }
         .affiliate-col-title { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 25px; text-align: center; }
@@ -304,7 +310,6 @@ export default async function GpuFpsHunterPage(props) {
         .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
         .heureka-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
 
-        /* 🚀 SEO HUB CSS */
         .seo-hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
         .hub-column { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
         .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
@@ -316,7 +321,6 @@ export default async function GpuFpsHunterPage(props) {
         .guru-support-btn { background: #eab308; color: #000; }
         .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
 
-        /* 🔥 STICKY BOTTOM ANCHOR CSS */
         .sticky-bottom-anchor {
             position: fixed;
             bottom: 0;
@@ -331,7 +335,6 @@ export default async function GpuFpsHunterPage(props) {
             box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
         }
 
-        /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
 
@@ -350,8 +353,6 @@ export default async function GpuFpsHunterPage(props) {
             .guru-deals-btn, .guru-support-btn { width: 100% !important; }
             .seo-hub-grid { grid-template-columns: 1fr; }
             .hub-column { padding: 25px; }
-
-            /* Responzivita Affiliate tlačítek */
             .affiliate-cta-grid { padding: 20px; }
             .affiliate-col-title { font-size: 14px; margin-bottom: 20px; }
             .affiliate-btn-wrap { flex-direction: column; gap: 15px; }
