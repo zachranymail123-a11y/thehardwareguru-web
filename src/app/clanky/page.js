@@ -14,21 +14,21 @@ import {
 import SeznamAd from '../../components/SeznamAd';
 
 /**
- * GURU ARTICLE ARCHIVE ENGINE V3.1 (MONEY FIX UPDATE)
+ * GURU ARTICLE ARCHIVE ENGINE V3.2 (MULTILANG FIX)
  * Cesta: src/app/clanky/page.js
- * 🚀 CÍL: Přesun TOP reklamy Above Fold, přidání Sticky Bottom Anchoru. Zachování Golden GSC Fixu.
+ * 🚀 CÍL: Oprava detekce jazyka podle vzoru bottleneck (isEn prop + params).
  */
 
 export const runtime = "nodejs";
-export const revalidate = 3600; // Cache na 1 hodinu pro stabilitu a výkon
+export const revalidate = 3600; 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const baseUrl = "https://thehardwareguru.cz";
 
 // 🚀 GURU SEO: Dynamické Meta Tagy pro archiv článků
-export async function generateMetadata(props) {
-  const isEn = props?.isEn === true;
+export async function generateMetadata({ params, isEn: isEnProp }) {
+  const isEn = isEnProp === true || params?.lang === 'en' || params?.locale === 'en';
   const title = isEn ? 'Article Archive & Tech News | The Hardware Guru' : 'Archiv Článků a Hardwarové Novinky | The Hardware Guru';
   const desc = isEn 
     ? 'Complete database of all hardware reviews, tech breakdowns, and gaming news verified by Hardware Guru.' 
@@ -38,7 +38,7 @@ export async function generateMetadata(props) {
     title: `${title} | The Hardware Guru`,
     description: desc,
     alternates: {
-      canonical: `${baseUrl}/clanky`,
+      canonical: isEn ? `${baseUrl}/en/clanky` : `${baseUrl}/clanky`,
       languages: {
         'en': `${baseUrl}/en/clanky`,
         'cs': `${baseUrl}/clanky`,
@@ -48,11 +48,11 @@ export async function generateMetadata(props) {
   };
 }
 
-export default async function ClankyArchivePage(props) {
-  const isEn = props?.isEn === true;
+export default async function ClankyArchivePage({ params, isEn: isEnProp }) {
+  const isEn = isEnProp === true || params?.lang === 'en' || params?.locale === 'en';
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. GURU FETCH: Načtení všech článků přímo na serveru
+  // 1. GURU FETCH
   const { data: posts, error } = await supabase
     .from('posts')
     .select('*')
@@ -78,7 +78,7 @@ export default async function ClankyArchivePage(props) {
     return { text: isEn ? 'HW NEWS' : 'HW NOVINKA', color: '#ff0000', textColor: '#fff' };
   };
 
-  // 🚀 ZLATÁ GSC SEO SCHÉMATA (ItemList pro seznam článků)
+  // 🚀 ZLATÁ GSC SEO SCHÉMATA
   const itemListSchema = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -104,7 +104,6 @@ export default async function ClankyArchivePage(props) {
 
   return (
     <div style={globalStyles}>
-      {/* JSON-LD INJECTIONS */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(itemListSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbSchema) }} />
 
@@ -115,12 +114,8 @@ export default async function ClankyArchivePage(props) {
         .guru-support-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(234, 179, 8, 0.4); }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff !important; font-weight: 950; font-size: 15px; text-transform: uppercase; border-radius: 16px; text-decoration: none !important; transition: 0.3s; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3); border: 1px solid rgba(255,255,255,0.1); }
         .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
-        
-        /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
-
-        /* 🔥 STICKY BOTTOM ANCHOR CSS */
         .sticky-bottom-anchor {
             position: fixed;
             bottom: 0;
@@ -134,7 +129,6 @@ export default async function ClankyArchivePage(props) {
             justify-content: center;
             box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
         }
-
         @media (max-width: 768px) {
           .ad-desktop-wrapper { display: none; }
           .ad-mobile-wrapper { display: flex; justify-content: center; }
@@ -143,7 +137,6 @@ export default async function ClankyArchivePage(props) {
         }
       `}} />
 
-      {/* 🔥 TOP REKLAMA (Archiv-Top) - 100% Viewability Above Fold */}
       <div style={{ maxWidth: '1200px', margin: '40px auto 0 auto', padding: '0 20px' }}>
         <div className="ad-desktop-wrapper">
           <SeznamAd zoneId={408654} width={970} height={210} />
@@ -209,7 +202,6 @@ export default async function ClankyArchivePage(props) {
           </div>
         )}
 
-        {/* 🚀 GURU GLOBÁLNÍ CTA TLAČÍTKA (Golden standard) */}
         <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
           <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
             {isEn ? "Want to support the Guru project? Get the best game deals." : "Chceš podpořit projekt Guru? Pořiď si hry za nejlepší ceny."}
@@ -225,7 +217,6 @@ export default async function ClankyArchivePage(props) {
         </div>
       </main>
 
-      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
       <div className="sticky-bottom-anchor">
           <div className="ad-desktop-wrapper">
               <SeznamAd zoneId={408654} width={970} height={90} />
