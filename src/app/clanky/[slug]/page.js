@@ -3,11 +3,11 @@ import { notFound } from 'next/navigation';
 import { ChevronLeft, Info, Calendar, Flame, Heart, Share2, Swords, Gauge, ArrowRight, Sparkles, Gamepad2, Twitter, Cpu, Monitor, User, Clock, CheckCircle, ChevronRight } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../../components/SeznamAd';
-import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
+import HeurekaButtons from '../../../components/HeurekaButtons';
 
 /**
- * GURU ARTICLE ENGINE V5.9 (HEUREKA CTA UPDATE)
- * 🚀 CÍL: Vložení Heureka konverzních tlačítek na konec článku.
+ * GURU ARTICLE ENGINE V5.9.1 (MULTILANG UPDATE)
+ * 🚀 CÍL: 100% funkční EN verze článku při zachování designu a reklam.
  */
 
 export const runtime = "nodejs";
@@ -57,7 +57,7 @@ const getReadingTime = (text) => {
 export async function generateMetadata(props) {
     const params = await props.params;
     const rawSlug = params?.slug || '';
-    const isEn = rawSlug.startsWith('en-');
+    const isEn = props.isEn === true || rawSlug.startsWith('en-');
     const post = await getPost(rawSlug);
     if (!post) return { title: '404 | The Hardware Guru' };
     const title = isEn && post.title_en ? post.title_en : post.title;
@@ -70,7 +70,8 @@ export async function generateMetadata(props) {
 export default async function ArticleDetailPage(props) {
     const params = await props.params;
     const rawSlug = params?.slug || '';
-    const isEn = rawSlug.startsWith('en-');
+    // ✅ DETEKCE: Props mají přednost, pak prefix slug-u
+    const isEn = props.isEn === true || rawSlug.startsWith('en-');
     const post = await getPost(rawSlug);
     
     if (!post) notFound();
@@ -99,7 +100,6 @@ export default async function ArticleDetailPage(props) {
                     </a>
                 </div>
 
-                {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD (Před hlavičkou pro 100% viditelnost) */}
                 <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
                     <div className="ad-desktop-wrapper">
                         <SeznamAd zoneId={408654} width={970} height={210} />
@@ -139,7 +139,6 @@ export default async function ArticleDetailPage(props) {
                     <div className="guru-article-content">
                          {part1 && <div dangerouslySetInnerHTML={{ __html: part1 }} />}
                          
-                         {/* 🚀 IN-TEXT AD #1 */}
                          {contentParts.length > 3 && (
                              <div style={{ margin: '40px 0', display: 'flex', justifyContent: 'center' }}>
                                  <div className="ad-desktop-wrapper"><SeznamAd zoneId={408658} width={480} height={300} /></div>
@@ -149,7 +148,6 @@ export default async function ArticleDetailPage(props) {
                          
                          {part2 && <div dangerouslySetInnerHTML={{ __html: part2 }} />}
 
-                         {/* 🚀 IN-TEXT AD #2 */}
                          {contentParts.length > 6 && (
                              <div style={{ margin: '40px 0', display: 'flex', justifyContent: 'center' }}>
                                  <div className="ad-desktop-wrapper"><SeznamAd zoneId={408658} width={480} height={300} /></div>
@@ -160,13 +158,12 @@ export default async function ArticleDetailPage(props) {
                          {part3 && <div dangerouslySetInnerHTML={{ __html: part3 }} />}
                     </div>
 
-                    {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (na konec článku) 🔥 */}
                     <div style={{ display: 'flex', justifyContent: 'center', margin: '50px 0 30px' }}>
                         <HeurekaButtons isEn={isEn} />
                     </div>
                     
                     <div className="gta6-conversion-box">
-                        <div className="gta6-badge"><Sparkles size={16} /> AI PREDIKCE</div>
+                        <div className="gta6-badge"><Sparkles size={16} /> AI {isEn ? 'PREDICTION' : 'PREDIKCE'}</div>
                         <h3 className="gta6-title">{isEn ? 'RUN GTA VI?' : 'ZVLÁDNE TO GTA VI?'}</h3>
                         <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="gta6-link">
                             <Gamepad2 size={20} /> {isEn ? 'TEST FPS' : 'ZJISTIT FPS'} <ArrowRight size={18} />
@@ -182,7 +179,6 @@ export default async function ArticleDetailPage(props) {
                     </div>
                 </div>
 
-                {/* 🚀 MASSIVE SEO HUB PRO ELIMINACI DEAD ENDU A BOUNCE RATE */}
                 <section className="massive-seo-hub" style={{ marginTop: '80px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '60px' }}>
                     <h2 style={{ fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #a855f7', paddingLeft: '15px' }}>
                         {isEn ? 'EXPLORE GURU DATABASE' : 'PROZKOUMEJ GURU DATABÁZI'}
@@ -211,7 +207,6 @@ export default async function ArticleDetailPage(props) {
 
             </main>
 
-            {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
             <div className="sticky-bottom-anchor">
                 <div className="ad-desktop-wrapper">
                     <SeznamAd zoneId={408654} width={970} height={90} />
@@ -234,34 +229,15 @@ export default async function ArticleDetailPage(props) {
                 .x-bg { background: #000; border: 1px solid #333; }
                 .fb-bg { background: #1877f2; }
                 .reddit-bg { background: #ff4500; }
-
-                /* 🚀 SEO HUB CSS */
                 .seo-hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
                 .hub-column { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
                 .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
                 .hub-links-list { list-style: none; padding: 0; margin: 0; }
                 .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 14px; display: flex; align-items: center; margin-bottom: 15px; font-weight: bold; transition: 0.3s; }
                 .hub-links-list a:hover { color: #a855f7; transform: translateX(10px); }
-
-                /* 🔥 STICKY BOTTOM ANCHOR CSS */
-                .sticky-bottom-anchor {
-                    position: fixed;
-                    bottom: 0;
-                    left: 0;
-                    width: 100%;
-                    background: rgba(10, 11, 13, 0.98);
-                    border-top: 1px solid rgba(255, 255, 255, 0.1);
-                    z-index: 9999;
-                    padding: 10px 0;
-                    display: flex;
-                    justify-content: center;
-                    box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
-                }
-
-                /* 🚀 RESPONSIVE ADS SYSTEM */
+                .sticky-bottom-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); }
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
                 .ad-mobile-wrapper { display: none; width: 100%; }
-
                 @media (max-width: 768px) {
                     .ad-desktop-wrapper { display: none !important; }
                     .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
