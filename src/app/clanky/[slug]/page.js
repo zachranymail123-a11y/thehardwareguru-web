@@ -6,8 +6,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons';
 
 /**
- * GURU ARTICLE ENGINE V5.9.1 (MULTILANG UPDATE)
- * 🚀 CÍL: 100% funkční EN verze článku při zachování designu a reklam.
+ * GURU ARTICLE ENGINE V5.9.2 (MULTILANG FIX)
+ * 🚀 CÍL: Správná detekce jazyka a překlad prvků detailu článku.
  */
 
 export const runtime = "nodejs";
@@ -38,26 +38,16 @@ const getPost = async (slug) => {
     return data;
 }
 
-const getLatestPosts = async (excludeId) => {
-    const { data } = await supabase
-        .from('posts')
-        .select('title, title_en, slug, slug_en, created_at, image_url')
-        .neq('id', excludeId)
-        .order('created_at', { ascending: false })
-        .limit(3);
-    return data || [];
-}
-
 const getReadingTime = (text) => {
     const words = text ? text.replace(/<[^>]*>?/gm, '').split(/\s+/).length : 0;
     const minutes = Math.ceil(words / 200); 
     return minutes < 1 ? 1 : minutes;
 };
 
-export async function generateMetadata(props) {
-    const params = await props.params;
-    const rawSlug = params?.slug || '';
-    const isEn = props.isEn === true || rawSlug.startsWith('en-');
+export async function generateMetadata({ params, isEn: isEnProp }) {
+    const p = await params;
+    const rawSlug = p?.slug || '';
+    const isEn = isEnProp === true || rawSlug.startsWith('en-');
     const post = await getPost(rawSlug);
     if (!post) return { title: '404 | The Hardware Guru' };
     const title = isEn && post.title_en ? post.title_en : post.title;
@@ -67,20 +57,17 @@ export async function generateMetadata(props) {
     };
 }
 
-export default async function ArticleDetailPage(props) {
-    const params = await props.params;
-    const rawSlug = params?.slug || '';
-    // ✅ DETEKCE: Props mají přednost, pak prefix slug-u
-    const isEn = props.isEn === true || rawSlug.startsWith('en-');
+export default async function ArticleDetailPage({ params, isEn: isEnProp }) {
+    const p = await params;
+    const rawSlug = p?.slug || '';
+    const isEn = isEnProp === true || rawSlug.startsWith('en-');
     const post = await getPost(rawSlug);
     
     if (!post) notFound();
 
-    const latestPosts = await getLatestPosts(post.id);
     const title = isEn && post.title_en ? post.title_en : post.title;
     const content = isEn && post.content_en ? post.content_en : (post.content_cs || post.content || '');
-    const date = post.created_at || new Date().toISOString();
-    const formattedDate = new Intl.DateTimeFormat(isEn ? 'en-US' : 'cs-CZ', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(date));
+    const formattedDate = new Intl.DateTimeFormat(isEn ? 'en-US' : 'cs-CZ', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(post.created_at));
     const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}clanky/${post.slug}`;
     const readingTime = getReadingTime(content);
 
@@ -138,23 +125,19 @@ export default async function ArticleDetailPage(props) {
 
                     <div className="guru-article-content">
                          {part1 && <div dangerouslySetInnerHTML={{ __html: part1 }} />}
-                         
                          {contentParts.length > 3 && (
                              <div style={{ margin: '40px 0', display: 'flex', justifyContent: 'center' }}>
                                  <div className="ad-desktop-wrapper"><SeznamAd zoneId={408658} width={480} height={300} /></div>
                                  <div className="ad-mobile-wrapper"><SeznamAd zoneId={408651} width={300} height={250} /></div>
                              </div>
                          )}
-                         
                          {part2 && <div dangerouslySetInnerHTML={{ __html: part2 }} />}
-
                          {contentParts.length > 6 && (
                              <div style={{ margin: '40px 0', display: 'flex', justifyContent: 'center' }}>
                                  <div className="ad-desktop-wrapper"><SeznamAd zoneId={408658} width={480} height={300} /></div>
                                  <div className="ad-mobile-wrapper"><SeznamAd zoneId={408651} width={300} height={250} /></div>
                              </div>
                          )}
-
                          {part3 && <div dangerouslySetInnerHTML={{ __html: part3 }} />}
                     </div>
 
@@ -204,16 +187,11 @@ export default async function ArticleDetailPage(props) {
                         </div>
                     </div>
                 </section>
-
             </main>
 
             <div className="sticky-bottom-anchor">
-                <div className="ad-desktop-wrapper">
-                    <SeznamAd zoneId={408654} width={970} height={90} />
-                </div>
-                <div className="ad-mobile-wrapper">
-                    <SeznamAd zoneId={408651} width={300} height={100} />
-                </div>
+                <div className="ad-desktop-wrapper"><SeznamAd zoneId={408654} width={970} height={90} /></div>
+                <div className="ad-mobile-wrapper"><SeznamAd zoneId={408651} width={300} height={100} /></div>
             </div>
 
             <style dangerouslySetInnerHTML={{__html: `
