@@ -172,8 +172,8 @@ export default async function CpuDuelDetail(props) {
   const smartyAffiliateLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(smartyUrl)}`;
   
   // Heureka hledání - OPRAVA: Kampaň 1651aa06 nelze použít pro Heureku, eHub by přesměroval na Smarty.
-  // Necháme čistý odkaz na Heureku, skript trixam.min.js v layout.js z něj affiliate udělá sám na straně klienta.
-  const heurekaAffiliateLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodedQuery}`;
+  // Necháme čistý odkaz na Heureku s přesnými UTM parametry pro Trixam.
+  const heurekaAffiliateLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodedQuery}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
 
 
   return (
@@ -211,7 +211,7 @@ export default async function CpuDuelDetail(props) {
               <a href={smartyAffiliateLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
                   <ShoppingCart size={20} /> {isEn ? 'Buy on Smarty.cz' : 'Koupit na Smarty.cz'}
               </a>
-              <a href={heurekaAffiliateLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn">
+              <a href={heurekaAffiliateLink} data-trixam-positionid="276027" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
                   <ShoppingCart size={20} /> {isEn ? 'Buy on Heureka.cz' : 'Koupit na Heureka.cz'}
               </a>
           </div>
