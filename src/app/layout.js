@@ -15,11 +15,6 @@ import AdTracker from '../components/AdTracker';
 
 import { Cpu, ShieldCheck, Layers, Gamepad2, Lightbulb, Bookmark, ShoppingCart, Rocket } from 'lucide-react';
 
-/**
- * GURU ROOT LAYOUT V10.2 (STEALTH AFFILIATE MODE)
- * 🚀 CÍL: Obejítí AdBlocku pomocí proxy serveru (wsrv.nl) a přejmenování CSS tříd. Vizuálně se tváří jako nativní obsah ("Guru Doporučuje").
- */
-
 export const metadata = {
   title: {
     default: 'Hardware Guru | PC Benchmarks, Tech News & AI Tools',
@@ -37,7 +32,6 @@ export const metadata = {
   },
 }
 
-// --- GURU VIP BOX COMPONENT ---
 const GuruBuildItem = ({ icon, name, link, isEn }) => (
     <li style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.03)', padding: '10px 15px', display: 'flex', alignItems: 'center', gap: '15px' }}>
         <div style={{ background: 'rgba(102, 252, 241, 0.05)', padding: '8px', borderRadius: '10px', border: '1px solid rgba(102, 252, 241, 0.1)', flexShrink: 0, color: '#66fcf1' }}>
@@ -47,7 +41,7 @@ const GuruBuildItem = ({ icon, name, link, isEn }) => (
             <div style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold', lineHeight: '1.3' }}>{name}</div>
         </div>
         <a href={link} target="_blank" rel="nofollow sponsored" style={{ background: 'rgba(102, 252, 241, 0.1)', color: '#66fcf1', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', textDecoration: 'none', border: '1px solid rgba(102, 252, 241, 0.3)', transition: '0.3s', whiteSpace: 'nowrap', flexShrink: 0 }} className="hover-scale">
-          {isEn ? 'BUY' : 'KOUPIT'}
+            {isEn ? 'BUY' : 'KOUPIT'}
         </a>
     </li>
 );
@@ -66,7 +60,6 @@ const GlobalVIPBox = ({ isEn }) => {
     <div className="guru-main-left-wrap">
       <aside className="guru-build-box-vip group">
         <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '200px', height: '200px', background: 'rgba(102, 252, 241, 0.15)', filter: 'blur(80px)', borderRadius: '50%', zIndex: 0 }} />
-        
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px', position: 'relative', zIndex: 1, marginBottom: '10px' }}>
             <div style={{ background: 'rgba(234, 179, 8, 0.1)', padding: '12px', borderRadius: '14px', border: '1px solid rgba(234, 179, 8, 0.2)' }}>
                 <ShoppingCart size={24} color="#eab308" style={{ filter: 'drop-shadow(0 0 10px rgba(234, 179, 8, 0.6))' }} />
@@ -80,12 +73,9 @@ const GlobalVIPBox = ({ isEn }) => {
                 </h2>
             </div>
         </div>
-
         <p style={{ fontSize: '13px', lineHeight: '1.6', color: '#9ca3af', position: 'relative', zIndex: 1, margin: 0, marginBottom: '15px' }}>
-            {isEn ? 'The best components selected by Hardware Guru.' 
-                   : 'Nejlepší komponenty aktuálně na trhu. Postav si absolutní bestii podle Guru.'}
+            {isEn ? 'The best components selected by Hardware Guru.' : 'Nejlepší komponenty aktuálně na trhu. Postav si absolutní bestii podle Guru.'}
         </p>
-
         <ul style={{ listStyleType: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative', zIndex: 1 }}>
           <GuruBuildItem icon={<Cpu size={18}/>} name="AMD Ryzen 7 9800X3D" link={links.cpu} isEn={isEn} />
           <GuruBuildItem icon={<ShieldCheck size={18}/>} name="GIGABYTE X870E AORUS ELITE" link={links.mobo} isEn={isEn} />
@@ -95,7 +85,6 @@ const GlobalVIPBox = ({ isEn }) => {
           <GuruBuildItem icon={<Bookmark size={18}/>} name={isEn ? "Case of choice" : "Case dle výběru"} link={links.case} isEn={isEn} />
         </ul>
       </aside>
-
       <div className="guru-vip-addon">
           <div className="guru-vip-desc">
               <p style={{ margin: 0, color: '#eab308', fontSize: '14px', fontWeight: 'bold', lineHeight: '1.4' }}>
@@ -120,7 +109,6 @@ const GlobalPartnersBox = ({ isEn }) => {
     { id: '40ba2316', hash: '05c13202', ext: 'png' },
     { id: 'dc46f460', hash: 'c0824462', ext: 'jpg' }
   ];
-
   return (
     <div className="guru-main-right-wrap">
       <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px', padding: '0 5px' }}>
@@ -131,7 +119,6 @@ const GlobalPartnersBox = ({ isEn }) => {
           {isEn ? 'GURU CHOICES' : 'GURU DOPORUČUJE'}
         </h2>
       </div>
-
       <div className="guru-hub-grid">
         {extLinks.map(link => (
           <div key={link.id} className="guru-hub-item hover-scale">
@@ -150,10 +137,7 @@ export default async function RootLayout({ children, params }) {
   const locale = resolvedParams?.locale || resolvedParams?.lang || 'cs';
   const isEn = locale === 'en';
 
-  const envVars = {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-  };
+  const envVars = { NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "", NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "" };
 
   return (
     <html lang={locale}>
@@ -208,21 +192,43 @@ export default async function RootLayout({ children, params }) {
         </main>
 
         <footer style={{ padding: '60px 20px 40px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto', background: '#0a0b0d' }}>
+          <style dangerouslySetInnerHTML={{__html: `
+            .guru-footer-link { color: #9ca3af; text-decoration: none; transition: 0.2s; font-size: 13px; font-weight: bold; text-transform: uppercase; }
+            .guru-footer-link:hover { color: #fff !important; }
+            .guru-footer-sitemap { color: #a855f7 !important; font-weight: 950 !important; }
+            .copyright { color: #4b5563; font-size: 12px; margin-top: 20px; font-weight: 600; }
+            .eeat-link { color: #6b7280; font-size: 11px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; transition: 0.2s; }
+            .eeat-link:hover { color: #d1d5db; }
+          `}} />
+          
           <VisitorCounter locale={locale} />
+
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginBottom: '20px' }}>
-            <a href={isEn ? "/en/clanky/jak-vyresit-bottleneck-navod" : "/clanky/jak-vyresit-bottleneck-navod"} style={{color:'#9ca3af', textDecoration:'none', fontWeight:'bold', fontSize:'13px', textTransform:'uppercase'}}>{isEn ? 'How to fix bottleneck' : 'Jak vyřešit Bottleneck'}</a>
+            <a href={isEn ? "/en/clanky/jak-vyresit-bottleneck-navod" : "/clanky/jak-vyresit-bottleneck-navod"} className="guru-footer-link">
+              {isEn ? 'How to fix bottleneck' : 'Jak vyřešit Bottleneck'}
+            </a>
             <span style={{ color: '#333' }}>|</span>
-            <a href={isEn ? "/en/sitemap" : "/sitemap"} style={{color:'#a855f7', textDecoration:'none', fontWeight:'950', fontSize:'13px', textTransform:'uppercase'}}>{isEn ? 'COMPLETE NAVIGATION' : 'KOMPLETNÍ NAVIGACE'}</a>
+            <a href={isEn ? "/en/clanky/nejlepsi-cpu-pro-rtx-5090-5080" : "/clanky/nejlepsi-cpu-pro-rtx-5090-5080"} className="guru-footer-link">
+              {isEn ? 'Best CPU for RTX 50' : 'Nejlepší CPU pro RTX 50'}
+            </a>
+            <span style={{ color: '#333' }}>|</span>
+            <a href={isEn ? "/en/sitemap" : "/sitemap"} className="guru-footer-link guru-footer-sitemap">
+              {isEn ? 'COMPLETE NAVIGATION' : 'KOMPLETNÍ NAVIGACE'}
+            </a>
           </div>
+
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginBottom: '30px' }}>
-            <a href={isEn ? "/en/about" : "/about"} style={{color:'#6b7280', fontSize:'11px', textDecoration:'none', textTransform:'uppercase', fontWeight:'bold'}}>{isEn ? 'About Us' : 'O nás'}</a>
+            <a href={isEn ? "/en/about" : "/about"} className="eeat-link">{isEn ? 'About Us' : 'O nás'}</a>
             <span style={{ color: '#333' }}>•</span>
-            <a href={isEn ? "/en/contact" : "/contact"} style={{color:'#6b7280', fontSize:'11px', textDecoration:'none', textTransform:'uppercase', fontWeight:'bold'}}>{isEn ? 'Contact' : 'Kontakt'}</a>
+            <a href={isEn ? "/en/contact" : "/contact"} className="eeat-link">{isEn ? 'Contact' : 'Kontakt'}</a>
             <span style={{ color: '#333' }}>•</span>
-            <a href={isEn ? "/en/privacy-policy" : "/privacy-policy"} style={{color:'#6b7280', fontSize:'11px', textDecoration:'none', textTransform:'uppercase', fontWeight:'bold'}}>{isEn ? 'Privacy Policy' : 'Ochrana soukromí'}</a>
+            <a href={isEn ? "/en/privacy-policy" : "/privacy-policy"} className="eeat-link">{isEn ? 'Privacy Policy' : 'Ochrana soukromí'}</a>
+            <span style={{ color: '#333' }}>•</span>
+            <a href={isEn ? "/en/terms-of-service" : "/terms-of-service"} className="eeat-link">{isEn ? 'Terms of Service' : 'Podmínky použití'}</a>
           </div>
-          <div style={{ color: '#4b5563', fontSize: '12px', marginTop: '20px', fontWeight: '600' }}>
-            © {new Date().getFullYear()} The Hardware Guru. {isEn ? 'For players, with love for iron.' : 'Pro hráče, s láskou k železu.'}
+
+          <div className="copyright">
+            © {new Date().getFullYear()} The Hardware Guru. Pro hráče, s láskou k železu.
           </div>
         </footer>
 
