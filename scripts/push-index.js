@@ -5,14 +5,38 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const keys = JSON.parse(process.env.GOOGLE_JSON_KEY);
+// --- DETEKTIVNÍ BLOK PRO GOOGLE KLÍČ ---
+let keys;
+let jwtClient;
+try {
+    let rawKey = process.env.GOOGLE_JSON_KEY || "";
+    rawKey = rawKey.trim();
+    
+    // Očištění, kdyby to GitHub obalil do zbytečných uvozovek
+    if (rawKey.startsWith("'") && rawKey.endsWith("'")) rawKey = rawKey.slice(1, -1);
+    if (rawKey.startsWith('"') && rawKey.endsWith('"')) rawKey = rawKey.slice(1, -1);
 
-// Tohle je ten neprůstřelný štít na rozbitý Google klíč z GitHubu
-const privateKey = keys.private_key ? keys.private_key.replace(/\\n/g, '\n') : null;
+    keys = JSON.parse(rawKey);
+    console.log("✅ JSON klíč z GitHubu přečten. Nalezená políčka:", Object.keys(keys).join(', '));
 
-const jwtClient = new google.auth.JWT(
-  keys.client_email, null, privateKey, ['https://www.googleapis.com/auth/indexing'], null
-);
+    if (!keys.private_key) {
+        throw new Error("V JSON souboru FAKT CHYBÍ 'private_key'! Zkontroluj, cos do GitHub Secrets zkopíroval.");
+    }
+
+    const privateKey = keys.private_key.replace(/\\n/g, '\n');
+    
+    // Moderní a bezpečnější inicializace
+    jwtClient = new google.auth.JWT({
+        email: keys.client_email,
+        key: privateKey,
+        scopes: ['https://www.googleapis.com/auth/indexing']
+    });
+
+} catch (err) {
+    console.error("🔥 FATÁLNÍ CHYBA S GOOGLE KLÍČEM:", err.message);
+    process.exit(1);
+}
+// --- KONEC DETEKTIVNÍHO BLOKU ---
 
 const slugify = (text) => text ? text.toLowerCase().replace(/graphics|gpu|processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
@@ -27,7 +51,6 @@ function shuffleArray(array) {
 async function runGuruIndexer() {
     console.log('🚀 Startuji rotující GURU Indexing Engine...');
     
-    // ZDE JE TA OPRAVA: POUZE 'name'
     const { data: cpusRaw, error: cpuErr } = await supabase.from('cpus').select('name').order('performance_index', { ascending: false }).limit(100);
     const { data: gpusRaw, error: gpuErr } = await supabase.from('gpus').select('name').order('performance_index', { ascending: false }).limit(100);
 
