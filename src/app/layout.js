@@ -231,6 +231,21 @@ export default async function RootLayout({ children }) {
         <CookieBanner />
         <Analytics />
         <MobileAnchorAd />
+
+        {/* 🔥 GURU MONEY MAKER: Sklik Mobilní Viněta (408681) 🔥 */}
+        <div id="ssp-zone-408681"></div>
+        <Script id="sklik-vignette-script" strategy="lazyOnload">
+          {`
+            if (window.sssp) {
+              sssp.getAds([{
+                "zoneId": 408681,
+                "id": "ssp-zone-408681",
+                "width": 480,
+                "height": 480
+              }]);
+            }
+          `}
+        </Script>
       </body>
     </html>
   )
