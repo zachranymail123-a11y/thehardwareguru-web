@@ -1,7 +1,7 @@
 import React from 'react';
-// Opravené cesty k tvým komponentám
-import Navbar from '../../../components/Navbar'; 
-import Footer from '../../../components/Footer';
+// Opravené cesty - jdeme o 2 úrovně nahoru do src/app/components
+import Navbar from '../../components/Navbar'; 
+import Footer from '../../components/Footer';
 
 export const metadata = {
   title: 'Hardware Guru | PC Benchmarks & Tools',
@@ -11,7 +11,6 @@ export const metadata = {
 export default function EnglishHomePage() {
   return (
     <main className="min-h-screen bg-[#0a0a0a] text-white">
-      {/* Předpokládám, že Navbar i Footer berou prop lang pro přepnutí menu */}
       <Navbar lang="en" />
       
       <div className="container mx-auto px-4 py-12">
@@ -60,8 +59,6 @@ export default function EnglishHomePage() {
             <p className="text-gray-500 text-sm italic">Looking for something else? Configure your own build in our tools below.</p>
           </div>
         </section>
-
-        {/* ZDE UŽ NENÍ ŽÁDNÝ SMARTY BANNER - VYČIŠTĚNO */}
       </div>
 
       <Footer lang="en" />
