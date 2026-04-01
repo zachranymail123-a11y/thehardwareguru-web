@@ -15,6 +15,7 @@ import SeznamAd from '../../components/SeznamAd';
 
 /**
  * GURU ARTICLE ARCHIVE ENGINE V3.2 (MULTILANG FIX)
+ * Cesta: src/app/clanky/page.js
  * 🚀 CÍL: 100% funkční EN verze archivu při zachování designu a reklam.
  */
 
@@ -28,7 +29,8 @@ const baseUrl = "https://thehardwareguru.cz";
 // 🚀 GURU SEO: Dynamické Meta Tagy
 export async function generateMetadata(props) {
   const params = await props.params;
-  const isEn = props?.isEn === true || params?.locale === 'en' || params?.lang === 'en';
+  const isEn = props?.isEn === true || params?.lang === 'en' || params?.locale === 'en';
+  
   const title = isEn ? 'Article Archive & Tech News | The Hardware Guru' : 'Archiv Článků a Hardwarové Novinky | The Hardware Guru';
   const desc = isEn 
     ? 'Complete database of all hardware reviews, tech breakdowns, and gaming news verified by Hardware Guru.' 
@@ -50,8 +52,8 @@ export async function generateMetadata(props) {
 
 export default async function ClankyArchivePage(props) {
   const params = await props.params;
-  // ✅ DETEKCE: Jistější kontrola jazyka
-  const isEn = props?.isEn === true || params?.locale === 'en' || params?.lang === 'en';
+  // ✅ DETEKCE: Jistější kontrola jazyka z props i URL parametrů
+  const isEn = props?.isEn === true || params?.lang === 'en' || params?.locale === 'en';
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   const { data: posts, error } = await supabase
