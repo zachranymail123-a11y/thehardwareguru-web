@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
- Swords, Zap, RefreshCw, ChevronRight, ArrowLeftRight, ShieldCheck, Flame, AlertTriangle, Gamepad2
+ Swords, Zap, RefreshCw, ChevronRight, ArrowLeftRight, ShieldCheck, Flame, AlertTriangle, Gamepad2, ShoppingCart
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
-import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
+import HeurekaButtons from '../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU DUELS ENGINE - MASTER HUB V67.8 (HEUREKA CTA UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchor, zachování layoutu + Heureka konverze.
+ * GURU GPU DUELS ENGINE - MASTER HUB V68.0 (AFFILIATE BOMB FIXED)
+ * 🚀 CÍL: Implementace modrých affiliate tlačítek s opraveným trackováním a UTM.
  */
 
 export default function GpuVsHub() {
@@ -80,6 +80,10 @@ export default function GpuVsHub() {
     window.location.href = isEn ? `/en/gpuvs/en-${rawSlug}` : `/gpuvs/${rawSlug}`;
   };
 
+  // 🔥 GENERÁTOR AFFILIATE LINKŮ 🔥
+  const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
+  const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+
   return (
     <div className="guru-hub-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', backgroundPosition: 'center', paddingTop: '140px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
@@ -100,6 +104,21 @@ export default function GpuVsHub() {
         .history-panel { display: flex; flex-direction: column; gap: 12px; }
         .compact-duel-item { background: rgba(15, 17, 21, 0.7); border: 1px solid rgba(255,255,255,0.05); padding: 14px 18px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; transition: 0.3s; color: #fff; }
         .compact-duel-item:hover { transform: translateX(5px); border-color: #66fcf1; color: #66fcf1; }
+
+        /* 🔥 CSS PRO AFFILIATE GRID A TLAČÍTKA 🔥 */
+        .affiliate-cta-grid { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 35px; background: rgba(0,0,0,0.4); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; box-sizing: border-box; }
+        .affiliate-col { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        .affiliate-col-title { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 25px; text-align: center; }
+        .affiliate-btn-wrap { display: flex; gap: 20px; width: 100%; justify-content: center; flex-wrap: wrap; }
+        
+        @keyframes pulse-smarty { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
+        @keyframes pulse-heureka { 0% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(0, 120, 212, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0); } }
+        
+        .guru-buy-winner-btn { flex: 1; max-width: 300px; min-width: 200px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 1px; }
+        .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
+        .smarty-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(234, 179, 8, 0.5); }
+        .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
+        .heureka-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
 
         /* 🚀 SEO HUB CSS */
         .seo-hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
@@ -124,7 +143,6 @@ export default function GpuVsHub() {
             box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
         }
 
-        /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
 
@@ -143,11 +161,17 @@ export default function GpuVsHub() {
             .history-panel h2 { font-size: 16px !important; }
             .seo-hub-grid { grid-template-columns: 1fr; }
             .hub-column { padding: 25px; }
+
+            /* Responzivita Affiliate tlačítek */
+            .affiliate-cta-grid { padding: 20px; }
+            .affiliate-col-title { font-size: 14px; margin-bottom: 20px; }
+            .affiliate-btn-wrap { flex-direction: column; gap: 15px; }
+            .guru-buy-winner-btn { max-width: 100%; width: 100%; padding: 16px; font-size: 15px; }
         }
       `}} />
 
       <div className="guru-hub-container">
-        {/* 🔥 GURU MONEY FIX: TOP BANNER ABOVE FOLD (Přesunut úplně nahoru před hlavičku) */}
+        
         <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
             <div className="ad-desktop-wrapper">
                 <SeznamAd zoneId={408654} width={970} height={210} />
@@ -158,7 +182,7 @@ export default function GpuVsHub() {
         </div>
 
         <header style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', padding: '6px 16px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#66fcf1', font-size: '11px', font-weight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px', padding: '6px 16px', border: '1px solid rgba(102, 252, 241, 0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)' }}>
             <ShieldCheck size={14} /> GURU VS ENGINE
           </div>
           <h1 className="guru-main-title">
@@ -170,7 +194,6 @@ export default function GpuVsHub() {
         </header>
 
         <div className="hub-grid">
-            {/* LEVÝ SLOUPEC: Generátor + Vyplnění díry SEO Hubem */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
                 <section className="generator-panel">
                   {error && <div style={{ color: '#ef4444', textAlign: 'center', marginBottom: '20px' }}>{error}</div>}
@@ -189,13 +212,35 @@ export default function GpuVsHub() {
                     <Zap fill="currentColor" size={24} /> {isEn ? "START DUEL" : "SPUSTIT SOUBOJ"}
                   </button>
 
-                  {/* 🔥 PŘIDÁNO: Heureka tlačítka přímo pod generátor 🔥 */}
+                  {/* 🔥 NOVÝ GURU AFFILIATE BOMB GRID (Modrá tlačítka s trackováním) 🔥 */}
+                  <div className="affiliate-cta-grid" style={{ marginTop: '40px', borderLeft: '4px solid #66fcf1' }}>
+                      <div className="affiliate-col">
+                          <div className="affiliate-col-title" style={{ color: '#66fcf1' }}>
+                              <ShoppingCart size={16} /> {isEn ? `BUY RTX 5070 Ti` : `KOUPIT RTX 5070 Ti`}
+                          </div>
+                          <div className="affiliate-btn-wrap">
+                              <a href={getSmartyLink("RTX 5070 Ti")} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
+                                  <ShoppingCart size={16} /> Smarty.cz
+                              </a>
+                              <a 
+                                  href={getHeurekaLink("RTX 5070 Ti")} 
+                                  data-trixam-positionid="276026" 
+                                  data-trixam-codetype="link" 
+                                  target="_blank" 
+                                  rel="nofollow sponsored" 
+                                  className="guru-buy-winner-btn heureka-btn heureka-hn-link"
+                              >
+                                  <ShoppingCart size={16} /> Heureka.cz
+                              </a>
+                          </div>
+                      </div>
+                  </div>
+
                   <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
-                      <HeurekaButtons isEn={isEn} />
+                      <HeurekaButtons isEn={isEn} manualSearch="RTX 5070 Ti" positionId="276026" />
                   </div>
                 </section>
 
-                {/* 🚀 MASSIVE SEO HUB PŘESUNUTÝ PŘÍMO POD VÝBĚR (Zaplňuje díru) */}
                 <section className="massive-seo-hub" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '30px' }}>
                     <h2 style={{ fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #a855f7', paddingLeft: '15px' }}>
                         {isEn ? 'EXPLORE GURU DATABASE' : 'PROZKOUMEJ GURU DATABÁZI'}
@@ -222,7 +267,6 @@ export default function GpuVsHub() {
                 </section>
             </div>
 
-            {/* PRAVÝ SLOUPEC: Historie + Reklama */}
             <section className="history-panel">
               <h2 style={{ fontSize: '18px', fontWeight: '950', textTransform: 'uppercase', marginBottom: '15px' }}><Flame size={20} color="#f97316" style={{display:'inline', marginRight:'10px'}}/> {isEn ? "RECENT" : "POSLEDNÍ"}</h2>
               {existingDuels.map((duel) => (
@@ -232,7 +276,6 @@ export default function GpuVsHub() {
                 </a>
               ))}
 
-              {/* 🔥 SIDEBAR / BOTTOM AD SLOT - STRIKTNÍ SEPARACE (POUZE MOBIL) */}
               <div className="ad-mobile-wrapper" style={{ marginTop: '20px' }}>
                 <SeznamAd zoneId={408651} width={300} height={250} />
               </div>
@@ -241,7 +284,6 @@ export default function GpuVsHub() {
 
       </div>
 
-      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
       <div className="sticky-bottom-anchor">
           <div className="ad-desktop-wrapper">
               <SeznamAd zoneId={408654} width={970} height={90} />
