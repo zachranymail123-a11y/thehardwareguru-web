@@ -1,23 +1,24 @@
 import React from 'react';
 import { 
-  ChevronLeft, 
-  Activity, 
-  CheckCircle2,
-  Monitor,
-  ArrowRight,
-  Cpu,
-  Swords,
-  Zap,
-  Gauge,
-  Crosshair
+ ChevronLeft, 
+ Activity, 
+ CheckCircle2,
+ Monitor,
+ ArrowRight,
+ Cpu,
+ Swords,
+ Zap,
+ Gauge,
+ Crosshair,
+ ShoppingCart
 } from 'lucide-react';
 import GuruAnalysisText from '../../../../components/GuruAnalysisText';
 import SeznamAd from '../../../../components/SeznamAd';
-import HeurekaButtons from '../../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
+import HeurekaButtons from '../../../../components/HeurekaButtons'; 
 
 /**
- * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.8 (HEUREKA CTA UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Vložení Heureka konverze.
+ * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.9 (AFFILIATE BOMB UPDATE)
+ * 🚀 CÍL: Vložení pulzujících affiliate tlačítek (Smarty + Heureka) přímo pod FPS výsledek.
  */
 
 export const runtime = "nodejs";
@@ -28,6 +29,9 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const baseUrl = "https://thehardwareguru.cz";
 
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
+
+// Pomocná funkce pro vyčištění názvů pro vyhledávání
+const getCleanSearchName = (name = '') => name.replace(/AMD |Intel |Core /gi, '').trim();
 
 const findCpuBySlug = async (cpuSlug) => {
   if (!supabaseUrl || !cpuSlug || cpuSlug === 'undefined') return null;
@@ -109,6 +113,11 @@ export default async function App(props) {
   const verdict = fps1440p >= 120 ? { en: 'ULTIMATE PERFORMANCE', cz: 'BRUTÁLNÍ VÝKON', color: '#10b981' } : 
                   (fps1440p >= 60 ? { en: 'SMOOTH GAMING', cz: 'PLYNULÉ HRANÍ', color: '#f59e0b' } : { en: 'PLAYABLE', cz: 'HRATELNÉ', color: '#eab308' });
 
+  // 🔥 GENERÁTOR AFFILIATE LINKŮ 🔥
+  const searchName = getCleanSearchName(cpu.name);
+  const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
+  const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}`;
+
   return (
     <div className="guru-benchmark-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
@@ -147,6 +156,23 @@ export default async function App(props) {
                 </div>
                 <div style={{ background: `${verdict.color}20`, color: verdict.color, padding: '12px 30px', borderRadius: '50px', display: 'inline-flex', alignItems: 'center', gap: '10px', fontWeight: '950', border: `1px solid ${verdict.color}50` }}>
                     <CheckCircle2 size={20} /> {isEn ? verdict.en : verdict.cz}
+                </div>
+            </div>
+
+            {/* 🔥 GURU AFFILIATE BOMB 🔥 */}
+            <div className="affiliate-cta-grid" style={{ marginTop: '40px' }}>
+                <div className="affiliate-col">
+                    <div className="affiliate-col-title">
+                        <Cpu size={16} /> {isEn ? `BUY ${normalizeName(cpu.name)}` : `KOUPIT ${normalizeName(cpu.name)}`}
+                    </div>
+                    <div className="affiliate-btn-wrap">
+                        <a href={getSmartyLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
+                            <ShoppingCart size={16} /> Smarty.cz
+                        </a>
+                        <a href={getHeurekaLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn">
+                            <ShoppingCart size={16} /> Heureka.cz
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -215,7 +241,21 @@ export default async function App(props) {
         .guru-prose { color: #d1d5db; font-size: 1.15rem; line-height: 1.8; }
         .battle-btn { display: inline-flex; align-items: center; gap: 12px; padding: 20px 45px; background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); color: #fff; border-radius: 18px; font-weight: 950; text-decoration: none; text-transform: uppercase; }
 
-        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        /* 🔥 CSS PRO AFFILIATE GRID A TLAČÍTKA 🔥 */
+        .affiliate-cta-grid { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 35px; background: rgba(0,0,0,0.4); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; box-sizing: border-box; }
+        .affiliate-col { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        .affiliate-col-title { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 25px; text-align: center; }
+        .affiliate-btn-wrap { display: flex; gap: 20px; width: 100%; justify-content: center; flex-wrap: wrap; }
+        
+        @keyframes pulse-smarty { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
+        @keyframes pulse-heureka { 0% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(0, 120, 212, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0); } }
+        
+        .guru-buy-winner-btn { flex: 1; max-width: 300px; min-width: 200px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 1px; }
+        .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
+        .smarty-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(234, 179, 8, 0.5); }
+        .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
+        .heureka-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(0, 120, 212, 0.5); }
+
         .sticky-bottom-anchor {
             position: fixed;
             bottom: 0;
@@ -230,7 +270,6 @@ export default async function App(props) {
             box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
         }
 
-        /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
 
@@ -245,6 +284,12 @@ export default async function App(props) {
             .scaling-grid { grid-template-columns: 1fr !important; }
             .res-card { padding: 20px; }
             main { padding: 0 15px !important; }
+
+            /* Responzivita Affiliate tlačítek */
+            .affiliate-cta-grid { padding: 20px; }
+            .affiliate-col-title { font-size: 14px; margin-bottom: 20px; }
+            .affiliate-btn-wrap { flex-direction: column; gap: 15px; }
+            .guru-buy-winner-btn { max-width: 100%; width: 100%; padding: 16px; font-size: 15px; }
         }
       `}} />
     </div>
