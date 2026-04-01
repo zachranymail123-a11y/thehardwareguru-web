@@ -1,15 +1,11 @@
-import Page from '../page';
+import Page, { generateMetadata as baseMetadata } from '../page';
 
 export default async function ProxyPage(props) {
-    // Tady posíláme isEn={true}, aby layout i komponenty věděly, že mají mluvit anglicky
+    // Přesně podle tvého funkčního vzoru z bottlenecku
     return <Page {...props} isEn={true} />;
 }
 
 export async function generateMetadata(props) {
-    // Tady by se dalo přidat volání metadat, pokud je chceš mít v EN jiné, 
-    // ale pro funkčnost přepínače stačí tohle.
-    return {
-        title: 'Hardware Guru | PC Benchmarks & Tools',
-        description: 'Ultimate hardware comparisons and bottleneck calculator.'
-    };
+    // Voláme základní metadata s isEn: true, aby se i meta tagy přeložily
+    return baseMetadata({ ...props, isEn: true });
 }
