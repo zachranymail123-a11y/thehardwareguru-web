@@ -47,9 +47,9 @@ export default function GameIndexPage() {
             </header>
 
             <main style={main}>
-                {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek nad grid her 🔥 */}
+                {/* 🔥 OPRAVENO: Heureka tlačítka s konkrétním hardwarovým cílením 🔥 */}
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
-                    <HeurekaButtons isEn={isEn} />
+                    <HeurekaButtons isEn={isEn} manualSearch="RTX 5070 Ti" positionId="276026" />
                 </div>
 
                 <div className="game-grid" style={grid}>
@@ -86,7 +86,7 @@ export default function GameIndexPage() {
             </div>
 
             <style dangerouslySetInnerHTML={{ __html: `
-                .guru-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.05); }
+                .guru-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
                 .game-card { transition: all .3s cubic-bezier(.4,0,.2,1); }
                 .game-card:hover {
                     transform: translateY(-8px);
