@@ -1,7 +1,6 @@
 import React from 'react';
-// Cesta z src/app/en/ do src/components/
+// Navbar tady je (vidím ho na screenu), Footer letí pryč, protože neexistuje
 import Navbar from '../../components/Navbar'; 
-import Footer from '../../components/Footer';
 
 export const metadata = {
   title: 'Hardware Guru | PC Benchmarks & Tools',
@@ -55,7 +54,7 @@ export default function EnglishHomePage() {
         </section>
       </div>
 
-      <Footer lang="en" />
+      {/* Footer jsem smazal, dokud nezjistíš, kde ho máš schovanej */}
     </main>
   );
 }
