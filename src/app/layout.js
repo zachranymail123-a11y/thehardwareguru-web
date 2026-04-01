@@ -10,8 +10,8 @@ import VisitorCounter from '../components/VisitorCounter';
 import ShareWidget from '../components/ShareWidget';
 import CookieBanner from '../components/CookieBanner';
 import AdBlockDetector from '../components/AdBlockDetector';
-import MobileAnchorAd from '../components/MobileAnchorAd';
 import AdTracker from '../components/AdTracker';
+import SeznamAd from '../components/SeznamAd'; // 🔥 PŘIDÁNO PRO GLOBÁLNÍ ANCHOR
 import { Cpu, ShieldCheck, Layers, Gamepad2, Lightbulb, Bookmark, ShoppingCart, Rocket } from 'lucide-react';
 
 export const metadata = {
@@ -149,7 +149,8 @@ export default async function RootLayout({ children }) {
         </Script>
       </head>
 
-      <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* 🔥 PŘIDÁN PADDING-BOTTOM ABY ANCHOR NEPŘEKRÝVAL PATIČKU 🔥 */}
+      <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingBottom: '120px' }}>
         <AdTracker />
         <div id="guru-env-bridge" style={{ display: 'none' }} data-url={envVars.NEXT_PUBLIC_SUPABASE_URL} data-key={envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY} />
         <Navbar lang={locale} />
@@ -172,6 +173,15 @@ export default async function RootLayout({ children }) {
               .guru-main-left-wrap { position: fixed; top: 100px; left: 20px; width: 380px; margin: 0; padding: 0 2px 20px 0; max-height: calc(100vh - 120px); overflow-y: auto; z-index: 50; }
               .guru-main-right-wrap { position: fixed; top: 100px; right: 20px; width: 320px; margin: 0; padding: 0 0 20px 2px; max-height: calc(100vh - 120px); overflow-y: auto; z-index: 50; }
               .guru-main-right-wrap .guru-hub-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+          }
+
+          /* 🔥 CSS PRO GLOBÁLNÍ ANCHOR (DESKTOP I MOBIL) 🔥 */
+          .global-sticky-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); }
+          .ad-desktop-anchor { display: flex; width: 100%; justify-content: center; }
+          .ad-mobile-anchor { display: none; width: 100%; justify-content: center; }
+          @media (max-width: 768px) {
+              .ad-desktop-anchor { display: none !important; }
+              .ad-mobile-anchor { display: flex !important; }
           }
         `}} />
 
@@ -230,19 +240,27 @@ export default async function RootLayout({ children }) {
         <AdBlockDetector />
         <CookieBanner />
         <Analytics />
-        <MobileAnchorAd />
 
-        {/* 🔥 GURU MONEY MAKER: Sklik Mobilní Viněta (408681) 🔥 */}
+        {/* 🔥 GURU MONEY MAKER: GLOBÁLNÍ ANCHOR PRO DESKTOP I MOBIL 🔥 */}
+        <div className="global-sticky-anchor">
+            <div className="ad-desktop-anchor">
+                <SeznamAd zoneId={408873} width={728} height={90} />
+            </div>
+            <div className="ad-mobile-anchor">
+                <SeznamAd zoneId={408678} width={320} height={100} />
+            </div>
+        </div>
+
+        {/* 🔥 GURU MONEY MAKER: Sklik Mobilní Viněta (408681) + Interstitial (408684) 🔥 */}
         <div id="ssp-zone-408681"></div>
+        <div id="ssp-zone-408684"></div>
         <Script id="sklik-vignette-script" strategy="lazyOnload">
           {`
             if (window.sssp) {
-              sssp.getAds([{
-                "zoneId": 408681,
-                "id": "ssp-zone-408681",
-                "width": 480,
-                "height": 480
-              }]);
+              sssp.getAds([
+                { "zoneId": 408681, "id": "ssp-zone-408681", "width": 480, "height": 480 },
+                { "zoneId": 408684, "id": "ssp-zone-408684", "width": 480, "height": 480 }
+              ]);
             }
           `}
         </Script>
