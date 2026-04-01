@@ -6,8 +6,12 @@ const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const keys = JSON.parse(process.env.GOOGLE_JSON_KEY);
+
+// Tohle je ten neprůstřelný štít na rozbitý Google klíč z GitHubu
+const privateKey = keys.private_key ? keys.private_key.replace(/\\n/g, '\n') : null;
+
 const jwtClient = new google.auth.JWT(
-  keys.client_email, null, keys.private_key, ['https://www.googleapis.com/auth/indexing'], null
+  keys.client_email, null, privateKey, ['https://www.googleapis.com/auth/indexing'], null
 );
 
 const slugify = (text) => text ? text.toLowerCase().replace(/graphics|gpu|processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
