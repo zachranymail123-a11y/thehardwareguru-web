@@ -115,7 +115,7 @@ export default async function CpuDetailPage({ params }) {
   // 🔥 GENERÁTOR AFFILIATE LINKŮ 🔥
   const searchName = getCleanSearchName(cpu.name);
   const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
-  const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}`;
+  const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
 
   return (
     <div className="guru-page-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -159,7 +159,7 @@ export default async function CpuDetailPage({ params }) {
                     <a href={getSmartyLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
                         <ShoppingCart size={16} /> Smarty.cz
                     </a>
-                    <a href={getHeurekaLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn">
+                    <a href={getHeurekaLink(searchName)} data-trixam-positionid="276027" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
                         <ShoppingCart size={16} /> Heureka.cz
                     </a>
                 </div>
