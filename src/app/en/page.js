@@ -1,7 +1,7 @@
 import React from 'react';
-// Absolutní cesty přes @, tohle už Vercel prostě musí sežrat
-import Navbar from '@/app/components/Navbar'; 
-import Footer from '@/app/components/Footer';
+// Toto je jediná cesta, která odtud (app/en/page.js) vede do app/components/
+import Navbar from '../components/Navbar'; 
+import Footer from '../components/Footer';
 
 export const metadata = {
   title: 'Hardware Guru | PC Benchmarks & Tools',
