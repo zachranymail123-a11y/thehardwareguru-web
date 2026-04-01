@@ -1,7 +1,7 @@
 import React from 'react';
-// Toto je jediná cesta, která odtud (app/en/page.js) vede do app/components/
-import Navbar from '../components/Navbar'; 
-import Footer from '../components/Footer';
+// Cesta z src/app/en/ do src/components/
+import Navbar from '../../components/Navbar'; 
+import Footer from '../../components/Footer';
 
 export const metadata = {
   title: 'Hardware Guru | PC Benchmarks & Tools',
