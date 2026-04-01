@@ -1,5 +1,6 @@
 import './globals.css'; 
 import Script from 'next/script';
+import { headers } from 'next/headers';
 import Tracker from '../components/Tracker'; 
 import SocialTracker from '../components/SocialTracker';
 import PartnerWidget from '../components/PartnerWidget'; 
@@ -9,10 +10,8 @@ import VisitorCounter from '../components/VisitorCounter';
 import ShareWidget from '../components/ShareWidget';
 import CookieBanner from '../components/CookieBanner';
 import AdBlockDetector from '../components/AdBlockDetector';
-
 import MobileAnchorAd from '../components/MobileAnchorAd';
 import AdTracker from '../components/AdTracker';
-
 import { Cpu, ShieldCheck, Layers, Gamepad2, Lightbulb, Bookmark, ShoppingCart, Rocket } from 'lucide-react';
 
 export const metadata = {
@@ -22,14 +21,8 @@ export const metadata = {
   },
   description: 'Exkluzivní novinky ze světa hardwaru, recenze her a streamy s unikátní AI.',
   metadataBase: new URL('https://thehardwareguru.cz'),
-  alternates: {
-    canonical: '/',
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
-  },
+  alternates: { canonical: '/' },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large' } },
 }
 
 const GuruBuildItem = ({ icon, name, link, isEn }) => (
@@ -132,10 +125,11 @@ const GlobalPartnersBox = ({ isEn }) => {
   );
 };
 
-export default async function RootLayout({ children, params }) {
-  const resolvedParams = await params;
-  const locale = resolvedParams?.locale || resolvedParams?.lang || 'cs';
-  const isEn = locale === 'en';
+export default async function RootLayout({ children }) {
+  const headersList = headers();
+  const fullUrl = headersList.get('referer') || "";
+  const isEn = fullUrl.includes('/en');
+  const locale = isEn ? 'en' : 'cs';
 
   const envVars = { NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "", NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "" };
 
