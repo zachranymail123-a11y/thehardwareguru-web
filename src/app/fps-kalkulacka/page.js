@@ -79,7 +79,8 @@ export default async function FpsKalkulackaPage(props) {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
-            <HeurekaButtons isEn={isEn} />
+            {/* Oprava: Přidány parametry pro správné affiliate linky */}
+            <HeurekaButtons isEn={isEn} manualSearch="RTX 5090" positionId="276026" />
         </div>
 
         <div className="silo-grid" style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
