@@ -3,16 +3,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { 
-  Cpu, Monitor, Zap, AlertTriangle, Crosshair, Settings2, Sparkles, 
-  TrendingUp, TrendingDown, Layers, Target, Video, Share2, Check, 
-  Twitter, Award, Swords, Gamepad2, ChevronRight, Play, Newspaper, Lightbulb, ShoppingCart
+ Cpu, Monitor, Zap, AlertTriangle, Crosshair, Settings2, Sparkles, 
+ TrendingUp, TrendingDown, Layers, Target, Video, Share2, Check, 
+ Twitter, Award, Swords, Gamepad2, ChevronRight, Play, Newspaper, Lightbulb, ShoppingCart
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons'; 
 
 /**
- * GURU BOTTLENECK ENGINE CLIENT - V11.8 (OVERFLOW FIX UPDATE)
- * 🚀 CÍL: Oprava CSS Grid přetečení u affiliate zóny pomocí box-sizing a auto-wrap.
+ * GURU BOTTLENECK ENGINE CLIENT - V11.9 (AFFILIATE TRACKING & OVERFLOW FIX)
+ * 🚀 CÍL: Fix trackování (UTM, Trixam IDs, HN class) + oprava CSS přetečení.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -165,8 +165,9 @@ export default function BottleneckClient({
     const cleanCpuName = a.cpuName ? normalizeName(a.cpuName) : '';
     const cleanGpuName = a.gpuName ? normalizeName(a.gpuName) : '';
 
+    // 🔥 AFFILIATE LINK GENERATORS 🔥
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
-    const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}`;
+    const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
 
     return (
         <div className="bn-wrapper">
@@ -253,7 +254,7 @@ export default function BottleneckClient({
                                 <p>{a.boundType === 'CPU_BOUND' ? 'Grafika čeká na procesor. Potřebuješ silnější CPU pro vyrovnaný výkon.' : 'Sestava je limitována grafickou kartou. Snížení detailů pomůže FPS.'}</p>
                             </div>
 
-                            {/* 🔥 GURU AFFILIATE BOMB 🔥 */}
+                            {/* 🔥 GURU AFFILIATE BOMB (OPRAVENÉ TRACKOVÁNÍ) 🔥 */}
                             <div className="affiliate-cta-grid" style={{ marginTop: '30px' }}>
                                 <div className="affiliate-col">
                                     <div className="affiliate-col-title">
@@ -263,7 +264,14 @@ export default function BottleneckClient({
                                         <a href={getSmartyLink(cleanGpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
                                             <ShoppingCart size={16} /> Smarty.cz
                                         </a>
-                                        <a href={getHeurekaLink(cleanGpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn">
+                                        <a 
+                                            href={getHeurekaLink(cleanGpuName)} 
+                                            data-trixam-positionid="276026" 
+                                            data-trixam-codetype="link" 
+                                            target="_blank" 
+                                            rel="nofollow sponsored" 
+                                            className="guru-buy-winner-btn heureka-btn heureka-hn-link"
+                                        >
                                             <ShoppingCart size={16} /> Heureka.cz
                                         </a>
                                     </div>
@@ -276,7 +284,14 @@ export default function BottleneckClient({
                                         <a href={getSmartyLink(cleanCpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
                                             <ShoppingCart size={16} /> Smarty.cz
                                         </a>
-                                        <a href={getHeurekaLink(cleanCpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn">
+                                        <a 
+                                            href={getHeurekaLink(cleanCpuName)} 
+                                            data-trixam-positionid="276027" 
+                                            data-trixam-codetype="link" 
+                                            target="_blank" 
+                                            rel="nofollow sponsored" 
+                                            className="guru-buy-winner-btn heureka-btn heureka-hn-link"
+                                        >
                                             <ShoppingCart size={16} /> Heureka.cz
                                         </a>
                                     </div>
@@ -330,7 +345,7 @@ export default function BottleneckClient({
             </div>
 
             <style dangerouslySetInnerHTML={{__html: `
-                .bn-wrapper { background: rgba(10, 11, 13, 0.9); color: #fff; border-radius: 40px; padding: 60px; border: 1px solid rgba(102, 252, 241, 0.1); backdrop-filter: blur(20px); }
+                .bn-wrapper { background: rgba(10, 11, 13, 0.9); color: #fff; border-radius: 40px; padding: 60px; border: 1px solid rgba(102, 252, 241, 0.1); backdrop-filter: blur(20px); box-sizing: border-box; }
                 .bn-header { text-align: center; margin-bottom: 60px; }
                 .pred-badge { display: inline-flex; align-items: center; gap: 10px; color: #a855f7; font-weight: 950; padding: 10px 30px; border-radius: 50px; background: rgba(168, 85, 247, 0.1); margin-bottom: 30px; text-transform: uppercase; font-size: 13px; border: 1px solid rgba(168, 85, 247, 0.2); }
                 .bn-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 50px; }
@@ -344,8 +359,7 @@ export default function BottleneckClient({
                 .start-btn { width: 100%; margin-top: 30px; padding: 22px; background: #a855f7; color: #fff; border: none; border-radius: 18px; font-weight: 950; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 15px; transition: 0.4s; text-transform: uppercase; font-size: 18px; }
                 .start-btn:disabled { opacity: 0.3; }
                 
-                /* FIX PŘETEČENÍ: */
-                .bn-result-card { background: linear-gradient(145deg, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0.6) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 30px; padding: 50px; display: flex; align-items: center; justify-content: center; min-height: 600px; min-width: 0; }
+                .bn-result-card { background: linear-gradient(145deg, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0.6) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 30px; padding: 50px; display: flex; align-items: center; justify-content: center; min-height: 600px; min-width: 0; box-sizing: border-box; }
                 .analysis-board { width: 100%; box-sizing: border-box; }
                 
                 .pct-value { font-size: 9rem; font-weight: 950; text-align: center; color: #fff; text-shadow: 0 0 60px rgba(168, 85, 247, 0.8); line-height: 0.9; }
@@ -357,7 +371,7 @@ export default function BottleneckClient({
                 
                 .gta-cta { display: flex; align-items: center; justify-content: center; gap: 15px; background: #f43f5e; color: #fff; padding: 22px; border-radius: 18px; text-decoration: none; font-weight: 950; margin-top: 40px; transition: 0.4s; box-shadow: 0 20px 40px rgba(244, 63, 94, 0.3); width: 100%; box-sizing: border-box; }
                 
-                .viral-flex-card { display: flex; align-items: center; gap: 30px; padding: 40px; background: rgba(0,0,0,0.5); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 30px; margin-top: 80px; }
+                .viral-flex-card { display: flex; align-items: center; gap: 30px; padding: 40px; background: rgba(0,0,0,0.5); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 30px; margin-top: 80px; box-sizing: border-box; }
                 .premium-share-btn { width: 60px; height: 60px; border-radius: 18px; border: none; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
                 .btn-copy { background: #a855f7; }
                 .btn-x { background: #000; border: 1px solid #333; }
@@ -383,47 +397,40 @@ export default function BottleneckClient({
                 .recommendation h4 { font-size: 18px; font-weight: 950; text-transform: uppercase; margin-bottom: 15px; color: #fff; }
                 .recommendation p { font-size: 15px; color: #9ca3af; lineHeight: 1.6; }
 
-                /* 🔥 CSS PRO AFFILIATE GRID A TLAČÍTKA 🔥 */
-                .affiliate-cta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 25px; background: rgba(0,0,0,0.4); border-radius: 20px; border: 1px solid rgba(168, 85, 247, 0.2); width: 100%; box-sizing: border-box; }
-                .affiliate-col { display: flex; flex-direction: column; align-items: center; width: 100%; }
-                .affiliate-col-title { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 950; color: #a855f7; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; text-align: center; }
-                .affiliate-btn-wrap { display: flex; gap: 10px; width: 100%; justify-content: center; flex-wrap: wrap; }
+                /* 🔥 AFFILIATE GRID A TLAČÍTKA 🔥 */
+                .affiliate-cta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; padding: 30px; background: rgba(0,0,0,0.4); border-radius: 24px; border: 1px solid rgba(168, 85, 247, 0.2); width: 100%; box-sizing: border-box; }
+                .affiliate-col { display: flex; flex-direction: column; align-items: center; width: 100%; box-sizing: border-box; }
+                .affiliate-col-title { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 950; color: #a855f7; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; text-align: center; }
+                .affiliate-btn-wrap { display: flex; gap: 12px; width: 100%; justify-content: center; flex-wrap: wrap; }
                 
                 @keyframes pulse-smarty { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
                 @keyframes pulse-heureka { 0% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(0, 120, 212, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0); } }
                 
-                .guru-buy-winner-btn { flex: 1; min-width: 120px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 12px 15px; border-radius: 12px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 0.5px; }
+                .guru-buy-winner-btn { flex: 1; min-width: 140px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 14px 18px; border-radius: 14px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 0.5px; }
                 .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
                 .smarty-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(234, 179, 8, 0.5); }
                 .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
                 .heureka-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
 
-                /* 🚀 RESPONSIVE ADS SYSTEM */
-                .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
-                .ad-mobile-wrapper { display: none; width: 100%; }
-
-                /* 🚀 OPRAVA MOBILNÍHO ZOBRAZENÍ */
                 @media (max-width: 768px) {
-                  .ad-desktop-wrapper { display: none !important; }
-                  .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
-                  .bn-wrapper { padding: 15px; border-radius: 20px; }
+                  .bn-wrapper { padding: 20px; border-radius: 20px; }
                   .bn-main-title { font-size: 1.8rem !important; }
-                  .bn-inputs-card { padding: 20px; border-radius: 20px; }
+                  .bn-inputs-card { padding: 25px 20px; border-radius: 20px; }
                   .section-title { font-size: 16px; margin-bottom: 25px; }
-                  .bn-select { padding: 12px; font-size: 14px; }
+                  .bn-select { padding: 14px; font-size: 14px; }
                   .toggle-grid { grid-template-columns: 1fr; }
                   .pct-value { font-size: 4rem !important; }
                   .pro-metrics-grid { grid-template-columns: 1fr; gap: 10px; }
                   .metric-box { padding: 15px; }
                   .m-val { font-size: 24px; }
-                  .bn-result-card { padding: 20px; min-height: auto; }
-                  .viral-flex-card { flex-direction: column; text-align: center; padding: 20px; gap: 15px; }
-                  .hub-grid { grid-template-columns: 1fr; }
+                  .bn-result-card { padding: 20px; min-height: auto; border-radius: 20px; }
+                  .viral-flex-card { flex-direction: column; text-align: center; padding: 25px; gap: 20px; }
+                  .hub-grid { grid-template-columns: 1fr; gap: 20px; }
+                  .hub-column { padding: 25px; border-radius: 20px; }
                   
-                  /* Responzivita Affiliate tlačítek */
-                  .affiliate-cta-grid { grid-template-columns: 1fr; gap: 20px; padding: 15px; }
-                  .affiliate-btn-wrap { flex-direction: column; }
-                  .guru-buy-winner-btn { width: 100%; }
+                  .affiliate-cta-grid { grid-template-columns: 1fr; gap: 30px; padding: 20px; }
+                  .affiliate-btn-wrap { flex-direction: column; width: 100%; }
+                  .guru-buy-winner-btn { width: 100%; min-width: 100%; }
                 }
             `}} />
         </div>
