@@ -1,14 +1,13 @@
 const { google } = require('googleapis');
 const { createClient } = require('@supabase/supabase-js');
 
-// 1. Inicializace Supabase z tajných proměnných GitHubu
+// 1. Inicializace Supabase
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// 2. Načtení klíče z Google Cloudu
+// 2. Google Klíče
 const keys = JSON.parse(process.env.GOOGLE_JSON_KEY);
-
 const jwtClient = new google.auth.JWT(
   keys.client_email,
   null,
@@ -23,26 +22,36 @@ const slugify = (text) => text ? text.toLowerCase().replace(/graphics|gpu|proces
 async function runGuruIndexer() {
     console.log('🚀 Startuji GURU Indexing Engine přes GitHub Actions...');
     
-    const { data: cpus } = await supabase.from('cpus').select('name, slug').order('performance_index', { ascending: false }).limit(20);
-    const { data: gpus } = await supabase.from('gpus').select('name, slug').order('performance_index', { ascending: false }).limit(20);
+    const { data: cpus, error: cpuErr } = await supabase.from('cpus').select('name, slug').order('performance_index', { ascending: false }).limit(20);
+    const { data: gpus, error: gpuErr } = await supabase.from('gpus').select('name, slug').order('performance_index', { ascending: false }).limit(20);
 
-    if (!cpus || !gpus) {
-        console.error('❌ Nepodařilo se načíst data ze Supabase.');
+    if (cpuErr || gpuErr || !cpus || !gpus) {
+        console.error('❌ Chyba při načítání DB:', cpuErr || gpuErr);
         return;
     }
 
+    console.log(`📊 Načteno ${cpus.length} CPU a ${gpus.length} GPU z databáze.`);
+
     let urlsToIndex = [];
 
-    for (let i = 0; i < 10; i++) {
-        for (let j = 0; j < 10; j++) {
+    // Ošetření: Použije jen tolik HW, kolik reálně v DB je
+    const cpuLimit = Math.min(10, cpus.length);
+    const gpuLimit = Math.min(10, gpus.length);
+
+    for (let i = 0; i < cpuLimit; i++) {
+        for (let j = 0; j < gpuLimit; j++) {
             const cpuSlug = cpus[i].slug || slugify(cpus[i].name);
             const gpuSlug = gpus[j].slug || slugify(gpus[j].name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
             urlsToIndex.push(`https://thehardwareguru.cz/fps-kalkulacka/gta-6-predikce/${cpuSlug}-vs-${gpuSlug}-1440p`);
         }
     }
 
-    for (let i = 10; i < 20; i++) {
-        for (let j = 10; j < 20; j++) {
+    // Ošetření pro druhou smyčku (Bottleneck)
+    const cpuLimit2 = Math.min(20, cpus.length);
+    const gpuLimit2 = Math.min(20, gpus.length);
+
+    for (let i = 10; i < cpuLimit2; i++) {
+        for (let j = 10; j < gpuLimit2; j++) {
             const cpuSlug = cpus[i].slug || slugify(cpus[i].name);
             const gpuSlug = gpus[j].slug || slugify(gpus[j].name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
             urlsToIndex.push(`https://thehardwareguru.cz/bottleneck/${cpuSlug}-with-${gpuSlug}-in-cyberpunk-2077-at-1440p`);
@@ -51,6 +60,11 @@ async function runGuruIndexer() {
 
     urlsToIndex = urlsToIndex.slice(0, 200);
     console.log(`📦 Vygenerováno ${urlsToIndex.length} VIP adres pro Google.`);
+
+    if (urlsToIndex.length === 0) {
+        console.log('⚠️ Žádné adresy k odeslání. Nemáš prázdnou databázi?');
+        return;
+    }
 
     await jwtClient.authorize();
     const indexing = google.indexing('v3');
@@ -69,11 +83,15 @@ async function runGuruIndexer() {
             await new Promise(resolve => setTimeout(resolve, 500)); 
         } catch (err) {
             errorCount++;
-            console.error(`❌ Chyba u ${url}:`, err.message);
+            console.error(`❌ Chyba u odesílání ${url}:`, err.message);
         }
     }
 
     console.log(`\n🏁 HOTOVO! Úspěšně odesláno: ${successCount} | Chyby: ${errorCount}`);
 }
 
-runGuruIndexer();
+// Spuštění s tvrdým zachycením pádů
+runGuruIndexer().catch(err => {
+    console.error('🔥 KRITICKÁ CHYBA SKRIPTU:', err);
+    process.exit(1); // Donutí GitHub zahlásit chybu červeně
+});
