@@ -26,3 +26,4 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           GOOGLE_JSON_KEY: ${{ secrets.GOOGLE_JSON_KEY }}
+          BING_API_KEY: ${{ secrets.BING_API_KEY }}
