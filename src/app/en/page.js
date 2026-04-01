@@ -1,7 +1,7 @@
 import React from 'react';
-// Opravené cesty - jdeme o 2 úrovně nahoru do src/app/components
-import Navbar from '../../components/Navbar'; 
-import Footer from '../../components/Footer';
+// Absolutní cesty přes @, tohle už Vercel prostě musí sežrat
+import Navbar from '@/app/components/Navbar'; 
+import Footer from '@/app/components/Footer';
 
 export const metadata = {
   title: 'Hardware Guru | PC Benchmarks & Tools',
@@ -14,7 +14,6 @@ export default function EnglishHomePage() {
       <Navbar lang="en" />
       
       <div className="container mx-auto px-4 py-12">
-        {/* HERO SECTION */}
         <section className="text-center mb-16 pt-10">
           <h1 className="text-6xl font-black mb-4 tracking-tighter italic">
             HARDWARE <span className="text-[#9333ea]">GURU</span>
@@ -22,7 +21,6 @@ export default function EnglishHomePage() {
           <p className="text-gray-400 text-xl font-light">Ultimate PC hardware benchmarks and tools for enthusiasts.</p>
         </section>
 
-        {/* V.I.P. GURU BUILD SECTION */}
         <section className="max-w-4xl mx-auto bg-[#111] border border-purple-900/30 rounded-2xl p-8 mb-16 shadow-2xl shadow-purple-900/10">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-12 h-12 bg-yellow-500/10 rounded-xl flex items-center justify-center border border-yellow-500/30">
@@ -53,10 +51,6 @@ export default function EnglishHomePage() {
                 </button>
               </div>
             ))}
-          </div>
-          
-          <div className="mt-8 text-center">
-            <p className="text-gray-500 text-sm italic">Looking for something else? Configure your own build in our tools below.</p>
           </div>
         </section>
       </div>
