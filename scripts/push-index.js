@@ -1,24 +1,17 @@
 const { google } = require('googleapis');
 const { createClient } = require('@supabase/supabase-js');
 
-// 1. Inicializace Supabase
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// 2. Google Klíče
 const keys = JSON.parse(process.env.GOOGLE_JSON_KEY);
 const jwtClient = new google.auth.JWT(
-  keys.client_email,
-  null,
-  keys.private_key,
-  ['https://www.googleapis.com/auth/indexing'],
-  null
+  keys.client_email, null, keys.private_key, ['https://www.googleapis.com/auth/indexing'], null
 );
 
 const slugify = (text) => text ? text.toLowerCase().replace(/graphics|gpu|processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
-// Pomocná funkce pro zamíchání pole (Fisher-Yates shuffle)
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -27,20 +20,18 @@ function shuffleArray(array) {
     return array;
 }
 
-// 3. Hlavní engine
 async function runGuruIndexer() {
     console.log('🚀 Startuji rotující GURU Indexing Engine...');
     
-    // Stáhneme široký okruh hardwaru (TOP 100)
-    const { data: cpusRaw, error: cpuErr } = await supabase.from('cpus').select('name, slug').order('performance_index', { ascending: false }).limit(100);
-    const { data: gpusRaw, error: gpuErr } = await supabase.from('gpus').select('name, slug').order('performance_index', { ascending: false }).limit(100);
+    // ZDE JE TA OPRAVA: POUZE 'name'
+    const { data: cpusRaw, error: cpuErr } = await supabase.from('cpus').select('name').order('performance_index', { ascending: false }).limit(100);
+    const { data: gpusRaw, error: gpuErr } = await supabase.from('gpus').select('name').order('performance_index', { ascending: false }).limit(100);
 
     if (cpuErr || gpuErr || !cpusRaw || !gpusRaw) {
         console.error('❌ Chyba při načítání DB:', cpuErr || gpuErr);
         return;
     }
 
-    // Zamícháme a vybereme náhodný vzorek 15 CPU a 15 GPU pro dnešní den
     const cpus = shuffleArray([...cpusRaw]).slice(0, 15);
     const gpus = shuffleArray([...gpusRaw]).slice(0, 15);
 
@@ -48,47 +39,37 @@ async function runGuruIndexer() {
 
     let urlsToIndex = [];
 
-    // Generujeme GTA VI Predikce pro dnešní zamíchaný výběr
     for (let i = 0; i < cpus.length; i++) {
-        for (let j = 0; j < 7; j++) { // Vezme 7 grafik ke každému CPU
+        for (let j = 0; j < 7; j++) {
             if (!gpus[j]) continue;
-            const cpuSlug = cpus[i].slug || slugify(cpus[i].name);
-            const gpuSlug = gpus[j].slug || slugify(gpus[j].name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
+            const cpuSlug = slugify(cpus[i].name);
+            const gpuSlug = slugify(gpus[j].name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
             urlsToIndex.push(`https://thehardwareguru.cz/fps-kalkulacka/gta-6-predikce/${cpuSlug}-vs-${gpuSlug}-1440p`);
         }
     }
 
-    // Generujeme Bottleneck pro zbytek
     for (let i = 0; i < cpus.length; i++) {
         for (let j = 7; j < gpus.length; j++) {
             if (!gpus[j]) continue;
-            const cpuSlug = cpus[i].slug || slugify(cpus[i].name);
-            const gpuSlug = gpus[j].slug || slugify(gpus[j].name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
+            const cpuSlug = slugify(cpus[i].name);
+            const gpuSlug = slugify(gpus[j].name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
             urlsToIndex.push(`https://thehardwareguru.cz/bottleneck/${cpuSlug}-with-${gpuSlug}-in-cyberpunk-2077-at-1440p`);
         }
     }
 
-    // Ořízneme přesně na 200, ať neprorazíme limit
     urlsToIndex = shuffleArray(urlsToIndex).slice(0, 200);
     console.log(`📦 Vygenerováno ${urlsToIndex.length} unikátních adres pro dnešní relaci.`);
 
-    if (urlsToIndex.length === 0) {
-        console.log('⚠️ Žádné adresy k odeslání.');
-        return;
-    }
+    if (urlsToIndex.length === 0) return;
 
     await jwtClient.authorize();
     const indexing = google.indexing('v3');
-
     let successCount = 0;
     let errorCount = 0;
 
     for (const url of urlsToIndex) {
         try {
-            await indexing.urlNotifications.publish({
-                auth: jwtClient,
-                requestBody: { url: url, type: 'URL_UPDATED' }
-            });
+            await indexing.urlNotifications.publish({ auth: jwtClient, requestBody: { url: url, type: 'URL_UPDATED' } });
             successCount++;
             console.log(`✅ [${successCount}] Odesláno: ${url}`);
             await new Promise(resolve => setTimeout(resolve, 500)); 
@@ -97,7 +78,6 @@ async function runGuruIndexer() {
             console.error(`❌ Chyba u odesílání ${url}:`, err.message);
         }
     }
-
     console.log(`\n🏁 HOTOVO! Úspěšně odesláno: ${successCount} | Chyby: ${errorCount}`);
 }
 
