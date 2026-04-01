@@ -7,8 +7,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU ENGINE - DETAIL GRAFIKY V3.0 (CLEAN AFFILIATE UPDATE)
- * 🚀 CÍL: Odstranění mrtvého Alza kódu, přesné vložení Affiliate Bomb Gridu nad HeurekaButtons.
+ * GURU GPU ENGINE - DETAIL GRAFIKY V3.1 (AFFILIATE BOMB FIXED)
+ * 🚀 CÍL: Oprava trackování modrých tlačítek (UTM, Trixam ID, HN třída).
  */
 
 export const runtime = "nodejs";
@@ -101,10 +101,10 @@ export default async function GpuDetailPage(props) {
   const relatedArticles = await getRelatedArticles(gpu.name);
   const { similarGpus, recommendedCpus } = await getInternalLinksData(gpu.id);
 
-  // 🔥 GENERÁTOR AFFILIATE LINKŮ 🔥
+  // 🔥 GENERÁTOR AFFILIATE LINKŮ S UTM 🔥
   const searchName = getCleanSearchName(gpu.name);
   const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
-  const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}`;
+  const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
 
   const productSchema = {
     "@context": "https://schema.org",
@@ -144,7 +144,7 @@ export default async function GpuDetailPage(props) {
           </h1>
         </header>
 
-        {/* 🔥 NOVÝ GURU AFFILIATE BOMB GRID (Hned pod názvem) 🔥 */}
+        {/* 🔥 GURU AFFILIATE BOMB GRID (Modrá tlačítka s trackováním) 🔥 */}
         <div className="affiliate-cta-grid" style={{ marginBottom: '30px', borderColor: `${vendorColor}40` }}>
             <div className="affiliate-col">
                 <div className="affiliate-col-title" style={{ color: vendorColor }}>
@@ -154,16 +154,24 @@ export default async function GpuDetailPage(props) {
                     <a href={getSmartyLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
                         <ShoppingCart size={16} /> Smarty.cz
                     </a>
-                    <a href={getHeurekaLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn">
+                    {/* OPRAVENO: Heureka link s UTM, Trixam ID a aktivační třídou */}
+                    <a 
+                        href={getHeurekaLink(searchName)} 
+                        data-trixam-positionid="276026" 
+                        data-trixam-codetype="link" 
+                        target="_blank" 
+                        rel="nofollow sponsored" 
+                        className="guru-buy-winner-btn heureka-btn heureka-hn-link"
+                    >
                         <ShoppingCart size={16} /> Heureka.cz
                     </a>
                 </div>
             </div>
         </div>
 
-        {/* 🧩 ZDE JE TVŮJ PŮVODNÍ HEUREKA BUTTONS WIDGET (Nedotčený) */}
+        {/* Heureka Buttons widget se správným ID a vyhledáváním */}
         <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
-            <HeurekaButtons isEn={isEn} />
+            <HeurekaButtons isEn={isEn} manualSearch={gpu.name} positionId="276026" />
         </div>
 
         {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
@@ -238,7 +246,7 @@ export default async function GpuDetailPage(props) {
         </div>
       </main>
 
-      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR */}
       <div className="sticky-bottom-anchor">
           <div className="ad-desktop-wrapper">
               <SeznamAd zoneId={408654} width={970} height={90} />
@@ -296,7 +304,7 @@ export default async function GpuDetailPage(props) {
         .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
         .smarty-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(234, 179, 8, 0.5); }
         .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
-        .heureka-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(0, 120, 212, 0.5); }
+        .heureka-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
 
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
