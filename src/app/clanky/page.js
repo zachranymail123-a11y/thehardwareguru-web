@@ -15,20 +15,20 @@ import SeznamAd from '../../components/SeznamAd';
 
 /**
  * GURU ARTICLE ARCHIVE ENGINE V3.2 (MULTILANG FIX)
- * Cesta: src/app/clanky/page.js
- * 🚀 CÍL: Oprava detekce jazyka podle vzoru bottleneck (isEn prop + params).
+ * 🚀 CÍL: Oprava detekce jazyka a překlad textů v archivu.
  */
 
 export const runtime = "nodejs";
-export const revalidate = 3600; 
+export const revalidate = 3600;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const baseUrl = "https://thehardwareguru.cz";
 
-// 🚀 GURU SEO: Dynamické Meta Tagy pro archiv článků
 export async function generateMetadata({ params, isEn: isEnProp }) {
-  const isEn = isEnProp === true || params?.lang === 'en' || params?.locale === 'en';
+  const locale = params?.locale || params?.lang || 'cs';
+  const isEn = isEnProp === true || locale === 'en';
+  
   const title = isEn ? 'Article Archive & Tech News | The Hardware Guru' : 'Archiv Článků a Hardwarové Novinky | The Hardware Guru';
   const desc = isEn 
     ? 'Complete database of all hardware reviews, tech breakdowns, and gaming news verified by Hardware Guru.' 
@@ -49,10 +49,10 @@ export async function generateMetadata({ params, isEn: isEnProp }) {
 }
 
 export default async function ClankyArchivePage({ params, isEn: isEnProp }) {
-  const isEn = isEnProp === true || params?.lang === 'en' || params?.locale === 'en';
+  const locale = params?.locale || params?.lang || 'cs';
+  const isEn = isEnProp === true || locale === 'en';
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // 1. GURU FETCH
   const { data: posts, error } = await supabase
     .from('posts')
     .select('*')
@@ -78,35 +78,10 @@ export default async function ClankyArchivePage({ params, isEn: isEnProp }) {
     return { text: isEn ? 'HW NEWS' : 'HW NOVINKA', color: '#ff0000', textColor: '#fff' };
   };
 
-  // 🚀 ZLATÁ GSC SEO SCHÉMATA
-  const itemListSchema = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    "name": isEn ? "Hardware & Gaming News" : "Hardwarové a herní novinky",
-    "description": isEn ? "Latest technology articles and reviews." : "Nejnovější technologické články a recenze.",
-    "itemListElement": safePosts.map((post, index) => ({
-      "@type": "ListItem",
-      "position": index + 1,
-      "url": `${baseUrl}${isEn ? '/en' : ''}/clanky/${isEn && post.slug_en ? post.slug_en : post.slug}`
-    }))
-  };
-
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Guru", "item": baseUrl },
-      { "@type": "ListItem", "position": 2, "name": isEn ? "Articles" : "Články", "item": `${baseUrl}${isEn ? '/en' : ''}/clanky` }
-    ]
-  };
-
   const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
   return (
     <div style={globalStyles}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(itemListSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbSchema) }} />
-
       <style dangerouslySetInnerHTML={{ __html: `
         .game-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(168, 85, 247, 0.2); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .game-card:hover { transform: translateY(-8px); box-shadow: 0 15px 40px rgba(168, 85, 247, 0.3); border-color: #a855f7; }
@@ -116,19 +91,7 @@ export default async function ClankyArchivePage({ params, isEn: isEnProp }) {
         .guru-deals-btn:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(249, 115, 22, 0.5); filter: brightness(1.1); }
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
-        .sticky-bottom-anchor {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(10, 11, 13, 0.98);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 9999;
-            padding: 10px 0;
-            display: flex;
-            justify-content: center;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
-        }
+        .sticky-bottom-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); }
         @media (max-width: 768px) {
           .ad-desktop-wrapper { display: none; }
           .ad-mobile-wrapper { display: flex; justify-content: center; }
@@ -174,13 +137,8 @@ export default async function ClankyArchivePage({ params, isEn: isEnProp }) {
                 <Link key={post.id} href={isEn ? `/en/clanky/${displaySlug}` : `/clanky/${displaySlug}`} style={{ textDecoration: 'none' }}>
                   <article className="game-card" style={{ borderRadius: '12px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
                     <div style={{ position: 'relative', paddingTop: '56.25%' }}>
-                      <img 
-                        src={getThumbnail(post)} 
-                        alt={displayTitle} 
-                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
-                        loading="lazy"
-                      />
-                      <div style={{ position: 'absolute', top: '10px', right: '10px', background: badge.color, color: badge.textColor, padding: '5px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem', zIndex: 2, boxShadow: '0 4px 10px rgba(0,0,0,0.5)' }}>
+                      <img src={getThumbnail(post)} alt={displayTitle} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                      <div style={{ position: 'absolute', top: '10px', right: '10px', background: badge.color, color: badge.textColor, padding: '5px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.75rem', zIndex: 2 }}>
                         {badge.text}
                       </div>
                     </div>
@@ -204,7 +162,7 @@ export default async function ClankyArchivePage({ params, isEn: isEnProp }) {
 
         <div style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
           <h4 style={{ color: '#9ca3af', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px', margin: 0, textAlign: 'center' }}>
-            {isEn ? "Want to support the Guru project? Get the best game deals." : "Chceš podpořit projekt Guru? Pořiď si hry za nejlepší ceny."}
+            {isEn ? "Want to support Hardware Guru? Get best game deals." : "Chceš podpořit projekt Guru? Pořiď si hry za nejlepší ceny."}
           </h4>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
             <a href="https://www.hrkgame.com/en/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn" style={{ flex: '1 1 280px' }}>
@@ -218,14 +176,13 @@ export default async function ClankyArchivePage({ params, isEn: isEnProp }) {
       </main>
 
       <div className="sticky-bottom-anchor">
-          <div className="ad-desktop-wrapper">
-              <SeznamAd zoneId={408654} width={970} height={90} />
-          </div>
-          <div className="ad-mobile-wrapper">
-              <SeznamAd zoneId={408651} width={300} height={100} />
-          </div>
+        <div className="ad-desktop-wrapper">
+          <SeznamAd zoneId={408654} width={970} height={90} />
+        </div>
+        <div className="ad-mobile-wrapper">
+          <SeznamAd zoneId={408651} width={300} height={100} />
+        </div>
       </div>
-
     </div>
   );
 }
