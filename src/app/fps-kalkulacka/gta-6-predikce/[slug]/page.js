@@ -89,9 +89,9 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
 
                 <ShareButtonsClient shareText={shareText} shareUrl={shareUrl} />
 
-                {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (CTA po zjištění slabého výkonu) 🔥 */}
+                {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek s dynamickým cílením na GPU 🔥 */}
                 <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
-                    <HeurekaButtons />
+                    <HeurekaButtons manualSearch={gpuName} positionId="276026" />
                 </div>
 
                 <div className="res-switch-grid">
