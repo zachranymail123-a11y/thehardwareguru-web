@@ -12,12 +12,11 @@ try {
     let rawKey = process.env.GOOGLE_JSON_KEY || "";
     rawKey = rawKey.trim();
     
-    // Očištění, kdyby to GitHub obalil do zbytečných uvozovek
     if (rawKey.startsWith("'") && rawKey.endsWith("'")) rawKey = rawKey.slice(1, -1);
     if (rawKey.startsWith('"') && rawKey.endsWith('"')) rawKey = rawKey.slice(1, -1);
 
     keys = JSON.parse(rawKey);
-    console.log("✅ JSON klíč z GitHubu přečten. Nalezená políčka:", Object.keys(keys).join(', '));
+    console.log("✅ JSON klíč z GitHubu přečten.");
 
     if (!keys.private_key) {
         throw new Error("V JSON souboru FAKT CHYBÍ 'private_key'! Zkontroluj, cos do GitHub Secrets zkopíroval.");
@@ -25,7 +24,6 @@ try {
 
     const privateKey = keys.private_key.replace(/\\n/g, '\n');
     
-    // Moderní a bezpečnější inicializace
     jwtClient = new google.auth.JWT({
         email: keys.client_email,
         key: privateKey,
@@ -36,68 +34,70 @@ try {
     console.error("🔥 FATÁLNÍ CHYBA S GOOGLE KLÍČEM:", err.message);
     process.exit(1);
 }
-// --- KONEC DETEKTIVNÍHO BLOKU ---
+// --- KONEC BLOKU ---
 
 const slugify = (text) => text ? text.toLowerCase().replace(/graphics|gpu|processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-}
-
 async function runGuruIndexer() {
-    console.log('🚀 Startuji rotující GURU Indexing Engine...');
+    console.log('🚀 Startuji 100% přesný GURU Indexing Engine s pamětí...');
     
+    // 1. Stáhneme si z databáze seznam toho, co už jsme Googlu poslali
+    const { data: indexedData, error: indexedErr } = await supabase.from('indexed_urls').select('url');
+    if (indexedErr) {
+        console.error('❌ Chyba při načítání historie odeslaných URL:', indexedErr);
+        return;
+    }
+    
+    const indexedSet = new Set(indexedData.map(row => row.url));
+    console.log(`📚 V paměti nalezeno ${indexedSet.size} již dříve odeslaných adres.`);
+
+    // 2. Načteme náš hardware z DB
     const { data: cpusRaw, error: cpuErr } = await supabase.from('cpus').select('name').order('performance_index', { ascending: false }).limit(100);
     const { data: gpusRaw, error: gpuErr } = await supabase.from('gpus').select('name').order('performance_index', { ascending: false }).limit(100);
 
     if (cpuErr || gpuErr || !cpusRaw || !gpusRaw) {
-        console.error('❌ Chyba při načítání DB:', cpuErr || gpuErr);
+        console.error('❌ Chyba při načítání DB hardwaru:', cpuErr || gpuErr);
         return;
     }
 
-    const cpus = shuffleArray([...cpusRaw]).slice(0, 15);
-    const gpus = shuffleArray([...gpusRaw]).slice(0, 15);
+    let allPossibleUrls = [];
 
-    console.log(`🎲 Dnešní rotace: Vybráno náhodných ${cpus.length} CPU a ${gpus.length} GPU z TOP 100.`);
-
-    let urlsToIndex = [];
-
-    for (let i = 0; i < cpus.length; i++) {
-        for (let j = 0; j < 7; j++) {
-            if (!gpus[j]) continue;
-            const cpuSlug = slugify(cpus[i].name);
-            const gpuSlug = slugify(gpus[j].name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
-            urlsToIndex.push(`https://thehardwareguru.cz/fps-kalkulacka/gta-6-predikce/${cpuSlug}-vs-${gpuSlug}-1440p`);
+    // 3. Vygenerujeme absolutně všechny myslitelné kombinace pro TOP 100 hardwaru
+    for (let i = 0; i < cpusRaw.length; i++) {
+        for (let j = 0; j < gpusRaw.length; j++) {
+            const cpuSlug = slugify(cpusRaw[i].name);
+            const gpuSlug = slugify(gpusRaw[j].name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
+            
+            allPossibleUrls.push(`https://thehardwareguru.cz/fps-kalkulacka/gta-6-predikce/${cpuSlug}-vs-${gpuSlug}-1440p`);
+            allPossibleUrls.push(`https://thehardwareguru.cz/bottleneck/${cpuSlug}-with-${gpuSlug}-in-cyberpunk-2077-at-1440p`);
         }
     }
 
-    for (let i = 0; i < cpus.length; i++) {
-        for (let j = 7; j < gpus.length; j++) {
-            if (!gpus[j]) continue;
-            const cpuSlug = slugify(cpus[i].name);
-            const gpuSlug = slugify(gpus[j].name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
-            urlsToIndex.push(`https://thehardwareguru.cz/bottleneck/${cpuSlug}-with-${gpuSlug}-in-cyberpunk-2077-at-1440p`);
-        }
+    // 4. Vyfiltrujeme z nich ty, které už jsou v naší paměti (indexedSet)
+    const newUrls = allPossibleUrls.filter(url => !indexedSet.has(url));
+
+    // 5. Ořízneme to na dnešních maximálně 200 kousků
+    const urlsToIndex = newUrls.slice(0, 200);
+
+    console.log(`📦 Připraveno ${urlsToIndex.length} zcela nových adres k odeslání.`);
+
+    if (urlsToIndex.length === 0) {
+        console.log('✅ Všechny možné adresy z TOP 100 hardwaru už byly odeslány v minulosti. Dnes není co na práci.');
+        return;
     }
 
-    urlsToIndex = shuffleArray(urlsToIndex).slice(0, 200);
-    console.log(`📦 Vygenerováno ${urlsToIndex.length} unikátních adres pro dnešní relaci.`);
-
-    if (urlsToIndex.length === 0) return;
-
+    // 6. Odpálení do Googlu
     await jwtClient.authorize();
     const indexing = google.indexing('v3');
     let successCount = 0;
     let errorCount = 0;
+    let successfullySentUrls = [];
 
     for (const url of urlsToIndex) {
         try {
             await indexing.urlNotifications.publish({ auth: jwtClient, requestBody: { url: url, type: 'URL_UPDATED' } });
             successCount++;
+            successfullySentUrls.push({ url: url }); // Přidáme na seznam úspěšných
             console.log(`✅ [${successCount}] Odesláno: ${url}`);
             await new Promise(resolve => setTimeout(resolve, 500)); 
         } catch (err) {
@@ -105,6 +105,17 @@ async function runGuruIndexer() {
             console.error(`❌ Chyba u odesílání ${url}:`, err.message);
         }
     }
+
+    // 7. Zápis úspěšných kousků navždy do Supabase paměti
+    if (successfullySentUrls.length > 0) {
+        const { error: insertErr } = await supabase.from('indexed_urls').insert(successfullySentUrls);
+        if (insertErr) {
+            console.error('❌ Pozor, nepodařilo se zapsat odeslané adresy do databáze:', insertErr);
+        } else {
+            console.log(`💾 Úspěšně uloženo ${successfullySentUrls.length} adres do tabulky indexed_urls. Zítra se jim skript vyhne obloukem.`);
+        }
+    }
+
     console.log(`\n🏁 HOTOVO! Úspěšně odesláno: ${successCount} | Chyby: ${errorCount}`);
 }
 
