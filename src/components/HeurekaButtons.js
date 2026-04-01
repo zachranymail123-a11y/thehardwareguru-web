@@ -3,19 +3,17 @@ import React, { useEffect } from 'react';
 import { Cpu, Monitor, Layers, Database } from 'lucide-react';
 
 /**
- * GURU HEUREKA GLOBAL BUTTONS V2.1 (TRIXAM CONFLICT FIX)
+ * GURU HEUREKA GLOBAL BUTTONS V2.2 (TRACKING FIX)
  * 🚀 CÍL: Svatá čtveřice PC buildu + Vyhledávání.
- * ✅ FIX: Odstraněny 'data-trixam-positionid' z <a> tagů. Tlačítka jsou nyní čisté přímé odkazy a Trixam JS je nepřepisuje!
+ * ✅ FIX: Vráceny 'data-trixam-positionid' do <a> tagů. Trixam JS je potřebuje k měření, jinak se kliky nezapočítají!
  */
 
 export default function HeurekaButtons({ isEn = false }) {
-  // 🔥 HEUREKA PŘÍMÉ ODKAZY NA KATEGORIE S UNIKÁTNÍMI ID DLE TVÉ TABULKY
   const HEUREKA_CPU = "https://procesory.heureka.cz/?haff=276027&utm_medium=affiliate";
   const HEUREKA_GPU = "https://graficke-karty.heureka.cz/?haff=276026&utm_medium=affiliate";
   const HEUREKA_MB  = "https://zakladni-desky.heureka.cz/?haff=276033&utm_medium=affiliate";
   const HEUREKA_RAM = "https://pameti.heureka.cz/?haff=276034&utm_medium=affiliate";
 
-  // Mechanismus pro spolehlivé načtení skriptu POUZE pro vyhledávač
   useEffect(() => {
     if (!isEn) {
       const script = document.createElement('script');
@@ -123,8 +121,8 @@ export default function HeurekaButtons({ isEn = false }) {
         }
       `}} />
 
-      {/* 🔥 ČISTÉ TLAČÍTKA BEZ TRIXAM ATRIBUTŮ (Už to skript nepřebije) */}
-      <a href={HEUREKA_CPU} target="_blank" rel="nofollow sponsored" className="h-banner-btn">
+      {/* 🔥 Vráceny atributy data-trixam-positionid pro funkční měření prokliků */}
+      <a href={HEUREKA_CPU} data-trixam-positionid="276027" target="_blank" rel="nofollow sponsored" className="h-banner-btn">
         <div className="h-icon-box"><Cpu size={26} /></div>
         <div className="h-text-col">
           <span className="h-title">{isEn ? 'Processors' : 'Procesory'}</span>
@@ -132,7 +130,7 @@ export default function HeurekaButtons({ isEn = false }) {
         </div>
       </a>
 
-      <a href={HEUREKA_GPU} target="_blank" rel="nofollow sponsored" className="h-banner-btn">
+      <a href={HEUREKA_GPU} data-trixam-positionid="276026" target="_blank" rel="nofollow sponsored" className="h-banner-btn">
         <div className="h-icon-box"><Monitor size={26} /></div>
         <div className="h-text-col">
           <span className="h-title">{isEn ? 'Graphic Cards' : 'Grafické karty'}</span>
@@ -140,7 +138,7 @@ export default function HeurekaButtons({ isEn = false }) {
         </div>
       </a>
 
-      <a href={HEUREKA_MB} target="_blank" rel="nofollow sponsored" className="h-banner-btn">
+      <a href={HEUREKA_MB} data-trixam-positionid="276033" target="_blank" rel="nofollow sponsored" className="h-banner-btn">
         <div className="h-icon-box"><Layers size={26} /></div>
         <div className="h-text-col">
           <span className="h-title">{isEn ? 'Motherboards' : 'Základní desky'}</span>
@@ -148,7 +146,7 @@ export default function HeurekaButtons({ isEn = false }) {
         </div>
       </a>
 
-      <a href={HEUREKA_RAM} target="_blank" rel="nofollow sponsored" className="h-banner-btn">
+      <a href={HEUREKA_RAM} data-trixam-positionid="276034" target="_blank" rel="nofollow sponsored" className="h-banner-btn">
         <div className="h-icon-box"><Database size={26} /></div>
         <div className="h-text-col">
           <span className="h-title">{isEn ? 'RAM Memory' : 'Operační paměti'}</span>
@@ -156,7 +154,6 @@ export default function HeurekaButtons({ isEn = false }) {
         </div>
       </a>
 
-      {/* 🔥 TRIXAM ATRIBUT ZŮSTÁVÁ JEN ZDE PRO VYHLEDÁVAČ */}
       {!isEn && (
         <div className="heureka-search-container">
           <div 
