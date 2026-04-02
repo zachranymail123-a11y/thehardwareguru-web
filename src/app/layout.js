@@ -141,32 +141,63 @@ export default async function RootLayout({ children }) {
         <Tracker />
 
         <style dangerouslySetInnerHTML={{__html: `
-          /* ZÁKLADNÍ STAV: SKRYTÉ */
-          .guru-side-box-left, .guru-side-box-right { display: none; }
+          /* MOBILNÍ STYL - BOXY POD SEBOU DOLE */
+          .guru-side-box-left, .guru-side-box-right { 
+            display: block; 
+            width: 100%; 
+            max-width: 1100px; 
+            margin: 20px auto; 
+            padding: 0 20px; 
+            box-sizing: border-box; 
+          }
           
           .guru-hub-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
           .guru-hub-item { background: rgba(17, 19, 24, 0.95); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; overflow: hidden; }
           .guru-hub-item img { width: 100%; height: auto; display: block; }
-          .guru-build-box-vip { background-color: rgba(17, 19, 24, 0.95); border-radius: 20px; padding: 15px; border: 1px solid rgba(102, 252, 241, 0.2); border-top: 4px solid #eab308; }
+          .guru-build-box-vip { background-color: rgba(17, 19, 24, 0.95); border-radius: 20px; padding: 15px; border: 1px solid rgba(102, 252, 241, 0.2); border-top: 4px solid #eab308; position: relative; overflow: hidden; }
           .hover-scale { transition: 0.3s; }
           .hover-scale:hover { transform: scale(1.02); }
           
-          /* AKTIVACE JEN PŘI DOSTATEČNÉ ŠÍŘCE MONITORU */
-          @media (min-width: 1750px) {
+          /* Full HD DESKTOP (1550px - 1899px) */
+          @media (min-width: 1550px) and (max-width: 1899px) {
               .guru-side-box-left { 
-                display: block; 
                 position: fixed; 
                 top: 100px; 
-                left: 20px; 
-                width: 350px; 
+                left: 5px; 
+                width: 320px; 
+                margin: 0;
+                transform: scale(0.85); 
+                transform-origin: left top;
                 z-index: 50; 
               }
               .guru-side-box-right { 
-                display: block; 
                 position: fixed; 
                 top: 100px; 
+                right: 5px; 
+                width: 260px; 
+                margin: 0;
+                transform: scale(0.85); 
+                transform-origin: right top;
+                z-index: 50; 
+              }
+          }
+
+          /* VELKÝ DESKTOP (nad 1900px) */
+          @media (min-width: 1900px) {
+              .guru-side-box-left { 
+                position: fixed; 
+                top: 110px; 
+                left: 20px; 
+                width: 380px; 
+                margin: 0;
+                z-index: 50; 
+              }
+              .guru-side-box-right { 
+                position: fixed; 
+                top: 110px; 
                 right: 20px; 
-                width: 300px; 
+                width: 320px; 
+                margin: 0;
                 z-index: 50; 
               }
           }
@@ -187,7 +218,7 @@ export default async function RootLayout({ children }) {
           </div>
         </main>
 
-        {/* Boxy jsou v kódu mimo main, ale díky CSS s display: none v základu nebudou strašit uprostřed webu */}
+        {/* Boxy jsou teď dole pod main - na mobilu tam zůstanou, na desktopu odletí do stran */}
         <GlobalVIPBox isEn={isEn} />
         <GlobalPartnersBox isEn={isEn} />
 
