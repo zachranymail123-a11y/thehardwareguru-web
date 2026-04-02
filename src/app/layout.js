@@ -151,6 +151,7 @@ export default async function RootLayout({ children }) {
         <Tracker />
 
         <style dangerouslySetInnerHTML={{__html: `
+          /* MOBILNÍ STYLY - BOXY POD SEBOU */
           .guru-side-box-left, .guru-side-box-right { 
             display: block; 
             width: 100%; 
@@ -166,13 +167,31 @@ export default async function RootLayout({ children }) {
           .hover-scale { transition: 0.3s; }
           .hover-scale:hover { transform: scale(1.02); }
           
-          /* OPRAVENÉ ŠKÁLOVÁNÍ Full HD (1080p) - AKTIVUJE SE DŘÍVE */
-          @media (min-width: 1350px) and (max-width: 1850px) {
-              .guru-side-box-left { position: fixed; top: 100px; left: 10px; width: 320px; margin: 0; transform: scale(0.75); transform-origin: left top; z-index: 50; }
-              .guru-side-box-right { position: fixed; top: 100px; right: 10px; width: 280px; margin: 0; transform: scale(0.75); transform-origin: right top; z-index: 50; }
+          /* AGRESIVNÍ FIX PRO 1080p (cca 1300px - 1800px šířka okna) */
+          @media (min-width: 1300px) and (max-width: 1800px) {
+              .guru-side-box-left { 
+                position: fixed; 
+                top: 100px; 
+                left: -40px; /* VYSUNUTÍ VÍC DO KRAJE */
+                width: 320px; 
+                margin: 0; 
+                transform: scale(0.65); /* JEŠTĚ VĚTŠÍ ZMENŠENÍ */
+                transform-origin: left top; 
+                z-index: 50; 
+              }
+              .guru-side-box-right { 
+                position: fixed; 
+                top: 100px; 
+                right: -40px; /* VYSUNUTÍ VÍC DO KRAJE */
+                width: 300px; 
+                margin: 0; 
+                transform: scale(0.65); /* JEŠTĚ VĚTŠÍ ZMENŠENÍ */
+                transform-origin: right top; 
+                z-index: 50; 
+              }
           }
 
-          @media (min-width: 1851px) {
+          @media (min-width: 1801px) {
               .guru-side-box-left { position: fixed; top: 110px; left: 20px; width: 380px; margin: 0; z-index: 50; }
               .guru-side-box-right { position: fixed; top: 110px; right: 20px; width: 320px; margin: 0; z-index: 50; }
           }
