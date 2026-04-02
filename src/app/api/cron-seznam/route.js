@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// Prodlužujeme limit pro Vercel (pokud to tvůj plán umožňuje)
+export const maxDuration = 60; 
+
 export async function GET(request) {
   const host = "thehardwareguru.cz";
   const key = "thehardwareguru-indexnow-2026";
@@ -8,38 +11,123 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const targetSitemap = searchParams.get('sitemap');
 
+  // ============================================================================
+  // CHYTRÝ AUTOMAT: POKUD NENÍ ZADANÁ SITEMAPA, SPUSTÍ AUTOMATICKÝ HTML RUNNER
+  // ============================================================================
   if (!targetSitemap) {
-      return NextResponse.json({ 
-          success: false, 
-          message: "Zadej URL podsitemapy. Např: ?sitemap=https://thehardwareguru.cz/guru-sitemap.xml" 
-      }, { status: 400 });
+    try {
+      const mainSitemapUrl = `https://${host}/guru-sitemap.xml`;
+      const sitemapResponse = await fetch(mainSitemapUrl);
+      const sitemapText = await sitemapResponse.text();
+
+      const urlMatches = [...sitemapText.matchAll(/<loc>(.*?)<\/loc>/g)];
+      const rawUrls = urlMatches.map(match => match[1]);
+      const xmlLinks = [...new Set(rawUrls)].filter(url => url.endsWith('.xml'));
+
+      // Vygenerování "chytreho" dashboardu, který odedře práci za tebe
+      const html = `
+        <!DOCTYPE html>
+        <html lang="cs">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Hardware Guru - IndexNow Automat</title>
+            <style>
+                body { font-family: monospace; background: #0a0b0d; color: #66fcf1; padding: 20px; line-height: 1.5; }
+                h1 { color: #eab308; text-transform: uppercase; border-bottom: 2px solid #333; padding-bottom: 10px; }
+                .log { background: #111; padding: 15px; border: 1px solid #333; border-radius: 8px; height: 60vh; overflow-y: auto; margin-top: 20px; box-shadow: inset 0 0 10px #000; }
+                .log div { margin-bottom: 5px; border-bottom: 1px dashed #222; padding-bottom: 5px; }
+                .success { color: #4ade80; font-weight: bold; }
+                .error { color: #f87171; font-weight: bold; }
+                .info { color: #9ca3af; }
+                .stats { background: rgba(102, 252, 241, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(102, 252, 241, 0.3); display: inline-block; margin-top: 10px; }
+            </style>
+        </head>
+        <body>
+            <h1>🚀 Guru IndexNow Automat (Seznam)</h1>
+            <p>Nalezeno podsitemap v rozcestníku: <strong>${xmlLinks.length}</strong></p>
+            <div class="stats">
+                Celkem zpracováno URL v této relaci: <strong id="total-count" style="font-size: 20px; color: #fff;">0</strong>
+            </div>
+            <p style="color: #f87171;">⚠️ NEZAVÍREJ TUTO STRÁNKU, automat právě sype data na Seznam...</p>
+            
+            <div class="log" id="log"></div>
+
+            <script>
+                const sitemaps = ${JSON.stringify(xmlLinks)};
+                const logEl = document.getElementById('log');
+                const totalCountEl = document.getElementById('total-count');
+                let totalUrls = 0;
+
+                function log(msg, type = 'info') {
+                    const div = document.createElement('div');
+                    div.className = type;
+                    div.innerText = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+                    logEl.appendChild(div);
+                    logEl.scrollTop = logEl.scrollHeight;
+                }
+
+                async function processAll() {
+                    log('Zahajuji automatický proces pro ' + sitemaps.length + ' podsitemap...', 'info');
+                    
+                    for(let i = 0; i < sitemaps.length; i++) {
+                        log('Tahám podsitemapu (' + (i+1) + '/' + sitemaps.length + '): ' + sitemaps[i], 'info');
+                        try {
+                            const res = await fetch('?sitemap=' + encodeURIComponent(sitemaps[i]));
+                            const data = await res.json();
+                            
+                            if(data.success) {
+                                const processed = data.totalUrlsProcessed || 0;
+                                totalUrls += processed;
+                                totalCountEl.innerText = totalUrls.toLocaleString();
+                                log('✅ Úspěch! Rozsekáno a odesláno ' + processed + ' URL.', 'success');
+                            } else {
+                                log('❌ Chyba: ' + data.message, 'error');
+                            }
+                        } catch(e) {
+                            log('❌ Kritická chyba při spojení: ' + e, 'error');
+                        }
+                        
+                        // Ochranná pauza 2 vteřiny, ať nás Seznam nezabanuje
+                        await new Promise(r => setTimeout(r, 2000));
+                    }
+                    
+                    log('🔥🔥 HOTOVO! Celý web byl kompletně natlačen do Seznamu! 🔥🔥', 'success');
+                }
+
+                processAll();
+            </script>
+        </body>
+        </html>
+      `;
+
+      return new NextResponse(html, {
+        headers: { 'Content-Type': 'text/html; charset=utf-8' }
+      });
+
+    } catch (e) {
+      return NextResponse.json({ success: false, message: "Nepodařilo se načíst rozcestník guru-sitemap.xml." });
+    }
   }
 
+  // ============================================================================
+  // WORKER: TATO ČÁST ZPRACOVÁVÁ KONKRÉTNÍ PODSITEMAPU PŘES API (NEVIDITELNĚ)
+  // ============================================================================
   try {
     const sitemapResponse = await fetch(targetSitemap);
     if (!sitemapResponse.ok) {
-        return NextResponse.json({ success: false, message: "Sitemapu se nepodařilo stáhnout." }, { status: 500 });
+        return NextResponse.json({ success: false, message: "Podsitemapu se nepodařilo stáhnout." }, { status: 500 });
     }
 
     const sitemapText = await sitemapResponse.text();
     const urlMatches = [...sitemapText.matchAll(/<loc>(.*?)<\/loc>/g)];
     const rawUrls = urlMatches.map(match => match[1]);
     
-    // Rozdělení na skutečné stránky a na podsitemapy (rozcestník)
+    // Ignorujeme případné xml odkazy
     const urlList = [...new Set(rawUrls)].filter(url => !url.endsWith('.xml'));
-    const xmlLinks = [...new Set(rawUrls)].filter(url => url.endsWith('.xml'));
-
-    // POKUD JE TO ROZCESTNÍK, VYPÍŠEME UŽIVATELI NÁPOVĚDU
-    if (urlList.length === 0 && xmlLinks.length > 0) {
-        return NextResponse.json({ 
-            success: false, 
-            message: "Tohle je hlavní rozcestník. Zkopíruj si jednu z podsitemap níže a dej ji do URL parametru místo tohoto rozcestníku.",
-            seznamPodsitemap: xmlLinks
-        }, { status: 200 });
-    }
 
     if (urlList.length === 0) {
-        return NextResponse.json({ success: false, message: "Nenalezeny žádné konkrétní URL adresy." }, { status: 400 });
+        return NextResponse.json({ success: true, message: "Prázdná sitemapa, ignoruji.", totalUrlsProcessed: 0 });
     }
 
     // ROZSEKÁNÍ A ODESLÁNÍ (Limit 10 000 pro Seznam)
@@ -74,7 +162,7 @@ export async function GET(request) {
             status: response.status
         });
 
-        // Ochrana před banem (pauza mezi odesíláním obřích balíků)
+        // Krátká pauza mezi POST požadavky v rámci jedné sitemapy
         if (i < chunks.length - 1) {
             await new Promise(resolve => setTimeout(resolve, 1000)); 
         }
@@ -82,12 +170,12 @@ export async function GET(request) {
 
     return NextResponse.json({ 
         success: true, 
-        message: "Úspěšně rozsekáno a odesláno na Seznam.", 
+        message: "Úspěšně rozsekáno a odesláno.", 
         totalUrlsProcessed: urlList.length,
         results: results
     });
 
   } catch (error) {
-    return NextResponse.json({ success: false, message: "Kritická chyba.", error: error.toString() }, { status: 500 });
+    return NextResponse.json({ success: false, message: "Kritická chyba API.", error: error.toString() }, { status: 500 });
   }
 }
