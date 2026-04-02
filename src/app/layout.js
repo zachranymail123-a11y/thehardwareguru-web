@@ -75,6 +75,17 @@ const GlobalVIPBox = ({ isEn }) => {
           <GuruBuildItem icon={<Bookmark size={18}/>} name={isEn ? "Case of choice" : "Case dle výběru"} link={links.case} isEn={isEn} />
         </ul>
       </aside>
+      {/* 🔥 VRÁCENÝ SMARTY BANNER POD SESTAVU 🔥 */}
+      <div className="guru-vip-addon" style={{ marginTop: '10px' }}>
+          <div className="guru-vip-desc" style={{ textAlign: 'center', background: 'rgba(234, 179, 8, 0.05)', border: '1px solid rgba(234, 179, 8, 0.2)', padding: '10px', borderRadius: '12px 12px 0 0' }}>
+              <p style={{ margin: 0, color: '#eab308', fontSize: '13px', fontWeight: 'bold' }}>
+                  {isEn ? "Configure your own build" : "Nakonfiguruj si vlastní sestavu"}
+              </p>
+          </div>
+          <a href="https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=74f145c2" target="_top" style={{ display: 'block', borderRadius: '0 0 12px 12px', overflow: 'hidden', border: '1px solid rgba(234, 179, 8, 0.2)', borderTop: 'none' }}>
+              <img src="https://wsrv.nl/?url=doc.ehub.cz/b/6b6bfd74/74f145c2.jpg&output=webp" alt="Smarty" style={{ width: '100%', display: 'block' }} />
+          </a>
+      </div>
     </div>
   );
 };
@@ -141,7 +152,7 @@ export default async function RootLayout({ children }) {
         <Tracker />
 
         <style dangerouslySetInnerHTML={{__html: `
-          /* MOBILNÍ STYL - BOXY POD SEBOU DOLE */
+          /* MOBILNÍ STYLY - BOXY POD SEBOU */
           .guru-side-box-left, .guru-side-box-right { 
             display: block; 
             width: 100%; 
@@ -158,32 +169,32 @@ export default async function RootLayout({ children }) {
           .hover-scale { transition: 0.3s; }
           .hover-scale:hover { transform: scale(1.02); }
           
-          /* Full HD DESKTOP (1550px - 1899px) */
-          @media (min-width: 1550px) and (max-width: 1899px) {
+          /* OPRAVENÉ ŠKÁLOVÁNÍ Full HD (1080p) */
+          @media (min-width: 1450px) and (max-width: 1850px) {
               .guru-side-box-left { 
                 position: fixed; 
                 top: 100px; 
-                left: 5px; 
+                left: 10px; 
                 width: 320px; 
                 margin: 0;
-                transform: scale(0.85); 
+                transform: scale(0.8); /* ZMENŠENÍ PRO 1080p */
                 transform-origin: left top;
                 z-index: 50; 
               }
               .guru-side-box-right { 
                 position: fixed; 
                 top: 100px; 
-                right: 5px; 
-                width: 260px; 
+                right: 10px; 
+                width: 280px; 
                 margin: 0;
-                transform: scale(0.85); 
+                transform: scale(0.8); /* ZMENŠENÍ PRO 1080p */
                 transform-origin: right top;
                 z-index: 50; 
               }
           }
 
-          /* VELKÝ DESKTOP (nad 1900px) */
-          @media (min-width: 1900px) {
+          /* VELKÉ MONITORY */
+          @media (min-width: 1851px) {
               .guru-side-box-left { 
                 position: fixed; 
                 top: 110px; 
@@ -218,7 +229,6 @@ export default async function RootLayout({ children }) {
           </div>
         </main>
 
-        {/* Boxy jsou teď dole pod main - na mobilu tam zůstanou, na desktopu odletí do stran */}
         <GlobalVIPBox isEn={isEn} />
         <GlobalPartnersBox isEn={isEn} />
 
