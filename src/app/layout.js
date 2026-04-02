@@ -11,7 +11,7 @@ import ShareWidget from '../components/ShareWidget';
 import CookieBanner from '../components/CookieBanner';
 import AdBlockDetector from '../components/AdBlockDetector';
 import AdTracker from '../components/AdTracker';
-import SeznamAd from '../components/SeznamAd'; // 🔥 PŘIDÁNO PRO GLOBÁLNÍ ANCHOR
+import SeznamAd from '../components/SeznamAd';
 import { Cpu, ShieldCheck, Layers, Gamepad2, Lightbulb, Bookmark, ShoppingCart, Rocket } from 'lucide-react';
 
 export const metadata = {
@@ -50,7 +50,7 @@ const GlobalVIPBox = ({ isEn }) => {
   };
 
   return (
-    <div className="guru-main-left-wrap">
+    <div className="guru-side-box-left">
       <aside className="guru-build-box-vip group">
         <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '200px', height: '200px', background: 'rgba(102, 252, 241, 0.15)', filter: 'blur(80px)', borderRadius: '50%', zIndex: 0 }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px', position: 'relative', zIndex: 1, marginBottom: '10px' }}>
@@ -66,9 +66,6 @@ const GlobalVIPBox = ({ isEn }) => {
                 </h2>
             </div>
         </div>
-        <p style={{ fontSize: '13px', lineHeight: '1.6', color: '#9ca3af', position: 'relative', zIndex: 1, margin: 0, marginBottom: '15px' }}>
-            {isEn ? 'The best components selected by Hardware Guru.' : 'Nejlepší komponenty aktuálně na trhu. Postav si absolutní bestii podle Guru.'}
-        </p>
         <ul style={{ listStyleType: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative', zIndex: 1 }}>
           <GuruBuildItem icon={<Cpu size={18}/>} name="AMD Ryzen 7 9800X3D" link={links.cpu} isEn={isEn} />
           <GuruBuildItem icon={<ShieldCheck size={18}/>} name="GIGABYTE X870E AORUS ELITE" link={links.mobo} isEn={isEn} />
@@ -78,16 +75,6 @@ const GlobalVIPBox = ({ isEn }) => {
           <GuruBuildItem icon={<Bookmark size={18}/>} name={isEn ? "Case of choice" : "Case dle výběru"} link={links.case} isEn={isEn} />
         </ul>
       </aside>
-      <div className="guru-vip-addon">
-          <div className="guru-vip-desc">
-              <p style={{ margin: 0, color: '#eab308', fontSize: '14px', fontWeight: 'bold', lineHeight: '1.4' }}>
-                  {isEn ? "Don't like this build? Configure your own." : "Nezdá se ti zrovna tato sestava? Nakonfiguruj si vlastní."}
-              </p>
-          </div>
-          <a href="https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=74f145c2" target="_top" className="guru-vip-link">
-              <img src="https://wsrv.nl/?url=doc.ehub.cz/b/6b6bfd74/74f145c2.jpg&output=webp" alt="Smarty" />
-          </a>
-      </div>
     </div>
   );
 };
@@ -103,20 +90,18 @@ const GlobalPartnersBox = ({ isEn }) => {
     { id: 'dc46f460', hash: 'c0824462', ext: 'jpg' }
   ];
   return (
-    <div className="guru-main-right-wrap">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px', padding: '0 5px' }}>
-        <div style={{ background: 'rgba(168, 85, 247, 0.1)', padding: '10px', borderRadius: '12px', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
-          <Rocket size={20} color="#a855f7" style={{ filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.6))' }} />
+    <div className="guru-side-box-right">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
+        <div style={{ background: 'rgba(168, 85, 247, 0.1)', padding: '10px', borderRadius: '12px' }}>
+          <Rocket size={20} color="#a855f7" />
         </div>
-        <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: '950', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
-          {isEn ? 'GURU CHOICES' : 'GURU DOPORUČUJE'}
-        </h2>
+        <h2 style={{ color: '#fff', fontSize: '18px', fontWeight: '950', margin: 0 }}>{isEn ? 'GURU CHOICES' : 'GURU DOPORUČUJE'}</h2>
       </div>
       <div className="guru-hub-grid">
         {extLinks.map(link => (
           <div key={link.id} className="guru-hub-item hover-scale">
-            <a href={`https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=${link.id}`} target="_top" rel="nofollow sponsored" style={{ display: 'block', width: '100%', height: '100%' }}>
-              <img src={`https://wsrv.nl/?url=doc.ehub.cz/b/${link.hash}/${link.id}.${link.ext}&output=webp`} alt="Guru Doporučuje" style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }} />
+            <a href={`https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=${link.id}`} target="_top" rel="nofollow sponsored">
+              <img src={`https://wsrv.nl/?url=doc.ehub.cz/b/${link.hash}/${link.id}.${link.ext}&output=webp`} alt="Guru" />
             </a>
           </div>
         ))}
@@ -130,7 +115,6 @@ export default async function RootLayout({ children }) {
   const fullUrl = headersList.get('referer') || "";
   const isEn = fullUrl.includes('/en');
   const locale = isEn ? 'en' : 'cs';
-
   const envVars = { NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "", NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "" };
 
   return (
@@ -157,24 +141,36 @@ export default async function RootLayout({ children }) {
         <Tracker />
 
         <style dangerouslySetInnerHTML={{__html: `
-          .guru-main-left-wrap, .guru-main-right-wrap { display: block; width: 100%; max-width: 1200px; margin: 40px auto 0 auto; padding: 0 20px; box-sizing: border-box; }
-          .guru-main-right-wrap .guru-hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; }
-          .guru-hub-item { background: rgba(17, 19, 24, 0.95); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
-          .guru-hub-item:hover { border-color: #a855f7; box-shadow: 0 15px 40px rgba(168, 85, 247, 0.25); }
-          .guru-build-box-vip { background-color: rgba(17, 19, 24, 0.95); backdrop-filter: blur(10px); border-radius: 24px; padding: 20px; border: 1px solid rgba(102, 252, 241, 0.2); color: #fff; box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(102, 252, 241, 0.05); width: 100%; font-family: sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden; border-top: 4px solid #eab308; margin-bottom: 20px; box-sizing: border-box; }
-          .hover-scale { transition: transform 0.3s ease; }
-          .hover-scale:hover { transform: scale(1.05); }
-          .guru-vip-addon { width: 100%; display: flex; flex-direction: column; box-sizing: border-box; }
-          .guru-vip-desc { text-align: center; background: rgba(234, 179, 8, 0.05); border: 1px solid rgba(234, 179, 8, 0.2); padding: 15px; border-radius: 16px 16px 0 0; width: 100%; box-sizing: border-box; }
-          .guru-vip-link { display: inline-block; border-radius: 0 0 16px 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 100%; border: 1px solid rgba(234, 179, 8, 0.2); border-top: none; box-sizing: border-box; }
-          .guru-vip-link img { display: block; width: 100%; height: auto; }
-          @media (min-width: 1950px) {
-              .guru-main-left-wrap { position: fixed; top: 100px; left: 20px; width: 380px; margin: 0; padding: 0 2px 20px 0; max-height: calc(100vh - 120px); overflow-y: auto; z-index: 50; }
-              .guru-main-right-wrap { position: fixed; top: 100px; right: 20px; width: 320px; margin: 0; padding: 0 0 20px 2px; max-height: calc(100vh - 120px); overflow-y: auto; z-index: 50; }
-              .guru-main-right-wrap .guru-hub-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+          /* ZÁKLADNÍ STAV: SKRYTÉ */
+          .guru-side-box-left, .guru-side-box-right { display: none; }
+          
+          .guru-hub-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+          .guru-hub-item { background: rgba(17, 19, 24, 0.95); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; overflow: hidden; }
+          .guru-hub-item img { width: 100%; height: auto; display: block; }
+          .guru-build-box-vip { background-color: rgba(17, 19, 24, 0.95); border-radius: 20px; padding: 15px; border: 1px solid rgba(102, 252, 241, 0.2); border-top: 4px solid #eab308; }
+          .hover-scale { transition: 0.3s; }
+          .hover-scale:hover { transform: scale(1.02); }
+          
+          /* AKTIVACE JEN PŘI DOSTATEČNÉ ŠÍŘCE MONITORU */
+          @media (min-width: 1750px) {
+              .guru-side-box-left { 
+                display: block; 
+                position: fixed; 
+                top: 100px; 
+                left: 20px; 
+                width: 350px; 
+                z-index: 50; 
+              }
+              .guru-side-box-right { 
+                display: block; 
+                position: fixed; 
+                top: 100px; 
+                right: 20px; 
+                width: 300px; 
+                z-index: 50; 
+              }
           }
 
-          /* CSS PRO GLOBÁLNÍ ANCHOR */
           .global-sticky-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); }
           .ad-desktop-anchor { display: flex; width: 100%; justify-content: center; }
           .ad-mobile-anchor { display: none; width: 100%; justify-content: center; }
@@ -184,9 +180,6 @@ export default async function RootLayout({ children }) {
           }
         `}} />
 
-        <GlobalVIPBox isEn={isEn} />
-        <GlobalPartnersBox isEn={isEn} />
-
         <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden' }}>
           {children}
           <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
@@ -194,44 +187,22 @@ export default async function RootLayout({ children }) {
           </div>
         </main>
 
-        <footer style={{ padding: '60px 20px 40px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto', background: '#0a0b0d' }}>
-          <style dangerouslySetInnerHTML={{__html: `
-            .guru-footer-link { color: #9ca3af; text-decoration: none; transition: 0.2s; font-size: 13px; font-weight: bold; text-transform: uppercase; }
-            .guru-footer-link:hover { color: #fff !important; }
-            .guru-footer-sitemap { color: #a855f7 !important; font-weight: 950 !important; }
-            .copyright { color: #4b5563; font-size: 12px; margin-top: 20px; font-weight: 600; }
-            .eeat-link { color: #6b7280; font-size: 11px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; transition: 0.2s; }
-            .eeat-link:hover { color: #d1d5db; }
-          `}} />
-          
-          <VisitorCounter locale={locale} />
+        {/* Boxy jsou v kódu mimo main, ale díky CSS s display: none v základu nebudou strašit uprostřed webu */}
+        <GlobalVIPBox isEn={isEn} />
+        <GlobalPartnersBox isEn={isEn} />
 
+        <footer style={{ padding: '60px 20px 40px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto', background: '#0a0b0d' }}>
+          <VisitorCounter locale={locale} />
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginBottom: '20px' }}>
-            <a href={isEn ? "/en/clanky/jak-vyresit-bottleneck-navod" : "/clanky/jak-vyresit-bottleneck-navod"} className="guru-footer-link">
+            <a href={isEn ? "/en/clanky/jak-vyresit-bottleneck-navod" : "/clanky/jak-vyresit-bottleneck-navod"} style={{color:'#9ca3af', textDecoration:'none', fontSize:'13px', fontWeight:'bold'}}>
               {isEn ? 'How to fix bottleneck' : 'Jak vyřešit Bottleneck'}
             </a>
-            <span style={{ color: '#333' }}>|</span>
-            <a href={isEn ? "/en/clanky/nejlepsi-cpu-pro-rtx-5090-5080" : "/clanky/nejlepsi-cpu-pro-rtx-5090-5080"} className="guru-footer-link">
-              {isEn ? 'Best CPU for RTX 50' : 'Nejlepší CPU pro RTX 50'}
-            </a>
-            <span style={{ color: '#333' }}>|</span>
-            <a href={isEn ? "/en/sitemap" : "/sitemap"} className="guru-footer-link guru-footer-sitemap">
+            <a href={isEn ? "/en/sitemap" : "/sitemap"} style={{color:'#a855f7', textDecoration:'none', fontSize:'13px', fontWeight:'950'}}>
               {isEn ? 'COMPLETE NAVIGATION' : 'KOMPLETNÍ NAVIGACE'}
             </a>
           </div>
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginBottom: '30px' }}>
-            <a href={isEn ? "/en/about" : "/about"} className="eeat-link">{isEn ? 'About Us' : 'O nás'}</a>
-            <span style={{ color: '#333' }}>•</span>
-            <a href={isEn ? "/en/contact" : "/contact"} className="eeat-link">{isEn ? 'Contact' : 'Kontakt'}</a>
-            <span style={{ color: '#333' }}>•</span>
-            <a href={isEn ? "/en/privacy-policy" : "/privacy-policy"} className="eeat-link">{isEn ? 'Privacy Policy' : 'Ochrana soukromí'}</a>
-            <span style={{ color: '#333' }}>•</span>
-            <a href={isEn ? "/en/terms-of-service" : "/terms-of-service"} className="eeat-link">{isEn ? 'Terms of Service' : 'Podmínky použití'}</a>
-          </div>
-
-          <div className="copyright">
-            © {new Date().getFullYear()} The Hardware Guru. Pro hráče, s láskou k železu.
+          <div className="copyright" style={{color:'#4b5563', fontSize:'12px', marginTop:'20px'}}>
+            © {new Date().getFullYear()} The Hardware Guru.
           </div>
         </footer>
 
@@ -240,7 +211,6 @@ export default async function RootLayout({ children }) {
         <CookieBanner />
         <Analytics />
 
-        {/* GLOBÁLNÍ ANCHOR PRO DESKTOP I MOBIL */}
         <div className="global-sticky-anchor">
             <div className="ad-desktop-anchor">
                 <SeznamAd zoneId={408873} width={728} height={90} />
