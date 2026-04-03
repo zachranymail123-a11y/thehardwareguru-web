@@ -130,7 +130,6 @@ export default async function RootLayout({ children }) {
   return (
     <html lang={locale}>
       <head>
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993" crossOrigin="anonymous"></script>
         <Script src="https://ssp.seznam.cz/static/js/ssp.js" strategy="afterInteractive" />
         <Script async type="text/javascript" src="//serve.affiliate.heureka.cz/js/trixam.min.js" strategy="lazyOnload" />
         <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="afterInteractive" />
