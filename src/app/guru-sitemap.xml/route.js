@@ -6,6 +6,7 @@ import { createClient } from '@supabase/supabase-js';
  * 🛡️ FIX 1: Opraven výpočet countu přes nativní Supabase API (zamezuje NaN a null chybám).
  * 🛡️ FIX 2: Přidán tag <lastmod> s aktuálním datem pro agresivnější crawl prioritu.
  * 🛡️ FIX 3: Přidána latest.xml sitemap přímo do hlavního indexu.
+ * 🛡️ FIX 4: Přidána overclocking sitemap do hlavního indexu.
  */
 
 export const revalidate = 3600; 
@@ -42,8 +43,8 @@ export async function GET() {
   
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
   
-  // 1. ZÁKLADNÍ SITEMAPY
-  const namedMaps = ['pages', 'posts', 'cpu', 'gpu', 'duels', 'upgrades'];
+  // 1. ZÁKLADNÍ SITEMAPY - PŘIDÁN OVERCLOCKING
+  const namedMaps = ['pages', 'posts', 'cpu', 'gpu', 'duels', 'upgrades', 'overclocking'];
   namedMaps.forEach(m => {
     xml += `  <sitemap>\n    <loc>${baseUrl}/guru-sitemap/${m}.xml</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>\n`;
   });
