@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Cpu, Zap, ThermometerSnowflake, AlertTriangle, ShieldCheck, ChevronRight, Activity, Settings, ArrowRight, Link2, Gauge, Layers, Monitor, Gamepad2, FileText, Wrench } from 'lucide-react';
 import HeurekaButtons from '@/components/HeurekaButtons';
 
-// Vyhozeno export const runtime, necháváme default
+// Cache nastavení bez konfliktních dynamických funkcí
 export const revalidate = 3600;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -13,45 +13,34 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const getCpuData = async (slug) => {
     if (!slug) return null;
-    try {
-        const cleanSlug = slug.replace(/^en-/, '');
-        const { data, error } = await supabase.from('cpus').select('*').eq('slug', cleanSlug).limit(1).single();
-        if (error || !data) return null;
-        return data;
-    } catch (e) {
-        return null;
-    }
+    const cleanSlug = slug.replace(/^en-/, '');
+    const { data, error } = await supabase.from('cpus').select('*').eq('slug', cleanSlug).limit(1).single();
+    if (error || !data) return null;
+    return data;
 };
 
 const getRelatedCpus = async (vendor, currentSlug) => {
-    if (!vendor || !currentSlug) return [];
-    try {
-        const cleanSlug = currentSlug.replace(/^en-/, '');
-        const { data, error } = await supabase.from('cpus').select('name, slug, architecture').eq('vendor', vendor).neq('slug', cleanSlug).limit(4);
-        if (error || !data) return [];
-        return data;
-    } catch (e) {
-        return [];
-    }
+    const cleanSlug = currentSlug.replace(/^en-/, '');
+    const { data, error } = await supabase.from('cpus').select('name, slug, architecture').eq('vendor', vendor).neq('slug', cleanSlug).limit(4);
+    if (error || !data) return [];
+    return data;
 };
 
 const getLatestPosts = async () => {
-    try {
-        const { data, error } = await supabase.from('posts').select('id, title, slug').order('created_at', { ascending: false }).limit(3);
-        if (error || !data) return [];
-        return data;
-    } catch (e) {
-        return [];
-    }
+    const { data, error } = await supabase.from('posts').select('id, title, slug').order('created_at', { ascending: false }).limit(3);
+    if (error || !data) return [];
+    return data;
 };
 
 export async function generateMetadata({ params }) {
-    const slug = params?.slug || '';
-    if (!slug) return { title: 'Not Found' };
+    const p = await params;
+    const slug = p?.slug || '';
+    if (!slug) return { title: '404 | The Hardware Guru' };
     
     const cpu = await getCpuData(slug);
-    if (!cpu) return { title: 'CPU Not Found | The Hardware Guru' };
+    if (!cpu) return { title: '404 | The Hardware Guru' };
 
+    // Bezpečná detekce jazyka bez headers()
     const isEn = slug.startsWith('en-');
     const arch = cpu.architecture || 'Processor';
 
@@ -67,9 +56,11 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function CpuOverclockingPage({ params }) {
-    const slug = params?.slug || '';
+    const p = await params;
+    const slug = p?.slug || '';
     if (!slug) notFound();
 
+    // Bezpečná detekce jazyka bez headers()
     const isEn = slug.startsWith('en-');
     const cpu = await getCpuData(slug);
     
