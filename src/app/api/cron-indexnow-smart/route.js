@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'; // Zabraní cachování tohoto skriptu n
 
 export async function GET(request) {
   const host = "thehardwareguru.cz";
-  const key = "thehardwareguru-indexnow-2026";
+  const key = "guru-indexnow-key-2026";
   const keyLocation = `https://${host}/${key}.txt`;
 
   try {
