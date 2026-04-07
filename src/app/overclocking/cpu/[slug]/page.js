@@ -5,6 +5,7 @@ import { Cpu, Zap, ThermometerSnowflake, Activity, Settings, Link2, Gauge, Layer
 import { headers } from 'next/headers';
 
 import HeurekaButtons from '../../../../components/HeurekaButtons';
+// SeznamAd smazáno, používáme iframy
 
 // --- GURU PSEO ENGINE V2.0: ANTI-DUPLICATE & INTERLINKING ---
 export const runtime = "nodejs";
@@ -188,10 +189,10 @@ export default async function CpuOverclockingPage({ params }) {
                 {!isEn && (
                     <>
                         <div className="desktop-ad" style={{ maxWidth: '970px' }}>
-                            <iframe src="https://c.imedia.cz/ad/zone?zoneId=408654" width="970" height="210" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
+                            <iframe title="Sklik Top Banner" src="https://c.imedia.cz/ad/zone?zoneId=408654" width="970" height="210" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
                         </div>
                         <div className="mobile-ad" style={{ maxWidth: '320px' }}>
-                            <iframe src="https://c.imedia.cz/ad/zone?zoneId=408678" width="320" height="100" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
+                            <iframe title="Sklik Mobile Top" src="https://c.imedia.cz/ad/zone?zoneId=408678" width="320" height="100" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
                         </div>
                     </>
                 )}
@@ -262,10 +263,10 @@ export default async function CpuOverclockingPage({ params }) {
                 {!isEn && (
                     <div style={{ marginBottom: '60px' }}>
                         <div className="desktop-ad" style={{ maxWidth: '480px', margin: '0 auto' }}>
-                            <iframe src="https://c.imedia.cz/ad/zone?zoneId=408658" width="480" height="300" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
+                            <iframe title="Sklik Bottom Banner" src="https://c.imedia.cz/ad/zone?zoneId=408658" width="480" height="300" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
                         </div>
                         <div className="mobile-ad" style={{ maxWidth: '320px', margin: '0 auto' }}>
-                            <iframe src="https://c.imedia.cz/ad/zone?zoneId=408678" width="320" height="100" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
+                            <iframe title="Sklik Mobile Bottom" src="https://c.imedia.cz/ad/zone?zoneId=408678" width="320" height="100" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
                         </div>
                     </div>
                 )}
