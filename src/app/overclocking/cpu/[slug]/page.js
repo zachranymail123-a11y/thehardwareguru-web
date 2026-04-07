@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Cpu, Zap, Activity, Gauge, Layers, Flame, ChevronRight } from 'lucide-react';
 
-// FIX CESTY: Takhle to Vercel v tomhle zanoření najde (4 úrovně zpět)
+// FIX CESTY: Pro Vercel (4 úrovně zpět)
 import HeurekaButtons from '../../../../components/HeurekaButtons';
 import SeznamAd from '../../../../components/SeznamAd';
 
@@ -40,7 +40,7 @@ export async function generateMetadata({ params }) {
     if (!cpu) return { title: '404 | The Hardware Guru' };
     return {
         title: `${cpu.name} Overclocking a Undervolt Návod`,
-        description: cpu.description_cz?.substring(0, 160) || `Detailní návod na overclocking a undervolt pro ${cpu.name}. Optimalizace výkonu a teplot pro váš herní PC.`,
+        description: `Detailní návod na overclocking a undervolt pro ${cpu.name}. Optimalizace výkonu a teplot pro váš herní PC.`,
         alternates: { canonical: `https://thehardwareguru.cz/overclocking/cpu/${cpu.slug}` }
     };
 }
@@ -50,9 +50,7 @@ export default async function CpuOverclockingPage({ params }) {
     const cpu = await getCpuData(p.slug);
     if (!cpu) notFound();
 
-    const relatedCpus = await getRelatedCpus(cpu.vendor, p.slug);
     const latestPosts = await getLatestPosts();
-
     const isAMD = cpu.vendor?.toUpperCase() === 'AMD';
     const safeBoost = (cpu.boost_clock_ghz + 0.1).toFixed(2);
     
@@ -64,7 +62,7 @@ export default async function CpuOverclockingPage({ params }) {
                 .guru-spider-link:hover { background: rgba(102, 252, 241, 0.1); border-color: #66fcf1; color: #fff; transform: translateX(5px); }
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; margin-bottom: 40px; }
                 .ad-mobile-wrapper { display: none; justify-content: center; width: 100%; margin-bottom: 40px; }
-                .guru-description-block { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 40px; line-height: 1.6; color: #d1d5db; }
+                .guru-description-block { background: rgba(255,255,255,0.03); padding: 35px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 40px; line-height: 1.8; color: #cbd5e1; font-size: 17px; backdrop-filter: blur(10px); }
                 @media (max-width: 768px) { .ad-desktop-wrapper { display: none !important; } .ad-mobile-wrapper { display: flex !important; } }
             `}} />
 
@@ -76,13 +74,23 @@ export default async function CpuOverclockingPage({ params }) {
                     </h1>
                 </header>
 
-                {/* UNIKÁTNÍ POPIS CPU - GURU ENGINE FIX PRO SEZNAM */}
-                {cpu.description_cz && (
-                    <section className="guru-description-block">
-                        <h2 style={{ fontSize: '18px', fontWeight: '900', color: '#fff', marginBottom: '15px', textTransform: 'uppercase' }}>Analýza a potenciál {cpu.name}</h2>
-                        <div dangerouslySetInnerHTML={{ __html: cpu.description_cz }} />
-                    </section>
-                )}
+                {/* --- UNIKÁTNÍ POPIS CPU (GURU PSEO ENGINE) --- */}
+                <section className="guru-description-block">
+                    <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#fff', marginBottom: '15px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Zap size={20} color="#66fcf1" /> Proč ladit {cpu.name}?
+                    </h2>
+                    <p>
+                        Procesor <span style={{ color: '#66fcf1', fontWeight: 'bold' }}>{cpu.name}</span> postavený na architektuře <span style={{ color: '#a855f7' }}>{cpu.architecture || 'moderní platformě'}</span> disponuje obrovským potenciálem, který je ale v továrním nastavení často brzděn vysokými teplotami a zbytečně vysokým napětím. 
+                        Naším cílem pro tento konkrétní kus křemíku je najít ideální rovnováhu mezi maximálním <span style={{ color: '#10b981', fontWeight: 'bold' }}>Boostem ({safeBoost} GHz)</span> a efektivním chlazením. 
+                        {isAMD 
+                            ? ' U procesorů AMD se zaměříme primárně na Curve Optimizer, který u tohoto modelu dokáže zázraky s teplotami.' 
+                            : ' U této Intel architektury je klíčem k úspěchu správný VCore Offset, který zabrání zbytečnému thermal throttlingu při dlouhodobé zátěži.'
+                        }
+                    </p>
+                    {cpu.description_cz && (
+                        <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)' }} dangerouslySetInnerHTML={{ __html: cpu.description_cz }} />
+                    )}
+                </section>
 
                 {/* TOP REKLAMA */}
                 <div className="ad-desktop-wrapper">
@@ -92,23 +100,25 @@ export default async function CpuOverclockingPage({ params }) {
                     <SeznamAd zoneId={408678} width={320} height={100} />
                 </div>
 
+                {/* VOLTÁŽ A OC BOXY */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', marginBottom: '60px' }}>
-                    <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid #10b981', borderRadius: '24px', padding: '30px' }}>
-                        <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0 }}>GURU UNDERVOLT</h2>
-                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '20px', borderRadius: '16px', marginTop: '20px' }}>
+                    <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid #10b981', borderRadius: '24px', padding: '30px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                        <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0, color: '#10b981' }}>GURU UNDERVOLT</h2>
+                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '20px', borderRadius: '16px', marginTop: '20px', fontWeight: 'bold', fontSize: '18px' }}>
                             {isAMD ? 'Curve Optimizer: Negative -20' : 'VCore Offset: -0.05V'}
                         </div>
                     </div>
-                    <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid #3b82f6', borderRadius: '24px', padding: '30px' }}>
-                        <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0 }}>SAFE DAILY OC</h2>
+                    <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid #3b82f6', borderRadius: '24px', padding: '30px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                        <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0, color: '#3b82f6' }}>SAFE DAILY OC</h2>
                         <div style={{ fontSize: '32px', fontWeight: '950', marginTop: '20px', textAlign: 'center' }}>{safeBoost} GHz</div>
                     </div>
                 </div>
 
+                {/* HEUREKA A CHLAZENÍ */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '40px', marginBottom: '60px', alignItems: 'start' }}>
-                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '24px', textAlign: 'center' }}>
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '24px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
                         <h2 style={{ fontSize: '24px', fontWeight: '900', marginBottom: '20px' }}>Chlazení pro {cpu.name}</h2>
-                        <a href="https://www.heureka.cz/?h%5Bfraze%5D=vodni+chlazeni+cpu" target="_blank" rel="nofollow" style={{ background: '#3b82f6', color: '#fff', padding: '15px 25px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>ZLEPŠIT CHLAZENÍ</a>
+                        <a href="https://www.heureka.cz/?h%5Bfraze%5D=vodni+chlazeni+cpu" target="_blank" rel="nofollow" style={{ display: 'inline-block', background: '#3b82f6', color: '#fff', padding: '15px 35px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold', transition: '0.2s' }}>ZLEPŠIT CHLAZENÍ</a>
                     </div>
                     <div>
                         <HeurekaButtons isEn={false} />
@@ -120,6 +130,7 @@ export default async function CpuOverclockingPage({ params }) {
                     <SeznamAd zoneId={408658} width={480} height={300} />
                 </div>
 
+                {/* SPIDER LINKS */}
                 <section style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '50px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '25px' }}>Guru Nástroje</h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
