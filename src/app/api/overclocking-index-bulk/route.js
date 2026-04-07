@@ -14,12 +14,14 @@ export async function GET() {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     try {
-        // 🚀 GURU MEGA BULK FIX: Supabase defaultně vrací jen 100. 
-        // Musíme natvrdo nastavit range, abysme dostali VŠECHNO.
+        // 🚀 GURU NUCLEAR BULK FIX: 
+        // Vytáhneme prostě všechny sloupce a nastavíme range na absurdní číslo, 
+        // aby nás Supabase defaultní 100 limit nezastavil.
         const { data: cpus, error } = await supabase
             .from('cpus')
             .select('slug')
-            .range(0, 4000); // Tady to máš, teď už to sežere celou DB
+            .order('slug', { ascending: true })
+            .range(0, 9999); 
 
         if (error) throw error;
         if (!cpus || cpus.length === 0) {
@@ -72,7 +74,7 @@ export async function GET() {
 
         return NextResponse.json({ 
             success: true, 
-            message: "TEĎ UŽ JE TO KURVA KOMPLETNÍ!", 
+            message: "TEĎ UŽ TAM KURVA MUSÍ BÝT VŠECHNO!", 
             totalUrlsSent: urlList.length, 
             engines: results
         });
