@@ -5,9 +5,9 @@ import { Cpu, Zap, ThermometerSnowflake, AlertTriangle, ShieldCheck, ChevronRigh
 import { headers } from 'next/headers';
 import HeurekaButtons from '@/components/HeurekaButtons';
 
-// --- GURU PSEO ENGINE V2.0: TVŮJ FUNKČNÍ KÓD + OPRAVA BUILDU A MONETIZACE ---
-// Smazáno: export const runtime = "nodejs";
-// Smazáno: export const revalidate = 3600; (Toto způsobovalo pád buildu kvůli konfliktu s funkcí headers() níže)
+// --- GURU PSEO ENGINE V2.0: ANTI-DUPLICATE & INTERLINKING ---
+export const runtime = "nodejs";
+export const revalidate = 3600;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -139,10 +139,10 @@ export default async function CpuOverclockingPage({ params }) {
                     </h1>
                 </header>
 
-                {/* 💰 SKLIK REKLAMA: TOP */}
+                {/* 💰 SKLIK REKLAMA: TOP (OPRAVENO PRO NEXT.JS STRICT MODE) */}
                 {!isEn && (
                     <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 40px auto', width: '100%', maxWidth: '970px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
-                        <iframe src="https://c.imedia.cz/ad/zone?zoneId=408654" width="970" height="210" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
+                        <iframe title="Sklik Top Banner" src="https://c.imedia.cz/ad/zone?zoneId=408654" width="970" height="210" scrolling="no" style={{ border: 'none', maxWidth: '100%' }} />
                     </div>
                 )}
 
@@ -188,7 +188,6 @@ export default async function CpuOverclockingPage({ params }) {
 
                 {/* --- HLAVNÍ MONETIZACE A AFFILIATE HOOK --- */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '40px', marginBottom: '60px', alignItems: 'start' }}>
-                    {/* Chlazení Hook */}
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
                         <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '15px' }}>
                             {isEn ? `Cooling the ${cpu.name}` : `Chlazení pro ${cpu.name}`}
@@ -201,8 +200,8 @@ export default async function CpuOverclockingPage({ params }) {
                         </a>
                     </div>
                     
-                    {/* HEUREKA BUTTONY Z TVÉ SLOŽKY COMPONENTS */}
-                    <div>
+                    {/* HEUREKA BUTTONY */}
+                    <div style={{ width: '100%' }}>
                         <h3 style={{ fontSize: '16px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '1px', marginBottom: '15px', textAlign: 'center' }}>
                             {isEn ? 'Current Market Prices' : 'Aktuální ceny komponent'}
                         </h3>
@@ -210,10 +209,10 @@ export default async function CpuOverclockingPage({ params }) {
                     </div>
                 </div>
 
-                {/* 💰 SKLIK REKLAMA: BOTTOM */}
+                {/* 💰 SKLIK REKLAMA: BOTTOM (OPRAVENO PRO NEXT.JS STRICT MODE) */}
                 {!isEn && (
                     <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 60px auto', width: '100%', maxWidth: '480px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
-                        <iframe src="https://c.imedia.cz/ad/zone?zoneId=408658" width="480" height="300" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
+                        <iframe title="Sklik Bottom Banner" src="https://c.imedia.cz/ad/zone?zoneId=408658" width="480" height="300" scrolling="no" style={{ border: 'none', maxWidth: '100%' }} />
                     </div>
                 )}
 
