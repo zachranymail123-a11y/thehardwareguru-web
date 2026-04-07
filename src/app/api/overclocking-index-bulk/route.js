@@ -11,21 +11,25 @@ export async function GET() {
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     
-    // 🚀 GURU MASTER BYPASS: Musíš mít ve Vercelu nastavený SUPABASE_SERVICE_ROLE_KEY
-    // Pokud tam není, použije se anon, ale ten tě zase uřízne na 50!
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    // 🚀 GURU MASTER BYPASS: Teď už žádný fallback. Buď Service Key, nebo smrt.
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-        auth: { persistSession: false }
-    });
+    if (!supabaseKey || supabaseKey.length < 20) {
+        return NextResponse.json({ 
+            success: false, 
+            message: "CHYBA: Vercel nemá načtený SUPABASE_SERVICE_ROLE_KEY! Udělej REDEPLOY ve Vercelu, ty zmrde!" 
+        }, { status: 500 });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     try {
         let allCpus = [];
         let from = 0;
-        const PAGE_SIZE = 500; // Taháme po velkých kusech, Master Key nás pustí
+        const PAGE_SIZE = 100; // Bezpečný krok
         let hasMore = true;
 
-        // 🚀 GURU INFINITE VACUUM: Taháme dokud DB nevrátí nulu
+        // 🚀 GURU BRUTE FORCE LOOP: Taháme dokud tam něco je
         while (hasMore) {
             const { data, error } = await supabase
                 .from('cpus')
@@ -39,23 +43,16 @@ export async function GET() {
                 allCpus = [...allCpus, ...data];
                 from += data.length;
                 
-                // Pokud nám to vrátilo míň, než jsme chtěli, jsme reálně na dně
+                // Pokud jsme dostali míň než PAGE_SIZE, jsme na konci
                 if (data.length < PAGE_SIZE) {
                     hasMore = false;
                 }
             } else {
                 hasMore = false;
             }
-
-            // Bezpečnostní pojistka (IndexNow bere max 10k URL)
             if (from > 10000) break;
         }
 
-        if (allCpus.length === 0) {
-            return NextResponse.json({ success: false, message: "V DB fakt nic není, nebo tě nepustil klíč." });
-        }
-
-        // CZ + EN mutace
         const urlList = allCpus.flatMap(cpu => [
             `https://${host}/overclocking/cpu/${cpu.slug}`,
             `https://${host}/en/overclocking/cpu/${cpu.slug}`
@@ -71,8 +68,7 @@ export async function GET() {
         const endpoints = [
             { name: "Seznam", url: "https://search.seznam.cz/indexnow", hostHeader: "search.seznam.cz" },
             { name: "Bing", url: "https://www.bing.com/indexnow", hostHeader: "www.bing.com" },
-            { name: "Yandex", url: "https://yandex.com/indexnow", hostHeader: "yandex.com" },
-            { name: "Naver", url: "https://searchadvisor.naver.com/indexnow", hostHeader: "searchadvisor.naver.com" }
+            { name: "Yandex", url: "https://yandex.com/indexnow", hostHeader: "yandex.com" }
         ];
 
         const results = [];
@@ -81,8 +77,7 @@ export async function GET() {
                 const response = await fetch(engine.url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json; charset=utf-8', 'Host': engine.hostHeader },
-                    body: JSON.stringify(payload),
-                    cache: 'no-store' // 🚀 ANTI-CACHE FIX
+                    body: JSON.stringify(payload)
                 });
                 results.push({ engine: engine.name, status: response.status, success: response.ok });
             } catch (err) {
@@ -92,7 +87,7 @@ export async function GET() {
 
         return NextResponse.json({ 
             success: true, 
-            message: "GURU ULTIMATE BULK: VŠECHNO JE VENKU!", 
+            message: "TEĎ UŽ JE TO KURVA VŠECHNO!", 
             totalCpusFetched: allCpus.length,
             totalUrlsSent: urlList.length, 
             engines: results
