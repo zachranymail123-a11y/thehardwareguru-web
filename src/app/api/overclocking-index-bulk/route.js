@@ -14,7 +14,7 @@ export async function GET() {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     try {
-        // 🚀 GURU BULK FIX: Žádné limity, bereme ÚPLNĚ VŠE
+        // 🚀 GURU TOTAL BULK: Žádné limity, žádné ořezávání. Bereme úplně všechno z DB.
         const { data: cpus, error } = await supabase
             .from('cpus')
             .select('slug');
@@ -24,7 +24,7 @@ export async function GET() {
             return NextResponse.json({ success: false, message: "V databázi nejsou žádná CPU." });
         }
 
-        // Vygenerujeme CZ i EN linky pro každej jeden kus v DB
+        // Vygenerujeme linky pro každý jeden řádek, co Supabase vyflusla
         const urlList = cpus.flatMap(cpu => [
             `https://${host}/overclocking/cpu/${cpu.slug}`,
             `https://${host}/en/overclocking/cpu/${cpu.slug}`
@@ -34,7 +34,7 @@ export async function GET() {
             host: host,
             key: key,
             keyLocation: keyLocation,
-            urlList: urlList
+            urlList: urlList // ŽÁDNÝ .slice(0, 100) TU NENÍ, TY ZMRDE!
         };
 
         const endpoints = [
@@ -70,8 +70,8 @@ export async function GET() {
 
         return NextResponse.json({ 
             success: true, 
-            message: "KOMPLETNÍ GURU BULK ODESLÁN.", 
-            totalUrlsSent: urlList.length,
+            message: "TEĎ UŽ JE TO KOMPLETNÍ NÁLOŽ!", 
+            totalUrlsSent: urlList.length, // Tady uvidíš to reálný číslo
             engines: results
         });
 
