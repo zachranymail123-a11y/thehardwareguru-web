@@ -16,15 +16,15 @@ export async function GET() {
     try {
         let allCpus = [];
         let from = 0;
-        const CHUNK_SIZE = 100; // Bezpečný krok pro obcházení limitů
+        const PAGE_SIZE = 20; // Absolutní jistota, tohle projde přes jakýkoliv limit serveru
         let hasMore = true;
 
-        // 🚀 GURU RECURSIVE FETCH: Taháme tak dlouho, dokud není v DB pusto
+        // 🚀 GURU NUCLEAR BULK: Taháme po malých soustech, dokud tam něco je
         while (hasMore) {
             const { data, error } = await supabase
                 .from('cpus')
                 .select('slug')
-                .range(from, from + CHUNK_SIZE - 1)
+                .range(from, from + PAGE_SIZE - 1)
                 .order('slug', { ascending: true });
 
             if (error) throw error;
@@ -33,23 +33,24 @@ export async function GET() {
                 allCpus = [...allCpus, ...data];
                 from += data.length;
                 
-                // Pokud jsme dostali míň než CHUNK_SIZE, jsme u konce
-                if (data.length < CHUNK_SIZE) {
+                // Pokud nám to vrátilo míň, než jsme chtěli, jsme reálně u konce
+                if (data.length < PAGE_SIZE) {
                     hasMore = false;
                 }
             } else {
+                // Pokud to nevrátilo vůbec nic, končíme
                 hasMore = false;
             }
 
-            // Pojistka proti nekonečnu (IndexNow bere max 10k URL naráz)
-            if (from >= 5000) hasMore = false;
+            // Bezpečnostní pojistka (IndexNow bere max 10k URL naráz)
+            if (from > 5000) hasMore = false;
         }
 
         if (allCpus.length === 0) {
-            return NextResponse.json({ success: false, message: "V databázi nic není." });
+            return NextResponse.json({ success: false, message: "V databázi fakt nic není, ty hovado." });
         }
 
-        // Zdvojnásobíme to (CZ + EN)
+        // Zdvojnásobíme to (CZ + EN linky pro každou jednu položku)
         const urlList = allCpus.flatMap(cpu => [
             `https://${host}/overclocking/cpu/${cpu.slug}`,
             `https://${host}/en/overclocking/cpu/${cpu.slug}`
@@ -59,7 +60,7 @@ export async function GET() {
             host: host,
             key: key,
             keyLocation: keyLocation,
-            urlList: urlList // Teď už tu nebude ta posraná stovka
+            urlList: urlList
         };
 
         const endpoints = [
@@ -83,13 +84,14 @@ export async function GET() {
                 });
                 results.push({ engine: engine.name, status: response.status, success: response.ok });
             } catch (err) {
-                results.push({ engine: engine.name, error: "Timeout/Network error" });
+                results.push({ engine: engine.name, error: "Network error" });
             }
         }
 
         return NextResponse.json({ 
             success: true, 
-            message: "GURU BULK ODESLÁN BEZ LIMITU!", 
+            message: "GURU NUCLEAR BULK: TEĎ UŽ JSEM TO ODESLAL VŠECHNO!", 
+            totalCpusInDb: allCpus.length,
             totalUrlsSent: urlList.length, 
             engines: results
         });
