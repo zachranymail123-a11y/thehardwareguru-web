@@ -3,10 +3,10 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Cpu, Zap, ThermometerSnowflake, Activity, Settings, Link2, Gauge, Layers, Swords, Gamepad2, Flame, ChevronRight } from 'lucide-react';
 
-import HeurekaButtons from '@/components/HeurekaButtons';
-import SeznamAd from '@/components/SeznamAd'; 
+// Používám relativní cestu, která ti v minulosti prošla
+import HeurekaButtons from '../../../../components/HeurekaButtons';
 
-// --- GURU PSEO ENGINE V2.0: ANTI-DUPLICATE & INTERLINKING ---
+// --- GURU PSEO ENGINE V2.0 ---
 export const runtime = "nodejs";
 export const revalidate = 3600;
 
@@ -14,40 +14,21 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Vytažení hlavního CPU
 const getCpuData = async (slug) => {
     if (!slug) return null;
-    const cleanSlug = slug.replace(/^en-/, '');
-    const { data, error } = await supabase
-        .from('cpus')
-        .select('*')
-        .eq('slug', cleanSlug)
-        .limit(1)
-        .single();
+    const { data, error } = await supabase.from('cpus').select('*').eq('slug', slug).limit(1).single();
     if (error || !data) return null;
     return data;
 };
 
-// Vytažení souvisejících CPU pro interní prolinkování (Google Spider Web)
 const getRelatedCpus = async (vendor, currentSlug) => {
-    const cleanSlug = currentSlug.replace(/^en-/, '');
-    const { data, error } = await supabase
-        .from('cpus')
-        .select('name, slug, architecture')
-        .eq('vendor', vendor)
-        .neq('slug', cleanSlug)
-        .limit(4);
+    const { data, error } = await supabase.from('cpus').select('name, slug, architecture').eq('vendor', vendor).neq('slug', currentSlug).limit(4);
     if (error || !data) return [];
     return data;
 };
 
-// Vytažení 3 posledních článků
 const getLatestPosts = async () => {
-    const { data, error } = await supabase
-        .from('posts')
-        .select('id, title, title_en, slug, slug_en')
-        .order('created_at', { ascending: false })
-        .limit(3);
+    const { data, error } = await supabase.from('posts').select('id, title, slug').order('created_at', { ascending: false }).limit(3);
     if (error || !data) return [];
     return data;
 };
@@ -56,21 +37,8 @@ export async function generateMetadata({ params }) {
     const p = await params;
     const cpu = await getCpuData(p.slug);
     if (!cpu) return { title: '404 | The Hardware Guru' };
-
-    const isEn = p.slug.startsWith('en-');
-
-    // Unikátní meta titulky díky dynamickým proměnným
-    const title = isEn 
-        ? `${cpu.name} Overclocking & Undervolt Guide (${cpu.cores}-Core ${cpu.architecture})`
-        : `${cpu.name} Overclocking a Undervolt Návod (${cpu.cores}-jádro ${cpu.architecture})`;
-        
-    const description = isEn
-        ? `Maximize your ${cpu.architecture} chip. Exact curve settings and voltages to drop temps on the ${cpu.name} while hitting ${cpu.boost_clock_ghz}GHz+ safely.`
-        : `Zkroťte architekturu ${cpu.architecture}. Přesné hodnoty pro undervolting a bezpečné přetaktování ${cpu.name} nad hranici ${cpu.boost_clock_ghz} GHz.`;
-
     return {
-        title,
-        description,
+        title: `${cpu.name} Overclocking a Undervolt Návod`,
         alternates: { canonical: `https://thehardwareguru.cz/overclocking/cpu/${cpu.slug}` }
     };
 }
@@ -83,251 +51,86 @@ export default async function CpuOverclockingPage({ params }) {
     const relatedCpus = await getRelatedCpus(cpu.vendor, p.slug);
     const latestPosts = await getLatestPosts();
 
-    const isEn = p.slug.startsWith('en-');
-
     const isAMD = cpu.vendor?.toUpperCase() === 'AMD';
-    const baseClock = cpu.base_clock_ghz || 0;
-    const boostClock = cpu.boost_clock_ghz || 0;
+    const safeBoost = (cpu.boost_clock_ghz + 0.1).toFixed(2);
     
-    const hasData = boostClock > 0;
-    const safeBoost = hasData ? (boostClock + (isAMD ? 0.1 : 0.2)).toFixed(2) : 'Auto';
-    const extremeBoost = hasData ? (boostClock + (isAMD ? 0.25 : 0.4)).toFixed(2) : 'Max PBO/TVB';
-    
-    const undervoltStrategy = isAMD 
-        ? `Curve Optimizer: Negative All Core -15 to -30` 
-        : `VCore Offset: -0.05V to -0.10V`;
-
-    // --- GENERÁTOR UNIKÁTNÍHO TEXTU PROTI DUPLICITĚ (SPINNING) ---
-    const uniqueParagraph1 = isEn 
-        ? `The ${cpu.name} is a powerful ${cpu.cores}-core, ${cpu.threads}-thread processor built on the ${cpu.architecture || 'latest'} architecture. Out of the box, it features a base frequency of ${baseClock} GHz, but the real tuning potential begins when pushing past its official ${boostClock} GHz boost limit.`
-        : `Procesor ${cpu.name} je brutální křemík s ${cpu.cores} jádry a ${cpu.threads} vlákny, postavený na architektuře ${cpu.architecture || 'moderní platformě'}. V základu běží na frekvenci ${baseClock} GHz, ale ta pravá zábava začíná ve chvíli, kdy se rozhodnete překonat jeho tovární limit ${boostClock} GHz.`;
-
-    const uniqueParagraph2 = isEn
-        ? `Because the ${cpu.vendor} silicon behaves differently under thermal load, our tuning engine focuses heavily on undervolting. By dropping voltages (e.g., ${undervoltStrategy}), the ${cpu.name} can sustain higher multi-core frequencies without hitting thermal throttling walls.`
-        : `Vzhledem k tomu, že čipy od ${cpu.vendor} pod tepelnou zátěží rychle omezují výkon, náš tuning engine se soustředí primárně na undervolting. Snížením napětí (např. pomocí ${undervoltStrategy}) dokáže ${cpu.name} udržet vysoké takty na všech jádrech mnohem déle, aniž by narazil na teplotní strop.`;
-
-    // --- GOOGLE GOLDEN RICH: SCHÉMATA ---
-    const faqSchema = {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-            {
-                "@type": "Question",
-                "name": isEn ? `Is it safe to undervolt ${cpu.name}?` : `Je bezpečné podtaktovat (undervolt) ${cpu.name}?`,
-                "acceptedAnswer": { "@type": "Answer", "text": isEn ? `Yes, undervolting the ${cpu.name} is completely safe and extends lifespan.` : `Ano, undervolting ${cpu.name} je naprosto bezpečný a prodlužuje životnost.` }
-            },
-            {
-                "@type": "Question",
-                "name": isEn ? `What is the max boost clock for ${cpu.name}?` : `Jaký je maximální boost takt pro ${cpu.name}?`,
-                "acceptedAnswer": { "@type": "Answer", "text": isEn ? `With custom overclocking, it can reach up to ${extremeBoost} GHz.` : `S extrémním přetaktováním lze dosáhnout až ${extremeBoost} GHz.` }
-            }
-        ]
-    };
-
-    const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
-
-    const coolerLink = isEn 
-        ? "https://www.amazon.com/s?k=cpu+liquid+cooler+aio&tag=thehardware07-20" 
-        : "https://www.heureka.cz/?h%5Bfraze%5D=vodni+chlazeni+cpu#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
-
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
             
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
-
-            {/* Styl pro pavučinu a responzivní reklamy jako ve článcích */}
             <style dangerouslySetInnerHTML={{__html: `
-                .guru-spider-link {
-                    background: rgba(255,255,255,0.03); 
-                    border: 1px solid rgba(255,255,255,0.05); 
-                    padding: 15px; 
-                    border-radius: 12px; 
-                    color: #d1d5db; 
-                    text-decoration: none; 
-                    display: flex; 
-                    align-items: center; 
-                    gap: 10px; 
-                    font-size: 14px; 
-                    font-weight: bold;
-                    transition: 0.2s ease-in-out;
-                }
-                .guru-spider-link:hover {
-                    background: rgba(102, 252, 241, 0.1) !important;
-                    border-color: #66fcf1 !important;
-                    color: #fff !important;
-                    transform: translateX(5px);
-                }
-
-                .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
-                .ad-mobile-wrapper { display: none; width: 100%; }
-                
-                @media (max-width: 768px) {
-                    .ad-desktop-wrapper { display: none !important; }
-                    .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
-                }
+                .guru-spider-link { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; color: #d1d5db; text-decoration: none; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: bold; transition: 0.2s; }
+                .guru-spider-link:hover { background: rgba(102, 252, 241, 0.1); border-color: #66fcf1; color: #fff; transform: translateX(5px); }
+                .ad-desktop { display: flex; justify-content: center; width: 100%; margin-bottom: 40px; }
+                .ad-mobile { display: none; justify-content: center; width: 100%; margin-bottom: 40px; }
+                @media (max-width: 768px) { .ad-desktop { display: none !important; } .ad-mobile { display: flex !important; } }
             `}} />
 
             <main style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
                 
-                {/* HLAVIČKA A UNIKÁTNÍ SEO POPIS */}
                 <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(102, 252, 241, 0.1)', color: '#66fcf1', padding: '8px 16px', borderRadius: '50px', border: '1px solid rgba(102, 252, 241, 0.3)', fontWeight: '950', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>
-                        <Settings size={14} /> GURU {cpu.architecture} ENGINE
-                    </div>
-                    <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', margin: '0 0 25px 0', textTransform: 'uppercase', lineHeight: '1.1' }}>
+                    <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', margin: '0 0 25px 0', textTransform: 'uppercase' }}>
                         {cpu.name} <span style={{ color: '#a855f7' }}>OC & UNDERVOLT</span>
                     </h1>
                 </header>
 
-                {/* 💰 SKLIK REKLAMA: TOP (Responzivní SeznamAd jako na článcích) */}
-                {!isEn && (
-                    <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
-                        <div className="ad-desktop-wrapper">
-                            <SeznamAd zoneId={408654} width={970} height={210} />
-                        </div>
-                        <div className="ad-mobile-wrapper">
-                            <SeznamAd zoneId={408651} width={300} height={250} />
-                        </div>
-                    </div>
-                )}
+                <div className="ad-desktop">
+                    <iframe src="https://c.imedia.cz/ad/zone?zoneId=408654" width="970" height="210" scrolling="no" frameBorder={0} style={{ border: 'none' }}></iframe>
+                </div>
+                <div className="ad-mobile">
+                    <iframe src="https://c.imedia.cz/ad/zone?zoneId=408678" width="320" height="100" scrolling="no" frameBorder={0} style={{ border: 'none' }}></iframe>
+                </div>
 
-                {/* UNIKÁTNÍ PARAGRAFY PRO GOOGLE BOTA */}
-                <article style={{ background: 'rgba(15, 17, 21, 0.6)', padding: '30px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '50px', lineHeight: '1.8', color: '#d1d5db', fontSize: '16px', backdropFilter: 'blur(10px)' }}>
-                    <p style={{ marginBottom: '15px' }}>{uniqueParagraph1}</p>
-                    <p style={{ margin: 0 }}>{uniqueParagraph2}</p>
-                </article>
-
-                {/* GURU PŘEDPOVĚDNÍ KARTY */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', marginBottom: '60px' }}>
-                    
-                    {/* Eco Mode / Undervolt */}
-                    <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid #10b981', borderRadius: '24px', padding: '30px', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 30px rgba(16, 185, 129, 0.15)' }}>
-                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: '#10b981' }}></div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
-                            <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '12px', borderRadius: '12px' }}><ThermometerSnowflake size={24} color="#10b981" /></div>
-                            <div>
-                                <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0 }}>GURU UNDERVOLT</h2>
-                                <span style={{ color: '#10b981', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' }}>{isEn ? 'Recommended' : 'Doporučeno'}</span>
-                            </div>
-                        </div>
-                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '20px', fontFamily: 'monospace', fontSize: '16px', color: '#fff' }}>
-                            {undervoltStrategy}
+                    <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid #10b981', borderRadius: '24px', padding: '30px' }}>
+                        <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0 }}>GURU UNDERVOLT</h2>
+                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '20px', borderRadius: '16px', marginTop: '20px' }}>
+                            {isAMD ? 'Curve Optimizer: Negative -20' : 'VCore Offset: -0.05V'}
                         </div>
                     </div>
-
-                    {/* Safe Overclocking */}
-                    <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid #3b82f6', borderRadius: '24px', padding: '30px', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 30px rgba(59, 130, 246, 0.15)' }}>
-                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: '#3b82f6' }}></div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
-                            <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '12px', borderRadius: '12px' }}><Activity size={24} color="#3b82f6" /></div>
-                            <div>
-                                <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0 }}>SAFE DAILY OC</h2>
-                                <span style={{ color: '#3b82f6', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' }}>{isEn ? 'Target Boost' : 'Cílový Boost'}</span>
-                            </div>
-                        </div>
-                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '20px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '32px', fontWeight: '950', color: '#fff', textShadow: '0 0 15px rgba(59, 130, 246, 0.5)' }}>{safeBoost} GHz</div>
-                        </div>
+                    <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid #3b82f6', borderRadius: '24px', padding: '30px' }}>
+                        <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0 }}>SAFE DAILY OC</h2>
+                        <div style={{ fontSize: '32px', fontWeight: '950', marginTop: '20px', textAlign: 'center' }}>{safeBoost} GHz</div>
                     </div>
                 </div>
 
-                {/* AFFILIATE HOOK & HEUREKA BUTTONY */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '40px', marginBottom: '60px', alignItems: 'start' }}>
-                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
-                        <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '15px' }}>
-                            {isEn ? `Cooling the ${cpu.name}` : `Chlazení pro ${cpu.name}`}
-                        </h2>
-                        <p style={{ color: '#9ca3af', marginBottom: '25px', maxWidth: '600px', margin: '0 auto 25px auto' }}>
-                            {isEn ? `To hit ${safeBoost} GHz, you need premium cooling.` : `Pro dosažení stabilních ${safeBoost} GHz potřebujete prémiové chlazení.`}
-                        </p>
-                        <a href={coolerLink} target="_blank" rel="nofollow sponsored" style={{ display: 'inline-flex', alignItems: 'center', gap: '15px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: '#fff', padding: '18px 30px', borderRadius: '16px', textDecoration: 'none', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '1px', boxShadow: '0 10px 25px rgba(37, 99, 235, 0.4)', transition: '0.3s' }}>
-                            <ThermometerSnowflake size={24} /> {isEn ? 'UPGRADE COOLING NOW' : 'ZLEPŠIT CHLAZENÍ PC'}
-                        </a>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '40px', marginBottom: '60px' }}>
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '24px', textAlign: 'center' }}>
+                        <h2 style={{ fontSize: '24px', fontWeight: '900', marginBottom: '20px' }}>Chlazení pro {cpu.name}</h2>
+                        <a href="https://www.heureka.cz/?h%5Bfraze%5D=vodni+chlazeni+cpu" target="_blank" rel="nofollow" style={{ background: '#3b82f6', color: '#fff', padding: '15px 25px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>ZLEPŠIT CHLAZENÍ</a>
                     </div>
-
-                    <div style={{ width: '100%' }}>
-                        <h3 style={{ fontSize: '16px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '1px', marginBottom: '15px', textAlign: 'center' }}>
-                            {isEn ? 'Current Market Prices' : 'Aktuální ceny komponent'}
-                        </h3>
-                        <HeurekaButtons isEn={isEn} />
+                    <div>
+                        <HeurekaButtons isEn={false} />
                     </div>
                 </div>
 
-                {/* 💰 SKLIK REKLAMA: BOTTOM (Responzivní SeznamAd jako na článcích) */}
-                {!isEn && (
-                    <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
-                        <div className="ad-desktop-wrapper">
-                            <SeznamAd zoneId={408658} width={480} height={300} />
-                        </div>
-                        <div className="ad-mobile-wrapper">
-                            <SeznamAd zoneId={408651} width={300} height={250} />
-                        </div>
-                    </div>
-                )}
+                <div className="ad-desktop">
+                    <iframe src="https://c.imedia.cz/ad/zone?zoneId=408658" width="480" height="300" scrolling="no" frameBorder={0} style={{ border: 'none' }}></iframe>
+                </div>
 
-                {/* --- GOOGLE SPIDER WEB: NÁSTROJE, DUELY & TIPY --- */}
                 <section style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '50px' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Link2 color="#a855f7" /> {isEn ? 'Guru Tech & Tools' : 'Guru Nástroje & Průvodce'}
-                    </h3>
-                    
+                    <h3 style={{ fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '25px' }}>Guru Nástroje</h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
-                        <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} className="guru-spider-link">
-                            <Gauge size={18} color="#eab308" /> {isEn ? 'Bottleneck Calculator' : 'Bottleneck Kalkulačka'}
-                        </a>
-                        <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="guru-spider-link">
-                            <Activity size={18} color="#10b981" /> {isEn ? 'Game FPS Calculator' : 'FPS Kalkulačka pro Hry'}
-                        </a>
-                        <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="guru-spider-link">
-                            <Cpu size={18} color="#3b82f6" /> {isEn ? 'CPU Battles' : 'Souboje CPU (CPU vs CPU)'}
-                        </a>
-                        <a href={isEn ? "/en/gpuvs" : "/gpuvs"} className="guru-spider-link">
-                            <Layers size={18} color="#ef4444" /> {isEn ? 'GPU Battles' : 'Souboje GPU (GPU vs GPU)'}
-                        </a>
-                        <a href={isEn ? "/en/tipy" : "/tipy"} className="guru-spider-link">
-                            <Flame size={18} color="#f97316" /> {isEn ? 'Hardware Tips' : 'HW Tipy a Triky'}
-                        </a>
-                        <a href={isEn ? "/en/tweaky" : "/tweaky"} className="guru-spider-link">
-                            <Zap size={18} color="#a855f7" /> {isEn ? 'PC Tweaks' : 'PC Optimalizace a Tweaky'}
-                        </a>
+                        <a href="/bottleneck-kalkulacka" className="guru-spider-link"><Gauge size={18} /> Bottleneck Kalkulačka</a>
+                        <a href="/fps-kalkulacka" className="guru-spider-link"><Activity size={18} /> FPS Kalkulačka</a>
+                        <a href="/cpuvs" className="guru-spider-link"><Cpu size={18} /> Souboje CPU</a>
+                        <a href="/gpuvs" className="guru-spider-link"><Swords size={18} /> Souboje GPU</a>
+                        <a href="/tipy" className="guru-spider-link"><Flame size={18} /> Tipy a Triky</a>
+                        <a href="/tweaky" className="guru-spider-link"><Zap size={18} /> PC Tweaky</a>
                     </div>
                 </section>
 
-                {/* --- GOOGLE SPIDER WEB: SOUVISEJÍCÍ PROCESORY --- */}
-                {relatedCpus.length > 0 && (
-                    <section style={{ paddingTop: '40px' }}>
-                        <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <Layers color="#a855f7" /> {isEn ? 'Related Processors' : 'Související Procesory'}
-                        </h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
-                            {relatedCpus.map(related => (
-                                <a key={related.slug} href={isEn ? `/en/overclocking/cpu/${related.slug}` : `/overclocking/cpu/${related.slug}`} className="guru-spider-link">
-                                    <Cpu size={16} color="#9ca3af" /> {related.name}
-                                </a>
-                            ))}
-                        </div>
-                    </section>
-                )}
-
-                {/* --- GOOGLE SPIDER WEB: NEJNOVĚJŠÍ ČLÁNKY Z DATABÁZE --- */}
                 {latestPosts.length > 0 && (
                     <section style={{ paddingTop: '40px' }}>
-                        <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <ChevronRight color="#a855f7" /> {isEn ? 'Latest Articles' : 'Nejnovější Články'}
-                        </h3>
+                        <h3 style={{ fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '25px' }}>Nejnovější Články</h3>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
                             {latestPosts.map(post => (
-                                <a key={post.id} href={isEn ? `/en/clanky/${post.slug_en || post.slug}` : `/clanky/${post.slug}`} className="guru-spider-link">
-                                    <ChevronRight size={16} color="#9ca3af" /> 
-                                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {isEn ? (post.title_en || post.title) : post.title}
-                                    </span>
+                                <a key={post.id} href={`/clanky/${post.slug}`} className="guru-spider-link">
+                                    <ChevronRight size={16} /> {post.title}
                                 </a>
                             ))}
                         </div>
                     </section>
                 )}
-
             </main>
         </div>
     );
