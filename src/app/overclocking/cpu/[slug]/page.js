@@ -4,8 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Cpu, Zap, ThermometerSnowflake, AlertTriangle, ShieldCheck, ChevronRight, Activity, Settings, ArrowRight, Link2, Gauge, Layers, Monitor, Gamepad2, FileText, Wrench } from 'lucide-react';
 import HeurekaButtons from '@/components/HeurekaButtons';
 
-// --- GURU PSEO ENGINE V3.2: BUILD FIX (Removed Headers Conflict) ---
-export const runtime = "nodejs";
+// Vyhozeno export const runtime, necháváme default
 export const revalidate = 3600;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -14,53 +13,69 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const getCpuData = async (slug) => {
     if (!slug) return null;
-    const cleanSlug = slug.replace(/^en-/, '');
-    const { data, error } = await supabase.from('cpus').select('*').eq('slug', cleanSlug).limit(1).single();
-    if (error || !data) return null;
-    return data;
+    try {
+        const cleanSlug = slug.replace(/^en-/, '');
+        const { data, error } = await supabase.from('cpus').select('*').eq('slug', cleanSlug).limit(1).single();
+        if (error || !data) return null;
+        return data;
+    } catch (e) {
+        return null;
+    }
 };
 
 const getRelatedCpus = async (vendor, currentSlug) => {
-    const cleanSlug = currentSlug.replace(/^en-/, '');
-    const { data, error } = await supabase.from('cpus').select('name, slug, architecture').eq('vendor', vendor).neq('slug', cleanSlug).limit(4);
-    if (error || !data) return [];
-    return data;
+    if (!vendor || !currentSlug) return [];
+    try {
+        const cleanSlug = currentSlug.replace(/^en-/, '');
+        const { data, error } = await supabase.from('cpus').select('name, slug, architecture').eq('vendor', vendor).neq('slug', cleanSlug).limit(4);
+        if (error || !data) return [];
+        return data;
+    } catch (e) {
+        return [];
+    }
 };
 
 const getLatestPosts = async () => {
-    const { data, error } = await supabase.from('posts').select('id, title, slug').order('created_at', { ascending: false }).limit(3);
-    if (error || !data) return [];
-    return data;
+    try {
+        const { data, error } = await supabase.from('posts').select('id, title, slug').order('created_at', { ascending: false }).limit(3);
+        if (error || !data) return [];
+        return data;
+    } catch (e) {
+        return [];
+    }
 };
 
 export async function generateMetadata({ params }) {
-    const p = await params;
-    const cpu = await getCpuData(p.slug);
-    if (!cpu) return { title: '404 | The Hardware Guru' };
+    const slug = params?.slug || '';
+    if (!slug) return { title: 'Not Found' };
+    
+    const cpu = await getCpuData(slug);
+    if (!cpu) return { title: 'CPU Not Found | The Hardware Guru' };
 
-    // Bezpečná detekce jazyka bez headers()
-    const isEn = p.slug.startsWith('en-');
+    const isEn = slug.startsWith('en-');
+    const arch = cpu.architecture || 'Processor';
 
     const title = isEn 
-        ? `${cpu.name} Overclocking & Undervolt Guide (${cpu.cores}-Core ${cpu.architecture})`
-        : `${cpu.name} Overclocking a Undervolt Návod (${cpu.cores}-jádro ${cpu.architecture})`;
+        ? `${cpu.name} Overclocking & Undervolt Guide (${cpu.cores}-Core ${arch})`
+        : `${cpu.name} Overclocking a Undervolt Návod (${cpu.cores}-jádro ${arch})`;
         
     const description = isEn
-        ? `Maximize your ${cpu.architecture} chip. Exact curve settings and voltages to drop temps on the ${cpu.name} while hitting ${cpu.boost_clock_ghz}GHz+ safely.`
-        : `Zkroťte architekturu ${cpu.architecture}. Přesné hodnoty pro undervolting a bezpečné přetaktování ${cpu.name} nad hranici ${cpu.boost_clock_ghz} GHz.`;
+        ? `Maximize your ${arch} chip. Exact curve settings and voltages to drop temps on the ${cpu.name} while hitting ${cpu.boost_clock_ghz || 'max'}GHz+ safely.`
+        : `Zkroťte architekturu ${arch}. Přesné hodnoty pro undervolting a bezpečné přetaktování ${cpu.name} nad hranici ${cpu.boost_clock_ghz || 'max'} GHz.`;
 
     return { title, description, alternates: { canonical: `https://thehardwareguru.cz/overclocking/cpu/${cpu.slug}` } };
 }
 
 export default async function CpuOverclockingPage({ params }) {
-    const p = await params;
-    // Bezpečná detekce jazyka bez headers()
-    const isEn = p.slug.startsWith('en-');
+    const slug = params?.slug || '';
+    if (!slug) notFound();
+
+    const isEn = slug.startsWith('en-');
+    const cpu = await getCpuData(slug);
     
-    const cpu = await getCpuData(p.slug);
     if (!cpu) notFound();
 
-    const relatedCpus = await getRelatedCpus(cpu.vendor, p.slug);
+    const relatedCpus = await getRelatedCpus(cpu.vendor, slug);
     const latestPosts = await getLatestPosts();
 
     const isAMD = cpu.vendor?.toUpperCase() === 'AMD';
@@ -68,18 +83,20 @@ export default async function CpuOverclockingPage({ params }) {
     const boostClock = cpu.boost_clock_ghz || 0;
     
     const hasData = boostClock > 0;
-    const safeBoost = hasData ? (boostClock + (isAMD ? 0.1 : 0.2)).toFixed(2) : 'Auto';
-    const extremeBoost = hasData ? (boostClock + (isAMD ? 0.25 : 0.4)).toFixed(2) : 'Max PBO/TVB';
+    const safeBoost = hasData ? (Number(boostClock) + (isAMD ? 0.1 : 0.2)).toFixed(2) : 'Auto';
+    const extremeBoost = hasData ? (Number(boostClock) + (isAMD ? 0.25 : 0.4)).toFixed(2) : 'Max PBO/TVB';
     
     const undervoltStrategy = isAMD ? `Curve Optimizer: Negative All Core -15 to -30` : `VCore Offset: -0.05V to -0.10V`;
 
+    const arch = cpu.architecture || (isAMD ? 'Zen' : 'Core');
+
     const uniqueParagraph1 = isEn 
-        ? `The ${cpu.name} is a powerful ${cpu.cores}-core, ${cpu.threads}-thread processor built on the ${cpu.architecture || 'latest'} architecture. Out of the box, it features a base frequency of ${baseClock} GHz, but the real tuning potential begins when pushing past its official ${boostClock} GHz boost limit.`
-        : `Procesor ${cpu.name} je brutální křemík s ${cpu.cores} jádry a ${cpu.threads} vlákny, postavený na architektuře ${cpu.architecture || 'moderní platformě'}. V základu běží na frekvenci ${baseClock} GHz, ale ta pravá zábava začíná ve chvíli, kdy se rozhodnete překonat jeho tovární limit ${boostClock} GHz.`;
+        ? `The ${cpu.name} is a powerful ${cpu.cores}-core, ${cpu.threads}-thread processor built on the ${arch} architecture. Out of the box, it features a base frequency of ${baseClock} GHz, but the real tuning potential begins when pushing past its official ${boostClock} GHz boost limit.`
+        : `Procesor ${cpu.name} je brutální křemík s ${cpu.cores} jádry a ${cpu.threads} vlákny, postavený na architektuře ${arch}. V základu běží na frekvenci ${baseClock} GHz, ale ta pravá zábava začíná ve chvíli, kdy se rozhodnete překonat jeho tovární limit ${boostClock} GHz.`;
 
     const uniqueParagraph2 = isEn
-        ? `Because the ${cpu.vendor} silicon behaves differently under thermal load, our tuning engine focuses heavily on undervolting. By dropping voltages (e.g., ${undervoltStrategy}), the ${cpu.name} can sustain higher multi-core frequencies without hitting thermal throttling walls.`
-        : `Vzhledem k tomu, že čipy od ${cpu.vendor} pod tepelnou zátěží rychle omezují výkon, náš tuning engine se soustředí primárně na undervolting. Snížením napětí (např. pomocí ${undervoltStrategy}) dokáže ${cpu.name} udržet vysoké takty na všech jádrech mnohem déle, aniž by narazil na teplotní strop.`;
+        ? `Because the ${cpu.vendor || 'silicon'} behaves differently under thermal load, our tuning engine focuses heavily on undervolting. By dropping voltages (e.g., ${undervoltStrategy}), the ${cpu.name} can sustain higher multi-core frequencies without hitting thermal throttling walls.`
+        : `Vzhledem k tomu, že čipy od ${cpu.vendor || 'výrobce'} pod tepelnou zátěží rychle omezují výkon, náš tuning engine se soustředí primárně na undervolting. Snížením napětí (např. pomocí ${undervoltStrategy}) dokáže ${cpu.name} udržet vysoké takty na všech jádrech mnohem déle, aniž by narazil na teplotní strop.`;
 
     const faqSchema = {
         "@context": "https://schema.org",
@@ -102,7 +119,7 @@ export default async function CpuOverclockingPage({ params }) {
                 
                 <header style={{ textAlign: 'center', marginBottom: '30px' }}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(102, 252, 241, 0.1)', color: '#66fcf1', padding: '8px 16px', borderRadius: '50px', border: '1px solid rgba(102, 252, 241, 0.3)', fontWeight: '950', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>
-                        <Settings size={14} /> GURU {cpu.architecture} ENGINE
+                        <Settings size={14} /> GURU {arch} ENGINE
                     </div>
                     <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '950', margin: '0 0 25px 0', textTransform: 'uppercase', lineHeight: '1.1' }}>
                         {cpu.name} <span style={{ color: '#a855f7' }}>OC & UNDERVOLT</span>
