@@ -4,12 +4,12 @@ import { createClient } from '@supabase/supabase-js';
 import { Cpu, Zap, ThermometerSnowflake, Activity, Settings, Link2, Gauge, Layers, Swords, Gamepad2, Flame, ChevronRight } from 'lucide-react';
 import { headers } from 'next/headers';
 
-// TADY JSOU TVOJE HEUREKA TLAČÍTKA S PŘESNOU RELATIVNÍ CESTOU
 import HeurekaButtons from '../../../../components/HeurekaButtons';
+import SeznamAd from '../../../../components/SeznamAd'; 
 
 // --- GURU PSEO ENGINE V2.0: ANTI-DUPLICATE & INTERLINKING ---
 export const runtime = "nodejs";
-export const revalidate = 3600;
+// export const revalidate = 3600; // Zakomentováno kvůli konfliktu s headers() na Vercelu
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -103,7 +103,6 @@ export default async function CpuOverclockingPage({ params }) {
         : `VCore Offset: -0.05V to -0.10V`;
 
     // --- GENERÁTOR UNIKÁTNÍHO TEXTU PROTI DUPLICITĚ (SPINNING) ---
-    // Tento text bude pro každý procesor vygenerován s unikátními hodnotami
     const uniqueParagraph1 = isEn 
         ? `The ${cpu.name} is a powerful ${cpu.cores}-core, ${cpu.threads}-thread processor built on the ${cpu.architecture || 'latest'} architecture. Out of the box, it features a base frequency of ${baseClock} GHz, but the real tuning potential begins when pushing past its official ${boostClock} GHz boost limit.`
         : `Procesor ${cpu.name} je brutální křemík s ${cpu.cores} jádry a ${cpu.threads} vlákny, postavený na architektuře ${cpu.architecture || 'moderní platformě'}. V základu běží na frekvenci ${baseClock} GHz, ale ta pravá zábava začíná ve chvíli, kdy se rozhodnete překonat jeho tovární limit ${boostClock} GHz.`;
@@ -141,7 +140,7 @@ export default async function CpuOverclockingPage({ params }) {
             
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
 
-            {/* Styl pro Hover Efekty na Spider Web Linkách */}
+            {/* Styl pro pavučinu a responzivní reklamy */}
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-spider-link {
                     background: rgba(255,255,255,0.03); 
@@ -163,6 +162,15 @@ export default async function CpuOverclockingPage({ params }) {
                     color: #fff !important;
                     transform: translateX(5px);
                 }
+
+                /* Responzivní bloky pro reklamu */
+                .desktop-ad { display: flex; justify-content: center; width: 100%; overflow: hidden; margin: 0 auto 40px auto; }
+                .mobile-ad { display: none; justify-content: center; width: 100%; overflow: hidden; margin: 0 auto 40px auto; }
+                
+                @media (max-width: 768px) {
+                    .desktop-ad { display: none !important; }
+                    .mobile-ad { display: flex !important; }
+                }
             `}} />
 
             <main style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
@@ -177,11 +185,16 @@ export default async function CpuOverclockingPage({ params }) {
                     </h1>
                 </header>
 
-                {/* 💰 SKLIK REKLAMA: TOP */}
+                {/* 💰 SKLIK REKLAMA: TOP (Responzivní přes CSS) */}
                 {!isEn && (
-                    <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 40px auto', width: '100%', maxWidth: '970px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
-                        <iframe title="Sklik Top Banner" src="https://c.imedia.cz/ad/zone?zoneId=408654" width="970" height="210" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
-                    </div>
+                    <>
+                        <div className="desktop-ad" style={{ maxWidth: '970px' }}>
+                            <SeznamAd zoneId={408654} /> {/* 970x210 PC */}
+                        </div>
+                        <div className="mobile-ad" style={{ maxWidth: '320px' }}>
+                            <SeznamAd zoneId={408678} /> {/* 320x100 Mobil */}
+                        </div>
+                    </>
                 )}
 
                 {/* UNIKÁTNÍ PARAGRAFY PRO GOOGLE BOTA */}
@@ -224,7 +237,7 @@ export default async function CpuOverclockingPage({ params }) {
                     </div>
                 </div>
 
-                {/* AFFILIATE HOOK & HEUREKA BUTTONS */}
+                {/* AFFILIATE HOOK & HEUREKA BUTTONY */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '40px', marginBottom: '60px', alignItems: 'start' }}>
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
                         <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '15px' }}>
@@ -237,7 +250,7 @@ export default async function CpuOverclockingPage({ params }) {
                             <ThermometerSnowflake size={24} /> {isEn ? 'UPGRADE COOLING NOW' : 'ZLEPŠIT CHLAZENÍ PC'}
                         </a>
                     </div>
-                    
+
                     <div style={{ width: '100%' }}>
                         <h3 style={{ fontSize: '16px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '1px', marginBottom: '15px', textAlign: 'center' }}>
                             {isEn ? 'Current Market Prices' : 'Aktuální ceny komponent'}
@@ -246,14 +259,19 @@ export default async function CpuOverclockingPage({ params }) {
                     </div>
                 </div>
 
-                {/* 💰 SKLIK REKLAMA: BOTTOM */}
+                {/* 💰 SKLIK REKLAMA: BOTTOM (Responzivní přes CSS) */}
                 {!isEn && (
-                    <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 60px auto', width: '100%', maxWidth: '480px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
-                        <iframe title="Sklik Bottom Banner" src="https://c.imedia.cz/ad/zone?zoneId=408658" width="480" height="300" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
+                    <div style={{ marginBottom: '60px' }}>
+                        <div className="desktop-ad" style={{ maxWidth: '480px', margin: '0 auto' }}>
+                            <SeznamAd zoneId={408658} /> {/* 480x300 PC */}
+                        </div>
+                        <div className="mobile-ad" style={{ maxWidth: '320px', margin: '0 auto' }}>
+                            <SeznamAd zoneId={408678} /> {/* 320x100 Mobil */}
+                        </div>
                     </div>
                 )}
 
-                {/* --- GOOGLE SPIDER WEB: GURU NÁSTROJE, DUELY & TIPY --- */}
+                {/* --- GOOGLE SPIDER WEB: NÁSTROJE, DUELY & TIPY --- */}
                 <section style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '50px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <Link2 color="#a855f7" /> {isEn ? 'Guru Tech & Tools' : 'Guru Nástroje & Průvodce'}
@@ -264,7 +282,7 @@ export default async function CpuOverclockingPage({ params }) {
                             <Gauge size={18} color="#eab308" /> {isEn ? 'Bottleneck Calculator' : 'Bottleneck Kalkulačka'}
                         </a>
                         <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="guru-spider-link">
-                            <Gamepad2 size={18} color="#10b981" /> {isEn ? 'Game FPS Calculator' : 'FPS Kalkulačka pro Hry'}
+                            <Activity size={18} color="#10b981" /> {isEn ? 'Game FPS Calculator' : 'FPS Kalkulačka pro Hry'}
                         </a>
                         <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="guru-spider-link">
                             <Cpu size={18} color="#3b82f6" /> {isEn ? 'CPU Battles' : 'Souboje CPU (CPU vs CPU)'}
