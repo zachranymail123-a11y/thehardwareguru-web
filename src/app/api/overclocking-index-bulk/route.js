@@ -14,22 +14,44 @@ export async function GET() {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     try {
-        // 🚀 GURU NUCLEAR BULK FIX: 
-        // Vytáhneme prostě všechny sloupce a nastavíme range na absurdní číslo, 
-        // aby nás Supabase defaultní 100 limit nezastavil.
-        const { data: cpus, error } = await supabase
-            .from('cpus')
-            .select('slug')
-            .order('slug', { ascending: true })
-            .range(0, 9999); 
+        // 🚀 GURU BRUTE FORCE FETCH: Taháme všechno v cyklu, abysme obešli limity
+        let allCpus = [];
+        let from = 0;
+        let to = 999;
+        let hasMore = true;
 
-        if (error) throw error;
-        if (!cpus || cpus.length === 0) {
+        while (hasMore) {
+            const { data, error } = await supabase
+                .from('cpus')
+                .select('slug')
+                .range(from, to)
+                .order('slug', { ascending: true });
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                allCpus = [...allCpus, ...data];
+                // Pokud jsme dostali plný nášup (1000), zkusíme další várku
+                if (data.length === 1000) {
+                    from += 1000;
+                    to += 1000;
+                } else {
+                    hasMore = false;
+                }
+            } else {
+                hasMore = false;
+            }
+            
+            // Bezpečnostní pojistka proti nekonečné smyčce (max 10k CPU)
+            if (from > 10000) hasMore = false;
+        }
+
+        if (allCpus.length === 0) {
             return NextResponse.json({ success: false, message: "V databázi nejsou žádná CPU." });
         }
 
-        // Vygenerujeme linky pro každý jeden řádek (CZ + EN)
-        const urlList = cpus.flatMap(cpu => [
+        // Vygenerujeme CZ i EN linky pro každej řádek z DB
+        const urlList = allCpus.flatMap(cpu => [
             `https://${host}/overclocking/cpu/${cpu.slug}`,
             `https://${host}/en/overclocking/cpu/${cpu.slug}`
         ]);
@@ -74,7 +96,7 @@ export async function GET() {
 
         return NextResponse.json({ 
             success: true, 
-            message: "TEĎ UŽ TAM KURVA MUSÍ BÝT VŠECHNO!", 
+            message: "GURU BRUTE FORCE ODESLÁNÍ DOKONČENO!", 
             totalUrlsSent: urlList.length, 
             engines: results
         });
