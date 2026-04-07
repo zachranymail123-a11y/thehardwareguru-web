@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Cpu, Zap, ThermometerSnowflake, AlertTriangle, ShieldCheck, ChevronRight, Activity, Settings, ArrowRight, Link2, Gauge, Layers } from 'lucide-react';
 import { headers } from 'next/headers';
+import HeurekaButtons from '@/components/HeurekaButtons';
 
 // --- GURU PSEO ENGINE V2.0: ANTI-DUPLICATE & INTERLINKING ---
 export const runtime = "nodejs";
@@ -189,6 +190,14 @@ export default async function CpuOverclockingPage({ params }) {
                     <a href={coolerLink} target="_blank" rel="nofollow sponsored" style={{ display: 'inline-flex', alignItems: 'center', gap: '15px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: '#fff', padding: '18px 30px', borderRadius: '16px', textDecoration: 'none', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '1px', boxShadow: '0 10px 25px rgba(37, 99, 235, 0.4)', transition: '0.3s' }}>
                         <ThermometerSnowflake size={24} /> {isEn ? 'UPGRADE COOLING NOW' : 'ZLEPŠIT CHLAZENÍ PC'}
                     </a>
+                </div>
+
+                {/* --- HEUREKA BUTTONS --- */}
+                <div style={{ marginBottom: '50px' }}>
+                    <h3 style={{ fontSize: '16px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '1px', marginBottom: '15px', textAlign: 'center' }}>
+                        {isEn ? 'Current Market Prices' : 'Aktuální ceny komponent'}
+                    </h3>
+                    <HeurekaButtons isEn={isEn} />
                 </div>
 
                 {/* --- GOOGLE SPIDER WEB: INTERNÍ PROLINKOVÁNÍ --- */}
