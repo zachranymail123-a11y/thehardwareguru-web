@@ -14,17 +14,19 @@ export async function GET() {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     try {
-        // 🚀 GURU TOTAL BULK: Žádné limity, žádné ořezávání. Bereme úplně všechno z DB.
+        // 🚀 GURU MEGA BULK FIX: Supabase defaultně vrací jen 100. 
+        // Musíme natvrdo nastavit range, abysme dostali VŠECHNO.
         const { data: cpus, error } = await supabase
             .from('cpus')
-            .select('slug');
+            .select('slug')
+            .range(0, 4000); // Tady to máš, teď už to sežere celou DB
 
         if (error) throw error;
         if (!cpus || cpus.length === 0) {
             return NextResponse.json({ success: false, message: "V databázi nejsou žádná CPU." });
         }
 
-        // Vygenerujeme linky pro každý jeden řádek, co Supabase vyflusla
+        // Vygenerujeme linky pro každý jeden řádek (CZ + EN)
         const urlList = cpus.flatMap(cpu => [
             `https://${host}/overclocking/cpu/${cpu.slug}`,
             `https://${host}/en/overclocking/cpu/${cpu.slug}`
@@ -34,7 +36,7 @@ export async function GET() {
             host: host,
             key: key,
             keyLocation: keyLocation,
-            urlList: urlList // ŽÁDNÝ .slice(0, 100) TU NENÍ, TY ZMRDE!
+            urlList: urlList 
         };
 
         const endpoints = [
@@ -70,8 +72,8 @@ export async function GET() {
 
         return NextResponse.json({ 
             success: true, 
-            message: "TEĎ UŽ JE TO KOMPLETNÍ NÁLOŽ!", 
-            totalUrlsSent: urlList.length, // Tady uvidíš to reálný číslo
+            message: "TEĎ UŽ JE TO KURVA KOMPLETNÍ!", 
+            totalUrlsSent: urlList.length, 
             engines: results
         });
 
