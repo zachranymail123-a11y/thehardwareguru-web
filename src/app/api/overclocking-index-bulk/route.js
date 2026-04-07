@@ -6,7 +6,6 @@ export const maxDuration = 60;
 
 export async function GET() {
     const host = "thehardwareguru.cz";
-    // FIX: Klíč opraven přesně podle tvého souboru guru-indexnow-key-2026.txt
     const key = "guru-indexnow-key-2026"; 
     const keyLocation = `https://${host}/guru-indexnow-key-2026.txt`;
 
@@ -15,7 +14,7 @@ export async function GET() {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     try {
-        // 1. Vytáhneme VŠECHNY procesory
+        // 🚀 GURU BULK FIX: Žádné limity, bereme ÚPLNĚ VŠE
         const { data: cpus, error } = await supabase
             .from('cpus')
             .select('slug');
@@ -25,13 +24,12 @@ export async function GET() {
             return NextResponse.json({ success: false, message: "V databázi nejsou žádná CPU." });
         }
 
-        // 2. Vygenerujeme seznam URL (CZ i EN)
+        // Vygenerujeme CZ i EN linky pro každej jeden kus v DB
         const urlList = cpus.flatMap(cpu => [
             `https://${host}/overclocking/cpu/${cpu.slug}`,
             `https://${host}/en/overclocking/cpu/${cpu.slug}`
         ]);
 
-        // 3. Payload pro IndexNow
         const payload = {
             host: host,
             key: key,
@@ -49,7 +47,6 @@ export async function GET() {
 
         const results = [];
 
-        // 4. Odeslání
         for (const engine of endpoints) {
             try {
                 const response = await fetch(engine.url, {
@@ -73,7 +70,7 @@ export async function GET() {
 
         return NextResponse.json({ 
             success: true, 
-            message: "HROMADNÉ ODESLÁNÍ OVERCLOCKINGU OPRAVENO.", 
+            message: "KOMPLETNÍ GURU BULK ODESLÁN.", 
             totalUrlsSent: urlList.length,
             engines: results
         });
