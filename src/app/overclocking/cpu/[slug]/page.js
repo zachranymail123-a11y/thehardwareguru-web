@@ -3,7 +3,9 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Cpu, Zap, ThermometerSnowflake, AlertTriangle, ShieldCheck, ChevronRight, Activity, Settings, ArrowRight, Link2, Gauge, Layers } from 'lucide-react';
 import { headers } from 'next/headers';
-import HeurekaButtons from '@/components/HeurekaButtons';
+
+// TADY JE PŘIDANÝ IMPORT - natvrdo relativní cesta, aby to Vercel stoprocentně našel
+import HeurekaButtons from '../../../../components/HeurekaButtons';
 
 // --- GURU PSEO ENGINE V2.0: ANTI-DUPLICATE & INTERLINKING ---
 export const runtime = "nodejs";
@@ -192,8 +194,8 @@ export default async function CpuOverclockingPage({ params }) {
                     </a>
                 </div>
 
-                {/* --- HEUREKA BUTTONS --- */}
-                <div style={{ marginBottom: '50px' }}>
+                {/* TADY JE PŘIDANÁ KOMPONENTA HEUREKA TLAČÍTEK */}
+                <div style={{ marginBottom: '60px' }}>
                     <h3 style={{ fontSize: '16px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '1px', marginBottom: '15px', textAlign: 'center' }}>
                         {isEn ? 'Current Market Prices' : 'Aktuální ceny komponent'}
                     </h3>
