@@ -5,7 +5,6 @@ import { Cpu, Zap, ThermometerSnowflake, Activity, Settings, Link2, Gauge, Layer
 import { headers } from 'next/headers';
 
 import HeurekaButtons from '../../../../components/HeurekaButtons';
-import SeznamAd from '../../../../components/SeznamAd'; 
 
 // --- GURU PSEO ENGINE V2.0: ANTI-DUPLICATE & INTERLINKING ---
 export const runtime = "nodejs";
@@ -185,14 +184,14 @@ export default async function CpuOverclockingPage({ params }) {
                     </h1>
                 </header>
 
-                {/* 💰 SKLIK REKLAMA: TOP (Responzivní přes CSS) */}
+                {/* 💰 SKLIK REKLAMA: TOP (Responzivní iframy) */}
                 {!isEn && (
                     <>
                         <div className="desktop-ad" style={{ maxWidth: '970px' }}>
-                            <SeznamAd zoneId={408654} /> {/* 970x210 PC */}
+                            <iframe src="https://c.imedia.cz/ad/zone?zoneId=408654" width="970" height="210" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
                         </div>
                         <div className="mobile-ad" style={{ maxWidth: '320px' }}>
-                            <SeznamAd zoneId={408678} /> {/* 320x100 Mobil */}
+                            <iframe src="https://c.imedia.cz/ad/zone?zoneId=408678" width="320" height="100" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
                         </div>
                     </>
                 )}
@@ -259,14 +258,14 @@ export default async function CpuOverclockingPage({ params }) {
                     </div>
                 </div>
 
-                {/* 💰 SKLIK REKLAMA: BOTTOM (Responzivní přes CSS) */}
+                {/* 💰 SKLIK REKLAMA: BOTTOM (Responzivní iframy) */}
                 {!isEn && (
                     <div style={{ marginBottom: '60px' }}>
                         <div className="desktop-ad" style={{ maxWidth: '480px', margin: '0 auto' }}>
-                            <SeznamAd zoneId={408658} /> {/* 480x300 PC */}
+                            <iframe src="https://c.imedia.cz/ad/zone?zoneId=408658" width="480" height="300" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
                         </div>
                         <div className="mobile-ad" style={{ maxWidth: '320px', margin: '0 auto' }}>
-                            <SeznamAd zoneId={408678} /> {/* 320x100 Mobil */}
+                            <iframe src="https://c.imedia.cz/ad/zone?zoneId=408678" width="320" height="100" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
                         </div>
                     </div>
                 )}
