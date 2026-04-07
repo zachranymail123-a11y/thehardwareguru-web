@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Cpu, Zap, ThermometerSnowflake, AlertTriangle, ShieldCheck, ChevronRight, Activity, Settings, ArrowRight, Link2, Gauge, Layers } from 'lucide-react';
 import { headers } from 'next/headers';
+
+// TADY SI JEN ZKONTROLUJ CESTU. Pokud to Vercel nenajde, přepiš to na relativní (např. ../../../../components/HeurekaButtons)
 import HeurekaButtons from '@/components/HeurekaButtons';
 
 // --- GURU PSEO ENGINE V2.0: ANTI-DUPLICATE & INTERLINKING ---
@@ -139,10 +141,10 @@ export default async function CpuOverclockingPage({ params }) {
                     </h1>
                 </header>
 
-                {/* 💰 SKLIK REKLAMA: TOP (OPRAVENO PRO NEXT.JS STRICT MODE) */}
+                {/* 💰 SKLIK REKLAMA: TOP */}
                 {!isEn && (
                     <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 40px auto', width: '100%', maxWidth: '970px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
-                        <iframe title="Sklik Top Banner" src="https://c.imedia.cz/ad/zone?zoneId=408654" width="970" height="210" scrolling="no" style={{ border: 'none', maxWidth: '100%' }} />
+                        <iframe title="Sklik Top Banner" src="https://c.imedia.cz/ad/zone?zoneId=408654" width="970" height="210" scrolling="no" style={{ border: 'none', maxWidth: '100%' }}></iframe>
                     </div>
                 )}
 
@@ -188,6 +190,7 @@ export default async function CpuOverclockingPage({ params }) {
 
                 {/* --- HLAVNÍ MONETIZACE A AFFILIATE HOOK --- */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '40px', marginBottom: '60px', alignItems: 'start' }}>
+                    {/* Chlazení Hook */}
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
                         <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '15px' }}>
                             {isEn ? `Cooling the ${cpu.name}` : `Chlazení pro ${cpu.name}`}
@@ -209,10 +212,10 @@ export default async function CpuOverclockingPage({ params }) {
                     </div>
                 </div>
 
-                {/* 💰 SKLIK REKLAMA: BOTTOM (OPRAVENO PRO NEXT.JS STRICT MODE) */}
+                {/* 💰 SKLIK REKLAMA: BOTTOM */}
                 {!isEn && (
                     <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 60px auto', width: '100%', maxWidth: '480px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
-                        <iframe title="Sklik Bottom Banner" src="https://c.imedia.cz/ad/zone?zoneId=408658" width="480" height="300" scrolling="no" style={{ border: 'none', maxWidth: '100%' }} />
+                        <iframe title="Sklik Bottom Banner" src="https://c.imedia.cz/ad/zone?zoneId=408658" width="480" height="300" scrolling="no" style={{ border: 'none', maxWidth: '100%' }}></iframe>
                     </div>
                 )}
 
@@ -224,7 +227,6 @@ export default async function CpuOverclockingPage({ params }) {
                     
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
                         
-                        {/* Pevné Hardlinky (Autorita webu) */}
                         <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', padding: '15px', borderRadius: '12px', color: '#eab308', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold', transition: '0.2s' }}>
                             <Gauge size={18} /> {isEn ? 'Bottleneck Calculator' : 'Bottleneck Kalkulačka'}
                         </a>
@@ -232,7 +234,7 @@ export default async function CpuOverclockingPage({ params }) {
                             <Layers size={18} /> {isEn ? 'Full CPU Database' : 'Kompletní Databáze CPU'}
                         </a>
 
-                        {/* Dynamické prolinky na další procesory (Zamezuje slepým uličkám) */}
+                        {/* Dynamické prolinky na další procesory */}
                         {relatedCpus.map(related => (
                             <a key={related.slug} href={isEn ? `/en/overclocking/cpu/${related.slug}` : `/overclocking/cpu/${related.slug}`} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', padding: '15px', borderRadius: '12px', color: '#d1d5db', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', transition: '0.2s' }}>
                                 <Cpu size={16} color="#9ca3af" /> {related.name}
