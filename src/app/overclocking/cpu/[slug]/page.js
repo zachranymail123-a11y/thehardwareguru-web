@@ -1,15 +1,17 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
-import { Cpu, Zap, ThermometerSnowflake, AlertTriangle, ShieldCheck, ChevronRight, Activity, Settings, ArrowRight, Link2, Gauge, Layers } from 'lucide-react';
+import { Cpu, Zap, ThermometerSnowflake, AlertTriangle, ShieldCheck, ChevronRight, Activity, Settings, ArrowRight, Link2, Gauge, Layers, Monitor, Gamepad2, FileText, Wrench } from 'lucide-react';
 import { headers } from 'next/headers';
 
 // TADY JE PŘIDANÝ IMPORT - natvrdo relativní cesta, aby to Vercel stoprocentně našel
 import HeurekaButtons from '../../../../components/HeurekaButtons';
 
-// --- GURU PSEO ENGINE V2.0: ANTI-DUPLICATE & INTERLINKING ---
+// --- GURU PSEO ENGINE V2.0: ANTI-DUPLICATE, INTERLINKING & MONETIZATION ---
 export const runtime = "nodejs";
-export const revalidate = 3600;
+
+// Zakomentováno pro Vercel build (zamezuje Error 1 při použití dynamických headers)
+// export const revalidate = 3600;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -38,6 +40,17 @@ const getRelatedCpus = async (vendor, currentSlug) => {
         .eq('vendor', vendor)
         .neq('slug', cleanSlug)
         .limit(4);
+    if (error || !data) return [];
+    return data;
+};
+
+// PŘIDÁNO: Vytažení posledních 3 článků pro pavučinu
+const getLatestPosts = async () => {
+    const { data, error } = await supabase
+        .from('posts')
+        .select('id, title, slug')
+        .order('created_at', { ascending: false })
+        .limit(3);
     if (error || !data) return [];
     return data;
 };
@@ -73,6 +86,7 @@ export default async function CpuOverclockingPage({ params }) {
     if (!cpu) notFound();
 
     const relatedCpus = await getRelatedCpus(cpu.vendor, p.slug);
+    const latestPosts = await getLatestPosts(); // Načtení článků
 
     const headersList = headers();
     const fullUrl = headersList.get('referer') || "";
@@ -91,7 +105,6 @@ export default async function CpuOverclockingPage({ params }) {
         : `VCore Offset: -0.05V to -0.10V`;
 
     // --- GENERÁTOR UNIKÁTNÍHO TEXTU PROTI DUPLICITĚ (SPINNING) ---
-    // Tento text bude pro každý procesor vygenerován s unikátními hodnotami
     const uniqueParagraph1 = isEn 
         ? `The ${cpu.name} is a powerful ${cpu.cores}-core, ${cpu.threads}-thread processor built on the ${cpu.architecture || 'latest'} architecture. Out of the box, it features a base frequency of ${baseClock} GHz, but the real tuning potential begins when pushing past its official ${boostClock} GHz boost limit.`
         : `Procesor ${cpu.name} je brutální křemík s ${cpu.cores} jádry a ${cpu.threads} vlákny, postavený na architektuře ${cpu.architecture || 'moderní platformě'}. V základu běží na frekvenci ${baseClock} GHz, ale ta pravá zábava začíná ve chvíli, kdy se rozhodnete překonat jeho tovární limit ${boostClock} GHz.`;
@@ -141,6 +154,13 @@ export default async function CpuOverclockingPage({ params }) {
                     </h1>
                 </header>
 
+                {/* 💰 SKLIK REKLAMA: TOP (Zobrazí se jen Čechům) */}
+                {!isEn && (
+                    <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 40px auto', width: '100%', maxWidth: '970px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+                        <iframe title="Sklik Top Banner" src="https://c.imedia.cz/ad/zone?zoneId=408654" width="970" height="210" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }} />
+                    </div>
+                )}
+
                 {/* UNIKÁTNÍ PARAGRAFY PRO GOOGLE BOTA */}
                 <article style={{ background: 'rgba(15, 17, 21, 0.6)', padding: '30px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '50px', lineHeight: '1.8', color: '#d1d5db', fontSize: '16px', backdropFilter: 'blur(10px)' }}>
                     <p style={{ marginBottom: '15px' }}>{uniqueParagraph1}</p>
@@ -181,53 +201,126 @@ export default async function CpuOverclockingPage({ params }) {
                     </div>
                 </div>
 
-                {/* AFFILIATE HOOK */}
-                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center', marginBottom: '60px' }}>
-                    <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '15px' }}>
-                        {isEn ? `Cooling the ${cpu.name}` : `Chlazení pro ${cpu.name}`}
-                    </h2>
-                    <p style={{ color: '#9ca3af', marginBottom: '25px', maxWidth: '600px', margin: '0 auto 25px auto' }}>
-                        {isEn ? `To hit ${safeBoost} GHz, you need premium cooling.` : `Pro dosažení stabilních ${safeBoost} GHz potřebujete prémiové chlazení.`}
-                    </p>
-                    <a href={coolerLink} target="_blank" rel="nofollow sponsored" style={{ display: 'inline-flex', alignItems: 'center', gap: '15px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: '#fff', padding: '18px 30px', borderRadius: '16px', textDecoration: 'none', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '1px', boxShadow: '0 10px 25px rgba(37, 99, 235, 0.4)', transition: '0.3s' }}>
-                        <ThermometerSnowflake size={24} /> {isEn ? 'UPGRADE COOLING NOW' : 'ZLEPŠIT CHLAZENÍ PC'}
-                    </a>
+                {/* AFFILIATE HOOK A HEUREKA BUTTONY */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '40px', marginBottom: '60px', alignItems: 'start' }}>
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                        <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '15px' }}>
+                            {isEn ? `Cooling the ${cpu.name}` : `Chlazení pro ${cpu.name}`}
+                        </h2>
+                        <p style={{ color: '#9ca3af', marginBottom: '25px', maxWidth: '600px', margin: '0 auto 25px auto' }}>
+                            {isEn ? `To hit ${safeBoost} GHz, you need premium cooling.` : `Pro dosažení stabilních ${safeBoost} GHz potřebujete prémiové chlazení.`}
+                        </p>
+                        <a href={coolerLink} target="_blank" rel="nofollow sponsored" style={{ display: 'inline-flex', alignItems: 'center', gap: '15px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: '#fff', padding: '18px 30px', borderRadius: '16px', textDecoration: 'none', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '1px', boxShadow: '0 10px 25px rgba(37, 99, 235, 0.4)', transition: '0.3s' }}>
+                            <ThermometerSnowflake size={24} /> {isEn ? 'UPGRADE COOLING NOW' : 'ZLEPŠIT CHLAZENÍ PC'}
+                        </a>
+                    </div>
+
+                    <div style={{ width: '100%' }}>
+                        <h3 style={{ fontSize: '16px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '1px', marginBottom: '15px', textAlign: 'center' }}>
+                            {isEn ? 'Current Market Prices' : 'Aktuální ceny komponent'}
+                        </h3>
+                        <HeurekaButtons isEn={isEn} />
+                    </div>
                 </div>
 
-                {/* TADY JE PŘIDANÁ KOMPONENTA HEUREKA TLAČÍTEK */}
-                <div style={{ marginBottom: '60px' }}>
-                    <h3 style={{ fontSize: '16px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '1px', marginBottom: '15px', textAlign: 'center' }}>
-                        {isEn ? 'Current Market Prices' : 'Aktuální ceny komponent'}
-                    </h3>
-                    <HeurekaButtons isEn={isEn} />
-                </div>
+                {/* 💰 SKLIK REKLAMA: BOTTOM (Zobrazí se jen Čechům) */}
+                {!isEn && (
+                    <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 60px auto', width: '100%', maxWidth: '480px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+                        <iframe title="Sklik Bottom Banner" src="https://c.imedia.cz/ad/zone?zoneId=408658" width="480" height="300" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }} />
+                    </div>
+                )}
 
-                {/* --- GOOGLE SPIDER WEB: INTERNÍ PROLINKOVÁNÍ --- */}
-                <section style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '50px' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Link2 color="#a855f7" /> {isEn ? 'Guru Ecosystem & Related CPUs' : 'Guru Ekosystém a Související CPU'}
-                    </h3>
-                    
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+                {/* --- GOOGLE SPIDER WEB: ROZŠÍŘENÉ INTERNÍ PROLINKOVÁNÍ --- */}
+                <section style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '60px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '40px' }}>
                         
-                        {/* Pevné Hardlinky (Autorita webu) */}
-                        <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', padding: '15px', borderRadius: '12px', color: '#eab308', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold', transition: '0.2s' }}>
-                            <Gauge size={18} /> {isEn ? 'Bottleneck Calculator' : 'Bottleneck Kalkulačka'}
-                        </a>
-                        <a href={isEn ? "/en/cpu-index" : "/cpu-index"} style={{ background: 'rgba(102, 252, 241, 0.1)', border: '1px solid rgba(102, 252, 241, 0.3)', padding: '15px', borderRadius: '12px', color: '#66fcf1', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold', transition: '0.2s' }}>
-                            <Layers size={18} /> {isEn ? 'Full CPU Database' : 'Kompletní Databáze CPU'}
-                        </a>
+                        {/* 1. Hlavní rozcestník GURU Nástrojů */}
+                        <div>
+                            <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <Wrench color="#66fcf1" /> {isEn ? 'Hardware Guru Tools' : 'Guru Nástroje'}
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={spiderLinkStyle}>
+                                    <Gauge size={18} color="#eab308" /> {isEn ? 'Bottleneck Calculator' : 'Bottleneck Kalkulačka'}
+                                </a>
+                                <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={spiderLinkStyle}>
+                                    <Gamepad2 size={18} color="#10b981" /> {isEn ? 'Game FPS Calculator' : 'FPS Kalkulačka pro Hry'}
+                                </a>
+                                <a href={isEn ? "/en/cpu-index" : "/cpu-index"} style={spiderLinkStyle}>
+                                    <Cpu size={18} color="#3b82f6" /> {isEn ? 'CPU Comparisons' : 'CPU Duely a Srovnání'}
+                                </a>
+                                <a href={isEn ? "/en/gpu-index" : "/gpu-index"} style={spiderLinkStyle}>
+                                    <Monitor size={18} color="#a855f7" /> {isEn ? 'GPU Comparisons' : 'GPU Duely a Srovnání'}
+                                </a>
+                                <a href={isEn ? "/en/guru-tweaks" : "/guru-tweaky"} style={spiderLinkStyle}>
+                                    <Zap size={18} color="#ef4444" /> {isEn ? 'Guru Tweaks & Tips' : 'Guru Tweaky a Tipy'}
+                                </a>
+                            </div>
+                        </div>
 
-                        {/* Dynamické prolinky na další procesory (Zamezuje slepým uličkám) */}
-                        {relatedCpus.map(related => (
-                            <a key={related.slug} href={isEn ? `/en/overclocking/cpu/${related.slug}` : `/overclocking/cpu/${related.slug}`} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', padding: '15px', borderRadius: '12px', color: '#d1d5db', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', transition: '0.2s' }}>
-                                <Cpu size={16} color="#9ca3af" /> {related.name}
-                            </a>
-                        ))}
+                        {/* 2. Související Procesory */}
+                        <div>
+                            <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <Layers color="#a855f7" /> {isEn ? 'Related CPUs' : 'Související Procesory'}
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {relatedCpus.map(related => (
+                                    <a key={related.slug} href={isEn ? `/en/overclocking/cpu/${related.slug}` : `/overclocking/cpu/${related.slug}`} style={spiderLinkStyle}>
+                                        <Cpu size={16} color="#9ca3af" /> {related.name}
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 3. Poslední články */}
+                        <div>
+                            <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <FileText color="#3b82f6" /> {isEn ? 'Latest Articles' : 'Nejnovější Články'}
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {latestPosts.length > 0 ? (
+                                    latestPosts.map(post => (
+                                        <a key={post.id} href={isEn ? `/en/blog/${post.slug}` : `/clanky/${post.slug}`} style={spiderLinkStyle}>
+                                            <ChevronRight size={16} color="#9ca3af" /> 
+                                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{post.title}</span>
+                                        </a>
+                                    ))
+                                ) : (
+                                    <div style={{ color: '#6b7280', fontSize: '14px' }}>{isEn ? 'No articles found.' : 'Zatím žádné články.'}</div>
+                                )}
+                            </div>
+                        </div>
+
                     </div>
                 </section>
+
+                {/* Malý styl přímo v komponentě, abychom nenarušovali tvé externí CSS */}
+                <style dangerouslySetInnerHTML={{__html: `
+                    .guru-spider-link:hover {
+                        background: rgba(255,255,255,0.1) !important;
+                        border-color: rgba(255,255,255,0.2) !important;
+                        transform: translateX(5px);
+                    }
+                `}} />
 
             </main>
         </div>
     );
 }
+
+// Odsunutý styl dolů, ať to nahoře nestraší v HTML kódu
+const spiderLinkStyle = {
+    background: 'rgba(255,255,255,0.03)', 
+    border: '1px solid rgba(255,255,255,0.05)', 
+    padding: '15px', 
+    borderRadius: '12px', 
+    color: '#d1d5db', 
+    textDecoration: 'none', 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '12px', 
+    fontSize: '15px', 
+    fontWeight: 'bold',
+    transition: 'all 0.2s ease-in-out',
+    className: 'guru-spider-link' // Připojeno na classu výše pro hover efekt
+};
