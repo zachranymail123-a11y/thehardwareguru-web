@@ -3,11 +3,16 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Cpu, Zap, ThermometerSnowflake, AlertTriangle, ShieldCheck, ChevronRight, Activity, Settings, ArrowRight, Link2, Gauge, Layers } from 'lucide-react';
 import { headers } from 'next/headers';
+
+// PŘIDÁNO: Import Heureka tlačítek (alias @/ ukazuje do src/)
 import HeurekaButtons from '@/components/HeurekaButtons';
 
 // --- GURU PSEO ENGINE V2.0: ANTI-DUPLICATE & INTERLINKING ---
 export const runtime = "nodejs";
-export const revalidate = 3600;
+
+// OPRAVA CHYBY VERCELU: Next.js striktně zakazuje používat 'revalidate' na stejné stránce jako funkci 'headers()'. 
+// Na localhostu to jede, ale Vercel kvůli tomu háže Error 1. Proto je to teď bezpečně zakomentované:
+// export const revalidate = 3600; 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -179,27 +184,22 @@ export default async function CpuOverclockingPage({ params }) {
                     </div>
                 </div>
 
-                {/* AFFILIATE HOOK & HEUREKA BUTTONY */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '40px', marginBottom: '60px', alignItems: 'start' }}>
-                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
-                        <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '15px' }}>
-                            {isEn ? `Cooling the ${cpu.name}` : `Chlazení pro ${cpu.name}`}
-                        </h2>
-                        <p style={{ color: '#9ca3af', marginBottom: '25px', maxWidth: '600px', margin: '0 auto 25px auto' }}>
-                            {isEn ? `To hit ${safeBoost} GHz, you need premium cooling.` : `Pro dosažení stabilních ${safeBoost} GHz potřebujete prémiové chlazení.`}
-                        </p>
-                        <a href={coolerLink} target="_blank" rel="nofollow sponsored" style={{ display: 'inline-flex', alignItems: 'center', gap: '15px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: '#fff', padding: '18px 30px', borderRadius: '16px', textDecoration: 'none', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '1px', boxShadow: '0 10px 25px rgba(37, 99, 235, 0.4)', transition: '0.3s' }}>
-                            <ThermometerSnowflake size={24} /> {isEn ? 'UPGRADE COOLING NOW' : 'ZLEPŠIT CHLAZENÍ PC'}
-                        </a>
-                    </div>
+                {/* AFFILIATE HOOK */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center', marginBottom: '40px' }}>
+                    <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '15px' }}>
+                        {isEn ? `Cooling the ${cpu.name}` : `Chlazení pro ${cpu.name}`}
+                    </h2>
+                    <p style={{ color: '#9ca3af', marginBottom: '25px', maxWidth: '600px', margin: '0 auto 25px auto' }}>
+                        {isEn ? `To hit ${safeBoost} GHz, you need premium cooling.` : `Pro dosažení stabilních ${safeBoost} GHz potřebujete prémiové chlazení.`}
+                    </p>
+                    <a href={coolerLink} target="_blank" rel="nofollow sponsored" style={{ display: 'inline-flex', alignItems: 'center', gap: '15px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: '#fff', padding: '18px 30px', borderRadius: '16px', textDecoration: 'none', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '1px', boxShadow: '0 10px 25px rgba(37, 99, 235, 0.4)', transition: '0.3s' }}>
+                        <ThermometerSnowflake size={24} /> {isEn ? 'UPGRADE COOLING NOW' : 'ZLEPŠIT CHLAZENÍ PC'}
+                    </a>
+                </div>
 
-                    {/* VLOŽENÉ HEUREKA TLAČÍTKA */}
-                    <div style={{ width: '100%' }}>
-                        <h3 style={{ fontSize: '16px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '1px', marginBottom: '15px', textAlign: 'center' }}>
-                            {isEn ? 'Current Market Prices' : 'Aktuální ceny komponent'}
-                        </h3>
-                        <HeurekaButtons isEn={isEn} />
-                    </div>
+                {/* PŘIDÁNO: HEUREKA TLAČÍTKA */}
+                <div style={{ marginBottom: '60px' }}>
+                    <HeurekaButtons isEn={isEn} />
                 </div>
 
                 {/* --- GOOGLE SPIDER WEB: INTERNÍ PROLINKOVÁNÍ --- */}
