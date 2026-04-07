@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Cpu, Zap, ThermometerSnowflake, Activity, Settings, Link2, Gauge, Layers, Swords, Gamepad2, Flame, ChevronRight } from 'lucide-react';
 
-// Používám relativní cestu, která ti v minulosti prošla
+// FIX CESTY: Takhle to Vercel v tomhle zanoření najde (4 úrovně zpět)
 import HeurekaButtons from '../../../../components/HeurekaButtons';
+import SeznamAd from '../../../../components/SeznamAd';
 
 // --- GURU PSEO ENGINE V2.0 ---
 export const runtime = "nodejs";
@@ -60,9 +61,9 @@ export default async function CpuOverclockingPage({ params }) {
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-spider-link { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; color: #d1d5db; text-decoration: none; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: bold; transition: 0.2s; }
                 .guru-spider-link:hover { background: rgba(102, 252, 241, 0.1); border-color: #66fcf1; color: #fff; transform: translateX(5px); }
-                .ad-desktop { display: flex; justify-content: center; width: 100%; margin-bottom: 40px; }
-                .ad-mobile { display: none; justify-content: center; width: 100%; margin-bottom: 40px; }
-                @media (max-width: 768px) { .ad-desktop { display: none !important; } .ad-mobile { display: flex !important; } }
+                .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; margin-bottom: 40px; }
+                .ad-mobile-wrapper { display: none; justify-content: center; width: 100%; margin-bottom: 40px; }
+                @media (max-width: 768px) { .ad-desktop-wrapper { display: none !important; } .ad-mobile-wrapper { display: flex !important; } }
             `}} />
 
             <main style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
@@ -73,11 +74,12 @@ export default async function CpuOverclockingPage({ params }) {
                     </h1>
                 </header>
 
-                <div className="ad-desktop">
-                    <iframe src="https://c.imedia.cz/ad/zone?zoneId=408654" width="970" height="210" scrolling="no" frameBorder={0} style={{ border: 'none' }}></iframe>
+                {/* TOP REKLAMA - POUŽITÍ TVÉ KOMPONENTY SEZNAMAD */}
+                <div className="ad-desktop-wrapper">
+                    <SeznamAd zoneId={408654} width={970} height={210} />
                 </div>
-                <div className="ad-mobile">
-                    <iframe src="https://c.imedia.cz/ad/zone?zoneId=408678" width="320" height="100" scrolling="no" frameBorder={0} style={{ border: 'none' }}></iframe>
+                <div className="ad-mobile-wrapper">
+                    <SeznamAd zoneId={408678} width={320} height={100} />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', marginBottom: '60px' }}>
@@ -93,7 +95,7 @@ export default async function CpuOverclockingPage({ params }) {
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '40px', marginBottom: '60px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '40px', marginBottom: '60px', alignItems: 'start' }}>
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '24px', textAlign: 'center' }}>
                         <h2 style={{ fontSize: '24px', fontWeight: '900', marginBottom: '20px' }}>Chlazení pro {cpu.name}</h2>
                         <a href="https://www.heureka.cz/?h%5Bfraze%5D=vodni+chlazeni+cpu" target="_blank" rel="nofollow" style={{ background: '#3b82f6', color: '#fff', padding: '15px 25px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>ZLEPŠIT CHLAZENÍ</a>
@@ -103,19 +105,20 @@ export default async function CpuOverclockingPage({ params }) {
                     </div>
                 </div>
 
-                <div className="ad-desktop">
-                    <iframe src="https://c.imedia.cz/ad/zone?zoneId=408658" width="480" height="300" scrolling="no" frameBorder={0} style={{ border: 'none' }}></iframe>
+                {/* BOTTOM REKLAMA */}
+                <div className="ad-desktop-wrapper">
+                    <SeznamAd zoneId={408658} width={480} height={300} />
                 </div>
 
                 <section style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '50px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '25px' }}>Guru Nástroje</h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
-                        <a href="/bottleneck-kalkulacka" className="guru-spider-link"><Gauge size={18} /> Bottleneck Kalkulačka</a>
-                        <a href="/fps-kalkulacka" className="guru-spider-link"><Activity size={18} /> FPS Kalkulačka</a>
-                        <a href="/cpuvs" className="guru-spider-link"><Cpu size={18} /> Souboje CPU</a>
-                        <a href="/gpuvs" className="guru-spider-link"><Swords size={18} /> Souboje GPU</a>
-                        <a href="/tipy" className="guru-spider-link"><Flame size={18} /> Tipy a Triky</a>
-                        <a href="/tweaky" className="guru-spider-link"><Zap size={18} /> PC Tweaky</a>
+                        <a href="/bottleneck-kalkulacka" className="guru-spider-link"><Gauge size={18} color="#eab308" /> Bottleneck Kalkulačka</a>
+                        <a href="/fps-kalkulacka" className="guru-spider-link"><Activity size={18} color="#10b981" /> FPS Kalkulačka</a>
+                        <a href="/cpuvs" className="guru-spider-link"><Cpu size={18} color="#3b82f6" /> Souboje CPU</a>
+                        <a href="/gpuvs" className="guru-spider-link"><Layers size={18} color="#ef4444" /> Souboje GPU</a>
+                        <a href="/tipy" className="guru-spider-link"><Flame size={18} color="#f97316" /> Tipy a Triky</a>
+                        <a href="/tweaky" className="guru-spider-link"><Zap size={18} color="#a855f7" /> PC Tweaky</a>
                     </div>
                 </section>
 
@@ -125,7 +128,7 @@ export default async function CpuOverclockingPage({ params }) {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
                             {latestPosts.map(post => (
                                 <a key={post.id} href={`/clanky/${post.slug}`} className="guru-spider-link">
-                                    <ChevronRight size={16} /> {post.title}
+                                    <ChevronRight size={16} color="#9ca3af" /> {post.title}
                                 </a>
                             ))}
                         </div>
