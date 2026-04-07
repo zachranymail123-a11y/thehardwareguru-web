@@ -11,28 +11,22 @@ export async function GET() {
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     
-    // 🚀 GURU BYPASS: Musíš použít SERVICE_ROLE_KEY (najdeš v Supabase -> Project Settings -> API)
-    // Tento klíč nesmí mít předponu NEXT_PUBLIC_, aby nebyl vidět v prohlížeči!
+    // 🚀 GURU MASTER BYPASS: Musíš mít ve Vercelu nastavený SUPABASE_SERVICE_ROLE_KEY
+    // Pokud tam není, použije se anon, ale ten tě zase uřízne na 50!
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: { persistSession: false }
+    });
 
     try {
         let allCpus = [];
         let from = 0;
-        const PAGE_SIZE = 1000; 
-        
-        // 1. Zjistíme totální počet řádků s Master Key
-        const { count, error: countError } = await supabase
-            .from('cpus')
-            .select('*', { count: 'exact', head: true });
+        const PAGE_SIZE = 500; // Taháme po velkých kusech, Master Key nás pustí
+        let hasMore = true;
 
-        if (countError) throw countError;
-        
-        const totalRows = count || 0;
-
-        // 2. Taháme, dokud nemáme všechno. Service Role Key nás pustí přes limity.
-        while (allCpus.length < totalRows) {
+        // 🚀 GURU INFINITE VACUUM: Taháme dokud DB nevrátí nulu
+        while (hasMore) {
             const { data, error } = await supabase
                 .from('cpus')
                 .select('slug')
@@ -40,17 +34,28 @@ export async function GET() {
                 .order('slug', { ascending: true });
 
             if (error) throw error;
-            if (!data || data.length === 0) break;
 
-            allCpus = [...allCpus, ...data];
-            from += data.length;
+            if (data && data.length > 0) {
+                allCpus = [...allCpus, ...data];
+                from += data.length;
+                
+                // Pokud nám to vrátilo míň, než jsme chtěli, jsme reálně na dně
+                if (data.length < PAGE_SIZE) {
+                    hasMore = false;
+                }
+            } else {
+                hasMore = false;
+            }
+
+            // Bezpečnostní pojistka (IndexNow bere max 10k URL)
+            if (from > 10000) break;
         }
 
         if (allCpus.length === 0) {
-            return NextResponse.json({ success: false, message: "V databázi fakt nic není, nebo je špatně klíč." });
+            return NextResponse.json({ success: false, message: "V DB fakt nic není, nebo tě nepustil klíč." });
         }
 
-        // 3. Příprava CZ + EN
+        // CZ + EN mutace
         const urlList = allCpus.flatMap(cpu => [
             `https://${host}/overclocking/cpu/${cpu.slug}`,
             `https://${host}/en/overclocking/cpu/${cpu.slug}`
@@ -76,7 +81,8 @@ export async function GET() {
                 const response = await fetch(engine.url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json; charset=utf-8', 'Host': engine.hostHeader },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(payload),
+                    cache: 'no-store' // 🚀 ANTI-CACHE FIX
                 });
                 results.push({ engine: engine.name, status: response.status, success: response.ok });
             } catch (err) {
@@ -86,8 +92,8 @@ export async function GET() {
 
         return NextResponse.json({ 
             success: true, 
-            message: "GURU MASTER BULK: BYPASS ÚSPĚŠNÝ!", 
-            realRowsInDb: totalRows,
+            message: "GURU ULTIMATE BULK: VŠECHNO JE VENKU!", 
+            totalCpusFetched: allCpus.length,
             totalUrlsSent: urlList.length, 
             engines: results
         });
