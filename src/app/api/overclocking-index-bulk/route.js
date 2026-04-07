@@ -14,43 +14,42 @@ export async function GET() {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     try {
-        // 🚀 GURU BRUTE FORCE FETCH: Taháme všechno v cyklu, abysme obešli limity
         let allCpus = [];
         let from = 0;
-        let to = 999;
+        const CHUNK_SIZE = 100; // Bezpečný krok pro obcházení limitů
         let hasMore = true;
 
+        // 🚀 GURU RECURSIVE FETCH: Taháme tak dlouho, dokud není v DB pusto
         while (hasMore) {
             const { data, error } = await supabase
                 .from('cpus')
                 .select('slug')
-                .range(from, to)
+                .range(from, from + CHUNK_SIZE - 1)
                 .order('slug', { ascending: true });
 
             if (error) throw error;
 
             if (data && data.length > 0) {
                 allCpus = [...allCpus, ...data];
-                // Pokud jsme dostali plný nášup (1000), zkusíme další várku
-                if (data.length === 1000) {
-                    from += 1000;
-                    to += 1000;
-                } else {
+                from += data.length;
+                
+                // Pokud jsme dostali míň než CHUNK_SIZE, jsme u konce
+                if (data.length < CHUNK_SIZE) {
                     hasMore = false;
                 }
             } else {
                 hasMore = false;
             }
-            
-            // Bezpečnostní pojistka proti nekonečné smyčce (max 10k CPU)
-            if (from > 10000) hasMore = false;
+
+            // Pojistka proti nekonečnu (IndexNow bere max 10k URL naráz)
+            if (from >= 5000) hasMore = false;
         }
 
         if (allCpus.length === 0) {
-            return NextResponse.json({ success: false, message: "V databázi nejsou žádná CPU." });
+            return NextResponse.json({ success: false, message: "V databázi nic není." });
         }
 
-        // Vygenerujeme CZ i EN linky pro každej řádek z DB
+        // Zdvojnásobíme to (CZ + EN)
         const urlList = allCpus.flatMap(cpu => [
             `https://${host}/overclocking/cpu/${cpu.slug}`,
             `https://${host}/en/overclocking/cpu/${cpu.slug}`
@@ -60,7 +59,7 @@ export async function GET() {
             host: host,
             key: key,
             keyLocation: keyLocation,
-            urlList: urlList 
+            urlList: urlList // Teď už tu nebude ta posraná stovka
         };
 
         const endpoints = [
@@ -72,7 +71,6 @@ export async function GET() {
         ];
 
         const results = [];
-
         for (const engine of endpoints) {
             try {
                 const response = await fetch(engine.url, {
@@ -83,20 +81,15 @@ export async function GET() {
                     },
                     body: JSON.stringify(payload)
                 });
-                
-                results.push({
-                    engine: engine.name,
-                    status: response.status,
-                    success: response.ok
-                });
+                results.push({ engine: engine.name, status: response.status, success: response.ok });
             } catch (err) {
-                results.push({ engine: engine.name, error: "Network error" });
+                results.push({ engine: engine.name, error: "Timeout/Network error" });
             }
         }
 
         return NextResponse.json({ 
             success: true, 
-            message: "GURU BRUTE FORCE ODESLÁNÍ DOKONČENO!", 
+            message: "GURU BULK ODESLÁN BEZ LIMITU!", 
             totalUrlsSent: urlList.length, 
             engines: results
         });
