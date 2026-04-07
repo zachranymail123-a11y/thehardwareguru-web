@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU SEO ENGINE - CHUNK GENERATOR V39.3 (FPS CALCULATOR + SEO SILOING)
+ * GURU SEO ENGINE - CHUNK GENERATOR V39.4 (OVERCLOCKING + SEO SILOING)
  * Cesta: src/app/guru-sitemap/[id]/route.js
  * 🛡️ FIX 1: Přidána FPS Kalkulačka (/fps-kalkulacka) do pages.xml.
  * 🛡️ FIX 2: Přidána EN varianta (/en/fps-calculator) do pages.xml.
  * 🛡️ FIX 3: Zachována generateStaticParams pro eliminaci 404 errorů sitemap.
+ * 🛡️ FIX 4: Přidána sekce Overclocking (CZ i EN) s taháním z tabulky cpus.
  */
 
 export const revalidate = 3600; 
@@ -20,7 +21,8 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
 });
 
 export async function generateStaticParams() {
-    const types = ['pages.xml', 'posts.xml', 'cpu.xml', 'gpu.xml', 'duels.xml', 'upgrades.xml'];
+    // Přidáno 'overclocking.xml', aby to Vercel předgeneroval
+    const types = ['pages.xml', 'posts.xml', 'cpu.xml', 'gpu.xml', 'duels.xml', 'upgrades.xml', 'overclocking.xml'];
     // Předgenerujeme prvních 20 numerických chunků pro matici
     for(let i=1; i<=20; i++) types.push(`${i}.xml`);
     return types.map(t => ({ id: t }));
@@ -97,6 +99,18 @@ export async function GET(req, props) {
                     routes.push({ url: `${baseUrl}/cpu-fps/${s}/${g}`, lastmod: d, priority: '0.7' });
                     routes.push({ url: `${baseUrl}/en/cpu-fps/${s}/${g}`, lastmod: d, priority: '0.6' });
                 });
+            });
+
+        // 🚀 PŘIDÁNO GURU ŘEŠENÍ PRO OVERCLOCKING
+        } else if (type === 'overclocking') {
+            const { data: cpus } = await supabase.from('cpus').select('slug, created_at');
+            
+            cpus?.forEach(c => {
+                if (c.slug) {
+                    const d = safeDate(c.created_at);
+                    routes.push({ url: `${baseUrl}/overclocking/cpu/${c.slug}`, lastmod: d, priority: '0.9', changefreq: 'monthly' });
+                    routes.push({ url: `${baseUrl}/en/overclocking/cpu/${c.slug}`, lastmod: d, priority: '0.8', changefreq: 'monthly' });
+                }
             });
 
         } else if (type === 'gpu') {
