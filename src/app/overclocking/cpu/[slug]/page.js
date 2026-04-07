@@ -2,10 +2,9 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Cpu, Zap, ThermometerSnowflake, AlertTriangle, ShieldCheck, ChevronRight, Activity, Settings, ArrowRight, Link2, Gauge, Layers, Monitor, Gamepad2, FileText, Wrench } from 'lucide-react';
-import { headers } from 'next/headers';
 import HeurekaButtons from '@/components/HeurekaButtons';
 
-// --- GURU PSEO ENGINE V3.1: ULTIMATE SPIDER WEB + SKLIK MONETIZACE ---
+// --- GURU PSEO ENGINE V3.2: BUILD FIX (Removed Headers Conflict) ---
 export const runtime = "nodejs";
 export const revalidate = 3600;
 
@@ -39,9 +38,8 @@ export async function generateMetadata({ params }) {
     const cpu = await getCpuData(p.slug);
     if (!cpu) return { title: '404 | The Hardware Guru' };
 
-    const headersList = headers();
-    const fullUrl = headersList.get('referer') || "";
-    const isEn = fullUrl.includes('/en/') || p.slug.startsWith('en-');
+    // Bezpečná detekce jazyka bez headers()
+    const isEn = p.slug.startsWith('en-');
 
     const title = isEn 
         ? `${cpu.name} Overclocking & Undervolt Guide (${cpu.cores}-Core ${cpu.architecture})`
@@ -56,15 +54,14 @@ export async function generateMetadata({ params }) {
 
 export default async function CpuOverclockingPage({ params }) {
     const p = await params;
+    // Bezpečná detekce jazyka bez headers()
+    const isEn = p.slug.startsWith('en-');
+    
     const cpu = await getCpuData(p.slug);
     if (!cpu) notFound();
 
     const relatedCpus = await getRelatedCpus(cpu.vendor, p.slug);
     const latestPosts = await getLatestPosts();
-
-    const headersList = headers();
-    const fullUrl = headersList.get('referer') || "";
-    const isEn = fullUrl.includes('/en/') || p.slug.startsWith('en-');
 
     const isAMD = cpu.vendor?.toUpperCase() === 'AMD';
     const baseClock = cpu.base_clock_ghz || 0;
@@ -103,7 +100,6 @@ export default async function CpuOverclockingPage({ params }) {
 
             <main style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
                 
-                {/* HLAVIČKA */}
                 <header style={{ textAlign: 'center', marginBottom: '30px' }}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(102, 252, 241, 0.1)', color: '#66fcf1', padding: '8px 16px', borderRadius: '50px', border: '1px solid rgba(102, 252, 241, 0.3)', fontWeight: '950', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '20px' }}>
                         <Settings size={14} /> GURU {cpu.architecture} ENGINE
@@ -113,23 +109,18 @@ export default async function CpuOverclockingPage({ params }) {
                     </h1>
                 </header>
 
-                {/* 💰 SKLIK REKLAMA: TOP (Zobrazí se jen na české verzi, Američanům ne) */}
                 {!isEn && (
                     <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 40px auto', width: '100%', maxWidth: '970px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
                         <iframe src="https://c.imedia.cz/ad/zone?zoneId=408654" width="970" height="210" scrolling="no" frameBorder="0" style={{ border: 'none', maxWidth: '100%' }}></iframe>
                     </div>
                 )}
 
-                {/* SEO TEXT */}
                 <article style={{ background: 'rgba(15, 17, 21, 0.6)', padding: '30px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '50px', lineHeight: '1.8', color: '#d1d5db', fontSize: '16px', backdropFilter: 'blur(10px)', maxWidth: '1000px', margin: '0 auto 50px auto' }}>
                     <p style={{ marginBottom: '15px' }}>{uniqueParagraph1}</p>
                     <p style={{ margin: 0 }}>{uniqueParagraph2}</p>
                 </article>
 
-                {/* GURU PŘEDPOVĚDNÍ KARTY */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', marginBottom: '60px', maxWidth: '1000px', margin: '0 auto 60px auto' }}>
-                    
-                    {/* Eco Mode / Undervolt */}
                     <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid #10b981', borderRadius: '24px', padding: '30px', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 30px rgba(16, 185, 129, 0.15)' }}>
                         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: '#10b981' }}></div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
@@ -144,7 +135,6 @@ export default async function CpuOverclockingPage({ params }) {
                         </div>
                     </div>
 
-                    {/* Safe Overclocking */}
                     <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid #3b82f6', borderRadius: '24px', padding: '30px', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 30px rgba(59, 130, 246, 0.15)' }}>
                         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: '#3b82f6' }}></div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
@@ -160,9 +150,7 @@ export default async function CpuOverclockingPage({ params }) {
                     </div>
                 </div>
 
-                {/* --- HLAVNÍ MONETIZACE A AFFILIATE HOOK --- */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '40px', maxWidth: '1000px', margin: '0 auto 60px auto', alignItems: 'start' }}>
-                    {/* Chlazení Hook */}
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
                         <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#fff', marginBottom: '15px' }}>
                             {isEn ? `Cooling the ${cpu.name}` : `Chlazení pro ${cpu.name}`}
@@ -175,7 +163,6 @@ export default async function CpuOverclockingPage({ params }) {
                         </a>
                     </div>
 
-                    {/* Vložení GURU Heureka / Amazon Buttonů */}
                     <div>
                         <h3 style={{ fontSize: '16px', color: '#9ca3af', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '1px', marginBottom: '15px', textAlign: 'center' }}>
                             {isEn ? 'Current Market Prices' : 'Aktuální ceny komponent'}
@@ -184,19 +171,14 @@ export default async function CpuOverclockingPage({ params }) {
                     </div>
                 </div>
 
-                {/* 💰 SKLIK REKLAMA: BOTTOM (Zobrazí se jen na české verzi) */}
                 {!isEn && (
                     <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto 60px auto', width: '100%', maxWidth: '480px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
                         <iframe src="https://c.imedia.cz/ad/zone?zoneId=408658" width="480" height="300" scrolling="no" frameBorder="0" style={{ border: 'none', maxWidth: '100%' }}></iframe>
                     </div>
                 )}
 
-                {/* --- GOOGLE SPIDER WEB: MASIVNÍ INTERNÍ PROLINKOVÁNÍ --- */}
                 <section style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '60px' }}>
-                    
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '40px' }}>
-                        
-                        {/* 1. Hlavní rozcestník GURU Nástrojů */}
                         <div>
                             <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <Wrench color="#66fcf1" /> {isEn ? 'Hardware Guru Tools' : 'Guru Nástroje'}
@@ -220,7 +202,6 @@ export default async function CpuOverclockingPage({ params }) {
                             </div>
                         </div>
 
-                        {/* 2. Související Procesory */}
                         <div>
                             <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <Layers color="#a855f7" /> {isEn ? 'Related CPUs' : 'Související Procesory'}
@@ -234,7 +215,6 @@ export default async function CpuOverclockingPage({ params }) {
                             </div>
                         </div>
 
-                        {/* 3. Poslední články z databáze */}
                         <div>
                             <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <FileText color="#3b82f6" /> {isEn ? 'Latest Articles' : 'Nejnovější Články'}
@@ -252,7 +232,6 @@ export default async function CpuOverclockingPage({ params }) {
                                 )}
                             </div>
                         </div>
-
                     </div>
                 </section>
 
