@@ -2,14 +2,13 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Cpu, Zap, ThermometerSnowflake, Activity, Settings, Link2, Gauge, Layers, Swords, Gamepad2, Flame, ChevronRight } from 'lucide-react';
-import { headers } from 'next/headers';
 
-import HeurekaButtons from '../../../../components/HeurekaButtons';
-// SeznamAd smazáno, používáme iframy
+import HeurekaButtons from '@/components/HeurekaButtons';
+import SeznamAd from '@/components/SeznamAd'; 
 
 // --- GURU PSEO ENGINE V2.0: ANTI-DUPLICATE & INTERLINKING ---
 export const runtime = "nodejs";
-// export const revalidate = 3600; // Zakomentováno kvůli konfliktu s headers() na Vercelu
+export const revalidate = 3600;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -58,9 +57,7 @@ export async function generateMetadata({ params }) {
     const cpu = await getCpuData(p.slug);
     if (!cpu) return { title: '404 | The Hardware Guru' };
 
-    const headersList = headers();
-    const fullUrl = headersList.get('referer') || "";
-    const isEn = fullUrl.includes('/en/') || p.slug.startsWith('en-');
+    const isEn = p.slug.startsWith('en-');
 
     // Unikátní meta titulky díky dynamickým proměnným
     const title = isEn 
@@ -86,9 +83,7 @@ export default async function CpuOverclockingPage({ params }) {
     const relatedCpus = await getRelatedCpus(cpu.vendor, p.slug);
     const latestPosts = await getLatestPosts();
 
-    const headersList = headers();
-    const fullUrl = headersList.get('referer') || "";
-    const isEn = fullUrl.includes('/en/') || p.slug.startsWith('en-');
+    const isEn = p.slug.startsWith('en-');
 
     const isAMD = cpu.vendor?.toUpperCase() === 'AMD';
     const baseClock = cpu.base_clock_ghz || 0;
@@ -140,7 +135,7 @@ export default async function CpuOverclockingPage({ params }) {
             
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(faqSchema) }} />
 
-            {/* Styl pro pavučinu a responzivní reklamy */}
+            {/* Styl pro pavučinu a responzivní reklamy jako ve článcích */}
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-spider-link {
                     background: rgba(255,255,255,0.03); 
@@ -163,13 +158,12 @@ export default async function CpuOverclockingPage({ params }) {
                     transform: translateX(5px);
                 }
 
-                /* Responzivní bloky pro reklamu */
-                .desktop-ad { display: flex; justify-content: center; width: 100%; overflow: hidden; margin: 0 auto 40px auto; }
-                .mobile-ad { display: none; justify-content: center; width: 100%; overflow: hidden; margin: 0 auto 40px auto; }
+                .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+                .ad-mobile-wrapper { display: none; width: 100%; }
                 
                 @media (max-width: 768px) {
-                    .desktop-ad { display: none !important; }
-                    .mobile-ad { display: flex !important; }
+                    .ad-desktop-wrapper { display: none !important; }
+                    .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
                 }
             `}} />
 
@@ -185,16 +179,16 @@ export default async function CpuOverclockingPage({ params }) {
                     </h1>
                 </header>
 
-                {/* 💰 SKLIK REKLAMA: TOP (Responzivní iframy) */}
+                {/* 💰 SKLIK REKLAMA: TOP (Responzivní SeznamAd jako na článcích) */}
                 {!isEn && (
-                    <>
-                        <div className="desktop-ad" style={{ maxWidth: '970px' }}>
-                            <iframe title="Sklik Top Banner" src="https://c.imedia.cz/ad/zone?zoneId=408654" width="970" height="210" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
+                    <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+                        <div className="ad-desktop-wrapper">
+                            <SeznamAd zoneId={408654} width={970} height={210} />
                         </div>
-                        <div className="mobile-ad" style={{ maxWidth: '320px' }}>
-                            <iframe title="Sklik Mobile Top" src="https://c.imedia.cz/ad/zone?zoneId=408678" width="320" height="100" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
+                        <div className="ad-mobile-wrapper">
+                            <SeznamAd zoneId={408651} width={300} height={250} />
                         </div>
-                    </>
+                    </div>
                 )}
 
                 {/* UNIKÁTNÍ PARAGRAFY PRO GOOGLE BOTA */}
@@ -259,14 +253,14 @@ export default async function CpuOverclockingPage({ params }) {
                     </div>
                 </div>
 
-                {/* 💰 SKLIK REKLAMA: BOTTOM (Responzivní iframy) */}
+                {/* 💰 SKLIK REKLAMA: BOTTOM (Responzivní SeznamAd jako na článcích) */}
                 {!isEn && (
-                    <div style={{ marginBottom: '60px' }}>
-                        <div className="desktop-ad" style={{ maxWidth: '480px', margin: '0 auto' }}>
-                            <iframe title="Sklik Bottom Banner" src="https://c.imedia.cz/ad/zone?zoneId=408658" width="480" height="300" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
+                    <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
+                        <div className="ad-desktop-wrapper">
+                            <SeznamAd zoneId={408658} width={480} height={300} />
                         </div>
-                        <div className="mobile-ad" style={{ maxWidth: '320px', margin: '0 auto' }}>
-                            <iframe title="Sklik Mobile Bottom" src="https://c.imedia.cz/ad/zone?zoneId=408678" width="320" height="100" scrolling="no" frameBorder={0} style={{ border: 'none', maxWidth: '100%' }}></iframe>
+                        <div className="ad-mobile-wrapper">
+                            <SeznamAd zoneId={408651} width={300} height={250} />
                         </div>
                     </div>
                 )}
@@ -288,7 +282,7 @@ export default async function CpuOverclockingPage({ params }) {
                             <Cpu size={18} color="#3b82f6" /> {isEn ? 'CPU Battles' : 'Souboje CPU (CPU vs CPU)'}
                         </a>
                         <a href={isEn ? "/en/gpuvs" : "/gpuvs"} className="guru-spider-link">
-                            <Swords size={18} color="#ef4444" /> {isEn ? 'GPU Battles' : 'Souboje GPU (GPU vs GPU)'}
+                            <Layers size={18} color="#ef4444" /> {isEn ? 'GPU Battles' : 'Souboje GPU (GPU vs GPU)'}
                         </a>
                         <a href={isEn ? "/en/tipy" : "/tipy"} className="guru-spider-link">
                             <Flame size={18} color="#f97316" /> {isEn ? 'Hardware Tips' : 'HW Tipy a Triky'}
