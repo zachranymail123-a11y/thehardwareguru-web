@@ -1,7 +1,7 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
-import { Cpu, Zap, ThermometerSnowflake, Activity, Settings, Link2, Gauge, Layers, Swords, Gamepad2, Flame, ChevronRight } from 'lucide-react';
+import { Cpu, Zap, Activity, Gauge, Layers, Flame, ChevronRight } from 'lucide-react';
 
 // FIX CESTY: Takhle to Vercel v tomhle zanoření najde (4 úrovně zpět)
 import HeurekaButtons from '../../../../components/HeurekaButtons';
@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 export const revalidate = 3600;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const getCpuData = async (slug) => {
@@ -40,6 +40,7 @@ export async function generateMetadata({ params }) {
     if (!cpu) return { title: '404 | The Hardware Guru' };
     return {
         title: `${cpu.name} Overclocking a Undervolt Návod`,
+        description: cpu.description_cz?.substring(0, 160) || `Detailní návod na overclocking a undervolt pro ${cpu.name}. Optimalizace výkonu a teplot pro váš herní PC.`,
         alternates: { canonical: `https://thehardwareguru.cz/overclocking/cpu/${cpu.slug}` }
     };
 }
@@ -63,6 +64,7 @@ export default async function CpuOverclockingPage({ params }) {
                 .guru-spider-link:hover { background: rgba(102, 252, 241, 0.1); border-color: #66fcf1; color: #fff; transform: translateX(5px); }
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; margin-bottom: 40px; }
                 .ad-mobile-wrapper { display: none; justify-content: center; width: 100%; margin-bottom: 40px; }
+                .guru-description-block { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 40px; line-height: 1.6; color: #d1d5db; }
                 @media (max-width: 768px) { .ad-desktop-wrapper { display: none !important; } .ad-mobile-wrapper { display: flex !important; } }
             `}} />
 
@@ -74,7 +76,15 @@ export default async function CpuOverclockingPage({ params }) {
                     </h1>
                 </header>
 
-                {/* TOP REKLAMA - POUŽITÍ TVÉ KOMPONENTY SEZNAMAD */}
+                {/* UNIKÁTNÍ POPIS CPU - GURU ENGINE FIX PRO SEZNAM */}
+                {cpu.description_cz && (
+                    <section className="guru-description-block">
+                        <h2 style={{ fontSize: '18px', fontWeight: '900', color: '#fff', marginBottom: '15px', textTransform: 'uppercase' }}>Analýza a potenciál {cpu.name}</h2>
+                        <div dangerouslySetInnerHTML={{ __html: cpu.description_cz }} />
+                    </section>
+                )}
+
+                {/* TOP REKLAMA */}
                 <div className="ad-desktop-wrapper">
                     <SeznamAd zoneId={408654} width={970} height={210} />
                 </div>
