@@ -36,7 +36,8 @@ export default function MobileStickyButton() {
         ? "https://www.amazon.com/s?k=pc+components&tag=thehardware07-20" 
         : "https://www.heureka.cz/?h%5Bfraze%5D=pc+komponenty#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=StickyMobile";
 
-    const text = isEn ? "CHECK CURRENT PRICE" : "OVĚŘIT AKTUÁLNÍ CENU";
+    // 🔥 AGRESIVNÍ TEXTY PRO MAXIMÁLNÍ CTR 🔥
+    const text = isEn ? "SEE TODAY'S DEALS" : "ZJISTIT DNEŠNÍ SLEVY";
 
     if (!isVisible) return null;
 
