@@ -244,126 +244,6 @@ export default async function HomePage({ params, isEn: isEnProp }) {
          <script key={`article-schema-${i}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(schema) }} />
       ))}
 
-      <style dangerouslySetInnerHTML={{ __html: `
-        /* 🔥 AGRESIVNÍ SKRYTÍ POSTRANNÍCH SKLIK REKLAM (BRANDING/SKIN) NA HOMEPAGE 🔥 */
-        body > div[id^="ssp-zone"] { display: none !important; opacity: 0 !important; pointer-events: none !important; }
-        body > iframe[id^="ssp-zone"], body > iframe[name^="ssp-zone"] { display: none !important; opacity: 0 !important; pointer-events: none !important; }
-        .ssp-branding, .branding-ssp { display: none !important; }
-        
-        /* 🤖 SKRYTÍ AI MOZKU (GURU PRŮVODCE) POUZE NA HOMEPAGE */
-        #guru-chat, #guru-pruvodce, .guru-pruvodce, .chat-widget, [id*="chat"], [class*="chat"], [id*="mozek"], [class*="mozek"], iframe[src*="chat"] {
-            display: none !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-        }
-
-        .game-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(31, 40, 51, 0.95); }
-        .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(102, 252, 241, 0.4); border-color: #66fcf1; }
-        
-        .expected-card { transition: all 0.3s ease; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
-        .expected-card:hover { transform: translateY(-5px); box-shadow: 0 0 25px rgba(102, 252, 241, 0.25); border-color: #66fcf1; }
-
-        .guru-hero-section {
-            max-width: 1200px; margin: 40px auto; padding: 60px 50px;
-            background: linear-gradient(145deg, rgba(15, 17, 21, 0.9) 0%, rgba(10, 11, 13, 0.95) 100%);
-            border-radius: 30px; border: 1px solid rgba(102, 252, 241, 0.2);
-            display: flex; align-items: center; gap: 50px; flex-wrap: wrap;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.8), inset 0 0 30px rgba(102, 252, 241, 0.05);
-            position: relative; overflow: hidden; backdrop-filter: blur(15px);
-        }
-        .social-btn-main {
-            padding: 14px 28px; border-radius: 14px; font-weight: 900; font-size: 14px; text-decoration: none; text-transform: uppercase; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid transparent; cursor: pointer; letter-spacing: 1px;
-        }
-        .social-btn-main.live { background: rgba(83, 252, 24, 0.1); color: #53fc18; border-color: rgba(83, 252, 24, 0.3); }
-        .social-btn-main.live:hover { background: #53fc18; color: #000; box-shadow: 0 10px 25px rgba(83, 252, 24, 0.4); transform: translateY(-3px); }
-
-        .social-btn-main.duels { background: rgba(255, 0, 85, 0.1); color: #ff0055; border-color: rgba(255, 0, 85, 0.3); }
-        .social-btn-main.duels:hover { background: #ff0055; color: #fff; box-shadow: 0 10px 25px rgba(255, 0, 85, 0.4); transform: translateY(-3px); }
-
-        .social-btn-main.cpuduels { background: rgba(102, 252, 241, 0.1); color: #66fcf1; border-color: rgba(102, 252, 241, 0.3); }
-        .social-btn-main.cpuduels:hover { background: #66fcf1; color: #000; box-shadow: 0 10px 25px rgba(102, 252, 241, 0.4); transform: translateY(-3px); }
-
-        .social-btn-main.fpscalc { background: rgba(168, 85, 247, 0.1); color: #a855f7; border-color: rgba(168, 85, 247, 0.3); }
-        .social-btn-main.fpscalc:hover { background: #a855f7; color: #fff; box-shadow: 0 10px 25px rgba(168, 85, 247, 0.4); transform: translateY(-3px); }
-
-        .social-btn-main.bottleneck { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); }
-        .social-btn-main.bottleneck:hover { background: #38bdf8; color: #000; box-shadow: 0 10px 25px rgba(56, 189, 248, 0.4); transform: translateY(-3px); }
-
-        .social-btn-main.poradna { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); }
-        .social-btn-main.poradna:hover { background: #3b82f6; color: #fff; box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4); transform: translateY(-3px); }
-
-        .social-btn-main.deals { background: rgba(249, 115, 22, 0.1); color: #f97316; border-color: rgba(249, 115, 22, 0.3); }
-        .social-btn-main.deals:hover { background: #f97316; color: #fff; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4); transform: translateY(-3px); }
-
-        .social-btn-main.support { background: rgba(234, 179, 8, 0.1); color: #eab308; border-color: rgba(234, 179, 8, 0.3); }
-        .social-btn-main.support:hover { background: #eab308; color: #000; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.4); transform: translateY(-3px); }
-
-        .deal-hp-card { display: flex; align-items: center; gap: 20px; background: linear-gradient(145deg, rgba(15, 17, 21, 0.95) 0%, rgba(249, 115, 22, 0.05) 100%); padding: 20px; border-radius: 24px; border: 1px solid rgba(249, 115, 22, 0.2); transition: 0.4s; text-decoration: none; overflow: hidden; position: relative; }
-        .deal-hp-card:hover { transform: translateY(-5px); border-color: #f97316; box-shadow: 0 15px 35px rgba(249, 115, 22, 0.25); }
-
-        .duel-hp-card { display: flex; align-items: center; gap: 20px; background: linear-gradient(145deg, rgba(15, 17, 21, 0.95) 0%, rgba(255, 0, 85, 0.05) 100%); padding: 20px; border-radius: 24px; border: 1px solid rgba(255, 0, 85, 0.2); transition: 0.4s; text-decoration: none; overflow: hidden; position: relative; }
-        .duel-hp-card:hover { transform: translateY(-5px); border-color: #ff0055; box-shadow: 0 15px 35px rgba(255, 0, 85, 0.25); }
-
-        .cpu-duel-hp-card { display: flex; align-items: center; gap: 20px; background: linear-gradient(145deg, rgba(15, 17, 21, 0.95) 0%, rgba(102, 252, 241, 0.05) 100%); padding: 20px; border-radius: 24px; border: 1px solid rgba(102, 252, 241, 0.2); transition: 0.4s; text-decoration: none; overflow: hidden; position: relative; }
-        .cpu-duel-hp-card:hover { transform: translateY(-5px); border-color: #66fcf1; box-shadow: 0 15px 35px rgba(102, 252, 241, 0.25); }
-
-        .tip-card { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
-        .tip-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 0 30px rgba(168, 85, 247, 0.4); border-color: #a855f7; }
-        .tweak-card { transition: all 0.3s ease; border: 1px solid rgba(234, 179, 8, 0.3); background: rgba(17, 19, 24, 0.85); backdrop-filter: blur(10px); }
-        .tweak-card:hover { transform: translateY(-5px); box-shadow: 0 0 25px rgba(234, 179, 8, 0.3); border-color: #eab308; }
-        
-        .section-title-wrapper { background: rgba(0,0,0,0.7); padding: 18px 35px; border-radius: 18px; backdrop-filter: blur(8px); border: 1px solid rgba(234, 179, 8, 0.2); display: inline-block; }
-        
-        .monetize-hero-card { background: linear-gradient(145deg, rgba(15, 17, 21, 0.95) 0%, rgba(10, 11, 13, 0.98) 100%); border: 1px solid rgba(255,255,255,0.05); border-radius: 30px; padding: 40px 30px; text-decoration: none; color: #fff; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.6); position: relative; overflow: hidden; backdrop-filter: blur(20px); }
-        .monetize-hero-card.hof { border-top: 4px solid #a855f7; }
-        .monetize-hero-card.hof:hover { border-color: #a855f7; box-shadow: 0 25px 60px rgba(168, 85, 247, 0.3); transform: translateY(-8px); }
-        .monetize-hero-card.partners { border-top: 4px solid #eab308; }
-        .monetize-hero-card.partners:hover { border-color: #eab308; box-shadow: 0 25px 60px rgba(234, 179, 8, 0.3); transform: translateY(-8px); }
-
-        .hover-scale { transition: transform 0.3s ease; }
-        .hover-scale:hover { transform: scale(1.05); }
-
-        .seo-link-pill {
-            display: inline-block; padding: 8px 16px; margin: 0 10px 10px 0;
-            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 12px; color: #9ca3af; font-size: 13px; text-decoration: none;
-            transition: 0.2s ease;
-        }
-        .seo-link-pill:hover { background: rgba(102, 252, 241, 0.1); border-color: #66fcf1; color: #fff; }
-
-        .seo-hard-text-block {
-            max-width: 1200px; margin: 0 auto; padding: 40px; 
-            background: rgba(15, 17, 21, 0.8); border-radius: 24px; 
-            border: 1px solid rgba(102, 252, 241, 0.15); color: #9ca3af; 
-            line-height: 1.8; font-size: 16px; backdrop-filter: blur(10px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .seo-hard-text-block h2 { color: #fff; font-size: 24px; margin-top: 0; margin-bottom: 20px; font-weight: 900; }
-        .seo-hard-text-block h3 { color: #fff; font-size: 18px; margin-top: 30px; margin-bottom: 15px; font-weight: bold; }
-        .seo-hard-text-block ul { list-style-type: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; }
-        .seo-hard-text-block li { margin-bottom: 10px; padding-left: 20px; position: relative; }
-        .seo-hard-text-block li::before { content: '→'; color: #66fcf1; position: absolute; left: 0; top: 0; font-weight: bold; }
-        .seo-hard-text-block a { color: #66fcf1; text-decoration: none; font-weight: bold; transition: 0.2s; border-bottom: 1px solid rgba(102, 252, 241, 0.3); padding-bottom: 1px; }
-        .seo-hard-text-block a:hover { color: #fff; border-bottom-color: #fff; }
-
-        /* 🔥 GURU PARTNER CTA BUTTON */
-        .guru-partner-button {
-          background: linear-gradient(90deg, rgba(168, 85, 247, 0.15) 0%, rgba(102, 252, 241, 0.15) 100%);
-          border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 20px; padding: 25px 35px;
-          display: flex; align-items: center; justify-content: space-between;
-          transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer;
-          box-shadow: 0 15px 35px rgba(0,0,0,0.4); text-decoration: none; margin-bottom: 60px;
-        }
-        .guru-partner-button:hover { transform: scale(1.02); border-color: #a855f7; background: rgba(168, 85, 247, 0.25); }
-        .partner-btn-text { font-size: clamp(14px, 2vw, 17px); font-weight: 950; color: #fff; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 15px; }
-
-        @media (max-width: 768px) {
-          .guru-hero-section { padding: 40px 20px; text-align: center; justify-content: center; margin-bottom: 20px; }
-          .social-btn-main { width: 100%; }
-          .guru-partner-button { padding: 20px; }
-        }
-      `}} />
-
       {/* --- 🚀 HERO SEKCE S HEUREKA TLAČÍTKY NA OČÍCH --- */}
       <header className="guru-hero-section" style={{ marginTop: '40px' }}>
         <div style={{ flex: '1', minWidth: '300px', position: 'relative', zIndex: 10 }}>
@@ -413,7 +293,7 @@ export default async function HomePage({ params, isEn: isEnProp }) {
       </header>
 
       {/* --- 🚀 NOVÉ DLOUHÉ PARTNER TLAČÍTKO (CTR OPTIMIZED) --- */}
-      <section style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
         <a href={isEn ? "/en/sestavy" : "/sestavy"} className="guru-partner-button">
           <div className="partner-btn-text">
             <Award color="#a855f7" size={32} />
@@ -425,7 +305,7 @@ export default async function HomePage({ params, isEn: isEnProp }) {
           </div>
           <ChevronRight size={32} color="#a855f7" />
         </a>
-      </section>
+      </div>
 
       {/* --- HARD TEXT BLOCK PŘESUNUTÝ NAHORU + VÍCE STATICKÝCH ODKAZŮ PROTI PRÁZDNÉ DOMÉNĚ --- */}
       <section className="seo-hard-text-block" style={{ marginBottom: '60px' }}>
@@ -471,7 +351,7 @@ export default async function HomePage({ params, isEn: isEnProp }) {
       </section>
 
       {/* --- SEO: CATEGORY HUB --- */}
-      <section style={{ maxWidth: '1200px', margin: '0 auto 60px auto', padding: '0 20px' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto 60px auto', padding: '0 20px' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', justifyContent: 'center' }}>
           <a href={isEn ? "/en/clanky" : "/clanky"} className="seo-link-pill"><Compass size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }}/> {isEn ? 'Hardware News' : 'HW Novinky'}</a>
           <a href={isEn ? "/en/gpu-index" : "/gpu-index"} className="seo-link-pill"><Layers size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }}/> {isEn ? 'GPU Catalog' : 'Katalog Grafických Karet a Index Výkonu'}</a>
@@ -479,7 +359,7 @@ export default async function HomePage({ params, isEn: isEnProp }) {
           <a href={isEn ? "/en/slovnik" : "/slovnik"} className="seo-link-pill"><MessageSquare size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }}/> {isEn ? 'Tech Dictionary' : 'HW Slovník Pojmů'}</a>
           <a href={isEn ? "/en/sestavy" : "/sestavy"} className="seo-link-pill"><Gamepad2 size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '5px' }}/> {isEn ? 'PC Builds' : 'Doporučené PC Sestavy'}</a>
         </div>
-      </section>
+      </div>
 
       {/* --- SDÍLET & ODEBÍRAT LIŠTA --- */}
       <section style={{ maxWidth: '1200px', margin: '0 auto 60px auto', background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '24px', padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', backdropFilter: 'blur(10px)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
@@ -625,7 +505,7 @@ export default async function HomePage({ params, isEn: isEnProp }) {
                 {visualGpuDuels.map(duel => (
                     <a key={duel.id} href={`/${isEn ? 'en/' : ''}gpuvs/${isEn ? (duel.slug_en || `en-${duel.slug}`) : duel.slug}`} style={{ textDecoration: 'none' }}>
                         <div className="duel-hp-card group">
-                            <div style={{ background: '#ff0055', width: '50px', height: '50px', borderRadius: '14px', display: 'flex', alignItems: 'center', justify: 'center', flexShrink: 0, boxShadow: '0 0 15px rgba(255,0,85,0.4)' }}>
+                            <div style={{ background: '#ff0055', width: '50px', height: '50px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 0 15px rgba(255,0,85,0.4)' }}>
                                 <Swords size={24} color="#fff" />
                             </div>
                             <div style={{ flex: 1 }}>
@@ -642,7 +522,7 @@ export default async function HomePage({ params, isEn: isEnProp }) {
 
       {/* --- SEO: DEEP LINKS (GPU) --- */}
       {deepGpuDuels.length > 0 && (
-        <section style={{ maxWidth: '1200px', margin: '0 auto 60px auto', padding: '0 20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto 60px auto', padding: '0 20px' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             <span style={{ color: '#6b7280', fontSize: '12px', textTransform: 'uppercase', fontWeight: 'bold', marginRight: '10px', display: 'flex', alignItems: 'center' }}><Link2 size={12} style={{marginRight:'5px'}}/> {isEn ? 'TRENDING COMPARISONS:' : 'HLEDANÁ SROVNÁNÍ:'}</span>
             {deepGpuDuels.map(duel => (
@@ -651,7 +531,7 @@ export default async function HomePage({ params, isEn: isEnProp }) {
               </a>
             ))}
           </div>
-        </section>
+        </div>
       )}
 
       {/* --- CPU DUELY (Vizuální) --- */}
@@ -671,7 +551,7 @@ export default async function HomePage({ params, isEn: isEnProp }) {
                 {visualCpuDuels.map(duel => (
                     <a key={duel.id} href={`/${isEn ? 'en/' : ''}cpuvs/${isEn ? (duel.slug_en || `en-${duel.slug}`) : duel.slug}`} style={{ textDecoration: 'none' }}>
                         <div className="cpu-duel-hp-card group">
-                            <div style={{ background: '#66fcf1', width: '50px', height: '50px', borderRadius: '14px', display: 'flex', alignItems: 'center', justify: 'center', flexShrink: 0, boxShadow: '0 0 15px rgba(102,252,241,0.4)' }}>
+                            <div style={{ background: '#66fcf1', width: '50px', height: '50px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 0 15px rgba(102,252,241,0.4)' }}>
                                 <Cpu size={24} color="#000" />
                             </div>
                             <div style={{ flex: 1 }}>
@@ -688,7 +568,7 @@ export default async function HomePage({ params, isEn: isEnProp }) {
 
       {/* --- SEO: DEEP LINKS (CPU) --- */}
       {deepCpuDuels.length > 0 && (
-        <section style={{ maxWidth: '1200px', margin: '0 auto 60px auto', padding: '0 20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto 60px auto', padding: '0 20px' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             <span style={{ color: '#6b7280', fontSize: '12px', textTransform: 'uppercase', fontWeight: 'bold', marginRight: '10px', display: 'flex', alignItems: 'center' }}><Link2 size={12} style={{marginRight:'5px'}}/> {isEn ? 'DEEP CPU LINKS:' : 'CPU SROVNÁNÍ:'}</span>
             {deepCpuDuels.map(duel => (
@@ -697,7 +577,7 @@ export default async function HomePage({ params, isEn: isEnProp }) {
               </a>
             ))}
           </div>
-        </section>
+        </div>
       )}
 
       {/* OČEKÁVANÉ HRY */}
@@ -800,7 +680,7 @@ export default async function HomePage({ params, isEn: isEnProp }) {
 
       {/* ČLÁNKY (Content Grid) */}
       {latestPosts.length > 0 && (
-        <main style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px', marginTop: '80px' }}>
+        <div style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px', marginTop: '80px' }}>
           <div className="section-title-wrapper" style={{ marginBottom: '40px', borderColor: 'rgba(102, 252, 241, 0.2)', width: '100%', boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
               <h2 style={{ color: '#fff', fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>
@@ -840,7 +720,7 @@ export default async function HomePage({ params, isEn: isEnProp }) {
               );
             })}
           </div>
-        </main>
+        </div>
       )}
 
       <footer style={{ background: '#050505', padding: '40px 20px', borderTop: '1px solid rgba(102, 252, 241, 0.2)', textAlign: 'center' }}>
