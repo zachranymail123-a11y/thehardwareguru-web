@@ -49,7 +49,7 @@ export default function HeurekaButtons({ isEn = false }) {
             <div className="h-icon-box amazon-icon-box"><Cpu size={26} /></div>
             <div className="h-text-col">
               <span className="h-title amazon-title">Processors</span>
-              <span className="h-subtitle">Check price on Amazon</span>
+              <span className="h-subtitle">🔥 SEE TODAY'S DEALS</span>
             </div>
           </a>
 
@@ -57,7 +57,7 @@ export default function HeurekaButtons({ isEn = false }) {
             <div className="h-icon-box amazon-icon-box"><Monitor size={26} /></div>
             <div className="h-text-col">
               <span className="h-title amazon-title">Graphic Cards</span>
-              <span className="h-subtitle">Check price on Amazon</span>
+              <span className="h-subtitle">🔥 FIND LOWEST PRICE</span>
             </div>
           </a>
 
@@ -65,7 +65,7 @@ export default function HeurekaButtons({ isEn = false }) {
             <div className="h-icon-box amazon-icon-box"><Layers size={26} /></div>
             <div className="h-text-col">
               <span className="h-title amazon-title">Motherboards</span>
-              <span className="h-subtitle">Check price on Amazon</span>
+              <span className="h-subtitle">🔥 COMPARE ALL PRICES</span>
             </div>
           </a>
 
@@ -73,7 +73,7 @@ export default function HeurekaButtons({ isEn = false }) {
             <div className="h-icon-box amazon-icon-box"><Database size={26} /></div>
             <div className="h-text-col">
               <span className="h-title amazon-title">RAM Memory</span>
-              <span className="h-subtitle">Check price on Amazon</span>
+              <span className="h-subtitle">🔥 CLAIM BEST OFFER</span>
             </div>
           </a>
         </>
@@ -83,7 +83,7 @@ export default function HeurekaButtons({ isEn = false }) {
             <div className="h-icon-box"><Cpu size={26} /></div>
             <div className="h-text-col">
               <span className="h-title">Procesory</span>
-              <span className="h-subtitle">Za nejnižší cenu</span>
+              <span className="h-subtitle">🔥 ZJISTIT DNEŠNÍ SLEVY</span>
             </div>
           </a>
 
@@ -91,7 +91,7 @@ export default function HeurekaButtons({ isEn = false }) {
             <div className="h-icon-box"><Monitor size={26} /></div>
             <div className="h-text-col">
               <span className="h-title">Grafické karty</span>
-              <span className="h-subtitle">Za nejnižší cenu</span>
+              <span className="h-subtitle">🔥 UKÁZAT NEJNIŽŠÍ CENU</span>
             </div>
           </a>
 
@@ -99,7 +99,7 @@ export default function HeurekaButtons({ isEn = false }) {
             <div className="h-icon-box"><Layers size={26} /></div>
             <div className="h-text-col">
               <span className="h-title">Základní desky</span>
-              <span className="h-subtitle">Za nejnižší cenu</span>
+              <span className="h-subtitle">🔥 POROVNAT CENY E-SHOPŮ</span>
             </div>
           </a>
 
@@ -107,7 +107,7 @@ export default function HeurekaButtons({ isEn = false }) {
             <div className="h-icon-box"><Database size={26} /></div>
             <div className="h-text-col">
               <span className="h-title">Operační paměti</span>
-              <span className="h-subtitle">Za nejnižší cenu</span>
+              <span className="h-subtitle">🔥 KDE KOUPIT NEJLEVNĚJI?</span>
             </div>
           </a>
 
