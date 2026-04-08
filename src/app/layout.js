@@ -61,9 +61,9 @@ const GlobalVIPBox = ({ isEn }) => {
                 <span style={{ fontWeight: '950', letterSpacing: '3px', textTransform: 'uppercase', fontSize: '11px', color: '#eab308', display: 'block' }}>
                     {isEn ? 'ULTIMATE GAMING SETUP' : 'ULTIMÁTNÍ HERNÍ DĚLO'}
                 </span>
-                <h2 style={{ color: '#fff', fontSize: '22px', fontWeight: '950', margin: '3px 0 0 0', textTransform: 'uppercase', lineHeight: '1.2' }}>
+                <h3 style={{ color: '#fff', fontSize: '22px', fontWeight: '950', margin: '3px 0 0 0', textTransform: 'uppercase', lineHeight: '1.2' }}>
                     {isEn ? 'V.I.P. GURU BUILD' : 'V.I.P. GURU SESTAVA'}
-                </h2>
+                </h3>
             </div>
         </div>
         <ul style={{ listStyleType: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative', zIndex: 1 }}>
@@ -148,63 +148,6 @@ export default async function RootLayout({ children }) {
         <Navbar lang={locale} />
         <SocialTracker />
         <Tracker />
-
-        <style dangerouslySetInnerHTML={{__html: `
-          /* MOBILNÍ STYLY - BOXY POD SEBOU */
-          .guru-side-box-left, .guru-side-box-right { 
-            display: block; 
-            width: 100%; 
-            max-width: 1100px; 
-            margin: 20px auto; 
-            padding: 0 20px; 
-            box-sizing: border-box; 
-          }
-          .guru-hub-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-          .guru-hub-item { background: rgba(17, 19, 24, 0.95); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; overflow: hidden; }
-          .guru-hub-item img { width: 100%; height: auto; display: block; }
-          .guru-build-box-vip { background-color: rgba(17, 19, 24, 0.95); border-radius: 20px; padding: 15px; border: 1px solid rgba(102, 252, 241, 0.2); border-top: 4px solid #eab308; position: relative; overflow: hidden; }
-          .hover-scale { transition: 0.3s; }
-          .hover-scale:hover { transform: scale(1.02); }
-          
-          /* AGRESIVNÍ FIX PRO 1080p (cca 1300px - 1800px šířka okna) */
-          @media (min-width: 1300px) and (max-width: 1800px) {
-              .guru-side-box-left { 
-                position: fixed; 
-                top: 100px; 
-                left: -40px; /* VYSUNUTÍ VÍC DO KRAJE */
-                width: 320px; 
-                margin: 0; 
-                transform: scale(0.65); /* JEŠTĚ VĚTŠÍ ZMENŠENÍ */
-                transform-origin: left top; 
-                z-index: 50; 
-              }
-              .guru-side-box-right { 
-                position: fixed; 
-                top: 100px; 
-                right: -40px; /* VYSUNUTÍ VÍC DO KRAJE */
-                width: 300px; 
-                margin: 0; 
-                transform: scale(0.65); /* JEŠTĚ VĚTŠÍ ZMENŠENÍ */
-                transform-origin: right top; 
-                z-index: 50; 
-              }
-          }
-
-          @media (min-width: 1801px) {
-              .guru-side-box-left { position: fixed; top: 110px; left: 20px; width: 380px; margin: 0; z-index: 50; }
-              .guru-side-box-right { position: fixed; top: 110px; right: 20px; width: 320px; margin: 0; z-index: 50; }
-          }
-
-          .global-sticky-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); }
-          .ad-desktop-anchor { display: flex; width: 100%; justify-content: center; }
-          .ad-mobile-anchor { display: none; width: 100%; justify-content: center; }
-          @media (max-width: 768px) { .ad-desktop-anchor { display: none !important; } .ad-mobile-anchor { display: flex !important; } }
-          
-          .guru-footer-link { color: #9ca3af; text-decoration: none; transition: 0.2s; font-size: 13px; font-weight: bold; text-transform: uppercase; }
-          .guru-footer-link:hover { color: #fff !important; }
-          .eeat-link { color: #6b7280; font-size: 11px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; transition: 0.2s; }
-          .eeat-link:hover { color: #d1d5db; }
-        `}} />
 
         <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden' }}>
           {children}
