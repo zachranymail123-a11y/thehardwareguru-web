@@ -1,14 +1,11 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
-// 🚀 GURU ICON FIX: Přidán Settings a všechny chybějící ikony
-import { Cpu, Zap, Activity, Gauge, Layers, Flame, ChevronRight, BookOpen, ShieldCheck, Clock, User, Settings } from 'lucide-react';
+import { Cpu, Zap, Activity, Gauge, Layers, Flame, ChevronRight, BookOpen, ShieldCheck, Clock, User, Settings, Swords } from 'lucide-react';
 
-// FIX CESTY: Takhle to Vercel v tomhle zanoření najde (4 úrovně zpět)
 import HeurekaButtons from '../../../../components/HeurekaButtons';
 import SeznamAd from '../../../../components/SeznamAd';
 
-// --- GURU PSEO ENGINE V2.0 ---
 export const runtime = "nodejs";
 export const revalidate = 3600;
 
@@ -18,10 +15,20 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const getCpuData = async (slug) => {
     if (!slug) return null;
-    // Očistíme slug od EN prefixu pro DB query
     const cleanSlug = slug.startsWith('en-') ? slug.replace('en-', '') : slug;
     const { data, error } = await supabase.from('cpus').select('*').eq('slug', cleanSlug).limit(1).single();
     if (error || !data) return null;
+    return data;
+};
+
+// 🚀 NÁVRAT PROLINKOVÁNÍ: Související CPU pro pavouka
+const getRelatedCpus = async (vendor, currentSlug) => {
+    const { data, error } = await supabase.from('cpus')
+        .select('name, slug, architecture')
+        .eq('vendor', vendor)
+        .neq('slug', currentSlug)
+        .limit(6); // Vracíme víc linků pro lepší indexaci
+    if (error || !data) return [];
     return data;
 };
 
@@ -58,11 +65,11 @@ export default async function CpuOverclockingPage({ params }) {
     const cpu = await getCpuData(p.slug);
     if (!cpu) notFound();
 
+    const relatedCpus = await getRelatedCpus(cpu.vendor, cpu.slug);
     const latestPosts = await getLatestPosts();
     const isAMD = cpu.vendor?.toUpperCase() === 'AMD';
     const safeBoost = (cpu.boost_clock_ghz + 0.1).toFixed(2);
     
-    // JSON-LD Pro Google Rich Snippets (HowTo)
     const jsonLd = {
         "@context": "https://schema.org",
         "@type": "HowTo",
@@ -89,9 +96,8 @@ export default async function CpuOverclockingPage({ params }) {
                 .guru-spider-link:hover { background: rgba(102, 252, 241, 0.1); border-color: #66fcf1; color: #fff; transform: translateX(5px); }
             `}} />
 
-            <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+            <main style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
                 
-                {/* HEADLINE */}
                 <header style={{ textAlign: 'center', marginBottom: '60px' }}>
                     <div className="article-meta" style={{ justifyContent: 'center' }}>
                         <span><User size={14} style={{ verticalAlign: 'middle', marginRight: '5px' }} /> Hardware Guru</span>
@@ -99,7 +105,7 @@ export default async function CpuOverclockingPage({ params }) {
                         <span><BookOpen size={14} style={{ verticalAlign: 'middle', marginRight: '5px' }} /> {cpu.architecture || 'x86-64'}</span>
                     </div>
                     <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: '950', margin: '0 0 20px 0', textTransform: 'uppercase', lineHeight: '1.1' }}>
-                        {cpu.name}<br /><span style={{ color: '#a855f7' }}>Ultimate Tuning Guide</span>
+                        {cpu.name}<br /><span style={{ color: '#a855f7' }}>OC & Undervolt Guide</span>
                     </h1>
                 </header>
 
@@ -107,61 +113,82 @@ export default async function CpuOverclockingPage({ params }) {
                     <SeznamAd zoneId={408654} width={970} height={210} />
                 </div>
 
-                {/* ARTICLE BODY */}
                 <article className="guru-article-card">
-                    <h2 className="guru-h2"><Zap size={24} color="#66fcf1" /> {isEn ? 'Introduction' : 'Úvod do problematiky'}</h2>
+                    <h2 className="guru-h2"><Zap size={24} color="#66fcf1" /> {isEn ? 'Analysis' : 'Technická analýza'}</h2>
                     <p className="guru-p">
                         {isEn ? (
-                            `The ${cpu.name} is a powerhouse in the ${cpu.architecture || 'modern'} lineup. However, out of the box, it often consumes more power than necessary. Our testing shows that by applying specific undervolt settings, you can achieve better sustained clock speeds while significantly reducing thermal output.`
+                            `The ${cpu.name} is built on ${cpu.architecture} architecture. Tuning this specific silicon requires understanding its voltage-frequency curve. By reducing the VCore, we unlock higher sustained clocks without hitting thermal limits.`
                         ) : (
-                            `Procesor ${cpu.name} patří k vrcholům architektury ${cpu.architecture || 'moderních procesorů'}. V továrním nastavení je ale často "překrmen" zbytečně vysokým napětím, což vede k thermal throttlingu. V tomto článku se podíváme na to, jak z tohoto křemíku vymáčknout maximum při zachování tichého chlazení.`
+                            `Procesor ${cpu.name} postavený na architektuře ${cpu.architecture} je ideálním kandidátem pro ladění. Snížením napětí (undervolt) získáme prostor pro stabilnější a vyšší boost ${safeBoost} GHz, aniž by docházelo k podtaktování kvůli vysokým teplotám.`
                         )}
                     </p>
 
-                    <h2 className="guru-h2"><Settings size={24} color="#a855f7" /> {isEn ? 'BIOS Setup & Voltages' : 'Nastavení BIOSu a napětí'}</h2>
-                    <p className="guru-p">
-                        {isEn ? 'For optimal results, enter your motherboard BIOS and navigate to the Overclocking/Tweaker tab. Focus on these values:' : 'Pro nejlepší výsledky vstupte do BIOSu vaší základní desky. Zaměřte se na tyto konkrétní parametry:'}
-                    </p>
-                    
                     <div className="setup-box">
-                        <div style={{ fontSize: '14px', color: '#66fcf1', marginBottom: '5px', fontWeight: 'bold' }}>{isEn ? 'RECOMMENDED SETTINGS' : 'DOPORUČENÉ HODNOTY'}</div>
+                        <div style={{ fontSize: '14px', color: '#66fcf1', marginBottom: '5px', fontWeight: 'bold' }}>{isEn ? 'OPTIMAL SETTINGS' : 'OPTIMÁLNÍ NASTAVENÍ'}</div>
                         <div style={{ fontSize: '24px', fontWeight: '900' }}>
-                            {isAMD ? 'Curve Optimizer: -20 All Cores' : 'VCore Offset: -0.050V to -0.080V'}
+                            {isAMD ? 'Curve Optimizer: Negative -20' : 'VCore Offset: -0.065V'}
                         </div>
                     </div>
 
-                    <h2 className="guru-h2"><ShieldCheck size={24} color="#10b981" /> {isEn ? 'Stability Testing' : 'Ověření stability'}</h2>
+                    <h2 className="guru-h2"><Settings size={24} color="#a855f7" /> {isEn ? 'BIOS Configuration' : 'Konfigurace v BIOSu'}</h2>
                     <p className="guru-p">
-                        {isEn ? `After applying the ${safeBoost} GHz target, run a 30-minute Cinebench R23 loop. If the system remains stable, you can try pushing the undervolt further by -0.005V increments.` : `Po nastavení cílové frekvence ${safeBoost} GHz spusťte 30minutový test v Cinebench R23. Pokud systém zůstane stabilní, můžete zkusit snížit napětí o dalších -0.005V.`}
+                        {isEn ? 'Navigate to the Extreme Tweaker or AI Tweaker tab. Disable Power Limits and set your Load Line Calibration to Level 4 for maximum stability during stress tests.' : 'V BIOSu hledejte sekci Extreme Tweaker. Pro maximální stabilitu vypněte Power Limity a nastavte Load Line Calibration na Level 4.'}
                     </p>
 
-                    {/* DB DESCRIPTION CONTENT */}
                     {(isEn ? cpu.description_en : cpu.description_cz) && (
                         <div style={{ marginTop: '40px', paddingTop: '40px', borderTop: '1px solid rgba(255,255,255,0.1)' }} 
                              dangerouslySetInnerHTML={{ __html: isEn ? cpu.description_en : cpu.description_cz }} />
                     )}
                 </article>
 
-                {/* HEUREKA / CTA */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginBottom: '60px' }}>
-                    <div style={{ background: '#3b82f6', padding: '30px', borderRadius: '24px', textAlign: 'center' }}>
-                        <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '15px' }}>{isEn ? 'Need better cooling?' : 'Nestačí vám chlazení?'}</h3>
-                        <a href="https://www.heureka.cz/?h%5Bfraze%5D=vodni+chlazeni+cpu" style={{ color: '#fff', fontWeight: 'bold', textDecoration: 'none', border: '2px solid #fff', padding: '10px 20px', borderRadius: '12px' }}>{isEn ? 'VIEW COOLERS' : 'TOP CHLADIČE'}</a>
+                {/* 🚀 PROLINKOVÁNÍ SOUVISEJÍCÍCH CPU (SPIDER ENGINE) */}
+                <section style={{ marginBottom: '60px' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Swords size={20} color="#ef4444" /> {isEn ? 'Related Processors' : 'Související procesory'}
+                    </h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px' }}>
+                        {relatedCpus.map(related => (
+                            <a key={related.slug} href={isEn ? `/en/overclocking/cpu/${related.slug}` : `/overclocking/cpu/${related.slug}`} className="guru-spider-link">
+                                <Cpu size={16} color="#3b82f6" /> {related.name} ({related.architecture})
+                            </a>
+                        ))}
                     </div>
+                </section>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginBottom: '60px' }}>
                     <HeurekaButtons isEn={isEn} />
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '25px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                         <h3 style={{ fontSize: '16px', fontWeight: '900', marginBottom: '15px' }}>{isEn ? 'Recommended Cooling' : 'Doporučené chlazení'}</h3>
+                         <a href="https://www.heureka.cz/?h%5Bfraze%5D=vodni+chlazeni+cpu" style={{ color: '#3b82f6', fontWeight: 'bold', textDecoration: 'none' }}>{isEn ? 'SHOP NOW' : 'KOUPIT CHLADIČ'}</a>
+                    </div>
                 </div>
 
                 <SeznamAd zoneId={408658} width={480} height={300} />
 
-                {/* FOOTER SPIDER */}
-                <section style={{ marginTop: '80px' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '25px', textAlign: 'center' }}>Guru {isEn ? 'Knowledge Base' : 'Databáze vědomostí'}</h3>
+                {/* GURU NÁSTROJE */}
+                <section style={{ marginTop: '60px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '40px' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '25px' }}>{isEn ? 'Guru Tools' : 'Guru Nástroje'}</h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
                         <a href="/bottleneck-kalkulacka" className="guru-spider-link"><Gauge size={18} color="#eab308" /> Bottleneck</a>
                         <a href="/cpuvs" className="guru-spider-link"><Cpu size={18} color="#3b82f6" /> CPU Duels</a>
+                        <a href="/gpuvs" className="guru-spider-link"><Layers size={18} color="#ef4444" /> GPU Duels</a>
                         <a href="/tweaky" className="guru-spider-link"><Zap size={18} color="#a855f7" /> PC Tweaks</a>
                     </div>
                 </section>
+
+                {/* NEJNOVĚJŠÍ ČLÁNKY */}
+                {latestPosts.length > 0 && (
+                    <section style={{ paddingTop: '40px' }}>
+                        <h3 style={{ fontSize: '18px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '25px' }}>{isEn ? 'Latest from Guru' : 'Nejnovější články'}</h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '15px' }}>
+                            {latestPosts.map(post => (
+                                <a key={post.id} href={isEn ? `/en/articles/${post.slug_en || post.slug}` : `/clanky/${post.slug}`} className="guru-spider-link">
+                                    <ChevronRight size={16} color="#9ca3af" /> {isEn ? (post.title_en || post.title) : post.title}
+                                </a>
+                            ))}
+                        </div>
+                    </section>
+                )}
             </main>
         </div>
     );
