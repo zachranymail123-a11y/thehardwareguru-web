@@ -1,7 +1,7 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
-import { Cpu, Zap, Activity, Gauge, Layers, Flame, ChevronRight, Swords, Settings } from 'lucide-react';
+import { Cpu, Zap, Activity, Gauge, Layers, Flame, ChevronRight, Swords, Award } from 'lucide-react';
 
 // FIX CESTY: Takhle to Vercel najde
 import HeurekaButtons from '../../../../components/HeurekaButtons';
@@ -82,7 +82,7 @@ export default async function CpuOverclockingPage({ params }) {
                 .guru-spider-link:hover { background: rgba(102, 252, 241, 0.1); border-color: #66fcf1; color: #fff; transform: translateX(5px); }
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; margin-bottom: 40px; overflow: hidden; }
                 .ad-mobile-wrapper { display: none; justify-content: center; width: 100%; margin-bottom: 40px; overflow: hidden; }
-                .guru-description-block { background: rgba(255,255,255,0.03); padding: 35px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 40px; line-height: 1.8; color: #cbd5e1; font-size: 17px; backdrop-filter: blur(10px); }
+                .guru-description-block { background: rgba(255,255,255,0.03); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 40px; backdrop-filter: blur(10px); }
                 @media (max-width: 768px) { .ad-desktop-wrapper { display: none !important; } .ad-mobile-wrapper { display: flex !important; } }
             `}} />
 
@@ -95,13 +95,13 @@ export default async function CpuOverclockingPage({ params }) {
                     </h1>
                 </header>
 
-                {/* --- UNIKÁTNÍ POPIS CPU S WHITEPRESS BLOCKEM --- */}
+                {/* --- UNIKÁTNÍ POPIS CPU S WHITEPRESS / AFFILIATE BLOCKEM --- */}
                 <section className="guru-description-block">
-                    <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#fff', marginBottom: '15px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#fff', marginBottom: '20px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <Zap size={20} color="#66fcf1" /> {isEn ? `Why tune ${cpu.name}?` : `Proč ladit ${cpu.name}?`}
                     </h2>
                     
-                    <p style={{ marginBottom: '25px' }}>
+                    <p style={{ marginBottom: '35px', lineHeight: '1.8', fontSize: '17px' }}>
                         {isEn ? (
                             `The ${cpu.name} processor based on the ${cpu.architecture || 'modern'} architecture has enormous potential that is often held back in factory settings by high temperatures. Our goal is to find the perfect balance between maximum Boost (${safeBoost} GHz) and efficient cooling. ${isAMD ? 'For AMD processors, we focus on the Curve Optimizer.' : 'For Intel, the key is the correct VCore Offset.'}`
                         ) : (
@@ -109,22 +109,23 @@ export default async function CpuOverclockingPage({ params }) {
                         )}
                     </p>
 
-                    {/* WHITEPRESS PARTNER MENTION */}
-                    <div style={{ background: 'rgba(102, 252, 241, 0.05)', borderLeft: '4px solid #66fcf1', padding: '15px 20px', borderRadius: '0 12px 12px 0', marginBottom: '25px' }}>
-                        <div style={{ fontSize: '11px', color: '#66fcf1', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>
+                    {/* WHITEPRESS / AFFILIATE PARTNER MENTION */}
+                    <div style={{ background: 'rgba(102, 252, 241, 0.08)', borderLeft: '5px solid #66fcf1', padding: '25px 30px', borderRadius: '0 16px 16px 0', marginBottom: '30px', boxShadow: 'inset 0 0 20px rgba(102, 252, 241, 0.05)' }}>
+                        <div style={{ fontSize: '12px', color: '#66fcf1', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '1px', marginBottom: '10px' }}>
+                            <Award size={14} style={{ display: 'inline', verticalAlign: 'text-bottom', marginRight: '5px' }} /> 
                             Guru Doporučuje
                         </div>
-                        <p style={{ margin: 0, fontSize: '15px', fontStyle: 'italic', color: '#cbd5e1' }}>
+                        <p style={{ margin: 0, fontSize: '16px', fontStyle: 'italic', color: '#e2e8f0', lineHeight: '1.6' }}>
                             {isEn ? (
-                                <>Ensure your system is equipped with a reliable PSU and cooling. For enthusiasts building a new rig, check out the <a href="#" style={{ color: '#66fcf1', textDecoration: 'underline' }}>best PC components</a> at our verified partners.</>
+                                <>Before you start tuning, ensure your system is equipped with reliable cooling. For enthusiasts building a new rig, compare prices of the <a href="https://www.heureka.cz/?h%5Bfraze%5D=pc+komponenty" target="_blank" rel="nofollow sponsored" style={{ color: '#66fcf1', textDecoration: 'underline', fontWeight: 'bold' }}>best PC components</a> to get the maximum performance.</>
                             ) : (
-                                <>Než začnete s laděním, ujistěte se, že váš systém disponuje kvalitním chlazením a zdrojem. Pokud plánujete stavbu nové sestavy, doporučujeme sledovat nabídky na <a href="#" style={{ color: '#66fcf1', textDecoration: 'underline' }}>kvalitní PC komponenty</a> u prověřených prodejců.</>
+                                <>Než začnete s laděním, ujistěte se, že váš systém disponuje kvalitním chlazením a zdrojem. Pokud plánujete stavbu nové sestavy, doporučujeme si porovnat ceny za <a href="https://www.heureka.cz/?h%5Bfraze%5D=pc+komponenty" target="_blank" rel="nofollow sponsored" style={{ color: '#66fcf1', textDecoration: 'underline', fontWeight: 'bold' }}>kvalitní PC komponenty</a> na Heurece, nebo mrknout na hotové sestavy u <a href="https://www.smarty.cz/" target="_blank" rel="nofollow sponsored" style={{ color: '#eab308', textDecoration: 'underline', fontWeight: 'bold' }}>Smarty.cz</a>.</>
                             )}
                         </p>
                     </div>
 
                     {(isEn ? cpu.description_en : cpu.description_cz) && (
-                        <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)' }} 
+                        <div style={{ marginTop: '30px', paddingTop: '30px', borderTop: '1px solid rgba(255,255,255,0.1)' }} 
                              dangerouslySetInnerHTML={{ __html: isEn ? cpu.description_en : cpu.description_cz }} />
                     )}
                 </section>
