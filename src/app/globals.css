@@ -184,15 +184,17 @@
 /* --- MOBILE STICKY AFFILIATE BUTTON --- */
 .guru-mobile-sticky-wrapper {
     position: fixed;
-    bottom: 20px;
+    bottom: 140px; /* 🔥 VYKOPNUTO VÝŠ, ABY TO NEKRYLA SPODNÍ REKLAMA 🔥 */
     left: 0;
     right: 0;
-    z-index: 9999;
+    z-index: 10000;
     padding: 0 20px;
     animation: slideUp 0.5s ease-out;
+    pointer-events: none; /* 🔥 OBAL NESMÍ BLOKOVAT KLIKÁNÍ 🔥 */
 }
 
 .guru-mobile-sticky-btn {
+    pointer-events: auto; /* 🔥 SAMOTNÉ TLAČÍTKO KLIKACÍ JE 🔥 */
     display: flex;
     align-items: center;
     justify-content: center;
