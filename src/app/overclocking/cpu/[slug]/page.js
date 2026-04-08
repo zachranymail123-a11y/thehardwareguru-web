@@ -1,11 +1,14 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
-import { Cpu, Zap, Activity, Gauge, Layers, Flame, ChevronRight, BookOpen, ShieldCheck, Clock, User } from 'lucide-react';
+// 🚀 GURU ICON FIX: Přidán Settings a všechny chybějící ikony
+import { Cpu, Zap, Activity, Gauge, Layers, Flame, ChevronRight, BookOpen, ShieldCheck, Clock, User, Settings } from 'lucide-react';
 
+// FIX CESTY: Takhle to Vercel v tomhle zanoření najde (4 úrovně zpět)
 import HeurekaButtons from '../../../../components/HeurekaButtons';
 import SeznamAd from '../../../../components/SeznamAd';
 
+// --- GURU PSEO ENGINE V2.0 ---
 export const runtime = "nodejs";
 export const revalidate = 3600;
 
@@ -15,6 +18,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const getCpuData = async (slug) => {
     if (!slug) return null;
+    // Očistíme slug od EN prefixu pro DB query
     const cleanSlug = slug.startsWith('en-') ? slug.replace('en-', '') : slug;
     const { data, error } = await supabase.from('cpus').select('*').eq('slug', cleanSlug).limit(1).single();
     if (error || !data) return null;
@@ -78,7 +82,7 @@ export default async function CpuOverclockingPage({ params }) {
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-article-card { background: rgba(15, 17, 21, 0.8); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 40px; margin-bottom: 40px; backdrop-filter: blur(12px); box-shadow: 0 20px 50px rgba(0,0,0,0.4); }
                 .article-meta { display: flex; gap: 20px; margin-bottom: 30px; font-size: 13px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
-                .guru-h2 { font-size: 26px; fontWeight: 900; margin-bottom: 20px; color: #fff; display: flex; align-items: center; gap: 12px; border-left: 4px solid #a855f7; padding-left: 15px; }
+                .guru-h2 { font-size: 26px; font-weight: 900; margin-bottom: 20px; color: #fff; display: flex; align-items: center; gap: 12px; border-left: 4px solid #a855f7; padding-left: 15px; }
                 .guru-p { line-height: 1.8; color: #cbd5e1; font-size: 17px; margin-bottom: 25px; }
                 .setup-box { background: rgba(0,0,0,0.4); border-radius: 16px; padding: 25px; border-left: 4px solid #66fcf1; margin: 20px 0; }
                 .guru-spider-link { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; color: #d1d5db; text-decoration: none; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: bold; transition: 0.2s; }
@@ -92,7 +96,7 @@ export default async function CpuOverclockingPage({ params }) {
                     <div className="article-meta" style={{ justifyContent: 'center' }}>
                         <span><User size={14} style={{ verticalAlign: 'middle', marginRight: '5px' }} /> Hardware Guru</span>
                         <span><Clock size={14} style={{ verticalAlign: 'middle', marginRight: '5px' }} /> 6 min {isEn ? 'read' : 'čtení'}</span>
-                        <span><BookOpen size={14} style={{ verticalAlign: 'middle', marginRight: '5px' }} /> {cpu.architecture}</span>
+                        <span><BookOpen size={14} style={{ verticalAlign: 'middle', marginRight: '5px' }} /> {cpu.architecture || 'x86-64'}</span>
                     </div>
                     <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', fontWeight: '950', margin: '0 0 20px 0', textTransform: 'uppercase', lineHeight: '1.1' }}>
                         {cpu.name}<br /><span style={{ color: '#a855f7' }}>Ultimate Tuning Guide</span>
@@ -108,9 +112,9 @@ export default async function CpuOverclockingPage({ params }) {
                     <h2 className="guru-h2"><Zap size={24} color="#66fcf1" /> {isEn ? 'Introduction' : 'Úvod do problematiky'}</h2>
                     <p className="guru-p">
                         {isEn ? (
-                            `The ${cpu.name} is a powerhouse in the ${cpu.architecture} lineup. However, out of the box, it often consumes more power than necessary. Our testing shows that by applying specific undervolt settings, you can achieve better sustained clock speeds while significantly reducing thermal output.`
+                            `The ${cpu.name} is a powerhouse in the ${cpu.architecture || 'modern'} lineup. However, out of the box, it often consumes more power than necessary. Our testing shows that by applying specific undervolt settings, you can achieve better sustained clock speeds while significantly reducing thermal output.`
                         ) : (
-                            `Procesor ${cpu.name} patří k vrcholům architektury ${cpu.architecture}. V továrním nastavení je ale často "překrmen" zbytečně vysokým napětím, což vede k thermal throttlingu. V tomto článku se podíváme na to, jak z tohoto křemíku vymáčknout maximum při zachování tichého chlazení.`
+                            `Procesor ${cpu.name} patří k vrcholům architektury ${cpu.architecture || 'moderních procesorů'}. V továrním nastavení je ale často "překrmen" zbytečně vysokým napětím, což vede k thermal throttlingu. V tomto článku se podíváme na to, jak z tohoto křemíku vymáčknout maximum při zachování tichého chlazení.`
                         )}
                     </p>
 
