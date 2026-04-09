@@ -3,10 +3,12 @@ import UltimateGuidePage, { generateMetadata as originalMetadata } from '../../u
 export const runtime = "nodejs";
 export const revalidate = 86400;
 
-// Natáhne a vygeneruje Google Golden Rich metada z hlavního souboru
-export const generateMetadata = originalMetadata;
+export async function generateMetadata(props) {
+  // Natvrdo předáme isEn: true do původních metadat
+  return await originalMetadata({ ...props, isEn: true });
+}
 
-// Vykreslí hlavní Pillar Page
 export default function EnUltimateGuideProxy(props) {
-  return <UltimateGuidePage {...props} />;
+  // Natvrdo vynutíme angličtinu do hlavní komponenty
+  return <UltimateGuidePage {...props} isEn={true} />;
 }
