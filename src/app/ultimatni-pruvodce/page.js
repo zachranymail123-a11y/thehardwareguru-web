@@ -11,10 +11,10 @@ export const revalidate = 86400;
 
 const baseUrl = "https://thehardwareguru.cz";
 
-export async function generateMetadata() {
+export async function generateMetadata(props) {
   const headersList = headers();
-  const fullUrl = headersList.get('referer') || "";
-  const isEn = fullUrl.includes('/en');
+  const path = headersList.get('x-invoke-path') || headersList.get('referer') || "";
+  const isEn = props.isEn === true || path.includes('/en');
 
   const title = isEn 
     ? "Ultimate Guide: PC Bottleneck, FPS & Overclocking | Hardware Guru" 
@@ -32,10 +32,11 @@ export async function generateMetadata() {
   };
 }
 
-export default function UltimateGuidePage() {
+export default function UltimateGuidePage(props) {
   const headersList = headers();
-  const fullUrl = headersList.get('referer') || "";
-  const isEn = fullUrl.includes('/en');
+  const path = headersList.get('x-invoke-path') || headersList.get('referer') || "";
+  // Bere isEn buď natvrdo z Proxy, nebo z cesty
+  const isEn = props.isEn === true || path.includes('/en');
 
   // 🥇 GOOGLE GOLDEN RICH SCHEMA (FAQ + Article pro Nultou pozici v Googlu)
   const jsonLd = {
@@ -283,6 +284,18 @@ export default function UltimateGuidePage() {
 
           </div>
         </section>
+
+        {/* SOCIÁLNÍ SÍTĚ UŽIVATELE (Autorita pro Google) */}
+        <div style={{ marginTop: '80px', padding: '40px', background: 'linear-gradient(to right, rgba(168, 85, 247, 0.1), rgba(6, 182, 212, 0.1))', borderRadius: '30px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <h3 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '20px' }}>
+            {isEn ? 'Join The Hardware Guru Community' : 'Připojte se ke komunitě Hardware Guru'}
+          </h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px' }}>
+            <a href="https://www.youtube.com/@TheHardwareGuru_Czech" target="_blank" rel="noopener noreferrer" style={{ padding: '12px 25px', background: '#ff0000', color: '#fff', fontWeight: 'bold', borderRadius: '12px', textDecoration: 'none' }}>YouTube</a>
+            <a href="https://kick.com/thehardwareguru" target="_blank" rel="noopener noreferrer" style={{ padding: '12px 25px', background: '#53fc18', color: '#000', fontWeight: 'bold', borderRadius: '12px', textDecoration: 'none' }}>Kick Stream</a>
+            <a href="https://discord.com/invite/n7xThr8" target="_blank" rel="noopener noreferrer" style={{ padding: '12px 25px', background: '#5865F2', color: '#fff', fontWeight: 'bold', borderRadius: '12px', textDecoration: 'none' }}>Discord</a>
+          </div>
+        </div>
 
       </main>
     </div>
