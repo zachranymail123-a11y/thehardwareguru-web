@@ -5,10 +5,11 @@ import {
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
+import BottleneckFatContent from '../../../components/BottleneckFatContent'; // 🔥 IMPORT TVÉ NOVÉ SEO KOMPONENTY 🔥
 
 /**
- * GURU BOTTLENECK ENGINE V22.12 (AFFILIATE BOMB UPDATE)
- * 🚀 CÍL: Přidání dynamické affiliate zóny (Smarty + Heureka) pro CPU/GPU do detailní stránky bottlenecku.
+ * GURU BOTTLENECK ENGINE V22.13 (FAT CONTENT UPDATE)
+ * 🚀 CÍL: Generování tisíců plnohodnotných a unikátních stránek pro dominanci ve vyhledávačích.
  */
 
 export const runtime = "nodejs";
@@ -69,46 +70,6 @@ const getAnalysisData = async (slug) => {
   ]);
   
   return { cpu, gpu, gameSlug, resolution };
-};
-
-const AlgorithmicSeoText = ({ cpuName, gpuName, gameName, resolution, bottleneckPercent, isCpuBound, fps, isEn }) => {
-  const isPerfect = bottleneckPercent < 10;
-  const isMinor = bottleneckPercent >= 10 && bottleneckPercent <= 20;
-  const targetGame = gameName ? (isEn ? `in ${gameName}` : `ve hře ${gameName}`) : (isEn ? `in modern titles` : `v moderních titulech`);
-  const targetRes = resolution ? (isEn ? ` at ${resolution}` : ` v rozlišení ${resolution}`) : '';
-  const bottleneckType = isCpuBound ? "CPU" : "GPU";
-
-  let p1, p2, p3;
-
-  if (isEn) {
-    p1 = `When pairing the <strong>${cpuName}</strong> processor with the <strong>${gpuName}</strong> graphics card, it is crucial to analyze how they perform together ${targetGame}${targetRes}. A balanced system ensures maximum frames per second without wasting hardware potential.`;
-    if (isPerfect) {
-      p2 = `Based on our performance index, this combination is <strong>perfectly balanced</strong>. With a negligible bottleneck of only <strong>${bottleneckPercent}%</strong>, neither the ${bottleneckType} nor the other components are significantly holding the system back. This means you are extracting the maximum possible value from both components.`;
-    } else if (isMinor) {
-      p2 = `Our analysis reveals a minor <strong>${bottleneckPercent}% bottleneck</strong>, primarily caused by the <strong>${bottleneckType}</strong>. While not critical, it indicates that the ${bottleneckType} reaches its maximum capacity slightly earlier than the rest of the system${targetRes}.`;
-    } else {
-      p2 = `This configuration experiences a significant <strong>${bottleneckPercent}% bottleneck</strong>, strictly limited by the <strong>${bottleneckType}</strong>. In highly demanding scenarios ${targetGame}, the ${bottleneckType} struggles to keep pace, preventing the other components from achieving their full potential.`;
-    }
-    p3 = fps ? `For gamers, this translates to an estimated average performance of <strong>${fps} FPS</strong>. If you are planning to build or upgrade this PC, focusing on a more powerful ${bottleneckType} would yield the most noticeable improvements in smoothness and visual fidelity.` : `If you are planning to build or upgrade this exact PC setup, balancing the ${bottleneckType} power should be your next priority to optimize your gaming or professional workflow.`;
-  } else {
-    p1 = `Při spojení procesoru <strong>${cpuName}</strong> s grafickou kartou <strong>${gpuName}</strong> je naprosto klíčové vědět, jak se budou chovat ${targetGame}${targetRes}. Správně vyvážená sestava garantuje maximální snímkovou frekvenci (FPS) bez zbytečného plýtvání výkonem.`;
-    if (isPerfect) {
-      p2 = `Na základě našeho výkonnostního indexu je tato kombinace <strong>naprosto ideální</strong>. S naprosto zanedbatelným omezením pouze <strong>${bottleneckPercent} %</strong> nebrzdí procesor ani grafická karta zbytek systému. Z obou drahých komponent tak těžíte absolutní maximum.`;
-    } else if (isMinor) {
-      p2 = `Naše analýza odhalila mírný úzký profil (bottleneck) na úrovni <strong>${bottleneckPercent} %</strong>, který je způsoben primárně ze strany <strong>${bottleneckType}</strong>. Nejedná se o kritický problém, ale znamená to, že ${bottleneckType} naráží na své limity o něco dříve než zbytek sestavy${targetRes}.`;
-    } else {
-      p2 = `Tato konfigurace trpí poměrně zásadním bottleneckem <strong>${bottleneckPercent} %</strong>, kdy je výkon striktně limitován ze strany <strong>${bottleneckType}</strong>. V náročných momentech ${targetGame} přestává ${bottleneckType} stíhat a nedovolí druhé komponentě využít její plný potenciál.`;
-    }
-    p3 = fps ? `Pro hráče to v reálu znamená odhadovaný průměrný výkon kolem <strong>${fps} FPS</strong>. Pokud plánujete tuto sestavu stavět nebo vylepšovat, investice do silnějšího ${bottleneckType} by vám přinesla největší skok v plynulosti a kvalitě obrazu.` : `Pokud plánujete tuto počítačovou sestavu teprve stavět, doporučujeme zvážit lepší vyvážení. Investice do silnějšího ${bottleneckType} by měla být vaší prioritou číslo jedna pro maximalizaci výkonu.`;
-  }
-
-  return (
-    <div className="seo-text-container" style={{ fontSize: '1.1rem', lineHeight: '1.7', color: '#d1d5db' }}>
-      <p style={{ marginBottom: '15px' }} dangerouslySetInnerHTML={{ __html: p1 }}></p>
-      <p style={{ marginBottom: '15px' }} dangerouslySetInnerHTML={{ __html: p2 }}></p>
-      <p dangerouslySetInnerHTML={{ __html: p3 }}></p>
-    </div>
-  );
 };
 
 export async function generateMetadata(props) {
@@ -257,8 +218,17 @@ export default async function BottleneckPage(props) {
                 )}
             </div>
             
+            {/* 🔥 ZDE JE INTEGROVÁN NOVÝ FAT CONTENT MÍSTO STARÉHO SEO TEXTU 🔥 */}
             <div style={{ marginTop: '40px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '30px', textAlign: 'left' }}>
-              <AlgorithmicSeoText cpuName={cpu.name} gpuName={gpu.name} gameName={gameName} resolution={displayResolution} bottleneckPercent={bottleneckScore} isCpuBound={isCpuBottleneck} fps={estimatedFps} isEn={isEn} />
+              <BottleneckFatContent 
+                cpuName={cpu.name} 
+                gpuName={gpu.name} 
+                gameName={gameName || (isEn ? "Modern Titles" : "Moderních hrách")} 
+                resolution={displayResolution || "1440p"} 
+                bottleneckPercent={bottleneckScore} 
+                bottleneckType={bottleneckScore < 5 ? 'Balanced' : (isCpuBottleneck ? 'CPU' : 'GPU')} 
+                isEn={isEn} 
+              />
             </div>
 
             {/* 🔥 GURU AFFILIATE BOMB 🔥 */}
