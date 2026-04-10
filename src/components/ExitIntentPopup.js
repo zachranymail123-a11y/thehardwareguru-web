@@ -10,31 +10,33 @@ export default function ExitIntentPopup() {
     const isEn = pathname.startsWith('/en');
 
     useEffect(() => {
-        // Zabráníme zobrazení, pokud už to uživatel v této relaci viděl
+        // Kontrola, jestli se už popup v této session ukázal
         if (sessionStorage.getItem('guru_exit_shown')) {
             setHasTriggered(true);
             return;
         }
 
-        const handleMouseLeave = (e) => {
-            // Pokud myš vyjede přes HORNÍ okraj (směr zavření tabu/změna URL)
-            if (e.clientY <= 0 && !hasTriggered) {
+        const handleMouseOut = (e) => {
+            // e.clientY < 10 bezpečně detekuje vyjetí myši z horní části okna
+            if (e.clientY < 10 && e.relatedTarget === null && !hasTriggered) {
                 setIsVisible(true);
                 setHasTriggered(true);
+                // Zapíše do paměti, aby to uživatele neotravovalo při každém pohybu. 
+                // PRO TESTOVÁNÍ: Pokud chceš, aby to vyskakovalo pořád, tento řádek dočasně zakomentuj:
                 sessionStorage.setItem('guru_exit_shown', 'true');
             }
         };
 
-        document.addEventListener('mouseleave', handleMouseLeave);
+        document.addEventListener('mouseout', handleMouseOut);
         
         return () => {
-            document.removeEventListener('mouseleave', handleMouseLeave);
+            document.removeEventListener('mouseout', handleMouseOut);
         };
     }, [hasTriggered]);
 
     if (!isVisible) return null;
 
-    // Odkazy do affiliate (Heureka / Amazon)
+    // Odkazy do affiliate
     const cpuLink = isEn 
         ? "https://www.amazon.com/s?k=computer+processor+cpu&tag=thehardware07-20" 
         : "https://www.heureka.cz/?h%5Bfraze%5D=procesor#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=ExitPopup";
@@ -50,7 +52,7 @@ export default function ExitIntentPopup() {
                 <button 
                     onClick={() => setIsVisible(false)}
                     style={{ position: 'absolute', top: '15px', right: '15px', background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer', padding: '5px' }}
-                    className="hover:text-white transition-colors"
+                    className="hover-scale"
                 >
                     <X size={24} />
                 </button>
@@ -75,7 +77,7 @@ export default function ExitIntentPopup() {
                         {isEn ? "Show Graphics Card Deals" : "Ukázat slevy grafických karet"}
                     </a>
                     
-                    <a href={cpuLink} target="_blank" rel="nofollow sponsored" onClick={() => setIsVisible(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '16px', borderRadius: '16px', fontWeight: '950', textTransform: 'uppercase', textDecoration: 'none', transition: '0.3s' }} className="hover:bg-white/10">
+                    <a href={cpuLink} target="_blank" rel="nofollow sponsored" onClick={() => setIsVisible(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '16px', borderRadius: '16px', fontWeight: '950', textTransform: 'uppercase', textDecoration: 'none', transition: '0.3s' }} className="hover-scale">
                         <ShoppingCart size={20} color="#a855f7" />
                         {isEn ? "Show Processor Deals" : "Ukázat slevy procesorů"}
                     </a>
