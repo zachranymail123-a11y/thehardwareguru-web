@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons'; 
+import ShareResultButton from '../../components/ShareResultButton';
 
 /**
  * GURU BOTTLENECK ENGINE CLIENT - V11.9 (AFFILIATE TRACKING & OVERFLOW FIX)
@@ -306,6 +307,17 @@ export default function BottleneckClient({
                                 <HeurekaButtons isEn={isEn} />
                             </div>
                             
+                            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', width: '100%', boxSizing: 'border-box' }}>
+                                <ShareResultButton 
+                                    cpu={a.cpuName} 
+                                    gpu={a.gpuName} 
+                                    resolution={resolution} 
+                                    bottleneck={`${a.bottleneckPercent} %`} 
+                                    score={100 - (a.bottleneckPercent || 0)} 
+                                    isEn={isEn} 
+                                />
+                            </div>
+
                         </div>
                     )}
                 </div>
