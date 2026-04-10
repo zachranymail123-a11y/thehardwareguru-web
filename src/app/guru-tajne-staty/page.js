@@ -18,17 +18,25 @@ export default async function RealtimeStatsPage() {
         return <div style={{ color: 'red', padding: '50px', textAlign: 'center' }}>Chyba při načítání dat: {error.message}</div>;
     }
 
-    // Spočítání kliků
+    // Spočítání kliků (přidáno sticky pro Mobile Button a popup pro Exit Popup)
     const stats = {
-        amazon: { total: 0, cpu: 0, gpu: 0, mb: 0, ram: 0 },
-        heureka: { total: 0, cpu: 0, gpu: 0, mb: 0, ram: 0 }
+        amazon: { total: 0, cpu: 0, gpu: 0, mb: 0, ram: 0, sticky: 0, popup: 0 },
+        heureka: { total: 0, cpu: 0, gpu: 0, mb: 0, ram: 0, sticky: 0, popup: 0 }
     };
 
     logs?.forEach(log => {
         if (stats[log.platform]) {
             stats[log.platform].total += 1;
-            if (stats[log.platform][log.category] !== undefined) {
-                stats[log.platform][log.category] += 1;
+            
+            // Sjednotíme názvy kategorií, pokud by se lehce lišily (např. mobile_sticky -> sticky)
+            let cat = log.category;
+            if (cat) {
+                if (cat.includes('sticky') || cat === 'mobile_button') cat = 'sticky';
+                if (cat.includes('popup') || cat === 'exit_intent') cat = 'popup';
+            }
+
+            if (stats[log.platform][cat] !== undefined) {
+                stats[log.platform][cat] += 1;
             }
         }
     });
@@ -52,6 +60,11 @@ export default async function RealtimeStatsPage() {
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>GPU:</span> <b>{stats.amazon.gpu}</b></div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Desky:</span> <b>{stats.amazon.mb}</b></div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>RAM:</span> <b>{stats.amazon.ram}</b></div>
+                            
+                            <div style={{ borderTop: '1px solid rgba(245, 158, 11, 0.3)', margin: '5px 0' }}></div>
+                            
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fcd34d' }}><span>Mobile Sticky:</span> <b>{stats.amazon.sticky}</b></div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fcd34d' }}><span>Exit Popup:</span> <b>{stats.amazon.popup}</b></div>
                         </div>
                     </div>
 
@@ -65,6 +78,11 @@ export default async function RealtimeStatsPage() {
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>GPU:</span> <b>{stats.heureka.gpu}</b></div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Desky:</span> <b>{stats.heureka.mb}</b></div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>RAM:</span> <b>{stats.heureka.ram}</b></div>
+                            
+                            <div style={{ borderTop: '1px solid rgba(59, 130, 246, 0.3)', margin: '5px 0' }}></div>
+                            
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#93c5fd' }}><span>Mobile Sticky:</span> <b>{stats.heureka.sticky}</b></div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#93c5fd' }}><span>Exit Popup:</span> <b>{stats.heureka.popup}</b></div>
                         </div>
                     </div>
 
