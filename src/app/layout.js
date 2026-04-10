@@ -13,6 +13,7 @@ import AdBlockDetector from '../components/AdBlockDetector';
 import AdTracker from '../components/AdTracker';
 import SeznamAd from '../components/SeznamAd';
 import MobileStickyButton from '../components/MobileStickyButton';
+import ExitIntentPopup from '../components/ExitIntentPopup';
 import { Cpu, ShieldCheck, Layers, Gamepad2, Lightbulb, Bookmark, ShoppingCart, Rocket } from 'lucide-react';
 
 export const metadata = {
@@ -195,6 +196,7 @@ export default async function RootLayout({ children }) {
         <AdBlockDetector />
         <CookieBanner />
         <MobileStickyButton />
+        <ExitIntentPopup />
         <Analytics />
 
         <div className="global-sticky-anchor">
