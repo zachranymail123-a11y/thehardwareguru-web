@@ -5,7 +5,7 @@ import { ShieldAlert, Check, X } from 'lucide-react';
 import Link from 'next/link';
 
 /**
- * GURU COOKIE BANNER V1.0
+ * GURU COOKIE BANNER V1.1 (PUSH TRIGGER UPDATE)
  * Cesta: src/components/CookieBanner.js
  * 🛡️ STATUS: PRODUCTION READY
  */
@@ -28,6 +28,10 @@ export default function CookieBanner() {
   const handleAcceptAll = () => {
     localStorage.setItem('guru_cookie_consent', 'all');
     setIsVisible(false);
+    // 🔥 TADY JE TA MAGIE: Odpálí globální event pro OneSignal a Retargeting 🔥
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('guruConsentGranted'));
+    }
   };
 
   const handleReject = () => {
