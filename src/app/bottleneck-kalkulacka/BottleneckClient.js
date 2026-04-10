@@ -226,6 +226,20 @@ export default function BottleneckClient({
                     <button onClick={handleStart} disabled={!selectedCpuId || !selectedGpuId || !selectedGameSlug || isCalculating} className="start-btn">
                         {isCalculating ? <Sparkles className="spin" /> : <Play size={20} />} SPUSTIT SIMULACI
                     </button>
+                    
+                    {/* Tlačítko přesunuto SEM, ukáže se jen když je analýza hotová */}
+                    {analysis && (
+                        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', width: '100%', boxSizing: 'border-box' }}>
+                            <ShareResultButton 
+                                cpu={a.cpuName} 
+                                gpu={a.gpuName} 
+                                resolution={resolution} 
+                                bottleneck={`${a.bottleneckPercent} %`} 
+                                score={100 - (a.bottleneckPercent || 0)} 
+                                isEn={isEn} 
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <div className="bn-result-card">
@@ -305,17 +319,6 @@ export default function BottleneckClient({
 
                             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px', width: '100%', boxSizing: 'border-box' }}>
                                 <HeurekaButtons isEn={isEn} />
-                            </div>
-                            
-                            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', width: '100%', boxSizing: 'border-box' }}>
-                                <ShareResultButton 
-                                    cpu={a.cpuName} 
-                                    gpu={a.gpuName} 
-                                    resolution={resolution} 
-                                    bottleneck={`${a.bottleneckPercent} %`} 
-                                    score={100 - (a.bottleneckPercent || 0)} 
-                                    isEn={isEn} 
-                                />
                             </div>
 
                         </div>
