@@ -8,8 +8,8 @@ import HeurekaButtons from '../../components/HeurekaButtons';
 import ShareFpsButton from '../../components/ShareFpsButton';
 
 /**
- * GURU FPS ENGINE CLIENT - V11.9 (HEUREKA REVENUE FIX)
- * 🚀 CÍL: Fix Heureka linků na finální formát + Amazon pro EN.
+ * GURU FPS ENGINE CLIENT - V11.10 (HEUREKA 404 KILLER)
+ * 🚀 CÍL: Fix Heureka linků na www.heureka.cz, aby to nehádalo 404 a sypalo prachy.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -101,10 +101,12 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
     const cleanGpuName = selectedGpu ? normalizeName(selectedGpu.name) : '';
 
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
+    
+    // 🔥 DEFINITIVNÍ FIX: Pouze www.heureka.cz pro funkční vyhledávání bez 404 🔥
     const getHeurekaLink = (name, category) => {
-        const subdomain = category === 'cpu' ? 'procesory' : 'graficke-karty';
-        return `https://${subdomain}.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=FpsCalc`;
+        return `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=FpsCalc`;
     };
+    
     const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
 
     return (
@@ -251,6 +253,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                         </div>
                     </div>
 
+                    {/* 🔥 HEUREKA WIDGET SCHOVÁN PRO EN VERZI 🔥 */}
                     {!isEn && (
                         <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
                             <HeurekaButtons isEn={false} />
@@ -308,7 +311,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 .heureka-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
 
                 .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
-                .amazon-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(245, 158, 11, 0.5); }
+                .amazon-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(245, 158, 11, 0.5); }
 
                 .viral-flex-card { display: flex; align-items: center; gap: 20px; max-width: 520px; margin: 40px auto 0; padding: 25px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 20px; text-align: left; }
                 .premium-share-btn { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; border: none; color: #fff; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; transition: 0.2s; }
