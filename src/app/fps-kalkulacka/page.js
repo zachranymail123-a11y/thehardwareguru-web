@@ -4,10 +4,11 @@ import FpsCalculatorClient from './FpsCalculatorClient';
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons'; 
+import { headers } from 'next/headers'; // 🔥 Přidán import pro čtení URL hlaviček
 
 /**
- * GURU FPS ENGINE - V6.9 (FIXED DATABASE FETCH)
- * 🚀 CÍL: Přidání 'performance_index' do dotazů na databázi pro zprovoznění dynamického výpočtu FPS.
+ * GURU FPS ENGINE - V6.9 (FIXED DATABASE FETCH + I18N FIX)
+ * 🚀 CÍL: Přidání 'performance_index' do dotazů na databázi pro zprovoznění dynamického výpočtu FPS. Oprava angličtiny.
  */
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +19,9 @@ const baseUrl = "https://thehardwareguru.cz";
 export async function generateMetadata(props) {
   const p = await props.params;
   const s = await props.searchParams;
+  // Fallback čtení z URL pro metadata, kdyby params selhalo
   const isEn = p?.lang === 'en' || s?.lang === 'en' || false;
+  
   return {
     title: isEn ? 'GTA VI FPS Predictor & Calculator | The Hardware Guru' : 'GTA VI FPS Predikce & Kalkulačka | The Hardware Guru',
     description: 'Zjisti jako první, kolik FPS ti dá GTA VI na tvé sestavě. Unikátní AI odhad výkonu založený na reálných datech.',
@@ -30,9 +33,10 @@ export async function generateMetadata(props) {
 }
 
 export default async function FpsKalkulackaPage(props) {
-  const p = await props.params;
-  const s = await props.searchParams;
-  const isEn = p?.lang === 'en' || s?.lang === 'en' || false;
+  // 🔥 NEPRŮSTŘELNÁ DETEKCE ANGLIČTINY PŘES HLAVIČKY 🔥
+  const headersList = headers();
+  const activePath = headersList.get('x-invoke-path') || ''; 
+  const isEn = activePath.includes('/en/') || activePath === '/en';
   
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -64,13 +68,13 @@ export default async function FpsKalkulackaPage(props) {
         <header style={{ textAlign: 'center', marginBottom: '30px' }}>
           <div className="guru-badge"><Gamepad2 size={16} /> GURU FPS ENGINE</div>
           <h1 className="main-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
-            {isEn ? 'FPS' : 'ROZJEDU'} <span style={{ color: '#a855f7' }}>TO?</span>
+            {isEn ? 'CAN I' : 'ROZJEDU'} <span style={{ color: '#a855f7' }}>{isEn ? 'RUN IT?' : 'TO?'}</span>
           </h1>
 
           <div className="main-bait-panel">
-            <div className="bait-tag"><Sparkles size={14} /> EXKLUZIVNÍ AI MODUL</div>
-            <h2 className="bait-title">CHCETE VĚDĚT, JAK VÁM POJEDE <span style={{color: '#f43f5e'}}>GTA VI?</span></h2>
-            <p className="bait-desc">Stačí níže zadat vaši sestavu. Po výpočtu se vám odemkne <strong>přesný odhad pro GTA VI</strong>!</p>
+            <div className="bait-tag"><Sparkles size={14} /> {isEn ? 'EXCLUSIVE AI MODULE' : 'EXKLUZIVNÍ AI MODUL'}</div>
+            <h2 className="bait-title">{isEn ? 'WANT TO KNOW HOW YOUR PC HANDLES ' : 'CHCETE VĚDĚT, JAK VÁM POJEDE '}<span style={{color: '#f43f5e'}}>GTA VI?</span></h2>
+            <p className="bait-desc">{isEn ? 'Enter your setup below. An ' : 'Stačí níže zadat vaši sestavu. Po výpočtu se vám odemkne '}<strong>{isEn ? 'accurate GTA VI estimate' : 'přesný odhad pro GTA VI'}</strong>{isEn ? ' will unlock after the calculation!' : '!'}</p>
           </div>
         </header>
 
@@ -84,9 +88,9 @@ export default async function FpsKalkulackaPage(props) {
         </div>
 
         <div className="silo-grid" style={{ marginTop: '50px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-            <a href="/cpu-index" className="silo-mini-card"><Cpu size={20} color="#f59e0b" /> KATALOG PROCESORŮ <ArrowRight size={16} /></a>
-            <a href="/gpu-index" className="silo-mini-card"><Monitor size={20} color="#66fcf1" /> KATALOG GRAFIK <ArrowRight size={16} /></a>
-            <a href="/cpuvs" className="silo-mini-card highlight"><Zap size={20} color="#a855f7" /> BOTTLENECK NÁSTROJ <ArrowRight size={16} /></a>
+            <a href={isEn ? "/en/cpu-index" : "/cpu-index"} className="silo-mini-card"><Cpu size={20} color="#f59e0b" /> {isEn ? 'CPU DATABASE' : 'KATALOG PROCESORŮ'} <ArrowRight size={16} /></a>
+            <a href={isEn ? "/en/gpu-index" : "/gpu-index"} className="silo-mini-card"><Monitor size={20} color="#66fcf1" /> {isEn ? 'GPU DATABASE' : 'KATALOG GRAFIK'} <ArrowRight size={16} /></a>
+            <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="silo-mini-card highlight"><Zap size={20} color="#a855f7" /> {isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK NÁSTROJ'} <ArrowRight size={16} /></a>
         </div>
 
         <section className="massive-seo-hub" style={{ marginTop: '60px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '50px' }}>
