@@ -12,8 +12,8 @@ import HeurekaButtons from '../../components/HeurekaButtons';
 import ShareResultButton from '../../components/ShareResultButton';
 
 /**
- * GURU BOTTLENECK ENGINE CLIENT - V12.3 (DEFINITIVE HEUREKA FIX)
- * 🚀 CÍL: Fix Heureka linků na www.heureka.cz s Text%20link.
+ * GURU BOTTLENECK ENGINE CLIENT - V12.5 (THE ULTIMATE HEUREKA FIX + SCRIPT FALLBACK)
+ * 🚀 CÍL: Fix Heureka linků na ampersandy, utm_content=Text%20link, přidání trixam atributů a fallback načtení skriptu.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -42,6 +42,17 @@ export default function BottleneckClient({
     const [shareUrl, setShareUrl] = useState('');
     const [sb, setSb] = useState(null);
     const [showResult, setShowResult] = useState(false);
+
+    // 🔥 POJISTKA: Zajištění načtení Heureka trackovacího skriptu pro přímé návštěvy 🔥
+    useEffect(() => {
+        if (!isEn && typeof document !== 'undefined' && !document.querySelector('script[src*="trixam.min.js"]')) {
+            const script = document.createElement('script');
+            script.src = "//serve.affiliate.heureka.cz/js/trixam.min.js";
+            script.async = true;
+            script.type = "text/javascript";
+            document.body.appendChild(script);
+        }
+    }, [isEn]);
 
     useEffect(() => {
         if (initialCpuId) setShowResult(true);
@@ -169,9 +180,9 @@ export default function BottleneckClient({
     // 🔥 AFFILIATE LINK GENERATORS 🔥
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
     
-    // 🔥 DEFINITIVNÍ FIX: Správný link na heureka.cz bez blbostí s přesným Text%20link parametrem 🔥
-    const getHeurekaLink = (name, category) => {
-        return `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+    // 🔥 DEFINITIVNÍ FIX: Správný link na heureka.cz s ampersandem a přesným Text%20link parametrem 🔥
+    const getHeurekaLink = (name) => {
+        return `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
     };
     
     const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
@@ -315,12 +326,13 @@ export default function BottleneckClient({
                                                 <ShoppingCart size={16} /> Smarty.cz
                                             </a>
                                             <a 
-                                                href={getHeurekaLink(cleanGpuName, 'gpu')} 
+                                                href={getHeurekaLink(cleanGpuName)} 
+                                                className="guru-buy-winner-btn heureka-btn heureka-hn-link"
                                                 data-trixam-positionid="276026" 
-                                                data-trixam-codetype="link" 
+                                                data-trixam-content="Text link"
+                                                data-trixam-medium="affiliate"
                                                 target="_blank" 
                                                 rel="nofollow sponsored" 
-                                                className="guru-buy-winner-btn heureka-btn heureka-hn-link"
                                             >
                                                 <ShoppingCart size={16} /> Heureka.cz
                                             </a>
@@ -335,12 +347,13 @@ export default function BottleneckClient({
                                                 <ShoppingCart size={16} /> Smarty.cz
                                             </a>
                                             <a 
-                                                href={getHeurekaLink(cleanCpuName, 'cpu')} 
+                                                href={getHeurekaLink(cleanCpuName)} 
+                                                className="guru-buy-winner-btn heureka-btn heureka-hn-link"
                                                 data-trixam-positionid="276027" 
-                                                data-trixam-codetype="link" 
+                                                data-trixam-content="Text link"
+                                                data-trixam-medium="affiliate"
                                                 target="_blank" 
                                                 rel="nofollow sponsored" 
-                                                className="guru-buy-winner-btn heureka-btn heureka-hn-link"
                                             >
                                                 <ShoppingCart size={16} /> Heureka.cz
                                             </a>
