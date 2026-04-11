@@ -8,8 +8,8 @@ import HeurekaButtons from '../../components/HeurekaButtons';
 import ShareFpsButton from '../../components/ShareFpsButton';
 
 /**
- * GURU FPS ENGINE CLIENT - V11.8 (AMAZON AFFILIATE UPDATE)
- * 🚀 CÍL: Přidání Amazon tlačítka (tag: thehardware07-20) pro EN verzi, skrytí CZ tlačítek.
+ * GURU FPS ENGINE CLIENT - V11.9 (HEUREKA REVENUE FIX)
+ * 🚀 CÍL: Fix Heureka linků na finální formát + Amazon pro EN.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -92,7 +92,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
     const getGtaPredictionPath = (targetRes) => getGtaUrl(targetRes).replace('https://thehardwareguru.cz', '');
 
-    // 🔥 GENERÁTOR AFFILIATE LINKŮ 🔥
+    // 🔥 AFFILIATE LINK GENERATORS 🔥
     const selectedCpu = cpus.find(c => String(c.id) === String(selectedCpuId));
     const selectedGpu = gpus.find(g => String(g.id) === String(selectedGpuId));
     const selectedGame = games.find(g => String(g.slug) === String(selectedGameSlug));
@@ -101,7 +101,10 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
     const cleanGpuName = selectedGpu ? normalizeName(selectedGpu.name) : '';
 
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
-    const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+    const getHeurekaLink = (name, category) => {
+        const subdomain = category === 'cpu' ? 'procesory' : 'graficke-karty';
+        return `https://${subdomain}.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=FpsCalc`;
+    };
     const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
 
     return (
@@ -204,7 +207,14 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                                     <a href={getSmartyLink(cleanGpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
                                         <ShoppingCart size={16} /> Smarty.cz
                                     </a>
-                                    <a href={getHeurekaLink(cleanGpuName)} data-trixam-positionid="276026" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
+                                    <a 
+                                        href={getHeurekaLink(cleanGpuName, 'gpu')} 
+                                        data-trixam-positionid="276026" 
+                                        data-trixam-codetype="link" 
+                                        target="_blank" 
+                                        rel="nofollow sponsored" 
+                                        className="guru-buy-winner-btn heureka-btn heureka-hn-link"
+                                    >
                                         <ShoppingCart size={16} /> Heureka.cz
                                     </a>
                                 </div>
@@ -217,7 +227,14 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                                     <a href={getSmartyLink(cleanCpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
                                         <ShoppingCart size={16} /> Smarty.cz
                                     </a>
-                                    <a href={getHeurekaLink(cleanCpuName)} data-trixam-positionid="276027" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
+                                    <a 
+                                        href={getHeurekaLink(cleanCpuName, 'cpu')} 
+                                        data-trixam-positionid="276027" 
+                                        data-trixam-codetype="link" 
+                                        target="_blank" 
+                                        rel="nofollow sponsored" 
+                                        className="guru-buy-winner-btn heureka-btn heureka-hn-link"
+                                    >
                                         <ShoppingCart size={16} /> Heureka.cz
                                     </a>
                                 </div>
@@ -234,7 +251,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                         </div>
                     </div>
 
-                    {/* 🔥 HEUREKA WIDGET SCHOVÁN PRO EN VERZI 🔥 */}
                     {!isEn && (
                         <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
                             <HeurekaButtons isEn={false} />
@@ -272,11 +288,9 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: 0.3s; }
                 .calc-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4); }
 
-                /* 🔥 CSS PRO CROSS-LINK NA BOTTLENECK 🔥 */
                 .bottleneck-cta-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); padding: 14px 28px; border-radius: 16px; font-weight: 950; font-size: 15px; text-transform: uppercase; text-decoration: none; transition: all 0.3s ease; width: 100%; max-width: 350px; box-sizing: border-box; }
                 .bottleneck-cta-btn:hover { background: rgba(168, 85, 247, 0.2); box-shadow: 0 0 20px rgba(168, 85, 247, 0.2); transform: translateY(-2px); }
 
-                /* 🔥 CSS PRO AFFILIATE GRID A TLAČÍTKA 🔥 */
                 .affiliate-cta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; padding: 25px; background: rgba(0,0,0,0.4); border-radius: 20px; border: 1px solid rgba(168, 85, 247, 0.2); }
                 .affiliate-col { display: flex; flex-direction: column; align-items: center; }
                 .affiliate-col-title { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 950; color: #a855f7; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; }
@@ -285,17 +299,16 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 @keyframes pulse-smarty { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
                 @keyframes pulse-heureka { 0% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(0, 120, 212, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0); } }
                 
-                .guru-buy-winner-btn { flex: 1; display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 12px 15px; border-radius: 12px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 0.5px; }
+                .guru-buy-winner-btn { flex: 1; display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 12px 15px; border-radius: 12px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 0.5px; color: #000; }
                 
                 .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
                 .smarty-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(234, 179, 8, 0.5); }
                 
-                .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
+                .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff !important; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
                 .heureka-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
 
-                /* 🔥 NOVÉ: CSS PRO AMAZON TLAČÍTKO 🔥 */
                 .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
-                .amazon-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(245, 158, 11, 0.5); }
+                .amazon-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(245, 158, 11, 0.5); }
 
                 .viral-flex-card { display: flex; align-items: center; gap: 20px; max-width: 520px; margin: 40px auto 0; padding: 25px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 20px; text-align: left; }
                 .premium-share-btn { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; border: none; color: #fff; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; transition: 0.2s; }
@@ -314,12 +327,9 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                     .ad-desktop-wrapper { display: none !important; }
                     .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
                     .fps-value { font-size: 3.5rem !important; }
-                    
-                    /* Responzivita Affiliate tlačítek */
                     .affiliate-cta-grid { grid-template-columns: 1fr; gap: 20px; padding: 15px; }
                     .affiliate-btn-wrap { flex-direction: column; }
                     .guru-buy-winner-btn { width: 100%; }
-
                     .viral-flex-card { flex-direction: column; text-align: center; gap: 15px; }
                     .viral-btns { width: 100%; justify-content: center; gap: 15px !important; }
                     .gta-res-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
