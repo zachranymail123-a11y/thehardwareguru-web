@@ -12,8 +12,8 @@ import HeurekaButtons from '../../components/HeurekaButtons';
 import ShareResultButton from '../../components/ShareResultButton';
 
 /**
- * GURU BOTTLENECK ENGINE CLIENT - V11.9 (AFFILIATE TRACKING & FULL EN TRANSLATION)
- * 🚀 CÍL: Fix trackování (UTM, Trixam IDs, HN class) + kompletní dopřeklad do EN.
+ * GURU BOTTLENECK ENGINE CLIENT - V12.0 (CACHE BUSTER & FULL EN TRANSLATION)
+ * 🚀 CÍL: Rozbití Vercel cache + Kompletní dopřeklad do EN.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -227,7 +227,6 @@ export default function BottleneckClient({
                         {isCalculating ? <Sparkles className="spin" /> : <Play size={20} />} {isEn ? 'START SIMULATION' : 'SPUSTIT SIMULACI'}
                     </button>
                     
-                    {/* Zde jsou zobrazená tlačítka vedle sebe po analýze */}
                     {analysis && (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', marginTop: '20px', width: '100%', boxSizing: 'border-box' }}>
                             <ShareResultButton 
@@ -275,7 +274,6 @@ export default function BottleneckClient({
                                 <p>{a.boundType === 'CPU_BOUND' ? (isEn ? 'The GPU is waiting for the processor. You need a stronger CPU for balanced performance.' : 'Grafika čeká na procesor. Potřebuješ silnější CPU pro vyrovnaný výkon.') : (isEn ? 'Your rig is limited by the graphics card. Lowering details will improve FPS.' : 'Sestava je limitována grafickou kartou. Snížení detailů pomůže FPS.')}</p>
                             </div>
 
-                            {/* 🔥 GURU AFFILIATE BOMB (OPRAVENÉ TRACKOVÁNÍ) 🔥 */}
                             <div className="affiliate-cta-grid" style={{ marginTop: '30px' }}>
                                 <div className="affiliate-col">
                                     <div className="affiliate-col-title">
@@ -449,4 +447,14 @@ export default function BottleneckClient({
                   .metric-box { padding: 15px; }
                   .m-val { font-size: 24px; }
                   .bn-result-card { padding: 20px; min-height: auto; border-radius: 20px; }
-                  .viral-flex-card { flex-
+                  .viral-flex-card { flex-direction: column; text-align: center; padding: 25px; gap: 20px; }
+                  .hub-grid { grid-template-columns: 1fr; gap: 20px; }
+                  .hub-column { padding: 25px; border-radius: 20px; }
+                  .affiliate-cta-grid { grid-template-columns: 1fr; gap: 30px; padding: 20px; }
+                  .affiliate-btn-wrap { flex-direction: column; width: 100%; }
+                  .guru-buy-winner-btn { width: 100%; min-width: 100%; }
+                }
+            `}} />
+        </div>
+    );
+}
