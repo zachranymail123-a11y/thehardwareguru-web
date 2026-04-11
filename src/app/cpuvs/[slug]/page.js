@@ -10,8 +10,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V76.9 (HEUREKA REVENUE FIX)
- * 🚀 CÍL: Fix Heureka linků na finální formát + Amazon pro EN.
+ * GURU CPU DUELS ENGINE - DETAIL V76.10 (DEFINITIVE HEUREKA 404 FIX)
+ * 🚀 CÍL: Fix Heureka linků na www.heureka.cz s parametrem h[fraze] + Amazon pro EN.
  */
 
 export const runtime = "nodejs";
@@ -156,7 +156,10 @@ export default async function CpuDuelDetail(props) {
   const encodedQuery = encodeURIComponent(searchName);
   
   const smartyAffiliateLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodedQuery}`)}`;
-  const heurekaAffiliateLink = `https://procesory.heureka.cz/?h%5Bfraze%5D=${encodedQuery}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=CpuVsDetail`;
+  
+  // 🔥 DEFINITIVNÍ FIX DLE TVÝCH SCREENŮ 🔥
+  const heurekaAffiliateLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodedQuery}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=CpuVsDetail`;
+  
   const amazonAffiliateLink = `https://www.amazon.com/s?k=${encodedQuery}&tag=thehardware07-20`;
 
   return (
