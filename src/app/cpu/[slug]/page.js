@@ -8,12 +8,12 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU CPU ENGINE - V3.5 (ULTIMATE AGGRESSIVE EN FIX)
- * 🚀 CÍL: Vynucení EN verze a Amazonu na základě Invoke Path.
+ * GURU CPU ENGINE - V3.6 (ULTIMATE EN FIX + HIERARCHY UPDATE)
+ * 🚀 CÍL: Vynucení EN verze a Amazonu + Posunutí kalkulaček nahoru.
  */
 
 export const runtime = "nodejs";
-export const revalidate = 0; // 🔥 VYPNUTÍ CACHE PRO SPRÁVNOU DETEKCI
+export const revalidate = 0; 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -56,7 +56,7 @@ const findCpuBySlug = async (rawSlugPart) => {
 export default async function CpuDetailPage({ params }) {
   const { slug: rawSlug } = await params;
   
-  // 🔥 AGRESIVNÍ DETEKCE EN: headers + referer + path
+  // 🔥 AGRESIVNÍ DETEKCE EN: headers + path
   const headersList = headers();
   const xPath = headersList.get('x-invoke-path') || "";
   const referer = headersList.get('referer') || "";
@@ -93,7 +93,7 @@ export default async function CpuDetailPage({ params }) {
           </div>
         </header>
 
-        {/* 🔥 AFFILIATE BOMB - AGRESIVNÍ PŘEPÍNÁNÍ 🔥 */}
+        {/* 🔥 AFFILIATE SEKCE 🔥 */}
         <div className="affiliate-cta-grid" style={{ marginBottom: '40px', borderColor: `${vendorColor}40` }}>
             <div className="affiliate-col">
                 <div className="affiliate-col-title" style={{ color: vendorColor }}>
@@ -112,7 +112,7 @@ export default async function CpuDetailPage({ params }) {
             </div>
         </div>
 
-        {/* 🔥 GURU TOOLS CTA - HNED NAHOŘE 🔥 */}
+        {/* 🔥 GURU TOOLS CTA (FPS + BOTTLENECK) - HNED POD NÁKUP 🔥 */}
         <section style={{ marginBottom: '40px' }}>
             <div className="guru-tools-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                 <div className="tool-cta-card" style={{ background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(168, 85, 247, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
@@ -121,7 +121,7 @@ export default async function CpuDetailPage({ params }) {
                         <h3 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase' }}>{isEn ? 'BOTTLENECK CALCULATOR' : 'BOTTLENECK KALKULAČKA'}</h3>
                         <p style={{ color: '#9ca3af', margin: 0 }}>{isEn ? `Will your GPU handle the ${normalizeName(cpu.name)}?` : `Bude tvá grafika stačit na procesor ${normalizeName(cpu.name)}?`}</p>
                     </div>
-                    <a href={isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka'} className="tool-btn hover-scale-purple">{isEn ? 'TEST BOTTLENECK' : 'ZJISTIT BOTTLENECK'}</a>
+                    <a href={isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka'} className="tool-btn hover-scale-purple" style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', color: '#a855f7', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', textAlign: 'center' }}>{isEn ? 'TEST BOTTLENECK' : 'ZJISTIT BOTTLENECK'}</a>
                 </div>
                 <div className="tool-cta-card" style={{ background: 'linear-gradient(135deg, rgba(102, 252, 241, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(102, 252, 241, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
                     <div>
@@ -129,7 +129,7 @@ export default async function CpuDetailPage({ params }) {
                         <h3 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</h3>
                         <p style={{ color: '#9ca3af', margin: 0 }}>{isEn ? `How many FPS will ${normalizeName(cpu.name)} push in games?` : `Kolik FPS ti dá ${normalizeName(cpu.name)} v oblíbených hrách?`}</p>
                     </div>
-                    <a href={isEn ? '/en/fps-calculator' : '/fps-kalkulacka'} className="tool-btn hover-scale-cyan">{isEn ? 'TEST FPS' : 'ZJISTIT FPS'}</a>
+                    <a href={isEn ? '/en/fps-calculator' : '/fps-kalkulacka'} className="tool-btn hover-scale-cyan" style={{ background: 'rgba(102, 252, 241, 0.1)', border: '1px solid rgba(102, 252, 241, 0.3)', color: '#66fcf1', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', textAlign: 'center' }}>{isEn ? 'TEST FPS' : 'ZJISTIT FPS'}</a>
                 </div>
             </div>
         </section>
@@ -163,15 +163,14 @@ export default async function CpuDetailPage({ params }) {
         .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
         .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; }
         .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; }
-        .tool-btn { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; text-align: center; color: #fff; text-decoration: none; font-weight: 950; }
         .table-wrapper { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; overflow: hidden; }
         .spec-row-style { display: flex; align-items: center; justify-content: space-between; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .table-label { font-size: 11px; font-weight: 950; color: #6b7280; text-transform: uppercase; }
         .spec-val-box { color: #fff; font-weight: 950; font-size: 18px; }
         @media (max-width: 768px) {
-            .spec-row-style { flex-direction: column; align-items: flex-start; gap: 10px; }
             .affiliate-btn-wrap { flex-direction: column; gap: 15px; }
             .guru-buy-winner-btn { max-width: 100%; width: 100%; }
+            .tool-cta-card { padding: 25px 15px !important; text-align: center; }
         }
       `}} />
     </div>
