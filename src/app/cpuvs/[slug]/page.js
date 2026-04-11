@@ -10,8 +10,8 @@ import HeurekaButtons from '../../../components/HeurekaButtons';
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText';
 
 /**
- * GURU CPU COMPARE ENGINE - V4.1 (ULTIMATE CONVERSION MACHINE)
- * 🚀 CÍL: Structured Data, Winner logika, Dynamic Intent CTA a SEO Money Loop.
+ * GURU CPU COMPARE ENGINE - V4.3 (STRICT AMAZON.COM FIX)
+ * 🚀 CÍL: V EN verzi striktně amazon.com s tagem thehardware07-20. 
  */
 
 export const runtime = "nodejs";
@@ -74,12 +74,14 @@ export default async function CpuComparePage(props) {
   const perfDiff = Math.round((cpuB.performance_index / cpuA.performance_index - 1) * 100);
   const cpuBBrand = normalizeName(cpuB.name).trim();
   
+  // 🔥 ROZDĚLENÍ LINKŮ: CZ -> Heureka, EN -> STRICT AMAZON.COM 🔥
   const heurekaLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(cpuB.name + ' cena')}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
-  const amazonLink = `https://www.amazon.de/s?k=${encodeURIComponent(cpuB.name)}&tag=thehardware07-21`;
+  const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(cpuB.name)}&tag=thehardware07-20`;
 
-  // 🔥 FIX #8: DYNAMIC INTENT CTA
+  const finalAffiliateLink = isEn ? amazonLink : heurekaLink;
+
   const ctaText = isEn 
-    ? (perfDiff > 20 ? `🔥 Upgrade to ${cpuBBrand} (+${perfDiff}%)` : `🔥 Best buy: ${cpuBBrand}`)
+    ? (perfDiff > 20 ? `🔥 Upgrade to ${cpuBBrand} (+${perfDiff}%)` : `🔥 Best price for ${cpuBBrand}`)
     : (perfDiff > 20 ? `🔥 Upgrade na ${cpuBBrand} (+${perfDiff}%)` : `🔥 Výhodná koupě ${cpuBBrand}`);
 
   return (
@@ -87,7 +89,6 @@ export default async function CpuComparePage(props) {
       
       {!isEn && <Script async src="//serve.affiliate.heureka.cz/js/trixam.min.js" strategy="afterInteractive" />}
 
-      {/* 🔥 FIX #1: STRUCTURED DATA PRO RICH SNIPPETS 🔥 */}
       <Script
         id="vs-schema"
         type="application/ld+json"
@@ -100,21 +101,24 @@ export default async function CpuComparePage(props) {
             "brand": "AMD / Intel",
             "offers": {
               "@type": "AggregateOffer",
-              "priceCurrency": isEn ? "EUR" : "CZK",
+              "priceCurrency": isEn ? "USD" : "CZK",
               "availability": "https://schema.org/InStock"
             }
           })
         }}
       />
 
-      {/* 🔥 FIX #5: OFFSET MOBILE CTA 🔥 */}
-      {!isEn && (
-        <div className="mobile-anchor-trap">
-          <a href={heurekaLink} target="_blank" rel="nofollow sponsored" className="heureka-hn-link pulse-button" data-trixam-positionid="276026">
-            <ShoppingCart size={18} /> CENA {cpuBBrand}
-          </a>
-        </div>
-      )}
+      <div className="mobile-anchor-trap">
+        <a 
+          href={finalAffiliateLink} 
+          target="_blank" 
+          rel="nofollow sponsored" 
+          className={`pulse-button ${!isEn ? 'heureka-hn-link' : ''}`}
+          {...(!isEn && { "data-trixam-positionid": "276026" })}
+        >
+          <ShoppingCart size={18} /> {isEn ? 'PRICE' : 'CENA'} {cpuBBrand}
+        </a>
+      </div>
 
       <main className="inner-container" style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
@@ -136,26 +140,26 @@ export default async function CpuComparePage(props) {
             <div className="gpu-card-box new-cpu" style={{ borderTop: '5px solid #f59e0b', transform: 'scale(1.05)', boxShadow: '0 0 40px rgba(245, 158, 11, 0.3)' }}><h2 className="gpu-name-text">{normalizeName(cpuB.name)}</h2></div>
         </div>
 
-        {/* 🔥 FIX #2 + #3: WINNER LOGICA & BUY HOOK 🔥 */}
         <div className="affiliate-cta-grid" style={{ marginBottom: '40px', background: 'rgba(0,0,0,0.4)', padding: '35px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div style={{ textAlign: 'center', width: '100%' }}>
-                <div style={{ marginBottom: '10px', fontWeight: '950', color: '#10b981', textTransform: 'uppercase', fontSize: '18px', letterSpacing: '1px' }}>
+                <div style={{ marginBottom: '10px', fontWeight: '950', color: '#10b981', textTransform: 'uppercase', fontSize: '18px' }}>
                   🏆 {isEn ? 'Winner' : 'Vítěz'}: {cpuBBrand} (+{perfDiff}% {isEn ? 'Perf' : 'výkon'})
-                </div>
-                <div style={{ marginBottom: '20px', color: '#f59e0b', fontWeight: 'bold', fontSize: '14px' }}>
-                  🔥 {isEn ? 'Ideal upgrade for gaming & multitasking' : 'Ideální upgrade pro gaming a multitasking'}
                 </div>
                 
                 <div className="affiliate-btn-wrap" style={{ display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
-                  <a href={isEn ? amazonLink : heurekaLink} target="_blank" rel="nofollow sponsored" className={`guru-buy-winner-btn pulse-button ${!isEn ? 'heureka-hn-link heureka-btn' : 'amazon-btn'}`} data-trixam-positionid="276026" data-trixam-content="Text link" data-trixam-medium="affiliate">
+                  <a 
+                    href={finalAffiliateLink} 
+                    target="_blank" 
+                    rel="nofollow sponsored" 
+                    className={`guru-buy-winner-btn pulse-button ${isEn ? 'amazon-btn' : 'heureka-hn-link heureka-btn'}`}
+                    {...(!isEn && { "data-trixam-positionid": "276026", "data-trixam-content": "Text link", "data-trixam-medium": "affiliate" })}
+                  >
                     <ShoppingCart size={20} /> {ctaText}
                   </a>
                 </div>
-                {!isEn && (
-                    <div style={{ marginTop: '15px', fontSize: '12px', color: '#9ca3af', fontWeight: 'bold' }}>
-                      ✔ Porovnáno z 50+ obchodů | ⚡ Cena se mění každých pár hodin
-                    </div>
-                )}
+                <div style={{ marginTop: '15px', fontSize: '12px', color: '#9ca3af', fontWeight: 'bold' }}>
+                  {isEn ? '✔ Official retailers | ⚡ Prices change hourly' : '✔ Alza, CZC, Datart a 50+ dalších | ⚡ Ceny se mění každých pár hodin'}
+                </div>
             </div>
         </div>
 
@@ -172,20 +176,14 @@ export default async function CpuComparePage(props) {
             </div>
         </section>
 
-        {/* 🔥 FIX #9: PSYCHO TRIGGER 🔥 */}
-        <div style={{ textAlign: 'center', marginBottom: '15px', color: '#9ca3af', textTransform: 'uppercase', fontSize: '12px', fontWeight: '950', letterSpacing: '2px' }}>
-            📊 {isEn ? 'Performance Difference' : 'Rozdíl výkonu'}: <b style={{ color: '#f59e0b' }}>+{perfDiff}%</b>
-        </div>
-
         <section style={{ marginBottom: '40px' }}>
             <div className="content-box-style analysis-box" style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950' }}>{isEn ? 'Battle Analysis' : 'Analýza souboje'}</h2>
                 <GuruCpuCompareText cpu1Name={normalizeName(cpuA.name)} cpu2Name={normalizeName(cpuB.name)} perfDiff={perfDiff} cpu1Cores={cpuA.cores} cpu2Cores={cpuB.cores} isEn={isEn} />
                 
-                {/* 🔥 FIX #4: INTERNAL MONEY LOOP 🔥 */}
                 <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '25px', flexWrap: 'wrap' }}>
-                  <a href={`/cpu/${cpuA.slug}`} style={{ color: '#60a5fa', fontSize: '13px', fontWeight: 'bold', textDecoration: 'underline' }}>Detail {normalizeName(cpuA.name)} →</a>
-                  <a href={`/cpu/${cpuB.slug}`} style={{ color: '#60a5fa', fontSize: '13px', fontWeight: 'bold', textDecoration: 'underline' }}>Detail {normalizeName(cpuB.name)} →</a>
+                  <a href={isEn ? `/en/cpu/${cpuA.slug}` : `/cpu/${cpuA.slug}`} style={{ color: '#60a5fa', fontSize: '13px', fontWeight: 'bold', textDecoration: 'underline' }}>Detail {normalizeName(cpuA.name)} →</a>
+                  <a href={isEn ? `/en/cpu/${cpuB.slug}` : `/cpu/${cpuB.slug}`} style={{ color: '#60a5fa', fontSize: '13px', fontWeight: 'bold', textDecoration: 'underline' }}>Detail {normalizeName(cpuB.name)} →</a>
                 </div>
             </div>
         </section>
@@ -206,10 +204,15 @@ export default async function CpuComparePage(props) {
               ))}
           </div>
 
-          {/* 🔥 FIX #7: SCROLL MONEY CTA 🔥 */}
           <div style={{ textAlign: 'center', marginTop: '40px' }}>
-            <a href={isEn ? amazonLink : heurekaLink} target="_blank" rel="nofollow sponsored" className={`guru-buy-winner-btn hover-scale ${!isEn ? 'heureka-hn-link heureka-btn' : 'amazon-btn'}`} data-trixam-positionid="276027" data-trixam-content="Text link" data-trixam-medium="affiliate">
-              💰 {isEn ? `Check best price for ${cpuBBrand}` : `Zobrazit nejlepší ceny ${cpuBBrand}`}
+            <a 
+              href={finalAffiliateLink} 
+              target="_blank" 
+              rel="nofollow sponsored" 
+              className={`guru-buy-winner-btn hover-scale ${isEn ? 'amazon-btn' : 'heureka-hn-link heureka-btn'}`}
+              {...(!isEn && { "data-trixam-positionid": "276027", "data-trixam-content": "Text link", "data-trixam-medium": "affiliate" })}
+            >
+              💰 {isEn ? `Check price for ${cpuBBrand}` : `Zobrazit nejlepší ceny ${cpuBBrand}`}
             </a>
           </div>
         </section>
