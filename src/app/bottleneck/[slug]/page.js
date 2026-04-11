@@ -1,15 +1,15 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { 
-  ChevronLeft, Activity, Zap, ShieldCheck, AlertTriangle, ArrowRight, Cpu, Monitor, Gauge, CheckCircle2, Flame, Heart, Swords, PlugZap, Layers, Database, Info, BarChart3, Gamepad2, ArrowUpCircle, ShoppingCart, ChevronRight
+ ChevronLeft, Activity, Zap, ShieldCheck, AlertTriangle, ArrowRight, Cpu, Monitor, Gauge, CheckCircle2, Flame, Heart, Swords, PlugZap, Layers, Database, Info, BarChart3, Gamepad2, ArrowUpCircle, ShoppingCart, ChevronRight
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 import BottleneckFatContent from '../../../components/BottleneckFatContent'; 
 
 /**
- * GURU BOTTLENECK ENGINE V22.16 (AMAZON AFFILIATE UPDATE)
- * 🚀 CÍL: Přidání Amazon tlačítka (tag: thehardware07-20) pro EN verzi, skrytí CZ tlačítek.
+ * GURU BOTTLENECK ENGINE V22.17 (HEUREKA REVENUE FIX)
+ * 🚀 CÍL: Oprava Heureka affiliate linků na finální formát pro zápočet provizí.
  */
 
 export const runtime = "nodejs";
@@ -130,7 +130,6 @@ export default async function BottleneckPage(props) {
       if (gFps > 0 && cFps > 0) estimatedFps = Math.min(gFps, cFps);
   }
 
-  // 🚀 GURU ALGORITHMIC FALLBACK
   if (!estimatedFps && gameSlug) {
       const gameDataMap = {
           'cyberpunk-2077': { thread_scaling: 0.85, cpu_weight: 1.2, gpu_weight: 1.5, fps_scale: 1.2 },
@@ -141,22 +140,17 @@ export default async function BottleneckPage(props) {
           'generic': { thread_scaling: 0.6, cpu_weight: 1.0, gpu_weight: 1.0, fps_scale: 1.4 }
       };
       const game = gameDataMap[gameSlug] || gameDataMap['generic'];
-      
       const cpuNameLower = String(cpu.name || '').toLowerCase();
       let ipcBase = 100; 
       let archEfficiency = 1.0;
       if (cpuNameLower.includes('x3d')) archEfficiency *= 1.4;
       if (cpuNameLower.includes('9800x3d')) ipcBase = 135;
       else if (cpuNameLower.includes('7800x3d')) ipcBase = 115;
-      
       let cpuEffective = (ipcBase * (1 - game.thread_scaling) + (Number(cpu.performance_index) || 100) * game.thread_scaling) * archEfficiency;
-      
       const resMultiplier = { '1080p': 1.0, '1440p': 1.5, '2160p': 2.4 }[resolution] || 1.5;
       let gpuEffective = (Number(gpu.performance_index) || 100) / resMultiplier;
-      
       const rawCpuFps = (cpuEffective / (game.cpu_weight || 1)) * game.fps_scale;
       const rawGpuFps = (gpuEffective / (game.gpu_weight || 1)) * game.fps_scale;
-      
       estimatedFps = Math.max(1, Math.round(Math.min(rawCpuFps, rawGpuFps)));
   }
 
@@ -164,12 +158,16 @@ export default async function BottleneckPage(props) {
   const safeGpuSlug = (gpu.slug || slugify(gpu.name)).replace(/^en-/, '');
   const baseComboUrl = gameSlug ? `${safeCpuSlug}-with-${safeGpuSlug}-in-${gameSlug}` : `${safeCpuSlug}-with-${safeGpuSlug}`;
 
-  // 🔥 GENERÁTOR AFFILIATE LINKŮ 🔥
   const cleanCpuName = normalizeName(cpu.name);
   const cleanGpuName = normalizeName(gpu.name);
 
-  const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
-  const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+  // 🔥 DEFINITIVNÍ AFFILIATE LINKY DLE ADMINU HEUREKY 🔥
+  const smartyCpuLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(cleanCpuName)}`)}`;
+  const heurekaCpuLink = `https://procesory.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(cleanCpuName)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=BottleneckDetail`;
+  
+  const smartyGpuLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(cleanGpuName)}`)}`;
+  const heurekaGpuLink = `https://graficke-karty.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(cleanGpuName)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=BottleneckDetail`;
+
   const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
 
   return (
@@ -178,12 +176,8 @@ export default async function BottleneckPage(props) {
       <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
         <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
-            <div className="ad-desktop-wrapper">
-              <SeznamAd zoneId={408654} width={970} height={210} />
-            </div>
-            <div className="ad-mobile-wrapper">
-              <SeznamAd zoneId={408651} width={300} height={250} />
-            </div>
+            <div className="ad-desktop-wrapper"><SeznamAd zoneId={408654} width={970} height={210} /></div>
+            <div className="ad-mobile-wrapper"><SeznamAd zoneId={408651} width={300} height={250} /></div>
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '50px' }}>
@@ -219,12 +213,9 @@ export default async function BottleneckPage(props) {
                 )}
             </div>
             
-            {/* 🔥 PŘESUNUTO NAHORU: GURU DUAL TOOLS CTA PŘÍMO POD VÝSLEDKY 🔥 */}
             <div style={{ marginTop: '40px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '40px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: '950', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '25px' }}>{isEn ? 'WHAT TO DO NEXT?' : 'CO DÁL?'}</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                    
-                    {/* FPS KALKULAČKA CARD */}
                     <a href={isEn ? '/en/fps-calculator' : '/fps-kalkulacka'} style={{ background: '#0a0b0d', border: '1px solid #06b6d4', padding: '25px', borderRadius: '20px', textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', transition: '0.3s' }} className="tool-cta-link cyan-glow">
                         <Gamepad2 size={32} color="#06b6d4" />
                         <div>
@@ -232,8 +223,6 @@ export default async function BottleneckPage(props) {
                             <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '5px' }}>{isEn ? 'Test this combo in other games' : 'Otestuj tuhle sestavu v jiných hrách'}</div>
                         </div>
                     </a>
-
-                    {/* HW SOUBOJE CARD */}
                     <a href={isEn ? (isCpuBottleneck ? '/en/cpuvs' : '/en/gpuvs') : (isCpuBottleneck ? '/cpuvs' : '/gpuvs')} style={{ background: '#0a0b0d', border: '1px solid #f43f5e', padding: '25px', borderRadius: '20px', textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', transition: '0.3s' }} className="tool-cta-link red-glow">
                         <Swords size={32} color="#f43f5e" />
                         <div>
@@ -241,91 +230,52 @@ export default async function BottleneckPage(props) {
                             <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '5px' }}>{isEn ? `Compare ${isCpuBottleneck ? 'CPUs' : 'GPUs'} to fix the bottleneck` : `Srovnej ${isCpuBottleneck ? 'procesory' : 'grafiky'} a vyřeš bottleneck`}</div>
                         </div>
                     </a>
-
                 </div>
             </div>
 
-            {/* 🔥 FAT CONTENT TEĎ NÁSLEDUJE AŽ POD TLAČÍTKY 🔥 */}
             <div style={{ marginTop: '40px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '30px', textAlign: 'left' }}>
-              <BottleneckFatContent 
-                cpuName={cpu.name} 
-                gpuName={gpu.name} 
-                gameName={gameName || (isEn ? "Modern Titles" : "Moderních hrách")} 
-                resolution={displayResolution || "1440p"} 
-                bottleneckPercent={bottleneckScore} 
-                bottleneckType={bottleneckScore < 5 ? 'Balanced' : (isCpuBottleneck ? 'CPU' : 'GPU')} 
-                isEn={isEn} 
-              />
+              <BottleneckFatContent cpuName={cpu.name} gpuName={gpu.name} gameName={gameName || (isEn ? "Modern Titles" : "Moderních hrách")} resolution={displayResolution || "1440p"} bottleneckPercent={bottleneckScore} bottleneckType={bottleneckScore < 5 ? 'Balanced' : (isCpuBottleneck ? 'CPU' : 'GPU')} isEn={isEn} />
             </div>
 
-            {/* 🔥 GURU AFFILIATE BOMB (AMAZON vs SMARTY/HEUREKA) 🔥 */}
+            {/* 🔥 GURU AFFILIATE REVENUE FIX 🔥 */}
             {isEn ? (
                 <div className="affiliate-cta-grid" style={{ marginTop: '40px' }}>
                     <div className="affiliate-col">
-                        <div className="affiliate-col-title">
-                            <Monitor size={16} /> CHECK GPU DEALS
-                        </div>
+                        <div className="affiliate-col-title"><Monitor size={16} /> CHECK GPU DEALS</div>
                         <div className="affiliate-btn-wrap">
-                            <a href={getAmazonLink(cleanGpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn">
-                                <ShoppingCart size={16} /> Check Price on Amazon
-                            </a>
+                            <a href={getAmazonLink(cleanGpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn"><ShoppingCart size={16} /> Check Price on Amazon</a>
                         </div>
                     </div>
                     <div className="affiliate-col">
-                        <div className="affiliate-col-title">
-                            <Cpu size={16} /> CHECK CPU DEALS
-                        </div>
+                        <div className="affiliate-col-title"><Cpu size={16} /> CHECK CPU DEALS</div>
                         <div className="affiliate-btn-wrap">
-                            <a href={getAmazonLink(cleanCpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn">
-                                <ShoppingCart size={16} /> Check Price on Amazon
-                            </a>
+                            <a href={getAmazonLink(cleanCpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn"><ShoppingCart size={16} /> Check Price on Amazon</a>
                         </div>
                     </div>
                 </div>
             ) : (
                 <div className="affiliate-cta-grid" style={{ marginTop: '40px' }}>
                     <div className="affiliate-col">
-                        <div className="affiliate-col-title">
-                            <Monitor size={16} /> KOUPIT ZVOLENOU GRAFIKU
-                        </div>
+                        <div className="affiliate-col-title"><Monitor size={16} /> KOUPIT ZVOLENOU GRAFIKU</div>
                         <div className="affiliate-btn-wrap">
-                            <a href={getSmartyLink(cleanGpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
-                                <ShoppingCart size={16} /> Smarty.cz
-                            </a>
-                            <a href={getHeurekaLink(cleanGpuName)} data-trixam-positionid="276026" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
-                                <ShoppingCart size={16} /> Heureka.cz
-                            </a>
+                            <a href={smartyGpuLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn"><ShoppingCart size={16} /> Smarty.cz</a>
+                            <a href={heurekaGpuLink} data-trixam-positionid="276026" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link"><ShoppingCart size={16} /> Heureka.cz</a>
                         </div>
                     </div>
                     <div className="affiliate-col">
-                        <div className="affiliate-col-title">
-                            <Cpu size={16} /> KOUPIT ZVOLENÝ PROCESOR
-                        </div>
+                        <div className="affiliate-col-title"><Cpu size={16} /> KOUPIT ZVOLENÝ PROCESOR</div>
                         <div className="affiliate-btn-wrap">
-                            <a href={getSmartyLink(cleanCpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
-                                <ShoppingCart size={16} /> Smarty.cz
-                            </a>
-                            <a href={getHeurekaLink(cleanCpuName)} data-trixam-positionid="276027" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
-                                <ShoppingCart size={16} /> Heureka.cz
-                            </a>
+                            <a href={smartyCpuLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn"><ShoppingCart size={16} /> Smarty.cz</a>
+                            <a href={heurekaCpuLink} data-trixam-positionid="276027" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link"><ShoppingCart size={16} /> Heureka.cz</a>
                         </div>
                     </div>
                 </div>
             )}
         </section>
 
-        {/* 🔥 HEUREKA WIDGET SCHOVÁN PRO EN VERZI 🔥 */}
-        {!isEn && (
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
-                <HeurekaButtons isEn={false} />
-            </div>
-        )}
+        {!isEn && (<div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}><HeurekaButtons isEn={false} /></div>)}
 
-        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
-            <div className="ad-mobile-wrapper">
-                <SeznamAd zoneId={408651} width={300} height={250} />
-            </div>
-        </div>
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}><div className="ad-mobile-wrapper"><SeznamAd zoneId={408651} width={300} height={250} /></div></div>
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeft: '4px solid #66fcf1' }}>{isEn ? 'SYSTEM RECOMMENDATIONS' : 'DOPORUČENÍ PRO SESTAVU'}</h2>
@@ -337,9 +287,7 @@ export default async function BottleneckPage(props) {
         </section>
 
         <section className="massive-seo-hub" style={{ marginTop: '80px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '60px' }}>
-            <h2 className="section-h2" style={{ borderLeft: '4px solid #a855f7', marginBottom: '40px' }}>
-                {isEn ? 'EXPLORE GURU DATABASE' : 'PROZKOUMEJ GURU DATABÁZI'}
-            </h2>
+            <h2 className="section-h2" style={{ borderLeft: '4px solid #a855f7', marginBottom: '40px' }}>{isEn ? 'EXPLORE GURU DATABASE' : 'PROZKOUMEJ GURU DATABÁZI'}</h2>
             <div className="hub-grid">
                 <div className="hub-column">
                     <div className="hub-col-header"><Swords size={20} color="#ff0055" /> {isEn ? 'Hardware Battles' : 'HW Souboje'}</div>
@@ -369,12 +317,8 @@ export default async function BottleneckPage(props) {
       </main>
 
       <div className="sticky-bottom-anchor">
-          <div className="ad-desktop-wrapper">
-              <SeznamAd zoneId={408654} width={970} height={90} />
-          </div>
-          <div className="ad-mobile-wrapper">
-              <SeznamAd zoneId={408651} width={300} height={100} />
-          </div>
+          <div className="ad-desktop-wrapper"><SeznamAd zoneId={408654} width={970} height={90} /></div>
+          <div className="ad-mobile-wrapper"><SeznamAd zoneId={408651} width={300} height={100} /></div>
       </div>
 
       <style dangerouslySetInnerHTML={{__html: `
@@ -386,78 +330,33 @@ export default async function BottleneckPage(props) {
         .spec-card-box { background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
         .card-label { font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; margin: 10px 0 5px; }
         .card-val { font-size: 18px; font-weight: 950; color: #fff; }
-        .support-btn, .live-btn { display: flex; align-items: center; gap: 12px; padding: 18px 40px; border-radius: 16px; font-weight: 950; text-decoration: none; text-transform: uppercase; transition: 0.3s; }
         .support-btn { background: #eab308; color: #000; }
         .live-btn { background: #000; color: #00ec64; border: 1px solid #00ec64; }
-
-        /* 🚀 SEO HUB CSS */
         .hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
         .hub-column { background: rgba(255,255,255,0.02); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); }
         .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 30px; font-size: 18px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
         .hub-links-list { list-style: none; padding: 0; }
         .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 16px; display: flex; align-items: center; margin-bottom: 18px; font-weight: bold; transition: 0.3s; }
         .hub-links-list a:hover { color: #66fcf1; transform: translateX(10px); }
-
-        /* 🔥 STICKY BOTTOM ANCHOR CSS */
-        .sticky-bottom-anchor {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(10, 11, 13, 0.98);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 9999;
-            padding: 10px 0;
-            display: flex;
-            justify-content: center;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
-        }
-
-        /* 🔥 CSS PRO CROSS-LINK TLAČÍTKA 🔥 */
+        .sticky-bottom-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; }
         .tool-cta-link.cyan-glow:hover { box-shadow: 0 0 30px rgba(6, 182, 212, 0.2); transform: translateY(-5px); border-color: #22d3ee !important; }
         .tool-cta-link.red-glow:hover { box-shadow: 0 0 30px rgba(244, 63, 94, 0.2); transform: translateY(-5px); border-color: #fb7185 !important; }
-
-        /* 🔥 CSS PRO AFFILIATE GRID A TLAČÍTKA 🔥 */
         .affiliate-cta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 25px; background: rgba(0,0,0,0.4); border-radius: 20px; border: 1px solid rgba(168, 85, 247, 0.2); width: 100%; box-sizing: border-box; }
         .affiliate-col { display: flex; flex-direction: column; align-items: center; width: 100%; }
         .affiliate-col-title { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 950; color: #a855f7; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; text-align: center; }
         .affiliate-btn-wrap { display: flex; gap: 10px; width: 100%; justify-content: center; flex-wrap: wrap; }
-        
-        @keyframes pulse-smarty { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
-        @keyframes pulse-heureka { 0% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(0, 120, 212, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0); } }
-        
-        .guru-buy-winner-btn { flex: 1; min-width: 120px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 12px 15px; border-radius: 12px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 0.5px; }
-        
-        .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
-        .smarty-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(234, 179, 8, 0.5); }
-        
-        .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
-        .heureka-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
-
-        /* 🔥 NOVÉ: CSS PRO AMAZON TLAČÍTKO 🔥 */
-        .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
-        .amazon-btn:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 10px 20px rgba(245, 158, 11, 0.5); }
-
-        /* GURU RESPONSIVE ADS - STRICT FIX */
+        .guru-buy-winner-btn { flex: 1; min-width: 120px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 12px 15px; border-radius: 12px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: 0.3s; color: #000; }
+        .smarty-btn { background: #facc15; border: 2px solid #fef08a; }
+        .heureka-btn { background: #3b82f6; color: #fff; border: 2px solid #60a5fa; }
+        .amazon-btn { background: #f59e0b; border: 2px solid #fbbf24; }
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
-
         @media (max-width: 768px) {
-            .guru-bottleneck-wrapper { paddingTop: 80px !important; }
             .ad-desktop-wrapper { display: none !important; }
             .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
-            .border-mobile-fix { border-left: none !important; padding-left: 0 !important; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 40px; }
-            .main-analysis-box { padding: 30px 15px !important; border-radius: 20px !important; }
-            .status-pill { padding: 10px 20px; font-size: 12px; }
-            .support-btn, .live-btn { width: 100%; justify-content: center; }
-            .main-title { font-size: 1.6rem !important; }
-            .hub-grid { grid-template-columns: 1fr; }
-            .hub-column { padding: 25px; }
-            
-            /* Responzivita Affiliate tlačítek */
-            .affiliate-cta-grid { grid-template-columns: 1fr; gap: 20px; padding: 15px; }
+            .affiliate-cta-grid { grid-template-columns: 1fr; }
             .affiliate-btn-wrap { flex-direction: column; }
-            .guru-buy-winner-btn { width: 100%; }
+            .hub-grid { grid-template-columns: 1fr; }
         }
       `}} />
     </div>
