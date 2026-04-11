@@ -10,8 +10,8 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**
- * GURU MOBILE STICKY BUTTON V2.10 - DEFINITIVNÍ HEUREKA FIX
- * 🚀 CÍL: Fix na www.heureka.cz s parametrem h[fraze] a utm_content=Text%20link.
+ * GURU MOBILE STICKY BUTTON V2.11 - DEFINITIVNÍ HEUREKA FIX
+ * 🚀 CÍL: Fix na www.heureka.cz s parametrem h[fraze], utm_content=Text%20link a smazání rozbitého data-trixam-codetype.
  */
 
 export default function MobileStickyButton() {
@@ -57,7 +57,6 @@ export default function MobileStickyButton() {
                 /* 🔥 AKTIVACE HEUREKA TRACKINGU 🔥 */
                 className={`guru-mobile-sticky-btn ${!isEn ? 'heureka-hn-link' : ''}`}
                 data-trixam-positionid="276026"
-                data-trixam-codetype="link"
             >
                 <ShoppingCart size={20} color="white" />
                 <span>{text}</span>
