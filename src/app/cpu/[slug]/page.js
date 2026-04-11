@@ -21,23 +21,23 @@ const getCleanSearchName = (name = '') => name.replace(/AMD |Intel |Core /gi, ''
 const findCpuBySlug = async (rawSlugPart) => {
   if (!supabaseUrl || !rawSlugPart || rawSlugPart === 'undefined') return null;
   const cpuSlug = rawSlugPart.replace(/^en-/, '');
-  const headersObj = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+  const authHeaders = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
   try {
-      const res1 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&slug=eq.${cpuSlug}&limit=1`, { headers: headersObj, cache: 'force-cache' });
+      const res1 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&slug=eq.${cpuSlug}&limit=1`, { headers: authHeaders, cache: 'force-cache' });
       let cpu = null;
       if (res1.ok) { 
           const data1 = await res1.json(); 
           if (data1?.length) cpu = data1[0]; 
       }
       if (!cpu) {
-        const res2 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&slug=ilike.*${cpuSlug}*&limit=1`, { headers: headersObj, cache: 'force-cache' });
+        const res2 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&slug=ilike.*${cpuSlug}*&limit=1`, { headers: authHeaders, cache: 'force-cache' });
         if (res2.ok) { 
             const data2 = await res2.json(); 
             if (data2?.length) cpu = data2[0]; 
         }
       }
       if (cpu) {
-          const fpsRes = await fetch(`${supabaseUrl}/rest/v1/cpu_game_fps?select=*&cpu_id=eq.${cpu.id}&limit=1`, { headers: headersObj, cache: 'force-cache' });
+          const fpsRes = await fetch(`${supabaseUrl}/rest/v1/cpu_game_fps?select=*&cpu_id=eq.${cpu.id}&limit=1`, { headers: authHeaders, cache: 'force-cache' });
           if (fpsRes.ok) {
               const fpsData = await fpsRes.json();
               cpu.cpu_game_fps = fpsData?.[0] || {};
@@ -48,46 +48,18 @@ const findCpuBySlug = async (rawSlugPart) => {
   return null;
 };
 
-const getInternalLinksData = async (cpuId) => {
-  if (!supabaseUrl || !cpuId) return { similarCpus: [], recommendedGpus: [] };
-  const headersObj = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
-  let similarCpus = [];
-  let recommendedGpus = [];
-  try {
-      const cpuRes = await fetch(`${supabaseUrl}/rest/v1/cpus?select=name,slug&id=neq.${cpuId}&order=performance_index.desc&limit=6`, { headers: headersObj, cache: 'force-cache' });
-      if (cpuRes.ok) similarCpus = await cpuRes.json();
-      const gpuRes = await fetch(`${supabaseUrl}/rest/v1/gpus?select=name,slug&order=performance_index.desc&limit=6`, { headers: headersObj, cache: 'force-cache' });
-      if (gpuRes.ok) recommendedGpus = await gpuRes.json();
-  } catch(e) {}
-  return { similarCpus, recommendedGpus };
-};
-
-export async function generateMetadata({ params }) {
-  const { slug: rawSlug } = await params;
-  const headersList = headers();
-  const referer = headersList.get('referer') || "";
-  const isEn = rawSlug.startsWith('en-') || referer.includes('/en');
-  const cpuSlug = rawSlug.replace(/^en-/, '');
-  const cpu = await findCpuBySlug(cpuSlug);
-  if (!cpu) return { title: '404 | Hardware Guru' };
-  const safeSlug = cpu.slug || slugify(cpu.name);
-  return {
-    title: isEn ? `${cpu.name} Specs & Gaming Performance | The Hardware Guru` : `${cpu.name} Specifikace a Herní výkon | The Hardware Guru`,
-    alternates: { canonical: isEn ? `${baseUrl}/en/cpu/${safeSlug}` : `${baseUrl}/cpu/${safeSlug}`, languages: { 'en': `${baseUrl}/en/cpu/${safeSlug}`, 'cs': `${baseUrl}/cpu/${safeSlug}` } }
-  };
-}
-
 export default async function CpuDetailPage({ params }) {
   const { slug: rawSlug } = await params;
+  
+  // 🔥 NEPRŮSTŘELNÁ DETEKCE EN: headers + slug prefix
   const headersList = headers();
-  const referer = headersList.get('referer') || "";
-  const isEn = rawSlug.startsWith('en-') || referer.includes('/en');
+  const fullPath = headersList.get('x-invoke-path') || headersList.get('referer') || "";
+  const isEn = rawSlug.startsWith('en-') || fullPath.includes('/en/cpu/');
 
   const cpuSlug = rawSlug.replace(/^en-/, '');
   const cpu = await findCpuBySlug(cpuSlug);
   if (!cpu) return <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#fff', textAlign: 'center', padding: '100px' }}><h1>CPU NOT FOUND</h1></div>;
 
-  const { similarCpus, recommendedGpus } = await getInternalLinksData(cpu.id);
   const vendorColor = (cpu.vendor || '').toUpperCase() === 'INTEL' ? '#0071c5' : (cpu.vendor === 'AMD' ? '#ed1c24' : '#f59e0b');
   const safeSlug = cpu.slug || slugify(cpu.name);
   const fpsData = cpu.cpu_game_fps || {};
@@ -113,9 +85,12 @@ export default async function CpuDetailPage({ params }) {
             <span style={{ color: '#d1d5db' }}>{cpu.vendor}</span> <br/>
             <span style={{ color: vendorColor, textShadow: `0 0 30px ${vendorColor}80` }}>{normalizeName(cpu.name)}</span>
           </h1>
+          <div style={{ marginTop: '20px', color: '#9ca3af', fontSize: '18px', fontWeight: 'bold' }}>
+             {cpu.cores} Cores • {cpu.threads} Threads • {cpu.architecture}
+          </div>
         </header>
 
-        {/* 🔥 AFFILIATE BOMB 🔥 */}
+        {/* 🔥 NÁKUPNÍ SEKCE 🔥 */}
         <div className="affiliate-cta-grid" style={{ marginBottom: '40px', borderColor: `${vendorColor}40` }}>
             <div className="affiliate-col">
                 <div className="affiliate-col-title" style={{ color: vendorColor }}>
@@ -134,7 +109,7 @@ export default async function CpuDetailPage({ params }) {
             </div>
         </div>
 
-        {/* 🔥 GURU TOOLS CTA (FPS + BOTTLENECK) - MOVED TO TOP 🔥 */}
+        {/* 🔥 GURU TOOLS CTA (FPS + BOTTLENECK) - HNED POD NÁKUP 🔥 */}
         <section style={{ marginBottom: '40px' }}>
             <div className="guru-tools-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                 <div className="tool-cta-card" style={{ background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(168, 85, 247, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
@@ -204,9 +179,9 @@ export default async function CpuDetailPage({ params }) {
         .affiliate-col-title { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 25px; text-align: center; }
         .affiliate-btn-wrap { display: flex; gap: 20px; width: 100%; justify-content: center; flex-wrap: wrap; }
         .guru-buy-winner-btn { flex: 1; max-width: 300px; min-width: 200px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 1px; }
+        .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
         .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; }
         .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; }
-        .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
         .guru-deals-btn, .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; text-decoration: none; transition: 0.3s; text-transform: uppercase; }
         .guru-support-btn { background: #eab308; color: #000; }
         .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
