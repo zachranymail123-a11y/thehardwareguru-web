@@ -12,43 +12,24 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU CPU UPGRADE - DETAIL V3.5 (ULTIMATE EN CONTENT FIX + TOOLS + AMAZON)
- * 🚀 CÍL: Fix EN obsahu z DB, Amazon affiliate a kalkulačky hned pod nákupem.
+ * GURU CPU UPGRADE - DETAIL V3.1 (FORCE DYNAMIC + 404 KILLER)
+ * 🚀 CÍL: Zničit kešovanou hlášku o údržbě a vynutit EN/Amazon.
  */
 
 export const runtime = "nodejs";
-export const revalidate = 0; 
-export const dynamicParams = true;
+export const dynamic = "force-dynamic"; // 🔥 ABSOLUTNÍ ZÁKAZ CACHE NA VERCELU
+export const revalidate = 0;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const baseUrl = "https://thehardwareguru.cz";
 
-export async function generateStaticParams() {
-  if (!supabaseUrl) return [];
-  try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/cpu_upgrades?select=slug&limit=1000`, {
-          headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-          next: { revalidate: 86400 }
-      });
-      if (!res.ok) return [];
-      const upgrades = await res.json();
-      return upgrades.map((upg) => ({ slug: upg.slug }));
-  } catch (e) { return []; }
-}
-
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 
-function calculatePerf(a, b) {
-    if (!a?.performance_index || !b?.performance_index || a.performance_index <= 0 || b.performance_index <= 0) {
-        return { winner: null, loser: null, diff: 0 };
-    }
-    const diff = Math.round((b.performance_index / a.performance_index - 1) * 100);
-    return { winner: b, loser: a, diff };
-}
-
-const getUpgradeData = cache(async (slug) => {
+const getUpgradeData = async (slug) => {
   if (!supabaseUrl || !slug) return null;
+  
+  // 🔥 FIX 404: Zkusíme slug s i bez en- prefixu
   const cleanSlug = slug.replace(/^en-/, '');
   const selectQuery = `*,oldCpu:cpus!old_cpu_id(*,cpu_game_fps!cpu_id(*)),newCpu:cpus!new_cpu_id(*,cpu_game_fps!cpu_id(*))`;
   
@@ -56,58 +37,53 @@ const getUpgradeData = cache(async (slug) => {
   for (const s of slugsToTry) {
     try {
       const res = await fetch(`${supabaseUrl}/rest/v1/cpu_upgrades?select=${encodeURIComponent(selectQuery)}&slug=eq.${s}&limit=1`, {
-        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }, 
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
         cache: 'no-store'
       });
       if (res.ok) {
-          const data = await res.json();
-          if (data && data.length > 0) return data[0];
+        const data = await res.json();
+        if (data && data.length > 0) return data[0];
       }
     } catch(e) {}
   }
   return null;
-});
-
-const getSimilarUpgrades = async (cpuId, currentSlug) => {
-    if (!supabaseUrl || !cpuId) return [];
-    try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/cpu_upgrades?select=title_cs,title_en,slug,slug_en&or=(old_cpu_id.eq.${cpuId},new_cpu_id.eq.${cpuId})&slug=neq.${currentSlug}&limit=4`, {
-            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-            cache: 'force-cache'
-        });
-        if (!res.ok) return [];
-        return await res.json();
-    } catch (e) { return []; }
 };
 
 export async function generateMetadata(props) {
-  const { slug } = await props.params;
+  const params = await props.params;
+  const slug = params?.slug || '';
   const h = headers();
-  const fullUrl = h.get('x-url') || h.get('referer') || "";
-  const isEn = fullUrl.includes('/en/') || slug?.startsWith('en-') || props.isEn === true;
-
+  const isEn = h.get('x-url')?.includes('/en/') || h.get('referer')?.includes('/en/') || slug.startsWith('en-');
+  
   const upgrade = await getUpgradeData(slug);
-  if (!upgrade || !upgrade.oldCpu) return { title: '404 | Hardware Guru' };
+  if (!upgrade) return { title: '404 | Hardware Guru' };
   
   const { oldCpu, newCpu } = upgrade;
-  const { diff } = calculatePerf(oldCpu, newCpu);
-  return { title: isEn ? `Upgrade ${oldCpu.name} to ${newCpu.name} (+${diff}% Perf)` : `Upgrade z ${oldCpu.name} na ${newCpu.name} (+${diff} % výkon)` };
+  const diff = Math.round((newCpu.performance_index / oldCpu.performance_index - 1) * 100);
+  
+  return { 
+    title: isEn ? `Upgrade ${oldCpu.name} to ${newCpu.name} (+${diff}% Perf)` : `Upgrade z ${oldCpu.name} na ${newCpu.name} (+${diff} % výkon)` 
+  };
 }
 
 export default async function App(props) {
-  const { slug } = await props.params;
+  const params = await props.params;
+  const slug = params?.slug || '';
+  
+  // 🔥 AGRESIVNÍ DETEKCE EN JAZYKA
   const h = headers();
   const fullUrl = h.get('x-url') || h.get('referer') || "";
-  
-  // 🔥 NEPRŮSTŘELNÁ DETEKCE JAZYKA
-  const isEn = fullUrl.includes('/en/') || slug?.startsWith('en-') || props.isEn === true;
+  const isEn = fullUrl.includes('/en/') || slug.startsWith('en-');
 
   const upgrade = await getUpgradeData(slug);
-  if (!upgrade || !upgrade.oldCpu || !upgrade.newCpu) notFound();
+  
+  // Pokud v DB nic není, vyhodíme standardní 404, ne tu tvoji "Údržbu"
+  if (!upgrade || !upgrade.oldCpu || !upgrade.newCpu) {
+    notFound();
+  }
 
   const { oldCpu: cpuA, newCpu: cpuB } = upgrade;
   const finalPerfDiff = Math.round((cpuB.performance_index / cpuA.performance_index - 1) * 100);
-  const similar = await (cpuA?.id ? getSimilarUpgrades(cpuA.id, upgrade.slug) : Promise.resolve([]));
 
   const getWinnerStyle = (valA, valB, lowerIsBetter = false) => {
     if (valA == null || valB == null) return {};
@@ -128,10 +104,11 @@ export default async function App(props) {
         
         <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <a href={isEn ? '/en/cpuvs' : '/cpuvs'} className="guru-back-btn"><ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}</a>
-          <a href={isEn ? '/en/cpuvs/ranking' : '/cpuvs/ranking'} className="guru-ranking-link"><TrendingUp size={16} /> {isEn ? 'TIER LIST' : 'ŽEBŘÍČEK'}</a>
         </div>
 
-        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}><SeznamAd zoneId={408654} width={970} height={210} /></div>
+        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+          <SeznamAd zoneId={408654} width={970} height={210} />
+        </div>
 
         <header style={{ textAlign: 'center', marginBottom: '50px' }}>
           <div className="upgrade-badge"><ArrowUpCircle size={14} /> {isEn ? 'GURU UPGRADE ANALYSIS' : 'GURU ANALÝZA UPGRADU'}</div>
@@ -170,24 +147,18 @@ export default async function App(props) {
             </div>
         </div>
 
-        {/* 🔥 GURU TOOLS CTA (FPS + BOTTLENECK) - HNED POD NÁKUP 🔥 */}
+        {/* 🔥 GURU TOOLS 🔥 */}
         <section style={{ marginBottom: '40px' }}>
             <div className="guru-tools-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-                <div className="tool-cta-card" style={{ background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(168, 85, 247, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#a855f7', fontWeight: '950', textTransform: 'uppercase', fontSize: '12px', marginBottom: '10px' }}><AlertTriangle size={16} /> {isEn ? 'SYSTEM CHECK' : 'KONTROLA SYSTÉMU'}</div>
-                        <h3 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase' }}>{isEn ? 'BOTTLENECK CALCULATOR' : 'BOTTLENECK KALKULAČKA'}</h3>
-                        <p style={{ color: '#9ca3af', margin: 0 }}>{isEn ? `Will your GPU handle the ${normalizeName(cpuB.name)}?` : `Bude tvá grafika stačit na procesor ${normalizeName(cpuB.name)}?`}</p>
-                    </div>
-                    <a href={isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka'} className="tool-btn hover-scale-purple" style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', color: '#a855f7', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', textAlign: 'center' }}>{isEn ? 'TEST BOTTLENECK' : 'ZJISTIT BOTTLENECK'}</a>
+                <div className="tool-cta-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(168, 85, 247, 0.2)', padding: '30px', borderRadius: '24px' }}>
+                    <div style={{ color: '#a855f7', fontWeight: '950', fontSize: '12px', marginBottom: '10px' }}><AlertTriangle size={16} /> {isEn ? 'BOTTLENECK' : 'KONTROLA'}</div>
+                    <h3 style={{ color: '#fff', margin: '0 0 15px 0' }}>{isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK KALKULAČKA'}</h3>
+                    <a href={isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka'} className="tool-btn-link">{isEn ? 'VERIFY' : 'OVĚŘIT'}</a>
                 </div>
-                <div className="tool-cta-card" style={{ background: 'linear-gradient(135deg, rgba(102, 252, 241, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(102, 252, 241, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', fontWeight: '950', textTransform: 'uppercase', fontSize: '12px', marginBottom: '10px' }}><Gamepad2 size={16} /> {isEn ? 'GAMING PERFORMANCE' : 'HERNÍ VÝKON'}</div>
-                        <h3 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</h3>
-                        <p style={{ color: '#9ca3af', margin: 0 }}>{isEn ? `How many FPS will ${normalizeName(cpuB.name)} push in games?` : `Kolik FPS ti dá ${normalizeName(cpuB.name)} v oblíbených hrách?`}</p>
-                    </div>
-                    <a href={isEn ? '/en/fps-calculator' : '/fps-kalkulacka'} className="tool-btn hover-scale-cyan" style={{ background: 'rgba(102, 252, 241, 0.1)', border: '1px solid rgba(102, 252, 241, 0.3)', color: '#66fcf1', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', textAlign: 'center' }}>{isEn ? 'TEST FPS' : 'ZJISTIT FPS'}</a>
+                <div className="tool-cta-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(102, 252, 241, 0.2)', padding: '30px', borderRadius: '24px' }}>
+                    <div style={{ color: '#66fcf1', fontWeight: '950', fontSize: '12px', marginBottom: '10px' }}><Gamepad2 size={16} /> {isEn ? 'FPS TEST' : 'HERNÍ VÝKON'}</div>
+                    <h3 style={{ color: '#fff', margin: '0 0 15px 0' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</h3>
+                    <a href={isEn ? '/en/fps-calculator' : '/fps-kalkulacka'} className="tool-btn-link-cyan">{isEn ? 'TEST FPS' : 'ZJISTIT FPS'}</a>
                 </div>
             </div>
         </section>
@@ -197,25 +168,16 @@ export default async function App(props) {
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <Info size={24} color="#f59e0b" /> {isEn ? 'Upgrade Analysis' : 'Analýza upgradu'}
                 </h2>
-                <GuruCpuCompareText 
-                    cpu1Name={normalizeName(cpuA.name)} 
-                    cpu2Name={normalizeName(cpuB.name)} 
-                    perfDiff={finalPerfDiff} 
-                    cpu1Cores={cpuA.cores} 
-                    cpu2Cores={cpuB.cores} 
-                    isEn={isEn} 
-                />
+                <GuruCpuCompareText cpu1Name={normalizeName(cpuA.name)} cpu2Name={normalizeName(cpuB.name)} perfDiff={finalPerfDiff} cpu1Cores={cpuA.cores} cpu2Cores={cpuB.cores} isEn={isEn} />
             </div>
         </section>
 
         {!isEn && (
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
-                <HeurekaButtons isEn={false} manualSearch={cpuB.name} positionId="276026" />
-            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}><HeurekaButtons isEn={false} manualSearch={cpuB.name} positionId="276026" /></div>
         )}
 
         <section style={{ marginBottom: '60px' }}>
-          <h2 className="section-h2" style={{ borderLeftColor: '#f59e0b' }}><LayoutList size={28} /> {isEn ? 'UPGRADE SPECIFICATIONS' : 'POROVNÁNÍ PARAMETRŮ'}</h2>
+          <h2 className="section-h2" style={{ borderLeftColor: '#f59e0b' }}><LayoutList size={28} /> {isEn ? 'SPECIFICATIONS' : 'PARAMETRY'}</h2>
           <div className="table-wrapper">
               {[
                 { label: isEn ? 'CORES / THREADS' : 'JÁDRA / VLÁKNA', valA: `${cpuA.cores}/${cpuA.threads}`, valB: `${cpuB.cores}/${cpuB.threads}`, winA: cpuA.cores, winB: cpuB.cores },
@@ -237,9 +199,7 @@ export default async function App(props) {
         </div>
       </main>
 
-      <div className="sticky-bottom-anchor">
-          <SeznamAd zoneId={408654} width={970} height={90} />
-      </div>
+      <div className="sticky-bottom-anchor"><SeznamAd zoneId={408654} width={970} height={90} /></div>
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #f59e0b; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(245, 158, 11, 0.3); transition: 0.3s; }
@@ -253,23 +213,23 @@ export default async function App(props) {
         .table-label { width: 180px; text-align: center; font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; }
         .affiliate-cta-grid { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 35px; background: rgba(0,0,0,0.4); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; box-sizing: border-box; }
         .affiliate-btn-wrap { display: flex; gap: 20px; width: 100%; justify-content: center; flex-wrap: wrap; }
-        .guru-buy-winner-btn { flex: 1; max-width: 300px; min-width: 200px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: transform 0.3s ease; letter-spacing: 1px; }
-        .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
-        .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; }
-        .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; }
-        .guru-deals-btn, .guru-support-btn { flex: 1; max-width: 300px; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; text-decoration: none; text-transform: uppercase; transition: 0.3s; }
-        .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
+        .guru-buy-winner-btn { flex: 1; max-width: 300px; min-width: 200px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: 0.3s; }
+        .amazon-btn { background: #f59e0b; color: #000; border: 2px solid #fbbf24; }
+        .smarty-btn { background: #facc15; color: #000; }
+        .heureka-btn { background: #3b82f6; color: #fff; }
+        .tool-btn-link, .tool-btn-link-cyan { display: block; text-align: center; padding: 15px; border-radius: 12px; text-decoration: none; font-weight: 950; text-transform: uppercase; transition: 0.3s; }
+        .tool-btn-link { background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); }
+        .tool-btn-link-cyan { background: rgba(102, 252, 241, 0.1); color: #66fcf1; border: 1px solid rgba(102, 252, 241, 0.3); }
+        .guru-deals-btn { background: #f97316; color: #fff; }
         .guru-support-btn { background: #eab308; color: #000; }
         .sticky-bottom-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; }
-        .tool-btn { display: block; width: 100%; box-sizing: border-box; }
         @media (max-width: 768px) {
             .guru-grid-ring { grid-template-columns: 1fr !important; }
             .vs-badge { margin: 10px auto; transform: rotate(90deg); width: 50px; height: 50px; font-size: 24px; }
             .spec-row-style { padding: 15px 10px; flex-direction: column; gap: 10px; }
             .table-label { width: 100%; order: -1; }
-            .affiliate-btn-wrap { flex-direction: column; gap: 15px; }
-            .guru-buy-winner-btn { max-width: 100%; width: 100%; }
-            div[style*="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))"] { grid-template-columns: 1fr !important; }
+            .affiliate-btn-wrap { flex-direction: column; }
+            .guru-buy-winner-btn { max-width: 100%; }
         }
       `}} />
     </div>
