@@ -10,15 +10,16 @@ import {
   Flame,
   Heart,
   Gauge,
-  Cpu
+  Cpu,
+  AlertTriangle
 } from 'lucide-react';
 import GuruAnalysisText from '../../../components/GuruAnalysisText';
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU CPU FPS HUB V1.4 (HEUREKA CTA UPDATE)
- * 🚀 CÍL: Přesun TOP banneru Above Fold, přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka konverze.
+ * GURU CPU FPS HUB V1.5 (HEUREKA CTA + TOOLS UPDATE)
+ * 🚀 CÍL: Přidání povinných odkazů na FPS a Bottleneck kalkulačku, zachování Heureka konverzí a reklamních bloků.
  * Cesta: src/app/cpu-fps/[slug]/page.js
  */
 
@@ -158,6 +159,22 @@ export default async function CpuFpsHubPage(props) {
           })}
         </div>
 
+        {/* 🔥 PŘIDÁNO DLE ROZKAZU: POVINNÁ NÁSTROJOVÁ CTA TLAČÍTKA 🔥 */}
+        <section style={{ marginBottom: '60px' }}>
+            <div className="guru-tools-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                <div className="tool-cta-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(168, 85, 247, 0.2)', padding: '30px', borderRadius: '24px' }}>
+                    <div style={{ color: '#a855f7', fontWeight: '950', fontSize: '12px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}><AlertTriangle size={16} /> {isEn ? 'BOTTLENECK' : 'KONTROLA'}</div>
+                    <h3 style={{ color: '#fff', fontSize: '1.4rem', margin: '0 0 15px 0', textTransform: 'uppercase' }}>{isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK KALKULAČKA'}</h3>
+                    <a href={isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka'} className="tool-btn-link" style={{ display: 'block', textAlign: 'center', padding: '15px', borderRadius: '12px', textDecoration: 'none', fontWeight: '950', textTransform: 'uppercase', transition: '0.3s', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' }}>{isEn ? 'VERIFY' : 'OVĚŘIT'}</a>
+                </div>
+                <div className="tool-cta-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(102, 252, 241, 0.2)', padding: '30px', borderRadius: '24px' }}>
+                    <div style={{ color: '#66fcf1', fontWeight: '950', fontSize: '12px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}><Gamepad2 size={16} /> {isEn ? 'FPS TEST' : 'HERNÍ VÝKON'}</div>
+                    <h3 style={{ color: '#fff', fontSize: '1.4rem', margin: '0 0 15px 0', textTransform: 'uppercase' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</h3>
+                    <a href={isEn ? '/en/fps-calculator' : '/fps-kalkulacka'} className="tool-btn-link-cyan" style={{ display: 'block', textAlign: 'center', padding: '15px', borderRadius: '12px', textDecoration: 'none', fontWeight: '950', textTransform: 'uppercase', transition: '0.3s', background: 'rgba(102, 252, 241, 0.1)', color: '#66fcf1', border: '1px solid rgba(102, 252, 241, 0.3)' }}>{isEn ? 'TEST FPS' : 'ZJISTIT FPS'}</a>
+                </div>
+            </div>
+        </section>
+
         <section style={{ marginBottom: '60px' }}>
             <div className="analysis-box" style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950' }}>{isEn ? 'Performance Analysis' : 'Analýza výkonu'}</h2>
@@ -226,6 +243,8 @@ export default async function CpuFpsHubPage(props) {
         .deep-link-card .arrow { position: absolute; bottom: 30px; right: 30px; opacity: 0.2; }
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000; font-weight: 950; border-radius: 16px; text-decoration: none; }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-weight: 950; border-radius: 16px; text-decoration: none; }
+        
+        .tool-btn-link:hover, .tool-btn-link-cyan:hover { filter: brightness(1.2); transform: translateY(-2px); }
 
         /* 🔥 STICKY BOTTOM ANCHOR CSS */
         .sticky-bottom-anchor {
