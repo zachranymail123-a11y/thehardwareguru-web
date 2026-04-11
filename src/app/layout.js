@@ -134,7 +134,7 @@ export default async function RootLayout({ children }) {
     <html lang={locale}>
       <head>
         <Script src="https://ssp.seznam.cz/static/js/ssp.js" strategy="afterInteractive" />
-        <Script async type="text/javascript" src="//serve.affiliate.heureka.cz/js/trixam.min.js" strategy="lazyOnload" />
+        <Script src="https://serve.affiliate.heureka.cz/js/trixam.min.js" strategy="afterInteractive" />
         <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="afterInteractive" />
         <Script id="onesignal-init" strategy="afterInteractive">
           {`window.OneSignalDeferred = window.OneSignalDeferred || []; OneSignalDeferred.push(async function(OneSignal) { await OneSignal.init({ appId: "1ea5ad89-5f3e-4922-b2c8-e8cd05304047" }); });`}
