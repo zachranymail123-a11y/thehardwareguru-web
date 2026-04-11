@@ -10,8 +10,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU DUELS ENGINE - V7.0 (CTA MOVED TO TOP)
- * 🚀 CÍL: Přesunutí Bottleneck a FPS prokliků nahoru pod Upgrade banner.
+ * GURU GPU DUELS ENGINE - V7.1 (CLEAN SLUG & EN PROP FIX)
+ * 🚀 CÍL: Oprava dvojitého 'en-' ve slugu. Komponenta nyní respektuje props.isEn.
  */
 
 export const runtime = "nodejs";
@@ -94,10 +94,12 @@ const getRelatedArticles = async (gpuA_Name, gpuB_Name) => {
 
 export async function generateMetadata(props) {
   const { slug } = await props.params; 
-  const duel = await getDuelData(slug);
+  const isEn = props.isEn === true || slug?.startsWith('en-');
+  const cleanSlug = slug.replace(/^en-/, '');
+  const duel = await getDuelData(cleanSlug);
+  
   if (!duel || !duel.gpuA) return { title: 'GPU Comparison | Hardware Guru' };
   
-  const isEn = slug?.startsWith('en-');
   const canonicalUrl = isEn ? `${baseUrl}/en/gpuvs/${duel.slug}` : `${baseUrl}/gpuvs/${duel.slug}`;
   return { 
     title: isEn ? `${duel.gpuA.name} vs ${duel.gpuB.name} – Gaming Benchmarks` : `Srovnání: ${duel.gpuA.name} vs ${duel.gpuB.name} – Výkon a Testy`,
@@ -107,11 +109,12 @@ export async function generateMetadata(props) {
 
 export default async function GpuVsDetailPage(props) {
   const { slug } = await props.params; 
-  const duel = await getDuelData(slug);
+  const isEn = props.isEn === true || slug?.startsWith('en-');
+  const cleanSlug = slug.replace(/^en-/, '');
+  const duel = await getDuelData(cleanSlug);
   
   if (!duel) notFound();
 
-  const isEn = slug?.startsWith('en-');
   const { gpuA, gpuB } = duel;
   
   const perfA = gpuA.performance_index || 1;
@@ -121,7 +124,11 @@ export default async function GpuVsDetailPage(props) {
   const finalPerfDiff = Math.round((Math.max(perfA, perfB) / Math.min(perfA, perfB) - 1) * 100);
   const perfDiffForComponent = perfA > perfB ? -finalPerfDiff : finalPerfDiff;
 
-  const getSafeGpuSlug = (gpu) => gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
+  const getSafeGpuSlug = (gpu) => {
+      const raw = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
+      return raw.replace(/^en-/, '');
+  };
+  
   const getVendorColor = (vendor) => {
     const v = (vendor || '').toUpperCase();
     return v === 'NVIDIA' ? '#76b900' : (v === 'AMD' ? '#ed1c24' : '#66fcf1');
@@ -136,14 +143,13 @@ export default async function GpuVsDetailPage(props) {
 
   const relatedArticles = await getRelatedArticles(gpuA.name, gpuB.name);
 
-  // 🔥 OPRAVENÉ DYNAMICKÉ AFFILIATE ODKAZY 🔥
+  // 🔥 AFFILIATE ODKAZY 🔥
   const winnerName = winner ? winner.name : gpuA.name;
   const cleanWinnerSearch = normalizeName(winnerName).trim();
   const encodedQuery = encodeURIComponent(cleanWinnerSearch);
   
   const smartyUrl = `https://www.smarty.cz/Vyhledavani?query=${encodedQuery}`;
   const smartyAffiliateLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(smartyUrl)}`;
-  
   const heurekaAffiliateLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodedQuery}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
 
   return (
@@ -179,7 +185,7 @@ export default async function GpuVsDetailPage(props) {
 
           <div style={{ marginTop: '30px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
               <a href={smartyAffiliateLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
-                  <ShoppingCart size={20} /> {isEn ? 'Buy on Smarty.cz' : 'Koupit na Smarty.cz'}
+                  <ShoppingCart size={20} /> {isEn ? 'BUY ON SMARTY.CZ' : 'KOUPIT NA SMARTY.CZ'}
               </a>
               <a 
                 href={heurekaAffiliateLink} 
@@ -189,7 +195,7 @@ export default async function GpuVsDetailPage(props) {
                 rel="nofollow sponsored" 
                 className="guru-buy-winner-btn heureka-btn heureka-hn-link"
               >
-                  <ShoppingCart size={20} /> {isEn ? 'Buy on Heureka.cz' : 'Koupit na Heureka.cz'}
+                  <ShoppingCart size={20} /> {isEn ? 'BUY ON HEUREKA.CZ' : 'KOUPIT NA HEUREKA.CZ'}
               </a>
           </div>
 
@@ -226,7 +232,7 @@ export default async function GpuVsDetailPage(props) {
             </div>
         </section>
 
-        {/* 🔥 PŘESUNUTO NAHORU: GURU DUAL TOOLS CTA (BOTTLENECK + FPS) 🔥 */}
+        {/* 🔥 GURU DUAL TOOLS CTA (BOTTLENECK + FPS) 🔥 */}
         <section style={{ marginBottom: '60px' }}>
             <div className="guru-tools-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                 
