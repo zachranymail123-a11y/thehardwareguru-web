@@ -227,9 +227,9 @@ export default function BottleneckClient({
                         {isCalculating ? <Sparkles className="spin" /> : <Play size={20} />} SPUSTIT SIMULACI
                     </button>
                     
-                    {/* Tlačítko přesunuto SEM, ukáže se jen když je analýza hotová */}
+                    {/* Zde jsou zobrazená tlačítka vedle sebe po analýze */}
                     {analysis && (
-                        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', width: '100%', boxSizing: 'border-box' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', marginTop: '20px', width: '100%', boxSizing: 'border-box' }}>
                             <ShareResultButton 
                                 cpu={a.cpuName} 
                                 gpu={a.gpuName} 
@@ -238,6 +238,12 @@ export default function BottleneckClient({
                                 score={100 - (a.bottleneckPercent || 0)} 
                                 isEn={isEn} 
                             />
+                            <a 
+                                href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} 
+                                className="fps-cta-btn hover-scale"
+                            >
+                                <Gamepad2 size={20} /> {isEn ? 'TEST FPS IN GAMES' : 'ZJISTIT FPS VE HRÁCH'}
+                            </a>
                         </div>
                     )}
                 </div>
@@ -370,84 +376,4 @@ export default function BottleneckClient({
                 .bn-select { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; outline: none; transition: 0.3s; font-size: 16px; margin-bottom: 20px; }
                 .res-toggles { display: flex; gap: 15px; margin-bottom: 20px; }
                 .res-btn { flex: 1; padding: 15px; background: #000; border: 1px solid #222; color: #9ca3af; border-radius: 12px; font-weight: 950; cursor: pointer; transition: 0.3s; }
-                .res-btn.active { border-color: #a855f7; color: #fff; background: rgba(168, 85, 247, 0.15); }
-                .start-btn { width: 100%; margin-top: 30px; padding: 22px; background: #a855f7; color: #fff; border: none; border-radius: 18px; font-weight: 950; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 15px; transition: 0.4s; text-transform: uppercase; font-size: 18px; }
-                .start-btn:disabled { opacity: 0.3; }
-                
-                .bn-result-card { background: linear-gradient(145deg, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0.6) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 30px; padding: 50px; display: flex; align-items: center; justify-content: center; min-height: 600px; min-width: 0; box-sizing: border-box; }
-                .analysis-board { width: 100%; box-sizing: border-box; }
-                
-                .pct-value { font-size: 9rem; font-weight: 950; text-align: center; color: #fff; text-shadow: 0 0 60px rgba(168, 85, 247, 0.8); line-height: 0.9; }
-                .pct-label { text-align: center; color: #a855f7; font-weight: 950; text-transform: uppercase; letter-spacing: 4px; margin-top: 20px; font-size: 18px; }
-                .pro-metrics-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin: 30px 0 50px; }
-                .metric-box { background: rgba(0,0,0,0.8); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-                .m-label { font-size: 12px; color: #666; font-weight: 950; text-transform: uppercase; margin-bottom: 8px; }
-                .m-val { font-size: 32px; font-weight: 950; color: #fff; }
-                
-                .gta-cta { display: flex; align-items: center; justify-content: center; gap: 15px; background: #f43f5e; color: #fff; padding: 22px; border-radius: 18px; text-decoration: none; font-weight: 950; margin-top: 40px; transition: 0.4s; box-shadow: 0 20px 40px rgba(244, 63, 94, 0.3); width: 100%; box-sizing: border-box; }
-                
-                .viral-flex-card { display: flex; align-items: center; gap: 30px; padding: 40px; background: rgba(0,0,0,0.5); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 30px; margin-top: 80px; box-sizing: border-box; }
-                .premium-share-btn { width: 60px; height: 60px; border-radius: 18px; border: none; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-                .btn-copy { background: #a855f7; }
-                .btn-x { background: #000; border: 1px solid #333; }
-                .btn-reddit { background: #ff4500; }
-                .massive-seo-hub { margin-top: 100px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 70px; }
-                .hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-                .hub-column { background: rgba(255,255,255,0.02); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); }
-                .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 30px; font-size: 18px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
-                .hub-links-list { list-style: none; padding: 0; }
-                .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 16px; display: flex; align-items: center; margin-bottom: 18px; font-weight: bold; transition: 0.3s; }
-                .hub-links-list a:hover { color: #66fcf1; transform: translateX(10px); }
-                .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-                .toggle-row { display: flex; align-items: center; gap: 15px; cursor: pointer; background: #000; padding: 18px; border-radius: 15px; font-size: 13px; font-weight: 950; border: 1px solid #222; }
-                .switch { width: 44px; height: 24px; background: #333; border-radius: 20px; position: relative; transition: 0.3s; }
-                .switch::after { content: ''; position: absolute; width: 18px; height: 18px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: 0.3s; }
-                .switch.on { background: #a855f7; }
-                .switch.on::after { left: 23px; }
-                .spin { animation: spin 1s linear infinite; }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .bound-badge { display: inline-block; padding: 12px 40px; border-radius: 50px; background: rgba(168, 85, 247, 0.1); border: 2px solid #a855f7; font-weight: 950; text-transform: uppercase; font-size: 15px; letter-spacing: 3px; color: #fff; margin-bottom: 30px; }
-                .bn-divider { border: 0; height: 1px; background: rgba(255,255,255,0.05); margin: 40px 0; }
-                .input-group label { display: block; font-size: 13px; font-weight: 950; color: #9ca3af; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 2px; }
-                .recommendation h4 { font-size: 18px; font-weight: 950; text-transform: uppercase; margin-bottom: 15px; color: #fff; }
-                .recommendation p { font-size: 15px; color: #9ca3af; lineHeight: 1.6; }
-
-                /* 🔥 AFFILIATE GRID A TLAČÍTKA 🔥 */
-                .affiliate-cta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; padding: 30px; background: rgba(0,0,0,0.4); border-radius: 24px; border: 1px solid rgba(168, 85, 247, 0.2); width: 100%; box-sizing: border-box; }
-                .affiliate-col { display: flex; flex-direction: column; align-items: center; width: 100%; box-sizing: border-box; }
-                .affiliate-col-title { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 950; color: #a855f7; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; text-align: center; }
-                .affiliate-btn-wrap { display: flex; gap: 12px; width: 100%; justify-content: center; flex-wrap: wrap; }
-                
-                @keyframes pulse-smarty { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
-                @keyframes pulse-heureka { 0% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(0, 120, 212, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0); } }
-                
-                .guru-buy-winner-btn { flex: 1; min-width: 140px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 14px 18px; border-radius: 14px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 0.5px; }
-                .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
-                .smarty-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(234, 179, 8, 0.5); }
-                .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
-                .heureka-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
-
-                @media (max-width: 768px) {
-                  .bn-wrapper { padding: 20px; border-radius: 20px; }
-                  .bn-main-title { font-size: 1.8rem !important; }
-                  .bn-inputs-card { padding: 25px 20px; border-radius: 20px; }
-                  .section-title { font-size: 16px; margin-bottom: 25px; }
-                  .bn-select { padding: 14px; font-size: 14px; }
-                  .toggle-grid { grid-template-columns: 1fr; }
-                  .pct-value { font-size: 4rem !important; }
-                  .pro-metrics-grid { grid-template-columns: 1fr; gap: 10px; }
-                  .metric-box { padding: 15px; }
-                  .m-val { font-size: 24px; }
-                  .bn-result-card { padding: 20px; min-height: auto; border-radius: 20px; }
-                  .viral-flex-card { flex-direction: column; text-align: center; padding: 25px; gap: 20px; }
-                  .hub-grid { grid-template-columns: 1fr; gap: 20px; }
-                  .hub-column { padding: 25px; border-radius: 20px; }
-                  
-                  .affiliate-cta-grid { grid-template-columns: 1fr; gap: 30px; padding: 20px; }
-                  .affiliate-btn-wrap { flex-direction: column; width: 100%; }
-                  .guru-buy-winner-btn { width: 100%; min-width: 100%; }
-                }
-            `}} />
-        </div>
-    );
-}
+                .res-btn.active { border-color: #a855f7; color: #fff; background: rgba(168, 85, 2
