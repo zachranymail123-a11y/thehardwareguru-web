@@ -5,11 +5,11 @@ import {
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
-import BottleneckFatContent from '../../../components/BottleneckFatContent'; // 🔥 IMPORT TVÉ NOVÉ SEO KOMPONENTY 🔥
+import BottleneckFatContent from '../../../components/BottleneckFatContent'; 
 
 /**
- * GURU BOTTLENECK ENGINE V22.13 (FAT CONTENT UPDATE)
- * 🚀 CÍL: Generování tisíců plnohodnotných a unikátních stránek pro dominanci ve vyhledávačích.
+ * GURU BOTTLENECK ENGINE V22.14 (DUAL CTA LOOP UPDATE)
+ * 🚀 CÍL: Přidání cross-linků na FPS kalkulačku a HW souboje přímo do hlavní analýzy.
  */
 
 export const runtime = "nodejs";
@@ -231,6 +231,32 @@ export default async function BottleneckPage(props) {
               />
             </div>
 
+            {/* 🔥 NOVÉ: GURU DUAL TOOLS CTA PŘÍMO V ANALÝZE 🔥 */}
+            <div style={{ marginTop: '40px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '40px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '950', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '25px' }}>{isEn ? 'WHAT TO DO NEXT?' : 'CO DÁL?'}</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                    
+                    {/* FPS KALKULAČKA CARD */}
+                    <a href={isEn ? '/en/fps-calculator' : '/fps-kalkulacka'} style={{ background: '#0a0b0d', border: '1px solid #06b6d4', padding: '25px', borderRadius: '20px', textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', transition: '0.3s' }} className="tool-cta-link cyan-glow">
+                        <Gamepad2 size={32} color="#06b6d4" />
+                        <div>
+                            <div style={{ fontSize: '18px', fontWeight: '950', color: '#fff', textTransform: 'uppercase' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</div>
+                            <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '5px' }}>{isEn ? 'Test this combo in other games' : 'Otestuj tuhle sestavu v jiných hrách'}</div>
+                        </div>
+                    </a>
+
+                    {/* HW SOUBOJE CARD */}
+                    <a href={isEn ? (isCpuBottleneck ? '/en/cpuvs' : '/en/gpuvs') : (isCpuBottleneck ? '/cpuvs' : '/gpuvs')} style={{ background: '#0a0b0d', border: '1px solid #f43f5e', padding: '25px', borderRadius: '20px', textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', transition: '0.3s' }} className="tool-cta-link red-glow">
+                        <Swords size={32} color="#f43f5e" />
+                        <div>
+                            <div style={{ fontSize: '18px', fontWeight: '950', color: '#fff', textTransform: 'uppercase' }}>{isEn ? 'FIND BETTER HARDWARE' : 'NAJÍT LEPŠÍ HARDWARE'}</div>
+                            <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '5px' }}>{isEn ? `Compare ${isCpuBottleneck ? 'CPUs' : 'GPUs'} to fix the bottleneck` : `Srovnej ${isCpuBottleneck ? 'procesory' : 'grafiky'} a vyřeš bottleneck`}</div>
+                        </div>
+                    </a>
+
+                </div>
+            </div>
+
             {/* 🔥 GURU AFFILIATE BOMB 🔥 */}
             <div className="affiliate-cta-grid" style={{ marginTop: '40px' }}>
                 <div className="affiliate-col">
@@ -357,6 +383,10 @@ export default async function BottleneckPage(props) {
             justify-content: center;
             box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
         }
+
+        /* 🔥 CSS PRO CROSS-LINK TLAČÍTKA 🔥 */
+        .tool-cta-link.cyan-glow:hover { box-shadow: 0 0 30px rgba(6, 182, 212, 0.2); transform: translateY(-5px); border-color: #22d3ee !important; }
+        .tool-cta-link.red-glow:hover { box-shadow: 0 0 30px rgba(244, 63, 94, 0.2); transform: translateY(-5px); border-color: #fb7185 !important; }
 
         /* 🔥 CSS PRO AFFILIATE GRID A TLAČÍTKA 🔥 */
         .affiliate-cta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 25px; background: rgba(0,0,0,0.4); border-radius: 20px; border: 1px solid rgba(168, 85, 247, 0.2); width: 100%; box-sizing: border-box; }
