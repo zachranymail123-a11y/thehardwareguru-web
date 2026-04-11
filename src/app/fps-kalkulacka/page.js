@@ -4,7 +4,6 @@ import FpsCalculatorClient from './FpsCalculatorClient';
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons'; 
-import { headers } from 'next/headers'; // 🔥 Přidán import pro čtení URL hlaviček
 
 /**
  * GURU FPS ENGINE - V6.9 (FIXED DATABASE FETCH + I18N FIX)
@@ -19,7 +18,6 @@ const baseUrl = "https://thehardwareguru.cz";
 export async function generateMetadata(props) {
   const p = await props.params;
   const s = await props.searchParams;
-  // Fallback čtení z URL pro metadata, kdyby params selhalo
   const isEn = p?.lang === 'en' || s?.lang === 'en' || false;
   
   return {
@@ -33,10 +31,11 @@ export async function generateMetadata(props) {
 }
 
 export default async function FpsKalkulackaPage(props) {
-  // 🔥 NEPRŮSTŘELNÁ DETEKCE ANGLIČTINY PŘES HLAVIČKY 🔥
-  const headersList = headers();
-  const activePath = headersList.get('x-invoke-path') || ''; 
-  const isEn = activePath.includes('/en/') || activePath === '/en';
+  const p = await props.params;
+  const s = await props.searchParams;
+  
+  // 🔥 FINÁLNÍ A NEJBEZPEČNĚJŠÍ DETEKCE (čte signál přímo z EN Proxy) 🔥
+  const isEn = props.isEnProxy === true || p?.lang === 'en' || s?.lang === 'en' || false;
   
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -83,7 +82,6 @@ export default async function FpsKalkulackaPage(props) {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
-            {/* Oprava: Přidány parametry pro správné affiliate linky */}
             <HeurekaButtons isEn={isEn} manualSearch="RTX 5090" positionId="276026" />
         </div>
 
