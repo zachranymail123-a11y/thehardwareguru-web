@@ -3,15 +3,15 @@ import { notFound } from 'next/navigation';
 import { 
  ChevronLeft, ShieldCheck, Flame, Heart, Swords, Calendar,
  Trophy, Zap, Cpu, Activity, BarChart3, Gamepad2, LayoutList,
- TrendingUp, ArrowRight, ExternalLink, Info, ChevronRight, ShoppingCart
+ TrendingUp, ArrowRight, ExternalLink, Info, ChevronRight, ShoppingCart, AlertTriangle
 } from 'lucide-react';
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText'; 
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V76.6 (HEUREKA FIX & PULSING BUTTONS)
- * 🚀 CÍL: Oprava Heureka redirectu (použití čistého linku pro Trixam) + Pulzující/výraznější tlačítka.
+ * GURU CPU DUELS ENGINE - DETAIL V76.7 (DUAL CTA LOOP UPDATE)
+ * 🚀 CÍL: Přidání ultimátní pasti - cross-linky na Bottleneck a FPS kalkulačku hned nahoru pod hlavičku.
  */
 
 export const runtime = "nodejs";
@@ -171,8 +171,7 @@ export default async function CpuDuelDetail(props) {
   const smartyUrl = `https://www.smarty.cz/Vyhledavani?query=${encodedQuery}`;
   const smartyAffiliateLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(smartyUrl)}`;
   
-  // Heureka hledání - OPRAVA: Kampaň 1651aa06 nelze použít pro Heureku, eHub by přesměroval na Smarty.
-  // Necháme čistý odkaz na Heureku s přesnými UTM parametry pro Trixam.
+  // Heureka hledání - čistý odkaz s přesnými UTM parametry pro Trixam.
   const heurekaAffiliateLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodedQuery}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
 
 
@@ -206,7 +205,6 @@ export default async function CpuDuelDetail(props) {
           </h1>
           {perfWinner && <div className="guru-verdict">{perfWinner.name} {isEn ? 'is about' : 'je přibližně'} <strong>{perfDiff}%</strong> {isEn ? 'faster in games' : 'výkonnější ve hrách'}</div>}
           
-          {/* 🔥 DYNAMICKÁ AFFILIATE TLAČÍTKA PRO VÍTĚZE (NYNÍ PULZUJÍCÍ A VÝRAZNĚJŠÍ) 🔥 */}
           <div style={{ marginTop: '30px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
               <a href={smartyAffiliateLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
                   <ShoppingCart size={20} /> {isEn ? 'Buy on Smarty.cz' : 'Koupit na Smarty.cz'}
@@ -246,6 +244,33 @@ export default async function CpuDuelDetail(props) {
             </div>
         </div>
 
+        {/* 🔥 PŘESUNUTO NAHORU: GURU DUAL TOOLS CTA (BOTTLENECK + FPS) 🔥 */}
+        <section style={{ marginBottom: '60px' }}>
+            <div className="guru-tools-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                
+                {/* BOTTLENECK KARTA */}
+                <div className="tool-cta-card" style={{ background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(168, 85, 247, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#a855f7', fontWeight: '950', textTransform: 'uppercase', fontSize: '12px', marginBottom: '10px' }}><AlertTriangle size={16} /> {isEn ? 'SYSTEM CHECK' : 'KONTROLA SYSTÉMU'}</div>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase' }}>{isEn ? 'BOTTLENECK CALCULATOR' : 'BOTTLENECK KALKULAČKA'}</h3>
+                        <p style={{ color: '#9ca3af', margin: 0 }}>{isEn ? `Will your GPU handle the ${normalizeName((perfWinner || cpuA).name)}?` : `Bude tvá grafika stačit na procesor ${normalizeName((perfWinner || cpuA).name)}?`}</p>
+                    </div>
+                    <a href={isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka'} style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', color: '#a855f7', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', textAlign: 'center', transition: '0.3s' }} className="tool-btn hover-scale-purple">{isEn ? 'TEST BOTTLENECK' : 'ZJISTIT BOTTLENECK'}</a>
+                </div>
+
+                {/* FPS KARTA */}
+                <div className="tool-cta-card" style={{ background: 'linear-gradient(135deg, rgba(102, 252, 241, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(102, 252, 241, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', fontWeight: '950', textTransform: 'uppercase', fontSize: '12px', marginBottom: '10px' }}><Gamepad2 size={16} /> {isEn ? 'GAMING PERFORMANCE' : 'HERNÍ VÝKON'}</div>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</h3>
+                        <p style={{ color: '#9ca3af', margin: 0 }}>{isEn ? `How many FPS will ${normalizeName((perfWinner || cpuA).name)} push in games?` : `Kolik FPS ti dá ${normalizeName((perfWinner || cpuA).name)} v oblíbených hrách?`}</p>
+                    </div>
+                    <a href={isEn ? '/en/fps-calculator' : '/fps-kalkulacka'} style={{ background: 'rgba(102, 252, 241, 0.1)', border: '1px solid rgba(102, 252, 241, 0.3)', color: '#66fcf1', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', textAlign: 'center', transition: '0.3s' }} className="tool-btn hover-scale-cyan">{isEn ? 'TEST FPS' : 'ZJISTIT FPS'}</a>
+                </div>
+
+            </div>
+        </section>
+
         <section style={{ marginBottom: '60px' }}>
             <div className="analysis-card" style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -282,16 +307,6 @@ export default async function CpuDuelDetail(props) {
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
             <HeurekaButtons isEn={isEn} />
         </div>
-
-        <section style={{ marginBottom: '60px' }}>
-            <div className="bottleneck-cta" style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-                <div>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: '950', color: '#fff', margin: '0 0 10px 0', textTransform: 'uppercase' }}>{isEn ? 'BOTTLENECK CHECK' : 'KONTROLA BOTTLENECKU'}</h3>
-                    <p style={{ color: '#9ca3af', margin: 0 }}>{isEn ? `Will your GPU handle the ${normalizeName((perfWinner || cpuA).name)}?` : `Bude tvá grafika stačit na procesor ${normalizeName((perfWinner || cpuA).name)}?`}</p>
-                </div>
-                <a href={isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka'} style={{ background: 'transparent', border: '2px solid #f59e0b', color: '#f59e0b', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase' }}>{isEn ? 'VERIFY' : 'OVĚŘIT'}</a>
-            </div>
-        </section>
 
         <section className="massive-seo-hub" style={{ marginBottom: '60px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '60px' }}>
             <h2 style={{ fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #a855f7', paddingLeft: '15px' }}>
@@ -417,6 +432,10 @@ export default async function CpuDuelDetail(props) {
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
 
+        /* 🔥 CSS PRO HOVER EFEKTY NOVÝCH NÁSTROJŮ 🔥 */
+        .hover-scale-purple:hover { background: rgba(168, 85, 247, 0.2) !important; box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); transform: translateY(-2px); }
+        .hover-scale-cyan:hover { background: rgba(102, 252, 241, 0.2) !important; box-shadow: 0 0 20px rgba(102, 252, 241, 0.3); transform: translateY(-2px); }
+
         @media (max-width: 768px) {
             .guru-duel-wrapper { padding-top: 80px !important; }
             .inner-container { padding: 0 15px !important; }
@@ -424,7 +443,7 @@ export default async function CpuDuelDetail(props) {
             .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
             .main-h1 { font-size: 1.8rem !important; }
             .guru-verdict { font-size: 14px; padding: 8px 15px; }
-            .guru-buy-winner-btn { width: 100%; justify-content: center; } /* Na mobilu plná šířka tlačítek */
+            .guru-buy-winner-btn { width: 100%; justify-content: center; }
             .guru-grid-ring { grid-template-columns: 1fr !important; gap: 10px; }
             .cpu-box { padding: 25px 15px; }
             .vs-badge { margin: 10px auto; width: 50px; height: 50px; font-size: 18px; }
@@ -433,10 +452,11 @@ export default async function CpuDuelDetail(props) {
             .table-label { width: 100%; }
             .spec-val-box { font-size: 16px !important; }
             .section-h2 { font-size: 1.4rem !important; }
-            .bottleneck-cta { padding: 25px 15px !important; text-align: center; justify-content: center !important; }
+            .tool-cta-card { padding: 25px 15px !important; text-align: center; }
             .guru-deals-btn, .guru-support-btn { max-width: 100% !important; }
             .seo-hub-grid { grid-template-columns: 1fr; }
             .hub-column { padding: 25px; }
+            .guru-tools-grid { grid-template-columns: 1fr !important; }
         }
       `}} />
     </div>
