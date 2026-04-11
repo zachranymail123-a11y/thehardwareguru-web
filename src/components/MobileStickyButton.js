@@ -9,12 +9,17 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+/**
+ * GURU MOBILE STICKY BUTTON V2.7 - AFFILIATE REVENUE FIX
+ * 🚀 CÍL: Aktivace reálných provizí na Heurece (heureka-hn-link + position ID).
+ */
+
 export default function MobileStickyButton() {
     const pathname = usePathname() || '';
     const [isVisible, setIsVisible] = useState(false);
     const isEn = pathname.startsWith('/en');
 
-    // Tlačítko se objeví až po odskrolování 300px, aby neotravovalo hned v hlavičce
+    // Tlačítko se objeví až po odskrolování 300px
     useEffect(() => {
         const handleScroll = () => {
             if (window.scrollY > 300) {
@@ -32,11 +37,11 @@ export default function MobileStickyButton() {
         supabase.from('affiliate_clicks_log').insert([{ platform, category: 'sticky_mobile' }]).then();
     };
 
+    // 🔥 SYNCED AFFILIATE LINKS (Sjednoceno s HeurekaButtons a Exit Popup)
     const link = isEn 
         ? "https://www.amazon.com/s?k=pc+components&tag=thehardware07-20" 
-        : "https://www.heureka.cz/?h%5Bfraze%5D=pc+komponenty#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=StickyMobile";
+        : "https://komponenty.heureka.cz/#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=StickyMobile";
 
-    // 🔥 AGRESIVNÍ TEXTY PRO MAXIMÁLNÍ CTR 🔥
     const text = isEn ? "SEE TODAY'S DEALS" : "ZJISTIT DNEŠNÍ SLEVY";
 
     if (!isVisible) return null;
@@ -48,7 +53,10 @@ export default function MobileStickyButton() {
                 href={link}
                 target="_blank"
                 rel="nofollow sponsored"
-                className="guru-mobile-sticky-btn"
+                /* 🔥 AKTIVACE HEUREKA TRACKINGU 🔥 */
+                className={`guru-mobile-sticky-btn ${!isEn ? 'heureka-hn-link' : ''}`}
+                data-trixam-positionid="276026"
+                data-trixam-codetype="link"
             >
                 <ShoppingCart size={20} color="white" />
                 <span>{text}</span>
