@@ -9,10 +9,11 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function HeurekaButtons({ isEn = false }) {
-  const HEUREKA_CPU = "https://www.heureka.cz/?h%5Bfraze%5D=procesor#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
-  const HEUREKA_GPU = "https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
-  const HEUREKA_MB  = "https://www.heureka.cz/?h%5Bfraze%5D=zakladni+deska#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
-  const HEUREKA_RAM = "https://www.heureka.cz/?h%5Bfraze%5D=ram+pamet#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
+  // 🔥 SJEDNOCENÝ UTM FORMÁT DLE EXIT POP-UPU
+  const HEUREKA_CPU = "https://www.heureka.cz/?h%5Bfraze%5D=procesor#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=HeurekaButtons";
+  const HEUREKA_GPU = "https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=HeurekaButtons";
+  const HEUREKA_MB  = "https://www.heureka.cz/?h%5Bfraze%5D=zakladni+deska#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=HeurekaButtons";
+  const HEUREKA_RAM = "https://www.heureka.cz/?h%5Bfraze%5D=ram+pamet#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=HeurekaButtons";
 
   const AMAZON_TAG = "thehardware07-20";
   const AMAZON_CPU = `https://www.amazon.com/s?k=computer+processor+cpu&tag=${AMAZON_TAG}`;
