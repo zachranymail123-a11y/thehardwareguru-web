@@ -1,5 +1,18 @@
+import Page, { generateMetadata as originalGenerateMetadata } from '../../../cpu/[slug]/page';
+
 /**
  * GURU MASTER PROXY: Detail CPU EN
- * Zajišťuje existenci cesty /en/cpu/[slug]
+ * Vynucuje angličtinu pro cestu /en/cpu/[slug]
  */
-export { default, generateMetadata } from '../../../cpu/[slug]/page';
+
+export const runtime = "nodejs";
+
+export async function generateMetadata(props) {
+  // Přidáme isEn: true do props pro metadata
+  return originalGenerateMetadata({ ...props, isEn: true });
+}
+
+export default function EnCpuProxyPage(props) {
+  // Přidáme isEn: true do props pro samotnou stránku
+  return <Page {...props} isEn={true} />;
+}
