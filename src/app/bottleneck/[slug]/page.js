@@ -8,8 +8,8 @@ import HeurekaButtons from '../../../components/HeurekaButtons';
 import BottleneckFatContent from '../../../components/BottleneckFatContent'; 
 
 /**
- * GURU BOTTLENECK ENGINE V22.21 (DEFINITIVE HEUREKA FIX)
- * 🚀 CÍL: Fix linků na www.heureka.cz s povinným parametrem h[fraze], aby to nehádalo 404 a sypalo prachy.
+ * GURU BOTTLENECK ENGINE V22.22 (DEFINITIVE HEUREKA FIX)
+ * 🚀 CÍL: Fix linků na www.heureka.cz s povinným parametrem h[fraze] a Text%20link.
  */
 
 export const runtime = "nodejs";
@@ -160,12 +160,13 @@ export default async function BottleneckPage(props) {
   const cleanCpuName = normalizeName(cpu.name);
   const cleanGpuName = normalizeName(gpu.name);
 
-  // 🔥 DEFINITIVNÍ FIX: www.heureka.cz + ?h[fraze] parametr (Zkontrolováno s image_f8b401.png a image_f8b43a.png) 🔥
   const smartyCpuLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(cleanCpuName)}`)}`;
-  const heurekaCpuLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(cleanCpuName)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=BottleneckDetail`;
+  // 🔥 DEFINITIVNÍ FIX: www.heureka.cz + ?h[fraze] parametr + Text%20link (Zkontrolováno) 🔥
+  const heurekaCpuLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(cleanCpuName)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
   
   const smartyGpuLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(cleanGpuName)}`)}`;
-  const heurekaGpuLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(cleanGpuName)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=BottleneckDetail`;
+  // 🔥 DEFINITIVNÍ FIX: www.heureka.cz + ?h[fraze] parametr + Text%20link (Zkontrolováno) 🔥
+  const heurekaGpuLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(cleanGpuName)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
 
   const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
 
@@ -236,7 +237,6 @@ export default async function BottleneckPage(props) {
               <BottleneckFatContent cpuName={cpu.name} gpuName={gpu.name} gameName={gameName || (isEn ? "Modern Titles" : "Moderních hrách")} resolution={displayResolution || "1440p"} bottleneckPercent={bottleneckScore} bottleneckType={bottleneckScore < 5 ? 'Balanced' : (isCpuBottleneck ? 'CPU' : 'GPU')} isEn={isEn} />
             </div>
 
-            {/* 🔥 GURU AFFILIATE REVENUE FIX 🔥 */}
             {isEn ? (
                 <div className="affiliate-cta-grid" style={{ marginTop: '40px' }}>
                     <div className="affiliate-col">
