@@ -8,8 +8,8 @@ import HeurekaButtons from '../../../components/HeurekaButtons';
 import BottleneckFatContent from '../../../components/BottleneckFatContent'; 
 
 /**
- * GURU BOTTLENECK ENGINE V22.14 (DUAL CTA LOOP UPDATE)
- * 🚀 CÍL: Přidání cross-linků na FPS kalkulačku a HW souboje přímo do hlavní analýzy.
+ * GURU BOTTLENECK ENGINE V22.15 (CTA MOVED TO TOP)
+ * 🚀 CÍL: Přesun dual CTA odkazů (FPS kalkulačka a HW duely) nad textový obsah (Fat Content).
  */
 
 export const runtime = "nodejs";
@@ -218,20 +218,7 @@ export default async function BottleneckPage(props) {
                 )}
             </div>
             
-            {/* 🔥 ZDE JE INTEGROVÁN NOVÝ FAT CONTENT MÍSTO STARÉHO SEO TEXTU 🔥 */}
-            <div style={{ marginTop: '40px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '30px', textAlign: 'left' }}>
-              <BottleneckFatContent 
-                cpuName={cpu.name} 
-                gpuName={gpu.name} 
-                gameName={gameName || (isEn ? "Modern Titles" : "Moderních hrách")} 
-                resolution={displayResolution || "1440p"} 
-                bottleneckPercent={bottleneckScore} 
-                bottleneckType={bottleneckScore < 5 ? 'Balanced' : (isCpuBottleneck ? 'CPU' : 'GPU')} 
-                isEn={isEn} 
-              />
-            </div>
-
-            {/* 🔥 NOVÉ: GURU DUAL TOOLS CTA PŘÍMO V ANALÝZE 🔥 */}
+            {/* 🔥 PŘESUNUTO NAHORU: GURU DUAL TOOLS CTA PŘÍMO POD VÝSLEDKY 🔥 */}
             <div style={{ marginTop: '40px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '40px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: '950', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '25px' }}>{isEn ? 'WHAT TO DO NEXT?' : 'CO DÁL?'}</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
@@ -255,6 +242,19 @@ export default async function BottleneckPage(props) {
                     </a>
 
                 </div>
+            </div>
+
+            {/* 🔥 FAT CONTENT TEĎ NÁSLEDUJE AŽ POD TLAČÍTKY 🔥 */}
+            <div style={{ marginTop: '40px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '30px', textAlign: 'left' }}>
+              <BottleneckFatContent 
+                cpuName={cpu.name} 
+                gpuName={gpu.name} 
+                gameName={gameName || (isEn ? "Modern Titles" : "Moderních hrách")} 
+                resolution={displayResolution || "1440p"} 
+                bottleneckPercent={bottleneckScore} 
+                bottleneckType={bottleneckScore < 5 ? 'Balanced' : (isCpuBottleneck ? 'CPU' : 'GPU')} 
+                isEn={isEn} 
+              />
             </div>
 
             {/* 🔥 GURU AFFILIATE BOMB 🔥 */}
