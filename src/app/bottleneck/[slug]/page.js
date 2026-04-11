@@ -8,8 +8,8 @@ import HeurekaButtons from '../../../components/HeurekaButtons';
 import BottleneckFatContent from '../../../components/BottleneckFatContent'; 
 
 /**
- * GURU BOTTLENECK ENGINE V22.17 (HEUREKA REVENUE FIX)
- * 🚀 CÍL: Oprava Heureka affiliate linků na finální formát pro zápočet provizí.
+ * GURU BOTTLENECK ENGINE V22.18 (HEUREKA 404 & REVENUE FIX)
+ * 🚀 CÍL: Fix Heureka linků na www.heureka.cz s mřížkou, aby to nehádalo 404 a sypalo prachy.
  */
 
 export const runtime = "nodejs";
@@ -161,12 +161,12 @@ export default async function BottleneckPage(props) {
   const cleanCpuName = normalizeName(cpu.name);
   const cleanGpuName = normalizeName(gpu.name);
 
-  // 🔥 DEFINITIVNÍ AFFILIATE LINKY DLE ADMINU HEUREKY 🔥
+  // 🔥 DEFINITIVNÍ AFFILIATE LINKY DLE ADMINU HEUREKY (FIX 404) 🔥
   const smartyCpuLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(cleanCpuName)}`)}`;
-  const heurekaCpuLink = `https://procesory.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(cleanCpuName)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=BottleneckDetail`;
+  const heurekaCpuLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(cleanCpuName)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=BottleneckDetail`;
   
   const smartyGpuLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(cleanGpuName)}`)}`;
-  const heurekaGpuLink = `https://graficke-karty.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(cleanGpuName)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=BottleneckDetail`;
+  const heurekaGpuLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(cleanGpuName)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=BottleneckDetail`;
 
   const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
 
@@ -345,10 +345,10 @@ export default async function BottleneckPage(props) {
         .affiliate-col { display: flex; flex-direction: column; align-items: center; width: 100%; }
         .affiliate-col-title { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 950; color: #a855f7; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; text-align: center; }
         .affiliate-btn-wrap { display: flex; gap: 10px; width: 100%; justify-content: center; flex-wrap: wrap; }
-        .guru-buy-winner-btn { flex: 1; min-width: 120px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 12px 15px; border-radius: 12px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: 0.3s; color: #000; }
-        .smarty-btn { background: #facc15; border: 2px solid #fef08a; }
-        .heureka-btn { background: #3b82f6; color: #fff; border: 2px solid #60a5fa; }
-        .amazon-btn { background: #f59e0b; border: 2px solid #fbbf24; }
+        .guru-buy-winner-btn { flex: 1; min-width: 120px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 12px 15px; border-radius: 12px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 0.5px; color: #000; }
+        .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); border: 2px solid #fef08a; }
+        .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; }
+        .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: 2px solid #fbbf24; }
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
         @media (max-width: 768px) {
