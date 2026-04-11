@@ -8,8 +8,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons';
 
 /**
- * GURU ARTICLE ENGINE V6.1 (TOOLS UPDATE + BUILD FIX)
- * 🚀 CÍL: Přidání kalkulaček pod nákup + Fix zobrazení textu + EN detekce.
+ * GURU ARTICLE ENGINE V6.3 (ULTIMATE MONETIZATION FIX)
+ * 🚀 CÍL: Dynamický Heureka Search Intent, oprava pořadí tlačítek, agresivní CTR texty a garantovaný Trixam skript.
  */
 
 export const runtime = "nodejs";
@@ -84,13 +84,23 @@ export default async function ArticleDetailPage(props) {
     const part2 = contentParts.slice(3, 6).join('</p>') + (contentParts.length > 6 ? '</p>' : '');
     const part3 = contentParts.slice(6).join('</p>');
 
-    const amazonLink = `https://www.amazon.com/s?k=gaming+hardware&tag=thehardware07-20`;
-    const smartyLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz`)}`;
-    const heurekaLink = `https://www.heureka.cz/#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Article%20link`;
+    // 🔥 DYNAMICKÉ ODKAZY PODLE NÁZVU ČLÁNKU PRO MAXIMÁLNÍ KONVERZI 🔥
+    const searchQuery = title;
+    
+    const getAmazonLink = (query) => `https://www.amazon.com/s?k=${encodeURIComponent(query)}&tag=thehardware07-20`;
+    const getSmartyLink = (query) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(query)}`)}`;
+    
+    // 🔥 DEFINITIVNÍ HEUREKA FIX: Dynamický Search Intent s h[fraze], bez mřížky, s Text link 🔥
+    const getHeurekaLink = (query) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(query)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
 
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
             <Script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993" crossOrigin="anonymous" strategy="afterInteractive" />
+            
+            {/* 🔥 GARANTOVANÉ NAČTENÍ TRIXAM SKRIPTU PRO PŘÍMÉ NÁVŠTĚVY 🔥 */}
+            {!isEn && (
+                <Script async src="//serve.affiliate.heureka.cz/js/trixam.min.js" strategy="afterInteractive" />
+            )}
 
             <main style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
                 <div style={{ marginBottom: '30px' }}>
@@ -118,16 +128,31 @@ export default async function ArticleDetailPage(props) {
                         </div>
                     )}
 
-                    {/* 🔥 NÁKUPNÍ SEKCE 🔥 */}
+                    {/* 🔥 NÁKUPNÍ SEKCE: HEUREKA JAKO PRVNÍ + AGRESIVNÍ COPY 🔥 */}
                     <div className="affiliate-cta-grid" style={{ marginBottom: '20px' }}>
                         <div className="affiliate-col">
                             <div className="affiliate-btn-wrap">
                                 {isEn ? (
-                                    <a href={amazonLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn"><ShoppingCart size={16} /> Check Deals on Amazon</a>
+                                    <a href={getAmazonLink(searchQuery)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn">
+                                        <ShoppingCart size={16} /> 🔥 Check Lowest Prices
+                                    </a>
                                 ) : (
                                     <>
-                                        <a href={smartyLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn"><ShoppingCart size={16} /> Smarty.cz</a>
-                                        <a href={heurekaLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn"><ShoppingCart size={16} /> Heureka.cz</a>
+                                        {/* 🔥 FIX: Heureka je první, má Position ID a nejlepší CTR text 🔥 */}
+                                        <a 
+                                            href={getHeurekaLink(searchQuery)} 
+                                            className="guru-buy-winner-btn heureka-btn heureka-hn-link" 
+                                            data-trixam-positionid="276026"
+                                            data-trixam-content="Text link" 
+                                            data-trixam-medium="affiliate" 
+                                            target="_blank" 
+                                            rel="nofollow sponsored"
+                                        >
+                                            <ShoppingCart size={16} /> 🔥 Porovnat ceny
+                                        </a>
+                                        <a href={getSmartyLink(searchQuery)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
+                                            <ShoppingCart size={16} /> Smarty.cz
+                                        </a>
                                     </>
                                 )}
                             </div>
@@ -192,7 +217,7 @@ export default async function ArticleDetailPage(props) {
                 .affiliate-btn-wrap { display: flex; gap: 20px; width: 100%; justify-content: center; flex-wrap: wrap; }
                 .guru-buy-winner-btn { flex: 1; max-width: 300px; min-width: 200px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 15px; text-transform: uppercase; transition: 0.3s; letter-spacing: 1px; }
                 .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; }
-                .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; }
+                .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; }
                 .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; width: 100%; max-width: 400px; }
                 
                 /* Kalkulačky style */
