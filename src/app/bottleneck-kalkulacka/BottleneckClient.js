@@ -12,8 +12,8 @@ import HeurekaButtons from '../../components/HeurekaButtons';
 import ShareResultButton from '../../components/ShareResultButton';
 
 /**
- * GURU BOTTLENECK ENGINE CLIENT - V11.9 (AFFILIATE TRACKING & OVERFLOW FIX)
- * 🚀 CÍL: Fix trackování (UTM, Trixam IDs, HN class) + oprava CSS přetečení.
+ * GURU BOTTLENECK ENGINE CLIENT - V11.9 (AFFILIATE TRACKING & FULL EN TRANSLATION)
+ * 🚀 CÍL: Fix trackování (UTM, Trixam IDs, HN class) + kompletní dopřeklad do EN.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -177,21 +177,21 @@ export default function BottleneckClient({
                 <h1 className="bn-main-title" style={{ fontSize: '3.5rem', fontWeight: '950', textTransform: 'uppercase', margin: '10px 0', textShadow: '0 0 30px rgba(102, 252, 241, 0.4)' }}>
                     {isEn ? 'System Bottleneck' : 'Bottleneck Kalkulačka'}
                 </h1>
-                <p style={{ color: '#9ca3af', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '2px' }}>Najdi nejslabší článek své sestavy.</p>
+                <p style={{ color: '#9ca3af', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '2px' }}>{isEn ? 'Find the weakest link in your rig.' : 'Najdi nejslabší článek své sestavy.'}</p>
             </div>
 
             <div className="bn-grid">
                 <div className="bn-inputs-card">
-                    <h3 className="section-title"><Settings2 size={18} /> Konfigurace</h3>
+                    <h3 className="section-title"><Settings2 size={18} /> {isEn ? 'Configuration' : 'Konfigurace'}</h3>
                     <div className="input-group">
-                        <label>Herní Engine</label>
+                        <label>{isEn ? 'Game Engine' : 'Herní Engine'}</label>
                         <select value={selectedGameSlug} onChange={(e) => { setSelectedGameSlug(e.target.value); setShowResult(false); }} className="bn-select">
-                            <option value="">-- Vyber hru --</option>
+                            <option value="">{isEn ? '-- Select game --' : '-- Vyber hru --'}</option>
                             {(games || []).map(g => <option key={g.id} value={g.slug}>{g.name}</option>)}
                         </select>
                     </div>
                     <div className="input-group">
-                        <label>Rozlišení</label>
+                        <label>{isEn ? 'Resolution' : 'Rozlišení'}</label>
                         <div className="res-toggles">
                             {['1080p', '1440p', '2160p'].map(res => (
                                 <button key={res} onClick={() => { setResolution(res); setShowResult(false); }} className={`res-btn ${resolution === res ? 'active' : ''}`}>{res === '2160p' ? '4K' : res}</button>
@@ -212,19 +212,19 @@ export default function BottleneckClient({
                     <div className="input-group">
                         <label><Cpu size={14} /> CPU</label>
                         <select value={selectedCpuId} onChange={(e) => { setSelectedCpuId(e.target.value); setShowResult(false); }} className="bn-select">
-                            <option value="">-- Vyber procesor --</option>
+                            <option value="">{isEn ? '-- Select processor --' : '-- Vyber procesor --'}</option>
                             {(cpus || []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
                     <div className="input-group">
                         <label><Zap size={14} /> GPU</label>
                         <select value={selectedGpuId} onChange={(e) => { setSelectedGpuId(e.target.value); setShowResult(false); }} className="bn-select">
-                            <option value="">-- Vyber grafiku --</option>
+                            <option value="">{isEn ? '-- Select graphics --' : '-- Vyber grafiku --'}</option>
                             {(gpus || []).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                         </select>
                     </div>
                     <button onClick={handleStart} disabled={!selectedCpuId || !selectedGpuId || !selectedGameSlug || isCalculating} className="start-btn">
-                        {isCalculating ? <Sparkles className="spin" /> : <Play size={20} />} SPUSTIT SIMULACI
+                        {isCalculating ? <Sparkles className="spin" /> : <Play size={20} />} {isEn ? 'START SIMULATION' : 'SPUSTIT SIMULACI'}
                     </button>
                     
                     {/* Zde jsou zobrazená tlačítka vedle sebe po analýze */}
@@ -250,7 +250,7 @@ export default function BottleneckClient({
 
                 <div className="bn-result-card">
                     {!analysis ? (
-                        <div className="empty-state"><Crosshair size={64} color="rgba(255,255,255,0.05)" /><p>Nastav hardware a spusť simulaci.</p></div>
+                        <div className="empty-state"><Crosshair size={64} color="rgba(255,255,255,0.05)" /><p>{isEn ? 'Select hardware and start simulation.' : 'Nastav hardware a spusť simulaci.'}</p></div>
                     ) : (
                         <div className="analysis-board">
                             <div style={{ textAlign: 'center' }}>
@@ -258,7 +258,7 @@ export default function BottleneckClient({
                             </div>
                             <div className="percentage-display">
                                 <div className="pct-value" style={{ color: statusColor, textShadow: `0 0 60px ${statusColor}80` }}>{a.bottleneckPercent}%</div>
-                                <div className="pct-label" style={{ color: statusColor }}>{a.limitedBy} tě brzdí o {a.bottleneckPercent}%</div>
+                                <div className="pct-label" style={{ color: statusColor }}>{a.limitedBy} {isEn ? 'bottlenecks you by' : 'tě brzdí o'} {a.bottleneckPercent}%</div>
                             </div>
 
                             <div className="ad-mobile-wrapper" style={{ margin: '30px -20px', display: 'flex', justifyContent: 'center' }}>
@@ -271,8 +271,8 @@ export default function BottleneckClient({
                                 <div className="metric-box"><div className="m-label">LATENCY</div><div className="m-val">{a.frameTimeMs}ms</div></div>
                             </div>
                             <div className="recommendation">
-                                <h4>💡 Guru Verdikt</h4>
-                                <p>{a.boundType === 'CPU_BOUND' ? 'Grafika čeká na procesor. Potřebuješ silnější CPU pro vyrovnaný výkon.' : 'Sestava je limitována grafickou kartou. Snížení detailů pomůže FPS.'}</p>
+                                <h4>💡 {isEn ? 'Guru Verdict' : 'Guru Verdikt'}</h4>
+                                <p>{a.boundType === 'CPU_BOUND' ? (isEn ? 'The GPU is waiting for the processor. You need a stronger CPU for balanced performance.' : 'Grafika čeká na procesor. Potřebuješ silnější CPU pro vyrovnaný výkon.') : (isEn ? 'Your rig is limited by the graphics card. Lowering details will improve FPS.' : 'Sestava je limitována grafickou kartou. Snížení detailů pomůže FPS.')}</p>
                             </div>
 
                             {/* 🔥 GURU AFFILIATE BOMB (OPRAVENÉ TRACKOVÁNÍ) 🔥 */}
@@ -320,7 +320,7 @@ export default function BottleneckClient({
                             </div>
 
                             {gta6DynamicLink ? (
-                                <a href={gta6DynamicLink} className="gta-cta"><Sparkles size={20} /> ROZJEDE TO GTA VI?</a>
+                                <a href={gta6DynamicLink} className="gta-cta"><Sparkles size={20} /> {isEn ? 'WILL IT RUN GTA VI?' : 'ROZJEDE TO GTA VI?'}</a>
                             ) : null}
 
                             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px', width: '100%', boxSizing: 'border-box' }}>
@@ -336,8 +336,8 @@ export default function BottleneckClient({
                 <div className="viral-flex-card">
                     <div className="award-icon"><Award size={32} color="#a855f7" /></div>
                     <div className="viral-text-box">
-                        <div style={{ fontWeight: '950', fontSize: '18px' }}>SDÍLET KALKULAČKU</div>
-                        <div style={{ color: '#a855f7', fontWeight: 'bold' }}>Pomoz ostatním geekům najít pravdu</div>
+                        <div style={{ fontWeight: '950', fontSize: '18px' }}>{isEn ? 'SHARE CALCULATOR' : 'SDÍLET KALKULAČKU'}</div>
+                        <div style={{ color: '#a855f7', fontWeight: 'bold' }}>{isEn ? 'Help other geeks find the truth' : 'Pomoz ostatním geekům najít pravdu'}</div>
                     </div>
                     <div style={{ display: 'flex', gap: '12px' }}>
                         <button onClick={handleCopyShare} className="premium-share-btn btn-copy">{copied ? <Check size={20} /> : <Share2 size={20} />}</button>
@@ -348,18 +348,18 @@ export default function BottleneckClient({
 
                 <div className="hub-grid" style={{marginTop: '50px'}}>
                     <div className="hub-column">
-                        <div className="hub-col-header"><Swords size={20} color="#ff0055" /> HW Souboje</div>
+                        <div className="hub-col-header"><Swords size={20} color="#ff0055" /> {isEn ? 'Hardware Battles' : 'HW Souboje'}</div>
                         <ul className="hub-links-list">
-                            <li><a href="/gpuvs"><ChevronRight size={16} /> Souboje Grafických Karet</a></li>
-                            <li><a href="/cpuvs"><ChevronRight size={16} /> Souboje Procesorů</a></li>
+                            <li><a href={isEn ? "/en/gpuvs" : "/gpuvs"}><ChevronRight size={16} /> {isEn ? 'Graphics Card Battles' : 'Souboje Grafických Karet'}</a></li>
+                            <li><a href={isEn ? "/en/cpuvs" : "/cpuvs"}><ChevronRight size={16} /> {isEn ? 'Processor Battles' : 'Souboje Procesorů'}</a></li>
                         </ul>
                     </div>
                     <div className="hub-column">
-                        <div className="hub-col-header"><Gamepad2 size={20} color="#66fcf1" /> Guru Ekosystém</div>
+                        <div className="hub-col-header"><Gamepad2 size={20} color="#66fcf1" /> {isEn ? 'Guru Ecosystem' : 'Guru Ekosystém'}</div>
                         <ul className="hub-links-list">
-                            <li><a href="/ocekavane-hry"><ChevronRight size={16} /> Archiv her</a></li>
-                            <li><a href="/clanky"><ChevronRight size={16} /> Články a Novinky</a></li>
-                            <li><a href="/tipy"><ChevronRight size={16} /> GURU Tipy</a></li>
+                            <li><a href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"}><ChevronRight size={16} /> {isEn ? 'Game Archive' : 'Archiv her'}</a></li>
+                            <li><a href={isEn ? "/en/clanky" : "/clanky"}><ChevronRight size={16} /> {isEn ? 'News & Articles' : 'Články a Novinky'}</a></li>
+                            <li><a href={isEn ? "/en/tipy" : "/tipy"}><ChevronRight size={16} /> {isEn ? 'GURU Tips' : 'GURU Tipy'}</a></li>
                         </ul>
                     </div>
                 </div>
@@ -449,15 +449,4 @@ export default function BottleneckClient({
                   .metric-box { padding: 15px; }
                   .m-val { font-size: 24px; }
                   .bn-result-card { padding: 20px; min-height: auto; border-radius: 20px; }
-                  .viral-flex-card { flex-direction: column; text-align: center; padding: 25px; gap: 20px; }
-                  .hub-grid { grid-template-columns: 1fr; gap: 20px; }
-                  .hub-column { padding: 25px; border-radius: 20px; }
-                  
-                  .affiliate-cta-grid { grid-template-columns: 1fr; gap: 30px; padding: 20px; }
-                  .affiliate-btn-wrap { flex-direction: column; width: 100%; }
-                  .guru-buy-winner-btn { width: 100%; min-width: 100%; }
-                }
-            `}} />
-        </div>
-    );
-}
+                  .viral-flex-card { flex-
