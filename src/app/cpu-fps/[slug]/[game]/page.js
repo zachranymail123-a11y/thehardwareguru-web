@@ -17,8 +17,8 @@ import SeznamAd from '../../../../components/SeznamAd';
 import HeurekaButtons from '../../../../components/HeurekaButtons'; 
 
 /**
- * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.9 (AFFILIATE BOMB UPDATE)
- * 🚀 CÍL: Vložení pulzujících affiliate tlačítek (Smarty + Heureka) přímo pod FPS výsledek.
+ * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.10 (AMAZON AFFILIATE UPDATE)
+ * 🚀 CÍL: Přidání Amazon tlačítka (tag: thehardware07-20) pro EN verzi, skrytí CZ tlačítek.
  */
 
 export const runtime = "nodejs";
@@ -117,6 +117,7 @@ export default async function App(props) {
   const searchName = getCleanSearchName(cpu.name);
   const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
   const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+  const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
 
   return (
     <div className="guru-benchmark-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -166,20 +167,30 @@ export default async function App(props) {
                         <Cpu size={16} /> {isEn ? `BUY ${normalizeName(cpu.name)}` : `KOUPIT ${normalizeName(cpu.name)}`}
                     </div>
                     <div className="affiliate-btn-wrap">
-                        <a href={getSmartyLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
-                            <ShoppingCart size={16} /> Smarty.cz
-                        </a>
-                        <a href={getHeurekaLink(searchName)} data-trixam-positionid="276027" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
-                            <ShoppingCart size={16} /> Heureka.cz
-                        </a>
+                        {isEn ? (
+                            <a href={getAmazonLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn">
+                                <ShoppingCart size={16} /> Check Price on Amazon
+                            </a>
+                        ) : (
+                            <>
+                                <a href={getSmartyLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
+                                    <ShoppingCart size={16} /> Smarty.cz
+                                </a>
+                                <a href={getHeurekaLink(searchName)} data-trixam-positionid="276027" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
+                                    <ShoppingCart size={16} /> Heureka.cz
+                                </a>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (bezpečně vložené pod výsledkový box) 🔥 */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
-                <HeurekaButtons isEn={isEn} />
-            </div>
+            {/* 🔥 HEUREKA WIDGET SCHOVÁN PRO EN VERZI 🔥 */}
+            {!isEn && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
+                    <HeurekaButtons isEn={false} />
+                </div>
+            )}
             
         </section>
 
@@ -254,7 +265,11 @@ export default async function App(props) {
         .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
         .smarty-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(234, 179, 8, 0.5); }
         .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
-        .heureka-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(0, 120, 212, 0.5); }
+        .heureka-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
+
+        /* 🔥 NOVÉ: CSS PRO AMAZON TLAČÍTKO 🔥 */
+        .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
+        .amazon-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(245, 158, 11, 0.5); }
 
         .sticky-bottom-anchor {
             position: fixed;
