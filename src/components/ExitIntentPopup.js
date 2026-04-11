@@ -3,6 +3,11 @@ import React, { useEffect, useState } from 'react';
 import { AlertTriangle, ShoppingCart, X, Zap } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
+/**
+ * GURU EXIT INTENT POPUP V2.6 - AFFILIATE REVENUE FIX
+ * 🚀 CÍL: Sjednocení linků s HeurekaButtons + aktivace "Prokliku do shopu".
+ */
+
 export default function ExitIntentPopup() {
     const [isVisible, setIsVisible] = useState(false);
     const [hasTriggered, setHasTriggered] = useState(false);
@@ -10,19 +15,15 @@ export default function ExitIntentPopup() {
     const isEn = pathname.startsWith('/en');
 
     useEffect(() => {
-        // Kontrola, jestli se už popup v této session ukázal
         if (sessionStorage.getItem('guru_exit_shown')) {
             setHasTriggered(true);
             return;
         }
 
         const handleMouseOut = (e) => {
-            // e.clientY < 10 bezpečně detekuje vyjetí myši z horní části okna
             if (e.clientY < 10 && e.relatedTarget === null && !hasTriggered) {
                 setIsVisible(true);
                 setHasTriggered(true);
-                // Zapíše do paměti, aby to uživatele neotravovalo při každém pohybu. 
-                // PRO TESTOVÁNÍ: Pokud chceš, aby to vyskakovalo pořád, tento řádek dočasně zakomentuj:
                 sessionStorage.setItem('guru_exit_shown', 'true');
             }
         };
@@ -36,14 +37,14 @@ export default function ExitIntentPopup() {
 
     if (!isVisible) return null;
 
-    // Odkazy do affiliate
+    // 🔥 SYNCED AFFILIATE LINKS (Heureka + Amazon)
     const cpuLink = isEn 
         ? "https://www.amazon.com/s?k=computer+processor+cpu&tag=thehardware07-20" 
-        : "https://www.heureka.cz/?h%5Bfraze%5D=procesor#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=ExitPopup";
+        : "https://procesory.heureka.cz/#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=ExitPopup";
         
     const gpuLink = isEn 
         ? "https://www.amazon.com/s?k=graphics+card+gpu&tag=thehardware07-20" 
-        : "https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=ExitPopup";
+        : "https://graficke-karty.heureka.cz/#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=ExitPopup";
 
     return (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 99999, display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(5px)' }}>
@@ -52,7 +53,6 @@ export default function ExitIntentPopup() {
                 <button 
                     onClick={() => setIsVisible(false)}
                     style={{ position: 'absolute', top: '15px', right: '15px', background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer', padding: '5px' }}
-                    className="hover-scale"
                 >
                     <X size={24} />
                 </button>
@@ -72,12 +72,32 @@ export default function ExitIntentPopup() {
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                    <a href={gpuLink} target="_blank" rel="nofollow sponsored" onClick={() => setIsVisible(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: 'linear-gradient(90deg, #9333ea 0%, #06b6d4 100%)', color: '#fff', padding: '16px', borderRadius: '16px', fontWeight: '950', textTransform: 'uppercase', textDecoration: 'none', transition: '0.3s', boxShadow: '0 10px 20px rgba(168, 85, 247, 0.3)' }} className="hover-scale">
+                    {/* 🔥 GPU LINK S PŘIDANOU REVENUE AKTIVACÍ 🔥 */}
+                    <a 
+                        href={gpuLink} 
+                        target="_blank" 
+                        rel="nofollow sponsored" 
+                        onClick={() => setIsVisible(false)} 
+                        className="heureka-hn-link hover-scale"
+                        data-trixam-positionid="276026"
+                        data-trixam-codetype="link"
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: 'linear-gradient(90deg, #9333ea 0%, #06b6d4 100%)', color: '#fff', padding: '16px', borderRadius: '16px', fontWeight: '950', textTransform: 'uppercase', textDecoration: 'none', transition: '0.3s', boxShadow: '0 10px 20px rgba(168, 85, 247, 0.3)' }}
+                    >
                         <Zap size={20} />
                         {isEn ? "Show Graphics Card Deals" : "Ukázat slevy grafických karet"}
                     </a>
                     
-                    <a href={cpuLink} target="_blank" rel="nofollow sponsored" onClick={() => setIsVisible(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '16px', borderRadius: '16px', fontWeight: '950', textTransform: 'uppercase', textDecoration: 'none', transition: '0.3s' }} className="hover-scale">
+                    {/* 🔥 CPU LINK S PŘIDANOU REVENUE AKTIVACÍ 🔥 */}
+                    <a 
+                        href={cpuLink} 
+                        target="_blank" 
+                        rel="nofollow sponsored" 
+                        onClick={() => setIsVisible(false)} 
+                        className="heureka-hn-link hover-scale"
+                        data-trixam-positionid="276027"
+                        data-trixam-codetype="link"
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '16px', borderRadius: '16px', fontWeight: '950', textTransform: 'uppercase', textDecoration: 'none', transition: '0.3s' }}
+                    >
                         <ShoppingCart size={20} color="#a855f7" />
                         {isEn ? "Show Processor Deals" : "Ukázat slevy procesorů"}
                     </a>
@@ -93,6 +113,7 @@ export default function ExitIntentPopup() {
                     from { transform: scale(0.9); opacity: 0; }
                     to { transform: scale(1); opacity: 1; }
                 }
+                .hover-scale:hover { transform: scale(1.02); filter: brightness(1.1); }
             `}} />
         </div>
     );
