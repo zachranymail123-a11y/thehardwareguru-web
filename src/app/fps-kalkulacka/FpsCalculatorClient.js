@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Check, Award, Twitter, Sparkles, ShoppingCart } from 'lucide-react';
+import { Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Check, Award, Twitter, Sparkles, ShoppingCart, AlertTriangle } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons'; 
@@ -9,7 +9,7 @@ import ShareFpsButton from '../../components/ShareFpsButton';
 
 /**
  * GURU FPS ENGINE CLIENT - V11.7 (AFFILIATE BOMB UPDATE)
- * 🚀 CÍL: Dynamické affiliate linky (Smarty + Heureka) pro aktuálně vybrané CPU a GPU ihned po výpočtu.
+ * 🚀 CÍL: Dynamické affiliate linky (Smarty + Heureka) pro aktuálně vybrané CPU a GPU ihned po výpočtu. Přidán cross-link na Bottleneck.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -61,7 +61,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         if (cpuName.includes('9800x3d')) ipcBase = 135;
         else if (cpuName.includes('7800x3d')) ipcBase = 115;
 
-        // Tady se spoléhá na performance_index z props!
         const cpuEffective = (ipcBase * (1 - gData.thread_scaling) + (Number(cpu.performance_index) || 100) * gData.thread_scaling) * archEfficiency;
         
         const resMultiplier = { '1080p': 1.0, '1440p': 1.5, '2160p': 2.4 }[selectedRes] || 1.5;
@@ -145,9 +144,9 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 </button>
             </div>
 
-            {/* 🔥 TLAČÍTKO PRO SDÍLENÍ HNED POD VÝPOČTEM 🔥 */}
+            {/* 🔥 TLAČÍTKA PRO SDÍLENÍ A CROSS-LINK HNED POD VÝPOČTEM 🔥 */}
             {result && !isCalculating && (
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', width: '100%', boxSizing: 'border-box' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', marginTop: '20px', width: '100%', boxSizing: 'border-box' }}>
                     <ShareFpsButton 
                         gameName={selectedGame?.name}
                         cpu={selectedCpu?.name} 
@@ -156,6 +155,12 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                         avgFps={result.fps}
                         isEn={isEn} 
                     />
+                    <a 
+                        href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} 
+                        className="bottleneck-cta-btn hover-scale"
+                    >
+                        <AlertTriangle size={20} /> {isEn ? 'TEST PC BOTTLENECK' : 'ZJISTIT BOTTLENECK SESTAVY'}
+                    </a>
                 </div>
             )}
 
@@ -237,6 +242,10 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 .input-field label { display: block; margin-bottom: 10px; font-size: 11px; font-weight: 950; text-transform: uppercase; color: #9ca3af; letter-spacing: 1px; }
                 .calc-btn { background: #a855f7; color: #fff; border: none; padding: 18px 40px; font-size: 16px; font-weight: 950; border-radius: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px; transition: 0.3s; }
                 .calc-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4); }
+
+                /* 🔥 CSS PRO CROSS-LINK NA BOTTLENECK 🔥 */
+                .bottleneck-cta-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); padding: 14px 28px; border-radius: 16px; font-weight: 950; font-size: 15px; text-transform: uppercase; text-decoration: none; transition: all 0.3s ease; width: 100%; max-width: 350px; box-sizing: border-box; }
+                .bottleneck-cta-btn:hover { background: rgba(168, 85, 247, 0.2); box-shadow: 0 0 20px rgba(168, 85, 247, 0.2); transform: translateY(-2px); }
 
                 /* 🔥 CSS PRO AFFILIATE GRID A TLAČÍTKA 🔥 */
                 .affiliate-cta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; padding: 25px; background: rgba(0,0,0,0.4); border-radius: 20px; border: 1px solid rgba(168, 85, 247, 0.2); }
