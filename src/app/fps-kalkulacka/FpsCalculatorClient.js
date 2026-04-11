@@ -8,8 +8,8 @@ import HeurekaButtons from '../../components/HeurekaButtons';
 import ShareFpsButton from '../../components/ShareFpsButton';
 
 /**
- * GURU FPS ENGINE CLIENT - V11.7 (AFFILIATE BOMB UPDATE)
- * 🚀 CÍL: Dynamické affiliate linky (Smarty + Heureka) pro aktuálně vybrané CPU a GPU ihned po výpočtu. Přidán cross-link na Bottleneck.
+ * GURU FPS ENGINE CLIENT - V11.8 (AMAZON AFFILIATE UPDATE)
+ * 🚀 CÍL: Přidání Amazon tlačítka (tag: thehardware07-20) pro EN verzi, skrytí CZ tlačítek.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -102,6 +102,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
     const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+    const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
 
     return (
         <div className="guru-calc-box">
@@ -169,35 +170,60 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                     <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px' }}>{isEn ? 'EXPECTED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
                     <div className="fps-value" style={{ fontSize: '6rem', fontWeight: '950', color: '#fff', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)', margin: '15px 0' }}>{result.fps} FPS</div>
 
-                    {/* 🔥 GURU AFFILIATE BOMB 🔥 */}
-                    <div className="affiliate-cta-grid">
-                        <div className="affiliate-col">
-                            <div className="affiliate-col-title">
-                                <Monitor size={16} /> {isEn ? 'BUY SELECTED GPU' : 'KOUPIT ZVOLENOU GRAFIKU'}
+                    {/* 🔥 PODMÍNKA PRO TLAČÍTKA AMAZON VS SMARTY/HEUREKA 🔥 */}
+                    {isEn ? (
+                        <div className="affiliate-cta-grid">
+                            <div className="affiliate-col">
+                                <div className="affiliate-col-title">
+                                    <Monitor size={16} /> CHECK GPU DEALS
+                                </div>
+                                <div className="affiliate-btn-wrap">
+                                    <a href={getAmazonLink(cleanGpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn">
+                                        <ShoppingCart size={16} /> Check Price on Amazon
+                                    </a>
+                                </div>
                             </div>
-                            <div className="affiliate-btn-wrap">
-                                <a href={getSmartyLink(cleanGpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
-                                    <ShoppingCart size={16} /> Smarty.cz
-                                </a>
-                                <a href={getHeurekaLink(cleanGpuName)} data-trixam-positionid="276026" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
-                                    <ShoppingCart size={16} /> Heureka.cz
-                                </a>
-                            </div>
-                        </div>
-                        <div className="affiliate-col">
-                            <div className="affiliate-col-title">
-                                <Cpu size={16} /> {isEn ? 'BUY SELECTED CPU' : 'KOUPIT ZVOLENÝ PROCESOR'}
-                            </div>
-                            <div className="affiliate-btn-wrap">
-                                <a href={getSmartyLink(cleanCpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
-                                    <ShoppingCart size={16} /> Smarty.cz
-                                </a>
-                                <a href={getHeurekaLink(cleanCpuName)} data-trixam-positionid="276027" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
-                                    <ShoppingCart size={16} /> Heureka.cz
-                                </a>
+                            <div className="affiliate-col">
+                                <div className="affiliate-col-title">
+                                    <Cpu size={16} /> CHECK CPU DEALS
+                                </div>
+                                <div className="affiliate-btn-wrap">
+                                    <a href={getAmazonLink(cleanCpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn">
+                                        <ShoppingCart size={16} /> Check Price on Amazon
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="affiliate-cta-grid">
+                            <div className="affiliate-col">
+                                <div className="affiliate-col-title">
+                                    <Monitor size={16} /> KOUPIT ZVOLENOU GRAFIKU
+                                </div>
+                                <div className="affiliate-btn-wrap">
+                                    <a href={getSmartyLink(cleanGpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
+                                        <ShoppingCart size={16} /> Smarty.cz
+                                    </a>
+                                    <a href={getHeurekaLink(cleanGpuName)} data-trixam-positionid="276026" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
+                                        <ShoppingCart size={16} /> Heureka.cz
+                                    </a>
+                                </div>
+                            </div>
+                            <div className="affiliate-col">
+                                <div className="affiliate-col-title">
+                                    <Cpu size={16} /> KOUPIT ZVOLENÝ PROCESOR
+                                </div>
+                                <div className="affiliate-btn-wrap">
+                                    <a href={getSmartyLink(cleanCpuName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
+                                        <ShoppingCart size={16} /> Smarty.cz
+                                    </a>
+                                    <a href={getHeurekaLink(cleanCpuName)} data-trixam-positionid="276027" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
+                                        <ShoppingCart size={16} /> Heureka.cz
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div style={{ margin: '30px 0', display: 'flex', justifyContent: 'center' }}>
                         <div className="ad-desktop-wrapper">
@@ -208,9 +234,12 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
-                        <HeurekaButtons isEn={isEn} />
-                    </div>
+                    {/* 🔥 HEUREKA WIDGET SCHOVÁN PRO EN VERZI 🔥 */}
+                    {!isEn && (
+                        <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
+                            <HeurekaButtons isEn={false} />
+                        </div>
+                    )}
 
                     <div className="viral-flex-card">
                         <div className="award-icon"><Award size={32} color="#fff" /></div>
@@ -257,10 +286,16 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                 @keyframes pulse-heureka { 0% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(0, 120, 212, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0); } }
                 
                 .guru-buy-winner-btn { flex: 1; display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 12px 15px; border-radius: 12px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 0.5px; }
+                
                 .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
                 .smarty-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(234, 179, 8, 0.5); }
+                
                 .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
                 .heureka-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
+
+                /* 🔥 NOVÉ: CSS PRO AMAZON TLAČÍTKO 🔥 */
+                .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
+                .amazon-btn:hover { transform: translateY(-3px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(245, 158, 11, 0.5); }
 
                 .viral-flex-card { display: flex; align-items: center; gap: 20px; max-width: 520px; margin: 40px auto 0; padding: 25px; background: rgba(10, 11, 13, 0.8); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 20px; text-align: left; }
                 .premium-share-btn { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; border: none; color: #fff; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; transition: 0.2s; }
