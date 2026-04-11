@@ -168,10 +168,12 @@ export default function BottleneckClient({
 
     // 🔥 AFFILIATE LINK GENERATORS 🔥
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
+    
+    // 🔥 DEFINITIVNÍ FIX DLE TVÝCH SCREENŮ 🔥
     const getHeurekaLink = (name, category) => {
-        const subdomain = category === 'cpu' ? 'procesory' : 'graficke-karty';
-        return `https://${subdomain}.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=BottleneckCalc`;
+        return `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=BottleneckCalc`;
     };
+    
     const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
 
     return (
@@ -278,7 +280,7 @@ export default function BottleneckClient({
                                 <p>{a.boundType === 'CPU_BOUND' ? (isEn ? 'The GPU is waiting for the processor. You need a stronger CPU for balanced performance.' : 'Grafika čeká na procesor. Potřebuješ silnější CPU pro vyrovnaný výkon.') : (isEn ? 'Your rig is limited by the graphics card. Lowering details will improve FPS.' : 'Sestava je limitována grafickou kartou. Snížení detailů pomůže FPS.')}</p>
                             </div>
 
-                            {/* 🔥 GURU AFFILIATE REVENUE FIX 🔥 */}
+                            {/* 🔥 PODMÍNKA PRO TLAČÍTKA AMAZON VS SMARTY/HEUREKA 🔥 */}
                             {isEn ? (
                                 <div className="affiliate-cta-grid" style={{ marginTop: '30px' }}>
                                     <div className="affiliate-col">
@@ -351,6 +353,7 @@ export default function BottleneckClient({
                                 <a href={gta6DynamicLink} className="gta-cta"><Sparkles size={20} /> {isEn ? 'WILL IT RUN GTA VI?' : 'ROZJEDE TO GTA VI?'}</a>
                             ) : null}
 
+                            {/* 🔥 HEUREKA WIDGET DOLE SCHOVÁN PRO EN VERZI 🔥 */}
                             {!isEn && (
                                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px', width: '100%', boxSizing: 'border-box' }}>
                                     <HeurekaButtons isEn={false} />
