@@ -10,8 +10,8 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**
- * GURU MOBILE STICKY BUTTON V2.8 - DEFINITIVNÍ HEUREKA FIX
- * 🚀 CÍL: Oprava na www.heureka.cz s parametrem h[fraze] (Fix 404).
+ * GURU MOBILE STICKY BUTTON V2.9 - DEFINITIVE FIX (CATEGORY LINK)
+ * 🚀 CÍL: Návrat k přímému odkazu na kategorii (bez search parametru) dle schváleného vzoru.
  */
 
 export default function MobileStickyButton() {
@@ -38,10 +38,10 @@ export default function MobileStickyButton() {
         supabase.from('affiliate_clicks_log').insert([{ platform, category: 'sticky_mobile' }]).then();
     };
 
-    // 🔥 DEFINITIVNÍ FIX: www.heureka.cz + ?h[fraze] parametr 🔥
+    // 🔥 DEFINITIVNÍ FIX: Správný odkaz na kategorii bez vyhledávání (jako v Exit Popup) 🔥
     const link = isEn 
         ? "https://www.amazon.com/s?k=pc+components&tag=thehardware07-20" 
-        : "https://www.heureka.cz/?h%5Bfraze%5D=pc+komponenty#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=StickyMobile";
+        : "https://komponenty.heureka.cz/#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=StickyMobile";
 
     const text = isEn ? "SEE TODAY'S DEALS" : "ZJISTIT DNEŠNÍ SLEVY";
 
