@@ -11,8 +11,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU DUELS ENGINE - V8.1 (HEUREKA REVENUE FIX)
- * 🚀 CÍL: Fix Heureka linků na finální formát + Amazon pro EN.
+ * GURU GPU DUELS ENGINE - V8.2 (DEFINITIVE HEUREKA 404 FIX)
+ * 🚀 CÍL: Fix Heureka linků na www.heureka.cz s parametrem h[fraze] + Amazon pro EN.
  */
 
 export const runtime = "nodejs";
@@ -142,7 +142,10 @@ export default async function GpuVsDetailPage(props) {
   const encodedQuery = encodeURIComponent(searchName);
   
   const smartyAffiliateLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodedQuery}`)}`;
-  const heurekaAffiliateLink = `https://graficke-karty.heureka.cz/?h%5Bfraze%5D=${encodedQuery}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=GpuVsDetail`;
+  
+  // 🔥 DEFINITIVNÍ FIX: Pouze www.heureka.cz pro funkční vyhledávání bez 404 🔥
+  const heurekaAffiliateLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodedQuery}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=GpuVsDetail`;
+  
   const amazonAffiliateLink = `https://www.amazon.com/s?k=${encodedQuery}&tag=thehardware07-20`;
 
   return (
@@ -311,7 +314,7 @@ export default async function GpuVsDetailPage(props) {
         .table-wrapper { background: rgba(15, 17, 21, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
         .spec-row-style { display: flex; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .table-label { width: 180px; text-align: center; font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; }
-        .guru-buy-winner-btn { display: inline-flex; align-items: center; gap: 12px; padding: 18px 36px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 15px; text-transform: uppercase; transition: 0.3s; color: #000; }
+        .guru-buy-winner-btn { display: inline-flex; align-items: center; gap: 12px; padding: 18px 36px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 15px; text-transform: uppercase; transition: transform 0.3s ease; letter-spacing: 1px; color: #000; }
         .smarty-btn { background: #facc15; border: 2px solid #fef08a; }
         .heureka-btn { background: #3b82f6; color: #fff; border: 2px solid #60a5fa; }
         .amazon-btn { background: #f59e0b; border: 2px solid #fbbf24; }
