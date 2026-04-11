@@ -1,5 +1,5 @@
 import React, { cache } from 'react';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { 
  ChevronLeft, Zap, ArrowRight, Activity, ArrowUpCircle, LayoutList, 
  BarChart3, Gamepad2, Coins, CheckCircle2, Swords, Flame, Heart, 
@@ -10,8 +10,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU DUELS ENGINE - V7.2 (ULTIMATE CLEAN SLUG REDIRECT)
- * 🚀 CÍL: Tvrdé přesměrování z 'en-' slugů na čisté URL adresy, oprava kanonických linků.
+ * GURU GPU DUELS ENGINE - V8.0 (FINAL AMAZON AFFILIATE)
+ * 🚀 CÍL: Původní funkční kód s přidaným Amazon tagem (thehardware07-20) pro EN verzi.
  */
 
 export const runtime = "nodejs";
@@ -31,8 +31,7 @@ export async function generateStaticParams() {
       });
       if (!res.ok) return [];
       const duels = await res.json();
-      // Generujeme rovnou vyčištěné slugy
-      return duels.map((duel) => ({ slug: duel.slug.replace(/^en-/, '') }));
+      return duels.map((duel) => ({ slug: duel.slug }));
   } catch (e) { return []; }
 }
 
@@ -101,23 +100,16 @@ export async function generateMetadata(props) {
   
   if (!duel || !duel.gpuA) return { title: 'GPU Comparison | Hardware Guru' };
   
-  const cleanDuelSlug = duel.slug.replace(/^en-/, '');
-  const canonicalUrl = isEn ? `${baseUrl}/en/gpuvs/${cleanDuelSlug}` : `${baseUrl}/gpuvs/${cleanDuelSlug}`;
+  const canonicalUrl = isEn ? `${baseUrl}/en/gpuvs/${duel.slug}` : `${baseUrl}/gpuvs/${duel.slug}`;
   return { 
     title: isEn ? `${duel.gpuA.name} vs ${duel.gpuB.name} – Gaming Benchmarks` : `Srovnání: ${duel.gpuA.name} vs ${duel.gpuB.name} – Výkon a Testy`,
-    alternates: { canonical: canonicalUrl, languages: { 'en': `${baseUrl}/en/gpuvs/${cleanDuelSlug}`, 'cs': `${baseUrl}/gpuvs/${cleanDuelSlug}` } }
+    alternates: { canonical: canonicalUrl, languages: { 'en': `${baseUrl}/en/gpuvs/${duel.slug}`, 'cs': `${baseUrl}/gpuvs/${duel.slug}` } }
   };
 }
 
 export default async function GpuVsDetailPage(props) {
   const { slug } = await props.params; 
   const isEn = props.isEn === true || slug?.startsWith('en-');
-  
-  // 🔥 TVRDÉ PŘESMĚROVÁNÍ PRO UŽIVATELE S UGLY ODKAZEM 🔥
-  if (slug.startsWith('en-')) {
-      redirect(`/${isEn ? 'en/' : ''}gpuvs/${slug.replace(/^en-/, '')}`);
-  }
-
   const cleanSlug = slug.replace(/^en-/, '');
   const duel = await getDuelData(cleanSlug);
   
@@ -159,6 +151,9 @@ export default async function GpuVsDetailPage(props) {
   const smartyUrl = `https://www.smarty.cz/Vyhledavani?query=${encodedQuery}`;
   const smartyAffiliateLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(smartyUrl)}`;
   const heurekaAffiliateLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodedQuery}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+  
+  // 🔥 AMAZON ODKAZ PRO ANGLICKOU VERZI (SPRÁVNÝ STORE ID) 🔥
+  const amazonAffiliateLink = `https://www.amazon.com/s?k=${encodedQuery}&tag=thehardware07-20`;
 
   return (
     <div className="guru-duel-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -191,22 +186,30 @@ export default async function GpuVsDetailPage(props) {
               {isEn ? 'PERFORMANCE WINNER:' : 'VÍTĚZ VÝKONU:'} <strong>{normalizeName(winner.name)}</strong> (+{finalPerfDiff}%)
           </div>
 
-          <div style={{ marginTop: '30px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
-              <a href={smartyAffiliateLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
-                  <ShoppingCart size={20} /> {isEn ? 'BUY ON SMARTY.CZ' : 'KOUPIT NA SMARTY.CZ'}
-              </a>
-              <a 
-                href={heurekaAffiliateLink} 
-                data-trixam-positionid="276026" 
-                data-trixam-codetype="link" 
-                target="_blank" 
-                rel="nofollow sponsored" 
-                className="guru-buy-winner-btn heureka-btn heureka-hn-link"
-              >
-                  <ShoppingCart size={20} /> {isEn ? 'BUY ON HEUREKA.CZ' : 'KOUPIT NA HEUREKA.CZ'}
-              </a>
-          </div>
-
+          {/* 🔥 PODMÍNKA PRO TLAČÍTKA AMAZON VS SMARTY/HEUREKA 🔥 */}
+          {isEn ? (
+              <div style={{ marginTop: '30px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
+                  <a href={amazonAffiliateLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn">
+                      <ShoppingCart size={20} /> CHECK PRICE ON AMAZON
+                  </a>
+              </div>
+          ) : (
+              <div style={{ marginTop: '30px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
+                  <a href={smartyAffiliateLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
+                      <ShoppingCart size={20} /> KOUPIT NA SMARTY.CZ
+                  </a>
+                  <a 
+                    href={heurekaAffiliateLink} 
+                    data-trixam-positionid="276026" 
+                    data-trixam-codetype="link" 
+                    target="_blank" 
+                    rel="nofollow sponsored" 
+                    className="guru-buy-winner-btn heureka-btn heureka-hn-link"
+                  >
+                      <ShoppingCart size={20} /> KOUPIT NA HEUREKA.CZ
+                  </a>
+              </div>
+          )}
         </header>
 
         <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '50px' }}>
@@ -280,9 +283,12 @@ export default async function GpuVsDetailPage(props) {
             </div>
         </section>
 
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
-            <HeurekaButtons isEn={isEn} manualSearch={winner.name} positionId="276026" />
-        </div>
+        {/* 🔥 HEUREKA TLAČÍTKA DOLE SE PRO EN VERZI SCHOVAJÍ 🔥 */}
+        {!isEn && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+                <HeurekaButtons isEn={false} manualSearch={winner.name} positionId="276026" />
+            </div>
+        )}
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: '#ff0055' }}><LayoutList size={28} /> {isEn ? 'TECHNICAL SPECS' : 'GURU SPECIFIKACE'}</h2>
@@ -417,10 +423,16 @@ export default async function GpuVsDetailPage(props) {
             100% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0); }
         }
         .guru-buy-winner-btn { display: inline-flex; align-items: center; gap: 12px; padding: 18px 36px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 15px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 1px; }
+        
         .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
         .smarty-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(234, 179, 8, 0.5); }
+        
         .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
         .heureka-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
+        
+        /* 🔥 NOVÉ: CSS PRO AMAZON TLAČÍTKO 🔥 */
+        .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
+        .amazon-btn:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 15px 30px rgba(245, 158, 11, 0.5); }
 
         /* 🔥 CSS PRO HOVER EFEKTY NOVÝCH NÁSTROJŮ 🔥 */
         .hover-scale-purple:hover { background: rgba(168, 85, 247, 0.2) !important; box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); transform: translateY(-2px); }
