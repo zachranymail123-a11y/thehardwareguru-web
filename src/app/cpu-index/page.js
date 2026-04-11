@@ -10,14 +10,15 @@ import {
   Flame, 
   Info, 
   Calendar,
-  Gamepad2
+  Gamepad2,
+  AlertTriangle
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU CPU ENGINE - KATALOG PROCESORŮ V1.10 (HEUREKA CTA UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka konverze.
+ * GURU CPU ENGINE - KATALOG PROCESORŮ V1.11 (HEUREKA CTA + TOOLS FIX)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka konverze + Povinné Tools.
  */
 
 export const dynamic = 'force-dynamic';
@@ -127,7 +128,10 @@ export default async function CpuIndexPage(props) {
 
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginTop: '30px' }}>
             <a href={isEn ? "/en/cpuvs/ranking" : "/cpuvs/ranking"} className="quick-link-pill" style={{ borderColor: '#f59e0b', color: '#f59e0b' }}><TrendingUp size={14} /> {isEn ? 'TIER LIST' : 'ŽEBŘÍČEK'}</a>
-            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="quick-link-pill" style={{ borderColor: '#a855f7', color: '#a855f7' }}><Gamepad2 size={14} /> {isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</a>
+            
+            {/* 🔥 POVINNÉ DOPLNĚNÍ TOOLS ODKAZŮ DLE ROZKAZU 🔥 */}
+            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="quick-link-pill" style={{ borderColor: '#06b6d4', color: '#06b6d4' }}><Gamepad2 size={14} /> {isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</a>
+            <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} className="quick-link-pill" style={{ borderColor: '#a855f7', color: '#a855f7' }}><AlertTriangle size={14} /> {isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</a>
           </div>
         </header>
 
@@ -211,6 +215,7 @@ export default async function CpuIndexPage(props) {
         .card-actions { display: flex; justify-content: space-between; }
         .action-btn { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: bold; color: #6b7280; text-transform: uppercase; }
         .quick-link-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 50px; font-weight: 950; font-size: 11px; text-transform: uppercase; text-decoration: none; border: 1px solid; background: rgba(255,255,255,0.02); transition: 0.3s; }
+        .quick-link-pill:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
         .silo-banner-card { flex: 1; min-width: 300px; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; align-items: center; gap: 20px; text-decoration: none; transition: 0.3s; border-left-width: 5px; }
         .related-article-card { display: flex; flex-direction: column; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; overflow: hidden; text-decoration: none; transition: 0.3s; }
         .related-article-img-wrapper { height: 140px; overflow: hidden; }
