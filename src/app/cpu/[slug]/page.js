@@ -1,14 +1,15 @@
 import React from 'react';
+import { headers } from 'next/headers';
 import { 
-  ChevronLeft, Cpu, Database, Gamepad2, ArrowRight, ExternalLink, 
-  Activity, CheckCircle2, Swords, LayoutList, ShoppingCart, Flame, Heart, Zap
+ ChevronLeft, Cpu, Database, Gamepad2, ArrowRight, ExternalLink, 
+ Activity, CheckCircle2, Swords, LayoutList, ShoppingCart, Flame, Heart, Zap
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU CPU ENGINE - DETAIL PROCESORU V2.9 (AFFILIATE BOMB UPDATE)
- * 🚀 CÍL: Přidání pulzujících tlačítek (Smarty + Heureka) pro nákup aktuálního procesoru hned nahoře.
+ * GURU CPU ENGINE - DETAIL PROCESORU V3.0 (EN DETECTION + AMAZON)
+ * 🚀 CÍL: Spolehlivá detekce angličtiny z URL + Amazon tlačítka (thehardware07-20).
  */
 
 export const runtime = "nodejs";
@@ -21,16 +22,15 @@ const baseUrl = "https://thehardwareguru.cz";
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 const slugify = (text) => text ? text.toLowerCase().replace(/processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
-// Pomocná funkce pro vyhledávání na e-shopech (odstraní i generaci apod.)
 const getCleanSearchName = (name = '') => name.replace(/AMD |Intel |Core /gi, '').trim();
 
 const findCpuBySlug = async (rawSlugPart) => {
   if (!supabaseUrl || !rawSlugPart || rawSlugPart === 'undefined') return null;
   const cpuSlug = rawSlugPart.replace(/^en-/, '');
-  const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+  const headersObj = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
 
   try {
-      const res1 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&slug=eq.${cpuSlug}&limit=1`, { headers, cache: 'force-cache' });
+      const res1 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&slug=eq.${cpuSlug}&limit=1`, { headers: headersObj, cache: 'force-cache' });
       let cpu = null;
       if (res1.ok) { 
           const data1 = await res1.json(); 
@@ -38,29 +38,15 @@ const findCpuBySlug = async (rawSlugPart) => {
       }
       
       if (!cpu) {
-        const res2 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&slug=ilike.*${cpuSlug}*&limit=1`, { headers, cache: 'force-cache' });
+        const res2 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&slug=ilike.*${cpuSlug}*&limit=1`, { headers: headersObj, cache: 'force-cache' });
         if (res2.ok) { 
             const data2 = await res2.json(); 
             if (data2?.length) cpu = data2[0]; 
         }
       }
 
-      if (!cpu) {
-          const filter = /amd|intel|ryzen|core|ultra|processor|cpu/gi;
-          const clean = cpuSlug.replace(/-/g, ' ').replace(filter, '').trim();
-          const tokens = clean.split(/\s+/).filter(t => t.length > 0);
-          if (tokens.length > 0) {
-              const cond = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
-              const r3 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*&and=(${cond})&limit=1`, { headers, cache: 'force-cache' });
-              if (r3.ok) { 
-                  const d3 = await r3.json(); 
-                  if (d3?.length) cpu = d3[0]; 
-              }
-          }
-      }
-
       if (cpu) {
-          const fpsRes = await fetch(`${supabaseUrl}/rest/v1/cpu_game_fps?select=*&cpu_id=eq.${cpu.id}&limit=1`, { headers, cache: 'force-cache' });
+          const fpsRes = await fetch(`${supabaseUrl}/rest/v1/cpu_game_fps?select=*&cpu_id=eq.${cpu.id}&limit=1`, { headers: headersObj, cache: 'force-cache' });
           if (fpsRes.ok) {
               const fpsData = await fpsRes.json();
               cpu.cpu_game_fps = fpsData?.[0] || {};
@@ -73,13 +59,13 @@ const findCpuBySlug = async (rawSlugPart) => {
 
 const getInternalLinksData = async (cpuId) => {
   if (!supabaseUrl || !cpuId) return { similarCpus: [], recommendedGpus: [] };
-  const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+  const headersObj = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
   let similarCpus = [];
   let recommendedGpus = [];
   try {
-      const cpuRes = await fetch(`${supabaseUrl}/rest/v1/cpus?select=name,slug&id=neq.${cpuId}&order=performance_index.desc&limit=6`, { headers, cache: 'force-cache' });
+      const cpuRes = await fetch(`${supabaseUrl}/rest/v1/cpus?select=name,slug&id=neq.${cpuId}&order=performance_index.desc&limit=6`, { headers: headersObj, cache: 'force-cache' });
       if (cpuRes.ok) similarCpus = await cpuRes.json();
-      const gpuRes = await fetch(`${supabaseUrl}/rest/v1/gpus?select=name,slug&order=performance_index.desc&limit=6`, { headers, cache: 'force-cache' });
+      const gpuRes = await fetch(`${supabaseUrl}/rest/v1/gpus?select=name,slug&order=performance_index.desc&limit=6`, { headers: headersObj, cache: 'force-cache' });
       if (gpuRes.ok) recommendedGpus = await gpuRes.json();
   } catch(e) {}
   return { similarCpus, recommendedGpus };
@@ -87,24 +73,32 @@ const getInternalLinksData = async (cpuId) => {
 
 export async function generateMetadata({ params }) {
   const { slug: rawSlug } = await params;
-  const isEn = rawSlug.startsWith('en-');
+  const headersList = headers();
+  const referer = headersList.get('referer') || "";
+  const isEn = rawSlug.startsWith('en-') || referer.includes('/en');
+  
   const cpuSlug = rawSlug.replace(/^en-/, '');
   const cpu = await findCpuBySlug(cpuSlug);
   if (!cpu) return { title: '404 | Hardware Guru' };
   const safeSlug = cpu.slug || slugify(cpu.name);
   return {
     title: isEn ? `${cpu.name} Specs & Gaming Performance | The Hardware Guru` : `${cpu.name} Specifikace a Herní výkon | The Hardware Guru`,
-    alternates: { canonical: `${baseUrl}/cpu/${safeSlug}`, languages: { 'en': `${baseUrl}/en/cpu/${safeSlug}`, 'cs': `${baseUrl}/cpu/${safeSlug}` } }
+    alternates: { canonical: isEn ? `${baseUrl}/en/cpu/${safeSlug}` : `${baseUrl}/cpu/${safeSlug}`, languages: { 'en': `${baseUrl}/en/cpu/${safeSlug}`, 'cs': `${baseUrl}/cpu/${safeSlug}` } }
   };
 }
 
 export default async function CpuDetailPage({ params }) {
   const { slug: rawSlug } = await params;
-  const isEn = rawSlug.startsWith('en-');
+  
+  // 🔥 GURU FIX: Detekce EN z URL hlaviček
+  const headersList = headers();
+  const referer = headersList.get('referer') || "";
+  const isEn = rawSlug.startsWith('en-') || referer.includes('/en');
+
   const cpuSlug = rawSlug.replace(/^en-/, '');
   const cpu = await findCpuBySlug(cpuSlug);
 
-  if (!cpu) return <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#fff', textAlign: 'center', padding: '100px' }}><h1>CPU NENALEZENO</h1></div>;
+  if (!cpu) return <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#fff', textAlign: 'center', padding: '100px' }}><h1>CPU NOT FOUND</h1></div>;
 
   const { similarCpus, recommendedGpus } = await getInternalLinksData(cpu.id);
   const vendorColor = (cpu.vendor || '').toUpperCase() === 'INTEL' ? '#0071c5' : (cpu.vendor === 'AMD' ? '#ed1c24' : '#f59e0b');
@@ -112,10 +106,11 @@ export default async function CpuDetailPage({ params }) {
   const fpsData = cpu.cpu_game_fps || {};
   const cinebenchScore = fpsData?.cinebench_r23_multi || 'N/A';
 
-  // 🔥 GENERÁTOR AFFILIATE LINKŮ 🔥
+  // 🔥 AFFILIATE LINKY 🔥
   const searchName = getCleanSearchName(cpu.name);
   const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
   const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+  const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
 
   return (
     <div className="guru-page-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -126,7 +121,6 @@ export default async function CpuDetailPage({ params }) {
           </a>
         </div>
 
-        {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
         <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
             <div className="ad-desktop-wrapper">
                 <SeznamAd zoneId={408654} width={970} height={210} />
@@ -156,12 +150,20 @@ export default async function CpuDetailPage({ params }) {
                     <ShoppingCart size={16} /> {isEn ? `BUY ${normalizeName(cpu.name)}` : `KOUPIT ${normalizeName(cpu.name)}`}
                 </div>
                 <div className="affiliate-btn-wrap">
-                    <a href={getSmartyLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
-                        <ShoppingCart size={16} /> Smarty.cz
-                    </a>
-                    <a href={getHeurekaLink(searchName)} data-trixam-positionid="276027" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
-                        <ShoppingCart size={16} /> Heureka.cz
-                    </a>
+                    {isEn ? (
+                        <a href={getAmazonLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn">
+                            <ShoppingCart size={16} /> Check Price on Amazon
+                        </a>
+                    ) : (
+                        <>
+                            <a href={getSmartyLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
+                                <ShoppingCart size={16} /> Smarty.cz
+                            </a>
+                            <a href={getHeurekaLink(searchName)} data-trixam-positionid="276027" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
+                                <ShoppingCart size={16} /> Heureka.cz
+                            </a>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
@@ -177,19 +179,20 @@ export default async function CpuDetailPage({ params }) {
           <div className="deep-links-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
               <a href={isEn ? `/en/cpu-performance/${safeSlug}` : `/cpu-performance/${safeSlug}`} className="deep-link-card">
                   <Activity size={32} color="#f59e0b" />
-                  <div><h3>{isEn ? 'Performance & Specs' : 'Výkon a Parametry'}</h3><p>Full technical specs and benchmarks.</p></div>
+                  <div><h3>{isEn ? 'Performance & Specs' : 'Výkon a Parametry'}</h3><p>{isEn ? 'Full technical specs and benchmarks.' : 'Kompletní technické specifikace a benchmarky.'}</p></div>
               </a>
               <a href={isEn ? `/en/cpuvs` : `/cpuvs`} className="deep-link-card">
                   <Swords size={32} color="#a855f7" />
-                  <div><h3>{isEn ? 'CPU VS Engine' : 'Srovnávač CPU'}</h3><p>Compare against any other processor.</p></div>
+                  <div><h3>{isEn ? 'CPU VS Engine' : 'Srovnávač CPU'}</h3><p>{isEn ? 'Compare against any other processor.' : 'Srovnej s jakýmkoliv jiným procesorem.'}</p></div>
               </a>
           </div>
         </section>
 
-        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (CTA pod rozcestníkem analýzy) 🔥 */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
-            <HeurekaButtons isEn={isEn} />
-        </div>
+        {!isEn && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+                <HeurekaButtons isEn={false} />
+            </div>
+        )}
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: vendorColor }}><LayoutList size={28} /> {isEn ? 'TECHNICAL SPECIFICATIONS' : 'TECHNICKÉ SPECIFIKACE'}</h2>
@@ -203,12 +206,11 @@ export default async function CpuDetailPage({ params }) {
         </section>
 
         <div className="footer-btns" style={{ marginTop: '80px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
-          <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn"><Flame size={20} /> DEALS</a>
-          <a href="/support" className="guru-support-btn"><Heart size={20} /> SUPPORT</a>
+          <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" className="guru-deals-btn"><Flame size={20} /> {isEn ? 'DEALS' : 'SLEVY'}</a>
+          <a href="/support" className="guru-support-btn"><Heart size={20} /> {isEn ? 'SUPPORT' : 'PODPORA'}</a>
         </div>
       </main>
 
-      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
       <div className="sticky-bottom-anchor">
           <div className="ad-desktop-wrapper">
               <SeznamAd zoneId={408654} width={970} height={90} />
@@ -225,7 +227,7 @@ export default async function CpuDetailPage({ params }) {
         .stat-label { color: #6b7280; font-size: 10px; font-weight: 950; letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase; }
         .stat-val { font-size: 32px; font-weight: 950; }
         
-        .table-wrapper { background: rgba(15, 17, 21, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
+        .table-wrapper { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; overflow: hidden; }
         .spec-row-style { display: flex; align-items: center; justify-content: space-between; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .table-label { font-size: 11px; font-weight: 950; color: #6b7280; text-transform: uppercase; }
         .spec-val-box { color: #fff; font-weight: 950; font-size: 18px; }
@@ -237,37 +239,18 @@ export default async function CpuDetailPage({ params }) {
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000; font-weight: 950; border-radius: 16px; text-decoration: none; }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-weight: 950; border-radius: 16px; text-decoration: none; }
 
-        /* 🔥 STICKY BOTTOM ANCHOR CSS */
-        .sticky-bottom-anchor {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(10, 11, 13, 0.98);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 9999;
-            padding: 10px 0;
-            display: flex;
-            justify-content: center;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
-        }
+        .sticky-bottom-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); }
 
-        /* 🔥 CSS PRO AFFILIATE GRID A TLAČÍTKA 🔥 */
         .affiliate-cta-grid { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 35px; background: rgba(0,0,0,0.4); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; box-sizing: border-box; }
         .affiliate-col { display: flex; flex-direction: column; align-items: center; width: 100%; }
         .affiliate-col-title { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 25px; text-align: center; }
         .affiliate-btn-wrap { display: flex; gap: 20px; width: 100%; justify-content: center; flex-wrap: wrap; }
         
-        @keyframes pulse-smarty { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
-        @keyframes pulse-heureka { 0% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(0, 120, 212, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0); } }
-        
         .guru-buy-winner-btn { flex: 1; max-width: 300px; min-width: 200px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 1px; }
-        .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
-        .smarty-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(234, 179, 8, 0.5); }
-        .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
-        .heureka-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(0, 120, 212, 0.5); }
+        .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; }
+        .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; }
+        .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
 
-        /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
 
@@ -276,18 +259,10 @@ export default async function CpuDetailPage({ params }) {
             .ad-desktop-wrapper { display: none !important; }
             .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
             .main-title { font-size: 1.6rem !important; }
-            .section-h2 { font-size: 1.4rem !important; }
-            .stat-card { padding: 20px !important; }
             .stat-val { font-size: 24px !important; }
             .spec-row-style { flex-direction: column; align-items: flex-start; gap: 10px; padding: 15px 20px !important; }
-            .deep-link-card { padding: 20px !important; }
             .deep-links-grid { grid-template-columns: 1fr !important; }
-            .footer-btns { gap: 15px !important; }
             .guru-deals-btn, .guru-support-btn { width: 100% !important; }
-            
-            /* Responzivita Affiliate tlačítek */
-            .affiliate-cta-grid { padding: 20px; }
-            .affiliate-col-title { font-size: 14px; margin-bottom: 20px; }
             .affiliate-btn-wrap { flex-direction: column; gap: 15px; }
             .guru-buy-winner-btn { max-width: 100%; width: 100%; padding: 16px; font-size: 15px; }
         }
