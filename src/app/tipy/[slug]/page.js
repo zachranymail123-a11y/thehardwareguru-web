@@ -11,12 +11,12 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons';
 
 /**
- * GURU TIP ENGINE V6.0 (ULTIMATE EN FIX + TOOLS + AMAZON)
- * 🚀 CÍL: Fix EN obsahu z DB, Amazon affiliate a kalkulačky hned nahoře.
+ * GURU TIP ENGINE V6.5 (THE ATOMIC EN FIX + NO TRIMMING)
+ * 🚀 CÍL: Absolutní zničení češtiny v EN sekci, Amazon a kalkulačky nahoře.
  */
 
 export const runtime = "nodejs";
-export const revalidate = 0; // 🔥 ZABIJE CACHE PRO SPRÁVNOU DETEKCI JAZYKA
+export const revalidate = 0; 
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -29,7 +29,7 @@ const RedditIcon = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-2.05-6.65c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm4.1 0c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm1.64-3.56c-.34 0-.64.16-.84.4-.58-.4-1.36-.67-2.24-.72l.47-2.18 1.5.32c.04.53.48.95 1.02.95.57 0 1.03-.46 1.03-1.03 0-.57-.46-1.03-1.03-1.03-.42 0-.78.26-.94.63l-1.64-.35c-.06-.01-.13 0-.17.05-.05.04-.07.1-.06.16l-.52 2.45c-.93.03-1.74.32-2.35.74-.2-.23-.5-.38-.83-.38-.6 0-1.08.48-1.08 1.08 0 .42.24.78.58.96-.02.12-.03.24-.03.37 0 1.88 2.05 3.4 4.58 3.4s4.58-1.52 4.58-3.4c0-.13-.01-.25-.03-.37.34-.18.58-.54.58-.96 0-.6-.48-1.08-1.08-1.08zm-4.14 3.12c-.93 0-1.66-.4-1.7-.44-.1-.1-.11-.27-.01-.38.1-.1.27-.11.38-.01.02.01.62.33 1.33.33.7 0 1.31-.32 1.33-.33.11-.1.28-.09.38.01.1.11.09.28-.01.38-.04.04-.77.44-1.7.44z" /></svg>
 );
 
-const getLatestTips = async (excludeId) => {
+const getLatestTips = async (excludeId, isEn) => {
     const { data } = await supabase.from('tipy').select('title, title_en, slug, slug_en, created_at, image_url').neq('id', excludeId).order('created_at', { ascending: false }).limit(3);
     return data || [];
 }
@@ -55,14 +55,16 @@ export default async function TipDetail(props) {
   const { slug } = await props.params;
   const h = headers();
   const fullUrl = h.get('x-url') || h.get('referer') || "";
-  const isEn = fullUrl.includes('/en/') || slug?.startsWith('en-');
+  
+  // 🔥 AGRESIVNÍ DETEKCE EN JAZYKA
+  const isEn = fullUrl.includes('/en/tipy/') || slug?.startsWith('en-') || props.isEn === true;
 
   const { data: tip } = await supabase.from('tipy').select('*').or(`slug.eq."${slug}",slug_en.eq."${slug}"`).single();
   if (!tip) notFound();
 
-  const latestTips = await getLatestTips(tip.id);
+  const latestTips = await getLatestTips(tip.id, isEn);
   
-  // 🔥 NEPRŮSTŘELNÝ VÝBĚR JAZYKA OBSAHU 🔥
+  // 🔥 BRUTÁLNÍ VYNUCENÍ EN SLOUPCŮ Z DB
   const title = isEn ? (tip.title_en || tip.title) : tip.title;
   const content = isEn ? (tip.content_en || tip.content) : tip.content;
   const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}tipy/${slug}`;
@@ -80,9 +82,7 @@ export default async function TipDetail(props) {
             <img src={tip.image_url} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15, 17, 21, 1) 0%, transparent 100%)' }}></div>
             <div style={{ position: 'absolute', top: '30px', left: '30px' }}>
-              <Link href={isEn ? '/en/tipy' : '/tipy'} className="guru-back-btn">
-                <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
-              </Link>
+              <Link href={isEn ? '/en/tipy' : '/tipy'} className="guru-back-btn"><ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}</Link>
             </div>
           </div>
         )}
@@ -97,7 +97,7 @@ export default async function TipDetail(props) {
             <h1 className="tip-h1">{title}</h1>
           </header>
 
-          {/* 🔥 AFFILIATE BOMB 🔥 */}
+          {/* 🔥 AFFILIATE SEKCE 🔥 */}
           <div className="affiliate-cta-grid" style={{ marginBottom: '30px' }}>
               <div className="affiliate-col">
                   <div className="affiliate-btn-wrap">
@@ -125,16 +125,15 @@ export default async function TipDetail(props) {
               <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="tool-btn-small cyan-link"><Gamepad2 size={16} /> {isEn ? 'FPS Test' : 'FPS Test'}</a>
           </div>
 
-          <div style={{ marginBottom: '40px' }}>
-            <SeznamAd zoneId={408654} width={970} height={210} />
-          </div>
+          <div style={{ marginBottom: '40px' }}><SeznamAd zoneId={408654} width={970} height={210} /></div>
 
+          {/* 🔥 SAMOTNÝ TEXT TIPU 🔥 */}
           <div className="guru-prose" style={{ color: '#d1d5db', fontSize: '1.15rem', lineHeight: '1.8' }}>
               <div dangerouslySetInnerHTML={{ __html: content }} />
           </div>
 
           {!isEn && (
-              <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px', marginTop: '40px' }}>
                   <HeurekaButtons isEn={false} />
               </div>
           )}
@@ -142,14 +141,12 @@ export default async function TipDetail(props) {
           <div className="gta6-bait-box">
               <div className="gta6-badge"><Sparkles size={16} /> AI {isEn ? 'PREDICTION' : 'PREDIKCE'}</div>
               <h3 className="gta6-title">{isEn ? 'WILL YOUR PC RUN GTA VI?' : 'ZVLÁDNE TO TVŮJ PC?'}</h3>
-              <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="gta6-link">
-                  <Gamepad2 size={20} /> {isEn ? 'TEST FPS' : 'ZJISTIT FPS'} <ArrowRight size={18} />
-              </a>
+              <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="gta6-link"><Gamepad2 size={20} /> {isEn ? 'TEST GTA VI FPS' : 'ZJISTIT FPS V GTA VI'} <ArrowRight size={18} /></a>
           </div>
 
           <div className="share-grid">
-              <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`} target="_blank" className="share-card x-bg"><Twitter size={18} /> X</a>
-              <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" className="share-card fb-bg"><Share2 size={18} /> FB</a>
+              <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`} target="_blank" className="share-card x-bg"><Twitter size={18} /> X / TWITTER</a>
+              <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" className="share-card fb-bg"><Share2 size={18} /> FACEBOOK</a>
               <a href={`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}`} target="_blank" className="share-card reddit-bg"><RedditIcon size={18} /> REDDIT</a>
           </div>
 
@@ -162,12 +159,16 @@ export default async function TipDetail(props) {
             <section style={{ marginTop: '50px' }}>
               <h2 className="section-title">{isEn ? 'READ MORE' : 'DALŠÍ TIPY'}</h2>
               <div className="related-grid">
-                {latestTips.map((lt) => (
-                  <Link key={lt.slug} href={isEn ? `/en/tipy/${lt.slug_en || lt.slug}` : `/tipy/${lt.slug}`} className="related-card">
-                    <img src={lt.image_url} alt={isEn ? lt.title_en : lt.title} />
-                    <div className="related-info"><h3>{isEn ? lt.title_en : lt.title}</h3></div>
-                  </Link>
-                ))}
+                {latestTips.map((lt) => {
+                  const ltTitle = isEn ? (lt.title_en || lt.title) : lt.title;
+                  const ltSlug = isEn ? (lt.slug_en || lt.slug) : lt.slug;
+                  return (
+                    <Link key={lt.slug} href={isEn ? `/en/tipy/${ltSlug}` : `/tipy/${ltSlug}`} className="related-card">
+                      <img src={lt.image_url} alt={ltTitle} />
+                      <div className="related-info"><h3>{ltTitle}</h3></div>
+                    </Link>
+                  );
+                })}
               </div>
             </section>
           )}
@@ -180,14 +181,14 @@ export default async function TipDetail(props) {
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         .guru-header-meta { display: flex; align-items: center; justify-content: center; gap: 15px; color: #9ca3af; font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 25px; }
         .guru-badge { color: #66fcf1; display: flex; align-items: center; gap: 6px; }
-        .tip-h1 { font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 950; color: #fff; text-transform: uppercase; line-height: 1.1; margin: 0; }
+        .tip-h1 { font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 950; color: #fff; text-transform: uppercase; line-height: 1.1; margin: 0; }
         .guru-prose h2 { color: #fff; font-size: 2rem; font-weight: 950; margin: 1.5em 0 0.8em; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; }
         .affiliate-cta-grid { background: rgba(0,0,0,0.4); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); padding: 25px; }
         .affiliate-btn-wrap { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
-        .guru-buy-winner-btn { flex: 1; max-width: 300px; min-width: 200px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 15px; text-transform: uppercase; transition: 0.3s; }
+        .guru-buy-winner-btn { flex: 1; max-width: 300px; min-width: 200px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 16px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 15px; text-transform: uppercase; transition: 0.3s; }
         .amazon-btn { background: #f59e0b; color: #000; width: 100%; max-width: 450px; }
-        .smarty-btn { background: #facc15; color: #000; }
-        .heureka-btn { background: #3b82f6; color: #fff; }
+        .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; }
+        .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; }
         .tool-btn-small { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px; border-radius: 12px; font-weight: 950; text-transform: uppercase; text-decoration: none; font-size: 12px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
         .purple-link { background: rgba(168, 85, 247, 0.1); color: #a855f7; }
         .cyan-link { background: rgba(102, 252, 241, 0.1); color: #66fcf1; }
