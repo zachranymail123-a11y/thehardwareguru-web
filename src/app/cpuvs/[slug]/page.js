@@ -10,8 +10,8 @@ import HeurekaButtons from '../../../components/HeurekaButtons';
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText';
 
 /**
- * GURU CPU COMPARE ENGINE - V4.0 (FIXED VS LOGIC + MONETIZATION)
- * 🚀 CÍL: Fix 404 (správná VS logika), garantovaný tracking, Rich Snippets a Money Loop.
+ * GURU CPU COMPARE ENGINE - V4.1 (ULTIMATE CONVERSION MACHINE)
+ * 🚀 CÍL: Structured Data, Winner logika, Dynamic Intent CTA a SEO Money Loop.
  */
 
 export const runtime = "nodejs";
@@ -77,12 +77,37 @@ export default async function CpuComparePage(props) {
   const heurekaLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(cpuB.name + ' cena')}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
   const amazonLink = `https://www.amazon.de/s?k=${encodeURIComponent(cpuB.name)}&tag=thehardware07-21`;
 
+  // 🔥 FIX #8: DYNAMIC INTENT CTA
+  const ctaText = isEn 
+    ? (perfDiff > 20 ? `🔥 Upgrade to ${cpuBBrand} (+${perfDiff}%)` : `🔥 Best buy: ${cpuBBrand}`)
+    : (perfDiff > 20 ? `🔥 Upgrade na ${cpuBBrand} (+${perfDiff}%)` : `🔥 Výhodná koupě ${cpuBBrand}`);
+
   return (
     <div className="guru-upgrade-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       {!isEn && <Script async src="//serve.affiliate.heureka.cz/js/trixam.min.js" strategy="afterInteractive" />}
 
-      {/* STICKY MOBILE CTA */}
+      {/* 🔥 FIX #1: STRUCTURED DATA PRO RICH SNIPPETS 🔥 */}
+      <Script
+        id="vs-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": `${cpuA.name} vs ${cpuB.name}`,
+            "category": "CPU Comparison",
+            "brand": "AMD / Intel",
+            "offers": {
+              "@type": "AggregateOffer",
+              "priceCurrency": isEn ? "EUR" : "CZK",
+              "availability": "https://schema.org/InStock"
+            }
+          })
+        }}
+      />
+
+      {/* 🔥 FIX #5: OFFSET MOBILE CTA 🔥 */}
       {!isEn && (
         <div className="mobile-anchor-trap">
           <a href={heurekaLink} target="_blank" rel="nofollow sponsored" className="heureka-hn-link pulse-button" data-trixam-positionid="276026">
@@ -111,19 +136,24 @@ export default async function CpuComparePage(props) {
             <div className="gpu-card-box new-cpu" style={{ borderTop: '5px solid #f59e0b', transform: 'scale(1.05)', boxShadow: '0 0 40px rgba(245, 158, 11, 0.3)' }}><h2 className="gpu-name-text">{normalizeName(cpuB.name)}</h2></div>
         </div>
 
+        {/* 🔥 FIX #2 + #3: WINNER LOGICA & BUY HOOK 🔥 */}
         <div className="affiliate-cta-grid" style={{ marginBottom: '40px', background: 'rgba(0,0,0,0.4)', padding: '35px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div style={{ textAlign: 'center', width: '100%' }}>
-                <div style={{ marginBottom: '15px', fontWeight: '900', color: '#f59e0b', textTransform: 'uppercase', fontSize: '14px' }}>
-                  {isEn ? `Check current availability and prices` : `Zjistit aktuální dostupnost a ceny`}
+                <div style={{ marginBottom: '10px', fontWeight: '950', color: '#10b981', textTransform: 'uppercase', fontSize: '18px', letterSpacing: '1px' }}>
+                  🏆 {isEn ? 'Winner' : 'Vítěz'}: {cpuBBrand} (+{perfDiff}% {isEn ? 'Perf' : 'výkon'})
                 </div>
+                <div style={{ marginBottom: '20px', color: '#f59e0b', fontWeight: 'bold', fontSize: '14px' }}>
+                  🔥 {isEn ? 'Ideal upgrade for gaming & multitasking' : 'Ideální upgrade pro gaming a multitasking'}
+                </div>
+                
                 <div className="affiliate-btn-wrap" style={{ display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
-                  <a href={isEn ? amazonLink : heurekaLink} target="_blank" rel="nofollow sponsored" className={`guru-buy-winner-btn pulse-button ${!isEn ? 'heureka-hn-link heureka-btn' : 'amazon-btn'}`} data-trixam-positionid="276026" data-trixam-content="Text link" data-trixam-medium="affiliate" style={{ padding: '18px 30px', borderRadius: '16px', fontWeight: '950', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-                    <ShoppingCart size={20} /> {isEn ? `BUY ${cpuBBrand} CHEAPEST` : `🔥 KOUPIT ${cpuBBrand} NEJLEVNĚJI`}
+                  <a href={isEn ? amazonLink : heurekaLink} target="_blank" rel="nofollow sponsored" className={`guru-buy-winner-btn pulse-button ${!isEn ? 'heureka-hn-link heureka-btn' : 'amazon-btn'}`} data-trixam-positionid="276026" data-trixam-content="Text link" data-trixam-medium="affiliate">
+                    <ShoppingCart size={20} /> {ctaText}
                   </a>
                 </div>
                 {!isEn && (
                     <div style={{ marginTop: '15px', fontSize: '12px', color: '#9ca3af', fontWeight: 'bold' }}>
-                      ✔ Alza, CZC, Datart a 50+ dalších | ⚡ Ceny se mění každých pár hodin
+                      ✔ Porovnáno z 50+ obchodů | ⚡ Cena se mění každých pár hodin
                     </div>
                 )}
             </div>
@@ -131,38 +161,56 @@ export default async function CpuComparePage(props) {
 
         <section style={{ marginBottom: '40px' }}>
             <div className="guru-tools-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                <div className="tool-cta-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(168, 85, 247, 0.2)', padding: '30px', borderRadius: '24px' }}>
-                    <div style={{ color: '#a855f7', fontWeight: '950', fontSize: '12px', marginBottom: '10px' }}><AlertTriangle size={16} /> BOTTLENECK</div>
-                    <a href={isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka'} style={{ color: '#fff', textDecoration: 'none' }}><h3>{isEn ? 'SYSTEM CHECK' : 'KONTROLA SYSTÉMU'}</h3></a>
+                <div className="tool-cta-card">
+                    <div className="tool-header"><AlertTriangle size={16} /> BOTTLENECK</div>
+                    <a href={isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka'}><h3>{isEn ? 'SYSTEM CHECK' : 'KONTROLA SYSTÉMU'}</h3></a>
                 </div>
-                <div className="tool-cta-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(102, 252, 241, 0.2)', padding: '30px', borderRadius: '24px' }}>
-                    <div style={{ color: '#66fcf1', fontWeight: '950', fontSize: '12px', marginBottom: '10px' }}><Gamepad2 size={16} /> FPS TEST</div>
-                    <a href={isEn ? '/en/fps-calculator' : '/fps-kalkulacka'} style={{ color: '#fff', textDecoration: 'none' }}><h3>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</h3></a>
+                <div className="tool-cta-card">
+                    <div className="tool-header" style={{color: '#66fcf1'}}><Gamepad2 size={16} /> FPS TEST</div>
+                    <a href={isEn ? '/en/fps-calculator' : '/fps-kalkulacka'}><h3>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</h3></a>
                 </div>
             </div>
         </section>
+
+        {/* 🔥 FIX #9: PSYCHO TRIGGER 🔥 */}
+        <div style={{ textAlign: 'center', marginBottom: '15px', color: '#9ca3af', textTransform: 'uppercase', fontSize: '12px', fontWeight: '950', letterSpacing: '2px' }}>
+            📊 {isEn ? 'Performance Difference' : 'Rozdíl výkonu'}: <b style={{ color: '#f59e0b' }}>+{perfDiff}%</b>
+        </div>
 
         <section style={{ marginBottom: '40px' }}>
             <div className="content-box-style analysis-box" style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950' }}>{isEn ? 'Battle Analysis' : 'Analýza souboje'}</h2>
                 <GuruCpuCompareText cpu1Name={normalizeName(cpuA.name)} cpu2Name={normalizeName(cpuB.name)} perfDiff={perfDiff} cpu1Cores={cpuA.cores} cpu2Cores={cpuB.cores} isEn={isEn} />
+                
+                {/* 🔥 FIX #4: INTERNAL MONEY LOOP 🔥 */}
+                <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '25px', flexWrap: 'wrap' }}>
+                  <a href={`/cpu/${cpuA.slug}`} style={{ color: '#60a5fa', fontSize: '13px', fontWeight: 'bold', textDecoration: 'underline' }}>Detail {normalizeName(cpuA.name)} →</a>
+                  <a href={`/cpu/${cpuB.slug}`} style={{ color: '#60a5fa', fontSize: '13px', fontWeight: 'bold', textDecoration: 'underline' }}>Detail {normalizeName(cpuB.name)} →</a>
+                </div>
             </div>
         </section>
 
         <section style={{ marginBottom: '60px' }}>
-          <h2 className="section-h2" style={{ borderLeft: '4px solid #f59e0b', paddingLeft: '15px', textTransform: 'uppercase', fontWeight: '950', marginBottom: '25px' }}><LayoutList size={24} /> {isEn ? 'SPECIFICATIONS' : 'PARAMETRY'}</h2>
-          <div className="table-wrapper" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', overflow: 'hidden' }}>
+          <h2 className="section-h2" style={{ borderLeft: '4px solid #f59e0b', paddingLeft: '15px' }}><LayoutList size={24} /> {isEn ? 'SPECIFICATIONS' : 'PARAMETRY'}</h2>
+          <div className="table-wrapper">
               {[
                 { label: isEn ? 'CORES / THREADS' : 'JÁDRA / VLÁKNA', valA: `${cpuA.cores}/${cpuA.threads}`, valB: `${cpuB.cores}/${cpuB.threads}` },
                 { label: isEn ? 'BOOST CLOCK' : 'BOOST TAKT', valA: `${cpuA.boost_clock_mhz} MHz`, valB: `${cpuB.boost_clock_mhz} MHz` },
                 { label: 'TDP', valA: `${cpuA.tdp_w}W`, valB: `${cpuB.tdp_w}W` }
               ].map((row, i) => (
-                <div key={i} style={{ display: 'flex', padding: '20px 30px', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                  <div style={{ flex: 1, textAlign: 'center', fontWeight: '950' }}>{row.valA}</div>
-                  <div style={{ width: '180px', textAlign: 'center', fontSize: '10px', color: '#6b7280', fontWeight: '950' }}>{row.label}</div>
-                  <div style={{ flex: 1, textAlign: 'center', fontWeight: '950', color: '#f59e0b' }}>{row.valB}</div>
+                <div key={i} className="spec-row">
+                  <div className="spec-val">{row.valA}</div>
+                  <div className="spec-label-text">{row.label}</div>
+                  <div className="spec-val highlight">{row.valB}</div>
                 </div>
               ))}
+          </div>
+
+          {/* 🔥 FIX #7: SCROLL MONEY CTA 🔥 */}
+          <div style={{ textAlign: 'center', marginTop: '40px' }}>
+            <a href={isEn ? amazonLink : heurekaLink} target="_blank" rel="nofollow sponsored" className={`guru-buy-winner-btn hover-scale ${!isEn ? 'heureka-hn-link heureka-btn' : 'amazon-btn'}`} data-trixam-positionid="276027" data-trixam-content="Text link" data-trixam-medium="affiliate">
+              💰 {isEn ? `Check best price for ${cpuBBrand}` : `Zobrazit nejlepší ceny ${cpuBBrand}`}
+            </a>
           </div>
         </section>
 
@@ -174,18 +222,31 @@ export default async function CpuComparePage(props) {
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes pulse-cta { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
         .pulse-button { animation: pulse-cta 2s infinite; }
-        .mobile-anchor-trap { position: fixed; bottom: 100px; right: 15px; z-index: 9999; }
+        .mobile-anchor-trap { position: fixed; bottom: 160px; right: 15px; z-index: 9999; }
         .mobile-anchor-trap a { background: #0078d4; color: #fff; padding: 12px 20px; border-radius: 14px; font-size: 13px; font-weight: 900; text-decoration: none; boxShadow: 0 10px 40px rgba(0,0,0,0.8); display: flex; alignItems: center; gap: 8px; border: 1px solid rgba(255,255,255,0.2); }
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #f59e0b; padding: 10px 18px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(245, 158, 11, 0.3); transition: 0.3s; }
         .gpu-card-box { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 40px 20px; text-align: center; }
         .gpu-name-text { font-size: clamp(1.2rem, 3vw, 2rem); font-weight: 950; color: #fff; text-transform: uppercase; margin: 0; line-height: 1.1; }
         .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff !important; }
         .amazon-btn { background: #f59e0b; color: #000 !important; }
+        .guru-buy-winner-btn { padding: 18px 30px; borderRadius: 16px; fontWeight: 950; textDecoration: none; display: inline-flex; alignItems: center; gap: 10px; transition: 0.3s; }
+        .table-wrapper { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; overflow: hidden; margin-top: 20px; }
+        .spec-row { display: flex; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        .spec-val { flex: 1; text-align: center; font-weight: 950; }
+        .spec-val.highlight { color: #f59e0b; }
+        .spec-label-text { width: 180px; text-align: center; font-size: 10px; color: #6b7280; font-weight: 950; text-transform: uppercase; }
+        .tool-cta-card { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(168, 85, 247, 0.2); padding: 30px; border-radius: 24px; text-align: center; }
+        .tool-header { color: #a855f7; fontWeight: 950; fontSize: 12px; marginBottom: 10px; text-transform: uppercase; }
+        .tool-cta-card h3 { color: #fff; text-transform: uppercase; font-size: 1.2rem; }
         .sticky-bottom-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; }
+        .hover-scale:hover { transform: scale(1.03); filter: brightness(1.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         @media (max-width: 768px) {
             .guru-grid-ring { grid-template-columns: 1fr !important; }
             .vs-badge { margin: 10px auto; transform: rotate(90deg); }
+            .spec-row { flex-direction: column; gap: 10px; padding: 15px; }
+            .spec-label-text { width: 100%; order: -1; }
             .guru-tools-grid { grid-template-columns: 1fr !important; }
+            .guru-buy-winner-btn { width: 100%; justify-content: center; font-size: 14px; }
         }
       `}} />
     </div>
