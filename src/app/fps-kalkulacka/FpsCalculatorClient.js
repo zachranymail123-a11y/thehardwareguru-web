@@ -5,6 +5,7 @@ import { Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Check, Award, Twitter, Sp
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons'; 
+import ShareFpsButton from '../../components/ShareFpsButton';
 
 /**
  * GURU FPS ENGINE CLIENT - V11.7 (AFFILIATE BOMB UPDATE)
@@ -95,6 +96,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
     // 🔥 GENERÁTOR AFFILIATE LINKŮ 🔥
     const selectedCpu = cpus.find(c => String(c.id) === String(selectedCpuId));
     const selectedGpu = gpus.find(g => String(g.id) === String(selectedGpuId));
+    const selectedGame = games.find(g => String(g.slug) === String(selectedGameSlug));
     
     const cleanCpuName = selectedCpu ? normalizeName(selectedCpu.name) : '';
     const cleanGpuName = selectedGpu ? normalizeName(selectedGpu.name) : '';
@@ -142,6 +144,20 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                     {isEn ? 'CALCULATE' : 'SPOČÍTAT VÝKON'}
                 </button>
             </div>
+
+            {/* 🔥 TLAČÍTKO PRO SDÍLENÍ HNED POD VÝPOČTEM 🔥 */}
+            {result && !isCalculating && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', width: '100%', boxSizing: 'border-box' }}>
+                    <ShareFpsButton 
+                        gameName={selectedGame?.name}
+                        cpu={selectedCpu?.name} 
+                        gpu={selectedGpu?.name} 
+                        resolution={selectedRes} 
+                        avgFps={result.fps}
+                        isEn={isEn} 
+                    />
+                </div>
+            )}
 
             {result && !isCalculating && (
                 <div className="result-area" style={{ marginTop: '40px', textAlign: 'center', animation: 'fadeIn 0.7s ease-out' }}>
