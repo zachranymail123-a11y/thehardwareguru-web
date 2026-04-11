@@ -3,13 +3,12 @@ import React, { useEffect } from 'react';
 import { Cpu, Monitor, Layers, Database } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
-// Inicializace Supabase klienta pro odesílání kliků
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function HeurekaButtons({ isEn = false }) {
-  // 🔥 FINAL AFFILIATE LINKS - Přísně kopírováno ze screenů Heureka adminu (včetně Text%20link)
+  // 🔥 DEFINITIVNÍ FIX: URL a UTM parametry přesně podle tvých screenů z adminu
   const HEUREKA_CPU = "https://www.heureka.cz/?h%5Bfraze%5D=procesor#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
   const HEUREKA_GPU = "https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
   const HEUREKA_MB  = "https://www.heureka.cz/?h%5Bfraze%5D=zakladni+deska#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
@@ -21,25 +20,18 @@ export default function HeurekaButtons({ isEn = false }) {
   const AMAZON_MB  = `https://www.amazon.com/s?k=computer+motherboard&tag=${AMAZON_TAG}`;
   const AMAZON_RAM = `https://www.amazon.com/s?k=computer+ram+ddr5&tag=${AMAZON_TAG}`;
 
-  // Tichá funkce pro záznam kliku
   const trackClick = (platform, category) => {
     supabase.from('affiliate_clicks_log').insert([{ platform, category }]).then();
   };
 
   useEffect(() => {
     if (!isEn) {
-      // 🔥 DŮLEŽITÉ: Načtení měřícího kódu Heureky, bez kterého se prokliky v adminu nepočítají
       const script = document.createElement('script');
       script.src = "//serve.affiliate.heureka.cz/js/trixam.min.js";
       script.async = true;
       script.type = "text/javascript";
       document.body.appendChild(script);
-
-      return () => {
-        if (document.body.contains(script)) {
-          document.body.removeChild(script);
-        }
-      };
+      return () => { if (document.body.contains(script)) document.body.removeChild(script); };
     }
   }, [isEn]);
 
@@ -54,7 +46,6 @@ export default function HeurekaButtons({ isEn = false }) {
               <span className="h-subtitle">🔥 SEE TODAY'S DEALS</span>
             </div>
           </a>
-
           <a onClick={() => trackClick('amazon', 'gpu')} href={AMAZON_GPU} className="h-banner-btn amazon-btn" target="_blank" rel="nofollow sponsored">
             <div className="h-icon-box amazon-icon-box"><Monitor size={26} /></div>
             <div className="h-text-col">
@@ -62,7 +53,6 @@ export default function HeurekaButtons({ isEn = false }) {
               <span className="h-subtitle">🔥 FIND LOWEST PRICE</span>
             </div>
           </a>
-
           <a onClick={() => trackClick('amazon', 'mb')} href={AMAZON_MB} className="h-banner-btn amazon-btn" target="_blank" rel="nofollow sponsored">
             <div className="h-icon-box amazon-icon-box"><Layers size={26} /></div>
             <div className="h-text-col">
@@ -70,7 +60,6 @@ export default function HeurekaButtons({ isEn = false }) {
               <span className="h-subtitle">🔥 COMPARE ALL PRICES</span>
             </div>
           </a>
-
           <a onClick={() => trackClick('amazon', 'ram')} href={AMAZON_RAM} className="h-banner-btn amazon-btn" target="_blank" rel="nofollow sponsored">
             <div className="h-icon-box amazon-icon-box"><Database size={26} /></div>
             <div className="h-text-col">
@@ -81,7 +70,8 @@ export default function HeurekaButtons({ isEn = false }) {
         </>
       ) : (
         <>
-          <a onClick={() => trackClick('heureka', 'cpu')} href={HEUREKA_CPU} data-trixam-positionid="276027" className="h-banner-btn heureka-hn-link" target="_blank" rel="nofollow sponsored">
+          {/* 🔥 OČIŠTĚNÉ ODKAZY PRO MAXIMÁLNÍ TRACKING REVENUE 🔥 */}
+          <a onClick={() => trackClick('heureka', 'cpu')} href={HEUREKA_CPU} className="heureka-hn-link h-banner-btn" data-trixam-positionid="276027" target="_blank" rel="nofollow sponsored">
             <div className="h-icon-box"><Cpu size={26} /></div>
             <div className="h-text-col">
               <span className="h-title">Procesory</span>
@@ -89,7 +79,7 @@ export default function HeurekaButtons({ isEn = false }) {
             </div>
           </a>
 
-          <a onClick={() => trackClick('heureka', 'gpu')} href={HEUREKA_GPU} data-trixam-positionid="276026" className="h-banner-btn heureka-hn-link" target="_blank" rel="nofollow sponsored">
+          <a onClick={() => trackClick('heureka', 'gpu')} href={HEUREKA_GPU} className="heureka-hn-link h-banner-btn" data-trixam-positionid="276026" target="_blank" rel="nofollow sponsored">
             <div className="h-icon-box"><Monitor size={26} /></div>
             <div className="h-text-col">
               <span className="h-title">Grafické karty</span>
@@ -97,7 +87,7 @@ export default function HeurekaButtons({ isEn = false }) {
             </div>
           </a>
 
-          <a onClick={() => trackClick('heureka', 'mb')} href={HEUREKA_MB} data-trixam-positionid="276033" className="h-banner-btn heureka-hn-link" target="_blank" rel="nofollow sponsored">
+          <a onClick={() => trackClick('heureka', 'mb')} href={HEUREKA_MB} className="heureka-hn-link h-banner-btn" data-trixam-positionid="276033" target="_blank" rel="nofollow sponsored">
             <div className="h-icon-box"><Layers size={26} /></div>
             <div className="h-text-col">
               <span className="h-title">Základní desky</span>
@@ -105,7 +95,7 @@ export default function HeurekaButtons({ isEn = false }) {
             </div>
           </a>
 
-          <a onClick={() => trackClick('heureka', 'ram')} href={HEUREKA_RAM} data-trixam-positionid="276034" className="h-banner-btn heureka-hn-link" target="_blank" rel="nofollow sponsored">
+          <a onClick={() => trackClick('heureka', 'ram')} href={HEUREKA_RAM} className="heureka-hn-link h-banner-btn" data-trixam-positionid="276034" target="_blank" rel="nofollow sponsored">
             <div className="h-icon-box"><Database size={26} /></div>
             <div className="h-text-col">
               <span className="h-title">Operační paměti</span>
