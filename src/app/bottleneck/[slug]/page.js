@@ -8,8 +8,8 @@ import HeurekaButtons from '../../../components/HeurekaButtons';
 import BottleneckFatContent from '../../../components/BottleneckFatContent'; 
 
 /**
- * GURU BOTTLENECK ENGINE V22.18 (HEUREKA 404 & REVENUE FIX)
- * 🚀 CÍL: Fix Heureka linků na www.heureka.cz s mřížkou, aby to nehádalo 404 a sypalo prachy.
+ * GURU BOTTLENECK ENGINE V22.21 (DEFINITIVE HEUREKA FIX)
+ * 🚀 CÍL: Fix linků na www.heureka.cz s povinným parametrem h[fraze], aby to nehádalo 404 a sypalo prachy.
  */
 
 export const runtime = "nodejs";
@@ -22,7 +22,6 @@ const baseUrl = "https://thehardwareguru.cz";
 const normalizeName = (name = '') => name.replace(/AMD |Intel |NVIDIA |GeForce |Ryzen |Core |Radeon /gi, '').trim();
 const slugify = (text) => text ? text.toLowerCase().replace(/graphics|gpu|processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
-// 🛡️ GURU ENGINE: HW LOOKUP
 const findHw = async (table, rawSlugPart) => {
   if (!rawSlugPart || rawSlugPart === 'undefined') return null;
   const slugPart = rawSlugPart.replace(/^en-/, '');
@@ -161,7 +160,7 @@ export default async function BottleneckPage(props) {
   const cleanCpuName = normalizeName(cpu.name);
   const cleanGpuName = normalizeName(gpu.name);
 
-  // 🔥 DEFINITIVNÍ AFFILIATE LINKY DLE ADMINU HEUREKY (FIX 404) 🔥
+  // 🔥 DEFINITIVNÍ FIX: www.heureka.cz + ?h[fraze] parametr (Zkontrolováno s image_f8b401.png a image_f8b43a.png) 🔥
   const smartyCpuLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(cleanCpuName)}`)}`;
   const heurekaCpuLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(cleanCpuName)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=BottleneckDetail`;
   
@@ -346,9 +345,9 @@ export default async function BottleneckPage(props) {
         .affiliate-col-title { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 950; color: #a855f7; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; text-align: center; }
         .affiliate-btn-wrap { display: flex; gap: 10px; width: 100%; justify-content: center; flex-wrap: wrap; }
         .guru-buy-winner-btn { flex: 1; min-width: 120px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 12px 15px; border-radius: 12px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 0.5px; color: #000; }
-        .smarty-btn { background: #facc15; border: 2px solid #fef08a; }
-        .heureka-btn { background: #3b82f6; color: #fff; border: 2px solid #60a5fa; }
-        .amazon-btn { background: #f59e0b; border: 2px solid #fbbf24; }
+        .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); border: 2px solid #fef08a; }
+        .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; }
+        .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: 2px solid #fbbf24; }
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
         @media (max-width: 768px) {
