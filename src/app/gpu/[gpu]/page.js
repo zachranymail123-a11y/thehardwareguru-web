@@ -7,8 +7,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU ENGINE - DETAIL GRAFIKY V3.1 (AFFILIATE BOMB FIXED)
- * 🚀 CÍL: Oprava trackování modrých tlačítek (UTM, Trixam ID, HN třída).
+ * GURU GPU ENGINE - DETAIL GRAFIKY V3.2 (AMAZON AFFILIATE UPDATE)
+ * 🚀 CÍL: Přidání Amazon tlačítka (tag: thehardware07-20) pro EN verzi, skrytí CZ tlačítek.
  */
 
 export const runtime = "nodejs";
@@ -105,6 +105,7 @@ export default async function GpuDetailPage(props) {
   const searchName = getCleanSearchName(gpu.name);
   const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
   const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+  const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
 
   const productSchema = {
     "@context": "https://schema.org",
@@ -151,28 +152,38 @@ export default async function GpuDetailPage(props) {
                     <ShoppingCart size={16} /> {isEn ? `BUY ${normalizeName(gpu.name)}` : `KOUPIT ${normalizeName(gpu.name)}`}
                 </div>
                 <div className="affiliate-btn-wrap">
-                    <a href={getSmartyLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
-                        <ShoppingCart size={16} /> Smarty.cz
-                    </a>
-                    {/* OPRAVENO: Heureka link s UTM, Trixam ID a aktivační třídou */}
-                    <a 
-                        href={getHeurekaLink(searchName)} 
-                        data-trixam-positionid="276026" 
-                        data-trixam-codetype="link" 
-                        target="_blank" 
-                        rel="nofollow sponsored" 
-                        className="guru-buy-winner-btn heureka-btn heureka-hn-link"
-                    >
-                        <ShoppingCart size={16} /> Heureka.cz
-                    </a>
+                    {isEn ? (
+                        <a href={getAmazonLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn">
+                            <ShoppingCart size={16} /> Check Price on Amazon
+                        </a>
+                    ) : (
+                        <>
+                            <a href={getSmartyLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
+                                <ShoppingCart size={16} /> Smarty.cz
+                            </a>
+                            {/* OPRAVENO: Heureka link s UTM, Trixam ID a aktivační třídou */}
+                            <a 
+                                href={getHeurekaLink(searchName)} 
+                                data-trixam-positionid="276026" 
+                                data-trixam-codetype="link" 
+                                target="_blank" 
+                                rel="nofollow sponsored" 
+                                className="guru-buy-winner-btn heureka-btn heureka-hn-link"
+                            >
+                                <ShoppingCart size={16} /> Heureka.cz
+                            </a>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
 
-        {/* Heureka Buttons widget se správným ID a vyhledáváním */}
-        <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
-            <HeurekaButtons isEn={isEn} manualSearch={gpu.name} positionId="276026" />
-        </div>
+        {/* Heureka Buttons widget se správným ID a vyhledáváním (Skryto pro EN) */}
+        {!isEn && (
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
+                <HeurekaButtons isEn={false} manualSearch={gpu.name} positionId="276026" />
+            </div>
+        )}
 
         {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
         <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
@@ -305,6 +316,10 @@ export default async function GpuDetailPage(props) {
         .smarty-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(234, 179, 8, 0.5); }
         .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
         .heureka-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
+
+        /* 🔥 NOVÉ: CSS PRO AMAZON TLAČÍTKO 🔥 */
+        .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
+        .amazon-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(245, 158, 11, 0.5); }
 
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
