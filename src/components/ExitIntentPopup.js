@@ -4,8 +4,8 @@ import { AlertTriangle, ShoppingCart, X, Zap } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 /**
- * GURU EXIT INTENT POPUP V2.8 - CATEGORY LINKS FIX
- * 🚀 CÍL: Návrat k přímým kategoriím pro obecná tlačítka (bez search parametru).
+ * GURU EXIT INTENT POPUP V2.9 - DEFINITIVE CATEGORY LINKS FIX
+ * 🚀 CÍL: Návrat k přímým kategoriím s přesným utm_content=Text%20link.
  */
 
 export default function ExitIntentPopup() {
@@ -37,14 +37,14 @@ export default function ExitIntentPopup() {
 
     if (!isVisible) return null;
 
-    // 🔥 DEFINITIVNÍ FIX: Správné odkazy na kategorie bez vyhledávání 🔥
+    // 🔥 DEFINITIVNÍ FIX: Správné odkazy na kategorie přesně dle adminu (Text%20link) 🔥
     const cpuLink = isEn 
         ? "https://www.amazon.com/s?k=computer+processor+cpu&tag=thehardware07-20" 
-        : "https://procesory.heureka.cz/#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=ExitPopup";
+        : "https://procesory.heureka.cz/#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
         
     const gpuLink = isEn 
         ? "https://www.amazon.com/s?k=graphics+card+gpu&tag=thehardware07-20" 
-        : "https://graficke-karty.heureka.cz/#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=ExitPopup";
+        : "https://graficke-karty.heureka.cz/#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
 
     return (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 99999, display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(5px)' }}>
