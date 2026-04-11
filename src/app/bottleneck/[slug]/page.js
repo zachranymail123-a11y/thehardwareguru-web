@@ -346,9 +346,9 @@ export default async function BottleneckPage(props) {
         .affiliate-col-title { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 950; color: #a855f7; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; text-align: center; }
         .affiliate-btn-wrap { display: flex; gap: 10px; width: 100%; justify-content: center; flex-wrap: wrap; }
         .guru-buy-winner-btn { flex: 1; min-width: 120px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 12px 15px; border-radius: 12px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 0.5px; color: #000; }
-        .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); border: 2px solid #fef08a; }
-        .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; }
-        .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: 2px solid #fbbf24; }
+        .smarty-btn { background: #facc15; border: 2px solid #fef08a; }
+        .heureka-btn { background: #3b82f6; color: #fff; border: 2px solid #60a5fa; }
+        .amazon-btn { background: #f59e0b; border: 2px solid #fbbf24; }
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
         @media (max-width: 768px) {
