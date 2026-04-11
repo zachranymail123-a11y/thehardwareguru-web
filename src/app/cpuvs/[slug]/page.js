@@ -10,8 +10,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU CPU DUELS ENGINE - DETAIL V76.7 (DUAL CTA LOOP UPDATE)
- * 🚀 CÍL: Přidání ultimátní pasti - cross-linky na Bottleneck a FPS kalkulačku hned nahoru pod hlavičku.
+ * GURU CPU DUELS ENGINE - DETAIL V76.8 (AMAZON AFFILIATE UPDATE)
+ * 🚀 CÍL: Přidání ultimátní pasti + Dynamický Amazon pro EN / Smarty+Heureka pro CZ.
  */
 
 export const runtime = "nodejs";
@@ -167,13 +167,15 @@ export default async function CpuDuelDetail(props) {
   const winnerName = perfWinner ? perfWinner.name : cpuA.name;
   const encodedQuery = encodeURIComponent(winnerName);
   
-  // Smarty hledání přes eHub (Kampaň 1651aa06 je vyhrazena pro Smarty.cz)
+  // Smarty hledání přes eHub
   const smartyUrl = `https://www.smarty.cz/Vyhledavani?query=${encodedQuery}`;
   const smartyAffiliateLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(smartyUrl)}`;
   
   // Heureka hledání - čistý odkaz s přesnými UTM parametry pro Trixam.
   const heurekaAffiliateLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodedQuery}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
 
+  // Amazon hledání (PRO EN VERZI)
+  const amazonAffiliateLink = `https://www.amazon.com/s?k=${encodedQuery}&tag=thehardware07-20`;
 
   return (
     <div className="guru-duel-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -205,14 +207,23 @@ export default async function CpuDuelDetail(props) {
           </h1>
           {perfWinner && <div className="guru-verdict">{perfWinner.name} {isEn ? 'is about' : 'je přibližně'} <strong>{perfDiff}%</strong> {isEn ? 'faster in games' : 'výkonnější ve hrách'}</div>}
           
-          <div style={{ marginTop: '30px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
-              <a href={smartyAffiliateLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
-                  <ShoppingCart size={20} /> {isEn ? 'Buy on Smarty.cz' : 'Koupit na Smarty.cz'}
-              </a>
-              <a href={heurekaAffiliateLink} data-trixam-positionid="276027" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
-                  <ShoppingCart size={20} /> {isEn ? 'Buy on Heureka.cz' : 'Koupit na Heureka.cz'}
-              </a>
-          </div>
+          {/* 🔥 PODMÍNKA PRO TLAČÍTKA AMAZON VS SMARTY/HEUREKA 🔥 */}
+          {isEn ? (
+              <div style={{ marginTop: '30px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
+                  <a href={amazonAffiliateLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn">
+                      <ShoppingCart size={20} /> CHECK PRICE ON AMAZON
+                  </a>
+              </div>
+          ) : (
+              <div style={{ marginTop: '30px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
+                  <a href={smartyAffiliateLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
+                      <ShoppingCart size={20} /> Koupit na Smarty.cz
+                  </a>
+                  <a href={heurekaAffiliateLink} data-trixam-positionid="276027" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">
+                      <ShoppingCart size={20} /> Koupit na Heureka.cz
+                  </a>
+              </div>
+          )}
 
           {upgradeUrl && (
             <div style={{ marginTop: '35px' }}>
@@ -244,11 +255,9 @@ export default async function CpuDuelDetail(props) {
             </div>
         </div>
 
-        {/* 🔥 PŘESUNUTO NAHORU: GURU DUAL TOOLS CTA (BOTTLENECK + FPS) 🔥 */}
         <section style={{ marginBottom: '60px' }}>
             <div className="guru-tools-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                 
-                {/* BOTTLENECK KARTA */}
                 <div className="tool-cta-card" style={{ background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(168, 85, 247, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#a855f7', fontWeight: '950', textTransform: 'uppercase', fontSize: '12px', marginBottom: '10px' }}><AlertTriangle size={16} /> {isEn ? 'SYSTEM CHECK' : 'KONTROLA SYSTÉMU'}</div>
@@ -258,7 +267,6 @@ export default async function CpuDuelDetail(props) {
                     <a href={isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka'} style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', color: '#a855f7', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', textAlign: 'center', transition: '0.3s' }} className="tool-btn hover-scale-purple">{isEn ? 'TEST BOTTLENECK' : 'ZJISTIT BOTTLENECK'}</a>
                 </div>
 
-                {/* FPS KARTA */}
                 <div className="tool-cta-card" style={{ background: 'linear-gradient(135deg, rgba(102, 252, 241, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(102, 252, 241, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', fontWeight: '950', textTransform: 'uppercase', fontSize: '12px', marginBottom: '10px' }}><Gamepad2 size={16} /> {isEn ? 'GAMING PERFORMANCE' : 'HERNÍ VÝKON'}</div>
@@ -304,9 +312,12 @@ export default async function CpuDuelDetail(props) {
           </div>
         </section>
 
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
-            <HeurekaButtons isEn={isEn} />
-        </div>
+        {/* 🔥 HEUREKA WIDGET SCHOVÁN PRO EN VERZI 🔥 */}
+        {!isEn && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+                <HeurekaButtons isEn={false} />
+            </div>
+        )}
 
         <section className="massive-seo-hub" style={{ marginBottom: '60px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '60px' }}>
             <h2 style={{ fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #a855f7', paddingLeft: '15px' }}>
@@ -383,10 +394,16 @@ export default async function CpuDuelDetail(props) {
             100% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0); }
         }
         .guru-buy-winner-btn { display: inline-flex; align-items: center; gap: 12px; padding: 18px 36px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 15px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 1px; }
+        
         .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
         .smarty-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(234, 179, 8, 0.5); }
+        
         .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
         .heureka-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(0, 120, 212, 0.5); }
+        
+        /* 🔥 NOVÉ: CSS PRO AMAZON TLAČÍTKO 🔥 */
+        .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
+        .amazon-btn:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 15px 30px rgba(245, 158, 11, 0.5); }
 
         .guru-upgrade-pill { display: inline-flex; align-items: center; gap: 10px; padding: 12px 30px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 50px; text-decoration: none; font-weight: 950; font-size: 13px; text-transform: uppercase; transition: 0.3s; }
         .cpu-box { background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 40px 20px; text-align: center; flex: 1; }
