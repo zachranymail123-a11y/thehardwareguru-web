@@ -26,8 +26,8 @@ import SeznamAd from '../../../../components/SeznamAd';
 import HeurekaButtons from '../../../../components/HeurekaButtons'; 
 
 /**
- * GURU FPS HUNTER V2.0 (AFFILIATE BOMB FIXED)
- * 🚀 CÍL: Oprava modrých Heureka tlačítek - doplnění UTM, Trixam ID a HN třídy.
+ * GURU FPS HUNTER V2.1 (AMAZON AFFILIATE UPDATE)
+ * 🚀 CÍL: Přidání Amazon tlačítka (tag: thehardware07-20) pro EN verzi, skrytí CZ tlačítek.
  */
 
 export const runtime = "nodejs";
@@ -104,10 +104,11 @@ export default async function GpuFpsHunterPage(props) {
     return { text: isEn ? 'NOT RECOMMENDED' : 'NEDOSTATEČNÝ VÝKON', color: '#ef4444' };
   };
 
-  // 🔥 OPRAVENÝ GENERÁTOR AFFILIATE LINKŮ 🔥
+  // 🔥 AFFILIATE LINK GENERATORS 🔥
   const searchName = getCleanSearchName(gpu.name);
   const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
   const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+  const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
 
   return (
     <div className="guru-hunter-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -134,27 +135,34 @@ export default async function GpuFpsHunterPage(props) {
           </h1>
         </header>
 
-        {/* 🔥 OPRAVENÝ GURU AFFILIATE BOMB GRID 🔥 */}
+        {/* 🔥 OPRAVENÝ GURU AFFILIATE BOMB GRID S AMAZONEM 🔥 */}
         <div className="affiliate-cta-grid" style={{ marginBottom: '50px', borderColor: `${vendorColor}40` }}>
             <div className="affiliate-col">
                 <div className="affiliate-col-title" style={{ color: vendorColor }}>
                     <ShoppingCart size={16} /> {isEn ? `BUY ${normalizeName(gpu.name)}` : `KOUPIT ${normalizeName(gpu.name)}`}
                 </div>
                 <div className="affiliate-btn-wrap">
-                    <a href={getSmartyLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
-                        <ShoppingCart size={16} /> Smarty.cz
-                    </a>
-                    {/* OPRAVA: Heureka link s UTM, Trixam ID a HN třídou */}
-                    <a 
-                        href={getHeurekaLink(searchName)} 
-                        data-trixam-positionid="276026" 
-                        data-trixam-codetype="link" 
-                        target="_blank" 
-                        rel="nofollow sponsored" 
-                        className="guru-buy-winner-btn heureka-btn heureka-hn-link"
-                    >
-                        <ShoppingCart size={16} /> Heureka.cz
-                    </a>
+                    {isEn ? (
+                        <a href={getAmazonLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn">
+                            <ShoppingCart size={16} /> Check Price on Amazon
+                        </a>
+                    ) : (
+                        <>
+                            <a href={getSmartyLink(searchName)} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
+                                <ShoppingCart size={16} /> Smarty.cz
+                            </a>
+                            <a 
+                                href={getHeurekaLink(searchName)} 
+                                data-trixam-positionid="276026" 
+                                data-trixam-codetype="link" 
+                                target="_blank" 
+                                rel="nofollow sponsored" 
+                                className="guru-buy-winner-btn heureka-btn heureka-hn-link"
+                            >
+                                <ShoppingCart size={16} /> Heureka.cz
+                            </a>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
@@ -218,10 +226,12 @@ export default async function GpuFpsHunterPage(props) {
             </div>
         </section>
 
-        {/* 🔥 OPRAVA: HeurekaButtons komponenta s manuálním vyhledáváním a správným ID 🔥 */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
-            <HeurekaButtons isEn={isEn} manualSearch={gpu.name} positionId="276026" />
-        </div>
+        {/* 🔥 HEUREKA WIDGET SCHOVÁN PRO EN VERZI 🔥 */}
+        {!isEn && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+                <HeurekaButtons isEn={false} manualSearch={gpu.name} positionId="276026" />
+            </div>
+        )}
 
         <section className="semantic-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '60px' }}>
             <a href={`/${isEn ? 'en/' : ''}bottleneck/${safeSlug}-with-ryzen-7-7800x3d`} className="deep-link-card" style={{ borderTop: '4px solid #ff0055' }}>
@@ -309,6 +319,10 @@ export default async function GpuFpsHunterPage(props) {
         .smarty-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(234, 179, 8, 0.5); }
         .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
         .heureka-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
+        
+        /* 🔥 NOVÉ: CSS PRO AMAZON TLAČÍTKO 🔥 */
+        .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
+        .amazon-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(245, 158, 11, 0.5); }
 
         .seo-hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
         .hub-column { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
