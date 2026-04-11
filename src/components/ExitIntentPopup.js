@@ -4,8 +4,8 @@ import { AlertTriangle, ShoppingCart, X, Zap } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 /**
- * GURU EXIT INTENT POPUP V2.7 - DEFINITIVE HEUREKA FIX
- * 🚀 CÍL: Oprava Heureka odkazů na www.heureka.cz s parametrem h[fraze] (Fix 404).
+ * GURU EXIT INTENT POPUP V2.8 - CATEGORY LINKS FIX
+ * 🚀 CÍL: Návrat k přímým kategoriím pro obecná tlačítka (bez search parametru).
  */
 
 export default function ExitIntentPopup() {
@@ -37,14 +37,14 @@ export default function ExitIntentPopup() {
 
     if (!isVisible) return null;
 
-    // 🔥 DEFINITIVNÍ FIX: www.heureka.cz + ?h[fraze] parametr (Fix 404) 🔥
+    // 🔥 DEFINITIVNÍ FIX: Správné odkazy na kategorie bez vyhledávání 🔥
     const cpuLink = isEn 
         ? "https://www.amazon.com/s?k=computer+processor+cpu&tag=thehardware07-20" 
-        : "https://www.heureka.cz/?h%5Bfraze%5D=procesor#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=ExitPopup";
+        : "https://procesory.heureka.cz/#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=ExitPopup";
         
     const gpuLink = isEn 
         ? "https://www.amazon.com/s?k=graphics+card+gpu&tag=thehardware07-20" 
-        : "https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=ExitPopup";
+        : "https://graficke-karty.heureka.cz/#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=ExitPopup";
 
     return (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 99999, display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(5px)' }}>
@@ -72,7 +72,6 @@ export default function ExitIntentPopup() {
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                    {/* 🔥 GPU LINK S PŘIDANOU REVENUE AKTIVACÍ 🔥 */}
                     <a 
                         href={gpuLink} 
                         target="_blank" 
@@ -87,7 +86,6 @@ export default function ExitIntentPopup() {
                         {isEn ? "Show Graphics Card Deals" : "Ukázat slevy grafických karet"}
                     </a>
                     
-                    {/* 🔥 CPU LINK S PŘIDANOU REVENUE AKTIVACÍ 🔥 */}
                     <a 
                         href={cpuLink} 
                         target="_blank" 
