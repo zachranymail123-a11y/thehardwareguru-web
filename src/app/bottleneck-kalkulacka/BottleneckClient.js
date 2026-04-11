@@ -12,8 +12,8 @@ import HeurekaButtons from '../../components/HeurekaButtons';
 import ShareResultButton from '../../components/ShareResultButton';
 
 /**
- * GURU BOTTLENECK ENGINE CLIENT - V12.2 (HEUREKA REVENUE FIX)
- * 🚀 CÍL: Fix Heureka linků na finální formát + Amazon pro EN.
+ * GURU BOTTLENECK ENGINE CLIENT - V12.3 (DEFINITIVE HEUREKA FIX)
+ * 🚀 CÍL: Fix Heureka linků na www.heureka.cz s Text%20link.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -169,9 +169,9 @@ export default function BottleneckClient({
     // 🔥 AFFILIATE LINK GENERATORS 🔥
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
     
-    // 🔥 DEFINITIVNÍ FIX DLE TVÝCH SCREENŮ 🔥
+    // 🔥 DEFINITIVNÍ FIX: Správný link na heureka.cz bez blbostí s přesným Text%20link parametrem 🔥
     const getHeurekaLink = (name, category) => {
-        return `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=BottleneckCalc`;
+        return `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
     };
     
     const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
