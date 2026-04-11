@@ -1,5 +1,5 @@
 import React, { cache } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { 
  ChevronLeft, Zap, ArrowRight, Activity, ArrowUpCircle, LayoutList, 
  BarChart3, Gamepad2, Coins, CheckCircle2, Swords, Flame, Heart, 
@@ -10,8 +10,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU DUELS ENGINE - V7.1 (CLEAN SLUG & EN PROP FIX)
- * 🚀 CÍL: Oprava dvojitého 'en-' ve slugu. Komponenta nyní respektuje props.isEn.
+ * GURU GPU DUELS ENGINE - V7.2 (ULTIMATE CLEAN SLUG REDIRECT)
+ * 🚀 CÍL: Tvrdé přesměrování z 'en-' slugů na čisté URL adresy, oprava kanonických linků.
  */
 
 export const runtime = "nodejs";
@@ -31,7 +31,8 @@ export async function generateStaticParams() {
       });
       if (!res.ok) return [];
       const duels = await res.json();
-      return duels.map((duel) => ({ slug: duel.slug }));
+      // Generujeme rovnou vyčištěné slugy
+      return duels.map((duel) => ({ slug: duel.slug.replace(/^en-/, '') }));
   } catch (e) { return []; }
 }
 
@@ -100,16 +101,23 @@ export async function generateMetadata(props) {
   
   if (!duel || !duel.gpuA) return { title: 'GPU Comparison | Hardware Guru' };
   
-  const canonicalUrl = isEn ? `${baseUrl}/en/gpuvs/${duel.slug}` : `${baseUrl}/gpuvs/${duel.slug}`;
+  const cleanDuelSlug = duel.slug.replace(/^en-/, '');
+  const canonicalUrl = isEn ? `${baseUrl}/en/gpuvs/${cleanDuelSlug}` : `${baseUrl}/gpuvs/${cleanDuelSlug}`;
   return { 
     title: isEn ? `${duel.gpuA.name} vs ${duel.gpuB.name} – Gaming Benchmarks` : `Srovnání: ${duel.gpuA.name} vs ${duel.gpuB.name} – Výkon a Testy`,
-    alternates: { canonical: canonicalUrl, languages: { 'en': `${baseUrl}/en/gpuvs/${duel.slug}`, 'cs': `${baseUrl}/gpuvs/${duel.slug}` } }
+    alternates: { canonical: canonicalUrl, languages: { 'en': `${baseUrl}/en/gpuvs/${cleanDuelSlug}`, 'cs': `${baseUrl}/gpuvs/${cleanDuelSlug}` } }
   };
 }
 
 export default async function GpuVsDetailPage(props) {
   const { slug } = await props.params; 
   const isEn = props.isEn === true || slug?.startsWith('en-');
+  
+  // 🔥 TVRDÉ PŘESMĚROVÁNÍ PRO UŽIVATELE S UGLY ODKAZEM 🔥
+  if (slug.startsWith('en-')) {
+      redirect(`/${isEn ? 'en/' : ''}gpuvs/${slug.replace(/^en-/, '')}`);
+  }
+
   const cleanSlug = slug.replace(/^en-/, '');
   const duel = await getDuelData(cleanSlug);
   
@@ -232,11 +240,9 @@ export default async function GpuVsDetailPage(props) {
             </div>
         </section>
 
-        {/* 🔥 GURU DUAL TOOLS CTA (BOTTLENECK + FPS) 🔥 */}
         <section style={{ marginBottom: '60px' }}>
             <div className="guru-tools-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                 
-                {/* BOTTLENECK KARTA */}
                 <div className="tool-cta-card" style={{ background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(168, 85, 247, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#a855f7', fontWeight: '950', textTransform: 'uppercase', fontSize: '12px', marginBottom: '10px' }}><AlertTriangle size={16} /> {isEn ? 'SYSTEM CHECK' : 'KONTROLA SYSTÉMU'}</div>
@@ -246,7 +252,6 @@ export default async function GpuVsDetailPage(props) {
                     <a href={isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka'} style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', color: '#a855f7', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', textAlign: 'center', transition: '0.3s' }} className="tool-btn hover-scale-purple">{isEn ? 'TEST BOTTLENECK' : 'ZJISTIT BOTTLENECK'}</a>
                 </div>
 
-                {/* FPS KARTA */}
                 <div className="tool-cta-card" style={{ background: 'linear-gradient(135deg, rgba(102, 252, 241, 0.05) 0%, rgba(15, 17, 21, 0.95) 100%)', border: '1px solid rgba(102, 252, 241, 0.2)', padding: '40px', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#66fcf1', fontWeight: '950', textTransform: 'uppercase', fontSize: '12px', marginBottom: '10px' }}><Gamepad2 size={16} /> {isEn ? 'GAMING PERFORMANCE' : 'HERNÍ VÝKON'}</div>
