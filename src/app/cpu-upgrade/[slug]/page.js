@@ -12,8 +12,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU CPU UPGRADE - DETAIL V3.3 (FINAL BUTTON & EN FIX)
- * 🚀 CÍL: Fix rozbitých tlačítek + EN obsahu + Top kalkulačky.
+ * GURU CPU UPGRADE - DETAIL V3.4 (DEFINITIVE HEUREKA FIX)
+ * 🚀 CÍL: Fix Heureka linků na www.heureka.cz s parametrem h[fraze] a Text%20link.
  */
 
 export const runtime = "nodejs";
@@ -82,6 +82,8 @@ export default async function App(props) {
   const searchName = normalizeName(cpuB.name).trim();
   const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20`;
   const smartyLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(searchName)}`)}`;
+  
+  // 🔥 DEFINITIVNÍ FIX DLE TVÝCH SCREENŮ (včetně Text%20link) 🔥
   const heurekaLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(searchName)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
 
   return (
