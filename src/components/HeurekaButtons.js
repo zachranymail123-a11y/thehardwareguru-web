@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Cpu, Monitor, Layers, Database, ChevronRight } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
@@ -10,9 +10,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function HeurekaButtons({ isEn = false }) {
     const pathname = usePathname() || '';
-    const clickLockRef = useRef(false);
     
-    // 🔥 FIX: Okamžitý lock platformy bez čekání na useEffect
+    // Okamžitý lock platformy
     const platform = isEn ? 'amazon' : 'heureka';
 
     // Deterministický intent
@@ -24,7 +23,7 @@ export default function HeurekaButtons({ isEn = false }) {
         return 'generic';
     }, [pathname]);
 
-    // 🔥 FIX: Heureka linky s prioritou pro haff ID (prevence ztráty prokliku)
+    // Heureka linky s prioritou pro haff ID
     const getLink = (category) => {
         const subId = `v10-${platform}-${category}-${intent}`;
         
@@ -34,30 +33,16 @@ export default function HeurekaButtons({ isEn = false }) {
         }
         
         const queries = { cpu: "ryzen+9950x", gpu: "rtx+5080", mb: "am5+zakladni+deska", ram: "ddr5+64gb" };
-        // Parametry v pořadí, které Heureka preferuje pro affiliate
+        // Čistý HTML odkaz pro Heureku s haff parametrem (bez JS redirectu)
         return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${queries[category]}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     };
 
-    const handleAction = (category) => {
-        if (clickLockRef.current) return;
-        clickLockRef.current = true;
-
-        const targetUrl = getLink(category);
+    // Pouze tiché logování na pozadí (nijak neblokuje nativní proklik)
+    const handleLogClick = (category) => {
         const payload = { platform, category: `static_${category}`, sub_id: `v10-${category}`, page: pathname };
-
-        // 1. Tichý tracking (sendBeacon je pro proklik nejstabilnější)
         if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
             navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
         }
-
-        // 2. 🔥 FIX: Krátký timeout (150ms) zajistí, že browser stihne odeslat pakety s trackingem
-        // a Heureka/Supabase tě nezahodí jako "robotický" okamžitý proklik.
-        setTimeout(() => {
-            window.location.href = targetUrl;
-        }, 150);
-
-        // Reset locku pro případ, že user zůstane na stránce
-        setTimeout(() => { clickLockRef.current = false; }, 1000);
     };
 
     const buttons = [
@@ -72,11 +57,14 @@ export default function HeurekaButtons({ isEn = false }) {
             {buttons.map((btn) => {
                 const Icon = btn.icon;
                 return (
-                    <div
+                    <a
                         key={btn.id}
-                        role="button"
-                        onClick={() => handleAction(btn.id)}
+                        href={getLink(btn.id)}
+                        target="_blank"
+                        rel="nofollow sponsored"
+                        onClick={() => handleLogClick(btn.id)}
                         className="guru-card"
+                        style={{ textDecoration: 'none' }}
                     >
                         <div className="guru-card-glow" />
                         <div className="guru-icon-wrapper">
@@ -87,7 +75,7 @@ export default function HeurekaButtons({ isEn = false }) {
                             <span className="guru-sub">{btn.sub}</span>
                         </div>
                         <ChevronRight size={20} className="guru-arrow" />
-                    </div>
+                    </a>
                 );
             })}
 
