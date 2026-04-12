@@ -23,69 +23,74 @@ const cleanHeurekaProduct = (name = '') => {
     .trim();
 };
 
-// 🔥 FIX #2: SAFE NORMALIZE
 const encodeHeureka = (name = '') => {
     const safe = String(name || '');
     const clean = safe.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return clean.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).join('+');
 };
 
-const findHw = async (table, rawSlugPart) => {
-  if (!rawSlugPart || rawSlugPart === 'undefined') return null;
-  const slugPart = String(rawSlugPart).replace(/^en-/, '');
+const findHw = async (table, slugPart) => {
   const headers = { 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` };
   const joinQuery = table === 'gpus' ? 'game_fps!gpu_id(*)' : 'cpu_game_fps!cpu_id(*)';
 
   try {
-      const r = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}?select=*,${joinQuery}&slug=eq.${slugPart}&limit=1`, { headers, cache: 'force-cache' });
-      if (r.ok) { const d = await r.json(); if (d?.length) return d[0]; }
+      const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}?select=*,${joinQuery}&slug=eq.${slugPart}&limit=1`, { headers, cache: 'force-cache' });
+      const data = await res.json();
+      return data?.[0] || null;
   } catch(e) { return null; }
-  return null;
 };
 
-// 🔥 FIX #3: NaN GUARD IN QUERY
 const findUpgrade = async (table, currentPerf) => {
     const perf = Number(currentPerf) || 100;
     const headers = { 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` };
     try {
-        const r = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}?select=name,slug,performance_index&performance_index=gt.${perf * 1.2}&order=performance_index.asc&limit=1`, { headers });
-        const data = await r.json();
+        const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}?select=name,slug,performance_index&performance_index=gt.${perf * 1.2}&order=performance_index.asc&limit=1`, { headers });
+        const data = await res.json();
         return data?.[0] || null;
     } catch(e) { return null; }
 };
 
-const getAnalysisData = async (slug) => {
-  if (!slug) return null;
-  const isEn = String(slug).startsWith('en-');
-  const cleanSlug = String(slug).replace(/^en-/, '');
-  
+// 🔥 GENERATE METADATA - FIX PROTI CRASHNUTÍ
+export async function generateMetadata({ params }) {
+    const p = await params;
+    const slug = p.slug || '';
+    const isEn = slug.startsWith('en-');
+    const cleanSlug = slug.replace(/^en-/, '');
+    
+    const hwParts = cleanSlug.split('-at-')[0].split('-in-')[0].split('-with-');
+    if (hwParts.length !== 2) return { title: 'Hardware Analysis' };
+
+    return { 
+        title: isEn ? `Bottleneck Test: ${hwParts[0]} + ${hwParts[1]}` : `${hwParts[0]} + ${hwParts[1]} - Test Bottlenecku | Guru`,
+    };
+}
+
+export default async function BottleneckPage({ params }) {
+  const p = await params;
+  const slug = String(p.slug || '');
+  const isEn = slug.startsWith('en-');
+  const cleanSlug = slug.replace(/^en-/, '');
+
+  // Parsování slugu
   const resParts = cleanSlug.split('-at-');
   const resolution = resParts[1] === '4k' ? '2160p' : (resParts[1] || '1440p'); 
   const gameParts = resParts[0].split('-in-');
   const gameSlug = gameParts[1] || null;
   const hwParts = gameParts[0].split('-with-');
-  
-  if (hwParts.length !== 2) return null;
-  
-  const [cpu, gpu] = await Promise.all([ findHw('cpus', hwParts[0]), findHw('gpus', hwParts[1]) ]);
-  if (!cpu || !gpu) return null;
+
+  if (hwParts.length !== 2) return notFound();
+
+  const [cpu, gpu] = await Promise.all([ 
+      findHw('cpus', hwParts[0]), 
+      findHw('gpus', hwParts[1]) 
+  ]);
+
+  if (!cpu || !gpu) return notFound();
 
   const [upgradeCpu, upgradeGpu] = await Promise.all([
       findUpgrade('cpus', cpu.performance_index),
       findUpgrade('gpus', gpu.performance_index)
   ]);
-
-  return { cpu, gpu, gameSlug, resolution, upgradeCpu, upgradeGpu, isEn };
-};
-
-export default async function BottleneckPage({ params }) {
-  // 🔥 FIX #1: REMOVED AWAIT (Next.js 14 direct access)
-  const s = params; 
-  const data = await getAnalysisData(s.slug);
-
-  if (!data?.cpu || !data?.gpu) return notFound();
-
-  const { cpu, gpu, gameSlug, resolution, upgradeCpu, upgradeGpu, isEn } = data;
 
   const friendlyGameName = gameSlug ? gameSlug.replace(/-/g, ' ').toUpperCase() : (isEn ? 'MODERN TITLES' : 'MODERNÍCH HRÁCH');
   const friendlyRes = resolution === '2160p' ? '4K' : resolution;
@@ -105,15 +110,12 @@ export default async function BottleneckPage({ params }) {
 
   const getAmazonLink = (name, type) => {
       const q = encodeURIComponent(`${name} buy now best price deal gaming fps benchmark`);
-      const subtag = `bn-${type}-${resolution}-${gameSlug || 'general'}`;
+      const subtag = `bn-${type}-${resolution}`;
       return `https://www.amazon.com/s?k=${q}&tag=${AMAZON_TAG}&linkCode=ll2&ref_=as_li_ss_tl&ascsubtag=${subtag}`;
   };
 
-  const hQueryGpu = encodeHeureka(cleanHeurekaProduct(targetGpuName));
-  const hQueryCpu = encodeHeureka(cleanHeurekaProduct(targetCpuName));
-
-  const heurekaGpuLink = `https://graficke-karty.heureka.cz/f:q:${hQueryGpu}/?utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
-  const heurekaCpuLink = `https://procesory.heureka.cz/f:q:${hQueryCpu}/?utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+  const heurekaGpuLink = `https://graficke-karty.heureka.cz/f:q:${encodeHeureka(cleanHeurekaProduct(targetGpuName))}/?utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+  const heurekaCpuLink = `https://procesory.heureka.cz/f:q:${encodeHeureka(cleanHeurekaProduct(targetCpuName))}/?utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
 
   return (
     <div className="guru-bottleneck-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -123,96 +125,72 @@ export default async function BottleneckPage({ params }) {
 
         <header style={{ textAlign: 'center', margin: '50px 0' }}>
           <div className="radar-badge" style={{ color: '#66fcf1', border: '1px solid rgba(102,252,241,0.3)', padding: '6px 20px', borderRadius: '50px', fontSize: '11px', fontWeight: 950, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-            <Gauge size={16} /> 
-            <span>GURU REVENUE ENGINE V3.9.7</span>
+            <Gauge size={16} /> <span>GURU ENGINE V3.9.8</span>
           </div>
-          <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', fontWeight: 950, textTransform: 'uppercase', marginTop: '20px' }}>
+          <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 3rem)', fontWeight: 950, textTransform: 'uppercase', marginTop: '20px' }}>
             {cpu.name} <span style={{ opacity: 0.2 }}>+</span> {gpu.name}
           </h1>
         </header>
 
-        <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 900, marginBottom: '20px', color: '#facc15', textTransform: 'uppercase' }}>
-          🔥 {isEn ? 'BEST HARDWARE UPGRADE FOR THIS BUILD' : 'NEJLEPŠÍ UPGRADE PRO TUTO SESTAVU PRÁVĚ TEĎ'}
-        </div>
-
-        <section className="affiliate-cta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px', padding: '35px', background: 'rgba(0,0,0,0.5)', borderRadius: '28px', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
+        <section className="affiliate-cta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', padding: '35px', background: 'rgba(0,0,0,0.5)', borderRadius: '28px', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
             
-            <div className="affiliate-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="affiliate-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
+                <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase' }}>
                    <Monitor size={16} /> {isEn ? 'GPU UPGRADE' : 'DOPORUČENÝ UPGRADE GRAFIKY'}
                 </div>
-                <div style={{ width: '100%' }}>
-                    <div style={{ opacity: 0.6, fontSize: '12px', textAlign: 'center', marginBottom: '8px' }}>{isEn ? 'From $399' : 'Běžně 15 490 Kč • Guru cena od 11 990 Kč'}</div>
-                    <div style={{ fontSize: '11px', color: '#facc15', fontWeight: 900, textAlign: 'center', marginBottom: '10px' }}>
-                        {isEn ? `You are losing up to ${bottleneckPercent}% FPS performance` : `📉 Ztrácíš až ${bottleneckPercent}% výkonu s aktuální kartou`}
-                    </div>
-                    <div style={{ background: 'rgba(34,197,94,0.1)', borderRadius: '12px', padding: '12px', fontWeight: 900, textAlign: 'center', marginBottom: '15px', border: '1px solid rgba(34,197,94,0.2)' }}>
-                        🎮 {baseFps} FPS → {afterFps} FPS {isEn ? 'after upgrade' : 'po upgradu'}
-                    </div>
-                    <div style={{ fontWeight: 900, color: '#a855f7', marginBottom: '15px', textAlign: 'center' }}>🔥 {targetGpuName}</div>
-                    {isEn ? (
-                        <a href={getAmazonLink(targetGpuName, 'gpu')} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ background: '#f59e0b', color: '#000', padding: '18px', borderRadius: '14px', textDecoration: 'none', fontWeight: 950, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
-                           <ShoppingCart size={16} /> CHECK PRICE ON AMAZON
-                        </a>
-                    ) : (
-                        <a href={heurekaGpuLink} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ background: '#3b82f6', color: '#fff', padding: '18px', borderRadius: '14px', textDecoration: 'none', fontWeight: 950, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
-                           <ShoppingCart size={16} /> NAJÍT NEJLEVNĚJŠÍ CENU TEĎ
-                        </a>
-                    )}
+                <div style={{ opacity: 0.6, fontSize: '12px' }}>{isEn ? 'From $399' : 'Guru cena od 11 990 Kč'}</div>
+                <div style={{ fontSize: '11px', color: '#facc15', fontWeight: 900, textAlign: 'center' }}>
+                    {isEn ? `Losing up to ${bottleneckPercent}% FPS` : `📉 Ztrácíš až ${bottleneckPercent}% výkonu`}
                 </div>
+                <div style={{ background: 'rgba(34,197,94,0.1)', borderRadius: '12px', padding: '12px', fontWeight: 900, width: '100%', textAlign: 'center', border: '1px solid rgba(34,197,94,0.2)' }}>
+                    🎮 {baseFps} FPS → {afterFps} FPS
+                </div>
+                <div style={{ fontWeight: 900, color: '#a855f7' }}>🔥 {targetGpuName}</div>
+                {isEn ? (
+                    <a href={getAmazonLink(targetGpuName, 'gpu')} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ background: '#f59e0b', color: '#000', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center' }}>AMAZON DEALS</a>
+                ) : (
+                    <a href={heurekaGpuLink} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center' }}>NAJÍT NEJLEVNĚJŠÍ CENU</a>
+                )}
             </div>
 
-            <div className="affiliate-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="affiliate-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
+                <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase' }}>
                    <Zap size={16} /> {isEn ? 'CPU UPGRADE' : 'DOPORUČENÝ UPGRADE PROCESORU'}
                 </div>
-                <div style={{ width: '100%' }}>
-                    <div style={{ opacity: 0.6, fontSize: '12px', textAlign: 'center', marginBottom: '8px' }}>{isEn ? 'From $249' : 'Běžně 8 990 Kč • Guru cena od 6 490 Kč'}</div>
-                    <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: 900, textAlign: 'center', marginBottom: '10px' }}>
-                        {isEn ? 'Current CPU is slowing down your GPU' : '⚠️ Tvůj procesor brzdí potenciál grafiky'}
-                    </div>
-                    <div style={{ background: 'rgba(34,197,94,0.1)', borderRadius: '12px', padding: '12px', fontWeight: 900, textAlign: 'center', marginBottom: '15px', border: '1px solid rgba(34,197,94,0.2)' }}>
-                        🚀 {isEn ? '+35% smoother gaming experience' : '+35% plynulejší herní zážitek'}
-                    </div>
-                    <div style={{ fontWeight: 900, color: '#a855f7', marginBottom: '15px', textAlign: 'center' }}>🔥 {targetCpuName}</div>
-                    {isEn ? (
-                        <a href={getAmazonLink(targetCpuName, 'cpu')} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ background: '#f59e0b', color: '#000', padding: '18px', borderRadius: '14px', textDecoration: 'none', fontWeight: 950, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
-                           <ShoppingCart size={16} /> CHECK PRICE ON AMAZON
-                        </a>
-                    ) : (
-                        <a href={heurekaCpuLink} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ background: '#3b82f6', color: '#fff', padding: '18px', borderRadius: '14px', textDecoration: 'none', fontWeight: 950, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
-                           <ShoppingCart size={16} /> NAJÍT NEJLEVNĚJŠÍ CENU TEĎ
-                        </a>
-                    )}
+                <div style={{ opacity: 0.6, fontSize: '12px' }}>{isEn ? 'From $249' : 'Guru cena od 6 490 Kč'}</div>
+                <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: 900, textAlign: 'center' }}>
+                    {isEn ? 'CPU limits your GPU' : '⚠️ Procesor brzdí grafiku'}
                 </div>
+                <div style={{ background: 'rgba(34,197,94,0.1)', borderRadius: '12px', padding: '12px', fontWeight: 900, width: '100%', textAlign: 'center', border: '1px solid rgba(34,197,94,0.2)' }}>
+                    🚀 {isEn ? '+35% smoother' : '+35% plynulejší'}
+                </div>
+                <div style={{ fontWeight: 900, color: '#a855f7' }}>🔥 {targetCpuName}</div>
+                {isEn ? (
+                    <a href={getAmazonLink(targetCpuName, 'cpu')} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ background: '#f59e0b', color: '#000', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center' }}>AMAZON DEALS</a>
+                ) : (
+                    <a href={heurekaCpuLink} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center' }}>NAJÍT NEJLEVNĚJŠÍ CENU</a>
+                )}
             </div>
         </section>
 
-        <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ background: '#0a0b0d', border: '1px solid #06b6d4', padding: '25px', borderRadius: '20px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '15px', transition: '0.3s' }}>
-                <Gamepad2 size={32} color="#06b6d4" />
-                <div>
-                    <div style={{ fontSize: '18px', fontWeight: '950', color: '#fff' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</div>
-                    <div style={{ fontSize: '12px', color: '#9ca3af' }}>{isEn ? 'Test this build in other games' : 'Otestuj tuhle sestavu v jiných hrách'}</div>
-                </div>
+        {/* GURU TOOLS SECTION */}
+        <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ background: '#0a0b0d', border: '1px solid #06b6d4', padding: '20px', borderRadius: '15px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <Gamepad2 size={24} color="#06b6d4" />
+                <span style={{ fontSize: '16px', fontWeight: '950', color: '#fff' }}>FPS KALKULAČKA</span>
             </a>
-            <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ background: '#0a0b0d', border: '1px solid #a855f7', padding: '25px', borderRadius: '20px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '15px', transition: '0.3s' }}>
-                <Activity size={32} color="#a855f7" />
-                <div>
-                    <div style={{ fontSize: '18px', fontWeight: '950', color: '#fff' }}>{isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</div>
-                    <div style={{ fontSize: '12px', color: '#9ca3af' }}>{isEn ? 'Check another hardware combo' : 'Zkus jinou kombinaci hardware'}</div>
-                </div>
+            <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ background: '#0a0b0d', border: '1px solid #a855f7', padding: '20px', borderRadius: '15px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <Activity size={24} color="#a855f7" />
+                <span style={{ fontSize: '16px', fontWeight: '950', color: '#fff' }}>BOTTLENECK TEST</span>
             </a>
         </div>
 
         <div style={{ marginTop: '60px' }}>
             <BottleneckFatContent 
-                cpuName={cpu.name} 
-                gpuName={gpu.name} 
-                gameName={friendlyGameName} 
-                resolution={friendlyRes} 
+                cpuName={cpu.name} gpuName={gpu.name} 
+                gameName={friendlyGameName} resolution={friendlyRes} 
                 bottleneckPercent={bottleneckPercent}
-                bottleneckType={bottleneckPercent < 5 ? 'Balanced' : (isCpuBottleneck ? 'CPU' : 'GPU')}
+                bottleneckType={isCpuBottleneck ? 'CPU' : 'GPU'}
                 isEn={isEn} 
             />
         </div>
