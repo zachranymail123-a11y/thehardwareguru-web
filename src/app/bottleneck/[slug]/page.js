@@ -136,7 +136,7 @@ export default async function BottleneckPage({ params }) {
         <header style={{ textAlign: 'center', margin: '50px 0' }}>
           <div className="radar-badge" style={{ color: '#66fcf1', border: '1px solid rgba(102,252,241,0.3)', padding: '6px 20px', borderRadius: '50px', fontSize: '11px', fontWeight: 950, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <Gauge size={16} /> 
-            <span>GURU REVENUE ENGINE V3.9.2</span>
+            <span>GURU REVENUE ENGINE V3.9.3</span>
           </div>
           <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', fontWeight: 950, textTransform: 'uppercase', marginTop: '20px' }}>
             {cpu.name} <span style={{ opacity: 0.2 }}>+</span> {gpu.name}
@@ -215,7 +215,8 @@ export default async function BottleneckPage({ params }) {
         </div>
       </main>
 
-      <div className="sticky-bottom-anchor" style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: 'rgba(10,11,13,0.98)', borderTop: '1px solid rgba(255,255,255,0.1)', z-index: 9999, padding: '10px 0', display: 'flex', justifyContent: 'center' }}>
+      {/* 🔥 FIX: camelCase zIndex + camelCase borderTop */}
+      <div className="sticky-bottom-anchor" style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: 'rgba(10,11,13,0.98)', borderTop: '1px solid rgba(255,255,255,0.1)', zIndex: 9999, padding: '10px 0', display: 'flex', justifyContent: 'center' }}>
           <SeznamAd zoneId={408654} width={970} height={90} />
       </div>
     </div>
