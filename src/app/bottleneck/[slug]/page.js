@@ -58,8 +58,10 @@ const getAnalysisData = async (slug) => {
   
   const resParts = cleanSlug.split('-at-');
   const resolution = resParts[1] === '4k' ? '2160p' : (resParts[1] || '1440p'); 
+  
   const gameParts = resParts[0].split('-in-');
   const gameSlug = gameParts[1] || null;
+  
   const hwParts = gameParts[0].split('-with-');
   if (hwParts.length !== 2) return null;
   
@@ -134,7 +136,7 @@ export default async function BottleneckPage({ params }) {
         <header style={{ textAlign: 'center', margin: '50px 0' }}>
           <div className="radar-badge" style={{ color: '#66fcf1', border: '1px solid rgba(102,252,241,0.3)', padding: '6px 20px', borderRadius: '50px', fontSize: '11px', fontWeight: 950, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <Gauge size={16} /> 
-            {isEn ? 'GURU REVENUE ENGINE V3.9.1' : 'GURU REVENUE ENGINE V3.9.1'}
+            <span>GURU REVENUE ENGINE V3.9.2</span>
           </div>
           <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', fontWeight: 950, textTransform: 'uppercase', marginTop: '20px' }}>
             {cpu.name} <span style={{ opacity: 0.2 }}>+</span> {gpu.name}
