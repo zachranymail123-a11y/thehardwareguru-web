@@ -6,17 +6,18 @@ import { notFound } from 'next/navigation';
 import BottleneckClient from '../BottleneckClient';
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons';
-import { ShoppingCart, Monitor, Cpu, CheckCircle, Zap, Sparkles, TrendingUp, Award, Target, ArrowRight } from 'lucide-react';
+import { ShoppingCart, Monitor, Cpu, CheckCircle, Zap, Sparkles, TrendingUp, Award, ArrowRight } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK CALCULATOR RESULT - V2.6 (THE ULTIMATE REVENUE TERMINATOR)
- * 🚀 CÍL: Smart Upgrade Logic (Next-Tier), Performance Transformation Loop a Strategic Justification.
+ * GURU BOTTLENECK CALCULATOR RESULT - V2.7 (THE DEFINITIVE REVENUE TERMINATOR)
+ * 🚀 CÍL: Heureka Deep Links, React Safety, Loss-Gain loop a Performance Memoization.
  */
 
 const AMAZON_TAG = "thehardware07-20";
 const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |Intel |GeForce |Radeon /gi, '').trim();
 
 export default function BottleneckResultPage({ params, searchParams }) {
+    // 🔥 FIX #1: BEZPEČNÉ PARAMS (Next.js standard)
     const p = params;
     const s = searchParams;
     
@@ -26,6 +27,7 @@ export default function BottleneckResultPage({ params, searchParams }) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+    // 🔥 FIX #6: MEMOIZED SUPABASE CLIENT
     const supabase = useMemo(() => createClient(supabaseUrl, supabaseKey), [supabaseUrl, supabaseKey]);
     const [data, setData] = useState({ gpus: [], cpus: [], games: [] });
 
@@ -39,7 +41,7 @@ export default function BottleneckResultPage({ params, searchParams }) {
             setData({ gpus: gRes.data || [], cpus: cRes.data || [], games: gmRes.data || [] });
         };
         fetchAll();
-    }, []); 
+    }, [supabase]); 
 
     const resolutionStr = p.slug.includes('2160p') ? '2160p' : p.slug.includes('1440p') ? '1440p' : '1080p';
     const selectedGpu = data.gpus.find(g => String(g.id) === String(s.gpuId));
@@ -54,14 +56,12 @@ export default function BottleneckResultPage({ params, searchParams }) {
 
     const lossRaw = isGpuWinner ? (1 - bottleneckRatio) : (1 - (1 / bottleneckRatio));
     const fpsLoss = Math.min(50, Math.max(10, Math.round(Math.abs(lossRaw) * 100)));
-    const fpsGain = Math.round(fpsLoss * 0.9);
+    const fpsGain = Math.round(fpsLoss * 0.85);
 
-    // 🔥 FIX #1: SMART UPGRADE TARGETING (Doporučujeme vyšší tier, ne current HW)
+    // 🔥 FIX #7: SMART UPGRADE TARGETING
     const getUpgrade = (list, currentPerf) => {
-        // Hledáme položku, která má aspoň o 25 % vyšší výkon
         return list.find(item => item.performance_index > currentPerf * 1.25) || list[0];
     };
-
     const upgradeGpu = getUpgrade(data.gpus, gpuPerf);
     const upgradeCpu = getUpgrade(data.cpus, cpuPerf);
 
@@ -70,6 +70,10 @@ export default function BottleneckResultPage({ params, searchParams }) {
 
     const subTag = `bn-${isGpuWinner ? 'gpu' : 'cpu'}-${fpsLoss}-${resolutionStr}`;
     const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=${AMAZON_TAG}&linkCode=ll2&ref_=as_li_ss_tl&ascsubtag=${subTag}`;
+    
+    // 🔥 FIX #2: HEUREKA DEEP LINKS (Míříme přímo do kategorií)
+    const getHeurekaGpu = (name) => `https://graficke-karty.heureka.cz/f:q:${encodeURIComponent(name)}/?utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+    const getHeurekaCpu = (name) => `https://procesory.heureka.cz/f:q:${encodeURIComponent(name)}/?utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
 
     useEffect(() => {
@@ -92,6 +96,7 @@ export default function BottleneckResultPage({ params, searchParams }) {
                 .affiliate-cta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; padding: 40px; background: rgba(0,0,0,0.6); border-radius: 32px; border: 1px solid rgba(168, 85, 247, 0.2); width: 100%; box-sizing: border-box; align-items: stretch; margin: 60px 0; position: relative; }
                 .affiliate-col { display: flex; flex-direction: column; align-items: center; width: 100%; justify-content: space-between; padding: 35px; border-radius: 28px; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); position: relative; }
                 
+                /* 🔥 FIX #5: PULSEGLOW DOMINANCE */
                 .featured-upgrade { background: rgba(168, 85, 247, 0.12) !important; border: 2px solid #a855f7 !important; transform: scale(1.06); z-index: 2; animation: pulseGlow 2.5s infinite; }
                 @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 40px rgba(168,85,247,0.2); } 50% { box-shadow: 0 0 80px rgba(168,85,247,0.5); } }
 
@@ -140,7 +145,6 @@ export default function BottleneckResultPage({ params, searchParams }) {
                                     <div style={{ fontSize:'12px', color:'#22c55e', fontWeight:'900', marginTop:'4px', textAlign: 'center' }}>
                                         {isEn ? `🚀 +${fpsGain}% FPS gain after upgrade` : `🚀 +${fpsGain}% FPS po upgradu`}
                                     </div>
-                                    {/* 🔥 FIX #3: INSTANT GRATIFICATION LOOP */}
                                     <div style={{ fontSize:'12px', color:'#22c55e', fontWeight:'900', textAlign:'center', marginTop:'6px' }}>
                                         {isEn 
                                             ? `🎯 Performance: ${100 - fpsLoss}% → ${100 + fpsGain}%`
@@ -149,23 +153,16 @@ export default function BottleneckResultPage({ params, searchParams }) {
                                 </div>
                             )}
 
-                            <div style={{ textAlign:'center', fontSize:'14px', fontWeight:'900', color:'#fff', marginBottom: '2px' }}>
+                            <div style={{ textAlign:'center', fontSize:'14px', fontWeight:'900', color:'#fff', marginBottom: '4px' }}>
                                 {normalizeName(gpuName)}
                             </div>
                             
-                            {/* 🔥 FIX #2: WHY THIS UPGRADE */}
                             <div style={{ fontSize:'11px', opacity:0.7, marginBottom:'10px', textAlign: 'center' }}>
-                                {isEn 
-                                    ? 'Perfect match for your CPU – no bottleneck' 
-                                    : 'Perfektní kombinace k tvému CPU – bez bottlenecku'}
+                                {isEn ? 'Perfect match for your CPU – no bottleneck' : 'Perfektní kombinace k tvému CPU – bez bottlenecku'}
                             </div>
                             
                             <div style={{ fontSize: '11px', opacity: 0.6, marginBottom: '15px', fontWeight: 'bold' }}>
-                                {isEn ? 'From $399 • Top Tier Value' : 'Od 9 990 Kč • Špičkový poměr cena/výkon'}
-                            </div>
-
-                            <div style={{ fontSize:'12px', color:'#facc15', fontWeight:'900', textAlign:'center', marginBottom:'8px' }}>
-                                🔥 {isEn ? 'Unlock full potential now' : 'Odemkni plný výkon hned'}
+                                {isEn ? 'From $399 • Top Tier Value' : 'Od 9 990 Kč • Špičkový výkon'}
                             </div>
 
                             {isEn ? (
@@ -177,7 +174,7 @@ export default function BottleneckResultPage({ params, searchParams }) {
                                     <a href={getSmartyLink(normalizeName(gpuName))} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
                                         <ShoppingCart size={22} /> {`Koupit na Smarty.cz`}
                                     </a>
-                                    <a href={`https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(gpuName)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`} data-trixam-positionid="276026" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn">
+                                    <a href={getHeurekaGpu(normalizeName(gpuName))} data-trixam-positionid="276026" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn">
                                         {`🔥 Nejlepší cena ${normalizeName(gpuName)}`}
                                     </a>
                                 </>
@@ -221,17 +218,11 @@ export default function BottleneckResultPage({ params, searchParams }) {
                             </div>
 
                             <div style={{ fontSize:'11px', opacity:0.7, marginBottom:'10px', textAlign: 'center' }}>
-                                {isEn 
-                                    ? 'Perfect match for your GPU – zero lag' 
-                                    : 'Perfektní kombinace k tvé grafice – nulové záseky'}
+                                {isEn ? 'Perfect match for your GPU – zero lag' : 'Perfektní kombinace k tvé grafice – bez záseků'}
                             </div>
                             
                             <div style={{ fontSize: '11px', opacity: 0.6, marginBottom: '15px', fontWeight: 'bold' }}>
-                                {isEn ? 'From $249 • Extreme IPC speed' : 'Od 5 990 Kč • Extrémní výkon'}
-                            </div>
-
-                            <div style={{ fontSize:'12px', color:'#facc15', fontWeight:'900', textAlign:'center', marginBottom:'8px' }}>
-                                🔥 {isEn ? 'Get extreme performance' : 'Získej extrémní výkon hned'}
+                                {isEn ? 'From $249 • Extreme IPC speed' : 'Od 5 990 Kč • Špičkové IPC'}
                             </div>
 
                             {isEn ? (
@@ -243,7 +234,7 @@ export default function BottleneckResultPage({ params, searchParams }) {
                                     <a href={getSmartyLink(normalizeName(cpuName))} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
                                         <ShoppingCart size={22} /> {`Koupit na Smarty.cz`}
                                     </a>
-                                    <a href={`https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(cpuName)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`} data-trixam-positionid="276027" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn">
+                                    <a href={getHeurekaCpu(normalizeName(cpuName))} data-trixam-positionid="276027" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn">
                                         {`🔥 Nejlepší cena ${normalizeName(cpuName)}`}
                                     </a>
                                 </>
