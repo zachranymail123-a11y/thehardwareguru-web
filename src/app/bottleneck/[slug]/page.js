@@ -11,6 +11,7 @@ export const runtime = "nodejs";
 export const revalidate = 86400; 
 
 const AMAZON_TAG = "thehardware07-20";
+const BASE_URL = "https://thehardwareguru.cz";
 
 const normalizeName = (name = '') => name.replace(/\s+/g, ' ').trim();
 
@@ -23,7 +24,8 @@ const cleanHeurekaProduct = (name = '') => {
     .trim();
 };
 
-const encodeHeureka = (name = '', isEn = false) => {
+const encodeHeureka = (name = '') => {
+    // 🔥 FIX: Odstranění diakritiky + bezpečné URL kódování pro Heureka parametry
     const clean = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return clean.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).join('+');
 };
@@ -43,9 +45,11 @@ const findHw = async (table, rawSlugPart) => {
 
 const findUpgrade = async (table, currentPerf) => {
     const headers = { 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` };
-    const r = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}?select=name,slug,performance_index&performance_index=gt.${currentPerf * 1.2}&order=performance_index.asc&limit=1`, { headers });
-    const data = await r.json();
-    return data?.[0] || null;
+    try {
+        const r = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}?select=name,slug,performance_index&performance_index=gt.${currentPerf * 1.2}&order=performance_index.asc&limit=1`, { headers });
+        const data = await r.json();
+        return data?.[0] || null;
+    } catch(e) { return null; }
 };
 
 const getAnalysisData = async (slug) => {
@@ -53,15 +57,12 @@ const getAnalysisData = async (slug) => {
   const isEn = slug.startsWith('en-');
   const cleanSlug = slug.replace(/^en-/, '');
   
-  // Robustní split rozlišení
   const resParts = cleanSlug.split('-at-');
   const resolution = resParts[1] === '4k' ? '2160p' : (resParts[1] || '1440p'); 
   
-  // Robustní split hry
   const gameParts = resParts[0].split('-in-');
   const gameSlug = gameParts[1] || null;
   
-  // Robustní split HW
   const hwParts = gameParts[0].split('-with-');
   if (hwParts.length !== 2) return null;
   
@@ -73,17 +74,22 @@ const getAnalysisData = async (slug) => {
       findUpgrade('gpus', gpu.performance_index || 100)
   ]);
 
-  return { cpu, gpu, gameSlug, resolution, upgradeCpu, upgradeGpu, isEn };
+  return { cpu, gpu, gameSlug, resolution, upgradeCpu, upgradeGpu, isEn, rawSlug: slug };
 };
 
 export async function generateMetadata({ params }) {
     const s = await params;
     const data = await getAnalysisData(s.slug);
-    if (!data) return { title: 'Analysis' };
-    const { cpu, gpu, resolution, isEn } = data;
+    if (!data) return { title: 'Hardware Analysis' };
+    const { cpu, gpu, resolution, isEn, rawSlug } = data;
     const displayRes = resolution === '2160p' ? '4K' : resolution.toUpperCase();
+    
+    // 🔥 FIX: SEO Canonical link pro programmatic (zabraňuje duplicitám)
     return { 
-        title: isEn ? `${cpu.name} + ${gpu.name} Bottleneck Test (${displayRes})` : `${cpu.name} + ${gpu.name} Bottleneck Test (${displayRes}) | Hardware Guru`
+        title: isEn ? `${cpu.name} + ${gpu.name} Bottleneck Test (${displayRes})` : `${cpu.name} + ${gpu.name} Bottleneck Test (${displayRes}) | Hardware Guru`,
+        alternates: {
+            canonical: `${BASE_URL}${isEn ? '/en' : ''}/bottleneck/${rawSlug.replace(/^en-/, '')}`,
+        }
     };
 }
 
@@ -93,9 +99,8 @@ export default async function BottleneckPage({ params }) {
 
   if (!data?.cpu || !data?.gpu) return notFound();
 
-  const { cpu, gpu, gameSlug, resolution, upgradeCpu, upgradeGpu, isEn } = data;
+  const { cpu, gpu, gameSlug, resolution, upgradeCpu, upgradeGpu, isEn, rawSlug } = data;
 
-  // Formátování pro texty
   const friendlyGameName = gameSlug ? gameSlug.replace(/-/g, ' ').toUpperCase() : (isEn ? 'MODERN TITLES' : 'MODERNÍCH HRÁCH');
   const friendlyRes = resolution === '2160p' ? '4K' : resolution;
 
@@ -112,9 +117,11 @@ export default async function BottleneckPage({ params }) {
   const targetGpuName = upgradeGpu?.name || "RTX 4070 SUPER";
   const targetCpuName = upgradeCpu?.name || "Ryzen 7 7800X3D";
 
-  const getAmazonLink = (name) => {
+  // 🔥 FIX: Dynamický subtag pro lepší tracking konverzí z programmatic SEO
+  const getAmazonLink = (name, type) => {
       const q = encodeURIComponent(`${name} buy now best price deal gaming fps benchmark`);
-      return `https://www.amazon.com/s?k=${q}&tag=${AMAZON_TAG}&linkCode=ll2&ref_=as_li_ss_tl&ascsubtag=bn-article`;
+      const subtag = `bn-${type}-${resolution}-${gameSlug || 'general'}`;
+      return `https://www.amazon.com/s?k=${q}&tag=${AMAZON_TAG}&linkCode=ll2&ref_=as_li_ss_tl&ascsubtag=${subtag}`;
   };
 
   const hQueryGpu = encodeHeureka(cleanHeurekaProduct(targetGpuName));
@@ -132,7 +139,7 @@ export default async function BottleneckPage({ params }) {
         <header style={{ textAlign: 'center', margin: '50px 0' }}>
           <div className="radar-badge" style={{ color: '#66fcf1', border: '1px solid rgba(102,252,241,0.3)', padding: '6px 20px', borderRadius: '50px', fontSize: '11px', fontWeight: 950 }}>
             <Gauge size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> 
-            {isEn ? 'GURU REVENUE ENGINE V3.8' : 'GURU REVENUE ENGINE V3.8'}
+            {isEn ? 'GURU REVENUE ENGINE V3.9' : 'GURU REVENUE ENGINE V3.9'}
           </div>
           <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', fontWeight: 950, textTransform: 'uppercase', marginTop: '20px' }}>
             {cpu.name} <span style={{ opacity: 0.2 }}>+</span> {gpu.name}
@@ -159,11 +166,11 @@ export default async function BottleneckPage({ params }) {
                     </div>
                     <div style={{ fontWeight: 900, color: '#a855f7', marginBottom: '15px', textAlign: 'center' }}>🔥 {targetGpuName}</div>
                     {isEn ? (
-                        <a href={getAmazonLink(targetGpuName)} target="_blank" rel="nofollow sponsored" style={{ background: '#f59e0b', color: '#000', padding: '18px', borderRadius: '14px', textDecoration: 'none', fontWeight: 950, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+                        <a href={getAmazonLink(targetGpuName, 'gpu')} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ background: '#f59e0b', color: '#000', padding: '18px', borderRadius: '14px', textDecoration: 'none', fontWeight: 950, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
                            <ShoppingCart size={16} /> CHECK PRICE ON AMAZON
                         </a>
                     ) : (
-                        <a href={heurekaGpuLink} target="_blank" rel="nofollow sponsored" style={{ background: '#3b82f6', color: '#fff', padding: '18px', borderRadius: '14px', textDecoration: 'none', fontWeight: 950, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+                        <a href={heurekaGpuLink} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ background: '#3b82f6', color: '#fff', padding: '18px', borderRadius: '14px', textDecoration: 'none', fontWeight: 950, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
                            <ShoppingCart size={16} /> NAJÍT NEJLEVNĚJŠÍ CENU TEĎ
                         </a>
                     )}
@@ -184,11 +191,11 @@ export default async function BottleneckPage({ params }) {
                     </div>
                     <div style={{ fontWeight: 900, color: '#a855f7', marginBottom: '15px', textAlign: 'center' }}>🔥 {targetCpuName}</div>
                     {isEn ? (
-                        <a href={getAmazonLink(targetCpuName)} target="_blank" rel="nofollow sponsored" style={{ background: '#f59e0b', color: '#000', padding: '18px', borderRadius: '14px', textDecoration: 'none', fontWeight: 950, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+                        <a href={getAmazonLink(targetCpuName, 'cpu')} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ background: '#f59e0b', color: '#000', padding: '18px', borderRadius: '14px', textDecoration: 'none', fontWeight: 950, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
                            <ShoppingCart size={16} /> CHECK PRICE ON AMAZON
                         </a>
                     ) : (
-                        <a href={heurekaCpuLink} target="_blank" rel="nofollow sponsored" style={{ background: '#3b82f6', color: '#fff', padding: '18px', borderRadius: '14px', textDecoration: 'none', fontWeight: 950, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
+                        <a href={heurekaCpuLink} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ background: '#3b82f6', color: '#fff', padding: '18px', borderRadius: '14px', textDecoration: 'none', fontWeight: 950, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px' }}>
                            <ShoppingCart size={16} /> NAJÍT NEJLEVNĚJŠÍ CENU TEĎ
                         </a>
                     )}
