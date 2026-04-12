@@ -57,19 +57,20 @@ export default function MobileStickyButton() {
     const getLink = () => {
         const subId = `v10-sticky-${platform}-${funnelVariant}-${intent}`;
         
+        // Čisté názvy bez ručně psaných plusů
+        const gpuQueryStr = isHighEnd ? "RTX 5080" : "RTX 5060";
+        const cpuQueryStr = isHighEnd ? "Ryzen 9 9950X" : "Ryzen 5 9600";
+        const queryStr = funnelVariant === 'cpu' ? cpuQueryStr : gpuQueryStr;
+
+        // Bezpečné nahrazení mezer za "+" pro URL
+        const safeQuery = queryStr.trim().replace(/\s+/g, '+');
+
         if (platform === 'amazon') {
-            const gpuQuery = isHighEnd ? "RTX+5080" : "RTX+5060";
-            const cpuQuery = isHighEnd ? "Ryzen+9+9950X" : "Ryzen+5+9600";
-            const query = funnelVariant === 'cpu' ? cpuQuery : gpuQuery;
-            return `https://www.amazon.com/s?k=${query}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
+            return `https://www.amazon.com/s?k=${safeQuery}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
         }
-        
-        const gpuQuery = isHighEnd ? "rtx+5080" : "rtx+5060";
-        const cpuQuery = isHighEnd ? "ryzen+9950x" : "ryzen+9600";
-        const query = funnelVariant === 'cpu' ? cpuQuery : gpuQuery;
 
         // POUZE ČISTÝ HAFF ODKAZ NA VYHLEDÁVÁNÍ (h[fraze]) - NIC JINÉHO
-        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${query}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     };
 
     const handleLogClick = () => {
