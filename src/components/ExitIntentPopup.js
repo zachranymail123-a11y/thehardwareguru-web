@@ -4,8 +4,8 @@ import { AlertTriangle, ShoppingCart, X, Zap } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 /**
- * GURU EXIT INTENT POPUP V2.12 - THE ULTIMATE MONEY MAKER FIX
- * 🚀 CÍL: 100% shoda s Heureka adminem, pojistka načtení Trixam skriptu, agresivnější CTR copy.
+ * GURU EXIT INTENT POPUP V2.13 - THE ULTIMATE MONEY MAKER FIX
+ * 🚀 CÍL: Čistý HAFF tracking, smazání problémového Trixamu, agresivnější CTR copy.
  */
 
 export default function ExitIntentPopup() {
@@ -14,15 +14,7 @@ export default function ExitIntentPopup() {
     const pathname = usePathname() || '';
     const isEn = pathname.startsWith('/en');
 
-    // 1. Zajištění načtení Heureka trackovacího skriptu (Klíčové pro záchyt konverzí!)
-    useEffect(() => {
-        if (!isEn && !document.querySelector('script[src*="trixam.min.js"]')) {
-            const script = document.createElement('script');
-            script.src = "//serve.affiliate.heureka.cz/js/trixam.min.js";
-            script.async = true;
-            document.body.appendChild(script);
-        }
-    }, [isEn]);
+    // 🔥 ODSTRANĚN useEffect pro Trixam skript - jedeme čistý HAFF tracking
 
     // 2. Logika pro spuštění Popupu
     useEffect(() => {
@@ -48,14 +40,14 @@ export default function ExitIntentPopup() {
 
     if (!isVisible) return null;
 
-    // 🔥 DEFINITIVNÍ FIX: Odkazy s ampersandem a Text%20link přesně podle adminu 🔥
+    // 🔥 DEFINITIVNÍ FIX: Odkazy s ampersandem, haff=276049 a Text%20link 🔥
     const cpuLink = isEn 
         ? "https://www.amazon.com/s?k=computer+processor+cpu&tag=thehardware07-20" 
-        : "https://www.heureka.cz/?h%5Bfraze%5D=procesor&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
+        : "https://www.heureka.cz/?h%5Bfraze%5D=procesor&haff=276049&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
         
     const gpuLink = isEn 
         ? "https://www.amazon.com/s?k=graphics+card+gpu&tag=thehardware07-20" 
-        : "https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
+        : "https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta&haff=276049&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
 
     return (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 99999, display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(5px)' }}>
@@ -87,30 +79,26 @@ export default function ExitIntentPopup() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    {/* 🔥 ODSTRANĚNY TRIXAM ATRIBUTY 🔥 */}
                     <a 
                         href={gpuLink} 
                         target="_blank" 
                         rel="nofollow sponsored" 
                         onClick={() => setIsVisible(false)} 
-                        className="heureka-hn-link hover-scale"
-                        data-trixam-positionid="276026"
-                        data-trixam-content="Text link"
-                        data-trixam-medium="affiliate"
+                        className="hover-scale"
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: 'linear-gradient(90deg, #9333ea 0%, #06b6d4 100%)', color: '#fff', padding: '16px', borderRadius: '16px', fontWeight: '950', textTransform: 'uppercase', textDecoration: 'none', transition: '0.3s', boxShadow: '0 10px 20px rgba(168, 85, 247, 0.3)' }}
                     >
                         <Zap size={20} />
                         {isEn ? "Show Graphics Card Deals" : "🔥 Nejlevnější grafické karty DNES"}
                     </a>
                     
+                    {/* 🔥 ODSTRANĚNY TRIXAM ATRIBUTY 🔥 */}
                     <a 
                         href={cpuLink} 
                         target="_blank" 
                         rel="nofollow sponsored" 
                         onClick={() => setIsVisible(false)} 
-                        className="heureka-hn-link hover-scale"
-                        data-trixam-positionid="276027"
-                        data-trixam-content="Text link"
-                        data-trixam-medium="affiliate"
+                        className="hover-scale"
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '16px', borderRadius: '16px', fontWeight: '950', textTransform: 'uppercase', textDecoration: 'none', transition: '0.3s' }}
                     >
                         <ShoppingCart size={20} color="#a855f7" />
