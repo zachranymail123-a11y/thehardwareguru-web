@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { notFound } from 'next/navigation';
+import { notFound, usePathname } from 'next/navigation';
 import BottleneckClient from '../BottleneckClient';
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons';
@@ -39,6 +39,7 @@ const encodeHeureka = (name = '') => {
 export default function BottleneckResultPage({ params, searchParams }) {
     const p = params;
     const s = searchParams;
+    const pathname = usePathname() || '';
     
     if (!s.cpuId || !s.gpuId || !p.slug) return notFound();
 
@@ -83,24 +84,39 @@ export default function BottleneckResultPage({ params, searchParams }) {
     const upgradeGpu = getUpgrade(data.gpus, gpuPerf);
     const upgradeCpu = getUpgrade(data.cpus, cpuPerf);
 
-    const gpuName = upgradeGpu?.name || 'RTX 4070 SUPER';
-    const cpuName = upgradeCpu?.name || 'Ryzen 7 7800X3D';
+    const gpuName = upgradeGpu?.name || 'RTX 5070';
+    const cpuName = upgradeCpu?.name || 'Ryzen 7 9800X3D';
 
-    const subTag = `bn-${isGpuWinner ? 'gpu' : 'cpu'}-${fpsLoss}-${resolutionStr}`;
+    const subTag = `v10-bn-res-${isGpuWinner ? 'gpu' : 'cpu'}`;
     
-    // 🔥 AFFILIATE LINK GENERATORS
+    // 🔥 V10 HARD-LOCK TRACKING LOGIC 🔥
+    const handleHeurekaAction = (e, name, cat) => {
+        e.preventDefault();
+        const q = encodeHeureka(name);
+        // Prioritní haff ID na začátku
+        const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subTag}`;
+        
+        const payload = { 
+            platform: 'heureka', 
+            category: `bn_res_${cat}`, 
+            sub_id: subTag, 
+            page: pathname 
+        };
+
+        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+            navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
+        }
+
+        setTimeout(() => {
+            window.location.href = targetUrl;
+        }, 150);
+    };
+
     const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name + ' gaming benchmark fps test')}&tag=${AMAZON_TAG}&linkCode=ll2&ref_=as_li_ss_tl&ascsubtag=${subTag}`;
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
     
-    const getHeurekaGpuLink = (name) => {
-        const q = encodeHeureka(name);
-        return `https://graficke-karty.heureka.cz/f:q:${q}/?utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
-    };
-    
-    const getHeurekaCpuLink = (name) => {
-        const q = encodeHeureka(name);
-        return `https://procesory.heureka.cz/f:q:${q}/?h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
-    };
+    // Fallback href pro boty, realita běží přes onClick
+    const getHeurekaFallbackLink = (name) => `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeHeureka(name)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=res-fallback`;
 
     return (
         <div className="guru-page-wrapper" style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', paddingTop: '100px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -151,7 +167,7 @@ export default function BottleneckResultPage({ params, searchParams }) {
                             </div>
                             
                             <div className="price-anchor">
-                                {isEn ? 'From $399 • Top Tier Value' : 'Od 9 990 Kč • Špičkový výkon'}
+                                {isEn ? 'From $399 • Top Tier Value' : 'Špičkový výkon • Skladem'}
                             </div>
 
                             {isEn ? (
@@ -160,7 +176,14 @@ export default function BottleneckResultPage({ params, searchParams }) {
                                 </a>
                             ) : (
                                 <>
-                                    <a href={getHeurekaGpuLink(gpuName)} data-trixam-positionid="276026" target="_blank" rel="nofollow sponsored noopener noreferrer" className="guru-buy-winner-btn heureka-btn">
+                                    <a 
+                                        href={getHeurekaFallbackLink(gpuName)} 
+                                        onClick={(e) => handleHeurekaAction(e, gpuName, 'gpu')}
+                                        data-trixam-positionid="276026" 
+                                        target="_blank" 
+                                        rel="nofollow sponsored noopener noreferrer" 
+                                        className="guru-buy-winner-btn heureka-btn"
+                                    >
                                         {`🔥 Nejlepší cena ${normalizeName(gpuName)}`}
                                     </a>
                                     <div className="conversion-detail">
@@ -196,7 +219,7 @@ export default function BottleneckResultPage({ params, searchParams }) {
                             </div>
                             
                             <div className="price-anchor">
-                                {isEn ? 'From $249 • Extreme IPC speed' : 'Od 5 990 Kč • Špičkové IPC'}
+                                {isEn ? 'From $249 • Extreme IPC speed' : 'Špičkové IPC • Skladem'}
                             </div>
 
                             {isEn ? (
@@ -205,7 +228,14 @@ export default function BottleneckResultPage({ params, searchParams }) {
                                 </a>
                             ) : (
                                 <>
-                                    <a href={getHeurekaCpuLink(cpuName)} data-trixam-positionid="276027" target="_blank" rel="nofollow sponsored noopener noreferrer" className="guru-buy-winner-btn heureka-btn">
+                                    <a 
+                                        href={getHeurekaFallbackLink(cpuName)} 
+                                        onClick={(e) => handleHeurekaAction(e, cpuName, 'cpu')}
+                                        data-trixam-positionid="276027" 
+                                        target="_blank" 
+                                        rel="nofollow sponsored noopener noreferrer" 
+                                        className="guru-buy-winner-btn heureka-btn"
+                                    >
                                         {`🔥 Nejlepší cena ${normalizeName(cpuName)}`}
                                     </a>
                                     <div className="conversion-detail">
@@ -221,7 +251,7 @@ export default function BottleneckResultPage({ params, searchParams }) {
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
-                    <HeurekaButtons isEn={isEn} manualSearch={gpuName} positionId="276026" />
+                    <HeurekaButtons isEn={isEn} />
                 </div>
             </div>
 
