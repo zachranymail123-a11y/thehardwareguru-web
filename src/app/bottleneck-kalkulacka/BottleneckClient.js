@@ -2,20 +2,15 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { usePathname } from 'next/navigation'; // 🔥 FIX: Chybějící import pro tracking
+import { usePathname } from 'next/navigation'; // 🔥 FIX: Import pro tracking
 import { 
  Cpu, Monitor, Zap, AlertTriangle, Crosshair, Settings2, Sparkles, 
  TrendingUp, TrendingDown, Layers, Target, Video, Share2, Check, 
- Twitter, Award, Swords, Gamepad2, ChevronRight, Play, Newspaper, Lightbulb, ShoppingCart, Activity // 🔥 FIX: Přidána ikona Activity
+ Twitter, Award, Swords, Gamepad2, ChevronRight, Play, Newspaper, Lightbulb, ShoppingCart, Activity
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons'; 
 import ShareResultButton from '../../components/ShareResultButton';
-
-/**
- * GURU BOTTLENECK ENGINE CLIENT - V12.3 (V10 HARD-LOCK & NAV UPDATE)
- * 🚀 CÍL: Oprava Heureka linků a přidání přepínacích tlačítek na kalkulačky.
- */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -168,7 +163,7 @@ export default function BottleneckClient({
     const cleanCpuName = a.cpuName ? normalizeName(a.cpuName) : '';
     const cleanGpuName = a.gpuName ? normalizeName(a.gpuName) : '';
 
-    // 🔥 V10 HARD-LOCK REDIRECT 🔥
+    // 🔥 V10 HARD-LOCK REDIRECT LOGIC 🔥
     const handleAffiliateClick = (e, name, type) => {
         e.preventDefault();
         const cleanName = normalizeName(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '+');
@@ -181,7 +176,7 @@ export default function BottleneckClient({
         const subId = `v10-bn-${type}`;
         const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${cleanName}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
         
-        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        if (navigator.sendBeacon) {
             const payload = { platform: 'heureka', category: `bn_${type}`, sub_id: subId, page: pathname };
             navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
         }
@@ -302,7 +297,7 @@ export default function BottleneckClient({
                 </div>
             </div>
 
-            {/* 🔥 GURU TOOLS - PŘEPÍNACÍ TLAČÍTKA NA KALKULAČKY 🔥 */}
+            {/* 🔥 GURU TOOLS - PŘEPÍNACÍ TLAČÍTKA 🔥 */}
             <div className="guru-tools-nav" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '40px' }}>
                 <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ background: 'rgba(6, 182, 212, 0.1)', border: '1px solid #06b6d4', padding: '20px', borderRadius: '15px', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
                     <Gamepad2 size={24} color="#06b6d4" />
@@ -314,8 +309,8 @@ export default function BottleneckClient({
                 </a>
             </div>
 
-            <div className="massive-seo-hub">
-                <div className="viral-flex-card" style={{ display: 'flex', alignItems: 'center', gap: '30px', padding: '40px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '30px', marginTop: '80px' }}>
+            <div className="massive-seo-hub" style={{ marginTop: '80px' }}>
+                <div className="viral-flex-card" style={{ display: 'flex', alignItems: 'center', gap: '30px', padding: '40px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '30px' }}>
                     <div className="award-icon"><Award size={32} color="#a855f7" /></div>
                     <div className="viral-text-box">
                         <div style={{ fontWeight: '950', fontSize: '18px' }}>{isEn ? 'SHARE CALCULATOR' : 'SDÍLET KALKULAČKU'}</div>
@@ -330,14 +325,14 @@ export default function BottleneckClient({
 
                 <div className="hub-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', marginTop: '50px' }}>
                     <div className="hub-column" style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div className="hub-col-header" style={{ display: 'flex', alignItems: 'center', gap: '15px', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', fontSize: '18px', borderBottom: '1px solid rgba(255,255,255,0.05)', padding-bottom: '15px' }}><Swords size={20} color="#ff0055" /> {isEn ? 'Hardware Battles' : 'HW Souboje'}</div>
+                        <div className="hub-col-header" style={{ display: 'flex', alignItems: 'center', gap: '15px', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', fontSize: '18px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '15px' }}><Swords size={20} color="#ff0055" /> {isEn ? 'Hardware Battles' : 'HW Souboje'}</div>
                         <ul className="hub-links-list" style={{ listStyle: 'none', padding: 0 }}>
                             <li style={{ marginBottom: '18px' }}><a href={isEn ? "/en/gpuvs" : "/gpuvs"} style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '16px', fontWeight: 'bold' }}><ChevronRight size={16} /> {isEn ? 'Graphics Card Battles' : 'Souboje Grafických Karet'}</a></li>
                             <li style={{ marginBottom: '18px' }}><a href={isEn ? "/en/cpuvs" : "/cpuvs"} style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '16px', fontWeight: 'bold' }}><ChevronRight size={16} /> {isEn ? 'Processor Battles' : 'Souboje Procesorů'}</a></li>
                         </ul>
                     </div>
                     <div className="hub-column" style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div className="hub-col-header" style={{ display: 'flex', alignItems: 'center', gap: '15px', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', fontSize: '18px', borderBottom: '1px solid rgba(255,255,255,0.05)', padding-bottom: '15px' }}><Gamepad2 size={20} color="#66fcf1" /> {isEn ? 'Guru Ecosystem' : 'Guru Ekosystém'}</div>
+                        <div className="hub-col-header" style={{ display: 'flex', alignItems: 'center', gap: '15px', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', fontSize: '18px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '15px' }}><Gamepad2 size={20} color="#66fcf1" /> {isEn ? 'Guru Ecosystem' : 'Guru Ekosystém'}</div>
                         <ul className="hub-links-list" style={{ listStyle: 'none', padding: 0 }}>
                             <li style={{ marginBottom: '18px' }}><a href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"} style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '16px', fontWeight: 'bold' }}><ChevronRight size={16} /> {isEn ? 'Game Archive' : 'Archiv her'}</a></li>
                             <li style={{ marginBottom: '18px' }}><a href={isEn ? "/en/clanky" : "/clanky"} style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '16px', fontWeight: 'bold' }}><ChevronRight size={16} /> {isEn ? 'News & Articles' : 'Články a Novinky'}</a></li>
@@ -350,7 +345,7 @@ export default function BottleneckClient({
             <div style={{ marginTop: '40px' }}><HeurekaButtons isEn={isEn} /></div>
 
             <style dangerouslySetInnerHTML={{__html: `
-                .bn-wrapper { width: 100%; }
+                .bn-wrapper { background: rgba(10, 11, 13, 0.9); color: #fff; border-radius: 40px; padding: 60px; border: 1px solid rgba(102, 252, 241, 0.1); backdrop-filter: blur(20px); box-sizing: border-box; }
                 .bn-inputs-card { background: rgba(255, 255, 255, 0.02); border-radius: 30px; padding: 40px; border: 1px solid rgba(255, 255, 255, 0.05); }
                 .section-title { display: flex; align-items: center; gap: 15px; font-size: 20px; font-weight: 950; color: #fff; margin-bottom: 40px; text-transform: uppercase; border-left: 4px solid #a855f7; padding-left: 15px; }
                 .bn-select { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; outline: none; transition: 0.3s; font-size: 16px; margin-bottom: 20px; }
@@ -365,9 +360,8 @@ export default function BottleneckClient({
                 .switch.on::after { left: 23px; }
                 .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
                 .toggle-row { display: flex; align-items: center; gap: 15px; cursor: pointer; background: #000; padding: 18px; border-radius: 15px; font-size: 13px; font-weight: 950; border: 1px solid #222; }
-                .bn-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 50px; }
                 .bn-result-card { background: linear-gradient(145deg, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0.6) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 30px; padding: 50px; display: flex; align-items: center; justify-content: center; min-height: 600px; }
-                @media (max-width: 1000px) { .bn-grid { grid-template-columns: 1fr; } }
+                @media (max-width: 1000px) { .bn-grid { grid-template-columns: 1fr; } .bn-wrapper { padding: 30px; } }
             `}} />
         </div>
     );
