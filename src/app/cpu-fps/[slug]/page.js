@@ -1,5 +1,7 @@
-import React from 'react';
-import { notFound } from 'next/navigation';
+'use client';
+
+import React, { useEffect, useState, use } from 'react';
+import { notFound, usePathname } from 'next/navigation';
 import { 
   Gamepad2, 
   ChevronRight, 
@@ -11,73 +13,80 @@ import {
   Heart,
   Gauge,
   Cpu,
-  AlertTriangle
+  AlertTriangle,
+  ShoppingCart
 } from 'lucide-react';
 import GuruAnalysisText from '../../../components/GuruAnalysisText';
 import SeznamAd from '../../../components/SeznamAd';
-import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
+import HeurekaButtons from '../../../components/HeurekaButtons';
+import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU CPU FPS HUB V1.5 (HEUREKA CTA + TOOLS UPDATE)
- * 🚀 CÍL: Přidání povinných odkazů na FPS a Bottleneck kalkulačku, zachování Heureka konverzí a reklamních bloků.
- * Cesta: src/app/cpu-fps/[slug]/page.js
+ * GURU CPU FPS HUB V1.6 (V10 HARD-LOCK UPDATE)
+ * 🚀 CÍL: Implementace V10 Hard-Lock linků, oprava cest a zachování nástrojů.
  */
-
-export const runtime = "nodejs";
-export const revalidate = 86400; 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const baseUrl = "https://thehardwareguru.cz";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 const slugify = (text) => text ? text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
-const findCpuBySlug = async (cpuSlug) => {
-  if (!supabaseUrl || !cpuSlug) return null;
-  const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
-  try {
-      const res1 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=eq.${cpuSlug}&limit=1`, { headers, cache: 'force-cache' });
-      if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
-      
-      const clean = cpuSlug.replace(/-/g, " ").replace(/amd|intel|ryzen|core|ultra|processor|cpu/gi, '').trim();
-      const tokens = clean.split(/\s+/).filter(t => t.length > 0);
-      if (tokens.length > 0) {
-          const cond = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
-          const url2 = `${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&and=(${cond})&limit=1`;
-          const res2 = await fetch(url2, { headers, cache: 'force-cache' });
-          if (res2.ok) { const data2 = await res2.json(); return data2[0] || null; }
-      }
-  } catch(e) {}
-  return null;
-};
-
-export async function generateMetadata(props) {
-  const params = await props.params;
-  const rawSlug = params?.slug || '';
+export default function CpuFpsHubPage({ params }) {
+  const p = use(params);
+  const rawSlug = p?.slug || '';
   const isEn = rawSlug.startsWith('en-');
   const cleanSlug = rawSlug.replace(/^en-/, '');
-  const cpu = await findCpuBySlug(cleanSlug);
-  if (!cpu) return { title: '404 | The Hardware Guru' };
-  const safeSlug = cpu.slug || slugify(cpu.name);
-  return {
-    title: isEn ? `How much FPS does ${cpu.name} get? | Guru Benchmarks` : `Kolik FPS má ${cpu.name} ve hrách? | Guru Testy`,
-    alternates: { canonical: `${baseUrl}/cpu-fps/${safeSlug}`, languages: { 'en': `${baseUrl}/en/cpu-fps/${safeSlug}`, 'cs': `${baseUrl}/cpu-fps/${safeSlug}` } }
-  };
-}
+  const pathname = usePathname() || '';
 
-export default async function CpuFpsHubPage(props) {
-  const params = await props.params;
-  const rawSlug = params?.slug || '';
-  const isEn = rawSlug.startsWith('en-');
-  const cleanSlug = rawSlug.replace(/^en-/, '');
+  const [cpu, setCpu] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const cpu = await findCpuBySlug(cleanSlug);
+  useEffect(() => {
+    const fetchCpu = async () => {
+      const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+      try {
+        const res = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=eq.${cleanSlug}&limit=1`, { headers });
+        const data = await res.json();
+        if (data?.[0]) {
+          setCpu(data[0]);
+        } else {
+          // Fallback vyhledávání
+          const clean = cleanSlug.replace(/-/g, " ").replace(/amd|intel|ryzen|core|ultra|processor|cpu/gi, '').trim();
+          const tokens = clean.split(/\s+/).filter(t => t.length > 0);
+          if (tokens.length > 0) {
+            const cond = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
+            const res2 = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&and=(${cond})&limit=1`, { headers });
+            const data2 = await res2.json();
+            setCpu(data2[0] || null);
+          }
+        }
+      } catch (e) {}
+      setLoading(false);
+    };
+    fetchCpu();
+  }, [cleanSlug]);
+
+  if (loading) return null;
   if (!cpu) notFound();
 
   const fpsData = Array.isArray(cpu.cpu_game_fps) ? (cpu.cpu_game_fps[0] || {}) : (cpu.cpu_game_fps || {});
   const vendorColor = (cpu.vendor || '').toUpperCase() === 'INTEL' ? '#0071c5' : ((cpu.vendor || '').toUpperCase() === 'AMD' ? '#ed1c24' : '#f59e0b');
   const safeSlug = cpu.slug || slugify(cpu.name);
+
+  // 🔥 V10 HARD-LOCK REDIRECT LOGIC 🔥
+  const handleHeurekaAction = (e, name) => {
+    e.preventDefault();
+    const cleanName = name.replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '+');
+    const subId = `v10-cpu-hub`;
+    const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${cleanName}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+    
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify({ platform: 'heureka', category: 'cpu_hub', sub_id: subId, page: pathname })], { type: 'text/plain' }));
+    }
+    setTimeout(() => { window.location.href = targetUrl; }, 150);
+  };
 
   const gamesToShow = [
     { id: 'resident_evil_requiem', name: 'Resident Evil Requiem', key: 'resident_evil_requiem' },
@@ -99,14 +108,9 @@ export default async function CpuFpsHubPage(props) {
       
       <main className="inner-container" style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
-        {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD (Před hlavičkou pro 100% viditelnost) */}
         <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
-            <div className="ad-desktop-wrapper">
-                <SeznamAd zoneId={408654} width={970} height={210} />
-            </div>
-            <div className="ad-mobile-wrapper">
-                <SeznamAd zoneId={408651} width={300} height={250} />
-            </div>
+            <div className="ad-desktop-wrapper"><SeznamAd zoneId={408654} width={970} height={210} /></div>
+            <div className="ad-mobile-wrapper"><SeznamAd zoneId={408651} width={300} height={250} /></div>
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
@@ -125,7 +129,6 @@ export default async function CpuFpsHubPage(props) {
         <div className="fps-matrix-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px', marginBottom: '60px', marginTop: '40px' }}>
           {gamesToShow.map((game) => {
             let fpsBase = Number(fpsData[`${game.key}_1440p`] || fpsData[`${game.key}_1080p`] || 0);
-            
             if (fpsBase === 0 && cpu.performance_index > 0) {
                 const pIdx = cpu.performance_index;
                 if (game.key === 'cs2') fpsBase = Math.round(pIdx * 2.5);
@@ -135,7 +138,6 @@ export default async function CpuFpsHubPage(props) {
                 else fpsBase = Math.round(pIdx * 1.1);
             }
             if (fpsBase === 0) fpsBase = 145;
-
             const verdict = getVerdict(fpsBase);
 
             return (
@@ -159,7 +161,18 @@ export default async function CpuFpsHubPage(props) {
           })}
         </div>
 
-        {/* 🔥 PŘIDÁNO DLE ROZKAZU: POVINNÁ NÁSTROJOVÁ CTA TLAČÍTKA 🔥 */}
+        {/* Affiliate Block (V10 Hard-Lock) */}
+        <div style={{ marginBottom: '40px', background: 'rgba(255,255,255,0.02)', padding: '35px', borderRadius: '24px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase', marginBottom: '15px' }}>AKTUALIZOVANÁ CENA PROCESORU</div>
+            <div style={{ fontWeight: 950, fontSize: '22px', marginBottom: '25px' }}>{cpu.name}</div>
+            <button 
+              onClick={(e) => handleHeurekaAction(e, cpu.name)}
+              style={{ background: '#3b82f6', color: '#fff', padding: '18px 40px', borderRadius: '14px', border: 'none', fontWeight: 950, cursor: 'pointer', fontSize: '16px', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: '10px' }}
+            >
+              <ShoppingCart size={20} /> {isEn ? 'Check Price' : 'Zjistit nejlevnější cenu'}
+            </button>
+        </div>
+
         <section style={{ marginBottom: '60px' }}>
             <div className="guru-tools-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                 <div className="tool-cta-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(168, 85, 247, 0.2)', padding: '30px', borderRadius: '24px' }}>
@@ -191,7 +204,6 @@ export default async function CpuFpsHubPage(props) {
             </div>
         </section>
 
-        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek 🔥 */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
             <HeurekaButtons isEn={isEn} />
         </div>
@@ -223,14 +235,9 @@ export default async function CpuFpsHubPage(props) {
         </div>
       </main>
 
-      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
       <div className="sticky-bottom-anchor">
-          <div className="ad-desktop-wrapper">
-              <SeznamAd zoneId={408654} width={970} height={90} />
-          </div>
-          <div className="ad-mobile-wrapper">
-              <SeznamAd zoneId={408651} width={300} height={100} />
-          </div>
+          <div className="ad-desktop-wrapper"><SeznamAd zoneId={408654} width={970} height={90} /></div>
+          <div className="ad-mobile-wrapper"><SeznamAd zoneId={408651} width={300} height={100} /></div>
       </div>
 
       <style dangerouslySetInnerHTML={{__html: `
@@ -243,28 +250,10 @@ export default async function CpuFpsHubPage(props) {
         .deep-link-card .arrow { position: absolute; bottom: 30px; right: 30px; opacity: 0.2; }
         .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: #eab308; color: #000; font-weight: 950; border-radius: 16px; text-decoration: none; }
         .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; font-weight: 950; border-radius: 16px; text-decoration: none; }
-        
         .tool-btn-link:hover, .tool-btn-link-cyan:hover { filter: brightness(1.2); transform: translateY(-2px); }
-
-        /* 🔥 STICKY BOTTOM ANCHOR CSS */
-        .sticky-bottom-anchor {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(10, 11, 13, 0.98);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 9999;
-            padding: 10px 0;
-            display: flex;
-            justify-content: center;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
-        }
-
-        /* 🚀 RESPONSIVE ADS SYSTEM */
+        .sticky-bottom-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); }
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
-
         @media (max-width: 768px) {
             .guru-hub-wrapper { padding-top: 80px !important; }
             .inner-container { padding: 0 15px !important; }
