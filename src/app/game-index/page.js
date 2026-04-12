@@ -3,13 +3,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from 'react';
 import SeznamAd from "../../components/SeznamAd";
-import { Gamepad2, ShoppingCart } from 'lucide-react';
+import { Gamepad2, ShoppingCart, AlertTriangle } from 'lucide-react';
 import HeurekaButtons from "../../components/HeurekaButtons";
 
 /**
- * GURU GAME INDEX V1.6 (AFFILIATE BOMB & BUILD FIX)
- * 🚀 CÍL: Oprava cest k importům (Build fix) + integrace modrých affiliate tlačítek.
+ * GURU GAME INDEX V1.7 (V10 HARD-LOCK UPDATE)
+ * 🚀 CÍL: Integrace V10 Hard-Lock linku pro RTX 5070 Ti a přidání kalkulaček.
  */
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 export default function GameIndexPage() {
     const pathname = usePathname();
@@ -21,9 +24,23 @@ export default function GameIndexPage() {
         "baldurs-gate-3", "hogwarts-legacy", "forza-horizon-5"
     ];
 
-    // Affiliate linky pro modrá tlačítka
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
-    const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+
+    // 🔥 V10 HARD-LOCK REDIRECT LOGIC 🔥
+    const handleHeurekaAction = (e, name, subId) => {
+        e.preventDefault();
+        const q = encodeURIComponent(name);
+        const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+        
+        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+            const payload = { platform: 'heureka', category: 'game_index', sub_id: subId, page: pathname };
+            navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
+        }
+
+        setTimeout(() => {
+            window.location.href = targetUrl;
+        }, 150);
+    };
 
     return (
         <div className="guru-page-wrapper" style={globalStyles}>
@@ -51,7 +68,7 @@ export default function GameIndexPage() {
             </header>
 
             <main style={main}>
-                {/* 🔥 GURU AFFILIATE BOMB (Modrá tlačítka s opraveným trackováním) 🔥 */}
+                {/* 🔥 GURU AFFILIATE BOMB 🔥 */}
                 <div className="affiliate-cta-grid" style={{ marginBottom: '50px', borderLeft: '4px solid #a855f7' }}>
                     <div className="affiliate-col">
                         <div className="affiliate-col-title" style={{ color: '#a855f7' }}>
@@ -61,21 +78,17 @@ export default function GameIndexPage() {
                             <a href={getSmartyLink("RTX 5070 Ti")} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
                                 <ShoppingCart size={16} /> Smarty.cz
                             </a>
-                            <a 
-                                href={getHeurekaLink("RTX 5070 Ti")} 
-                                data-trixam-positionid="276026" 
-                                data-trixam-codetype="link" 
-                                target="_blank" 
-                                rel="nofollow sponsored" 
+                            <button 
+                                onClick={(e) => handleHeurekaAction(e, "RTX 5070 Ti", "v10-game-index")}
                                 className="guru-buy-winner-btn heureka-btn heureka-hn-link"
+                                style={{ border: 'none', cursor: 'pointer' }}
                             >
                                 <ShoppingCart size={16} /> Heureka.cz
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                {/* Heureka Buttons pro kategorie (ponecháno pod Bomb Gridem) */}
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
                     <HeurekaButtons isEn={isEn} manualSearch="RTX 5070 Ti" positionId="276026" />
                 </div>
@@ -100,6 +113,16 @@ export default function GameIndexPage() {
                             )}
                         </React.Fragment>
                     ))}
+                </div>
+
+                {/* 🔥 GURU TOOLS - POVINNÁ TLAČÍTKA NA KALKULAČKY 🔥 */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '60px' }}>
+                    <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
+                        <Gamepad2 size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</span>
+                    </a>
+                    <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                        <AlertTriangle size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</span>
+                    </a>
                 </div>
             </main>
 
