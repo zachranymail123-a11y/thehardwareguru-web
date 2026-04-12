@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AlertTriangle, ShoppingCart, X, Zap } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
@@ -16,7 +16,6 @@ export default function ExitIntentPopup({ cpuName = "Procesor", gpuName = "Grafi
     const [hasTriggered, setHasTriggered] = useState(false);
     const [timeLeft, setTimeLeft] = useState(180);
     const pathname = usePathname() || '';
-    const clickLockRef = useRef(false);
     
     const isEn = pathname.startsWith('/en');
     const platform = isEn ? 'amazon' : 'heureka';
@@ -104,14 +103,8 @@ export default function ExitIntentPopup({ cpuName = "Procesor", gpuName = "Grafi
         return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(q)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_content=${subId}`;
     };
 
-    // 5. 🔥 FIX: Hard-Lock Tracking s 150ms Delayem
-    const handleClick = (e, type) => {
-        if (clickLockRef.current) return;
-        clickLockRef.current = true;
-        e.preventDefault();
-        e.stopPropagation();
-
-        const targetUrl = getLink(type);
+    // 5. 🔥 FIX: Tiché logování bez blokování nativního prokliku
+    const handleLogClick = (type) => {
         const payload = { platform, category: `exit_popup_${type}`, sub_id: `v15-exit`, page: pathname };
 
         // A. sendBeacon (Primary for exit intent)
@@ -120,14 +113,11 @@ export default function ExitIntentPopup({ cpuName = "Procesor", gpuName = "Grafi
         }
 
         // B. Backup Queue (In case tab closes instantly)
-        const q = JSON.parse(localStorage.getItem('pending_clicks') || '[]');
-        q.push(payload);
-        localStorage.setItem('pending_clicks', JSON.stringify(q));
-
-        // C. Hard-Lock Delay (150ms) pro zápis cookies
-        setTimeout(() => {
-            window.location.href = targetUrl;
-        }, 150);
+        if (typeof window !== 'undefined') {
+            const q = JSON.parse(localStorage.getItem('pending_clicks') || '[]');
+            q.push(payload);
+            localStorage.setItem('pending_clicks', JSON.stringify(q));
+        }
     };
 
     if (!isVisible) return null;
@@ -172,21 +162,27 @@ export default function ExitIntentPopup({ cpuName = "Procesor", gpuName = "Grafi
                         </span>
                     </div>
 
-                    <button 
-                        onPointerDown={(e) => handleClick(e, 'gpu')}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', background: 'linear-gradient(90deg, #9333ea 0%, #06b6d4 100%)', color: '#fff', padding: '20px', borderRadius: '18px', fontWeight: '950', textTransform: 'uppercase', border: 'none', cursor: 'pointer', fontSize: '16px', boxShadow: '0 10px 20px rgba(0,0,0,0.5)' }}
+                    <a 
+                        href={getLink('gpu')}
+                        target="_blank"
+                        rel="nofollow sponsored"
+                        onClick={() => handleLogClick('gpu')}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', background: 'linear-gradient(90deg, #9333ea 0%, #06b6d4 100%)', color: '#fff', padding: '20px', borderRadius: '18px', fontWeight: '950', textTransform: 'uppercase', border: 'none', cursor: 'pointer', fontSize: '16px', boxShadow: '0 10px 20px rgba(0,0,0,0.5)', textDecoration: 'none' }}
                     >
                         <Zap size={22} fill="white" />
                         {isEn ? `🔥 ${targetGpu} - BEST PRICE` : `🔥 ${targetGpu} – NEJLEVNĚJŠÍ SKLADEM`}
-                    </button>
+                    </a>
 
-                    <button 
-                        onPointerDown={(e) => handleClick(e, 'cpu')}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '18px', borderRadius: '18px', fontWeight: '900', textTransform: 'uppercase', cursor: 'pointer' }}
+                    <a 
+                        href={getLink('cpu')}
+                        target="_blank"
+                        rel="nofollow sponsored"
+                        onClick={() => handleLogClick('cpu')}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '18px', borderRadius: '18px', fontWeight: '900', textTransform: 'uppercase', cursor: 'pointer', textDecoration: 'none' }}
                     >
                         <ShoppingCart size={20} color="#a855f7" />
                         {isEn ? `CHECK ${targetCpu} DEALS` : `KOUPIT ${targetCpu} NEJLEVNĚJI`}
-                    </button>
+                    </a>
                 </div>
 
                 <button 
