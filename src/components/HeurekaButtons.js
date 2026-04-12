@@ -42,17 +42,9 @@ export default function HeurekaButtons({ isEn = false, manualSearch = "" }) {
             return `https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
         }
         
-        // 🔥 PŘÍMÉ ODKAZY NA SUBDOMÉNY = ŽÁDNÝ REDIRECT HEUREKY = HAFF ZŮSTANE 🔥
-        const heurekaDomains = {
-            cpu: "procesory.heureka.cz",
-            gpu: "graficke-karty.heureka.cz",
-            mb: "zakladni-desky.heureka.cz",
-            ram: "pameti.heureka.cz"
-        };
-
-        const domain = heurekaDomains[category] || "www.heureka.cz";
-        
-        return `https://${domain}/f:q:${encodeURIComponent(searchQuery)}/?haff=276049&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+        // 🔥 ABSOLUTNĚ ČISTÝ ODKAZ PŘESNĚ PODLE TVÉHO ZADÁNÍ 🔥
+        // Žádné f:q:, žádné subdomény, pouze www.heureka.cz a h[fraze]
+        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchQuery)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     };
 
     const handleLogClick = (category) => {
