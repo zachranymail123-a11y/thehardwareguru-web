@@ -19,8 +19,8 @@ import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons';
 
 /**
- * GURU CPU ENGINE - KATALOG PROCESORŮ V1.15 (MAX REVENUE UPDATE)
- * 🚀 CÍL: Inline nákupní triggery v kartách, fix query, vícenásobné CTA bloky a garantovaný tracking.
+ * GURU CPU ENGINE - KATALOG PROCESORŮ V1.16 (V10 HARD-LOCK UPDATE)
+ * 🚀 CÍL: Fix Heureka linků na V10 Hard-Lock a doplnění povinných nástrojů.
  */
 
 export const dynamic = 'force-dynamic';
@@ -85,7 +85,6 @@ export default async function CpuIndexPage(props) {
       const isTopTier = index < 3 && cpu.performance_index > 0; 
       const safeSlug = cpu.slug || slugify(cpu.name);
       
-      // 🔥 FIX: Search query s full name + "cena" pro Heureku
       const heurekaSearchQuery = `${cpu.name} cena`;
       const amazonSearchQuery = cpu.name;
 
@@ -97,7 +96,6 @@ export default async function CpuIndexPage(props) {
               {isTopTier && <span className="top-badge" style={{ color: vendorColor, borderColor: vendorColor }}>TOP TIER</span>}
             </div>
             
-            {/* 🔥 PSYCHOLOGIE: Doporučení u TOP modelů 🔥 */}
             {isTopTier && !isEn && (
               <div style={{ marginTop: '10px', fontSize: '10px', color: '#10b981', fontWeight: '900', textTransform: 'uppercase' }}>
                 🔥 Nejlepší výkon / cena
@@ -114,7 +112,6 @@ export default async function CpuIndexPage(props) {
               <div className="action-btn" style={{ color: '#f59e0b' }}><Swords size={14}/> {isEn ? 'VS' : 'Srovnat'}</div>
             </div>
 
-            {/* 🔥 FIX: INLINE NÁKUPNÍ TRIGGER PŘÍMO V KARTĚ (MAX MONEY) 🔥 */}
             <div style={{ marginTop: '15px' }}>
               {isEn ? (
                 <div className="buy-btn" style={{ textAlign: 'center', padding: '10px', borderRadius: '10px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000', fontWeight: '900', fontSize: '12px', textTransform: 'uppercase' }}>
@@ -128,15 +125,15 @@ export default async function CpuIndexPage(props) {
             </div>
           </a>
 
-          {/* 🔥 SKUTEČNÝ AFFILIATE LINK PŘES KARTU 🔥 */}
+          {/* 🔥 FIX: Hard-Lock V10 Link (haff ID první) 🔥 */}
           {!isEn && (
             <a 
-              href={`https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(heurekaSearchQuery)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`}
+              href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(heurekaSearchQuery)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-cpu-card`}
               className="heureka-hn-link card-overlay-link"
               data-trixam-positionid="276026"
               data-trixam-content="Text link"
               data-trixam-medium="affiliate"
-              target="_blank"
+              target="_blank" 
               rel="nofollow sponsored"
               style={{ position: 'absolute', inset: 0, zIndex: 5, cursor: 'pointer' }}
               aria-label="Koupit na Heurece"
@@ -146,7 +143,7 @@ export default async function CpuIndexPage(props) {
             <a 
               href={`https://www.amazon.com/s?k=${encodeURIComponent(amazonSearchQuery)}&tag=thehardware07-20`}
               className="card-overlay-link"
-              target="_blank"
+              target="_blank" 
               rel="nofollow sponsored"
               style={{ position: 'absolute', inset: 0, zIndex: 5, cursor: 'pointer' }}
             ></a>
@@ -159,7 +156,6 @@ export default async function CpuIndexPage(props) {
   return (
     <div className="guru-page-container" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
-      {/* 🔥 POJISTKA: Zajištění trackování i pro přímé návštěvy 🔥 */}
       {!isEn && (
           <Script async src="//serve.affiliate.heureka.cz/js/trixam.min.js" strategy="afterInteractive" />
       )}
@@ -172,7 +168,7 @@ export default async function CpuIndexPage(props) {
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 25px', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '50px', background: 'rgba(245,158,11,0.05)' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '20px', padding: '6px 20px', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '50px', background: 'rgba(245,158,11,0.05)' }}>
             <Database size={16} /> GURU HARDWARE DATABASE
           </div>
           <h1 className="main-title" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
@@ -187,7 +183,6 @@ export default async function CpuIndexPage(props) {
           </div>
         </header>
 
-        {/* 🔥 PRVNÍ HEUREKA WIDGET 🔥 */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
             <HeurekaButtons isEn={isEn} />
         </div>
@@ -199,7 +194,6 @@ export default async function CpuIndexPage(props) {
           </section>
         )}
 
-        {/* 🔥 FIX: DRUHÁ MONETIZAČNÍ VRSTVA MEZI AMD A INTEL 🔥 */}
         {!isEn && (
           <div style={{ display: 'flex', justifyContent: 'center', margin: '60px 0' }}>
             <HeurekaButtons isEn={false} />
@@ -212,6 +206,16 @@ export default async function CpuIndexPage(props) {
             <div className="cpu-grid">{renderCpuCards(intelCpus, '#0071c5')}</div>
           </section>
         )}
+
+        {/* 🔥 GURU TOOLS - DOPLNĚNÍ TLAČÍTEK (Dle rozkazu) 🔥 */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '60px' }}>
+            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ background: 'rgba(6, 182, 212, 0.1)', border: '1px solid #06b6d4', padding: '25px', borderRadius: '20px', textDecoration: 'none', textAlign: 'center', color: '#fff', fontWeight: 950, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+                <Gamepad2 size={28} color="#06b6d4" /> {isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}
+            </a>
+            <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid #a855f7', padding: '25px', borderRadius: '20px', textDecoration: 'none', textAlign: 'center', color: '#fff', fontWeight: 950, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+                <AlertTriangle size={28} color="#a855f7" /> {isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}
+            </a>
+        </div>
 
         {relatedArticles.length > 0 && (
             <section className="related-articles-section" style={{ marginBottom: '80px', background: 'rgba(15, 17, 21, 0.95)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
