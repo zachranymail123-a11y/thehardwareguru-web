@@ -28,8 +28,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU FPS HUNTER V2.2 (V10 HARD-LOCK SERVER FIX)
- * 🚀 CÍL: Integrace Hard-Lock trackeru, zachování Server Component a přidání kalkulaček.
+ * GURU FPS HUNTER V2.2 (PROPS EN FIX & V10 HARD-LOCK)
+ * 🚀 CÍL: Oprava čtení props.isEn pro správnou lokalizaci z proxy + V10 Hard-Lock.
  */
 
 export const runtime = "nodejs";
@@ -66,7 +66,7 @@ const findGpuBySlug = async (gpuSlug) => {
 export async function generateMetadata(props) {
  const params = await props.params;
  const rawSlug = params?.slug || '';
- const isEn = rawSlug.startsWith('en-');
+ const isEn = props.isEn === true || rawSlug.startsWith('en-');
  const cleanSlug = rawSlug.replace(/^en-/, '');
  const gpu = await findGpuBySlug(cleanSlug);
  if (!gpu) return { title: '404 | The Hardware Guru' };
@@ -80,7 +80,7 @@ export async function generateMetadata(props) {
 export default async function GpuFpsHunterPage(props) {
  const params = await props.params;
  const rawSlug = params?.slug || '';
- const isEn = rawSlug.startsWith('en-');
+ const isEn = props.isEn === true || rawSlug.startsWith('en-');
  const cleanSlug = rawSlug.replace(/^en-/, '');
 
  const gpu = await findGpuBySlug(cleanSlug);
@@ -105,7 +105,7 @@ export default async function GpuFpsHunterPage(props) {
    return { text: isEn ? 'NOT RECOMMENDED' : 'NEDOSTATEČNÝ VÝKON', color: '#ef4444' };
  };
 
- // 🔥 OPRAVENÉ AFFILIATE LINKY 🔥
+ // 🔥 OPRAVENÉ AFFILIATE LINKY S V10 HARD-LOCK 🔥
  const searchName = getCleanSearchName(gpu.name);
  const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
  const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
@@ -134,7 +134,7 @@ export default async function GpuFpsHunterPage(props) {
          </h1>
        </header>
 
-       {/* 🔥 NOVÝ GURU AFFILIATE BOMB GRID S HARD-LOCK V10 🔥 */}
+       {/* 🔥 NOVÝ GURU AFFILIATE BOMB GRID (Modrá tlačítka s V10 Hard-Lock) 🔥 */}
        <div className="affiliate-cta-grid" style={{ marginBottom: '50px', borderColor: `${vendorColor}40` }}>
             <div className="affiliate-col">
                 <div className="affiliate-col-title" style={{ color: vendorColor }}>
@@ -152,8 +152,8 @@ export default async function GpuFpsHunterPage(props) {
                             </a>
                             <a 
                                 href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gpu-fps-top`} 
-                                data-subid="v10-gpu-fps-top" 
-                                data-cat="gpu_fps_hunter" 
+                                data-subid="v10-gpu-fps-top"
+                                data-cat="gpu_fps_hunter"
                                 target="_blank" 
                                 rel="nofollow sponsored" 
                                 className="guru-buy-winner-btn heureka-btn v10-hl-btn"
@@ -210,18 +210,20 @@ export default async function GpuFpsHunterPage(props) {
 
        {/* 🔥 GURU TOOLS - POVINNÁ TLAČÍTKA NA KALKULAČKY 🔥 */}
        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '60px', marginBottom: '60px' }}>
-            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
-                <Gamepad2 size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</span>
-            </a>
-            <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
-                <AlertTriangle size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</span>
-            </a>
-        </div>
+           <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
+               <Gamepad2 size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</span>
+           </a>
+           <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+               <AlertTriangle size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</span>
+           </a>
+       </div>
 
        {/* 🔥 HEUREKA WIDGET SCHOVÁN PRO EN VERZI 🔥 */}
        {!isEn && (
-           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
-               <HeurekaButtons isEn={false} manualSearch={gpu.name} positionId="276026" />
+           <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+               <div className="v10-hl-container" data-subid="v10-gpu-fps-widget" data-cat="gpu_fps_hunter">
+                   <HeurekaButtons isEn={false} manualSearch={gpu.name} positionId="276026" />
+               </div>
            </div>
        )}
 
@@ -267,7 +269,6 @@ export default async function GpuFpsHunterPage(props) {
                        <li><a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"}><ChevronRight size={16} /> {isEn ? 'GTA VI FPS Predictor' : 'GTA VI FPS Kalkulačka'}</a></li>
                        <li><a href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"}><ChevronRight size={16} /> {isEn ? 'Game Archive' : 'Archiv her'}</a></li>
                        <li><a href={isEn ? "/en/clanky" : "/clanky"}><ChevronRight size={16} /> {isEn ? 'News & Articles' : 'Články a Novinky'}</a></li>
-                       <li><a href={isEn ? "/en/tipy" : "/tipy"}><ChevronRight size={16} /> {isEn ? 'GURU Tips' : 'GURU Tipy'}</a></li>
                    </ul>
                </div>
            </div>
@@ -293,16 +294,20 @@ export default async function GpuFpsHunterPage(props) {
          {`
              if (typeof window !== 'undefined') {
                  document.addEventListener('click', function(e) {
-                     const btn = e.target.closest('.v10-hl-btn');
+                     const btn = e.target.closest('.v10-hl-btn, .v10-hl-container a, .v10-hl-container button');
                      if (btn) {
                          e.preventDefault();
-                         const targetUrl = btn.href;
-                         const subId = btn.getAttribute('data-subid');
-                         const cat = btn.getAttribute('data-cat');
-                         if (navigator.sendBeacon) {
+                         const container = e.target.closest('.v10-hl-container');
+                         const subId = btn.getAttribute('data-subid') || (container ? container.getAttribute('data-subid') : 'unknown');
+                         const cat = btn.getAttribute('data-cat') || (container ? container.getAttribute('data-cat') : 'gpu_fps_hunter');
+                         const targetUrl = btn.href || (btn.tagName === 'A' ? btn.href : null);
+
+                         if (navigator.sendBeacon && targetUrl) {
                              navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: cat, sub_id: subId, page: window.location.pathname }));
                          }
-                         setTimeout(() => { window.location.href = targetUrl; }, 150);
+                         if (targetUrl) {
+                             setTimeout(() => { window.location.href = targetUrl; }, 150);
+                         }
                      }
                  });
              }
@@ -311,9 +316,7 @@ export default async function GpuFpsHunterPage(props) {
 
      <style dangerouslySetInnerHTML={{__html: `
        .hunter-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
-       .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
        
-       .game-fps-card { transition: 0.3s; }
        .game-fps-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.2) !important; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
        .deep-link-card { background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; position: relative; }
        .deep-link-card h3 { font-size: 18px; font-weight: 950; margin: 15px 0 10px 0; text-transform: uppercase; }
