@@ -1,4 +1,5 @@
 import React from 'react';
+import Script from 'next/script';
 import { 
  ChevronLeft, 
  Monitor, 
@@ -11,14 +12,15 @@ import {
  Info, 
  Calendar,
  Gamepad2,
- ShoppingCart
+ ShoppingCart,
+ AlertTriangle
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
-import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 HeurekaButtons pro kategorie
+import HeurekaButtons from '../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU ENGINE - KATALOG GRAFIK V2.0 (AFFILIATE BOMB UPDATE)
- * 🚀 CÍL: Implementace modrých affiliate tlačítek s opraveným trackováním a UTM.
+ * GURU GPU ENGINE - KATALOG GRAFIK V2.1 (V10 HARD-LOCK UPDATE)
+ * 🚀 CÍL: Implementace V10 Hard-Lock na Heureka linky a přidání kalkulaček.
  */
 
 export const dynamic = 'force-dynamic';
@@ -33,7 +35,6 @@ const slugify = (text) => text ? text.toLowerCase().replace(/graphics|gpu/gi, ""
 
 // Pomocná funkce pro e-shopy
 const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
-const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
 
 export async function generateMetadata(props) {
  const isEn = props?.isEn === true;
@@ -142,7 +143,7 @@ export default async function GpuIndexPage(props) {
          </div>
        </header>
 
-       {/* 🔥 OPRAVENO: Modrá tlačítka (Affiliate Bomb) s RTX 5070 Ti cílením 🔥 */}
+       {/* 🔥 OPRAVENO: Modrá tlačítka s V10 Hard-Lock 🔥 */}
        <div className="affiliate-cta-grid" style={{ marginBottom: '50px', borderLeft: '4px solid #66fcf1' }}>
             <div className="affiliate-col">
                 <div className="affiliate-col-title" style={{ color: '#66fcf1' }}>
@@ -153,12 +154,12 @@ export default async function GpuIndexPage(props) {
                         <ShoppingCart size={16} /> Smarty.cz
                     </a>
                     <a 
-                        href={getHeurekaLink("RTX 5070 Ti")} 
-                        data-trixam-positionid="276026" 
-                        data-trixam-codetype="link" 
+                        href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=RTX+5070+Ti+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gpu-index-5070ti`} 
+                        data-subid="v10-gpu-index-5070ti" 
+                        data-cat="gpu_index" 
                         target="_blank" 
                         rel="nofollow sponsored" 
-                        className="guru-buy-winner-btn heureka-btn heureka-hn-link"
+                        className="guru-buy-winner-btn heureka-btn v10-hl-btn"
                     >
                         <ShoppingCart size={16} /> Heureka.cz
                     </a>
@@ -189,6 +190,16 @@ export default async function GpuIndexPage(props) {
                </div>
            </a>
        </div>
+
+        {/* 🔥 GURU TOOLS - POVINNÁ TLAČÍTKA NA KALKULAČKY 🔥 */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '60px', marginBottom: '60px' }}>
+            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
+                <Gamepad2 size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</span>
+            </a>
+            <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                <AlertTriangle size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</span>
+            </a>
+        </div>
 
        {relatedArticles.length > 0 && (
            <section className="related-section" style={{ marginBottom: '80px', background: 'rgba(15, 17, 21, 0.95)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -235,6 +246,27 @@ export default async function GpuIndexPage(props) {
              <SeznamAd zoneId={408651} width={300} height={100} />
          </div>
      </div>
+
+     {/* 🔥 V10 HARD-LOCK SCRIPT PRO SERVER COMPONENT 🔥 */}
+     <Script id="v10-hl-script" strategy="lazyOnload">
+         {`
+             if (typeof window !== 'undefined') {
+                 document.addEventListener('click', function(e) {
+                     const btn = e.target.closest('.v10-hl-btn');
+                     if (btn) {
+                         e.preventDefault();
+                         const targetUrl = btn.href;
+                         const subId = btn.getAttribute('data-subid');
+                         const cat = btn.getAttribute('data-cat');
+                         if (navigator.sendBeacon) {
+                             navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: cat, sub_id: subId, page: window.location.pathname }));
+                         }
+                         setTimeout(() => { window.location.href = targetUrl; }, 150);
+                     }
+                 });
+             }
+         `}
+     </Script>
 
      <style dangerouslySetInnerHTML={{__html: `
        .guru-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.05); margin-bottom: 20px; }
@@ -301,7 +333,7 @@ export default async function GpuIndexPage(props) {
        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
        .ad-mobile-wrapper { display: none; width: 100%; }
 
-       @media (max-width: 768px) { 
+       @media (max-width: 768px) {
            .guru-page-wrapper { padding-top: 80px !important; }
            .inner-container { padding: 0 15px !important; }
            .ad-desktop-wrapper { display: none !important; }
