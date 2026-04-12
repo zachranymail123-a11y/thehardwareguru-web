@@ -5,8 +5,8 @@ import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons'; 
 
 /**
- * GURU BOTTLENECK CALCULATOR - HUB V3.6 (CLEAN CONTAINER)
- * 🚀 CÍL: Odstranit duplicitní bloky a sloužit jako čistý provider pro Client komponentu.
+ * GURU BOTTLENECK CALCULATOR - HUB V3.7 (AFFILIATE UPDATE 2026)
+ * 🚀 CÍL: Aktualizace hero HW pro affiliate prokliky na RTX 50 Series.
  */
 
 export const dynamic = 'force-dynamic';
@@ -41,9 +41,9 @@ export default async function BottleneckPage({ searchParams }) {
     const cpus = cpusRes.data || [];
     const gamesData = gamesRes.data || [];
 
-    // Najdeme hero HW pro HeurekaButtons (aby dole měly co doporučit i před analýzou)
-    const fallbackGpu = "RTX 4070 SUPER";
-    const isGpuHot = (name = '') => /4070|4080|5070|5060|7800|7700/i.test(name);
+    // 🔥 FIX: Aktualizace Hero HW pro HeurekaButtons na generaci RTX 50 (Standard 2026)
+    const fallbackGpu = "RTX 5070";
+    const isGpuHot = (name = '') => /5070|5080|5090|4090|ultra|high-end/i.test(name);
     const maxGpuPerf = gpus[0]?.performance_index || 1000;
     const scoreGpu = (g) => (isGpuHot(g.name) ? maxGpuPerf : 0) + g.performance_index;
     const heroGpu = [...gpus].map(g => ({ name: g.name, score: scoreGpu(g) })).sort((a,b) => b.score - a.score)[0]?.name || fallbackGpu;
@@ -56,10 +56,10 @@ export default async function BottleneckPage({ searchParams }) {
                     <SeznamAd zoneId={408654} width={970} height={210} />
                 </div>
 
-                {/* 🔥 JEDINÁ INSTANCE KLIENTSKE KOMPONENTY, KTERÁ ŘÍDÍ VŠECHNO */}
+                {/* JEDINÁ INSTANCE KLIENTSKÉ KOMPONENTY */}
                 <BottleneckClient gpus={gpus} cpus={cpus} games={gamesData} isEn={isEn} />
 
-                {/* SPODNÍ HEUREKA/AMAZON BUTTONS */}
+                {/* SPODNÍ HEUREKA/AMAZON BUTTONS - Hero HW synchronizován s RTX 50 */}
                 <div style={{ display: 'flex', justifyContent: 'center', margin: '60px 0 40px 0' }}>
                     <HeurekaButtons isEn={isEn} manualSearch={heroGpu} />
                 </div>
