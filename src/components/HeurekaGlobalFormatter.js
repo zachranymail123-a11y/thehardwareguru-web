@@ -1,101 +1,59 @@
 "use client";
 import { useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function HeurekaGlobalFormatter() {
     useEffect(() => {
         if (typeof window === 'undefined') return;
 
-        const fixAllHeurekaLinks = () => {
-            document.querySelectorAll('a[href*="heureka.cz"]').forEach(el => {
-                const originalHref = el.getAttribute('href');
-                if (!originalHref) return;
+        const fixHeurekaLink = (el) => {
+            const href = el.getAttribute('href');
+            if (!href || !href.includes('heureka.cz')) return;
+            
+            // Pokud už odkaz obsahuje tvůj haff a správný formát, nešahej na něj
+            if (href.includes('haff=276049') && href.includes('h%5Bfraze%5D')) return;
 
-                // Pokud už jsme tento element úspěšně přepsali, přeskočíme ho
-                if (el.dataset.guruFormatted === "true" && originalHref.includes('haff=276049') && !originalHref.includes('procesory.heureka.cz')) {
-                    return;
+            try {
+                const url = new URL(href, window.location.origin);
+                let query = "";
+
+                // Extrakce hledaného slova z jakéhokoliv formátu (f:q: nebo h[fraze])
+                if (url.searchParams.has('h[fraze]')) {
+                    query = url.searchParams.get('h[fraze]');
+                } else {
+                    const fqMatch = url.pathname.match(/f:q:([^/]+)/);
+                    if (fqMatch) {
+                        query = decodeURIComponent(fqMatch[1]);
+                    } else {
+                        // Poslední záchrana - vezmi poslední slovo z cesty
+                        query = url.pathname.split('/').filter(Boolean).pop();
+                    }
                 }
 
-                try {
-                    const decodedHref = decodeURIComponent(originalHref);
-                    let query = "";
+                if (!query) query = "PC komponenty";
+                const safeQuery = query.replace(/\+/g, ' ').trim().replace(/\s+/g, '+');
 
-                    // 1. Zkusí vytáhnout výraz z čistého h[fraze]=
-                    if (decodedHref.includes('h[fraze]=')) {
-                        query = decodedHref.split('h[fraze]=')[1].split('&')[0];
-                    } 
-                    // 2. Extrakce ze zkurvených filtrů jako f:2806:7112;q:ryzen 7 5700x nebo f:q:ryzen
-                    else if (decodedHref.match(/[;?&]q[:=]([^&?/;]+)/)) {
-                        query = decodedHref.match(/[;?&]q[:=]([^&?/;]+)/)[1];
-                    } 
-                    // 3. Fallback na poslední segment cesty
-                    else {
-                        const urlObj = new URL(originalHref, window.location.origin);
-                        const parts = urlObj.pathname.split('/').filter(Boolean);
-                        if (parts.length > 0) {
-                            query = parts[parts.length - 1];
-                        }
-                    }
+                // 🔥 KLÍČOVÁ ZMĚNA: Vnutíme haff přímo do URL parametrů, 
+                // ale zachováme původní subdoménu (např. procesory.heureka.cz), 
+                // aby Heureka už neměla důvod k dalšímu redirectu a mazání.
+                const cleanBase = url.hostname; // např. procesory.heureka.cz
+                const newHref = `https://${cleanBase}/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=global-fix`;
 
-                    if (!query || query.length < 2) query = "PC komponenty";
-
-                    // Extrémně bezpečné převedení na plusa (vyčistí i neviditelné znaky a podtržítka)
-                    const safeQuery = query.replace(/[-_]/g, ' ').trim().replace(/\s+/g, '+');
-
-                    // Zachování utm_content pokud tam byl
-                    let subId = 'v10-global-rewrite';
-                    try {
-                        const u = new URL(originalHref, window.location.origin);
-                        if (u.searchParams.has('utm_content')) {
-                            subId = u.searchParams.get('utm_content');
-                        }
-                    } catch(e) {}
-
-                    // 🔥 TVORBA JEDINÉHO ČISTÉHO URL (PŘÍMO NA WWW.HEUREKA.CZ S HAFF) 🔥
-                    const newHref = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
-
-                    // Přepis do DOMu
-                    el.setAttribute('href', newHref);
-                    el.setAttribute('target', '_blank');
-                    el.setAttribute('rel', 'nofollow sponsored');
-                    el.dataset.guruFormatted = "true";
-
-                    // Přidání tichého analytického eventu (jen poprvé)
-                    if (!el.dataset.guruTracked) {
-                        el.dataset.guruTracked = "true";
-                        el.addEventListener('click', () => {
-                            if (navigator.sendBeacon) {
-                                const payload = { platform: 'heureka', category: 'global_rewrite', sub_id: subId, page: window.location.pathname };
-                                navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
-                            }
-                        }, { passive: true });
-                    }
-                } catch (e) {
-                    console.error("Guru Formatter failed to parse:", originalHref);
-                }
-            });
+                el.setAttribute('href', newHref);
+                el.setAttribute('target', '_blank');
+                el.setAttribute('rel', 'nofollow sponsored');
+            } catch (e) {
+                console.error("Link fix error:", e);
+            }
         };
 
-        // 1. Spustit okamžitě
-        fixAllHeurekaLinks();
+        // Spustit hned a pak sledovat změny na stránce (MutationObserver)
+        const runFix = () => document.querySelectorAll('a[href*="heureka.cz"]').forEach(fixHeurekaLink);
+        runFix();
 
-        // 2. EXTRÉMNĚ AGRESIVNÍ FALLBACK (každých 500ms)
-        // Tohle zajistí, že i když Next.js převede stránku a dosadí špatný link z databáze,
-        // skript ho do půl vteřiny najde a nemilosrdně opraví.
-        const intervalId = setInterval(fixAllHeurekaLinks, 500);
+        const observer = new MutationObserver(runFix);
+        observer.observe(document.body, { childList: true, subtree: true });
 
-        // 3. Klasický MutationObserver pro okamžitou reakci na změny
-        const observer = new MutationObserver(fixAllHeurekaLinks);
-        observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['href'] });
-
-        return () => {
-            clearInterval(intervalId);
-            observer.disconnect();
-        };
+        return () => observer.disconnect();
     }, []);
 
     return null;
