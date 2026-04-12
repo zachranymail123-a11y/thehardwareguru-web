@@ -11,10 +11,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export default function HeurekaButtons({ isEn = false }) {
     const pathname = usePathname() || '';
     
-    // Okamžitý lock platformy
     const platform = isEn ? 'amazon' : 'heureka';
 
-    // Deterministický intent
     const intent = useMemo(() => {
         const lower = pathname.toLowerCase();
         if (lower.includes('bottleneck')) return 'calc';
@@ -23,7 +21,6 @@ export default function HeurekaButtons({ isEn = false }) {
         return 'generic';
     }, [pathname]);
 
-    // Heureka linky s prioritou pro haff ID
     const getLink = (category) => {
         const subId = `v10-${platform}-${category}-${intent}`;
         
@@ -33,11 +30,11 @@ export default function HeurekaButtons({ isEn = false }) {
         }
         
         const queries = { cpu: "ryzen+9950x", gpu: "rtx+5080", mb: "am5+zakladni+deska", ram: "ddr5+64gb" };
-        // Čistý HTML odkaz pro Heureku s haff parametrem (bez JS redirectu)
+        
+        // POUZE ČISTÝ HAFF ODKAZ - NIC JINÉHO
         return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${queries[category]}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     };
 
-    // Pouze tiché logování na pozadí (nijak neblokuje nativní proklik)
     const handleLogClick = (category) => {
         const payload = { platform, category: `static_${category}`, sub_id: `v10-${category}`, page: pathname };
         if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
