@@ -10,17 +10,16 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const HIGH_END_REGEX = /4090|4080|4070|7900|7800/;
 
-// 🔥 FIX 2: Čistá architektura - pure function pro rozhodovací logiku 🔥
 const computeDecision = (currentSubId, strength, amazonVariant, currentVariant, isHighEnd) => {
-    let query = "rtx+4060+8gb+graphics+card";
-    let amzPriceFilter = "p_36:10000-30000"; 
+    let query = isHighEnd ? "rtx+4070+super+12gb" : "rtx+4060+8gb+graphics+card";
+    let amzPriceFilter = isHighEnd ? "p_36:15000-40000" : "p_36:7000-15000"; 
 
     if (strength === 'hot') {
         query = isHighEnd ? "rtx+4080+super+16gb+card" : "rtx+4070+super+12gb+card";
-        amzPriceFilter = "p_36:40000-200000";
+        amzPriceFilter = isHighEnd ? "p_36:25000-60000" : "p_36:15000-30000";
     } else if (strength === 'warm') {
-        query = isHighEnd ? "rtx+4070+super+card" : "rtx+4060+ti+8gb+card";
-        amzPriceFilter = "p_36:20000-60000";
+        query = isHighEnd ? "rtx+4070+ti+super+16gb" : "rtx+4060+ti+16gb+card";
+        amzPriceFilter = isHighEnd ? "p_36:20000-35000" : "p_36:10000-18000";
     }
 
     const amzParams = new URLSearchParams({
@@ -74,7 +73,6 @@ export default function MobileStickyButton() {
         || lowerPath.includes('bottleneck') || lowerPath.includes('high-end') 
         || lowerPath.includes('4k') || lowerPath.includes('ultra');
 
-    // SPA Reset
     useEffect(() => {
         funnelLockRef.current = null;
         subIdLockedRef.current = null;
@@ -105,11 +103,9 @@ export default function MobileStickyButton() {
         const pages = typeof sessionStorage !== 'undefined' ? Number(sessionStorage.getItem('guru_pages') || 1) : 1;
         const engagement = pages > 3 ? 'hot' : (sessionTime > 60 ? 'engaged' : 'cold');
         const strength = getIntentStrength(depth);
-
-        return ['v33', 'sticky', variant, returning ? 'ret' : 'new', isHighEnd ? 'high' : 'mid', device, geo, source, engagement, strength, intentSource].join('-');
+        return ['v35', 'sticky', variant, returning ? 'ret' : 'new', isHighEnd ? 'high' : 'mid', device, geo, source, engagement, strength, intentSource].join('-');
     };
 
-    // 🔥 FIX 1: Deterministický Single-Point-of-Truth Lock Block 🔥
     if (!subIdLockedRef.current && subIdRef.current) {
         subIdLockedRef.current = subIdRef.current;
     }
@@ -128,40 +124,22 @@ export default function MobileStickyButton() {
     useEffect(() => {
         if (useAmazon !== null) return; 
         if (amazonVariantRef.current === null) {
-            // Placeholder pro EPC Layer: true = Amazon, false = Heureka
-            const variant = isEn 
-                ? true 
-                : (!isCzUser ? Math.random() < 0.7 : Math.random() < 0.2);
+            const variant = isEn || (!isCzUser && Math.random() < 0.7);
             amazonVariantRef.current = variant;
             setUseAmazon(variant);
         } else {
             setUseAmazon(amazonVariantRef.current);
         }
-    }, [isCzUser, isEn]);
+    }, [isCzUser, isEn, useAmazon]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        const pending = JSON.parse(localStorage.getItem('pending_clicks') || '[]');
-        if (pending.length > 0) {
-            pending.forEach(p => {
-                fetch(`${supabaseUrl}/rest/v1/affiliate_clicks_log`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-                    body: JSON.stringify(p),
-                    keepalive: true
-                }).catch(() => {});
-            });
-            localStorage.removeItem('pending_clicks');
-        }
-
         const pages = Number(sessionStorage.getItem('guru_pages') || 0);
         sessionStorage.setItem('guru_pages', (pages + 1).toString());
-
         const nav = typeof navigator !== 'undefined' ? navigator : null;
         const tz = Intl?.DateTimeFormat()?.resolvedOptions()?.timeZone || '';
         const cz = tz.includes('Prague') || (nav && (nav.language?.includes('cs') || (nav.languages && nav.languages.some(l => l.includes('cs')))));
         setIsCzUser(!!cz);
-
         if (nav && !baseMetaRef.current) {
             const device = /Mobi|Android/i.test(nav.userAgent) ? 'm' : 'd';
             const geo = !!cz ? 'cz' : 'int';
@@ -182,24 +160,20 @@ export default function MobileStickyButton() {
         let timeout;
         let attached = false;
         if (!urgencyRef.current) urgencyRef.current = "TOP NABÍDKA";
-
         const lastExitTs = Number(localStorage.getItem('guru_exit_shown_ts') || 0);
         const seenExit = sessionStorage.getItem('guru_exit_shown') === '1' || (lastExitTs && (Date.now() - lastExitTs < 3600000));
-
         if (seenExit) {
             setDelaySticky(true);
             timeout = setTimeout(() => setDelaySticky(false), 30000);
         }
-
         let variant = localStorage.getItem('sticky_funnel_variant');
         if (!variant) {
-            const pages = Number(sessionStorage.getItem('guru_pages') || 0);
+            const pages = typeof sessionStorage !== 'undefined' ? Number(sessionStorage.getItem('guru_pages') || 0) : 0;
             variant = pages > 2 ? 'gpu' : (Math.random() < 0.6 ? 'gpu' : 'cpu');
             localStorage.setItem('sticky_funnel_variant', variant);
         }
         setFunnelVariant(variant);
         setIsReturning(localStorage.getItem('visited_before') === '1');
-
         let ticking = false;
         handleScrollRef.current = () => {
             if (!ticking) {
@@ -217,14 +191,12 @@ export default function MobileStickyButton() {
                 });
             }
         };
-
         if (sessionStorage.getItem('sticky_seen') === '1' || seenExit) {
             setIsVisible(true);
         } else {
             window.addEventListener('scroll', handleScrollRef.current, { passive: true });
             attached = true;
         }
-
         return () => {
             if (attached && handleScrollRef.current) window.removeEventListener('scroll', handleScrollRef.current);
             if (timeout) clearTimeout(timeout);
@@ -234,27 +206,9 @@ export default function MobileStickyButton() {
     useEffect(() => {
         if (!isVisible || impressionSentRef.current || typeof window === 'undefined' || !decision) return;
         impressionSentRef.current = true;
-        
-        const payload = { 
-            event: 'impression', 
-            page: pathname, 
-            sub_id: subIdLockedRef.current,
-            intent_strength: decision.strength,
-            platform: decision.platform
-        };
+        const payload = { event: 'impression', page: pathname, sub_id: subIdLockedRef.current, intent_strength: decision.strength, platform: decision.platform };
         const beaconUrl = `${supabaseUrl}/rest/v1/affiliate_impressions?apikey=${supabaseKey}`;
-        const blob = new Blob([JSON.stringify(payload)], { type: 'text/plain;charset=UTF-8' });
-
-        let sent = false;
-        if (navigator.sendBeacon) sent = navigator.sendBeacon(beaconUrl, blob);
-        if (!sent) {
-            fetch(beaconUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-                body: JSON.stringify(payload),
-                keepalive: true
-            }).catch(() => {});
-        }
+        if (navigator.sendBeacon) navigator.sendBeacon(beaconUrl, new Blob([JSON.stringify(payload)], { type: 'text/plain;charset=UTF-8' }));
     }, [isVisible, decision]);
 
     const uiText = useMemo(() => {
@@ -262,15 +216,11 @@ export default function MobileStickyButton() {
         const isDiscountUser = isReturning || scrollDepth > 1500;
         const gpuPrice = isDiscountUser ? (isHighEnd ? "14 990 (-17%)" : "6 490 (-14%)") : (isHighEnd ? "15 990 (-11%)" : "6 990 (-7%)");
         const cpuPrice = isDiscountUser ? (isHighEnd ? "6 490 (-19%)" : "3 490 (-18%)") : (isHighEnd ? "6 990 (-13%)" : "3 990 (-7%)");
-        
-        const gpuName = decision.strength === 'hot' ? "RTX 4080 Super 16GB" : (decision.strength === 'warm' ? "RTX 4070 Super 12GB" : "RTX 4060 8GB");
-        const cpuName = decision.strength === 'hot' ? "Ryzen 7 7800X3D" : "Ryzen 5 7600";
+        const gpuName = isHighEnd ? (decision.strength === 'hot' ? "RTX 4080 Super 16GB" : "RTX 4070 Super 12GB") : (decision.strength === 'hot' ? "RTX 4070 Super 12GB" : "RTX 4060 8GB");
+        const cpuName = isHighEnd ? "Ryzen 7 7800X3D" : "Ryzen 5 7600";
         const urgency = decision.strength === 'hot' ? "SKLADEM DNES" : urgencyRef.current;
-
         if (useAmazon) return `🔥 ${gpuName} DEALS - ${decision.strength === 'hot' ? "BEST PRICE" : "LAST PIECES"} ⚡`;
-        if (funnelVariant === 'cpu') {
-            return isReturning ? `🔥 ${cpuName} OD ${cpuPrice} ⚡` : `🔥 ${cpuName} OD ${cpuPrice} – ${urgency}`;
-        }
+        if (funnelVariant === 'cpu') return isReturning ? `🔥 ${cpuName} OD ${cpuPrice} ⚡` : `🔥 ${cpuName} OD ${cpuPrice} – ${urgency}`;
         return isReturning ? `🔥 ${gpuName} OD ${gpuPrice} ⚡` : `🔥 ${gpuName} OD ${gpuPrice} – ${urgency}`;
     }, [decision, isReturning, scrollDepth, isHighEnd, useAmazon, funnelVariant]);
 
@@ -281,27 +231,10 @@ export default function MobileStickyButton() {
         setTimeout(() => { clickLockRef.current = false; }, 800);
         const nav = typeof navigator !== 'undefined' ? navigator : null;
         if (nav?.vibrate && decision.strength !== 'cold') nav.vibrate(10);
-
         const redirectLink = `/go?to=${encodeURIComponent(decision.finalTargetLink)}&subid=${subIdLockedRef.current}`;
         const payload = { platform: decision.platform, category: 'sticky_mobile', sub_id: subIdLockedRef.current, page: pathname };
         const beaconUrl = `${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`;
-        const blob = new Blob([JSON.stringify(payload)], { type: 'text/plain;charset=UTF-8' });
-
-        let sent = false;
-        if (nav?.sendBeacon) sent = nav.sendBeacon(beaconUrl, blob);
-        if (!sent) {
-            fetch(beaconUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-                body: JSON.stringify(payload),
-                keepalive: true
-            }).catch(() => {
-                const q = JSON.parse(localStorage.getItem('pending_clicks') || '[]');
-                q.push(payload);
-                localStorage.setItem('pending_clicks', JSON.stringify(q));
-            });
-        }
-
+        if (nav?.sendBeacon) nav.sendBeacon(beaconUrl, new Blob([JSON.stringify(payload)], { type: 'text/plain;charset=UTF-8' }));
         if (typeof window !== 'undefined') {
             localStorage.setItem('sticky_clicks', (Number(localStorage.getItem('sticky_clicks') || 0) + 1).toString());
             localStorage.setItem('sticky_last_click', Date.now().toString());
@@ -314,7 +247,6 @@ export default function MobileStickyButton() {
 
     if (useAmazon === null) return null; 
     if (!isVisible || delaySticky || !decision) return null; 
-
     const clickCount = typeof window !== 'undefined' ? Number(localStorage.getItem('sticky_clicks') || 0) : 0;
     const lastClickTime = typeof window !== 'undefined' ? Number(localStorage.getItem('sticky_last_click') || 0) : 0;
     if (clickCount > 4 && (Date.now() - lastClickTime < 86400000)) return null;
@@ -330,11 +262,15 @@ export default function MobileStickyButton() {
             </a>
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-mobile-sticky-wrapper {
-                    position: fixed; bottom: 15px; left: 15px; right: 15px; z-index: 99999;
+                    position: fixed; 
+                    bottom: 80px; /* 🔥 FIX: Posunuto nad Mobile Anchor Ad pro bezpečnost revenue 🔥 */
+                    left: 15px; right: 15px; 
+                    z-index: 999999;
                     padding-bottom: calc(env(safe-area-inset-bottom) + 10px);
                     animation: slideUpSticky 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                     will-change: transform; backface-visibility: hidden; transform: translate3d(0,0,0);
                     contain: layout style paint; pointer-events: auto;
+                    background: transparent !important;
                 }
                 .guru-mobile-sticky-btn {
                     position: relative; display: flex; align-items: center; justify-content: center; gap: 10px;
