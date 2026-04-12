@@ -7,7 +7,6 @@ import {
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText';
-import { createClient } from '@supabase/supabase-js';
 
 export const runtime = "nodejs";
 export const revalidate = 3600; 
@@ -64,17 +63,21 @@ export default async function CpuComparePage({ params }) {
   if (!data?.cpuA || !data?.cpuB) return notFound();
 
   const { cpuA, cpuB } = data;
-  const perfDiff = Math.round((cpuB.performance_index / cpuA.performance_index - 1) * 100);
-  const cpuBBrand = normalizeName(cpuB.name).trim();
+
+  // 🔥 OPRAVENÁ LOGIKA VÍTĚZE A VÝPOČTU PROCENT 🔥
+  const winnerCpu = cpuA.performance_index >= cpuB.performance_index ? cpuA : cpuB;
+  const loserCpu = cpuA.performance_index >= cpuB.performance_index ? cpuB : cpuA;
+  const perfDiff = Math.round((winnerCpu.performance_index / loserCpu.performance_index - 1) * 100);
+  const winnerBrand = normalizeName(winnerCpu.name).trim();
   
-  // 🔥 V10 HARD-LOCK LINK (haff ID na začátku) 🔥
-  const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(cpuB.name)}&tag=${AMAZON_TAG}&ascsubtag=cpuvs-compare`;
-  const heurekaLink = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(cpuB.name + ' cena')}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-vs-slug`;
+  // 🔥 V10 HARD-LOCK LINK (NATIVNÍ HTML, HAFF ID PRO VÍTĚZE) 🔥
+  const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(winnerCpu.name)}&tag=${AMAZON_TAG}&ascsubtag=cpuvs-compare`;
+  const heurekaLink = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(winnerCpu.name + ' cena')}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-vs-slug`;
 
   const finalAffiliateLink = isEn ? amazonLink : heurekaLink;
   const ctaText = isEn 
-    ? (perfDiff > 20 ? `🔥 Upgrade to ${cpuBBrand} (+${perfDiff}%)` : `🔥 Best price for ${cpuBBrand}`)
-    : (perfDiff > 20 ? `🔥 Upgrade na ${cpuBBrand} (+${perfDiff}%)` : `🔥 Výhodná koupě ${cpuBBrand}`);
+    ? (perfDiff > 20 ? `🔥 Upgrade to ${winnerBrand} (+${perfDiff}%)` : `🔥 Best price for ${winnerBrand}`)
+    : (perfDiff > 20 ? `🔥 Upgrade na ${winnerBrand} (+${perfDiff}%)` : `🔥 Výhodná koupě ${winnerBrand}`);
 
   return (
     <div className="guru-upgrade-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -89,7 +92,7 @@ export default async function CpuComparePage({ params }) {
           className="pulse-button"
           style={{ background: '#0078d4', color: '#fff', padding: '12px 20px', borderRadius: '14px', fontSize: '13px', fontWeight: '900', textDecoration: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.2)' }}
         >
-          <ShoppingCart size={18} /> {isEn ? 'PRICE' : 'CENA'} {cpuBBrand}
+          <ShoppingCart size={18} /> {isEn ? 'PRICE' : 'CENA'} {winnerBrand}
         </a>
       </div>
 
@@ -107,14 +110,18 @@ export default async function CpuComparePage({ params }) {
         </header>
 
         <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '40px' }}>
-            <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: '5px solid #4b5563', borderRadius: '24px', padding: '40px 20px', textAlign: 'center', opacity: 0.8 }}><h2 style={{ fontSize: 'clamp(1.2rem, 3vw, 2rem)', fontWeight: '950', margin: 0 }}>{normalizeName(cpuA.name)}</h2></div>
+            <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid ${winnerCpu.id === cpuA.id ? '#10b981' : '#4b5563'}`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', boxShadow: winnerCpu.id === cpuA.id ? '0 0 30px rgba(16, 185, 129, 0.2)' : 'none' }}>
+                <h2 style={{ fontSize: 'clamp(1.2rem, 3vw, 2rem)', fontWeight: '950', margin: 0 }}>{normalizeName(cpuA.name)}</h2>
+            </div>
             <div style={{ background: '#f59e0b', color: '#000', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900' }}>VS</div>
-            <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: '5px solid #f59e0b', borderRadius: '24px', padding: '40px 20px', textAlign: 'center', boxShadow: '0 0 40px rgba(245, 158, 11, 0.3)' }}><h2 style={{ fontSize: 'clamp(1.2rem, 3vw, 2rem)', fontWeight: '950', margin: 0 }}>{normalizeName(cpuB.name)}</h2></div>
+            <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid ${winnerCpu.id === cpuB.id ? '#10b981' : '#4b5563'}`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', boxShadow: winnerCpu.id === cpuB.id ? '0 0 30px rgba(16, 185, 129, 0.2)' : 'none' }}>
+                <h2 style={{ fontSize: 'clamp(1.2rem, 3vw, 2rem)', fontWeight: '950', margin: 0 }}>{normalizeName(cpuB.name)}</h2>
+            </div>
         </div>
 
         <div style={{ marginBottom: '40px', background: 'rgba(0,0,0,0.4)', padding: '35px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center' }}>
             <div style={{ marginBottom: '10px', fontWeight: '950', color: '#10b981', textTransform: 'uppercase', fontSize: '18px' }}>
-              🏆 {isEn ? 'Winner' : 'Vítěz'}: {cpuBBrand} (+{perfDiff}% {isEn ? 'Perf' : 'výkon'})
+              🏆 {isEn ? 'Winner' : 'Vítěz'}: {winnerBrand} (+{perfDiff}% {isEn ? 'Perf' : 'výkon'})
             </div>
             <a 
               href={finalAffiliateLink} 
@@ -133,7 +140,7 @@ export default async function CpuComparePage({ params }) {
         </div>
 
         <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <GuruCpuCompareText cpu1Name={normalizeName(cpuA.name)} cpu2Name={normalizeName(cpuB.name)} perfDiff={perfDiff} cpu1Cores={cpuA.cores} cpu2Cores={cpuB.cores} isEn={isEn} />
+            <GuruCpuCompareText cpu1Name={normalizeName(cpuA.name)} cpu2Name={normalizeName(cpuB.name)} perfDiff={Math.round((cpuB.performance_index / cpuA.performance_index - 1) * 100)} cpu1Cores={cpuA.cores} cpu2Cores={cpuB.cores} isEn={isEn} />
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}><HeurekaButtons isEn={isEn} /></div>
