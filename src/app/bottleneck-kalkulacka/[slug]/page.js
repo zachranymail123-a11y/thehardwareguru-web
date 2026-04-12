@@ -9,13 +9,13 @@ import HeurekaButtons from '../../../components/HeurekaButtons';
 import { ShoppingCart, Monitor, Cpu, ShieldCheck, Zap, Award, Clock } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK CALCULATOR RESULT - V3.2 (AFFILIATE SNIPER EDITION)
- * 🚀 CÍL: Fix encodingu, odstranění diakritiky z query a neprůstřelné trackování.
+ * GURU BOTTLENECK CALCULATOR RESULT - V3.3 (V10 HARD-LOCK UPDATE)
+ * 🚀 CÍL: Implementace 150ms delaye a haff priority pro výsledky bottlenecku.
  */
 
 const AMAZON_TAG = "thehardware07-20";
 
-// 🔥 FIX: Odstranění diakritiky pro 100% match v eshopech
+// FIX: Odstranění diakritiky pro 100% match v eshopech
 const normalizeQuery = (str = '') => {
     try {
         return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -26,7 +26,7 @@ const normalizeQuery = (str = '') => {
 
 const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |Intel |GeForce |Radeon /gi, '').trim();
 
-// 🔥 FIX: Čistý encoding pro Heureku (mezery na pluska)
+// FIX: Čistý encoding pro Heureku (mezery na pluska)
 const encodeHeureka = (name = '') => {
     return normalizeQuery(name)
         .replace(/\s+/g, ' ')
@@ -77,7 +77,7 @@ export default function BottleneckResultPage({ params, searchParams }) {
     const fpsLoss = Math.min(50, Math.max(10, Math.round(Math.abs(lossRaw) * 100)));
     const fpsGain = Math.round(fpsLoss * 0.85);
 
-    // 🔥 SMART UPGRADE LOGIC
+    // SMART UPGRADE LOGIC 2026
     const getUpgrade = (list, currentPerf) => {
         return list.find(item => item.performance_index > currentPerf * 1.25) || list[0];
     };
@@ -91,9 +91,11 @@ export default function BottleneckResultPage({ params, searchParams }) {
     
     // 🔥 V10 HARD-LOCK TRACKING LOGIC 🔥
     const handleHeurekaAction = (e, name, cat) => {
+        if (typeof window === 'undefined') return;
         e.preventDefault();
+        
         const q = encodeHeureka(name);
-        // Prioritní haff ID na začátku
+        // Prioritní haff ID na začátku pro jistotu připsání provize
         const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subTag}`;
         
         const payload = { 
@@ -103,10 +105,11 @@ export default function BottleneckResultPage({ params, searchParams }) {
             page: pathname 
         };
 
-        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        if (navigator.sendBeacon) {
             navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
         }
 
+        // 150ms delay pro garantovaný zápis cookies Heureky a trackingu v Supabase
         setTimeout(() => {
             window.location.href = targetUrl;
         }, 150);
@@ -115,7 +118,7 @@ export default function BottleneckResultPage({ params, searchParams }) {
     const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name + ' gaming benchmark fps test')}&tag=${AMAZON_TAG}&linkCode=ll2&ref_=as_li_ss_tl&ascsubtag=${subTag}`;
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
     
-    // Fallback href pro boty, realita běží přes onClick
+    // Fallback link pro roboty a SEO
     const getHeurekaFallbackLink = (name) => `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeHeureka(name)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=res-fallback`;
 
     return (
@@ -127,7 +130,7 @@ export default function BottleneckResultPage({ params, searchParams }) {
                 .featured-upgrade { background: rgba(168, 85, 247, 0.12) !important; border: 2px solid #a855f7 !important; transform: scale(1.06); z-index: 2; animation: pulseGlow 2.5s infinite; }
                 @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 40px rgba(168,85,247,0.2); } 50% { box-shadow: 0 0 80px rgba(168,85,247,0.5); } }
                 .winner-badge { position: absolute; top: -12px; right: -12px; background: #22c55e; color: #fff; padding: 8px 16px; border-radius: 999px; font-size: 10px; font-weight: 900; box-shadow: 0 10px 20px rgba(34, 197, 94, 0.4); text-transform: uppercase; letter-spacing: 1px; z-index: 10; }
-                .guru-buy-winner-btn { width: 100%; max-width: 360px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 22px 30px; border-radius: 20px; text-decoration: none; font-weight: 950; font-size: 17px; text-transform: uppercase; transition: 0.3s; color: #000; cursor: pointer; }
+                .guru-buy-winner-btn { width: 100%; max-width: 360px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 22px 30px; border-radius: 20px; text-decoration: none; font-weight: 950; font-size: 17px; text-transform: uppercase; transition: 0.3s; color: #000; cursor: pointer; border: none; }
                 .smarty-btn { background: #facc15; border: 2px solid #fef08a; }
                 .heureka-btn { background: #3b82f6; color: #fff !important; border: 2px solid #60a5fa; }
                 .amazon-btn { background: #f59e0b; color: #000; border: 2px solid #fbbf24; }
