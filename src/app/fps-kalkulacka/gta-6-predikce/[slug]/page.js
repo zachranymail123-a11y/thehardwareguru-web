@@ -1,40 +1,75 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState, use } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { notFound } from 'next/navigation';
-import { Sparkles, Zap, Monitor, Cpu, ChevronRight, Swords, Gamepad2 } from 'lucide-react';
+import { notFound, usePathname } from 'next/navigation';
+import { Sparkles, Zap, Monitor, Cpu, ChevronRight, Swords, Gamepad2, AlertTriangle, ShoppingCart } from 'lucide-react';
 import ShareButtonsClient from './ShareButtonsClient';
 import SeznamAd from '../../../../components/SeznamAd';
-import HeurekaButtons from '../../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
+import HeurekaButtons from '../../../../components/HeurekaButtons'; 
 
 /**
- * GURU GTA 6 PREDICTOR - V11.7 (HEUREKA CTA UPDATE)
- * 🚀 CÍL: Přesun TOP reklamy Above Fold, přidání Sticky Bottom Anchoru, ochrana FPS enginu + Heureka konverze.
+ * GURU GTA 6 PREDICTOR - V11.8 (V10 HARD-LOCK & TOOLS UPDATE)
+ * 🚀 CÍL: Fix Heureka linků na V10 Hard-Lock, oprava CSS build errorů a doplnění kalkulaček.
  */
 
-export const dynamic = 'force-dynamic';
 const baseUrl = "https://thehardwareguru.cz";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default async function Gta6PredictionPage({ params, searchParams }) {
-    const p = await params;
-    const s = await searchParams;
+export default function Gta6PredictionPage({ params, searchParams }) {
+    const p = use(params);
+    const s = use(searchParams);
+    const pathname = usePathname() || '';
+    
     const { cpuId, gpuId } = s;
     const { slug } = p;
 
-    if (!cpuId || !gpuId || !slug) return notFound();
+    const [data, setData] = useState({ gpu: null, cpu: null, loading: true });
 
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    useEffect(() => {
+        if (!cpuId || !gpuId || !slug) {
+            setData({ loading: false });
+            return;
+        }
 
-    // --- FETCH DATA ---
-    const [gpus, cpus] = await Promise.all([
-        supabase.from('gpus').select('id,name,performance_index,vram_gb,scaling').eq('id', gpuId).maybeSingle(),
-        supabase.from('cpus').select('id,name,performance_index').eq('id', cpuId).maybeSingle()
-    ]);
+        const fetchData = async () => {
+            const [gpusRes, cpusRes] = await Promise.all([
+                supabase.from('gpus').select('id,name,performance_index,vram_gb,scaling').eq('id', gpuId).maybeSingle(),
+                supabase.from('cpus').select('id,name,performance_index').eq('id', cpuId).maybeSingle()
+            ]);
+            
+            setData({
+                gpu: gpusRes.data || {},
+                cpu: cpusRes.data || {},
+                loading: false
+            });
+        };
+        fetchData();
+    }, [cpuId, gpuId, slug]);
 
-    const gpu = gpus.data || {};
-    const cpu = cpus.data || {};
+    // 🔥 V10 HARD-LOCK REDIRECT LOGIC 🔥
+    const handleHeurekaAction = (e, name, subId) => {
+        e.preventDefault();
+        const cleanName = name.replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '+');
+        const q = encodeURIComponent(cleanName + ' cena');
+        const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+        
+        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+            const payload = { platform: 'heureka', category: 'gta6_predictor', sub_id: subId, page: pathname };
+            navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
+        }
+
+        setTimeout(() => {
+            window.location.href = targetUrl;
+        }, 150);
+    };
+
+    if (data.loading) return null;
+    if (!cpuId || !gpuId || !slug || (!data.gpu?.id && !data.cpu?.id)) return notFound();
+
+    const { gpu, cpu } = data;
     const gpuName = gpu.name || 'GPU';
     const cpuName = cpu.name || 'CPU';
     const hwComboName = `${cpuName} + ${gpuName}`;
@@ -53,7 +88,6 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
         <div className="guru-gta-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
             <main className="inner-container" style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
                 
-                {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
                 <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
                     <div className="ad-desktop-wrapper">
                         <SeznamAd zoneId={408654} width={970} height={210} />
@@ -76,22 +110,37 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                 <div className="result-card">
                     <div className="fps-main">{predictedFps} <span className="fps-unit" style={{ fontSize: '3rem' }}>FPS</span></div>
                     <div className="fps-label">PŘEDPOKLÁDANÁ RYCHLOST HRY</div>
+                    
                     <div className="stats-row">
                         <div className="stat-pill"><Cpu size={18} color="#f59e0b" /> CPU: {Math.round(predictedFps * 1.1)} FPS</div>
                         <div className="stat-pill"><Monitor size={18} color="#66fcf1" /> GPU: {Math.round(predictedFps * 1.05)} FPS</div>
                     </div>
+
+                    {/* 🔥 PŘIDÁNO: HARD-LOCK NÁKUPNÍ TLAČÍTKA 🔥 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginTop: '40px', paddingTop: '30px', borderTop: '1px solid rgba(244, 63, 94, 0.2)' }}>
+                         <button 
+                             onClick={(e) => handleHeurekaAction(e, gpuName, 'v10-gta-gpu')}
+                             style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', border: 'none', fontWeight: '950', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textTransform: 'uppercase' }}
+                         >
+                             <ShoppingCart size={18} /> ZJISTIT CENU GRAFIKY
+                         </button>
+                         <button 
+                             onClick={(e) => handleHeurekaAction(e, cpuName, 'v10-gta-cpu')}
+                             style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', border: 'none', fontWeight: '950', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textTransform: 'uppercase' }}
+                         >
+                             <ShoppingCart size={18} /> ZJISTIT CENU PROCESORU
+                         </button>
+                    </div>
                 </div>
 
-                {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE (Zobrazeno pouze na mobilu) */}
                 <div className="ad-mobile-wrapper" style={{ marginTop: '30px', display: 'flex', justifyContent: 'center' }}>
                     <SeznamAd zoneId={408651} width={300} height={250} />
                 </div>
 
                 <ShareButtonsClient shareText={shareText} shareUrl={shareUrl} />
 
-                {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek s dynamickým cílením na GPU 🔥 */}
                 <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
-                    <HeurekaButtons manualSearch={gpuName} positionId="276026" />
+                    <HeurekaButtons manualSearch={gpuName} positionId="276026" isEn={false} />
                 </div>
 
                 <div className="res-switch-grid">
@@ -106,7 +155,16 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                     })}
                 </div>
 
-                {/* 🚀 MASSIVE SEO HUB PRO ELIMINACI DEAD ENDU */}
+                {/* 🔥 GURU TOOLS - POVINNÁ TLAČÍTKA NA KALKULAČKY 🔥 */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '60px' }}>
+                    <a href="/fps-kalkulacka" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
+                        <Gamepad2 size={28} /> <span style={{ fontSize: '16px' }}>FPS KALKULAČKA</span>
+                    </a>
+                    <a href="/bottleneck-kalkulacka" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                        <AlertTriangle size={28} /> <span style={{ fontSize: '16px' }}>BOTTLENECK TEST</span>
+                    </a>
+                </div>
+
                 <section className="massive-seo-hub" style={{ marginTop: '80px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '60px' }}>
                     <h2 style={{ fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #f43f5e', paddingLeft: '15px' }}>
                         PROZKOUMEJ GURU DATABÁZI
@@ -133,10 +191,8 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                         </div>
                     </div>
                 </section>
-
             </main>
 
-            {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
             <div className="sticky-bottom-anchor">
                 <div className="ad-desktop-wrapper">
                     <SeznamAd zoneId={408654} width={970} height={90} />
@@ -158,7 +214,6 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                 .res-nav { padding: 18px; background: rgba(15,17,21,0.8); border-radius: 16px; text-align: center; text-decoration: none; color: #6b7280; font-weight: 950; border: 1px solid #222; transition: 0.3s; }
                 .res-nav.active { border-color: #f43f5e; background: rgba(244, 63, 94, 0.1); color: #f43f5e; }
 
-                /* 🚀 SEO HUB CSS */
                 .seo-hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
                 .hub-column { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
                 .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
@@ -166,7 +221,6 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                 .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 14px; display: flex; align-items: center; margin-bottom: 15px; font-weight: bold; transition: 0.3s; }
                 .hub-links-list a:hover { color: #f43f5e; transform: translateX(10px); }
 
-                /* 🔥 STICKY BOTTOM ANCHOR CSS */
                 .sticky-bottom-anchor {
                     position: fixed;
                     bottom: 0;
@@ -181,12 +235,11 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                     box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
                 }
 
-                /* 🚀 RESPONSIVE ADS SYSTEM */
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
                 .ad-mobile-wrapper { display: none; width: 100%; }
                 
                 @media (max-width: 768px) { 
-                    .guru-gta-wrapper { paddingTop: 80px !important; }
+                    .guru-gta-wrapper { padding-top: 80px !important; }
                     .inner-container { padding: 0 15px !important; }
                     .ad-desktop-wrapper { display: none !important; }
                     .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
