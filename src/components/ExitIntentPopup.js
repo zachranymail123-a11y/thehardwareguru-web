@@ -89,7 +89,7 @@ export default function ExitIntentPopup({ cpuName = "Procesor", gpuName = "Grafi
     const targetGpu = HIGH_END_HW.test(gpuName) ? "RTX 5080" : "RTX 5060";
     const targetCpu = HIGH_END_HW.test(cpuName) ? "Ryzen 9 9950X" : "Ryzen 7 9700X";
 
-    // 4. 🔥 FIX: Bulletproof Affiliate Links (Same as Buttons V10)
+    // 4. 🔥 FIX: Čistý vyhledávací string s haff ID
     const getLink = (type) => {
         const subId = `v15-exit-${type}`;
         const query = type === 'gpu' ? targetGpu : targetCpu;
@@ -100,10 +100,12 @@ export default function ExitIntentPopup({ cpuName = "Procesor", gpuName = "Grafi
         }
         
         const q = type === 'gpu' ? targetGpu.toLowerCase() : targetCpu.toLowerCase();
+        
+        // POUZE ČISTÝ HAFF ODKAZ NA VYHLEDÁVÁNÍ (h[fraze]) - NIC JINÉHO
         return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(q)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_content=${subId}`;
     };
 
-    // 5. 🔥 FIX: Tiché logování bez blokování nativního prokliku
+    // 5. 🔥 FIX: Pouze tiché logování
     const handleLogClick = (type) => {
         const payload = { platform, category: `exit_popup_${type}`, sub_id: `v15-exit`, page: pathname };
 
