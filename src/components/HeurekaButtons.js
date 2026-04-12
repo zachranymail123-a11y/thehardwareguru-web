@@ -26,7 +26,6 @@ export default function HeurekaButtons({ isEn = false, manualSearch = "" }) {
         
         let searchQuery = "";
         
-        // Inteligentní dosazení kontextu
         if (category === intent && manualSearch) {
             searchQuery = manualSearch;
         } else {
@@ -39,16 +38,19 @@ export default function HeurekaButtons({ isEn = false, manualSearch = "" }) {
             searchQuery = fallbacks[category];
         }
 
-        // Formátování: Odstranění "NVIDIA/AMD", trimování a nahrazení mezer za "+"
-        const cleanStr = searchQuery.replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '').trim();
+        // AGRESIVNÍ ČIŠTĚNÍ: Žádné NVIDIA/AMD, žádné "cena", jen čistý název a pluska
+        const cleanStr = searchQuery
+            .replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '')
+            .replace(/cena/gi, '')
+            .trim();
         const safeQuery = cleanStr.replace(/\s+/g, '+');
 
         if (platform === 'amazon') {
             return `https://www.amazon.com/s?k=${safeQuery}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
         }
         
-        // 🔥 ABSOLUTNĚ ČISTÝ A JEDINÝ FUNKČNÍ TVAR PRO HEUREKU 🔥
-        // Vynucení hlavní domény www.heureka.cz zabraňuje redirectu, který maže haff parametr.
+        // 🔥 JEDINÁ FUNKČNÍ KONSTRUKCE PRO VŠECHNA 4 TLAČÍTKA 🔥
+        // Musí to jít na www.heureka.cz, jinak ti subdomény jako procesory.heureka.cz smažou haff parametr.
         return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     };
 
