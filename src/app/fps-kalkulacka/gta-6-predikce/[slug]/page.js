@@ -1,79 +1,47 @@
-'use client';
-
-import React, { useEffect, useState, use } from 'react';
+import React from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { notFound, usePathname } from 'next/navigation';
+import { notFound } from 'next/navigation';
+import Script from 'next/script';
 import { Sparkles, Zap, Monitor, Cpu, ChevronRight, Swords, Gamepad2, AlertTriangle, ShoppingCart } from 'lucide-react';
 import ShareButtonsClient from './ShareButtonsClient';
 import SeznamAd from '../../../../components/SeznamAd';
-import HeurekaButtons from '../../../../components/HeurekaButtons'; 
+import HeurekaButtons from '../../../../components/HeurekaButtons';
 
 /**
- * GURU GTA 6 PREDICTOR - V11.8 (V10 HARD-LOCK & TOOLS UPDATE)
- * 🚀 CÍL: Fix Heureka linků na V10 Hard-Lock, oprava CSS build errorů a doplnění kalkulaček.
+ * GURU GTA 6 PREDICTOR - V11.9 (V10 HARD-LOCK SERVER FIX)
+ * 🚀 CÍL: Návrat k Server Component (fix 404), integrace Hard-Lock trackeru a doplnění kalkulaček.
  */
 
+export const dynamic = 'force-dynamic';
 const baseUrl = "https://thehardwareguru.cz";
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default function Gta6PredictionPage({ params, searchParams }) {
-    const p = use(params);
-    const s = use(searchParams);
-    const pathname = usePathname() || '';
-    
+export default async function Gta6PredictionPage({ params, searchParams }) {
+    const p = await params;
+    const s = await searchParams;
     const { cpuId, gpuId } = s;
     const { slug } = p;
 
-    const [data, setData] = useState({ gpu: null, cpu: null, loading: true });
+    if (!cpuId || !gpuId || !slug) return notFound();
 
-    useEffect(() => {
-        if (!cpuId || !gpuId || !slug) {
-            setData({ loading: false });
-            return;
-        }
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
 
-        const fetchData = async () => {
-            const [gpusRes, cpusRes] = await Promise.all([
-                supabase.from('gpus').select('id,name,performance_index,vram_gb,scaling').eq('id', gpuId).maybeSingle(),
-                supabase.from('cpus').select('id,name,performance_index').eq('id', cpuId).maybeSingle()
-            ]);
-            
-            setData({
-                gpu: gpusRes.data || {},
-                cpu: cpusRes.data || {},
-                loading: false
-            });
-        };
-        fetchData();
-    }, [cpuId, gpuId, slug]);
+    // --- FETCH DATA ---
+    const [gpus, cpus] = await Promise.all([
+        supabase.from('gpus').select('id,name,performance_index,vram_gb,scaling').eq('id', gpuId).maybeSingle(),
+        supabase.from('cpus').select('id,name,performance_index').eq('id', cpuId).maybeSingle()
+    ]);
 
-    // 🔥 V10 HARD-LOCK REDIRECT LOGIC 🔥
-    const handleHeurekaAction = (e, name, subId) => {
-        e.preventDefault();
-        const cleanName = name.replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '+');
-        const q = encodeURIComponent(cleanName + ' cena');
-        const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
-        
-        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-            const payload = { platform: 'heureka', category: 'gta6_predictor', sub_id: subId, page: pathname };
-            navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
-        }
-
-        setTimeout(() => {
-            window.location.href = targetUrl;
-        }, 150);
-    };
-
-    if (data.loading) return null;
-    if (!cpuId || !gpuId || !slug || (!data.gpu?.id && !data.cpu?.id)) return notFound();
-
-    const { gpu, cpu } = data;
+    const gpu = gpus.data || {};
+    const cpu = cpus.data || {};
     const gpuName = gpu.name || 'GPU';
     const cpuName = cpu.name || 'CPU';
     const hwComboName = `${cpuName} + ${gpuName}`;
     const resolutionStr = slug.endsWith('2160p') ? '2160p' : slug.endsWith('1440p') ? '1440p' : '1080p';
+
+    if (!gpu.id && !cpu.id) return notFound();
 
     // 🚀 GURU GTA 6 FPS ENGINE
     const GPU_ratio = (gpu.performance_index || 100) / 260;
@@ -84,10 +52,14 @@ export default function Gta6PredictionPage({ params, searchParams }) {
     const shareText = `🔮 GTA VI PREDIKCE: Moje sestava (${hwComboName}) by měla dát v GTA VI na ${resolutionStr.toUpperCase()} okolo ${predictedFps} FPS! 🚀`;
     const shareUrl = `${baseUrl}/fps-kalkulacka/gta-6-predikce/${slug}?cpuId=${cpuId}&gpuId=${gpuId}`;
 
+    const cleanGpuSearch = gpuName.replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '+');
+    const cleanCpuSearch = cpuName.replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '+');
+
     return (
         <div className="guru-gta-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
             <main className="inner-container" style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
                 
+                {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
                 <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
                     <div className="ad-desktop-wrapper">
                         <SeznamAd zoneId={408654} width={970} height={210} />
@@ -110,29 +82,35 @@ export default function Gta6PredictionPage({ params, searchParams }) {
                 <div className="result-card">
                     <div className="fps-main">{predictedFps} <span className="fps-unit" style={{ fontSize: '3rem' }}>FPS</span></div>
                     <div className="fps-label">PŘEDPOKLÁDANÁ RYCHLOST HRY</div>
-                    
                     <div className="stats-row">
                         <div className="stat-pill"><Cpu size={18} color="#f59e0b" /> CPU: {Math.round(predictedFps * 1.1)} FPS</div>
                         <div className="stat-pill"><Monitor size={18} color="#66fcf1" /> GPU: {Math.round(predictedFps * 1.05)} FPS</div>
                     </div>
 
-                    {/* 🔥 PŘIDÁNO: HARD-LOCK NÁKUPNÍ TLAČÍTKA 🔥 */}
+                    {/* 🔥 PŘIDÁNO: HARD-LOCK NÁKUPNÍ TLAČÍTKA V10 🔥 */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginTop: '40px', paddingTop: '30px', borderTop: '1px solid rgba(244, 63, 94, 0.2)' }}>
-                         <button 
-                             onClick={(e) => handleHeurekaAction(e, gpuName, 'v10-gta-gpu')}
-                             style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', border: 'none', fontWeight: '950', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textTransform: 'uppercase' }}
+                         <a 
+                             href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${cleanGpuSearch}+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gta-gpu`}
+                             className="v10-hl-btn"
+                             data-subid="v10-gta-gpu"
+                             data-cat="gta6_predictor"
+                             style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', border: 'none', fontWeight: '950', fontSize: '14px', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textTransform: 'uppercase' }}
                          >
                              <ShoppingCart size={18} /> ZJISTIT CENU GRAFIKY
-                         </button>
-                         <button 
-                             onClick={(e) => handleHeurekaAction(e, cpuName, 'v10-gta-cpu')}
-                             style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', border: 'none', fontWeight: '950', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textTransform: 'uppercase' }}
+                         </a>
+                         <a 
+                             href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${cleanCpuSearch}+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gta-cpu`}
+                             className="v10-hl-btn"
+                             data-subid="v10-gta-cpu"
+                             data-cat="gta6_predictor"
+                             style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', border: 'none', fontWeight: '950', fontSize: '14px', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textTransform: 'uppercase' }}
                          >
                              <ShoppingCart size={18} /> ZJISTIT CENU PROCESORU
-                         </button>
+                         </a>
                     </div>
                 </div>
 
+                {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE (Zobrazeno pouze na mobilu) */}
                 <div className="ad-mobile-wrapper" style={{ marginTop: '30px', display: 'flex', justifyContent: 'center' }}>
                     <SeznamAd zoneId={408651} width={300} height={250} />
                 </div>
@@ -140,7 +118,7 @@ export default function Gta6PredictionPage({ params, searchParams }) {
                 <ShareButtonsClient shareText={shareText} shareUrl={shareUrl} />
 
                 <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
-                    <HeurekaButtons manualSearch={gpuName} positionId="276026" isEn={false} />
+                    <HeurekaButtons manualSearch={gpuName} positionId="276026" />
                 </div>
 
                 <div className="res-switch-grid">
@@ -165,6 +143,7 @@ export default function Gta6PredictionPage({ params, searchParams }) {
                     </a>
                 </div>
 
+                {/* 🚀 MASSIVE SEO HUB PRO ELIMINACI DEAD ENDU */}
                 <section className="massive-seo-hub" style={{ marginTop: '80px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '60px' }}>
                     <h2 style={{ fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #f43f5e', paddingLeft: '15px' }}>
                         PROZKOUMEJ GURU DATABÁZI
@@ -191,8 +170,10 @@ export default function Gta6PredictionPage({ params, searchParams }) {
                         </div>
                     </div>
                 </section>
+
             </main>
 
+            {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
             <div className="sticky-bottom-anchor">
                 <div className="ad-desktop-wrapper">
                     <SeznamAd zoneId={408654} width={970} height={90} />
@@ -201,6 +182,27 @@ export default function Gta6PredictionPage({ params, searchParams }) {
                     <SeznamAd zoneId={408651} width={300} height={100} />
                 </div>
             </div>
+
+            {/* 🔥 V10 HARD-LOCK SCRIPT PRO SERVER COMPONENT 🔥 */}
+            <Script id="v10-hl-script" strategy="lazyOnload">
+                {`
+                    if (typeof window !== 'undefined') {
+                        document.addEventListener('click', function(e) {
+                            const btn = e.target.closest('.v10-hl-btn');
+                            if (btn) {
+                                e.preventDefault();
+                                const targetUrl = btn.href;
+                                const subId = btn.getAttribute('data-subid');
+                                const cat = btn.getAttribute('data-cat');
+                                if (navigator.sendBeacon) {
+                                    navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: cat, sub_id: subId, page: window.location.pathname }));
+                                }
+                                setTimeout(() => { window.location.href = targetUrl; }, 150);
+                            }
+                        });
+                    }
+                `}
+            </Script>
 
             <style dangerouslySetInnerHTML={{__html: `
                 .pred-badge { display: inline-flex; align-items: center; gap: 8px; color: #f43f5e; font-weight: 950; padding: 6px 20px; border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 50px; background: rgba(244, 63, 94, 0.1); margin-bottom: 25px; text-transform: uppercase; font-size: 11px; }
