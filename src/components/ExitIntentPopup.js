@@ -89,20 +89,22 @@ export default function ExitIntentPopup({ cpuName = "Procesor", gpuName = "Grafi
     const targetGpu = HIGH_END_HW.test(gpuName) ? "RTX 5080" : "RTX 5060";
     const targetCpu = HIGH_END_HW.test(cpuName) ? "Ryzen 9 9950X" : "Ryzen 7 9700X";
 
-    // 4. 🔥 FIX: Čistý vyhledávací string s haff ID
+    // 4. 🔥 FIX: Čistý vyhledávací string s haff ID a bezpečnými plusy
     const getLink = (type) => {
         const subId = `v15-exit-${type}`;
-        const query = type === 'gpu' ? targetGpu : targetCpu;
+        const rawQuery = type === 'gpu' ? targetGpu : targetCpu;
 
         if (platform === 'amazon') {
-            const q = type === 'gpu' ? `${targetGpu}+graphics+card` : `${targetCpu}+processor`;
-            return `https://www.amazon.com/s?k=${encodeURIComponent(q)}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
+            const amazonQuery = type === 'gpu' ? `${rawQuery} graphics card` : `${rawQuery} processor`;
+            const safeAmazonQuery = amazonQuery.trim().replace(/\s+/g, '+');
+            return `https://www.amazon.com/s?k=${safeAmazonQuery}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
         }
         
-        const q = type === 'gpu' ? targetGpu.toLowerCase() : targetCpu.toLowerCase();
+        // POUZE ČISTÝ HAFF ODKAZ NA VYHLEDÁVÁNÍ (h[fraze])
+        // .replace(/\s+/g, '+') nahradí mezery čistými znaky "+", takže URL bude "RTX+5080"
+        const safeQuery = rawQuery.trim().replace(/\s+/g, '+');
         
-        // POUZE ČISTÝ HAFF ODKAZ NA VYHLEDÁVÁNÍ (h[fraze]) - NIC JINÉHO
-        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(q)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_content=${subId}`;
+        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_content=${subId}`;
     };
 
     // 5. 🔥 FIX: Pouze tiché logování
