@@ -42,6 +42,7 @@ export default function BottleneckClient({
     const [shareUrl, setShareUrl] = useState('');
     const [sb, setSb] = useState(null);
     const [showResult, setShowResult] = useState(false);
+    const pathname = usePathname() || '';
 
     useEffect(() => {
         if (initialCpuId) setShowResult(true);
@@ -166,13 +167,32 @@ export default function BottleneckClient({
     const cleanCpuName = a.cpuName ? normalizeName(a.cpuName) : '';
     const cleanGpuName = a.gpuName ? normalizeName(a.gpuName) : '';
 
-    // 🔥 VYLEPŠENO: Deep Category Linking pro přesnější shodu na Heurece 🔥
+    // 🔥 V10 HARD-LOCK TRACKING LOGIC 🔥
+    const handleHeurekaClick = (e, name, cat) => {
+        e.preventDefault();
+        const subId = `v10-bn-${cat}`;
+        const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeHeureka(name)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+        
+        const payload = { platform: 'heureka', category: `bn_${cat}`, sub_id: subId, page: pathname };
+        
+        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+            navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
+        }
+
+        setTimeout(() => {
+            window.location.href = targetUrl;
+        }, 150);
+    };
+
     const encodeHeureka = (name = '') => {
         const clean = String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         return clean.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).join('+');
     };
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
-    const getHeurekaLink = (name, cat) => `https://${cat}.heureka.cz/f:q:${encodeHeureka(name)}/?utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842`;
+    
+    // Fallback pro zobrazení linku v HTML (pro SEO/Boty), realita běží přes handleHeurekaClick
+    const getHeurekaLink = (name, cat) => `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeHeureka(name)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=bn-link`;
+    
     const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(`${name} buy now best price deal gaming fps benchmark`)}&tag=thehardware07-20&linkCode=ll2&ref_=as_li_ss_tl&ascsubtag=bn-hub`;
 
     return (
@@ -318,6 +338,7 @@ export default function BottleneckClient({
                                             </a>
                                             <a 
                                                 href={getHeurekaLink(cleanGpuName, 'graficke-karty')} 
+                                                onClick={(e) => handleHeurekaClick(e, cleanGpuName, 'gpu')}
                                                 data-trixam-positionid="276026" 
                                                 data-trixam-codetype="link" 
                                                 target="_blank" 
@@ -339,6 +360,7 @@ export default function BottleneckClient({
                                             </a>
                                             <a 
                                                 href={getHeurekaLink(cleanCpuName, 'procesory')} 
+                                                onClick={(e) => handleHeurekaClick(e, cleanCpuName, 'cpu')}
                                                 data-trixam-positionid="276027" 
                                                 data-trixam-codetype="link" 
                                                 target="_blank" 
@@ -438,7 +460,7 @@ export default function BottleneckClient({
                 .btn-x { background: #000; border: 1px solid #333; }
                 .btn-reddit { background: #ff4500; }
                 .massive-seo-hub { margin-top: 100px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 70px; }
-                .hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+                .hub-grid { grid-template-columns: 1fr 1fr; gap: 40px; }
                 .hub-column { background: rgba(255,255,255,0.02); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); }
                 .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 30px; font-size: 18px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
                 .hub-links-list { list-style: none; padding: 0; }
