@@ -1,14 +1,15 @@
 import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
-import { Sparkles, Zap, Monitor, Cpu, ChevronRight, Swords, Gamepad2, AlertTriangle } from 'lucide-react';
+import Script from 'next/script';
+import { Sparkles, Zap, Monitor, Cpu, ChevronRight, Swords, Gamepad2, AlertTriangle, ShoppingCart } from 'lucide-react';
 import ShareButtonsClient from './ShareButtonsClient';
 import SeznamAd from '../../../../components/SeznamAd';
 import HeurekaButtons from '../../../../components/HeurekaButtons';
 
 /**
- * GURU GTA 6 PREDICTOR - V11.7 (HEUREKA CTA UPDATE)
- * 🚀 CÍL: Přesun TOP reklamy Above Fold, přidání Sticky Bottom Anchoru, ochrana FPS enginu + Heureka konverze.
+ * GURU GTA 6 PREDICTOR - V11.11 (V10 HARD-LOCK SERVER FIX - BULLETPROOF)
+ * 🚀 CÍL: Fix 404 (odstranění null checks) + V10 Hard-Lock Script.
  */
 
 export const dynamic = 'force-dynamic';
@@ -49,6 +50,9 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
     const shareText = `🔮 GTA VI PREDIKCE: Moje sestava (${hwComboName}) by měla dát v GTA VI na ${resolutionStr.toUpperCase()} okolo ${predictedFps} FPS! 🚀`;
     const shareUrl = `${baseUrl}/fps-kalkulacka/gta-6-predikce/${slug}?cpuId=${cpuId}&gpuId=${gpuId}`;
 
+    const cleanGpuSearch = gpuName.replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '+');
+    const cleanCpuSearch = cpuName.replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '+');
+
     return (
         <div className="guru-gta-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
             <main className="inner-container" style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
@@ -80,6 +84,26 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                         <div className="stat-pill"><Cpu size={18} color="#f59e0b" /> CPU: {Math.round(predictedFps * 1.1)} FPS</div>
                         <div className="stat-pill"><Monitor size={18} color="#66fcf1" /> GPU: {Math.round(predictedFps * 1.05)} FPS</div>
                     </div>
+
+                    {/* 🔥 PŘIDÁNO: HARD-LOCK NÁKUPNÍ TLAČÍTKA V10 🔥 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginTop: '40px', paddingTop: '30px', borderTop: '1px solid rgba(244, 63, 94, 0.2)' }}>
+                         <a 
+                             href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${cleanGpuSearch}+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gta-gpu`}
+                             className="v10-hl-btn"
+                             data-subid="v10-gta-gpu"
+                             style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', border: 'none', fontWeight: '950', fontSize: '14px', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textTransform: 'uppercase' }}
+                         >
+                             <ShoppingCart size={18} /> ZJISTIT CENU GRAFIKY
+                         </a>
+                         <a 
+                             href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${cleanCpuSearch}+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gta-cpu`}
+                             className="v10-hl-btn"
+                             data-subid="v10-gta-cpu"
+                             style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', border: 'none', fontWeight: '950', fontSize: '14px', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textTransform: 'uppercase' }}
+                         >
+                             <ShoppingCart size={18} /> ZJISTIT CENU PROCESORU
+                         </a>
+                    </div>
                 </div>
 
                 {/* 🔥 INNER AD SLOT - STRIKTNÍ SEPARACE (Zobrazeno pouze na mobilu) */}
@@ -89,7 +113,6 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
 
                 <ShareButtonsClient shareText={shareText} shareUrl={shareUrl} />
 
-                {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek s dynamickým cílením na GPU 🔥 */}
                 <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
                     <HeurekaButtons manualSearch={gpuName} positionId="276026" />
                 </div>
@@ -156,6 +179,26 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                 </div>
             </div>
 
+            {/* 🔥 V10 HARD-LOCK SCRIPT PRO SERVER COMPONENT 🔥 */}
+            <Script id="v10-hl-script" strategy="lazyOnload">
+                {`
+                    if (typeof window !== 'undefined') {
+                        document.addEventListener('click', function(e) {
+                            const btn = e.target.closest('.v10-hl-btn');
+                            if (btn) {
+                                e.preventDefault();
+                                const targetUrl = btn.href;
+                                const subId = btn.getAttribute('data-subid');
+                                if (navigator.sendBeacon) {
+                                    navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: 'gta6_predictor', sub_id: subId, page: window.location.pathname }));
+                                }
+                                setTimeout(() => { window.location.href = targetUrl; }, 150);
+                            }
+                        });
+                    }
+                `}
+            </Script>
+
             <style dangerouslySetInnerHTML={{__html: `
                 .pred-badge { display: inline-flex; align-items: center; gap: 8px; color: #f43f5e; font-weight: 950; padding: 6px 20px; border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 50px; background: rgba(244, 63, 94, 0.1); margin-bottom: 25px; text-transform: uppercase; font-size: 11px; }
                 .result-card { background: linear-gradient(135deg, #0f1115 0%, #1a050a 100%); padding: 60px 40px; border-radius: 32px; border: 2px solid #f43f5e; text-align: center; box-shadow: 0 0 60px rgba(244, 63, 94, 0.15); position: relative; }
@@ -168,7 +211,6 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                 .res-nav { padding: 18px; background: rgba(15,17,21,0.8); border-radius: 16px; text-align: center; text-decoration: none; color: #6b7280; font-weight: 950; border: 1px solid #222; transition: 0.3s; }
                 .res-nav.active { border-color: #f43f5e; background: rgba(244, 63, 94, 0.1); color: #f43f5e; }
 
-                /* 🚀 SEO HUB CSS */
                 .seo-hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
                 .hub-column { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
                 .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
@@ -176,7 +218,6 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                 .hub-links-list a { color: #9ca3af; text-decoration: none; font-size: 14px; display: flex; align-items: center; margin-bottom: 15px; font-weight: bold; transition: 0.3s; }
                 .hub-links-list a:hover { color: #f43f5e; transform: translateX(10px); }
 
-                /* 🔥 STICKY BOTTOM ANCHOR CSS */
                 .sticky-bottom-anchor {
                     position: fixed;
                     bottom: 0;
@@ -191,12 +232,11 @@ export default async function Gta6PredictionPage({ params, searchParams }) {
                     box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
                 }
 
-                /* 🚀 RESPONSIVE ADS SYSTEM */
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
                 .ad-mobile-wrapper { display: none; width: 100%; }
                 
                 @media (max-width: 768px) { 
-                    .guru-gta-wrapper { paddingTop: 80px !important; }
+                    .guru-gta-wrapper { padding-top: 80px !important; }
                     .inner-container { padding: 0 15px !important; }
                     .ad-desktop-wrapper { display: none !important; }
                     .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
