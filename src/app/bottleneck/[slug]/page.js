@@ -25,7 +25,6 @@ const cleanHeurekaProduct = (name = '') => {
 };
 
 const encodeHeureka = (name = '') => {
-    // 🔥 FIX: Odstranění diakritiky + bezpečné URL kódování pro Heureka parametry
     const clean = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return clean.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).join('+');
 };
@@ -59,10 +58,8 @@ const getAnalysisData = async (slug) => {
   
   const resParts = cleanSlug.split('-at-');
   const resolution = resParts[1] === '4k' ? '2160p' : (resParts[1] || '1440p'); 
-  
   const gameParts = resParts[0].split('-in-');
   const gameSlug = gameParts[1] || null;
-  
   const hwParts = gameParts[0].split('-with-');
   if (hwParts.length !== 2) return null;
   
@@ -80,11 +77,10 @@ const getAnalysisData = async (slug) => {
 export async function generateMetadata({ params }) {
     const s = await params;
     const data = await getAnalysisData(s.slug);
-    if (!data) return { title: 'Hardware Analysis' };
+    if (!data) return { title: 'Analysis' };
     const { cpu, gpu, resolution, isEn, rawSlug } = data;
     const displayRes = resolution === '2160p' ? '4K' : resolution.toUpperCase();
     
-    // 🔥 FIX: SEO Canonical link pro programmatic (zabraňuje duplicitám)
     return { 
         title: isEn ? `${cpu.name} + ${gpu.name} Bottleneck Test (${displayRes})` : `${cpu.name} + ${gpu.name} Bottleneck Test (${displayRes}) | Hardware Guru`,
         alternates: {
@@ -99,7 +95,7 @@ export default async function BottleneckPage({ params }) {
 
   if (!data?.cpu || !data?.gpu) return notFound();
 
-  const { cpu, gpu, gameSlug, resolution, upgradeCpu, upgradeGpu, isEn, rawSlug } = data;
+  const { cpu, gpu, gameSlug, resolution, upgradeCpu, upgradeGpu, isEn } = data;
 
   const friendlyGameName = gameSlug ? gameSlug.replace(/-/g, ' ').toUpperCase() : (isEn ? 'MODERN TITLES' : 'MODERNÍCH HRÁCH');
   const friendlyRes = resolution === '2160p' ? '4K' : resolution;
@@ -117,7 +113,6 @@ export default async function BottleneckPage({ params }) {
   const targetGpuName = upgradeGpu?.name || "RTX 4070 SUPER";
   const targetCpuName = upgradeCpu?.name || "Ryzen 7 7800X3D";
 
-  // 🔥 FIX: Dynamický subtag pro lepší tracking konverzí z programmatic SEO
   const getAmazonLink = (name, type) => {
       const q = encodeURIComponent(`${name} buy now best price deal gaming fps benchmark`);
       const subtag = `bn-${type}-${resolution}-${gameSlug || 'general'}`;
@@ -137,24 +132,20 @@ export default async function BottleneckPage({ params }) {
         <SeznamAd zoneId={408654} width={970} height={210} />
 
         <header style={{ textAlign: 'center', margin: '50px 0' }}>
-          <div className="radar-badge" style={{ color: '#66fcf1', border: '1px solid rgba(102,252,241,0.3)', padding: '6px 20px', borderRadius: '50px', fontSize: '11px', fontWeight: 950 }}>
-            <Gauge size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> 
-            {isEn ? 'GURU REVENUE ENGINE V3.9' : 'GURU REVENUE ENGINE V3.9'}
+          <div className="radar-badge" style={{ color: '#66fcf1', border: '1px solid rgba(102,252,241,0.3)', padding: '6px 20px', borderRadius: '50px', fontSize: '11px', fontWeight: 950, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <Gauge size={16} /> 
+            {isEn ? 'GURU REVENUE ENGINE V3.9.1' : 'GURU REVENUE ENGINE V3.9.1'}
           </div>
           <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', fontWeight: 950, textTransform: 'uppercase', marginTop: '20px' }}>
             {cpu.name} <span style={{ opacity: 0.2 }}>+</span> {gpu.name}
           </h1>
         </header>
 
-        <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 900, marginBottom: '20px', color: '#facc15', textTransform: 'uppercase' }}>
-          🔥 {isEn ? 'TOP HARDWARE RECOMMENDATION' : 'NEJLEPŠÍ UPGRADE PRO TUTO SESTAVU PRÁVĚ TEĎ'}
-        </div>
-
-        <section className="affiliate-cta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px', padding: '35px', background: 'rgba(0,0,0,0.5)', borderRadius: '28px', border: '1px solid rgba(168,85,247,0.2)' }}>
+        <section className="affiliate-cta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px', padding: '35px', background: 'rgba(0,0,0,0.5)', borderRadius: '28px', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
             
             <div className="affiliate-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase', marginBottom: '20px' }}>
-                   <Monitor size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> {isEn ? 'GPU UPGRADE' : 'DOPORUČENÝ UPGRADE GRAFIKY'}
+                <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                   <Monitor size={16} /> {isEn ? 'GPU UPGRADE' : 'DOPORUČENÝ UPGRADE GRAFIKY'}
                 </div>
                 <div style={{ width: '100%' }}>
                     <div style={{ opacity: 0.6, fontSize: '12px', textAlign: 'center', marginBottom: '8px' }}>{isEn ? 'Starting from $399' : 'Běžně 15 490 Kč • Guru cena od 11 990 Kč'}</div>
@@ -178,8 +169,8 @@ export default async function BottleneckPage({ params }) {
             </div>
 
             <div className="affiliate-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase', marginBottom: '20px' }}>
-                   <Zap size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> {isEn ? 'CPU UPGRADE' : 'DOPORUČENÝ UPGRADE PROCESORU'}
+                <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                   <Zap size={16} /> {isEn ? 'CPU UPGRADE' : 'DOPORUČENÝ UPGRADE PROCESORU'}
                 </div>
                 <div style={{ width: '100%' }}>
                     <div style={{ opacity: 0.6, fontSize: '12px', textAlign: 'center', marginBottom: '8px' }}>{isEn ? 'Starting from $249' : 'Běžně 8 990 Kč • Guru cena od 6 490 Kč'}</div>
