@@ -68,6 +68,7 @@ export default function MobileStickyButton() {
         const cpuQuery = isHighEnd ? "ryzen+9950x" : "ryzen+9600";
         const query = funnelVariant === 'cpu' ? cpuQuery : gpuQuery;
 
+        // POUZE ČISTÝ HAFF ODKAZ NA VYHLEDÁVÁNÍ (h[fraze]) - NIC JINÉHO
         return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${query}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     };
 
