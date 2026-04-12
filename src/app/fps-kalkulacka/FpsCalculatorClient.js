@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { usePathname } from 'next/navigation'; // 🔥 FIX: Import pro tracking
 import { Monitor, Cpu, Gamepad2, Zap, Loader2, Share2, Award, Twitter, Sparkles, ShoppingCart, AlertTriangle, TrendingUp, Clock, CheckCircle } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons'; 
 import ShareFpsButton from '../../components/ShareFpsButton';
 
 /**
- * GURU FPS ENGINE CLIENT - V11.15 (MAX REVENUE PER USER)
- * 🚀 CÍL: Smart Sell logic, FPS Urgency, Instant Hook a Retargeting storage.
+ * GURU FPS ENGINE CLIENT - V11.16 (V10 HARD-LOCK UPDATE)
+ * 🚀 CÍL: Fix Heureka linků na V10 Hard-Lock a doplnění navigačních tlačítek na kalkulačky.
  */
 
 const AMAZON_TAG = "thehardware07-20";
@@ -22,6 +23,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
     const [selectedCpuId, setSelectedCpuId] = useState('');
     const [isCalculating, setIsCalculating] = useState(false);
     const [result, setResult] = useState(null);
+    const pathname = usePathname() || '';
 
     useEffect(() => {
         setResult(null);
@@ -40,10 +42,27 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         return `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=${AMAZON_TAG}&linkCode=ll2&ref_=as_li_ss_tl&ascsubtag=fps-${gameTag}-${selectedRes}-${type}-${cleanSlug}`;
     };
 
-    const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name + ' cena')}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
 
-    // 🔥 FIX #2: PRECISION PRELOAD GUARD 🔥
+    // 🔥 V10 HARD-LOCK REDIRECT LOGIC 🔥
+    const handleHeurekaAction = (e, name, subId) => {
+        e.preventDefault();
+        const cleanName = name.replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '+');
+        const q = encodeURIComponent(cleanName + ' cena');
+        // Prioritní haff ID na začátku URL pro garantované připsání
+        const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+        
+        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+            const payload = { platform: 'heureka', category: 'fps_calc', sub_id: subId, page: pathname };
+            navigator.sendBeacon(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
+        }
+
+        // 150ms delay pro garantovaný zápis trackingu a cookies
+        setTimeout(() => {
+            window.location.href = targetUrl;
+        }, 150);
+    };
+
     useEffect(() => {
         if (!selectedGpu?.name || !isEn) return;
         const url = getAmazonLink(selectedGpu.name, 'gpu');
@@ -55,14 +74,12 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         return () => { if (document.head.contains(link)) document.head.removeChild(link); };
     }, [selectedGpu?.id, isEn]);
 
-    // 🔥 FIX #7: RETARGETING STORAGE 🔥
     useEffect(() => {
         if (selectedGpu?.name) {
             localStorage.setItem("guru_last_gpu", selectedGpu.name);
         }
     }, [selectedGpu]);
 
-    // 🔥 FIX #3: FPS URGENCY LAYER 🔥
     const upgradeUrgency = useMemo(() => {
         if (!result?.fps) return '';
         if (result.fps < 50) return isEn ? '🔥 Upgrade needed NOW' : '🔥 Upgrade nutný OKAMŽITĚ';
@@ -91,14 +108,12 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
         return isEn ? poolEn[Math.floor(Math.random() * poolEn.length)] : poolCz[Math.floor(Math.random() * poolCz.length)];
     }, [cleanCpuName, isEn]);
 
-    // 🔥 FIX #1: SMART SELL WINNER LOGIC (BALANCED GUARD) 🔥
     const winner = useMemo(() => {
         if (!selectedCpu || !selectedGpu || !selectedGame) return null;
         const cpuPerf = selectedCpu.performance_index ?? 100;
         const gpuPerf = selectedGpu.performance_index ?? 100;
         const ratio = gpuPerf / cpuPerf;
 
-        // Pokud je sestava vyvážená (0.8 - 1.2), nic nevnucujeme
         if (ratio > 0.8 && ratio < 1.2) return null;
 
         const isCpuHeavy = ['cs2', 'valorant', 'gta-v'].includes(selectedGame.slug);
@@ -137,7 +152,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
     const trackClick = (item, type) => {
         if (typeof window !== 'undefined' && window.gtag) {
-            // 🔥 FIX #4: REVENUE VALUE NORMALIZATION 🔥
             const metricValue = (result?.fps || 0) < 60 ? 2 : 1; 
             window.gtag('event', 'affiliate_click', { 
                 item_name: item, item_category: type, game: selectedGameSlug, resolution: selectedRes, value: metricValue 
@@ -162,7 +176,6 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
 
             {result && !isCalculating && (
                 <div className="result-area" style={{ marginTop: '40px', textAlign: 'center', animation: 'fadeIn 0.7s ease-out' }}>
-                    {/* 🔥 FIX #5: INSTANT HOOK 🔥 */}
                     <div style={{ background: 'linear-gradient(90deg,#f59e0b,#ef4444)', padding: '12px', borderRadius: '14px', fontWeight: '950', marginBottom: '25px', color: '#fff', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                         ⚡ {isEn ? 'Real user setup analysis' : 'Analýza reálné herní sestavy'}
                     </div>
@@ -172,10 +185,8 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                     
                     <div style={{ color:'#10b981', fontWeight:'950', fontSize: '20px', textTransform: 'uppercase', marginBottom: '10px' }}>{fpsLabel}</div>
                     
-                    {/* 🔥 FIX #3: UPGRADE URGENCY 🔥 */}
                     {upgradeUrgency && <div style={{ color:'#ef4444', fontWeight:'950', fontSize: '14px', marginBottom: '25px' }}>{upgradeUrgency}</div>}
 
-                    {/* 🔥 FIX #1: WINNER BOX 🔥 */}
                     {winner && (
                         <div className="winner-logic-box" style={{ marginBottom: '40px', background: 'rgba(0,0,0,0.3)', padding: '25px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
                             <div className="winner-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '13px', fontWeight: '950', textTransform: 'uppercase' }}>
@@ -205,7 +216,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                                 ) : (
                                     <>
                                         <a href={getSmartyLink(cleanGpuName)} onClick={() => trackClick(selectedGpu?.name, 'gpu')} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">Smarty.cz</a>
-                                        <a href={getHeurekaLink(selectedGpu?.name)} onClick={() => trackClick(selectedGpu?.name, 'gpu')} data-trixam-positionid="276026" data-trixam-content="Text link" data-trixam-medium="affiliate" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">Heureka.cz</a>
+                                        <a href="#" onClick={(e) => { trackClick(selectedGpu?.name, 'gpu'); handleHeurekaAction(e, selectedGpu?.name, 'v10-fps-gpu'); }} className="guru-buy-winner-btn heureka-btn heureka-hn-link">Heureka.cz</a>
                                     </>
                                 )}
                             </div>
@@ -220,7 +231,7 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                                 ) : (
                                     <>
                                         <a href={getSmartyLink(cleanCpuName)} onClick={() => trackClick(selectedCpu?.name, 'cpu')} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">Smarty.cz</a>
-                                        <a href={getHeurekaLink(selectedCpu?.name)} onClick={() => trackClick(selectedCpu?.name, 'cpu')} data-trixam-positionid="276027" data-trixam-content="Text link" data-trixam-medium="affiliate" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link">Heureka.cz</a>
+                                        <a href="#" onClick={(e) => { trackClick(selectedCpu?.name, 'cpu'); handleHeurekaAction(e, selectedCpu?.name, 'v10-fps-cpu'); }} className="guru-buy-winner-btn heureka-btn heureka-hn-link">Heureka.cz</a>
                                     </>
                                 )}
                             </div>
@@ -244,6 +255,16 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                     </div>
                 </div>
             )}
+
+            {/* 🔥 GURU TOOLS - PŘEPÍNACÍ TLAČÍTKA NA KALKULAČKY 🔥 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '40px', marginBottom: '40px' }}>
+                <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '20px', borderRadius: '15px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
+                    <Gamepad2 size={24} /> <span>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</span>
+                </a>
+                <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '20px', borderRadius: '15px', textDecoration: 'none', fontWeight: '950', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                    <AlertTriangle size={24} /> <span>{isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</span>
+                </a>
+            </div>
 
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-calc-box { background: rgba(15, 17, 21, 0.95); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
