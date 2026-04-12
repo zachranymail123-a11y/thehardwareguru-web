@@ -14,16 +14,13 @@ export default function MobileStickyButton() {
     const pathname = usePathname() || '';
     const [isVisible, setIsVisible] = useState(false);
     const [funnelVariant, setFunnelVariant] = useState('gpu');
-    const clickLockRef = useRef(false);
     const handleScrollRef = useRef(null);
 
     const isEn = pathname.startsWith('/en');
     const isHighEnd = HIGH_END_REGEX.test(pathname.toLowerCase());
 
-    // 🔥 FIX: Okamžitý lock platformy (CZ = Heureka, EN = Amazon)
     const platform = isEn ? 'amazon' : 'heureka';
 
-    // Deterministický intent pro SubID
     const intent = useMemo(() => {
         const lower = pathname.toLowerCase();
         if (lower.includes('bottleneck')) return 'calc';
@@ -35,7 +32,6 @@ export default function MobileStickyButton() {
     useEffect(() => {
         if (typeof window === 'undefined') return;
 
-        // Inicializace varianty (GPU/CPU)
         let variant = localStorage.getItem('sticky_funnel_variant');
         if (!variant) {
             variant = Math.random() < 0.7 ? 'gpu' : 'cpu';
@@ -43,7 +39,6 @@ export default function MobileStickyButton() {
         }
         setFunnelVariant(variant);
 
-        // Scroll listener s requestAnimationFrame pro výkon
         handleScrollRef.current = () => {
             window.requestAnimationFrame(() => {
                 if (window.scrollY > 450) {
@@ -59,7 +54,6 @@ export default function MobileStickyButton() {
         };
     }, []);
 
-    // 🔥 FIX: Heureka linky s prioritou pro haff ID a RTX 50 Series
     const getLink = () => {
         const subId = `v10-sticky-${platform}-${funnelVariant}-${intent}`;
         
@@ -74,15 +68,10 @@ export default function MobileStickyButton() {
         const cpuQuery = isHighEnd ? "ryzen+9950x" : "ryzen+9600";
         const query = funnelVariant === 'cpu' ? cpuQuery : gpuQuery;
 
-        // Affiliate link s čistým haff parametrem na začátku
         return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${query}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     };
 
-    const handleAction = (e) => {
-        if (clickLockRef.current) return;
-        clickLockRef.current = true;
-
-        const targetUrl = getLink();
+    const handleLogClick = () => {
         const payload = { 
             platform, 
             category: `sticky_${funnelVariant}`, 
@@ -90,21 +79,12 @@ export default function MobileStickyButton() {
             page: pathname 
         };
 
-        // 1. Stabilní tracking přes sendBeacon
         if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
             navigator.sendBeacon(
                 `${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, 
                 new Blob([JSON.stringify(payload)], { type: 'text/plain' })
             );
         }
-
-        // 2. 🔥 FIX: 150ms timeout pro garantovaný zápis cookies a prevenci bot-detection
-        setTimeout(() => {
-            window.location.href = targetUrl;
-        }, 150);
-
-        // Safety reset locku
-        setTimeout(() => { clickLockRef.current = false; }, 1000);
     };
 
     const uiText = useMemo(() => {
@@ -127,15 +107,22 @@ export default function MobileStickyButton() {
                 ✔ NOVÁ GENERACE RTX 50 • SKLADEM
             </div>
             
-            <button onPointerDown={handleAction} className="guru-mobile-sticky-btn">
+            <a 
+                href={getLink()}
+                target="_blank"
+                rel="nofollow sponsored"
+                onClick={handleLogClick}
+                className="guru-mobile-sticky-btn"
+                style={{ textDecoration: 'none' }}
+            >
                 <Zap size={22} fill="white" />
                 <span className="guru-btn-text">{uiText}</span>
-            </button>
+            </a>
 
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-mobile-sticky-wrapper {
                     position: fixed;
-                    bottom: 115px; /* Bezpečně nad Google Anchor Ad (reklama má max 100px) */
+                    bottom: 115px;
                     left: 12px; right: 12px;
                     z-index: 2147483647;
                     display: flex; flex-direction: column; align-items: center;
