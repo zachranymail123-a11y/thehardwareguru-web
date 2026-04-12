@@ -1,6 +1,7 @@
 import React, { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
+import Script from 'next/script';
 import { 
  ChevronLeft, Zap, ArrowRight, Activity, ArrowUpCircle, LayoutList, 
  BarChart3, Gamepad2, Coins, CheckCircle2, Swords, Flame, Heart, 
@@ -11,8 +12,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V121.7 (FORCE DYNAMIC + 404 KILLER)
- * 🚀 CÍL: Fix 404/Údržba systému u nových GPU + EN vynucení + Top kalkulačky.
+ * GURU GPU UPGRADE ENGINE - DETAIL V121.8 (V10 HARD-LOCK SERVER FIX)
+ * 🚀 CÍL: Integrace Hard-Lock trackeru a doplnění tlačítek kalkulaček beze změn architektury.
  */
 
 export const runtime = "nodejs";
@@ -100,7 +101,6 @@ export default async function GpuUpgradePage(props) {
   const searchName = normalizeName(gpuB.name).trim();
   const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20`;
   const smartyLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(searchName)}`)}`;
-  const heurekaLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(searchName)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
 
   return (
     <div className="guru-upgrade-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -110,7 +110,12 @@ export default async function GpuUpgradePage(props) {
         </div>
 
         <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
-            <SeznamAd zoneId={408654} width={970} height={210} />
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '60px' }}>
@@ -127,7 +132,7 @@ export default async function GpuUpgradePage(props) {
             </div>
         </div>
 
-        {/* 🔥 OPRAVENÁ AFFILIATE SEKCE 🔥 */}
+        {/* 🔥 OPRAVENÁ AFFILIATE SEKCE S V10 HARD-LOCK 🔥 */}
         <div className="affiliate-cta-grid" style={{ marginBottom: '40px', borderLeft: '4px solid #66fcf1' }}>
             <div className="affiliate-col">
                 <div className="affiliate-col-title" style={{ color: '#66fcf1' }}><ShoppingCart size={16} /> {isEn ? `BUY ${normalizeName(gpuB.name)}` : `KOUPIT ${normalizeName(gpuB.name)}`}</div>
@@ -137,7 +142,16 @@ export default async function GpuUpgradePage(props) {
                     ) : (
                         <>
                             <a href={smartyLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn"><ShoppingCart size={16} /> Smarty.cz</a>
-                            <a href={heurekaLink} data-trixam-positionid="276026" data-trixam-codetype="link" target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn heureka-hn-link"><ShoppingCart size={16} /> Heureka.cz</a>
+                            <a 
+                                href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gpu-upgrade`}
+                                data-subid="v10-gpu-upgrade"
+                                data-cat="gpu_upgrade"
+                                target="_blank" 
+                                rel="nofollow sponsored" 
+                                className="guru-buy-winner-btn heureka-btn v10-hl-btn"
+                            >
+                                <ShoppingCart size={16} /> Heureka.cz
+                            </a>
                         </>
                     )}
                 </div>
@@ -169,7 +183,23 @@ export default async function GpuUpgradePage(props) {
             </div>
         </section>
 
-        {!isEn && (<div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}><HeurekaButtons isEn={false} manualSearch={gpuB.name} positionId="276026" /></div>)}
+        {/* 🔥 GURU TOOLS - POVINNÁ TLAČÍTKA NA KALKULAČKY 🔥 */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '60px', marginBottom: '60px' }}>
+            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
+                <Gamepad2 size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</span>
+            </a>
+            <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                <AlertTriangle size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</span>
+            </a>
+        </div>
+
+        {!isEn && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+                <div className="v10-hl-container" data-subid="v10-upgrade-heureka" data-cat="gpu_upgrade">
+                    <HeurekaButtons isEn={false} manualSearch={gpuB.name} positionId="276026" />
+                </div>
+            </div>
+        )}
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: '#66fcf1' }}><LayoutList size={28} /> {isEn ? 'UPGRADE SPECIFICATIONS' : 'POROVNÁNÍ PARAMETRŮ'}</h2>
@@ -189,12 +219,44 @@ export default async function GpuUpgradePage(props) {
         </section>
 
         <div className="cta-row-upgrade" style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '50px' }}>
-          <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" className="btn-guru deals"><Flame size={20} /> {isEn ? 'DEALS' : 'SLEVY'}</a>
+          <a href="https://www.hrkgame.com/en/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="btn-guru deals"><Flame size={20} /> {isEn ? 'DEALS' : 'SLEVY'}</a>
           <a href={isEn ? "/en/support" : "/support"} className="btn-guru support"><Heart size={20} /> {isEn ? 'SUPPORT' : 'PODPORA'}</a>
         </div>
       </main>
 
-      <div className="sticky-bottom-anchor"><SeznamAd zoneId={408654} width={970} height={90} /></div>
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
+
+      {/* 🔥 V10 HARD-LOCK SCRIPT PRO SERVER COMPONENT 🔥 */}
+      <Script id="v10-hl-script" strategy="lazyOnload">
+          {`
+              if (typeof window !== 'undefined') {
+                  document.addEventListener('click', function(e) {
+                      const btn = e.target.closest('.v10-hl-btn, .v10-hl-container a, .v10-hl-container button');
+                      if (btn) {
+                          e.preventDefault();
+                          const container = e.target.closest('.v10-hl-container');
+                          const subId = btn.getAttribute('data-subid') || (container ? container.getAttribute('data-subid') : 'unknown');
+                          const cat = btn.getAttribute('data-cat') || (container ? container.getAttribute('data-cat') : 'gpu_upgrade');
+                          const targetUrl = btn.href || (btn.tagName === 'A' ? btn.href : null);
+                          
+                          if (navigator.sendBeacon && targetUrl) {
+                              navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: cat, sub_id: subId, page: window.location.pathname }));
+                          }
+                          if (targetUrl) {
+                              setTimeout(() => { window.location.href = targetUrl; }, 150);
+                          }
+                      }
+                  });
+              }
+          `}
+      </Script>
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
@@ -202,23 +264,32 @@ export default async function GpuUpgradePage(props) {
         .box-title { font-size: clamp(1.4rem, 3vw, 2.2rem); font-weight: 950; color: #d1d5db; text-transform: uppercase; margin: 0; line-height: 1.1; }
         .perf-gain { font-size: 16px; font-weight: 950; color: #66fcf1; margin-top: 10px; text-transform: uppercase; }
         .vs-badge { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 950; font-size: 24px; color: #66fcf1; border: 2px solid #66fcf1; background: #0a0b0d; }
-        .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; }
+        .section-h2 { color: #fff; font-size: 1.8rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 4px solid #66fcf1; padding-left: 15px; display: flex; align-items: center; gap: 12px; }
         .table-wrapper { background: rgba(15, 17, 21, 0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
         .spec-row-style { display: flex; align-items: center; padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .spec-val-side { flex: 1; text-align: center; font-size: 18px; font-weight: 950; }
         .table-label { width: 150px; text-align: center; font-size: 10px; font-weight: 950; color: #6b7280; text-transform: uppercase; letter-spacing: 2px; }
         .affiliate-cta-grid { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 35px; background: rgba(0,0,0,0.4); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; box-sizing: border-box; }
+        .affiliate-col { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        .affiliate-col-title { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 25px; text-align: center; }
         .affiliate-btn-wrap { display: flex; gap: 20px; width: 100%; justify-content: center; flex-wrap: wrap; }
-        .guru-buy-winner-btn { flex: 1; max-width: 300px; min-width: 200px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: 0.3s; color: #000; }
-        .amazon-btn { background: #f59e0b; border: 2px solid #fbbf24; }
-        .smarty-btn { background: #facc15; border: 2px solid #fef08a; }
+        .guru-buy-winner-btn { flex: 1; max-width: 300px; min-width: 200px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 1px; }
+        .amazon-btn { background: #f59e0b; border: 2px solid #fbbf24; color: #000; }
+        .amazon-btn:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 15px 30px rgba(245, 158, 11, 0.5); }
+        .smarty-btn { background: #facc15; border: 2px solid #fef08a; color: #000; }
+        .smarty-btn:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 15px 30px rgba(234, 179, 8, 0.5); }
         .heureka-btn { background: #3b82f6; color: #fff; border: 2px solid #60a5fa; }
+        .heureka-btn:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
         .tool-btn-link { background: rgba(168, 85, 247, 0.1); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); text-align: center; padding: 15px; border-radius: 12px; text-decoration: none; font-weight: 950; text-transform: uppercase; display: block; }
         .tool-btn-link-cyan { background: rgba(102, 252, 241, 0.1); color: #66fcf1; border: 1px solid rgba(102, 252, 241, 0.3); text-align: center; padding: 15px; border-radius: 12px; text-decoration: none; font-weight: 950; text-transform: uppercase; display: block; }
         .btn-guru { flex: 1; max-width: 300px; padding: 18px; border-radius: 12px; font-weight: 950; text-transform: uppercase; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-guru.deals { background: #f97316; color: #fff; }
         .btn-guru.support { background: #eab308; color: #000; }
+        
         .sticky-bottom-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; }
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+        
         @media (max-width: 768px) {
             .guru-grid-ring { grid-template-columns: 1fr !important; }
             .vs-badge { margin: 10px auto; transform: rotate(90deg); width: 50px; height: 50px; }
@@ -226,6 +297,8 @@ export default async function GpuUpgradePage(props) {
             .table-label { width: 100%; order: -1; }
             .affiliate-btn-wrap { flex-direction: column; gap: 15px; }
             .guru-buy-winner-btn { max-width: 100%; width: 100%; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
         }
       `}} />
     </div>
