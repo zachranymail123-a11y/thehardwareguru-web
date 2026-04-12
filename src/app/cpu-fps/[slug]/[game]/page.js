@@ -19,8 +19,8 @@ import SeznamAd from '../../../../components/SeznamAd';
 import HeurekaButtons from '../../../../components/HeurekaButtons'; 
 
 /**
- * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.12 (BUILD FIX)
- * 🚀 CÍL: Fix importů (cesta o úroveň výš) + Heureka linky na Text%20link + povinná tlačítka.
+ * GURU CPU FPS ENGINE - BENCHMARK PAGE V2.13 (V10 HARD-LOCK UPDATE)
+ * 🚀 CÍL: Fix Heureka linků na V10 Hard-Lock a zachování navigačních prvků.
  */
 
 export const runtime = "nodejs";
@@ -115,10 +115,10 @@ export default async function App(props) {
   const verdict = fps1440p >= 120 ? { en: 'ULTIMATE PERFORMANCE', cz: 'BRUTÁLNÍ VÝKON', color: '#10b981' } : 
                   (fps1440p >= 60 ? { en: 'SMOOTH GAMING', cz: 'PLYNULÉ HRANÍ', color: '#f59e0b' } : { en: 'PLAYABLE', cz: 'HRATELNÉ', color: '#eab308' });
 
-  // 🔥 GENERÁTOR AFFILIATE LINKŮ 🔥
+  // 🔥 GENERÁTOR AFFILIATE LINKŮ (V10 HARD-LOCK) 🔥
   const searchName = getCleanSearchName(cpu.name);
   const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
-  const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+  const getHeurekaLink = (name) => `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(name)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-cpu-fps`;
   const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
 
   return (
@@ -193,7 +193,7 @@ export default async function App(props) {
             <div className="content-box-style">
                 <div className="guru-prose">
                     <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950' }}>{isEn ? `Performance Analysis` : `Analýza výkonu`}</h2>
-                    <GuruAnalysisText cpuName={cpu.name} gpuName="GeForce RTX 5090" gameName={gameSlug.replace(/-/g, ' ')} resolution="1440p" bottleneckPercent={0} isCpuBound={false} fps={fps1440p} isEn={isEn} />
+                    <GuruAnalysisText cpuName={cpu.name} gpuName="GeForce RTX 5090" gameName={gameSlug.replace(/-/g, ' ')} resolution="1440p" bottleneck={0} isCpuBound={false} fps={fps1440p} isEn={isEn} />
                 </div>
             </div>
         </section>
