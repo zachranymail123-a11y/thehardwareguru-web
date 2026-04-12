@@ -1,13 +1,17 @@
-import React from 'react';
-import { notFound } from 'next/navigation';
+'use client';
+
+import React, { useEffect, useState, useMemo } from 'react';
+import { notFound, usePathname } from 'next/navigation';
 import { 
  Zap, Cpu, Monitor, Gauge, ShoppingCart, ChevronRight, TrendingUp, Clock, AlertTriangle, Gamepad2, Activity
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
 import BottleneckFatContent from '../../../components/BottleneckFatContent'; 
+import { createClient } from '@supabase/supabase-js';
 
-export const runtime = "nodejs";
-export const revalidate = 86400; 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const AMAZON_TAG = "thehardware07-20";
 
@@ -24,64 +28,91 @@ const encodeHeureka = (name = '') => {
     return clean.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).join('+');
 };
 
-const findHw = async (table, slugPart) => {
-  const headers = { 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` };
-  try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}?select=*,${table === 'gpus' ? 'game_fps!gpu_id(*)' : 'cpu_game_fps!cpu_id(*)'}&slug=eq.${slugPart}`, { headers, cache: 'force-cache' });
-      const data = await res.json();
-      return data?.[0] || null;
-  } catch(e) { return null; }
-};
+export default function BottleneckPage({ params }) {
+  const p = params;
+  const pathname = usePathname() || '';
+  const [cpu, setCpu] = useState(null);
+  const [gpu, setGpu] = useState(null);
+  const [upgradeCpu, setUpgradeCpu] = useState(null);
+  const [upgradeGpu, setUpgradeGpu] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-const findUpgrade = async (table, currentPerf) => {
-    const headers = { 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` };
-    try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}?select=name,slug,performance_index&performance_index=gt.${(Number(currentPerf) || 100) * 1.2}&order=performance_index.asc&limit=1`, { headers });
-        const data = await res.json();
-        return data?.[0] || null;
-    } catch(e) { return null; }
-};
+  // Načítání dat na straně klienta se zachováním logiky findHw a findUpgrade
+  useEffect(() => {
+    const fetchData = async () => {
+      const cleanSlug = String(p.slug || '');
+      const hwParts = cleanSlug.split('-at-')[0].split('-in-')[0].split('-with-');
+      
+      if (hwParts.length !== 2) { setLoading(false); return; }
 
-export async function generateMetadata({ params }) {
-    const p = params; // 🔥 FIX: Žádný await
-    const hwParts = String(p.slug || '').split('-at-')[0].split('-in-')[0].split('-with-');
-    return { title: `${hwParts[0]} + ${hwParts[1]} - Test Bottlenecku` };
-}
+      const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+      
+      const [cpuRes, gpuRes] = await Promise.all([
+        fetch(`${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=eq.${hwParts[0]}`, { headers }).then(r => r.json()),
+        fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${hwParts[1]}`, { headers }).then(r => r.json())
+      ]);
 
-export default async function BottleneckPage({ params }) {
-  const p = params; // 🔥 FIX: Žádný await v Next.js 14 params
+      const cpuData = cpuRes?.[0];
+      const gpuData = gpuRes?.[0];
 
-  // 🔥 NEJČISTŠÍ ŘEŠENÍ: Jsme v CZ složce, takže to je prostě false
-  const isEn = false;
-  
+      if (cpuData && gpuData) {
+        setCpu(cpuData);
+        setGpu(gpuData);
+
+        const [uCpuRes, uGpuRes] = await Promise.all([
+          fetch(`${supabaseUrl}/rest/v1/cpus?select=name,slug,performance_index&performance_index=gt.${(Number(cpuData.performance_index) || 100) * 1.2}&order=performance_index.asc&limit=1`, { headers }).then(r => r.json()),
+          fetch(`${supabaseUrl}/rest/v1/gpus?select=name,slug,performance_index&performance_index=gt.${(Number(gpuData.performance_index) || 100) * 1.2}&order=performance_index.asc&limit=1`, { headers }).then(r => r.json())
+        ]);
+        
+        setUpgradeCpu(uCpuRes?.[0]);
+        setUpgradeGpu(uGpuRes?.[0]);
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, [p.slug]);
+
   const cleanSlug = String(p.slug || '');
   const resParts = cleanSlug.split('-at-');
   const resolution = resParts[1] === '4k' ? '2160p' : (resParts[1] || '1440p'); 
-  const gameParts = resParts[0].split('-in-'); // 🔥 FIX: Zajištěný scope pro gameParts
-  const hwParts = gameParts[0].split('-with-');
+  const gameParts = resParts[0].split('-in-');
 
-  if (hwParts.length !== 2) return notFound();
-
-  const [cpu, gpu] = await Promise.all([ 
-      findHw('cpus', hwParts[0]), 
-      findHw('gpus', hwParts[1]) 
-  ]);
-
+  if (loading) return null;
   if (!cpu || !gpu) return notFound();
-
-  const [upgradeCpu, upgradeGpu] = await Promise.all([ 
-      findUpgrade('cpus', cpu.performance_index), 
-      findUpgrade('gpus', gpu.performance_index) 
-  ]);
 
   const bottleneckPercent = Math.max(0, Math.min(Math.round(((Math.max(gpu.performance_index, (cpu.performance_index * 2.9)) / Math.min(gpu.performance_index, (cpu.performance_index * 2.9))) - 1) * 45), 100));
   const afterFps = Math.round(60 * (1 + (bottleneckPercent / 100) + 0.2));
   
-  const targetGpuName = upgradeGpu?.name || "RTX 4070 SUPER";
-  const targetCpuName = upgradeCpu?.name || "Ryzen 7 7800X3D";
+  const targetGpuName = upgradeGpu?.name || "RTX 5070";
+  const targetCpuName = upgradeCpu?.name || "Ryzen 7 9800X3D";
 
-  const getHeurekaLink = (name, cat) => `https://${cat}.heureka.cz/f:q:${encodeHeureka(cleanHeurekaProduct(name))}/?utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+  const subTag = `v10-bn-slug-${bottleneckPercent}`;
+
+  // 🔥 V10 HARD-LOCK TRACKING LOGIC 🔥
+  const handleHeurekaAction = (e, name, cat) => {
+      e.preventDefault();
+      const q = encodeHeureka(cleanHeurekaProduct(name));
+      // Prioritní haff ID na začátku
+      const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subTag}`;
+      
+      const payload = { 
+          platform: 'heureka', 
+          category: `bn_slug_${cat}`, 
+          sub_id: subTag, 
+          page: pathname 
+      };
+
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+          navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
+      }
+
+      setTimeout(() => {
+          window.location.href = targetUrl;
+      }, 150);
+  };
+
   const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name.replace(/NVIDIA |AMD |Intel /gi, '').trim())}`)}`;
+  const getHeurekaFallbackLink = (name) => `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeHeureka(cleanHeurekaProduct(name))}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=slug-fallback`;
 
   return (
     <div className="guru-bottleneck-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -90,7 +121,7 @@ export default async function BottleneckPage({ params }) {
         
         <header style={{ textAlign: 'center', margin: '50px 0' }}>
           <div style={{ color: '#66fcf1', border: '1px solid rgba(102,252,241,0.3)', padding: '6px 20px', borderRadius: '50px', fontSize: '11px', fontWeight: 950, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-            <Gauge size={16} /> <span>GURU REVENUE ENGINE V5.0 (CZ)</span>
+            <Gauge size={16} /> <span>GURU REVENUE ENGINE V10 (CZ)</span>
           </div>
           <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 3rem)', fontWeight: 950, textTransform: 'uppercase', marginTop: '20px' }}>
             {cpu.name} <span style={{ opacity: 0.2 }}>+</span> {gpu.name}
@@ -108,7 +139,7 @@ export default async function BottleneckPage({ params }) {
                 <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase' }}>
                     <Monitor size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> DOPORUČENÝ UPGRADE GRAFIKY
                 </div>
-                <div style={{ opacity: 0.6, fontSize: '12px' }}>Guru cena od 11 990 Kč</div>
+                <div style={{ opacity: 0.6, fontSize: '12px' }}>Guru cena • Skladem</div>
                 <div style={{ fontSize: '11px', color: '#facc15', fontWeight: 900 }}>
                     📉 Ztrácíš až {bottleneckPercent}% výkonu
                 </div>
@@ -117,7 +148,13 @@ export default async function BottleneckPage({ params }) {
                 </div>
                 <div style={{ fontWeight: 900, color: '#a855f7' }}>🔥 {targetGpuName}</div>
                 
-                <a href={getHeurekaLink(targetGpuName, 'graficke-karty')} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                <a 
+                  href={getHeurekaFallbackLink(targetGpuName)} 
+                  onClick={(e) => handleHeurekaAction(e, targetGpuName, 'gpu')}
+                  target="_blank" 
+                  rel="nofollow sponsored noopener noreferrer" 
+                  style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', border: 'none', cursor: 'pointer' }}
+                >
                     <ShoppingCart size={18} /> NAJÍT NEJLEVNĚJŠÍ CENU
                 </a>
                 <a href={getSmartyLink(targetGpuName)} target="_blank" rel="nofollow" style={{ marginTop: '5px', fontSize: '12px', color: '#9ca3af', textDecoration: 'underline' }}>Koupit na Smarty.cz</a>
@@ -128,7 +165,7 @@ export default async function BottleneckPage({ params }) {
                 <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase' }}>
                     <Zap size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> DOPORUČENÝ UPGRADE PROCESORU
                 </div>
-                <div style={{ opacity: 0.6, fontSize: '12px' }}>Guru cena od 6 490 Kč</div>
+                <div style={{ opacity: 0.6, fontSize: '12px' }}>Guru cena • Skladem</div>
                 <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: 900 }}>
                     ⚠️ Procesor brzdí grafiku
                 </div>
@@ -137,7 +174,13 @@ export default async function BottleneckPage({ params }) {
                 </div>
                 <div style={{ fontWeight: 900, color: '#a855f7' }}>🔥 {targetCpuName}</div>
                 
-                <a href={getHeurekaLink(targetCpuName, 'procesory')} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+                <a 
+                  href={getHeurekaFallbackLink(targetCpuName)} 
+                  onClick={(e) => handleHeurekaAction(e, targetCpuName, 'cpu')}
+                  target="_blank" 
+                  rel="nofollow sponsored noopener noreferrer" 
+                  style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', border: 'none', cursor: 'pointer' }}
+                >
                     <ShoppingCart size={18} /> NAJÍT NEJLEVNĚJŠÍ CENU
                 </a>
                 <a href={getSmartyLink(targetCpuName)} target="_blank" rel="nofollow" style={{ marginTop: '5px', fontSize: '12px', color: '#9ca3af', textDecoration: 'underline' }}>Koupit na Smarty.cz</a>
@@ -164,7 +207,7 @@ export default async function BottleneckPage({ params }) {
                 resolution={resolution === '2160p' ? '4K' : resolution} 
                 bottleneckPercent={bottleneckPercent} 
                 bottleneckType={bottleneckPercent < 15 ? 'Balanced' : (gpu.performance_index > cpu.performance_index * 2.9 ? 'CPU' : 'GPU')} 
-                isEn={isEn} 
+                isEn={false} 
             />
         </div>
       </main>
