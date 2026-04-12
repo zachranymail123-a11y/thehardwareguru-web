@@ -11,7 +11,6 @@ export const runtime = "nodejs";
 export const revalidate = 86400; 
 
 const AMAZON_TAG = "thehardware07-20";
-const BASE_URL = "https://thehardwareguru.cz";
 
 const normalizeName = (name = '') => name.replace(/\s+/g, ' ').trim();
 
@@ -53,7 +52,8 @@ const findUpgrade = async (table, currentPerf) => {
 
 const getAnalysisData = async (slug) => {
   if (!slug) return null;
-  const isEn = slug.includes('en-') || slug.startsWith('en-');
+  // 🔥 FIX: Detekce jazyka pouze ze slugu - bezpečné pro server
+  const isEn = slug.startsWith('en-');
   const cleanSlug = slug.replace(/^en-/, '');
   
   const resParts = cleanSlug.split('-at-');
@@ -61,6 +61,7 @@ const getAnalysisData = async (slug) => {
   const gameParts = resParts[0].split('-in-');
   const gameSlug = gameParts[1] || null;
   const hwParts = gameParts[0].split('-with-');
+  
   if (hwParts.length !== 2) return null;
   
   const [cpu, gpu] = await Promise.all([ findHw('cpus', hwParts[0]), findHw('gpus', hwParts[1]) ]);
@@ -75,14 +76,13 @@ const getAnalysisData = async (slug) => {
 };
 
 export default async function BottleneckPage({ params }) {
+  // 🔥 FIX: params musí být awaitovány v Next.js 14/15
   const s = await params;
   const data = await getAnalysisData(s.slug);
 
   if (!data?.cpu || !data?.gpu) return notFound();
 
-  const { cpu, gpu, gameSlug, resolution, upgradeCpu, upgradeGpu } = data;
-  // 🔥 NEKOMPROMISNÍ EN DETEKCE
-  const isEn = s.slug.startsWith('en-') || data.isEn;
+  const { cpu, gpu, gameSlug, resolution, upgradeCpu, upgradeGpu, isEn } = data;
 
   const friendlyGameName = gameSlug ? gameSlug.replace(/-/g, ' ').toUpperCase() : (isEn ? 'MODERN TITLES' : 'MODERNÍCH HRÁCH');
   const friendlyRes = resolution === '2160p' ? '4K' : resolution;
@@ -121,7 +121,7 @@ export default async function BottleneckPage({ params }) {
         <header style={{ textAlign: 'center', margin: '50px 0' }}>
           <div className="radar-badge" style={{ color: '#66fcf1', border: '1px solid rgba(102,252,241,0.3)', padding: '6px 20px', borderRadius: '50px', fontSize: '11px', fontWeight: 950, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <Gauge size={16} /> 
-            <span>GURU ENGINE V3.9.5</span>
+            <span>GURU ENGINE V3.9.6</span>
           </div>
           <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', fontWeight: 950, textTransform: 'uppercase', marginTop: '20px' }}>
             {cpu.name} <span style={{ opacity: 0.2 }}>+</span> {gpu.name}
@@ -187,7 +187,7 @@ export default async function BottleneckPage({ params }) {
             </div>
         </section>
 
-        {/* 🔥 GURU TOOLS SECTION (ROZKAZ SPLNĚN) */}
+        {/* GURU TOOLS SECTION */}
         <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
             <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ background: '#0a0b0d', border: '1px solid #06b6d4', padding: '25px', borderRadius: '20px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '15px', transition: '0.3s' }}>
                 <Gamepad2 size={32} color="#06b6d4" />
