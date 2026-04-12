@@ -1,5 +1,6 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
+import Script from 'next/script';
 import { 
   ChevronLeft, 
   CheckCircle2, 
@@ -13,14 +14,15 @@ import {
   Swords,
   Activity,
   Info,
-  HelpCircle
+  HelpCircle,
+  Gamepad2
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
-import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
+import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU RECOMMEND ENGINE - DETAIL V4.5 (HEUREKA CTA UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka konverze.
+ * GURU GPU RECOMMEND ENGINE - DETAIL V4.6 (V10 HARD-LOCK SERVER FIX)
+ * 🚀 CÍL: Integrace Hard-Lock trackeru a doplnění tlačítek kalkulaček beze změn architektury.
  */
 
 export const runtime = "nodejs";
@@ -149,7 +151,19 @@ export default async function GpuRecommendPage(props) {
 
         {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (CTA pod verdiktem) 🔥 */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
-            <HeurekaButtons isEn={isEn} />
+            <div className="v10-hl-container" data-subid="v10-recommend-heureka" data-cat="gpu_recommend">
+                <HeurekaButtons isEn={isEn} manualSearch={gpu.name} positionId="276026" />
+            </div>
+        </div>
+
+        {/* 🔥 GURU TOOLS - POVINNÁ TLAČÍTKA NA KALKULAČKY 🔥 */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '60px' }}>
+            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
+                <Gamepad2 size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</span>
+            </a>
+            <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                <AlertTriangle size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</span>
+            </a>
         </div>
 
         {/* 🚀 QUICK STATS */}
@@ -191,6 +205,25 @@ export default async function GpuRecommendPage(props) {
               <SeznamAd zoneId={408651} width={300} height={100} />
           </div>
       </div>
+
+      {/* 🔥 V10 HARD-LOCK SCRIPT PRO SERVER COMPONENT 🔥 */}
+      <Script id="v10-hl-script" strategy="lazyOnload">
+          {`
+              if (typeof window !== 'undefined') {
+                  document.addEventListener('click', function(e) {
+                      const btn = e.target.closest('.v10-hl-container a, .v10-hl-container button');
+                      if (btn) {
+                          const container = e.target.closest('.v10-hl-container');
+                          const subId = container ? container.getAttribute('data-subid') : 'unknown';
+                          const cat = container ? container.getAttribute('data-cat') : 'gpu_recommend';
+                          if (navigator.sendBeacon && btn.href) {
+                              navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: cat, sub_id: subId, page: window.location.pathname }));
+                          }
+                      }
+                  });
+              }
+          `}
+      </Script>
 
       <style dangerouslySetInnerHTML={{__html: `
         .recommend-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(102,252,241,0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.05); margin-bottom: 20px; }
