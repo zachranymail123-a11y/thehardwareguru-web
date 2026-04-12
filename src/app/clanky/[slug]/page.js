@@ -8,8 +8,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons';
 
 /**
- * GURU ARTICLE ENGINE V6.3 (ULTIMATE MONETIZATION FIX)
- * 🚀 CÍL: Dynamický Heureka Search Intent, oprava pořadí tlačítek, agresivní CTR texty a garantovaný Trixam skript.
+ * GURU ARTICLE ENGINE V6.5 (HARD-LOCK AFFILIATE FIX)
+ * 🚀 CÍL: Implementace V10 Hard-Lock Heureka linků a zachování funkčních cest.
  */
 
 export const runtime = "nodejs";
@@ -84,20 +84,18 @@ export default async function ArticleDetailPage(props) {
     const part2 = contentParts.slice(3, 6).join('</p>') + (contentParts.length > 6 ? '</p>' : '');
     const part3 = contentParts.slice(6).join('</p>');
 
-    // 🔥 DYNAMICKÉ ODKAZY PODLE NÁZVU ČLÁNKU PRO MAXIMÁLNÍ KONVERZI 🔥
     const searchQuery = title;
     
     const getAmazonLink = (query) => `https://www.amazon.com/s?k=${encodeURIComponent(query)}&tag=thehardware07-20`;
     const getSmartyLink = (query) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(query)}`)}`;
     
-    // 🔥 DEFINITIVNÍ HEUREKA FIX: Dynamický Search Intent s h[fraze], bez mřížky, s Text link 🔥
-    const getHeurekaLink = (query) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(query)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+    // 🔥 FIX: Hard-Lock V10 Link (Priority haff ID) 🔥
+    const getHeurekaLink = (query) => `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(query)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-article`;
 
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
             <Script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5468223287024993" crossOrigin="anonymous" strategy="afterInteractive" />
             
-            {/* 🔥 GARANTOVANÉ NAČTENÍ TRIXAM SKRIPTU PRO PŘÍMÉ NÁVŠTĚVY 🔥 */}
             {!isEn && (
                 <Script async src="//serve.affiliate.heureka.cz/js/trixam.min.js" strategy="afterInteractive" />
             )}
@@ -128,7 +126,6 @@ export default async function ArticleDetailPage(props) {
                         </div>
                     )}
 
-                    {/* 🔥 NÁKUPNÍ SEKCE: HEUREKA JAKO PRVNÍ + AGRESIVNÍ COPY 🔥 */}
                     <div className="affiliate-cta-grid" style={{ marginBottom: '20px' }}>
                         <div className="affiliate-col">
                             <div className="affiliate-btn-wrap">
@@ -138,13 +135,10 @@ export default async function ArticleDetailPage(props) {
                                     </a>
                                 ) : (
                                     <>
-                                        {/* 🔥 FIX: Heureka je první, má Position ID a nejlepší CTR text 🔥 */}
                                         <a 
                                             href={getHeurekaLink(searchQuery)} 
                                             className="guru-buy-winner-btn heureka-btn heureka-hn-link" 
                                             data-trixam-positionid="276026"
-                                            data-trixam-content="Text link" 
-                                            data-trixam-medium="affiliate" 
                                             target="_blank" 
                                             rel="nofollow sponsored"
                                         >
@@ -219,20 +213,14 @@ export default async function ArticleDetailPage(props) {
                 .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; }
                 .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; }
                 .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; width: 100%; max-width: 400px; }
-                
-                /* Kalkulačky style */
                 .tool-btn-small { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; border-radius: 12px; font-weight: 950; text-transform: uppercase; text-decoration: none; font-size: 12px; transition: 0.3s; border: 1px solid rgba(255,255,255,0.05); }
                 .purple-link { background: rgba(168, 85, 247, 0.1); color: #a855f7; border-color: rgba(168, 85, 247, 0.2); }
                 .cyan-link { background: rgba(102, 252, 241, 0.1); color: #66fcf1; border-color: rgba(102, 252, 241, 0.2); }
-                .tool-btn-small:hover { transform: translateY(-2px); filter: brightness(1.2); }
-
                 .share-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
                 .share-card { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 12px; font-weight: 950; font-size: 11px; text-decoration: none; color: #fff; }
                 .x-bg { background: #000; }
                 .fb-bg { background: #1877f2; }
                 .reddit-bg { background: #ff4500; }
-                .sticky-bottom-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; }
-                
                 @media (max-width: 768px) {
                     .affiliate-btn-wrap { flex-direction: column; gap: 15px; }
                     .guru-buy-winner-btn { max-width: 100%; width: 100%; }
