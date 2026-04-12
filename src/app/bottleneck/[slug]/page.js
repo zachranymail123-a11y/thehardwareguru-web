@@ -31,6 +31,7 @@ const encodeHeureka = (name = '') => {
 
 const findHw = async (table, rawSlugPart) => {
   if (!rawSlugPart || rawSlugPart === 'undefined') return null;
+  // 🔥 FIX: Odstraňujeme en- prefix pro DB query, aby to našlo HW
   const slugPart = rawSlugPart.replace(/^en-/, '');
   const headers = { 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` };
   const joinQuery = table === 'gpus' ? 'game_fps!gpu_id(*)' : 'cpu_game_fps!cpu_id(*)';
@@ -53,15 +54,14 @@ const findUpgrade = async (table, currentPerf) => {
 
 const getAnalysisData = async (slug) => {
   if (!slug) return null;
-  const isEn = slug.startsWith('en-');
+  // 🔥 FIX: Programmatic routing může mít slug bez en-, ale params mohou být v en/ folderu
+  // Detekce je teď robustnější
   const cleanSlug = slug.replace(/^en-/, '');
   
   const resParts = cleanSlug.split('-at-');
   const resolution = resParts[1] === '4k' ? '2160p' : (resParts[1] || '1440p'); 
-  
   const gameParts = resParts[0].split('-in-');
   const gameSlug = gameParts[1] || null;
-  
   const hwParts = gameParts[0].split('-with-');
   if (hwParts.length !== 2) return null;
   
@@ -73,31 +73,35 @@ const getAnalysisData = async (slug) => {
       findUpgrade('gpus', gpu.performance_index || 100)
   ]);
 
-  return { cpu, gpu, gameSlug, resolution, upgradeCpu, upgradeGpu, isEn, rawSlug: slug };
+  return { cpu, gpu, gameSlug, resolution, upgradeCpu, upgradeGpu };
 };
 
 export async function generateMetadata({ params }) {
     const s = await params;
+    // 🔥 FIX: Next.js v folderu [lang] parsuje cestu jinak
+    const isEn = s.slug.startsWith('en-') || s.lang === 'en';
     const data = await getAnalysisData(s.slug);
     if (!data) return { title: 'Analysis' };
-    const { cpu, gpu, resolution, isEn, rawSlug } = data;
+    const { cpu, gpu, resolution } = data;
     const displayRes = resolution === '2160p' ? '4K' : resolution.toUpperCase();
     
     return { 
         title: isEn ? `${cpu.name} + ${gpu.name} Bottleneck Test (${displayRes})` : `${cpu.name} + ${gpu.name} Bottleneck Test (${displayRes}) | Hardware Guru`,
         alternates: {
-            canonical: `${BASE_URL}${isEn ? '/en' : ''}/bottleneck/${rawSlug.replace(/^en-/, '')}`,
+            canonical: `${BASE_URL}${isEn ? '/en' : ''}/bottleneck/${s.slug.replace(/^en-/, '')}`,
         }
     };
 }
 
 export default async function BottleneckPage({ params }) {
   const s = await params;
+  // 🔥 FIX: Totální kontrola nad EN variantou
+  const isEn = s.slug.startsWith('en-') || s.lang === 'en' || (typeof window !== 'undefined' && window.location.pathname.includes('/en/'));
+  
   const data = await getAnalysisData(s.slug);
-
   if (!data?.cpu || !data?.gpu) return notFound();
 
-  const { cpu, gpu, gameSlug, resolution, upgradeCpu, upgradeGpu, isEn } = data;
+  const { cpu, gpu, gameSlug, resolution, upgradeCpu, upgradeGpu } = data;
 
   const friendlyGameName = gameSlug ? gameSlug.replace(/-/g, ' ').toUpperCase() : (isEn ? 'MODERN TITLES' : 'MODERNÍCH HRÁCH');
   const friendlyRes = resolution === '2160p' ? '4K' : resolution;
@@ -136,7 +140,7 @@ export default async function BottleneckPage({ params }) {
         <header style={{ textAlign: 'center', margin: '50px 0' }}>
           <div className="radar-badge" style={{ color: '#66fcf1', border: '1px solid rgba(102,252,241,0.3)', padding: '6px 20px', borderRadius: '50px', fontSize: '11px', fontWeight: 950, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <Gauge size={16} /> 
-            <span>GURU REVENUE ENGINE V3.9.3</span>
+            <span>GURU ENGINE V3.9.4</span>
           </div>
           <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', fontWeight: 950, textTransform: 'uppercase', marginTop: '20px' }}>
             {cpu.name} <span style={{ opacity: 0.2 }}>+</span> {gpu.name}
@@ -150,7 +154,7 @@ export default async function BottleneckPage({ params }) {
                    <Monitor size={16} /> {isEn ? 'GPU UPGRADE' : 'DOPORUČENÝ UPGRADE GRAFIKY'}
                 </div>
                 <div style={{ width: '100%' }}>
-                    <div style={{ opacity: 0.6, fontSize: '12px', textAlign: 'center', marginBottom: '8px' }}>{isEn ? 'Starting from $399' : 'Běžně 15 490 Kč • Guru cena od 11 990 Kč'}</div>
+                    <div style={{ opacity: 0.6, fontSize: '12px', textAlign: 'center', marginBottom: '8px' }}>{isEn ? 'From $399' : 'Běžně 15 490 Kč • Guru cena od 11 990 Kč'}</div>
                     <div style={{ fontSize: '11px', color: '#facc15', fontWeight: 900, textAlign: 'center', marginBottom: '10px' }}>
                         {isEn ? `You are losing up to ${bottleneckPercent}% performance` : `📉 Ztrácíš až ${bottleneckPercent}% výkonu s aktuální kartou`}
                     </div>
@@ -175,7 +179,7 @@ export default async function BottleneckPage({ params }) {
                    <Zap size={16} /> {isEn ? 'CPU UPGRADE' : 'DOPORUČENÝ UPGRADE PROCESORU'}
                 </div>
                 <div style={{ width: '100%' }}>
-                    <div style={{ opacity: 0.6, fontSize: '12px', textAlign: 'center', marginBottom: '8px' }}>{isEn ? 'Starting from $249' : 'Běžně 8 990 Kč • Guru cena od 6 490 Kč'}</div>
+                    <div style={{ opacity: 0.6, fontSize: '12px', textAlign: 'center', marginBottom: '8px' }}>{isEn ? 'From $249' : 'Běžně 8 990 Kč • Guru cena od 6 490 Kč'}</div>
                     <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: 900, textAlign: 'center', marginBottom: '10px' }}>
                         {isEn ? 'CPU is bottlenecking your potential' : '⚠️ Tvůj procesor brzdí potenciál grafiky'}
                     </div>
@@ -210,12 +214,11 @@ export default async function BottleneckPage({ params }) {
 
         <div style={{ marginTop: '40px', textAlign: 'center' }}>
             <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ color: '#a855f7', fontWeight: 900, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                {isEn ? 'Test different hardware combination' : 'Spočítej jinou kombinaci hardware'} <ChevronRight size={20} />
+                {isEn ? 'Calculate another combination' : 'Spočítej jinou kombinaci hardware'} <ChevronRight size={20} />
             </a>
         </div>
       </main>
 
-      {/* 🔥 FIX: camelCase zIndex + camelCase borderTop */}
       <div className="sticky-bottom-anchor" style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: 'rgba(10,11,13,0.98)', borderTop: '1px solid rgba(255,255,255,0.1)', zIndex: 9999, padding: '10px 0', display: 'flex', justifyContent: 'center' }}>
           <SeznamAd zoneId={408654} width={970} height={90} />
       </div>
