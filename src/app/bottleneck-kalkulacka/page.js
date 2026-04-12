@@ -3,12 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import BottleneckClient from './BottleneckClient';
 import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons'; 
-import AffiliateButton from './AffiliateButton'; // 🔥 NOVÝ IMPORT
+import AffiliateButton from './AffiliateButton'; 
 import { ShoppingCart, Monitor, Cpu, Zap, ShieldCheck, Clock, AlertTriangle } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK CALCULATOR - HUB V3.3 (THE TRACKING MASTER)
- * 🚀 CÍL: Client-side tracking fix, Savings hooks a Primary CTA stack.
+ * GURU BOTTLENECK CALCULATOR - HUB V3.4 (MASTER AFFILIATE ENGINE)
+ * 🚀 CÍL: Fix encodingu, neprůstřelné Heureka query a Amazon money intent.
  */
 
 export const dynamic = 'force-dynamic';
@@ -27,6 +27,7 @@ const normalizeQuery = (str = '') => {
   } catch (e) { return str; }
 };
 
+// 🔥 FIX: Čistíme balast, ale držíme model (Ti, SUPER, XT nesmí pryč!)
 const cleanHeurekaGpuName = (name = '') => {
   return name
     .replace(/(Graphics Card|GPU)/gi, '')
@@ -48,8 +49,14 @@ const cleanHeurekaCpuName = (name = '') => {
     .trim();
 };
 
+// 🔥 FIX: Encoding bez zdvojených plusů (split -> filter -> join)
 const encodeHeurekaQuery = (q, cleanFn) => {
-  return normalizeQuery(cleanFn(q)).replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).join('+');
+  return normalizeQuery(cleanFn(q))
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .join('+');
 };
 
 export default async function BottleneckPage({ searchParams }) {
@@ -90,14 +97,23 @@ export default async function BottleneckPage({ searchParams }) {
     const heroGpu = [...gpus].map(g => ({ name: g.name, score: scoreGpu(g) })).sort((a,b) => b.score - a.score)[0]?.name || fallbackGpu;
     const heroCpu = [...cpus].map(c => ({ name: c.name, score: scoreCpu(c) })).sort((a,b) => b.score - a.score)[0]?.name || fallbackCpu;
 
+    // 🔥 Amazon Money Intent
     const getAmazonLink = (name) => {
-        const q = `${name} gaming benchmark fps test review best price deal discount buy online free shipping in stock fast delivery`;
+        const q = `${name} gaming benchmark fps test review best price deal discount buy online free shipping`;
         return `https://www.amazon.com/s?k=${encodeURIComponent(q)}&tag=${AMAZON_TAG}&linkCode=ll2&ref_=as_li_ss_tl&ascsubtag=bn-hub`;
     };
 
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
-    const getHeurekaGpu = (name) => `https://graficke-karty.heureka.cz/f:q:${encodeHeurekaQuery(name, cleanHeurekaGpuName)}/?utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
-    const getHeurekaCpu = (name) => `https://procesory.heureka.cz/f:q:${encodeHeurekaQuery(name, cleanHeurekaCpuName)}/?h%5Bfraze%5D=${encodeHeurekaQuery(name, cleanHeurekaCpuName)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+    
+    // 🔥 Heureka Search Relevance Boost
+    const getHeurekaGpu = (name) => {
+        const query = encodeHeurekaQuery(name, cleanHeurekaGpuName);
+        return `https://graficke-karty.heureka.cz/f:q:${query}/?utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+    };
+    const getHeurekaCpu = (name) => {
+        const query = encodeHeurekaQuery(name, cleanHeurekaCpuName);
+        return `https://procesory.heureka.cz/f:q:${query}/?h%5Bfraze%5D=${query}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+    };
 
     return (
         <div className="guru-page-container" style={{ backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', paddingTop: '100px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -122,7 +138,7 @@ export default async function BottleneckPage({ searchParams }) {
                 <BottleneckClient gpus={gpus} cpus={cpus} games={gamesData} isEn={isEn} />
 
                 <div className="affiliate-cta-grid" style={{ margin: '40px 0' }}>
-                    {/* GPU UPGRADE COLUMN */}
+                    {/* GPU COLUMN */}
                     <div className="affiliate-col">
                         <div style={{ display:'flex', alignItems:'center', gap:'8px', fontSize:'13px', fontWeight:'950', color:'#a855f7', marginBottom:'20px' }}><Monitor size={16} /> {isEn ? `TOP GPU UPGRADE` : `NEJLEPŠÍ UPGRADE GRAFIKY`}</div>
                         <div className="affiliate-btn-wrap">
@@ -130,18 +146,16 @@ export default async function BottleneckPage({ searchParams }) {
                             <div className="price-anchor">{isEn ? 'From $399 • Best value' : 'Od 9 990 Kč • Nejlepší poměr cena/výkon'}</div>
                             <div className="gain-hook">🚀 {isEn ? '+40-70% smoother gameplay' : '+40-70 % plynulejší hraní'}</div>
 
-                            {/* 🔥 FIX #4: SMART STACK LABEL */}
                             <div className="conversion-detail" style={{ opacity: 0.8, color: '#22c55e', fontWeight: '950' }}>🟢 {isEn ? 'Cheapest option first' : 'Nejlevnější možnost nahoře'}</div>
 
                             {isEn ? (
                                 <AffiliateButton href={getAmazonLink(heroGpu)} label="hub_amazon_gpu" className="guru-buy-winner-btn amazon-btn">
-                                    <ShoppingCart size={18} /> 🔥 {isEn ? 'Unlock smoother gameplay NOW' : 'Získej plynulejší hraní TEĎ'}
+                                    <ShoppingCart size={18} /> 🔥 Unlock smoother gameplay NOW
                                 </AffiliateButton>
                             ) : (
                                 <>
-                                    {/* 🔥 FIX #1 & #3: CLIENT WRAPPER + REVENUE MULTIPLIER (30%) */}
                                     <AffiliateButton href={getHeurekaGpu(heroGpu)} label="hub_heureka_gpu" positionId="276026" className="guru-buy-winner-btn heureka-btn">
-                                        🔥 Najít NEJLEVNĚJŠÍ cenu GPU → teď (ušetříš až 30 %)
+                                        🔥 Najít NEJLEVNĚJŠÍ cenu GPU → teď
                                     </AffiliateButton>
                                     
                                     <div className="conversion-detail"><ShieldCheck size={10} /> {isEn ? '⚡ Price drops tracked in real time' : '⚡ Sleduje pokles cen v reálném čase (ověřeno dnes)'}</div>
@@ -154,7 +168,7 @@ export default async function BottleneckPage({ searchParams }) {
                         </div>
                     </div>
 
-                    {/* CPU UPGRADE COLUMN */}
+                    {/* CPU COLUMN */}
                     <div className="affiliate-col">
                         <div style={{ display:'flex', alignItems:'center', gap:'8px', fontSize:'13px', fontWeight:'950', color:'#a855f7', marginBottom:'20px' }}><Cpu size={16} /> {isEn ? `TOP CPU UPGRADE` : `NEJLEPŠÍ UPGRADE PROCESORU`}</div>
                         <div className="affiliate-btn-wrap">
@@ -166,12 +180,12 @@ export default async function BottleneckPage({ searchParams }) {
 
                             {isEn ? (
                                 <AffiliateButton href={getAmazonLink(heroCpu)} label="hub_amazon_cpu" className="guru-buy-winner-btn amazon-btn">
-                                    <ShoppingCart size={18} /> 🔥 {isEn ? 'Unlock smoother gameplay NOW' : 'Získej plynulejší hraní TEĎ'}
+                                    <ShoppingCart size={18} /> 🔥 Unlock smoother gameplay NOW
                                 </AffiliateButton>
                             ) : (
                                 <>
                                     <AffiliateButton href={getHeurekaCpu(heroCpu)} label="hub_heureka_cpu" positionId="276027" className="guru-buy-winner-btn heureka-btn">
-                                        🔥 Najít NEJLEVNĚJŠÍ cenu CPU → teď (ušetříš až 30 %)
+                                        🔥 Najít NEJLEVNĚJŠÍ cenu CPU → teď
                                     </AffiliateButton>
                                     
                                     <div className="conversion-detail"><ShieldCheck size={10} /> {isEn ? '⚡ Price drops tracked in real time' : '⚡ Sleduje pokles cen v reálném čase (ověřeno dnes)'}</div>
@@ -184,7 +198,6 @@ export default async function BottleneckPage({ searchParams }) {
                         </div>
                     </div>
                 </div>
-
                 <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
                     <HeurekaButtons isEn={isEn} manualSearch={heroGpu} positionId="276026" />
                 </div>
