@@ -15,7 +15,6 @@ import SeznamAd from '../components/SeznamAd';
 import MobileStickyButton from '../components/MobileStickyButton';
 import ExitIntentPopup from '../components/ExitIntentPopup';
 import OneSignalActivator from '../components/OneSignalActivator';
-import HeurekaGlobalFormatter from '../components/HeurekaGlobalFormatter';
 import { Cpu, ShieldCheck, Layers, Gamepad2, Lightbulb, Bookmark, ShoppingCart, Rocket } from 'lucide-react';
 
 export const metadata = {
@@ -147,7 +146,6 @@ export default async function RootLayout({ children }) {
       </head>
 
       <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingBottom: '120px' }}>
-        <HeurekaGlobalFormatter />
         <AdTracker />
         <div id="guru-env-bridge" style={{ display: 'none' }} data-url={envVars.NEXT_PUBLIC_SUPABASE_URL} data-key={envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY} />
         <Navbar lang={locale} />
