@@ -9,45 +9,44 @@ export default function HeurekaGlobalFormatter() {
             const href = el.getAttribute('href');
             if (!href || !href.includes('heureka.cz')) return;
             
-            // Pokud už odkaz začíná haff kódem, považujeme ho za opravený
-            if (href.includes('?haff=276049')) return;
+            // Pokud je to už správně na www.heureka.cz s haff, necháme to být
+            if (href.includes('www.heureka.cz') && href.includes('haff=276049') && href.includes('h%5Bfraze%5D')) {
+                return;
+            }
 
             try {
                 const url = new URL(href, window.location.origin);
                 let query = "";
 
-                // 1. Vytáhneme hledaný výraz z jakéhokoli formátu
+                // Extrakce hledaného slova z jakéhokoli zkurveného formátu
                 if (url.searchParams.has('h[fraze]')) {
                     query = url.searchParams.get('h[fraze]');
-                } else if (url.pathname.includes('f:q:')) {
-                    query = url.pathname.split('f:q:')[1].split('/')[0];
                 } else {
-                    query = url.pathname.split('/').filter(Boolean).pop()?.replace(/-/g, ' ');
+                    // Chytne to f:q: i f:2806:7112;q: a podobný bordely
+                    const fqMatch = url.pathname.match(/[;q:]q[:=]([^/&?]+)/) || url.pathname.match(/f:q:([^/&?]+)/);
+                    if (fqMatch) {
+                        query = decodeURIComponent(fqMatch[1]);
+                    } else {
+                        query = url.pathname.split('/').filter(Boolean).pop()?.replace(/-/g, ' ');
+                    }
                 }
 
-                if (!query) query = "PC komponenty";
+                if (!query || query.length < 2) query = "PC komponenty";
                 
-                // 2. Vyčistíme dotaz (žádná "cena", jen čistý produkt a pluska)
-                const safeQuery = decodeURIComponent(query)
-                    .toLowerCase()
-                    .replace('cena', '')
-                    .trim()
-                    .replace(/\s+/g, '+');
+                // Čistý dotaz bez sraček jako "cena" a s pluskama
+                const safeQuery = query.toLowerCase().replace('cena', '').trim().replace(/\s+/g, '+');
 
-                // 3. 🔥 AGRESIVNÍ KONSTRUKCE: haff musí být PRVNÍ parametr za otazníkem 🔥
-                // Tímto přebijeme redirecty Heureky na subdomény
-                const utmContent = url.searchParams.get('utm_content') || 'global-formatter-v10';
-                
-                const newHref = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${utmContent}`;
+                // 🔥 TOTÁLNÍ FIX: Všechno posíláme na WWW.HEUREKA.CZ 🔥
+                // Žádný procesory.heureka.cz nebo pameti.heureka.cz - ty to bourají.
+                const subId = url.searchParams.get('utm_content') || 'global-v10-fix';
+                const newHref = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
 
                 el.setAttribute('href', newHref);
                 el.setAttribute('target', '_blank');
                 el.setAttribute('rel', 'nofollow sponsored');
-                
-                // Přidáme značku, že jsme to opravili
                 el.dataset.guruFixed = "true";
             } catch (e) {
-                // Tichý fallback
+                // Tichý error
             }
         };
 
@@ -55,10 +54,8 @@ export default function HeurekaGlobalFormatter() {
             document.querySelectorAll('a[href*="heureka.cz"]:not([data-guru-fixed="true"])').forEach(fixHeurekaLink);
         };
 
-        // Spustit hned
         runFix();
 
-        // Sledovat každou změnu na stránce (Next.js překreslování)
         const observer = new MutationObserver(runFix);
         observer.observe(document.body, { 
             childList: true, 
@@ -67,7 +64,7 @@ export default function HeurekaGlobalFormatter() {
             attributeFilter: ['href'] 
         });
 
-        // Poslední pojistka - interval
+        // Agresivní interval pro jistotu
         const interval = setInterval(runFix, 1000);
 
         return () => {
