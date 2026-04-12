@@ -8,11 +8,12 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default function HeurekaButtons({ isEn = false }) {
+export default function HeurekaButtons({ isEn = false, manualSearch = "" }) {
     const pathname = usePathname() || '';
     
     const platform = isEn ? 'amazon' : 'heureka';
 
+    // Deterministický intent podle aktuální URL
     const intent = useMemo(() => {
         const lower = pathname.toLowerCase();
         if (lower.includes('bottleneck')) return 'calc';
@@ -24,15 +25,30 @@ export default function HeurekaButtons({ isEn = false }) {
     const getLink = (category) => {
         const subId = `v10-${platform}-${category}-${intent}`;
         
+        // 🔥 ZÁSADNÍ OPRAVA: Dynamické vyhledávání podle kontextu stránky
+        let searchQuery = "";
+        
+        // Pokud tlačítko odpovídá tématu stránky (např. tlačítko GPU na stránce o grafice),
+        // použijeme přesný název z props `manualSearch`.
+        if (category === intent && manualSearch) {
+            searchQuery = manualSearch;
+        } else {
+            // Pro ostatní tlačítka použijeme čisté, ověřené fráze, které na Heurece fungují
+            const fallbacks = {
+                cpu: "Ryzen 7 9800X3D",
+                gpu: "RTX 5080",
+                mb: "AM5 X870E",
+                ram: "DDR5 6000MHz"
+            };
+            searchQuery = fallbacks[category];
+        }
+
         if (platform === 'amazon') {
-            const queries = { cpu: "Ryzen+9+9950X", gpu: "RTX+5080", mb: "X870E+AM5", ram: "DDR5+8000MT" };
-            return `https://www.amazon.com/s?k=${queries[category]}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
+            return `https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
         }
         
-        const queries = { cpu: "ryzen+9950x", gpu: "rtx+5080", mb: "am5+zakladni+deska", ram: "ddr5+64gb" };
-        
-        // POUZE ČISTÝ HAFF ODKAZ - NIC JINÉHO
-        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${queries[category]}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+        // POUZE ČISTÝ HAFF ODKAZ PRO HEUREKU, ŽÁDNÝ JS REDIRECT
+        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchQuery)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     };
 
     const handleLogClick = (category) => {
