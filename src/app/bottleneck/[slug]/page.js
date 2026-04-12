@@ -12,10 +12,10 @@ export const revalidate = 86400;
 
 const AMAZON_TAG = "thehardware07-20";
 
-const normalizeName = (name = '') => name.replace(/\s+/g, ' ').trim();
+const normalizeName = (name = '') => String(name || '').replace(/\s+/g, ' ').trim();
 
 const cleanHeurekaProduct = (name = '') => {
-  return name
+  return String(name || '')
     .replace(/\b(OC|Gaming|Dual|Ventus|Eagle|Trio|X Trio|Aero|Ghost|Pny|Zotac|Inno3d|Palit|Asrock|Msi|Gigabyte|Asus)\b/gi, '')
     .replace(/\b(12GB|16GB|8GB|24GB|10GB|20GB|4GB|6GB)\b/gi, '')
     .replace(/\b(SUPER|TI|XT|X3D)\b/gi, m => m.toUpperCase())
@@ -23,14 +23,16 @@ const cleanHeurekaProduct = (name = '') => {
     .trim();
 };
 
+// 🔥 FIX #2: SAFE NORMALIZE
 const encodeHeureka = (name = '') => {
-    const clean = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const safe = String(name || '');
+    const clean = safe.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return clean.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).join('+');
 };
 
 const findHw = async (table, rawSlugPart) => {
   if (!rawSlugPart || rawSlugPart === 'undefined') return null;
-  const slugPart = rawSlugPart.replace(/^en-/, '');
+  const slugPart = String(rawSlugPart).replace(/^en-/, '');
   const headers = { 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` };
   const joinQuery = table === 'gpus' ? 'game_fps!gpu_id(*)' : 'cpu_game_fps!cpu_id(*)';
 
@@ -41,10 +43,12 @@ const findHw = async (table, rawSlugPart) => {
   return null;
 };
 
+// 🔥 FIX #3: NaN GUARD IN QUERY
 const findUpgrade = async (table, currentPerf) => {
+    const perf = Number(currentPerf) || 100;
     const headers = { 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` };
     try {
-        const r = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}?select=name,slug,performance_index&performance_index=gt.${currentPerf * 1.2}&order=performance_index.asc&limit=1`, { headers });
+        const r = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${table}?select=name,slug,performance_index&performance_index=gt.${perf * 1.2}&order=performance_index.asc&limit=1`, { headers });
         const data = await r.json();
         return data?.[0] || null;
     } catch(e) { return null; }
@@ -52,9 +56,8 @@ const findUpgrade = async (table, currentPerf) => {
 
 const getAnalysisData = async (slug) => {
   if (!slug) return null;
-  // 🔥 FIX: Detekce jazyka pouze ze slugu - bezpečné pro server
-  const isEn = slug.startsWith('en-');
-  const cleanSlug = slug.replace(/^en-/, '');
+  const isEn = String(slug).startsWith('en-');
+  const cleanSlug = String(slug).replace(/^en-/, '');
   
   const resParts = cleanSlug.split('-at-');
   const resolution = resParts[1] === '4k' ? '2160p' : (resParts[1] || '1440p'); 
@@ -68,16 +71,16 @@ const getAnalysisData = async (slug) => {
   if (!cpu || !gpu) return null;
 
   const [upgradeCpu, upgradeGpu] = await Promise.all([
-      findUpgrade('cpus', cpu.performance_index || 100),
-      findUpgrade('gpus', gpu.performance_index || 100)
+      findUpgrade('cpus', cpu.performance_index),
+      findUpgrade('gpus', gpu.performance_index)
   ]);
 
   return { cpu, gpu, gameSlug, resolution, upgradeCpu, upgradeGpu, isEn };
 };
 
 export default async function BottleneckPage({ params }) {
-  // 🔥 FIX: params musí být awaitovány v Next.js 14/15
-  const s = await params;
+  // 🔥 FIX #1: REMOVED AWAIT (Next.js 14 direct access)
+  const s = params; 
   const data = await getAnalysisData(s.slug);
 
   if (!data?.cpu || !data?.gpu) return notFound();
@@ -88,8 +91,8 @@ export default async function BottleneckPage({ params }) {
   const friendlyRes = resolution === '2160p' ? '4K' : resolution;
 
   const resMod = resolution === '1080p' ? 0.85 : (resolution === '2160p' ? 1.25 : 1);
-  const normalizedCpu = (cpu.performance_index || 100) * resMod * 2.9;
-  const normalizedGpu = (gpu.performance_index || 100);
+  const normalizedCpu = (Number(cpu.performance_index) || 100) * resMod * 2.9;
+  const normalizedGpu = (Number(gpu.performance_index) || 100);
   const isCpuBottleneck = normalizedGpu > normalizedCpu;
   const diff = isCpuBottleneck ? (normalizedGpu / normalizedCpu) - 1 : (normalizedCpu / normalizedGpu) - 1;
   const bottleneckPercent = Math.max(0, Math.min(Math.round(diff * 45), 100));
@@ -121,7 +124,7 @@ export default async function BottleneckPage({ params }) {
         <header style={{ textAlign: 'center', margin: '50px 0' }}>
           <div className="radar-badge" style={{ color: '#66fcf1', border: '1px solid rgba(102,252,241,0.3)', padding: '6px 20px', borderRadius: '50px', fontSize: '11px', fontWeight: 950, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <Gauge size={16} /> 
-            <span>GURU ENGINE V3.9.6</span>
+            <span>GURU REVENUE ENGINE V3.9.7</span>
           </div>
           <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', fontWeight: 950, textTransform: 'uppercase', marginTop: '20px' }}>
             {cpu.name} <span style={{ opacity: 0.2 }}>+</span> {gpu.name}
@@ -134,13 +137,12 @@ export default async function BottleneckPage({ params }) {
 
         <section className="affiliate-cta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px', padding: '35px', background: 'rgba(0,0,0,0.5)', borderRadius: '28px', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
             
-            {/* GPU UPGRADE */}
             <div className="affiliate-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                    <Monitor size={16} /> {isEn ? 'GPU UPGRADE' : 'DOPORUČENÝ UPGRADE GRAFIKY'}
                 </div>
                 <div style={{ width: '100%' }}>
-                    <div style={{ opacity: 0.6, fontSize: '12px', textAlign: 'center', marginBottom: '8px' }}>{isEn ? 'Starting from $399' : 'Běžně 15 490 Kč • Guru cena od 11 990 Kč'}</div>
+                    <div style={{ opacity: 0.6, fontSize: '12px', textAlign: 'center', marginBottom: '8px' }}>{isEn ? 'From $399' : 'Běžně 15 490 Kč • Guru cena od 11 990 Kč'}</div>
                     <div style={{ fontSize: '11px', color: '#facc15', fontWeight: 900, textAlign: 'center', marginBottom: '10px' }}>
                         {isEn ? `You are losing up to ${bottleneckPercent}% FPS performance` : `📉 Ztrácíš až ${bottleneckPercent}% výkonu s aktuální kartou`}
                     </div>
@@ -160,13 +162,12 @@ export default async function BottleneckPage({ params }) {
                 </div>
             </div>
 
-            {/* CPU UPGRADE */}
             <div className="affiliate-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                    <Zap size={16} /> {isEn ? 'CPU UPGRADE' : 'DOPORUČENÝ UPGRADE PROCESORU'}
                 </div>
                 <div style={{ width: '100%' }}>
-                    <div style={{ opacity: 0.6, fontSize: '12px', textAlign: 'center', marginBottom: '8px' }}>{isEn ? 'Starting from $249' : 'Běžně 8 990 Kč • Guru cena od 6 490 Kč'}</div>
+                    <div style={{ opacity: 0.6, fontSize: '12px', textAlign: 'center', marginBottom: '8px' }}>{isEn ? 'From $249' : 'Běžně 8 990 Kč • Guru cena od 6 490 Kč'}</div>
                     <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: 900, textAlign: 'center', marginBottom: '10px' }}>
                         {isEn ? 'Current CPU is slowing down your GPU' : '⚠️ Tvůj procesor brzdí potenciál grafiky'}
                     </div>
@@ -187,7 +188,6 @@ export default async function BottleneckPage({ params }) {
             </div>
         </section>
 
-        {/* GURU TOOLS SECTION */}
         <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
             <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ background: '#0a0b0d', border: '1px solid #06b6d4', padding: '25px', borderRadius: '20px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '15px', transition: '0.3s' }}>
                 <Gamepad2 size={32} color="#06b6d4" />
