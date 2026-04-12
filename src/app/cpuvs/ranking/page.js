@@ -1,72 +1,71 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import Script from 'next/script'; 
 import { 
-  ChevronLeft, Trophy, Zap, Cpu, Medal, Monitor, ChevronRight, Gamepad2, AlertTriangle, ShoppingCart
+  Trophy, Zap, Cpu, Monitor, ChevronRight, Gamepad2, AlertTriangle, ShoppingCart
 } from 'lucide-react';
 import Link from 'next/link';
-import SeznamAd from '../../../components/SeznamAd'; // 🔥 FIX: Správná cesta
-import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 FIX: Správná cesta
+import { usePathname } from 'next/navigation';
+import SeznamAd from '../../../components/SeznamAd';
+import HeurekaButtons from '../../../components/HeurekaButtons';
+import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU CPU RANKING V2.5 (VERCEL BUILD FIX)
- * 🚀 CÍL: Oprava cest k importům, zachování inline nákupů a ItemList Schema.
+ * GURU CPU RANKING V2.6 (V10 HARD-LOCK UPDATE)
+ * 🚀 CÍL: Fix Heureka linků na V10 Hard-Lock a zachování build stability.
  */
-
-export const dynamic = 'force-dynamic';
-export const fetchCache = 'force-no-store';
-export const revalidate = 0; 
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const baseUrl = "https://thehardwareguru.cz";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const slugify = (text) => text?.toLowerCase().replace(/processor|cpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() || 'unknown';
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 
-const fetchRankingData = async () => {
-    if (!supabaseUrl) return [];
-    try {
-        const url = `${supabaseUrl}/rest/v1/cpus?select=*&order=performance_index.desc.nullslast,name.asc`;
-        const res = await fetch(url, {
-            headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` },
-            cache: 'no-store'
-        });
-        return res.ok ? await res.json() : [];
-    } catch (e) { return []; }
-};
+export default function CpuRankingPage({ isEn = false }) {
+  const pathname = usePathname() || '';
+  const [cpus, setCpus] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function CpuRankingPage(props) {
-  const isEn = props?.isEn === true;
-  const cpus = await fetchRankingData();
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data } = await supabase
+          .from('cpus')
+          .select('*')
+          .order('performance_index', { ascending: false, nullsFirst: false });
+        setCpus(data || []);
+      } catch (e) {}
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
 
-  if (!cpus || cpus.length === 0) return <div style={{ color: '#fff', background: '#0a0b0d', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>DATABASE ERROR</div>;
+  // 🔥 V10 HARD-LOCK REDIRECT LOGIC 🔥
+  const handleHeurekaAction = (e, name, subId) => {
+    e.preventDefault();
+    const q = encodeURIComponent(name + ' cena');
+    const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+    
+    if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+      const payload = { platform: 'heureka', category: 'cpu_ranking', sub_id: subId, page: pathname };
+      navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
+    }
+    setTimeout(() => { window.location.href = targetUrl; }, 150);
+  };
+
+  if (loading) return null;
+  if (!cpus.length) return <div style={{ color: '#fff', background: '#0a0b0d', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>DATABASE ERROR</div>;
 
   return (
     <div className="guru-ranking-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       {!isEn && <Script async src="//serve.affiliate.heureka.cz/js/trixam.min.js" strategy="afterInteractive" />}
 
-      {/* ITEMLIST SCHEMA */}
-      <Script
-        id="ranking-schema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "ItemList",
-            "itemListElement": cpus.slice(0, 15).map((cpu, i) => ({
-              "@type": "ListItem",
-              "position": i + 1,
-              "name": cpu.name,
-              "url": `${baseUrl}${isEn ? '/en' : ''}/cpu/${cpu.slug || slugify(cpu.name)}`
-            }))
-          })
-        }}
-      />
-
       <main className="inner-container" style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div className="ranking-badge">
+          <div className="ranking-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#f59e0b', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', padding: '8px 25px', border: '1px solid rgba(245,158,11,0.4)', borderRadius: '50px', background: 'rgba(245,158,11,0.1)', marginBottom: '20px' }}>
             <Trophy size={18} /> GURU RANKING SYSTEM
           </div>
           <h1 className="main-h1" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: 1.0 }}>
@@ -78,8 +77,8 @@ export default async function CpuRankingPage(props) {
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '15px', marginTop: '30px' }}>
-            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="quick-link-pill" style={{ borderColor: '#06b6d4', color: '#06b6d4' }}><Gamepad2 size={14} /> {isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</a>
-            <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} className="quick-link-pill" style={{ borderColor: '#a855f7', color: '#a855f7' }}><AlertTriangle size={14} /> {isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</a>
+            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="quick-link-pill" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '50px', fontWeight: '950', fontSize: '11px', textTransform: 'uppercase', textDecoration: 'none', border: '1px solid #06b6d4', color: '#06b6d4', background: 'rgba(255,255,255,0.02)' }}><Gamepad2 size={14} /> {isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</a>
+            <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} className="quick-link-pill" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '50px', fontWeight: '950', fontSize: '11px', textTransform: 'uppercase', textDecoration: 'none', border: '1px solid #a855f7', color: '#a855f7', background: 'rgba(255,255,255,0.02)' }}><AlertTriangle size={14} /> {isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</a>
           </div>
         </header>
 
@@ -89,13 +88,10 @@ export default async function CpuRankingPage(props) {
 
         <div className="ranking-list" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {cpus.map((cpu, index) => {
-            if (!cpu || !cpu.name) return null;
             const vendorColor = (cpu.vendor || '').toUpperCase() === 'INTEL' ? '#0071c5' : '#ed1c24';
             const safeSlug = cpu.slug || slugify(cpu.name);
             const isTop3 = index < 3;
             
-            const heurekaLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(cpu.name + ' cena')}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
-
             return (
               <React.Fragment key={cpu.id || index}>
                 <div className="ranking-card-container" style={{ position: 'relative' }}>
@@ -105,20 +101,23 @@ export default async function CpuRankingPage(props) {
                     </div>
                   )}
 
-                  <div className="ranking-card hover-scale">
-                      <div className="rank-num" style={{ color: isTop3 ? '#f59e0b' : '#4b5563' }}>{index + 1}.</div>
-                      <div className="v-bar" style={{ backgroundColor: vendorColor }}></div>
+                  <div className="ranking-card" style={{ display: 'flex', alignItems: 'center', background: 'rgba(15, 17, 21, 0.98)', padding: '25px 30px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', color: '#fff' }}>
+                      <div className="rank-num" style={{ width: '50px', fontSize: '24px', fontWeight: '950', color: isTop3 ? '#f59e0b' : '#4b5563' }}>{index + 1}.</div>
+                      <div className="v-bar" style={{ width: '4px', height: '50px', borderRadius: '10px', marginRight: '25px', backgroundColor: vendorColor }}></div>
                       
                       <div style={{ flex: 1 }}>
                         <Link href={isEn ? `/en/cpu/${safeSlug}` : `/cpu/${safeSlug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                          <h2 className="cpu-title">{normalizeName(cpu.name)}</h2>
+                          <h2 style={{ fontSize: '1.4rem', fontWeight: '950', margin: 0, textTransform: 'uppercase' }}>{normalizeName(cpu.name)}</h2>
                         </Link>
                         
                         <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '15px' }}>
                           {!isEn ? (
-                            <a href={heurekaLink} target="_blank" rel="nofollow sponsored" className="heureka-hn-link" data-trixam-positionid="276026" style={{ fontSize: '12px', color: '#60a5fa', fontWeight: '900', textDecoration: 'underline' }}>
+                            <button 
+                              onClick={(e) => handleHeurekaAction(e, cpu.name, `v10-rank-${index + 1}`)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: '12px', color: '#60a5fa', fontWeight: '900', textDecoration: 'underline' }}
+                            >
                               🔥 Porovnat ceny →
-                            </a>
+                            </button>
                           ) : (
                             <a href={`https://www.amazon.com/s?k=${encodeURIComponent(cpu.name)}&tag=thehardware07-20`} target="_blank" rel="nofollow sponsored" style={{ fontSize: '12px', color: '#f59e0b', fontWeight: '900', textDecoration: 'underline' }}>
                               🔥 Check Price →
@@ -127,18 +126,18 @@ export default async function CpuRankingPage(props) {
                         </div>
                       </div>
 
-                      <div className="score-box">
-                        <div className="score-label">PERF SCORE</div>
-                        <div className="score-val" style={{ color: isTop3 ? '#f59e0b' : '#fff' }}>
+                      <div className="score-box" style={{ textAlign: 'center', padding: '0 40px', borderLeft: '1px solid rgba(255,255,255,0.05)', margin: '0 15px' }}>
+                        <div style={{ fontSize: '9px', color: '#6b7280', fontWeight: '950', textTransform: 'uppercase' }}>PERF SCORE</div>
+                        <div className="score-val" style={{ fontSize: '26px', fontWeight: '950', display: 'flex', alignItems: 'center', gap: '8px', color: isTop3 ? '#f59e0b' : '#fff' }}>
                           <Zap size={18} fill={isTop3 ? '#f59e0b' : 'none'} /> {cpu.performance_index || '0'}
                         </div>
                       </div>
-                      <ChevronRight size={20} className="arrow-icon" />
+                      <ChevronRight size={20} style={{ color: '#4b5563' }} />
                   </div>
                 </div>
 
                 {index === 4 && (
-                  <div className="ad-mobile-wrapper" style={{ margin: '15px 0' }}>
+                  <div style={{ margin: '15px 0', display: 'flex', justifyContent: 'center' }}>
                     <SeznamAd zoneId={408651} width={300} height={250} />
                   </div>
                 )}
@@ -149,47 +148,16 @@ export default async function CpuRankingPage(props) {
 
         <div style={{ textAlign: 'center', marginTop: '50px' }}>
           <a
-            href={isEn ? "https://www.amazon.com/s?k=gaming+processor&tag=thehardware07-20" : "https://www.heureka.cz/?h%5Bfraze%5D=procesor+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link"}
+            href={isEn ? "https://www.amazon.com/s?k=gaming+processor&tag=thehardware07-20" : "https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=procesor+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-rank-footer"}
             target="_blank"
             rel="nofollow sponsored"
-            className={`guru-buy-winner-btn hover-scale ${!isEn ? 'heureka-btn' : 'amazon-btn'}`}
+            className="guru-buy-winner-btn"
+            style={{ padding: '18px 40px', borderRadius: '18px', textDecoration: 'none', fontWeight: '950', fontSize: '16px', textTransform: 'uppercase', transition: '0.3s', color: '#fff', display: 'inline-flex', alignItems: 'center', gap: '10px', background: !isEn ? 'linear-gradient(135deg, #3b82f6 0%, #0078d4 100%)' : '#f59e0b', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
           >
             <ShoppingCart size={20} /> {isEn ? '💰 Best Processor Deals' : '💰 Zobrazit ceny procesorů'}
           </a>
         </div>
       </main>
-
-      <style dangerouslySetInnerHTML={{__html: `
-        .ranking-badge { display: inline-flex; align-items: center; gap: 8px; color: #f59e0b; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; padding: 8px 25px; border: 1px solid rgba(245,158,11,0.4); border-radius: 50px; background: rgba(245,158,11,0.1); margin-bottom: 20px; }
-        .ranking-card { display: flex; align-items: center; background: rgba(15, 17, 21, 0.98); padding: 25px 30px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; }
-        .ranking-card:hover { background: rgba(25, 27, 31, 1); border-color: rgba(245, 158, 11, 0.3); }
-        .rank-num { width: 50px; font-size: 24px; font-weight: 950; }
-        .v-bar { width: 4px; height: 50px; border-radius: 10px; margin-right: 25px; }
-        .cpu-title { font-size: 1.4rem; font-weight: 950; margin: 0; text-transform: uppercase; color: #fff; }
-        .score-box { text-align: center; padding: 0 40px; border-left: 1px solid rgba(255,255,255,0.05); margin: 0 15px; }
-        .score-label { font-size: 9px; color: #6b7280; font-weight: 950; text-transform: uppercase; }
-        .score-val { font-size: 26px; font-weight: 950; display: flex; align-items: center; gap: 8px; }
-        .arrow-icon { color: #4b5563; }
-        .guru-buy-winner-btn { padding: 18px 40px; border-radius: 18px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: 0.3s; color: #fff; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); }
-        .amazon-btn { background: #f59e0b; color: #000; }
-        .quick-link-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 50px; font-weight: 950; font-size: 11px; text-transform: uppercase; text-decoration: none; border: 1px solid; background: rgba(255,255,255,0.02); transition: 0.3s; }
-        .hover-scale:hover { transform: translateY(-3px) scale(1.01); filter: brightness(1.1); }
-        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
-        .ad-mobile-wrapper { display: none; width: 100%; }
-        @media (max-width: 768px) {
-          .inner-container { padding: 0 15px !important; }
-          .ad-desktop-wrapper { display: none !important; }
-          .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
-          .ranking-card { padding: 15px; flex-wrap: wrap; }
-          .score-box { border-left: none; padding: 15px 0 0 0; width: 100%; border-top: 1px solid rgba(255,255,255,0.05); margin: 15px 0 0 0; display: flex; justify-content: space-between; align-items: center; }
-          .score-val { font-size: 20px; }
-          .rank-num { width: 30px; font-size: 18px; }
-          .v-bar { margin-right: 15px; height: 40px; }
-          .cpu-title { font-size: 1.1rem; }
-          .arrow-icon { display: none; }
-        }
-      `}} />
     </div>
   );
 }
