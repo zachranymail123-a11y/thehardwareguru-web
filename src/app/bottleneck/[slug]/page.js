@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { notFound, usePathname } from 'next/navigation';
 import { 
- Zap, Cpu, Monitor, Gauge, ShoppingCart, ChevronRight, TrendingUp, Clock, AlertTriangle, Gamepad2, Activity
+ Zap, Cpu, Monitor, Gauge, ShoppingCart, Gamepad2, Activity
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
 import BottleneckFatContent from '../../../components/BottleneckFatContent'; 
@@ -12,21 +12,6 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
-
-const AMAZON_TAG = "thehardware07-20";
-
-const cleanHeurekaProduct = (name = '') => {
-  return String(name || '')
-    .replace(/\b(OC|Gaming|Dual|Ventus|Eagle|Trio|X Trio|Aero|Ghost|Pny|Zotac|Inno3d|Palit|Asrock|Msi|Gigabyte|Asus)\b/gi, '')
-    .replace(/\b(12GB|16GB|8GB|24GB|10GB|20GB|4GB|6GB)\b/gi, '')
-    .replace(/\b(SUPER|TI|XT|X3D)\b/gi, m => m.toUpperCase())
-    .replace(/\s+/g, ' ').trim();
-};
-
-const encodeHeureka = (name = '') => {
-    const clean = String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return clean.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).join('+');
-};
 
 export default function BottleneckPage({ params }) {
   const p = params;
@@ -37,7 +22,6 @@ export default function BottleneckPage({ params }) {
   const [upgradeGpu, setUpgradeGpu] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Načítání dat na straně klienta se zachováním logiky findHw a findUpgrade
   useEffect(() => {
     const fetchData = async () => {
       const cleanSlug = String(p.slug || '');
@@ -88,31 +72,20 @@ export default function BottleneckPage({ params }) {
 
   const subTag = `v10-bn-slug-${bottleneckPercent}`;
 
-  // 🔥 V10 HARD-LOCK TRACKING LOGIC 🔥
-  const handleHeurekaAction = (e, name, cat) => {
-      e.preventDefault();
-      const q = encodeHeureka(cleanHeurekaProduct(name));
-      // Prioritní haff ID na začátku
-      const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subTag}`;
-      
-      const payload = { 
-          platform: 'heureka', 
-          category: `bn_slug_${cat}`, 
-          sub_id: subTag, 
-          page: pathname 
-      };
+  // 🔥 JEDINÝ SCHVÁLENÝ AFFILIATE FORMÁT (ČISTÉ HTML) 🔥
+  const getCleanHeurekaLink = (name) => {
+      const safeQuery = String(name || '').replace(/[-_]/g, ' ').trim().replace(/\s+/g, '+');
+      return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subTag}`;
+  };
 
+  const handleSilentLog = (cat) => {
       if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+          const payload = { platform: 'heureka', category: `bn_slug_${cat}`, sub_id: subTag, page: pathname };
           navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
       }
-
-      setTimeout(() => {
-          window.location.href = targetUrl;
-      }, 150);
   };
 
   const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name.replace(/NVIDIA |AMD |Intel /gi, '').trim())}`)}`;
-  const getHeurekaFallbackLink = (name) => `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeHeureka(cleanHeurekaProduct(name))}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=slug-fallback`;
 
   return (
     <div className="guru-bottleneck-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -134,7 +107,6 @@ export default function BottleneckPage({ params }) {
 
         <section className="affiliate-cta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', padding: '35px', background: 'rgba(0,0,0,0.5)', borderRadius: '28px', border: '1px solid rgba(168,85,247,0.2)' }}>
             
-            {/* GPU COLUMN */}
             <div className="affiliate-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
                 <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase' }}>
                     <Monitor size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> DOPORUČENÝ UPGRADE GRAFIKY
@@ -149,18 +121,17 @@ export default function BottleneckPage({ params }) {
                 <div style={{ fontWeight: 900, color: '#a855f7' }}>🔥 {targetGpuName}</div>
                 
                 <a 
-                  href={getHeurekaFallbackLink(targetGpuName)} 
-                  onClick={(e) => handleHeurekaAction(e, targetGpuName, 'gpu')}
+                  href={getCleanHeurekaLink(targetGpuName)} 
+                  onClick={() => handleSilentLog('gpu')}
                   target="_blank" 
-                  rel="nofollow sponsored noopener noreferrer" 
-                  style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', border: 'none', cursor: 'pointer' }}
+                  rel="nofollow sponsored" 
+                  style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
                 >
                     <ShoppingCart size={18} /> NAJÍT NEJLEVNĚJŠÍ CENU
                 </a>
                 <a href={getSmartyLink(targetGpuName)} target="_blank" rel="nofollow" style={{ marginTop: '5px', fontSize: '12px', color: '#9ca3af', textDecoration: 'underline' }}>Koupit na Smarty.cz</a>
             </div>
 
-            {/* CPU COLUMN */}
             <div className="affiliate-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
                 <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase' }}>
                     <Zap size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> DOPORUČENÝ UPGRADE PROCESORU
@@ -175,11 +146,11 @@ export default function BottleneckPage({ params }) {
                 <div style={{ fontWeight: 900, color: '#a855f7' }}>🔥 {targetCpuName}</div>
                 
                 <a 
-                  href={getHeurekaFallbackLink(targetCpuName)} 
-                  onClick={(e) => handleHeurekaAction(e, targetCpuName, 'cpu')}
+                  href={getCleanHeurekaLink(targetCpuName)} 
+                  onClick={() => handleSilentLog('cpu')}
                   target="_blank" 
-                  rel="nofollow sponsored noopener noreferrer" 
-                  style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', border: 'none', cursor: 'pointer' }}
+                  rel="nofollow sponsored" 
+                  style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
                 >
                     <ShoppingCart size={18} /> NAJÍT NEJLEVNĚJŠÍ CENU
                 </a>
@@ -187,7 +158,6 @@ export default function BottleneckPage({ params }) {
             </div>
         </section>
 
-        {/* GURU TOOLS SECTION */}
         <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
             <a href="/fps-kalkulacka" style={{ background: '#0a0b0d', border: '1px solid #06b6d4', padding: '20px', borderRadius: '15px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '15px' }}>
                 <Gamepad2 size={24} color="#06b6d4" />
