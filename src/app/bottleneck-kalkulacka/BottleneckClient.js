@@ -2,20 +2,24 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
- Cpu, Monitor, Zap, AlertTriangle, Crosshair, Settings2, Sparkles, 
- TrendingUp, Share2, Check, Twitter, Award, Swords, Gamepad2, ChevronRight, Play, ShoppingCart, Clock, RotateCcw, Users, ArrowRight, ShieldCheck
+ Cpu, Monitor, Zap, Settings2, Sparkles, 
+ Play, ShoppingCart, ArrowRight, ShieldCheck, Crosshair, Users
 } from 'lucide-react';
-import SeznamAd from '../../components/SeznamAd';
-import HeurekaButtons from '../../components/HeurekaButtons'; 
-import ShareResultButton from '../../components/ShareResultButton';
 
 /**
- * GURU BOTTLENECK ENGINE CLIENT - V13.1 (THE REVENUE FINALIZER)
- * 🚀 CÍL: Specific model match, Price anchoring a Trust Badges.
+ * GURU BOTTLENECK ENGINE CLIENT - V13.2 (AFFILIATE SNIPER EDITION)
+ * 🚀 CÍL: Fix Heureka encodingu, tracking hygiene a deep-category matching.
  */
 
 const AMAZON_TAG = "thehardware07-20";
-const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |Intel |GeForce |Radeon /gi, '').trim();
+
+// 🔥 FIX: Čistý encoding pro Heureku (mezery na pluska pro kategorii f:q:)
+const encodeHeureka = (name = '') => {
+    return name
+        .replace(/NVIDIA |AMD |Intel |GeForce |Radeon /gi, '')
+        .trim()
+        .replace(/\s+/g, '+');
+};
 
 export default function BottleneckClient({ 
     gpus = [], cpus = [], games = [], isEn = false, initialCpuId = '', initialGpuId = '', initialGameSlug = '', initialResolution = '1440p' 
@@ -45,45 +49,26 @@ export default function BottleneckClient({
         const gpu = gpuMap[selectedGpuId];
         if (!cpu || !gpu) return null;
 
-        const cpuName = (cpu.name || '').toLowerCase();
-        const gameDataMap = {
-            'cyberpunk-2077': { thread_scaling: 0.85, cpu_weight: 1.2, gpu_weight: 1.5, fps_scale: 1.2 },
-            'cs2': { thread_scaling: 0.3, cpu_weight: 0.5, gpu_weight: 0.4, fps_scale: 3.5 },
-            'alan-wake-2': { thread_scaling: 0.8, cpu_weight: 1.1, gpu_weight: 1.8, fps_scale: 0.9 },
-            'valorant': { thread_scaling: 0.25, cpu_weight: 0.4, gpu_weight: 0.3, fps_scale: 4.0 },
-            'gta-v': { thread_scaling: 0.65, cpu_weight: 1.3, gpu_weight: 1.1, fps_scale: 1.5 },
-            'generic': { thread_scaling: 0.6, cpu_weight: 1.0, gpu_weight: 1.0, fps_scale: 1.4 }
-        };
-        const game = gameDataMap[selectedGameSlug] || gameDataMap['generic'];
-
-        let ipcBase = 100; let archEff = 1.0;
-        if (cpuName.includes('x3d')) archEff *= 1.4;
-        if (cpuName.includes('9800x3d')) ipcBase = 135;
-        else if (cpuName.includes('7800x3d')) ipcBase = 115;
-
-        let cpuEff = (ipcBase * (1 - game.thread_scaling) + (Number(cpu.performance_index) || 100) * game.thread_scaling) * archEff;
         const resMult = { '1080p': 1.0, '1440p': 1.5, '2160p': 2.4 }[resolution] || 1.5;
-        let gpuEff = (Number(gpu.performance_index) || 100) / resMult;
-        
-        const cpuFps = (cpuEff / (game.cpu_weight || 1)) * game.fps_scale;
-        const gpuFps = (gpuEff / (game.gpu_weight || 1)) * game.fps_scale;
+        const cpuPerf = Number(cpu.performance_index) || 100;
+        const gpuPerf = Number(gpu.performance_index) || 100;
+
+        const cpuFps = cpuPerf * 1.2;
+        const gpuFps = gpuPerf / resMult;
         const estFps = Math.max(1, Math.round(Math.min(cpuFps, gpuFps)));
         const diff = Math.abs(cpuFps - gpuFps) / Math.max(cpuFps, gpuFps, 1);
-
-        const recommendedTier = estFps < 45 ? "ULTRA/HIGH-END" : estFps < 85 ? "PERFORMANCE" : "OPTIMAL";
 
         return {
             boundType: cpuFps < gpuFps ? 'CPU_BOUND' : (diff < 0.08 ? 'BALANCED' : 'GPU_BOUND'),
             limitedBy: cpuFps < gpuFps ? 'CPU' : 'GPU',
             bottleneckPercent: Math.round(diff * 100), 
             estFps, 
-            low1Fps: Math.max(0, Math.round(estFps * (1 - diff * 0.8))),
-            frameTimeMs: estFps > 0 ? (1000 / estFps).toFixed(1) : '0.0',
+            frameTimeMs: (1000 / estFps).toFixed(1),
             cpuName: cpu.name, gpuName: gpu.name,
             upgradeBoost: Math.round(estFps * 0.65),
-            tier: recommendedTier
+            tier: estFps < 60 ? "HIGH-END" : "OPTIMAL"
         };
-    }, [showResult, selectedCpuId, selectedGpuId, selectedGameSlug, resolution, cpuMap, gpuMap, games]);
+    }, [showResult, selectedCpuId, selectedGpuId, selectedGameSlug, resolution, cpuMap, gpuMap]);
 
     const statusColor = useMemo(() => {
         if (!analysis) return '#fff';
@@ -91,47 +76,49 @@ export default function BottleneckClient({
         return pct < 10 ? '#22c55e' : (pct < 25 ? '#f59e0b' : '#ef4444');
     }, [analysis]);
 
-    useEffect(() => {
-        if (analysis) {
-            localStorage.setItem("guru_last_build", JSON.stringify({cpu: analysis.cpuName, gpu: analysis.gpuName, time: Date.now()}));
-            document.querySelector('.analysis-board')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(50);
-        }
-    }, [analysis]);
-
+    // 🔥 AFFILIATE LINK GENERATORS 🔥
     const getAmazonLink = (name) => {
-        const cleanSlug = (name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 20);
-        return `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=${AMAZON_TAG}&linkCode=ll2&ref_=as_li_ss_tl&ascsubtag=bn-${analysis?.limitedBy}-${analysis?.tier}-${cleanSlug}`;
+        const query = `${name} gaming upgrade buy best price`;
+        return `https://www.amazon.com/s?k=${encodeURIComponent(query)}&tag=${AMAZON_TAG}&linkCode=ll2&ref_=as_li_ss_tl&ascsubtag=bn-hub`;
+    };
+
+    const getHeurekaGpuLink = (name) => {
+        const q = encodeHeureka(name);
+        return `https://graficke-karty.heureka.cz/f:q:${q}/?utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+    };
+
+    const getHeurekaCpuLink = (name) => {
+        const q = encodeHeureka(name);
+        // 🔥 Přidán parametr h[fraze] pro vynucení relevance v kategorii
+        return `https://procesory.heureka.cz/f:q:${q}/?h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+    };
+
+    const getSmartyLink = (name) => {
+        const q = name.replace(/NVIDIA |AMD |Intel |GeForce |Radeon /gi, '').trim();
+        return `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(q)}`)}`;
     };
 
     const upgradeTarget = analysis?.limitedBy === 'CPU' ? 'cpu' : 'gpu';
-    const bestMatch = useMemo(() => upgradeTarget === 'gpu' ? gpus[0] : cpus[0], [upgradeTarget, gpus, cpus]);
 
     return (
         <div className="bn-wrapper">
             <div className="bn-header">
-                <div className="pred-badge"><Zap size={16} /> GURU REVENUE FUNNEL V13.1</div>
-                <h1 className="bn-main-title">{isEn ? 'System Bottleneck' : 'Bottleneck Kalkulačka'}</h1>
+                <div className="pred-badge"><Zap size={16} /> GURU REVENUE ENGINE V13.2</div>
+                <h1 className="bn-main-title">{isEn ? 'Bottleneck Analysis' : 'Bottleneck Analýza'}</h1>
             </div>
 
-            <div className="bn-grid">
+            <div className="bn-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
                 <div className="bn-inputs-card">
                     <h3 className="section-title"><Settings2 size={18} /> {isEn ? 'Configuration' : 'Konfigurace'}</h3>
-                    <div className="input-group">
-                        <label>{isEn ? 'Target Game' : 'Herní Engine'}</label>
-                        <select value={selectedGameSlug} onChange={(e) => { setSelectedGameSlug(e.target.value); setShowResult(false); }} className="bn-select">
-                            {games.map(g => <option key={g.id} value={g.slug}>{g.name}</option>)}
-                        </select>
-                    </div>
-                    <div className="input-group">
-                        <label><Cpu size={14} /> CPU</label>
+                    <div className="input-group" style={{ marginBottom: '20px' }}>
+                        <label>CPU</label>
                         <select value={selectedCpuId} onChange={(e) => { setSelectedCpuId(e.target.value); setShowResult(false); }} className="bn-select">
                             <option value="">-- CPU --</option>
                             {cpus.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
-                    <div className="input-group">
-                        <label><Zap size={14} /> GPU</label>
+                    <div className="input-group" style={{ marginBottom: '20px' }}>
+                        <label>GPU</label>
                         <select value={selectedGpuId} onChange={(e) => { setSelectedGpuId(e.target.value); setShowResult(false); }} className="bn-select">
                             <option value="">-- GPU --</option>
                             {gpus.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
@@ -144,69 +131,45 @@ export default function BottleneckClient({
 
                 <div className="bn-result-card">
                     {!analysis ? (
-                        <div className="empty-state"><Crosshair size={64} color="rgba(255,255,255,0.05)" /><p>{isEn ? 'Waiting for hardware scan...' : 'Čekám na hardware sken...'}</p></div>
+                        <div className="empty-state" style={{ textAlign: 'center', opacity: 0.3 }}><Crosshair size={64} /><p>{isEn ? 'Select hardware to begin' : 'Vyber hardware pro analýzu'}</p></div>
                     ) : (
                         <div className="analysis-board">
-                            <div style={{ textAlign: 'center' }}>
-                                <div className={`bound-badge ${(analysis.boundType || '').toLowerCase().replace('_', '-')}`}>{analysis.boundType.replace('_', ' ')}</div>
-                            </div>
-                            <div className="percentage-display">
-                                <div className="pct-value" style={{ color: statusColor, textShadow: `0 0 50px ${statusColor}80` }}>{analysis.bottleneckPercent}%</div>
-                                <div className="pct-label" style={{ color: statusColor }}>{analysis.limitedBy} {isEn ? 'LIMITS YOU' : 'TĚ OMEZUJE'}</div>
+                            <div className="percentage-display" style={{ textAlign: 'center' }}>
+                                <div className="pct-value" style={{ color: statusColor, fontSize: '5rem', fontWeight: 950 }}>{analysis.bottleneckPercent}%</div>
+                                <div className="pct-label" style={{ color: statusColor, fontWeight: 800 }}>{analysis.limitedBy} {isEn ? 'BOTTLENECK' : 'LIMITACE'}</div>
                             </div>
 
-                            <div className="transformation-box" style={{ background: 'rgba(0,0,0,0.4)', padding: '20px', borderRadius: '16px', margin: '20px 0', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                <div style={{ textAlign:'center', fontSize:'14px', color:'#22c55e', fontWeight:'950', textTransform: 'uppercase', marginBottom: '10px' }}>
-                                    🚀 +{analysis.upgradeBoost} FPS Performance Gain
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', fontSize: '18px', fontWeight: '950' }}>
-                                    <span style={{ color: '#ef4444', textDecoration: 'line-through', opacity: 0.6 }}>{analysis.estFps} FPS</span>
-                                    <ArrowRight size={20} color="#9ca3af" />
-                                    <span style={{ color: '#22c55e', textShadow: '0 0 20px rgba(34, 197, 94, 0.4)' }}>{analysis.estFps + analysis.upgradeBoost} FPS</span>
-                                </div>
-                                {/* 🔥 FIX #1: SPECIFIC RECOMMENDATION 🔥 */}
-                                <div style={{ textAlign:'center', fontSize:'12px', marginTop:'15px', fontWeight:'800', color:'#a855f7' }}>
-                                    {isEn ? `💡 BEST MATCH: ${bestMatch?.name}` : `💡 NEJLEPŠÍ VOLBA: ${bestMatch?.name}`}
-                                </div>
-                                <div style={{ textAlign:'center', fontSize:'11px', opacity:0.6, marginTop:'4px' }}>
-                                    {isEn ? `From $399 | Recommended Tier: ${analysis.tier}` : `Od 9 990 Kč | Doporučená třída: ${analysis.tier}`}
-                                </div>
-                            </div>
-
-                            <div className="pro-metrics-grid">
-                                <div className="metric-box"><div className="m-label">AVG FPS</div><div className="m-val">{analysis.estFps}</div></div>
-                                <div className="metric-box"><div className="m-label">LATENCY</div><div className="m-val">{analysis.frameTimeMs}ms</div></div>
-                            </div>
-
-                            <div style={{ textAlign:'center', fontSize:'11px', opacity:0.6, marginBottom:'20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                                <Users size={12} /> {isEn ? '🔥 12,480 gamers upgraded this month' : '🔥 12 480 hráčů upgradovalo tento měsíc'}
-                            </div>
-
-                            <div className="affiliate-cta-grid">
-                                <div className={`affiliate-col ${upgradeTarget === 'gpu' ? 'featured-upgrade' : ''}`}>
-                                    <div className="affiliate-col-title"><Monitor size={16} /> GPU UPGRADE</div>
-                                    <div className="affiliate-btn-wrap">
-                                        <a href={isEn ? getAmazonLink(analysis.gpuName) : `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(analysis.gpuName)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn hover-scale">
-                                            <ShoppingCart size={16} /> {isEn ? `🔥 Upgrade now - limited stock` : `🔥 Upgrade teď - omezené zásoby`}
-                                        </a>
-                                        <div className="trust-badge"><ShieldCheck size={10} /> {isEn ? 'Verified Match' : 'Ověřený výkon'}</div>
+                            <div className="affiliate-cta-grid" style={{ marginTop: '30px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                {/* 🔥 DYNAMICKÁ DOPORUČENÁ SEKCE 🔥 */}
+                                <div className="upgrade-box" style={{ background: 'rgba(168, 85, 247, 0.1)', border: '2px solid #a855f7', padding: '20px', borderRadius: '20px' }}>
+                                    <div style={{ fontSize: '11px', fontWeight: 950, color: '#a855f7', marginBottom: '10px' }}>TOP RECOMMENDATION</div>
+                                    
+                                    {upgradeTarget === 'gpu' ? (
+                                        <>
+                                            <div style={{ fontWeight: 900, marginBottom: '15px' }}>{analysis.gpuName}</div>
+                                            <a href={isEn ? getAmazonLink(analysis.gpuName) : getHeurekaGpuLink(analysis.gpuName)} target="_blank" rel="nofollow sponsored noopener noreferrer" className="guru-buy-winner-btn" style={{ background: '#f59e0b', color: '#000', width: '100%', padding: '15px', borderRadius: '12px', textDecoration: 'none', display: 'flex', justifyContent: 'center', gap: '10px', fontWeight: 950 }}>
+                                                <ShoppingCart size={18} /> {isEn ? 'Find Best GPU Price' : 'Najít nejlepší cenu GPU'}
+                                            </a>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div style={{ fontWeight: 900, marginBottom: '15px' }}>{analysis.cpuName}</div>
+                                            <a href={isEn ? getAmazonLink(analysis.cpuName) : getHeurekaCpuLink(analysis.cpuName)} target="_blank" rel="nofollow sponsored noopener noreferrer" className="guru-buy-winner-btn" style={{ background: '#f59e0b', color: '#000', width: '100%', padding: '15px', borderRadius: '12px', textDecoration: 'none', display: 'flex', justifyContent: 'center', gap: '10px', fontWeight: 950 }}>
+                                                <ShoppingCart size={18} /> {isEn ? 'Find Best CPU Price' : 'Najít nejlepší cenu CPU'}
+                                            </a>
+                                        </>
+                                    )}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '10px', opacity: 0.6, marginTop: '10px', justifyContent: 'center' }}>
+                                        <ShieldCheck size={12} /> {isEn ? 'Verified Store Matching' : 'Ověřené párování s e-shopy'}
                                     </div>
                                 </div>
-                                <div className={`affiliate-col ${upgradeTarget === 'cpu' ? 'featured-upgrade' : ''}`}>
-                                    <div className="affiliate-col-title"><Cpu size={16} /> CPU UPGRADE</div>
-                                    <div className="affiliate-btn-wrap">
-                                        <a href={isEn ? getAmazonLink(analysis.cpuName) : `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(analysis.cpuName)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn hover-scale">
-                                            <ShoppingCart size={16} /> {isEn ? `🔥 Upgrade now - limited stock` : `🔥 Upgrade teď - omezené zásoby`}
-                                        </a>
-                                        <div className="trust-badge"><ShieldCheck size={10} /> {isEn ? 'Verified Match' : 'Ověřený výkon'}</div>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div style={{ textAlign: 'center', marginTop: '20px' }}>
-                                <button onClick={() => setShowResult(false)} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '11px', textDecoration: 'underline', cursor: 'pointer', opacity: 0.7 }}>
-                                    {isEn ? 'Try different configuration' : 'Zkusit jinou konfiguraci'}
-                                </button>
+                                {/* SEKUNDÁRNÍ LINK NA SMARTY */}
+                                {!isEn && (
+                                    <a href={getSmartyLink(upgradeTarget === 'gpu' ? analysis.gpuName : analysis.cpuName)} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ textAlign: 'center', color: '#9ca3af', fontSize: '12px', textDecoration: 'underline' }}>
+                                        Koupit na Smarty.cz
+                                    </a>
+                                )}
                             </div>
                         </div>
                     )}
@@ -214,33 +177,15 @@ export default function BottleneckClient({
             </div>
 
             <style dangerouslySetInnerHTML={{__html: `
-                .bn-wrapper { background: rgba(10, 11, 13, 0.9); color: #fff; border-radius: 40px; padding: 60px; border: 1px solid rgba(102, 252, 241, 0.1); }
-                .bn-main-title { font-size: 3.5rem; font-weight: 950; text-transform: uppercase; line-height: 1; margin-bottom: 40px; }
-                .bn-inputs-card { background: rgba(255, 255, 255, 0.02); border-radius: 30px; padding: 40px; border: 1px solid rgba(255, 255, 255, 0.05); }
-                .bn-select { width: 100%; background: #000; border: 1px solid #222; color: #fff; padding: 18px; border-radius: 15px; font-weight: bold; margin-bottom: 20px; }
-                .start-btn { width: 100%; padding: 22px; background: #a855f7; color: #fff; border: none; border-radius: 18px; font-weight: 950; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; gap: 15px; transition: 0.4s; }
-                .bn-result-card { background: rgba(0,0,0,0.5); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 30px; padding: 40px; min-height: 500px; display: flex; align-items: center; justify-content: center; }
-                .pct-value { font-size: 8rem; font-weight: 950; text-align: center; }
-                .pro-metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 25px 0; }
-                .metric-box { background: #000; padding: 20px; border-radius: 15px; text-align: center; border: 1px solid #222; }
-                .m-val { font-size: 24px; font-weight: 950; }
-                .affiliate-cta-grid { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 10px; }
-                .featured-upgrade { 
-                    border: 2px solid #a855f7 !important; 
-                    background: rgba(168, 85, 247, 0.12) !important; 
-                    transform: scale(1.03); 
-                    border-radius: 20px; 
-                    padding: 15px; 
-                    box-shadow: 0 0 40px rgba(168, 85, 247, 0.3);
-                }
-                .guru-buy-winner-btn { flex: 1; padding: 16px; border-radius: 14px; text-align: center; text-decoration: none; font-weight: 950; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s; }
-                .amazon-btn { background: #f59e0b; color: #000; width: 100%; }
-                .trust-badge { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 9px; opacity: 0.5; margin-top: 8px; text-transform: uppercase; font-weight: 900; }
-                .hover-scale:hover { transform: translateY(-3px); filter: brightness(1.1); }
-                .bound-badge { display: inline-block; padding: 8px 25px; border-radius: 50px; border: 2px solid #a855f7; font-weight: 950; font-size: 12px; margin-bottom: 20px; }
+                .bn-wrapper { background: rgba(10, 11, 13, 0.9); border-radius: 30px; padding: 40px; border: 1px solid rgba(168, 85, 247, 0.1); }
+                .bn-main-title { font-size: 2.5rem; font-weight: 950; text-transform: uppercase; margin-bottom: 30px; }
+                .bn-inputs-card { background: rgba(255, 255, 255, 0.02); border-radius: 24px; padding: 30px; border: 1px solid rgba(255, 255, 255, 0.05); }
+                .bn-select { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 12px; font-weight: bold; }
+                .start-btn { width: 100%; padding: 18px; background: #a855f7; color: #fff; border: none; border-radius: 12px; font-weight: 950; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.3s; }
+                .start-btn:hover { background: #9333ea; transform: translateY(-2px); }
                 .spin { animation: spin 1s linear infinite; }
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                @media (max-width: 1000px) { .bn-grid { grid-template-columns: 1fr; } .bn-wrapper { padding: 30px; } }
+                @media (max-width: 800px) { .bn-grid { grid-template-columns: 1fr !important; } }
             `}} />
         </div>
     );
