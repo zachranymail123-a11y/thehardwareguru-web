@@ -2,6 +2,7 @@ import React from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Script from 'next/script';
 import { 
  Gamepad2, 
  Monitor, 
@@ -19,15 +20,16 @@ import {
  Gauge,
  Trophy,
  Info,
- Crosshair
+ Crosshair,
+ AlertTriangle
 } from 'lucide-react';
 import GuruAnalysisText from '../../../../components/GuruAnalysisText';
 import SeznamAd from '../../../../components/SeznamAd';
 import HeurekaButtons from '../../../../components/HeurekaButtons'; 
 
 /**
- * GURU FPS HUNTER V2.1 (AMAZON AFFILIATE UPDATE)
- * 🚀 CÍL: Přidání Amazon tlačítka (tag: thehardware07-20) pro EN verzi, skrytí CZ tlačítek.
+ * GURU FPS HUNTER V2.2 (V10 HARD-LOCK SERVER FIX)
+ * 🚀 CÍL: Integrace Hard-Lock trackeru a doplnění tlačítek kalkulaček beze změn architektury.
  */
 
 export const runtime = "nodejs";
@@ -107,7 +109,6 @@ export default async function GpuFpsHunterPage(props) {
   // 🔥 AFFILIATE LINK GENERATORS 🔥
   const searchName = getCleanSearchName(gpu.name);
   const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
-  const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
   const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
 
   return (
@@ -135,7 +136,7 @@ export default async function GpuFpsHunterPage(props) {
           </h1>
         </header>
 
-        {/* 🔥 OPRAVENÝ GURU AFFILIATE BOMB GRID S AMAZONEM 🔥 */}
+        {/* 🔥 OPRAVENÝ GURU AFFILIATE BOMB GRID S V10 HARD-LOCK 🔥 */}
         <div className="affiliate-cta-grid" style={{ marginBottom: '50px', borderColor: `${vendorColor}40` }}>
             <div className="affiliate-col">
                 <div className="affiliate-col-title" style={{ color: vendorColor }}>
@@ -152,12 +153,11 @@ export default async function GpuFpsHunterPage(props) {
                                 <ShoppingCart size={16} /> Smarty.cz
                             </a>
                             <a 
-                                href={getHeurekaLink(searchName)} 
-                                data-trixam-positionid="276026" 
-                                data-trixam-codetype="link" 
-                                target="_blank" 
-                                rel="nofollow sponsored" 
-                                className="guru-buy-winner-btn heureka-btn heureka-hn-link"
+                                href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gpu-fps`}
+                                className="guru-buy-winner-btn heureka-btn v10-hl-btn"
+                                data-subid="v10-gpu-fps"
+                                data-cat="gpu_fps_hunter"
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none' }}
                             >
                                 <ShoppingCart size={16} /> Heureka.cz
                             </a>
@@ -225,6 +225,16 @@ export default async function GpuFpsHunterPage(props) {
                 />
             </div>
         </section>
+
+        {/* 🔥 GURU TOOLS - POVINNÁ TLAČÍTKA NA KALKULAČKY 🔥 */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '60px', marginBottom: '60px' }}>
+            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
+                <Gamepad2 size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</span>
+            </a>
+            <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                <AlertTriangle size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</span>
+            </a>
+        </div>
 
         {/* 🔥 HEUREKA WIDGET SCHOVÁN PRO EN VERZI 🔥 */}
         {!isEn && (
@@ -294,6 +304,27 @@ export default async function GpuFpsHunterPage(props) {
               <SeznamAd zoneId={408651} width={300} height={100} />
           </div>
       </div>
+
+      {/* 🔥 V10 HARD-LOCK SCRIPT PRO SERVER COMPONENT 🔥 */}
+      <Script id="v10-hl-script" strategy="lazyOnload">
+          {`
+              if (typeof window !== 'undefined') {
+                  document.addEventListener('click', function(e) {
+                      const btn = e.target.closest('.v10-hl-btn');
+                      if (btn) {
+                          e.preventDefault();
+                          const targetUrl = btn.href;
+                          const subId = btn.getAttribute('data-subid');
+                          const cat = btn.getAttribute('data-cat');
+                          if (navigator.sendBeacon) {
+                              navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: cat, sub_id: subId, page: window.location.pathname }));
+                          }
+                          setTimeout(() => { window.location.href = targetUrl; }, 150);
+                      }
+                  });
+              }
+          `}
+      </Script>
 
       <style dangerouslySetInnerHTML={{__html: `
         .hunter-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
