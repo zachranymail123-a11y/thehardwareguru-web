@@ -9,21 +9,18 @@ export default function HeurekaGlobalFormatter() {
             const href = el.getAttribute('href');
             if (!href || !href.includes('heureka.cz')) return;
             
-            // Pokud je to už správně na www.heureka.cz s haff, necháme to být
-            if (href.includes('www.heureka.cz') && href.includes('haff=276049') && href.includes('h%5Bfraze%5D')) {
-                return;
-            }
+            // Pokud už odkaz začíná haff kódem na správné doméně, neřešíme ho
+            if (href.includes('www.heureka.cz') && href.includes('haff=276049')) return;
 
             try {
                 const url = new URL(href, window.location.origin);
                 let query = "";
 
-                // Extrakce hledaného slova z jakéhokoli zkurveného formátu
+                // Tahání výrazu z jakéhokoli bordelu (f:q:, h[fraze], nebo slug)
                 if (url.searchParams.has('h[fraze]')) {
                     query = url.searchParams.get('h[fraze]');
                 } else {
-                    // Chytne to f:q: i f:2806:7112;q: a podobný bordely
-                    const fqMatch = url.pathname.match(/[;q:]q[:=]([^/&?]+)/) || url.pathname.match(/f:q:([^/&?]+)/);
+                    const fqMatch = url.pathname.match(/q[:=]([^/&?]+)/) || url.pathname.match(/f:q:([^/&?]+)/);
                     if (fqMatch) {
                         query = decodeURIComponent(fqMatch[1]);
                     } else {
@@ -33,12 +30,12 @@ export default function HeurekaGlobalFormatter() {
 
                 if (!query || query.length < 2) query = "PC komponenty";
                 
-                // Čistý dotaz bez sraček jako "cena" a s pluskama
+                // Vyčištění dotazu od slova "cena" a mezer
                 const safeQuery = query.toLowerCase().replace('cena', '').trim().replace(/\s+/g, '+');
 
-                // 🔥 TOTÁLNÍ FIX: Všechno posíláme na WWW.HEUREKA.CZ 🔥
-                // Žádný procesory.heureka.cz nebo pameti.heureka.cz - ty to bourají.
-                const subId = url.searchParams.get('utm_content') || 'global-v10-fix';
+                // 🔥 TADY JE TA MAGIE: Všechno na WWW a haff hned za otazník 🔥
+                // Tímhle vynutíme zapsání cookies dřív, než Heureka stihne cokoli redirectnout.
+                const subId = url.searchParams.get('utm_content') || 'global-v10-hardfix';
                 const newHref = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
 
                 el.setAttribute('href', newHref);
@@ -46,16 +43,19 @@ export default function HeurekaGlobalFormatter() {
                 el.setAttribute('rel', 'nofollow sponsored');
                 el.dataset.guruFixed = "true";
             } catch (e) {
-                // Tichý error
+                // Ticho po pěšině
             }
         };
 
         const runFix = () => {
+            // Najde všechno s heureka.cz, co jsme ještě neopravili
             document.querySelectorAll('a[href*="heureka.cz"]:not([data-guru-fixed="true"])').forEach(fixHeurekaLink);
         };
 
+        // Spustit okamžitě při načtení
         runFix();
 
+        // Sledovat změny v DOMu (Next.js routing, kalkulačky atd.)
         const observer = new MutationObserver(runFix);
         observer.observe(document.body, { 
             childList: true, 
@@ -64,8 +64,8 @@ export default function HeurekaGlobalFormatter() {
             attributeFilter: ['href'] 
         });
 
-        // Agresivní interval pro jistotu
-        const interval = setInterval(runFix, 1000);
+        // Poslední pojistka: každejch 1500ms to projistotu proskenujeme znovu
+        const interval = setInterval(runFix, 1500);
 
         return () => {
             observer.disconnect();
