@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Cpu, Monitor, Layers, Database } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -9,11 +9,11 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function HeurekaButtons({ isEn = false }) {
-  // 🔥 FINAL AFFILIATE LINKS - Přísně podle ChatGPT (mřížka nahrazena ampersandem)
-  const HEUREKA_CPU = "https://www.heureka.cz/?h%5Bfraze%5D=procesor&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
-  const HEUREKA_GPU = "https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
-  const HEUREKA_MB  = "https://www.heureka.cz/?h%5Bfraze%5D=zakladni+deska&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
-  const HEUREKA_RAM = "https://www.heureka.cz/?h%5Bfraze%5D=ram+pamet&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
+  // 🔥 FINAL AFFILIATE LINKS - ČISTÝ HAFF TRACKING BEZ TRIXAM BALASTU 🔥
+  const HEUREKA_CPU = "https://www.heureka.cz/?h%5Bfraze%5D=procesor&haff=276049&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
+  const HEUREKA_GPU = "https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta&haff=276049&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
+  const HEUREKA_MB  = "https://www.heureka.cz/?h%5Bfraze%5D=zakladni+deska&haff=276049&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
+  const HEUREKA_RAM = "https://www.heureka.cz/?h%5Bfraze%5D=ram+pamet&haff=276049&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link";
 
   const AMAZON_TAG = "thehardware07-20";
   const AMAZON_CPU = `https://www.amazon.com/s?k=computer+processor+cpu&tag=${AMAZON_TAG}`;
@@ -25,23 +25,6 @@ export default function HeurekaButtons({ isEn = false }) {
   const trackClick = (platform, category) => {
     supabase.from('affiliate_clicks_log').insert([{ platform, category }]).then();
   };
-
-  useEffect(() => {
-    if (!isEn) {
-      // 🔥 DŮLEŽITÉ: Načtení měřícího kódu Heureky, bez kterého se prokliky v adminu nepočítají
-      const script = document.createElement('script');
-      script.src = "//serve.affiliate.heureka.cz/js/trixam.min.js";
-      script.async = true;
-      script.type = "text/javascript";
-      document.body.appendChild(script);
-
-      return () => {
-        if (document.body.contains(script)) {
-          document.body.removeChild(script);
-        }
-      };
-    }
-  }, [isEn]);
 
   return (
     <div className="heureka-global-buttons">
@@ -81,14 +64,10 @@ export default function HeurekaButtons({ isEn = false }) {
         </>
       ) : (
         <>
-          {/* 🔥 OČIŠTĚNÉ A DOPLNĚNÉ ODKAZY PODLE CHATGPT 🔥 */}
           <a 
             onClick={() => trackClick('heureka', 'cpu')} 
             href={HEUREKA_CPU} 
-            className="heureka-hn-link h-banner-btn" 
-            data-trixam-positionid="276027" 
-            data-trixam-content="Text link"
-            data-trixam-medium="affiliate"
+            className="h-banner-btn" 
             target="_blank" 
             rel="nofollow sponsored"
           >
@@ -102,10 +81,7 @@ export default function HeurekaButtons({ isEn = false }) {
           <a 
             onClick={() => trackClick('heureka', 'gpu')} 
             href={HEUREKA_GPU} 
-            className="heureka-hn-link h-banner-btn" 
-            data-trixam-positionid="276026" 
-            data-trixam-content="Text link"
-            data-trixam-medium="affiliate"
+            className="h-banner-btn" 
             target="_blank" 
             rel="nofollow sponsored"
           >
@@ -119,10 +95,7 @@ export default function HeurekaButtons({ isEn = false }) {
           <a 
             onClick={() => trackClick('heureka', 'mb')} 
             href={HEUREKA_MB} 
-            className="heureka-hn-link h-banner-btn" 
-            data-trixam-positionid="276033" 
-            data-trixam-content="Text link"
-            data-trixam-medium="affiliate"
+            className="h-banner-btn" 
             target="_blank" 
             rel="nofollow sponsored"
           >
@@ -136,10 +109,7 @@ export default function HeurekaButtons({ isEn = false }) {
           <a 
             onClick={() => trackClick('heureka', 'ram')} 
             href={HEUREKA_RAM} 
-            className="heureka-hn-link h-banner-btn" 
-            data-trixam-positionid="276034" 
-            data-trixam-content="Text link"
-            data-trixam-medium="affiliate"
+            className="h-banner-btn" 
             target="_blank" 
             rel="nofollow sponsored"
           >
@@ -149,15 +119,6 @@ export default function HeurekaButtons({ isEn = false }) {
               <span className="h-subtitle">🔥 KDE KOUPIT NEJLEVNĚJI?</span>
             </div>
           </a>
-
-          <div className="heureka-search-container">
-            <div 
-              className="heureka-affiliate-searchpanel" 
-              data-trixam-positionid="276035" 
-              data-trixam-codetype="iframe" 
-              data-trixam-linktarget="top"
-            ></div>
-          </div>
         </>
       )}
     </div>
