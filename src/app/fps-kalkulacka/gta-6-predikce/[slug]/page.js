@@ -5,10 +5,10 @@ import Script from 'next/script';
 import { Sparkles, Zap, Monitor, Cpu, ChevronRight, Swords, Gamepad2, AlertTriangle, ShoppingCart } from 'lucide-react';
 import ShareButtonsClient from './ShareButtonsClient';
 import SeznamAd from '../../../../components/SeznamAd';
-import HeurekaButtons from '../../../../components/HeurekaButtons';
+import HeurekaButtons from '../../../../components/HeurekaButtons'; 
 
 /**
- * GURU GTA 6 PREDICTOR - V11.9 (V10 HARD-LOCK SERVER FIX)
+ * GURU GTA 6 PREDICTOR - V11.10 (V10 HARD-LOCK SERVER FIX)
  * 🚀 CÍL: Návrat k Server Component (fix 404), integrace Hard-Lock trackeru a doplnění kalkulaček.
  */
 
