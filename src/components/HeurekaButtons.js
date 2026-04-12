@@ -26,7 +26,7 @@ export default function HeurekaButtons({ isEn = false, manualSearch = "" }) {
         
         let searchQuery = "";
         
-        // Inteligentní dosazení kontextu (např. jsi na stránce 9800X3D, tlačítko CPU bude hledat 9800X3D)
+        // Inteligentní dosazení kontextu
         if (category === intent && manualSearch) {
             searchQuery = manualSearch;
         } else {
@@ -39,15 +39,16 @@ export default function HeurekaButtons({ isEn = false, manualSearch = "" }) {
             searchQuery = fallbacks[category];
         }
 
-        // Formátování mezer na "+" pro neprůstřelné URL (jako to bylo u rtx+5080)
-        const safeQuery = searchQuery.trim().replace(/\s+/g, '+');
+        // Formátování: Odstranění "NVIDIA/AMD", trimování a nahrazení mezer za "+"
+        const cleanStr = searchQuery.replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '').trim();
+        const safeQuery = cleanStr.replace(/\s+/g, '+');
 
         if (platform === 'amazon') {
             return `https://www.amazon.com/s?k=${safeQuery}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
         }
         
-        // POUZE ČISTÝ HAFF ODKAZ - NIC JINÉHO. 
-        // Pokud tě z tohoto Heureka přesměruje na subdoménu a schová to, tracking už je v tu chvíli dávno zapsaný v cookies.
+        // 🔥 ABSOLUTNĚ ČISTÝ A JEDINÝ FUNKČNÍ TVAR PRO HEUREKU 🔥
+        // Vynucení hlavní domény www.heureka.cz zabraňuje redirectu, který maže haff parametr.
         return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     };
 
