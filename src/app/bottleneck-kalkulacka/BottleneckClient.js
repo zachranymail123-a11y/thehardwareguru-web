@@ -3,12 +3,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
  Cpu, Monitor, Zap, Settings2, Sparkles, 
- Play, ShoppingCart, ShieldCheck, Crosshair, Users, TrendingUp, Clock
+ Play, ShoppingCart, ShieldCheck, Crosshair, Users, TrendingUp, Clock, Share2
 } from 'lucide-react';
 
 /**
- * GURU BOTTLENECK ENGINE CLIENT - V14.0 (THE REVENUE UNIFIER)
- * 🚀 CÍL: Sjednotit CZ/EN verzi, fixnout "empty" EN stav a pálit max konverzi.
+ * GURU BOTTLENECK ENGINE CLIENT - V14.1 (THE REVENUE & VIRAL UNIFIER)
+ * 🚀 CÍL: Sjednotit CZ/EN verzi, fixnout "empty" EN stav a vrátit sdílení.
  */
 
 const AMAZON_TAG = "thehardware07-20";
@@ -49,10 +49,10 @@ export default function BottleneckClient({
 
         const normalizedCpu = cpuPerf * 2.9;
         const isCpuBottleneck = gpuPerf > normalizedCpu;
-        const diff = isCpuBottleneck ? (gpuPerf / normalizedCpu) - 1 : (normalizedCpu / gpuPerf) - 1;
-        const percentage = Math.max(0, Math.min(Math.round(diff * 45), 100));
+        const diff = Math.abs(gpuPerf - normalizedCpu) / Math.max(gpuPerf, normalizedCpu, 1);
+        const percentage = Math.max(0, Math.min(Math.round(diff * 100), 100));
 
-        // 🔥 Najdeme doporučený upgrade pro monetizaci
+        // 🔥 Dynamický výběr upgradu (+25% výkonu)
         const upgradeGpu = gpus.find(g => g.performance_index > gpuPerf * 1.25) || gpus[0];
         const upgradeCpu = cpus.find(c => c.performance_index > cpuPerf * 1.25) || cpus[0];
 
@@ -83,7 +83,7 @@ export default function BottleneckClient({
         <div className="bn-wrapper" style={{ color: '#fff', fontFamily: 'sans-serif' }}>
             <div className="bn-header" style={{ textAlign: 'center', marginBottom: '40px' }}>
                 <div style={{ color: '#66fcf1', fontSize: '11px', fontWeight: 950, textTransform: 'uppercase', letterSpacing: '3px', display: 'inline-flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(102,252,241,0.3)', padding: '6px 20px', borderRadius: '50px', background: 'rgba(102,252,241,0.05)' }}>
-                    <Zap size={14} /> GURU REVENUE ENGINE V14.0
+                    <Zap size={14} /> GURU REVENUE ENGINE V14.1
                 </div>
                 <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', fontWeight: 950, textTransform: 'uppercase', marginTop: '20px' }}>
                     {isEn ? 'Bottleneck Analysis' : 'Bottleneck Analýza'}
@@ -127,8 +127,20 @@ export default function BottleneckClient({
                             <div style={{ fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', color: analysis.percentage > 20 ? '#ef4444' : '#22c55e', marginTop: '10px', letterSpacing: '2px' }}>
                                 {analysis.type} {isEn ? 'BOTTLENECK' : 'LIMITACE'}
                             </div>
-                            <div style={{ marginTop: '20px', fontSize: '13px', opacity: 0.6, maxWidth: '250px' }}>
-                                {isEn ? 'System is ready for optimization.' : 'Váš systém je připraven k optimalizaci výkonu.'}
+                            
+                            {/* 🔥 SHARE BUTTON (VIRAL LOOP) */}
+                            <div style={{ marginTop: '20px' }}>
+                                <button 
+                                    onClick={() => {
+                                        const text = isEn ? `Check my PC Bottleneck result: ${analysis.percentage}%!` : `Moje PC má ${analysis.percentage}% bottleneck! Koukni sem:`;
+                                        const url = window.location.href;
+                                        if (navigator.share) navigator.share({ title: 'Hardware Guru', text, url });
+                                        else { navigator.clipboard.writeText(url); alert(isEn ? 'Link copied!' : 'Odkaz zkopírován!'); }
+                                    }}
+                                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#9ca3af', padding: '8px 20px', borderRadius: '50px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                >
+                                    <Share2 size={14} /> {isEn ? 'SHARE RESULT' : 'SDÍLET VÝSLEDEK'}
+                                </button>
                             </div>
                         </>
                     ) : (
@@ -140,7 +152,7 @@ export default function BottleneckClient({
                 </div>
             </div>
 
-            {/* 🔥 AGGRESIWNÍ AFFILIATE BLOKY (Vždy CZ i EN) 🔥 */}
+            {/* 🔥 AGGRESIVNÍ AFFILIATE BLOKY */}
             {analysis && (
                 <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '25px', maxWidth: '1200px', margin: '40px auto 0' }}>
                     
@@ -181,7 +193,6 @@ export default function BottleneckClient({
                             <a href={getSmartyLink(analysis.upgradeCpu.name)} target="_blank" rel="nofollow" style={{ marginTop: '10px', fontSize: '12px', color: '#9ca3af', textDecoration: 'underline' }}>Koupit na Smarty.cz</a>
                         )}
                     </div>
-
                 </div>
             )}
 
