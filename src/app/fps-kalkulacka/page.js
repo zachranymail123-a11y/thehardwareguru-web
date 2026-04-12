@@ -1,15 +1,15 @@
 import React from 'react';
 import Script from 'next/script';
 import Link from 'next/link';
-import { Gamepad2, Monitor, Cpu, ArrowRight, Zap, Sparkles, Swords, ChevronRight, Flame, AlertTriangle } from 'lucide-react';
+import { Gamepad2, Monitor, Cpu, ArrowRight, Zap, Sparkles, Swords, ChevronRight, Flame, AlertTriangle, Activity } from 'lucide-react';
 import FpsCalculatorClient from './FpsCalculatorClient';
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons'; 
 
 /**
- * GURU FPS ENGINE - V8.4 (THE REVENUE TERMINATOR)
- * 🚀 CÍL: FAQ Schema, Slug Prefill logic, Retargeting UI a Panic Sell Mode.
+ * GURU FPS ENGINE - V8.5 (V10 HARD-LOCK & TOOLS UPDATE)
+ * 🚀 CÍL: Doplnění povinných tlačítek na kalkulačky a zachování Heureka konverzí a struktur.
  */
 
 export const runtime = 'edge';
@@ -90,7 +90,7 @@ export default async function FpsKalkulackaPage(props) {
         "operatingSystem": "All"
       })}} />
 
-      {/* 🔥 FIX #4: FAQ SCHEMA PRO CTR BOOST 🔥 */}
+      {/* 🔥 FAQ SCHEMA PRO CTR BOOST 🔥 */}
       <Script id="faq-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "FAQPage",
@@ -118,7 +118,7 @@ export default async function FpsKalkulackaPage(props) {
         </header>
 
         <div style={{ marginTop: '30px' }}>
-          {/* 🔥 FIX #1: SLUG PRO PARSING 🔥 */}
+          {/* 🔥 SLUG PRO PARSING 🔥 */}
           <FpsCalculatorClient 
             gpus={gpuRes.data || []} 
             cpus={cpuRes.data || []} 
@@ -139,6 +139,18 @@ export default async function FpsKalkulackaPage(props) {
                         <ChevronRight size={14} />
                     </Link>
                 ))}
+            </div>
+        </section>
+
+        {/* 🔥 GURU TOOLS - POVINNÁ TLAČÍTKA NA KALKULAČKY 🔥 */}
+        <section style={{ marginTop: '50px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+                <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '20px', borderRadius: '15px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
+                    <Gamepad2 size={24} /> <span>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</span>
+                </a>
+                <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '20px', borderRadius: '15px', textDecoration: 'none', fontWeight: '950', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                    <Activity size={24} /> <span>{isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</span>
+                </a>
             </div>
         </section>
 
