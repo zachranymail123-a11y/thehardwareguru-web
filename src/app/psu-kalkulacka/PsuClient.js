@@ -3,10 +3,11 @@
 import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { 
- Zap, Cpu, Monitor, ShieldCheck, ShoppingCart, Info, ArrowRight, Settings2, Play, CheckCircle2
+ Zap, Cpu, Monitor, ShieldCheck, ShoppingCart, Info, ArrowRight, Settings2, Play, CheckCircle2, Gamepad2, AlertTriangle, Swords, ChevronRight, Share2
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
+import HeurekaButtons from '../../components/HeurekaButtons';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -43,6 +44,8 @@ export default function PsuClient({ cpus = [], gpus = [], isEn = false }) {
                 const rec = getPsuRecommendation(totalTdp);
                 
                 setResult({
+                    cpuObj,
+                    gpuObj,
                     cpuTdp,
                     gpuTdp,
                     baseSystem: 100,
@@ -69,6 +72,21 @@ export default function PsuClient({ cpus = [], gpus = [], isEn = false }) {
             navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
         }
         setTimeout(() => { window.location.href = targetUrl; }, 150);
+    };
+
+    const handleShareResult = async () => {
+        if (!result) return;
+        const text = isEn 
+            ? `My PC build (${result.cpuObj.name} + ${result.gpuObj.name}) needs a ${result.recommendation.watts}W PSU! Check your build on Hardware Guru:` 
+            : `Moje PC sestava (${result.cpuObj.name} + ${result.gpuObj.name}) potřebuje ${result.recommendation.watts}W zdroj! Spočítej si ten svůj na Hardware Guru:`;
+        const url = window.location.href;
+        
+        if (navigator.share) {
+            try { await navigator.share({ title: 'GURU PSU Calculator', text, url }); } catch (e) {}
+        } else {
+            navigator.clipboard.writeText(text + " " + url);
+            alert(isEn ? 'Result copied to clipboard!' : 'Výsledek byl zkopírován do schránky!');
+        }
     };
 
     return (
@@ -146,23 +164,69 @@ export default function PsuClient({ cpus = [], gpus = [], isEn = false }) {
                                     <a 
                                         href="#"
                                         onClick={(e) => handleAffiliateClick(e, result.recommendation.name)}
-                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: isEn ? '#f59e0b' : '#3b82f6', color: isEn ? '#000' : '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: '950', textTransform: 'uppercase', fontSize: '14px', transition: 'transform 0.2s ease' }}
+                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: isEn ? '#f59e0b' : '#3b82f6', color: isEn ? '#000' : '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: '950', textTransform: 'uppercase', fontSize: '14px', transition: 'transform 0.2s ease', marginBottom: '15px' }}
                                     >
                                         <ShoppingCart size={18} /> {isEn ? 'Check price on Amazon' : 'Koupit na Heureka.cz'}
                                     </a>
+
+                                    <button 
+                                        onClick={handleShareResult}
+                                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', padding: '12px', borderRadius: '12px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', transition: '0.3s' }}
+                                    >
+                                        <Share2 size={16} /> {isEn ? 'Share my build' : 'Sdílet moji sestavu'}
+                                    </button>
                                 </div>
                             </div>
                         )}
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '60px' }}>
+                {!isEn && (
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+                        <HeurekaButtons isEn={false} manualSearch={result ? result.recommendation.name : "napájecí zdroj PC"} positionId="276026" />
+                    </div>
+                )}
+
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
                     <SeznamAd zoneId={408654} width={970} height={210} />
                 </div>
+
+                {/* 🔥 GURU TOOLS - POVINNÁ TLAČÍTKA NA KALKULAČKY 🔥 */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '60px' }}>
+                    <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)', transition: '0.3s' }}>
+                        <Gamepad2 size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</span>
+                    </a>
+                    <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)', transition: '0.3s' }}>
+                        <AlertTriangle size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</span>
+                    </a>
+                </div>
+
+                {/* 🔥 KOMPLETNÍ SEO HUB 🔥 */}
+                <section className="massive-seo-hub" style={{ marginBottom: '60px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '60px' }}>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: '4px solid #facc15', paddingLeft: '15px' }}>{isEn ? 'EXPLORE GURU DATABASE' : 'PROZKOUMEJ GURU DATABÁZI'}</h2>
+                    <div className="seo-hub-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
+                        <div className="hub-column" style={{ background: 'rgba(15,17,21,0.8)', padding: '30px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div className="hub-col-header" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '18px', fontWeight: '950', marginBottom: '20px', color: '#ff0055' }}><Swords size={20} /> {isEn ? 'Hardware Battles' : 'HW Souboje'}</div>
+                            <ul className="hub-links-list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                <li><a href={isEn ? "/en/cpuvs" : "/cpuvs"} style={{ color: '#d1d5db', textDecoration: 'none', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}><Cpu size={16} color="#a855f7" /> {isEn ? 'Processor Battles (CPU VS)' : 'Souboje Procesorů (CPU VS)'}</a></li>
+                                <li><a href={isEn ? "/en/gpuvs" : "/gpuvs"} style={{ color: '#d1d5db', textDecoration: 'none', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}><Monitor size={16} color="#66fcf1" /> {isEn ? 'Graphics Card Battles (GPU VS)' : 'Souboje Grafických Karet (GPU VS)'}</a></li>
+                            </ul>
+                        </div>
+                        <div className="hub-column" style={{ background: 'rgba(15,17,21,0.8)', padding: '30px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div className="hub-col-header" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '18px', fontWeight: '950', marginBottom: '20px', color: '#66fcf1' }}><Info size={20} /> {isEn ? 'Guru Ecosystem' : 'Guru Ekosystém'}</div>
+                            <ul className="hub-links-list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                <li><a href={isEn ? "/en/clanky" : "/clanky"} style={{ color: '#d1d5db', textDecoration: 'none', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}><ChevronRight size={16} color="#06b6d4" /> {isEn ? 'Articles & News' : 'Články a Novinky'}</a></li>
+                                <li><a href={isEn ? "/en/tipy" : "/tipy"} style={{ color: '#d1d5db', textDecoration: 'none', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}><ChevronRight size={16} color="#a855f7" /> {isEn ? 'Tips & Tricks' : 'Tipy a Rady'}</a></li>
+                                <li><a href={isEn ? "/en/slovnik" : "/slovnik"} style={{ color: '#d1d5db', textDecoration: 'none', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}><ChevronRight size={16} color="#f59e0b" /> {isEn ? 'Hardware Glossary' : 'HW Slovník Pojmů'}</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
             </main>
 
             <style dangerouslySetInnerHTML={{__html: `
                 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                .hub-links-list a:hover { color: #fff !important; transform: translateX(5px); }
             `}} />
         </div>
     );
