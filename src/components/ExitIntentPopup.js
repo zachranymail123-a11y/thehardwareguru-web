@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle, ShoppingCart, X, Zap } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -32,7 +32,6 @@ export default function ExitIntentPopup({ cpuName = "Procesor", gpuName = "Grafi
         setHasTriggered(true);
     };
 
-    // 1. Logika spuštění a Cooldown
     useEffect(() => {
         if (typeof window === 'undefined') return;
         const lastShown = localStorage.getItem('guru_exit_shown');
@@ -74,7 +73,6 @@ export default function ExitIntentPopup({ cpuName = "Procesor", gpuName = "Grafi
         };
     }, [hasTriggered]);
 
-    // 2. Persistentní timer
     useEffect(() => {
         if (!isVisible || typeof window === 'undefined') return;
         const start = localStorage.getItem('guru_timer_start') || Date.now().toString();
@@ -89,34 +87,33 @@ export default function ExitIntentPopup({ cpuName = "Procesor", gpuName = "Grafi
     const targetGpu = HIGH_END_HW.test(gpuName) ? "RTX 5080" : "RTX 5060";
     const targetCpu = HIGH_END_HW.test(cpuName) ? "Ryzen 9 9950X" : "Ryzen 7 9700X";
 
-    // 4. 🔥 FIX: Čistý vyhledávací string s haff ID a bezpečnými plusy
+    // 4. 🔥 HIGH-CONVERSION LINK GENERATOR
     const getLink = (type) => {
         const subId = `v15-exit-${type}`;
-        const rawQuery = type === 'gpu' ? targetGpu : targetCpu;
+        let rawQuery = type === 'gpu' ? targetGpu : targetCpu;
 
         if (platform === 'amazon') {
             const amazonQuery = type === 'gpu' ? `${rawQuery} graphics card` : `${rawQuery} processor`;
-            const safeAmazonQuery = amazonQuery.trim().replace(/\s+/g, '+');
-            return `https://www.amazon.com/s?k=${safeAmazonQuery}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
+            return `https://www.amazon.com/s?k=${encodeURIComponent(amazonQuery)}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
         }
         
-        // POUZE ČISTÝ HAFF ODKAZ NA VYHLEDÁVÁNÍ (h[fraze])
-        // .replace(/\s+/g, '+') nahradí mezery čistými znaky "+", takže URL bude "RTX+5080"
+        // Upřesnění pro českou Heureku pro eliminaci balastu (větráčky, pasty)
+        if (type === 'gpu') rawQuery += " grafická karta";
+        else rawQuery += " procesor";
+
         const safeQuery = rawQuery.trim().replace(/\s+/g, '+');
         
-        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_content=${subId}`;
+        // Přidán parametr o=3 pro prioritizaci relevantních prodejních karet
+        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}&o=3`;
     };
 
-    // 5. 🔥 FIX: Pouze tiché logování
     const handleLogClick = (type) => {
         const payload = { platform, category: `exit_popup_${type}`, sub_id: `v15-exit`, page: pathname };
 
-        // A. sendBeacon (Primary for exit intent)
         if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
             navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
         }
 
-        // B. Backup Queue (In case tab closes instantly)
         if (typeof window !== 'undefined') {
             const q = JSON.parse(localStorage.getItem('pending_clicks') || '[]');
             q.push(payload);
