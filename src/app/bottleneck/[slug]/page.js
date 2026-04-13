@@ -8,6 +8,8 @@ import {
 import SeznamAd from '../../../components/SeznamAd';
 import BottleneckFatContent from '../../../components/BottleneckFatContent'; 
 import { createClient } from '@supabase/supabase-js';
+// 🔥 PŘIDÁNO: Import inteligentní komponenty
+import GuruInContentOffer from '../../../components/GuruInContentOffer';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -70,12 +72,18 @@ export default function BottleneckPage({ params }) {
   const targetGpuName = upgradeGpu?.name || "RTX 5070";
   const targetCpuName = upgradeCpu?.name || "Ryzen 7 9800X3D";
 
+  // Zjištění typu bottlenecku pro dynamickou nabídku
+  const isGpuBottleneck = gpu.performance_index < cpu.performance_index * 2.5;
+
   const subTag = `v10-bn-slug-${bottleneckPercent}`;
 
-  // 🔥 JEDINÝ SCHVÁLENÝ AFFILIATE FORMÁT (ČISTÉ HTML) 🔥
-  const getCleanHeurekaLink = (name) => {
-      const safeQuery = String(name || '').replace(/[-_]/g, ' ').trim().replace(/\s+/g, '+');
-      return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subTag}`;
+  // 🔥 V10 GOLDEN AFFILIATE FORMÁT 🔥
+  const getCleanHeurekaLink = (name, type) => {
+      let query = String(name || '').replace(/NVIDIA |AMD |Intel |Ryzen |Core /gi, '').trim();
+      if (type === 'cpu') query += " procesor";
+      if (type === 'gpu') query += " grafická karta";
+      const safeQuery = query.replace(/\s+/g, '+');
+      return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subTag}&o=3`;
   };
 
   const handleSilentLog = (cat) => {
@@ -94,67 +102,71 @@ export default function BottleneckPage({ params }) {
         
         <header style={{ textAlign: 'center', margin: '50px 0' }}>
           <div style={{ color: '#66fcf1', border: '1px solid rgba(102,252,241,0.3)', padding: '6px 20px', borderRadius: '50px', fontSize: '11px', fontWeight: 950, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-            <Gauge size={16} /> <span>GURU REVENUE ENGINE V10 (CZ)</span>
+            <Gauge size={16} /> <span>GURU BOTTLENECK ANALYSIS V12</span>
           </div>
           <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 3rem)', fontWeight: 950, textTransform: 'uppercase', marginTop: '20px' }}>
             {cpu.name} <span style={{ opacity: 0.2 }}>+</span> {gpu.name}
           </h1>
         </header>
 
+        {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (V12) 🔥 */}
+        <div style={{ margin: '40px 0' }}>
+            <GuruInContentOffer 
+                productName={isGpuBottleneck ? targetGpuName : targetCpuName} 
+                category={isGpuBottleneck ? "gpu" : "cpu"} 
+                reason="fix"
+                subId={`bn-slug-fix-${bottleneckPercent}`}
+            />
+        </div>
+
         <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 900, marginBottom: '20px', color: '#facc15' }}>
-          🔥 NEJLEPŠÍ UPGRADE PRO TUTO SESTAVU
+          🔥 DETAILNÍ MOŽNOSTI UPGRADU
         </div>
 
         <section className="affiliate-cta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', padding: '35px', background: 'rgba(0,0,0,0.5)', borderRadius: '28px', border: '1px solid rgba(168,85,247,0.2)' }}>
             
             <div className="affiliate-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
                 <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase' }}>
-                    <Monitor size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> DOPORUČENÝ UPGRADE GRAFIKY
+                    <Monitor size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> UPGRADE GRAFIKY
                 </div>
                 <div style={{ opacity: 0.6, fontSize: '12px' }}>Guru cena • Skladem</div>
-                <div style={{ fontSize: '11px', color: '#facc15', fontWeight: 900 }}>
-                    📉 Ztrácíš až {bottleneckPercent}% výkonu
-                </div>
                 <div style={{ background: 'rgba(34,197,94,0.1)', borderRadius: '12px', padding: '12px', fontWeight: 900, width: '100%', textAlign: 'center', border: '1px solid rgba(34,197,94,0.2)', color: '#22c55e' }}>
-                    🚀 60 FPS → {afterFps} FPS po upgradu
+                    🚀 {isGpuBottleneck ? `Odstraní ${bottleneckPercent}% ztrátu` : 'Zvýší grafický výkon'}
                 </div>
                 <div style={{ fontWeight: 900, color: '#a855f7' }}>🔥 {targetGpuName}</div>
                 
                 <a 
-                  href={getCleanHeurekaLink(targetGpuName)} 
+                  href={getCleanHeurekaLink(targetGpuName, 'gpu')} 
                   onClick={() => handleSilentLog('gpu')}
                   target="_blank" 
                   rel="nofollow sponsored" 
                   style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
                 >
-                    <ShoppingCart size={18} /> NAJÍT NEJLEVNĚJŠÍ CENU
+                    <ShoppingCart size={18} /> ZJISTIT NEJNIŽŠÍ CENU
                 </a>
-                <a href={getSmartyLink(targetGpuName)} target="_blank" rel="nofollow" style={{ marginTop: '5px', fontSize: '12px', color: '#9ca3af', textDecoration: 'underline' }}>Koupit na Smarty.cz</a>
+                <a href={getSmartyLink(targetGpuName)} target="_blank" rel="nofollow sponsored" style={{ marginTop: '5px', fontSize: '12px', color: '#9ca3af', textDecoration: 'underline' }}>Koupit na Smarty.cz</a>
             </div>
 
             <div className="affiliate-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
                 <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase' }}>
-                    <Zap size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> DOPORUČENÝ UPGRADE PROCESORU
+                    <Zap size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> UPGRADE PROCESORU
                 </div>
                 <div style={{ opacity: 0.6, fontSize: '12px' }}>Guru cena • Skladem</div>
-                <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: 900 }}>
-                    ⚠️ Procesor brzdí grafiku
-                </div>
                 <div style={{ background: 'rgba(34,197,94,0.1)', borderRadius: '12px', padding: '12px', fontWeight: 900, width: '100%', textAlign: 'center', border: '1px solid rgba(34,197,94,0.2)', color: '#22c55e' }}>
                     🚀 +35% plynulejší hraní
                 </div>
                 <div style={{ fontWeight: 900, color: '#a855f7' }}>🔥 {targetCpuName}</div>
                 
                 <a 
-                  href={getCleanHeurekaLink(targetCpuName)} 
+                  href={getCleanHeurekaLink(targetCpuName, 'cpu')} 
                   onClick={() => handleSilentLog('cpu')}
                   target="_blank" 
                   rel="nofollow sponsored" 
                   style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
                 >
-                    <ShoppingCart size={18} /> NAJÍT NEJLEVNĚJŠÍ CENU
+                    <ShoppingCart size={18} /> ZJISTIT NEJNIŽŠÍ CENU
                 </a>
-                <a href={getSmartyLink(targetCpuName)} target="_blank" rel="nofollow" style={{ marginTop: '5px', fontSize: '12px', color: '#9ca3af', textDecoration: 'underline' }}>Koupit na Smarty.cz</a>
+                <a href={getSmartyLink(targetCpuName)} target="_blank" rel="nofollow sponsored" style={{ marginTop: '5px', fontSize: '12px', color: '#9ca3af', textDecoration: 'underline' }}>Koupit na Smarty.cz</a>
             </div>
         </section>
 
