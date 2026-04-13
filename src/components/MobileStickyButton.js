@@ -8,7 +8,8 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const HIGH_END_REGEX = /5090|5080|5070|4090|ultra|high-end|9950x|9900x|9800x3d/;
+// 🔥 OPRAVENÝ REGEX: Musí chytit všechno, co zavání high-endem
+const HIGH_END_REGEX = /5090|5080|4090|ultra|high-end|9950x|9900x|9800x3d|bottleneck|kalkulacka/i;
 
 export default function MobileStickyButton() {
     const pathname = usePathname() || '';
@@ -56,12 +57,14 @@ export default function MobileStickyButton() {
     const getLink = () => {
         const subId = `v10-sticky-${platform}-${funnelVariant}-${intent}`;
         
-        // 🔥 INTELIGENTNÍ VÝBĚR PRODUKTU
+        // 🔥 KOMPLETNÍ ELIMINACE RTX 5060 PRO HIGH-END CONTEXT
         let productName = "";
         if (isHighEnd) {
+            // Tady už žádná 5060 neexistuje
             productName = funnelVariant === 'cpu' ? "Ryzen 7 9800X3D" : "RTX 5080";
         } else {
-            productName = funnelVariant === 'cpu' ? "Ryzen 5 9600" : "RTX 5060";
+            // Pouze pro low-end články
+            productName = funnelVariant === 'cpu' ? "Ryzen 5 9600" : "RTX 4060 Ti";
         }
 
         let queryStr = productName;
@@ -99,7 +102,7 @@ export default function MobileStickyButton() {
         if (isEn) {
             const name = isHighEnd 
                 ? (funnelVariant === 'cpu' ? "RYZEN 7 9800X3D" : "RTX 5080")
-                : (funnelVariant === 'cpu' ? "RYZEN 5 9600" : "RTX 5060");
+                : (funnelVariant === 'cpu' ? "RYZEN 5 9600" : "RTX 4060 TI");
             return `🔥 ${name} DEALS – BEST PRICE ⚡`;
         }
         
@@ -111,7 +114,7 @@ export default function MobileStickyButton() {
 
         return funnelVariant === 'cpu' 
             ? `🔥 RYZEN 5 9600 SKLADEM ⚡` 
-            : `🔥 RTX 5060 OD 7 490 Kč ⚡`;
+            : `🔥 RTX 4060 TI OD 9 990 Kč ⚡`;
     }, [isEn, isHighEnd, funnelVariant]);
 
     if (!isVisible) return null;
@@ -119,7 +122,7 @@ export default function MobileStickyButton() {
     return (
         <div className="guru-mobile-sticky-wrapper">
             <div className="guru-badge">
-                ✔ GURU OVĚŘENÁ NABÍDKA • SKLADEM
+                ✔ GURU DOPORUČUJE • SKLADEM
             </div>
             
             <a 
