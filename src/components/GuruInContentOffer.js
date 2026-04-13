@@ -1,6 +1,6 @@
-"use client";
+'use client';
 import React from 'react';
-import { Zap, ShieldCheck, TrendingUp, ArrowRight } from 'lucide-react';
+import { ShoppingCart, Zap, ShieldCheck, TrendingUp } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 export default function GuruInContentOffer({ 
@@ -13,15 +13,15 @@ export default function GuruInContentOffer({
     const pathname = usePathname() || '';
     const isAmazon = isEn || pathname.includes('/en');
     
-    // Pokud není zadáno jméno, komponenta se nezobrazí (bezpečnostní pojistka)
+    // Pojistka proti prázdnému názvu
     if (!productName) return null;
 
     const getLink = () => {
-        const subId = customSubId || `v10-smart-${category}-${reason}`;
+        const subId = customSubId || `v12-smart-${category}-${reason}`;
         let query = productName;
 
         if (!isAmazon) {
-            // High-conversion logic: Přidání kategorie pro Heureku, pokud tam chybí
+            // High-conversion logic pro Heureku (o=3, kategorie)
             const lowerQuery = query.toLowerCase();
             if (category === 'gpu' && !lowerQuery.includes('grafická')) query += " grafická karta";
             if (category === 'cpu' && !lowerQuery.includes('procesor')) query += " procesor";
@@ -33,92 +33,73 @@ export default function GuruInContentOffer({
         return `https://www.amazon.com/s?k=${encodeURIComponent(query)}&tag=thehardware07-20&ascsubtag=${subId}`;
     };
 
-    // Inteligentní textace podle důvodu zobrazení
-    const getText = () => {
-        const texts = {
-            cs: {
-                winner: { badge: "VÍTĚZ DUELU", desc: "Tento komponent vyhrál v testu" },
-                fix: { badge: "REŠENÍ BOTTLENECKU", desc: "Tento upgrade odstraní brzdění výkonu" },
-                upgrade: { badge: "GURU DOPORUČENÍ", desc: "Nejlepší volba pro maximální FPS" },
-                btn: "ZJISTIT CENU A DOSTUPNOST"
-            },
-            en: {
-                winner: { badge: "DUEL WINNER", desc: "This component won the benchmark" },
-                fix: { badge: "BOTTLENECK FIX", desc: "This upgrade eliminates system lag" },
-                upgrade: { badge: "GURU CHOICE", desc: "Best value for high-end gaming" },
-                btn: "CHECK PRICE & AVAILABILITY"
-            }
+    // Textace pro V12
+    const getCtaText = () => {
+        if (isEn) return {
+            reasonLabel: "GURU VERIFIED",
+            subText: `This is the ultimate ${category.toUpperCase()} upgrade for maximizing FPS.`,
+            btn: "CHECK PRICE & AVAILABILITY"
         };
-        return isEn ? texts.en[reason] : texts.cs[reason];
+        
+        return {
+            reasonLabel: "GURU OVĚŘENO",
+            subText: `Tento ${category.toUpperCase()} je nejvýhodnější volba pro boost FPS a plynulost.`,
+            btn: "ZJISTIT DOSTUPNOST A CENU"
+        };
     };
 
-    const ui = getText();
+    const ctaUi = getCtaText();
 
     return (
-        <div className="guru-smart-offer">
-            <div className="smart-glow" />
-            <div className="offer-header">
-                <div className={`offer-badge badge-${reason}`}>
-                    <TrendingUp size={12} /> {ui.badge}
-                </div>
-                <div className="offer-verified">
-                    <ShieldCheck size={14} /> {isEn ? "STOCKED" : "SKLADEM"}
-                </div>
-            </div>
+        <div className="guru-offer-d2a">
+            {/* Inteligentní, hluboký background */}
+            <div className="offer-bg-deep" />
             
-            <div className="offer-body">
-                <div className="product-info">
-                    <span className="product-category">{category.toUpperCase()}</span>
-                    <h3 className="product-name">{productName}</h3>
-                    <p className="product-status">{ui.desc}</p>
+            <div className="offer-content">
+                <div className="offer-verified-badge">
+                    <ShieldCheck size={16} className="verified-icon" /> {ctaUi.reasonLabel}
                 </div>
+                
+                <h3 className="product-title">{productName}</h3>
+                <p className="product-reason">{ctaUi.subText}</p>
                 
                 <a 
                     href={getLink()} 
                     target="_blank" 
                     rel="nofollow sponsored" 
-                    className="smart-cta-btn"
+                    className="offer-cta-btn-d2a"
                 >
-                    <span>{isEn ? "BUY NOW" : "KOUPIT"}</span>
-                    <ArrowRight size={18} />
+                    <ShoppingCart size={20} fill="currentColor" />
+                    {ctaUi.btn}
                 </a>
             </div>
 
             <style dangerouslySetInnerHTML={{__html: `
-                .guru-smart-offer {
-                    background: #0f1115;
-                    border: 1px solid rgba(147, 51, 234, 0.4);
+                .guru-offer-d2a {
+                    background: #111111;
+                    border: 1px solid rgba(255,255,255,0.05);
                     border-radius: 20px;
-                    padding: 24px;
-                    margin: 30px 0;
+                    padding: 30px;
+                    margin: 25px 0;
                     position: relative;
                     overflow: hidden;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                    text-align: center;
+                    display: flex; flex-direction: column; align-items: center; justify-content: center;
                 }
-                .smart-glow {
-                    position: absolute; top: 0; right: 0; width: 150px; height: 150px;
-                    background: radial-gradient(circle, rgba(147, 51, 234, 0.15) 0%, transparent 70%);
+                .offer-bg-deep {
+                    position: absolute; top: -100px; right: -100px; width: 250px; height: 250px;
+                    background: radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, transparent 70%);
                     pointer-events: none;
                 }
-                .offer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-                .offer-badge { font-size: 10px; font-weight: 900; padding: 4px 10px; border-radius: 8px; display: flex; align-items: center; gap: 5px; color: #fff; }
-                .badge-winner { background: #eab308; }
-                .badge-fix { background: #f43f5e; }
-                .badge-upgrade { background: #9333ea; }
-                .offer-verified { color: #22c55e; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 4px; }
-                .product-category { color: #9333ea; font-size: 10px; font-weight: 900; letter-spacing: 1.5px; }
-                .product-name { color: #fff; font-size: 20px; font-weight: 950; margin: 4px 0; }
-                .product-status { color: #9ca3af; font-size: 13px; margin: 0; font-weight: 500; }
-                .smart-cta-btn {
-                    background: #fff; color: #000; padding: 12px 24px; border-radius: 12px;
-                    font-weight: 950; font-size: 14px; text-decoration: none;
-                    display: flex; align-items: center; gap: 8px; transition: 0.2s;
-                    box-shadow: 0 4px 12px rgba(255,255,255,0.1);
-                }
-                .smart-cta-btn:hover { transform: scale(1.03); background: #9333ea; color: #fff; }
+                .offer-content { position: relative; z-index: 2; width: 100%; display: flex; flex-direction: column; align-items: center; }
+                .offer-verified-badge { background: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 6px 16px; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+                .product-title { color: #fff; font-size: 26px; font-weight: 950; margin: 0 0 8px 0; text-transform: uppercase; }
+                .product-reason { color: #d1d5db; font-size: 14px; margin: 0 0 25px 0; font-weight: 500; max-width: 380px; }
+                .offer-cta-btn-d2a { background: #fff; color: #000; padding: 16px 35px; border-radius: 14px; font-weight: 950; font-size: 15px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s ease-in-out; box-shadow: 0 4px 10px rgba(0,0,0,0.2); width: auto; }
+                .offer-cta-btn-d2a:hover { transform: scale(1.03); background: #fef08a; box-shadow: 0 8px 25px rgba(254, 240, 138, 0.2); }
                 @media (max-width: 640px) {
-                    .offer-body { flex-direction: column; gap: 20px; text-align: center; }
-                    .smart-cta-btn { width: 100%; justify-content: center; }
+                    .offer-cta-btn-d2a { width: 100%; font-size: 14px; }
+                    .product-title { font-size: 22px; }
                 }
             `}} />
         </div>
