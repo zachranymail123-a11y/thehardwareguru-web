@@ -1,9 +1,10 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { 
- Zap, Cpu, Monitor, Gauge, ShoppingCart, ChevronRight, TrendingUp, Clock, AlertTriangle, Gamepad2, Activity
+ Zap, Cpu, Monitor, Gauge, ShoppingCart, Gamepad2, Activity
 } from 'lucide-react';
 import BottleneckFatContent from '../../../../components/BottleneckFatContent'; 
+import GuruInContentOffer from '../../../../components/GuruInContentOffer';
 
 export const runtime = "nodejs";
 export const revalidate = 86400; 
@@ -29,21 +30,19 @@ const findUpgrade = async (table, currentPerf) => {
 };
 
 export async function generateMetadata({ params }) {
-    const p = params; // 🔥 FIX: Žádný await
+    const p = params;
     const hwParts = String(p.slug || '').replace(/^en-/, '').split('-at-')[0].split('-in-')[0].split('-with-');
     return { title: `Bottleneck Analysis: ${hwParts[0]} + ${hwParts[1]}` };
 }
 
 export default async function BottleneckPageEn({ params }) {
-  const p = params; // 🔥 FIX: Žádný await v Next.js 14 params
-
-  // 🔥 NEJČISTŠÍ ŘEŠENÍ: Jsme v EN složce, takže to je prostě true
+  const p = params;
   const isEn = true;
   
   const cleanSlug = String(p.slug || '').replace(/^en-/, '');
   const resParts = cleanSlug.split('-at-');
   const resolution = resParts[1] === '4k' ? '2160p' : (resParts[1] || '1440p'); 
-  const gameParts = resParts[0].split('-in-'); // 🔥 FIX: Zajištěný scope pro gameParts
+  const gameParts = resParts[0].split('-in-');
   const hwParts = gameParts[0].split('-with-');
 
   if (hwParts.length !== 2) return notFound();
@@ -63,10 +62,13 @@ export default async function BottleneckPageEn({ params }) {
   const bottleneckPercent = Math.max(0, Math.min(Math.round(((Math.max(gpu.performance_index, (cpu.performance_index * 2.9)) / Math.min(gpu.performance_index, (cpu.performance_index * 2.9))) - 1) * 45), 100));
   const afterFps = Math.round(60 * (1 + (bottleneckPercent / 100) + 0.2));
   
-  const targetGpuName = upgradeGpu?.name || "RTX 4070 SUPER";
-  const targetCpuName = upgradeCpu?.name || "Ryzen 7 7800X3D";
+  const targetGpuName = upgradeGpu?.name || "RTX 5070";
+  const targetCpuName = upgradeCpu?.name || "Ryzen 7 9800X3D";
 
-  const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name + ' buy now fps benchmark')}&tag=${AMAZON_TAG}&linkCode=ll2&ref_=as_li_ss_tl&ascsubtag=bn-direct`;
+  // Zjištění typu bottlenecku pro EN verzi
+  const isGpuBottleneck = gpu.performance_index < cpu.performance_index * 2.5;
+
+  const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=${AMAZON_TAG}&ascsubtag=bn-en-slug-${bottleneckPercent}`;
 
   return (
     <div className="guru-bottleneck-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -74,15 +76,26 @@ export default async function BottleneckPageEn({ params }) {
         
         <header style={{ textAlign: 'center', margin: '50px 0' }}>
           <div style={{ color: '#66fcf1', border: '1px solid rgba(102,252,241,0.3)', padding: '6px 20px', borderRadius: '50px', fontSize: '11px', fontWeight: 950, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-            <Gauge size={16} /> <span>GURU REVENUE ENGINE V5.0 (EN)</span>
+            <Gauge size={16} /> <span>GURU BOTTLENECK ANALYSIS V12 (EN)</span>
           </div>
           <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 3rem)', fontWeight: 950, textTransform: 'uppercase', marginTop: '20px' }}>
             {cpu.name} <span style={{ opacity: 0.2 }}>+</span> {gpu.name}
           </h1>
         </header>
 
+        {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (V12 EN) 🔥 */}
+        <div style={{ margin: '40px 0' }}>
+            <GuruInContentOffer 
+                productName={isGpuBottleneck ? targetGpuName : targetCpuName} 
+                category={isGpuBottleneck ? "gpu" : "cpu"} 
+                reason="fix"
+                isEn={true}
+                subId={`bn-en-fix-${bottleneckPercent}`}
+            />
+        </div>
+
         <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 900, marginBottom: '20px', color: '#facc15' }}>
-          🔥 BEST UPGRADE RECOMMENDATION
+          🔥 DETAILED UPGRADE OPTIONS
         </div>
 
         <section className="affiliate-cta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', padding: '35px', background: 'rgba(0,0,0,0.5)', borderRadius: '28px', border: '1px solid rgba(168,85,247,0.2)' }}>
@@ -92,17 +105,17 @@ export default async function BottleneckPageEn({ params }) {
                 <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase' }}>
                     <Monitor size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> GPU UPGRADE
                 </div>
-                <div style={{ opacity: 0.6, fontSize: '12px' }}>From $499</div>
+                <div style={{ opacity: 0.6, fontSize: '12px' }}>Guru Verified • In Stock</div>
                 <div style={{ fontSize: '11px', color: '#facc15', fontWeight: 900 }}>
-                    📉 Losing {bottleneckPercent}% FPS performance
+                    🚀 {isGpuBottleneck ? `Fixes ${bottleneckPercent}% loss` : 'Boost FPS performance'}
                 </div>
                 <div style={{ background: 'rgba(34,197,94,0.1)', borderRadius: '12px', padding: '12px', fontWeight: 900, width: '100%', textAlign: 'center', border: '1px solid rgba(34,197,94,0.2)', color: '#22c55e' }}>
-                    🚀 60 FPS → {afterFps} FPS boost
+                    ⚡ 60 FPS → {afterFps} FPS boost
                 </div>
                 <div style={{ fontWeight: 900, color: '#a855f7' }}>🔥 {targetGpuName}</div>
                 
                 <a href={getAmazonLink(targetGpuName)} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ background: '#f59e0b', color: '#000', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
-                    <ShoppingCart size={18} /> AMAZON DEALS
+                    <ShoppingCart size={18} /> CHECK AMAZON PRICE
                 </a>
             </div>
 
@@ -111,22 +124,18 @@ export default async function BottleneckPageEn({ params }) {
                 <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase' }}>
                     <Zap size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> CPU UPGRADE
                 </div>
-                <div style={{ opacity: 0.6, fontSize: '12px' }}>From $299</div>
-                <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: 900 }}>
-                    ⚠️ CPU limits your GPU potential
-                </div>
+                <div style={{ opacity: 0.6, fontSize: '12px' }}>High Performance • Top Rated</div>
                 <div style={{ background: 'rgba(34,197,94,0.1)', borderRadius: '12px', padding: '12px', fontWeight: 900, width: '100%', textAlign: 'center', border: '1px solid rgba(34,197,94,0.2)', color: '#22c55e' }}>
                     🚀 +35% smoother gameplay
                 </div>
                 <div style={{ fontWeight: 900, color: '#a855f7' }}>🔥 {targetCpuName}</div>
                 
                 <a href={getAmazonLink(targetCpuName)} target="_blank" rel="nofollow sponsored noopener noreferrer" style={{ background: '#f59e0b', color: '#000', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
-                    <ShoppingCart size={18} /> AMAZON DEALS
+                    <ShoppingCart size={18} /> CHECK AMAZON PRICE
                 </a>
             </div>
         </section>
 
-        {/* GURU TOOLS SECTION */}
         <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
             <a href="/en/fps-calculator" style={{ background: '#0a0b0d', border: '1px solid #06b6d4', padding: '20px', borderRadius: '15px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '15px' }}>
                 <Gamepad2 size={24} color="#06b6d4" />
