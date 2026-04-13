@@ -1,5 +1,4 @@
 import React from 'react';
-import Script from 'next/script';
 import { 
   ChevronLeft, 
   Cpu, 
@@ -12,15 +11,16 @@ import {
   Info, 
   Calendar,
   Gamepad2,
-  AlertTriangle,
-  ShoppingCart
+  AlertTriangle
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons';
+// 🔥 PŘIDÁNO: Naše chytrá komponenta
+import GuruInContentOffer from '../../components/GuruInContentOffer';
 
 /**
- * GURU CPU ENGINE - KATALOG PROCESORŮ V1.16 (V10 HARD-LOCK UPDATE)
- * 🚀 CÍL: Fix Heureka linků na V10 Hard-Lock a doplnění povinných nástrojů.
+ * GURU CPU ENGINE - KATALOG PROCESORŮ V3 (CLEAN & SMART)
+ * 🚀 CÍL: Odstranění fake overlay linků, nasazení GuruInContentOffer.
  */
 
 export const dynamic = 'force-dynamic';
@@ -85,12 +85,9 @@ export default async function CpuIndexPage(props) {
       const isTopTier = index < 3 && cpu.performance_index > 0; 
       const safeSlug = cpu.slug || slugify(cpu.name);
       
-      const heurekaSearchQuery = `${cpu.name} cena`;
-      const amazonSearchQuery = cpu.name;
-
+      // 🔥 FIX: Karta teď vede doopravdy na profil, není to falešný link na Heureku
       return (
-        <div key={safeSlug} className="cpu-card-wrapper">
-          <a href={isEn ? `/en/cpu/${safeSlug}` : `/cpu/${safeSlug}`} className="cpu-card" style={{ borderTop: `4px solid ${isTopTier ? vendorColor : '#374151'}` }}>
+        <a key={safeSlug} href={isEn ? `/en/cpu/${safeSlug}` : `/cpu/${safeSlug}`} className="cpu-card" style={{ borderTop: `4px solid ${isTopTier ? vendorColor : '#374151'}` }}>
             <div className="card-header">
               <h3>{normalizeName(cpu.name)}</h3>
               {isTopTier && <span className="top-badge" style={{ color: vendorColor, borderColor: vendorColor }}>TOP TIER</span>}
@@ -109,46 +106,9 @@ export default async function CpuIndexPage(props) {
             </div>
             <div className="card-actions">
               <div className="action-btn"><Activity size={14}/> {isEn ? 'Specs' : 'Detaily'}</div>
-              <div className="action-btn" style={{ color: '#f59e0b' }}><Swords size={14}/> {isEn ? 'VS' : 'Srovnat'}</div>
+              <div className="action-btn" style={{ color: '#f59e0b' }}><Swords size={14}/> {isEn ? 'VS Engine' : 'Srovnat'}</div>
             </div>
-
-            <div style={{ marginTop: '15px' }}>
-              {isEn ? (
-                <div className="buy-btn" style={{ textAlign: 'center', padding: '10px', borderRadius: '10px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000', fontWeight: '900', fontSize: '12px', textTransform: 'uppercase' }}>
-                  🔥 Check Price on Amazon
-                </div>
-              ) : (
-                <div className="buy-btn" style={{ textAlign: 'center', padding: '10px', borderRadius: '10px', background: 'linear-gradient(135deg, #3b82f6, #0078d4)', color: '#fff', fontWeight: '900', fontSize: '12px', textTransform: 'uppercase' }}>
-                  🔥 Nejlevnější cena
-                </div>
-              )}
-            </div>
-          </a>
-
-          {/* 🔥 FIX: Hard-Lock V10 Link (haff ID první) 🔥 */}
-          {!isEn && (
-            <a 
-              href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(heurekaSearchQuery)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-cpu-card`}
-              className="heureka-hn-link card-overlay-link"
-              data-trixam-positionid="276026"
-              data-trixam-content="Text link"
-              data-trixam-medium="affiliate"
-              target="_blank" 
-              rel="nofollow sponsored"
-              style={{ position: 'absolute', inset: 0, zIndex: 5, cursor: 'pointer' }}
-              aria-label="Koupit na Heurece"
-            ></a>
-          )}
-          {isEn && (
-            <a 
-              href={`https://www.amazon.com/s?k=${encodeURIComponent(amazonSearchQuery)}&tag=thehardware07-20`}
-              className="card-overlay-link"
-              target="_blank" 
-              rel="nofollow sponsored"
-              style={{ position: 'absolute', inset: 0, zIndex: 5, cursor: 'pointer' }}
-            ></a>
-          )}
-        </div>
+        </a>
       );
     });
   };
@@ -156,10 +116,6 @@ export default async function CpuIndexPage(props) {
   return (
     <div className="guru-page-container" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
-      {!isEn && (
-          <Script async src="//serve.affiliate.heureka.cz/js/trixam.min.js" strategy="afterInteractive" />
-      )}
-
       <main className="inner-container" style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
         <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
@@ -183,8 +139,15 @@ export default async function CpuIndexPage(props) {
           </div>
         </header>
 
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
-            <HeurekaButtons isEn={isEn} />
+        {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (MÍSTO STARÝCH FAKE LINKŮ) 🔥 */}
+        <div style={{ marginBottom: '50px' }}>
+            <GuruInContentOffer 
+                productName="AMD Ryzen 7 9800X3D" 
+                category="cpu" 
+                reason="winner"
+                isEn={isEn}
+                subId="cpu-index-premium"
+            />
         </div>
 
         {amdCpus.length > 0 && (
@@ -207,7 +170,6 @@ export default async function CpuIndexPage(props) {
           </section>
         )}
 
-        {/* 🔥 GURU TOOLS - DOPLNĚNÍ TLAČÍTEK (Dle rozkazu) 🔥 */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '60px' }}>
             <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ background: 'rgba(6, 182, 212, 0.1)', border: '1px solid #06b6d4', padding: '25px', borderRadius: '20px', textDecoration: 'none', textAlign: 'center', color: '#fff', fontWeight: 950, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
                 <Gamepad2 size={28} color="#06b6d4" /> {isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}
@@ -263,11 +225,8 @@ export default async function CpuIndexPage(props) {
         .vendor-h2 { color: #fff; font-size: 2.2rem; font-weight: 950; margin-bottom: 30px; text-transform: uppercase; border-left: 5px solid; padding-left: 15px; display: flex; align-items: center; gap: 15px; }
         .cpu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         
-        .cpu-card-wrapper { position: relative; transition: transform 0.3s ease; }
-        .cpu-card-wrapper:hover { transform: translateY(-5px); }
-        .cpu-card-wrapper:hover .buy-btn { transform: scale(1.05); filter: brightness(1.1); }
-
-        .cpu-card { display: flex; flex-direction: column; background: rgba(15, 17, 21, 0.95); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; padding: 25px; height: 100%; box-sizing: border-box; }
+        .cpu-card { display: flex; flex-direction: column; background: rgba(15, 17, 21, 0.95); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; padding: 25px; height: 100%; box-sizing: border-box; transition: transform 0.3s ease; }
+        .cpu-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.1); }
         .card-header h3 { margin: 0 0 5px 0; font-size: 1.3rem; font-weight: 950; text-transform: uppercase; }
         .top-badge { font-size: 9px; font-weight: 950; padding: 3px 8px; border: 1px solid; border-radius: 50px; display: inline-block; }
         .card-specs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -276,7 +235,6 @@ export default async function CpuIndexPage(props) {
         .spec-val { font-size: 13px; font-weight: 900; color: #9ca3af; }
         .card-actions { display: flex; justify-content: space-between; margin-top: 15px; }
         .action-btn { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: bold; color: #6b7280; text-transform: uppercase; }
-        .buy-btn { transition: all 0.3s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
 
         .quick-link-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 50px; font-weight: 950; font-size: 11px; text-transform: uppercase; text-decoration: none; border: 1px solid; background: rgba(255,255,255,0.02); transition: 0.3s; }
         .quick-link-pill:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
