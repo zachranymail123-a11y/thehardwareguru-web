@@ -76,11 +76,9 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
     const cleanCpuName = selectedCpu ? normalizeName(selectedCpu.name) : '';
     const cleanGpuName = selectedGpu ? normalizeName(selectedGpu.name) : '';
 
-    // 🔥 AFFILIATE LINK GENERATORS 🔥
     const getCleanHeurekaLink = (name, subId) => {
         const cleanStr = name.replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
         const safeQuery = cleanStr.replace(/\s+/g, '+');
-        // V10 Golden Formát: haff hned na začátku, doména www, řazení o=3
         return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}&o=3`;
     };
 
@@ -140,21 +138,40 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
                     <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px' }}>{isEn ? 'EXPECTED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
                     <div className="fps-value" style={{ fontSize: '6rem', fontWeight: '950', color: '#fff', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)', margin: '15px 0' }}>{result.fps} FPS</div>
 
-                    {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (CENA/VÝKON ALTERNATIVA) 🔥 */}
+                    {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (OPRAVENÁ LOGIKA V12) 🔥 */}
                     {(() => {
-                        let bestValueProduct = "NVIDIA RTX 5070";
-                        if (selectedRes === '2160p') bestValueProduct = "NVIDIA RTX 5080";
-                        else if (selectedRes === '1080p') bestValueProduct = "NVIDIA RTX 4060 Ti";
+                        const isUserHighEndGpu = selectedGpu?.name.includes('5090') || selectedGpu?.name.includes('5080') || selectedGpu?.name.includes('4090');
+                        const isUserX3D = selectedCpu?.name.toLowerCase().includes('x3d');
 
-                        const isGpuOverlap = selectedGpu?.name.includes(normalizeName(bestValueProduct));
-                        
+                        let bestValueProduct = "";
+                        let bestValueCategory = "gpu";
+
+                        if (isUserHighEndGpu) {
+                            if (!isUserX3D) {
+                                bestValueProduct = "AMD Ryzen 7 9800X3D";
+                                bestValueCategory = "cpu";
+                            } else {
+                                bestValueProduct = "ASUS ROG CROSSHAIR X870E";
+                                bestValueCategory = "mb";
+                            }
+                        } else {
+                            if (selectedRes === '2160p') bestValueProduct = "NVIDIA RTX 5080";
+                            else if (selectedRes === '1440p') bestValueProduct = "NVIDIA RTX 5070";
+                            else bestValueProduct = "NVIDIA RTX 5060";
+
+                            if (selectedGpu?.name.includes(normalizeName(bestValueProduct))) {
+                                bestValueProduct = "AMD Ryzen 7 9800X3D";
+                                bestValueCategory = "cpu";
+                            }
+                        }
+
                         return (
                             <GuruInContentOffer 
-                                productName={isGpuOverlap ? "AMD Ryzen 7 9800X3D" : bestValueProduct} 
-                                category={isGpuOverlap ? "cpu" : "gpu"} 
+                                productName={bestValueProduct} 
+                                category={bestValueCategory} 
                                 isEn={isEn} 
                                 reason="upgrade"
-                                subId={`fps-calc-smart-value-${selectedRes}`}
+                                subId={`fps-calc-smart-v12-${selectedRes}`}
                             />
                         );
                     })()}
