@@ -1,8 +1,6 @@
 import React from 'react';
-import Script from 'next/script';
 import { 
  ChevronLeft, 
- Monitor, 
  Database, 
  Activity, 
  Swords,
@@ -12,15 +10,15 @@ import {
  Info, 
  Calendar,
  Gamepad2,
- ShoppingCart,
  AlertTriangle
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
-import HeurekaButtons from '../../components/HeurekaButtons'; 
+// 🔥 PŘIDÁNO: Naše chytrá komponenta
+import GuruInContentOffer from '../../components/GuruInContentOffer'; 
 
 /**
- * GURU GPU ENGINE - KATALOG GRAFIK V2.1 (V10 HARD-LOCK UPDATE)
- * 🚀 CÍL: Implementace V10 Hard-Lock na Heureka linky a přidání kalkulaček.
+ * GURU GPU ENGINE - KATALOG GRAFIK V3 (CLEAN & SMART)
+ * 🚀 CÍL: Odstranění starého kódu, nasazení GuruInContentOffer, V10 Heureka.
  */
 
 export const dynamic = 'force-dynamic';
@@ -32,9 +30,6 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon |Intel /gi, '');
 const slugify = (text) => text ? text.toLowerCase().replace(/graphics|gpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
-
-// Pomocná funkce pro e-shopy
-const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
 
 export async function generateMetadata(props) {
  const isEn = props?.isEn === true;
@@ -117,7 +112,6 @@ export default async function GpuIndexPage(props) {
          </a>
        </div>
 
-       {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
            <div className="ad-desktop-wrapper">
                <SeznamAd zoneId={408654} width={970} height={210} />
@@ -143,29 +137,16 @@ export default async function GpuIndexPage(props) {
          </div>
        </header>
 
-       {/* 🔥 OPRAVENO: Modrá tlačítka s V10 Hard-Lock 🔥 */}
-       <div className="affiliate-cta-grid" style={{ marginBottom: '50px', borderLeft: '4px solid #66fcf1' }}>
-            <div className="affiliate-col">
-                <div className="affiliate-col-title" style={{ color: '#66fcf1' }}>
-                    <ShoppingCart size={16} /> {isEn ? `BUY RTX 5070 Ti` : `KOUPIT RTX 5070 Ti`}
-                </div>
-                <div className="affiliate-btn-wrap">
-                    <a href={getSmartyLink("RTX 5070 Ti")} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
-                        <ShoppingCart size={16} /> Smarty.cz
-                    </a>
-                    <a 
-                        href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=RTX+5070+Ti+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gpu-index-5070ti`} 
-                        data-subid="v10-gpu-index-5070ti" 
-                        data-cat="gpu_index" 
-                        target="_blank" 
-                        rel="nofollow sponsored" 
-                        className="guru-buy-winner-btn heureka-btn v10-hl-btn"
-                    >
-                        <ShoppingCart size={16} /> Heureka.cz
-                    </a>
-                </div>
-            </div>
-        </div>
+       {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (MÍSTO STARÝCH TLAČÍTEK) 🔥 */}
+       <div style={{ marginBottom: '50px' }}>
+           <GuruInContentOffer 
+               productName="NVIDIA GeForce RTX 5070 Ti" 
+               category="gpu" 
+               reason="winner"
+               isEn={isEn}
+               subId="gpu-index-premium"
+           />
+       </div>
 
        {nvidiaGpus.length > 0 && (
          <section style={{ marginBottom: '60px' }}>
@@ -191,7 +172,6 @@ export default async function GpuIndexPage(props) {
            </a>
        </div>
 
-        {/* 🔥 GURU TOOLS - POVINNÁ TLAČÍTKA NA KALKULAČKY 🔥 */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '60px', marginBottom: '60px' }}>
             <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
                 <Gamepad2 size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</span>
@@ -247,27 +227,6 @@ export default async function GpuIndexPage(props) {
          </div>
      </div>
 
-     {/* 🔥 V10 HARD-LOCK SCRIPT PRO SERVER COMPONENT 🔥 */}
-     <Script id="v10-hl-script" strategy="lazyOnload">
-         {`
-             if (typeof window !== 'undefined') {
-                 document.addEventListener('click', function(e) {
-                     const btn = e.target.closest('.v10-hl-btn');
-                     if (btn) {
-                         e.preventDefault();
-                         const targetUrl = btn.href;
-                         const subId = btn.getAttribute('data-subid');
-                         const cat = btn.getAttribute('data-cat');
-                         if (navigator.sendBeacon) {
-                             navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: cat, sub_id: subId, page: window.location.pathname }));
-                         }
-                         setTimeout(() => { window.location.href = targetUrl; }, 150);
-                     }
-                 });
-             }
-         `}
-     </Script>
-
      <style dangerouslySetInnerHTML={{__html: `
        .guru-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.05); margin-bottom: 20px; }
        .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
@@ -287,21 +246,6 @@ export default async function GpuIndexPage(props) {
        .action-btn { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: bold; color: #6b7280; text-transform: uppercase; }
        .quick-link-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 50px; font-weight: 950; font-size: 11px; text-transform: uppercase; text-decoration: none; border: 1px solid; background: rgba(255,255,255,0.02); transition: 0.3s; }
        .quick-link-pill:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
-       
-       /* Affiliate Bomb Grid & Buttons */
-       .affiliate-cta-grid { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 35px; background: rgba(0,0,0,0.4); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; box-sizing: border-box; }
-       .affiliate-col { display: flex; flex-direction: column; align-items: center; width: 100%; }
-       .affiliate-col-title { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 25px; text-align: center; }
-       .affiliate-btn-wrap { display: flex; gap: 20px; width: 100%; justify-content: center; flex-wrap: wrap; }
-       
-       @keyframes pulse-smarty { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
-       @keyframes pulse-heureka { 0% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(0, 120, 212, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0); } }
-       
-       .guru-buy-winner-btn { flex: 1; max-width: 300px; min-width: 200px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 1px; }
-       .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
-       .smarty-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(234, 179, 8, 0.5); }
-       .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
-       .heureka-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
 
        .silo-banner-card { flex: 1; min-width: 300px; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; display: flex; align-items: center; gap: 20px; text-decoration: none; transition: 0.3s; border-left-width: 5px; }
        .silo-banner-card:hover { transform: translateY(-5px); }
@@ -348,10 +292,6 @@ export default async function GpuIndexPage(props) {
            .silo-banner-card { flex-direction: column; text-align: center; min-width: 100%; }
            .quick-links-row { gap: 10px !important; }
            .quick-link-pill { width: 100%; justify-content: center; }
-           .affiliate-cta-grid { padding: 20px; }
-           .affiliate-col-title { font-size: 14px; margin-bottom: 20px; }
-           .affiliate-btn-wrap { flex-direction: column; gap: 15px; }
-           .guru-buy-winner-btn { max-width: 100%; width: 100%; padding: 16px; font-size: 15px; }
        }
      `}} />
    </div>
