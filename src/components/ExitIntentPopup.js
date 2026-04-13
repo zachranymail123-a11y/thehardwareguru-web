@@ -1,198 +1,87 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, ShoppingCart, X, Zap } from 'lucide-react';
+import { ShoppingCart, X, Zap, ShieldCheck } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-// 🔥 2026 HARDWARE CONSTANTS
-const HIGH_END_HW = /5090|5080|5070|4090|9950X|9900X|ultra|high-end/i;
-
-export default function ExitIntentPopup({ cpuName = "Procesor", gpuName = "Grafická karta" }) {
+export default function ExitIntentPopup() {
     const [isVisible, setIsVisible] = useState(false);
     const [hasTriggered, setHasTriggered] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(180);
     const pathname = usePathname() || '';
-    
     const isEn = pathname.startsWith('/en');
-    const platform = isEn ? 'amazon' : 'heureka';
-
-    const triggerPopup = () => {
-        if (hasTriggered) return;
-        const now = Date.now();
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('guru_timer_start', now.toString());
-            localStorage.setItem('guru_exit_shown', now.toString());
-        }
-        setTimeLeft(180);
-        setIsVisible(true);
-        setHasTriggered(true);
-    };
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        const lastShown = localStorage.getItem('guru_exit_shown');
-        if (lastShown && (Date.now() - Number(lastShown) < 3600000)) {
-            setHasTriggered(true);
-            return;
-        }
+        const lastShown = localStorage.getItem('guru_exit_v15');
+        if (lastShown) return;
 
-        let triggered = false;
         const handleMouseOut = (e) => {
-            if (e.clientY < 10 && !triggered && !hasTriggered) {
-                triggered = true;
-                triggerPopup();
+            if (e.clientY < 10 && !hasTriggered) {
+                setHasTriggered(true);
+                setIsVisible(true);
+                localStorage.setItem('guru_exit_v15', Date.now().toString());
             }
         };
-
-        const handleScroll = () => {
-            if (triggered || hasTriggered) return;
-            if (window.scrollY > 1200) {
-                triggered = true;
-                triggerPopup();
-            }
-        };
-
-        const timer = setTimeout(() => {
-            if (!triggered && !hasTriggered) {
-                triggered = true;
-                triggerPopup();
-            }
-        }, 25000);
 
         document.addEventListener('mouseout', handleMouseOut);
-        window.addEventListener('scroll', handleScroll);
-        
-        return () => {
-            document.removeEventListener('mouseout', handleMouseOut);
-            window.removeEventListener('scroll', handleScroll);
-            clearTimeout(timer);
-        };
+        return () => document.removeEventListener('mouseout', handleMouseOut);
     }, [hasTriggered]);
-
-    useEffect(() => {
-        if (!isVisible || typeof window === 'undefined') return;
-        const start = localStorage.getItem('guru_timer_start') || Date.now().toString();
-        const interval = setInterval(() => {
-            const diff = Math.floor((Date.now() - Number(start)) / 1000);
-            setTimeLeft(Math.max(180 - diff, 0));
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [isVisible]);
-
-    // 3. Hardware Intent Detection 2026
-    const targetGpu = HIGH_END_HW.test(gpuName) ? "RTX 5080" : "RTX 5060";
-    const targetCpu = HIGH_END_HW.test(cpuName) ? "Ryzen 9 9950X" : "Ryzen 7 9700X";
-
-    // 4. 🔥 HIGH-CONVERSION LINK GENERATOR
-    const getLink = (type) => {
-        const subId = `v15-exit-${type}`;
-        let rawQuery = type === 'gpu' ? targetGpu : targetCpu;
-
-        if (platform === 'amazon') {
-            const amazonQuery = type === 'gpu' ? `${rawQuery} graphics card` : `${rawQuery} processor`;
-            return `https://www.amazon.com/s?k=${encodeURIComponent(amazonQuery)}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
-        }
-        
-        // Upřesnění pro českou Heureku pro eliminaci balastu (větráčky, pasty)
-        if (type === 'gpu') rawQuery += " grafická karta";
-        else rawQuery += " procesor";
-
-        const safeQuery = rawQuery.trim().replace(/\s+/g, '+');
-        
-        // Přidán parametr o=3 pro prioritizaci relevantních prodejních karet
-        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}&o=3`;
-    };
-
-    const handleLogClick = (type) => {
-        const payload = { platform, category: `exit_popup_${type}`, sub_id: `v15-exit`, page: pathname };
-
-        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-            navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
-        }
-
-        if (typeof window !== 'undefined') {
-            const q = JSON.parse(localStorage.getItem('pending_clicks') || '[]');
-            q.push(payload);
-            localStorage.setItem('pending_clicks', JSON.stringify(q));
-        }
-    };
 
     if (!isVisible) return null;
 
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = String(timeLeft % 60).padStart(2, '0');
+    // 🔥 NEPRŮSTŘELNÝ LINK (Vždy přes hlavní doménu a s haff na začátku)
+    const getLink = (product, category) => {
+        const query = encodeURIComponent(`${product} ${category === 'cpu' ? 'procesor' : 'grafická karta'}`);
+        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${query}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_content=exit-popup-v15&o=3`;
+    };
+
+    const product = "AMD Ryzen 7 9800X3D";
 
     return (
-        <div 
-            onClick={() => setIsVisible(false)}
-            style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 2147483647, display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(10px)' }}
-        >
-            <div 
-                onClick={(e) => e.stopPropagation()}
-                style={{ background: '#0a0a0a', border: '2px solid #9333ea', borderRadius: '28px', padding: '40px', maxWidth: '550px', width: '90%', position: 'relative', boxShadow: '0 0 50px rgba(147, 51, 234, 0.4)', textAlign: 'center' }}
-            >
-                <button 
-                    onClick={() => setIsVisible(false)}
-                    style={{ position: 'absolute', top: '20px', right: '20px', background: 'transparent', border: 'none', color: '#4b5563', cursor: 'pointer' }}
-                >
-                    <X size={28} />
-                </button>
-
-                <div style={{ display: 'inline-flex', background: 'rgba(234, 179, 8, 0.15)', padding: '20px', borderRadius: '50%', marginBottom: '20px' }}>
-                    <AlertTriangle size={48} color="#eab308" />
-                </div>
-
-                <h2 style={{ fontSize: '2.2rem', fontWeight: '950', color: '#fff', textTransform: 'uppercase', marginBottom: '15px', lineHeight: '1.1', letterSpacing: '-1px' }}>
-                    {isEn ? "Wait! Your PC is crying!" : "Počkej! Tvůj PC brečí!"}
+        <div className="exit-overlay">
+            <div className="exit-card">
+                <button onClick={() => setIsVisible(false)} className="exit-close"><X size={24} /></button>
+                
+                <div className="exit-badge"><ShieldCheck size={14} /> GURU PRIVÁTNÍ NABÍDKA</div>
+                
+                <h2 className="exit-title">
+                    {isEn ? "Wait! Don't leave without the best." : "Počkej! Neodcházej bez vítěze."}
                 </h2>
                 
-                <p style={{ color: '#d1d5db', fontSize: '1.15rem', marginBottom: '30px', fontWeight: '500' }}>
+                <p className="exit-desc">
                     {isEn 
-                        ? <>Don't leave with a <strong>bottleneck</strong>. Upgrade to {targetGpu} and unlock your true FPS potential.</>
-                        : <>Neodcházej s <strong>bottleneckem</strong>. Upgrade na {targetGpu} ti okamžitě odemkne plný výkon.</>}
+                        ? `Upgrade to ${product} and eliminate every bottleneck in your system.`
+                        : `Aktuálně nejvýkonnější herní procesor ${product} je konečně skladem za top cenu.`}
                 </p>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    <div style={{ padding: '12px', background: 'rgba(248, 113, 113, 0.1)', borderRadius: '14px', border: '1px solid rgba(248, 113, 113, 0.2)', marginBottom: '10px' }}>
-                        <span style={{ fontSize: '15px', color: '#f87171', fontWeight: 900, textTransform: 'uppercase' }}>
-                            {isEn ? `⏳ DEALS EXPIRE IN: ${minutes}:${seconds}` : `⏳ SLEVA VYPRŠÍ ZA: ${minutes}:${seconds}`}
-                        </span>
-                    </div>
-
-                    <a 
-                        href={getLink('gpu')}
-                        target="_blank"
-                        rel="nofollow sponsored"
-                        onClick={() => handleLogClick('gpu')}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', background: 'linear-gradient(90deg, #9333ea 0%, #06b6d4 100%)', color: '#fff', padding: '20px', borderRadius: '18px', fontWeight: '950', textTransform: 'uppercase', border: 'none', cursor: 'pointer', fontSize: '16px', boxShadow: '0 10px 20px rgba(0,0,0,0.5)', textDecoration: 'none' }}
-                    >
-                        <Zap size={22} fill="white" />
-                        {isEn ? `🔥 ${targetGpu} - BEST PRICE` : `🔥 ${targetGpu} – NEJLEVNĚJŠÍ SKLADEM`}
-                    </a>
-
-                    <a 
-                        href={getLink('cpu')}
-                        target="_blank"
-                        rel="nofollow sponsored"
-                        onClick={() => handleLogClick('cpu')}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '18px', borderRadius: '18px', fontWeight: '900', textTransform: 'uppercase', cursor: 'pointer', textDecoration: 'none' }}
-                    >
-                        <ShoppingCart size={20} color="#a855f7" />
-                        {isEn ? `CHECK ${targetCpu} DEALS` : `KOUPIT ${targetCpu} NEJLEVNĚJI`}
-                    </a>
+                <div className="exit-product-box">
+                    <span className="exit-cat">HERNÍ BESTIE 2026</span>
+                    <div className="exit-name">{product}</div>
                 </div>
 
-                <button 
-                    onClick={() => setIsVisible(false)}
-                    style={{ background: 'none', border: 'none', color: '#4b5563', fontSize: '0.9rem', marginTop: '30px', cursor: 'pointer', textDecoration: 'underline' }}
-                >
-                    {isEn ? "I don't care about my performance." : "Nezajímá mě výkon mého PC."}
+                <a href={getLink(product, 'cpu')} target="_blank" rel="nofollow sponsored" className="exit-cta">
+                    <Zap size={20} fill="currentColor" />
+                    {isEn ? "CHECK AVAILABILITY" : "ZJISTIT CENU A SKLAD"}
+                </a>
+
+                <button onClick={() => setIsVisible(false)} className="exit-dismiss">
+                    {isEn ? "I don't need more FPS" : "Děkuji, nechci víc FPS"}
                 </button>
             </div>
+
+            <style dangerouslySetInnerHTML={{__html: `
+                .exit-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 999999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); padding: 20px; }
+                .exit-card { background: #0f1115; border: 1px solid rgba(147, 51, 234, 0.5); border-radius: 32px; padding: 40px; max-width: 500px; width: 100%; position: relative; text-align: center; box-shadow: 0 30px 60px rgba(0,0,0,0.8); }
+                .exit-close { position: absolute; top: 20px; right: 20px; background: none; border: none; color: #4b5563; cursor: pointer; }
+                .exit-badge { display: inline-flex; align-items: center; gap: 8px; color: #22c55e; background: rgba(34, 197, 94, 0.1); padding: 6px 16px; border-radius: 100px; font-size: 11px; font-weight: 900; margin-bottom: 20px; text-transform: uppercase; }
+                .exit-title { color: #fff; font-size: 28px; font-weight: 950; line-height: 1.1; margin-bottom: 15px; }
+                .exit-desc { color: #9ca3af; font-size: 16px; margin-bottom: 30px; line-height: 1.5; }
+                .exit-product-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; margin-bottom: 30px; }
+                .exit-cat { color: #9333ea; font-size: 10px; font-weight: 900; letter-spacing: 2px; display: block; margin-bottom: 5px; }
+                .exit-name { color: #fff; font-size: 22px; font-weight: 950; }
+                .exit-cta { background: #fff; color: #000; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px; border-radius: 16px; font-weight: 950; text-decoration: none; font-size: 16px; transition: 0.3s; text-transform: uppercase; }
+                .exit-cta:hover { transform: scale(1.02); background: #facc15; }
+                .exit-dismiss { background: none; border: none; color: #4b5563; font-size: 13px; margin-top: 20px; cursor: pointer; text-decoration: underline; }
+            `}} />
         </div>
     );
 }
