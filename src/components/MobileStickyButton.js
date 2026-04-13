@@ -8,7 +8,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// 🔥 OPRAVENÝ REGEX: Musí chytit všechno, co zavání high-endem
+// 🔥 TOTÁLNÍ ELIMINACE MAINSRTEAMU PRO KALKULAČKY A HIGH-END ČLÁNKY
 const HIGH_END_REGEX = /5090|5080|4090|ultra|high-end|9950x|9900x|9800x3d|bottleneck|kalkulacka/i;
 
 export default function MobileStickyButton() {
@@ -57,14 +57,12 @@ export default function MobileStickyButton() {
     const getLink = () => {
         const subId = `v10-sticky-${platform}-${funnelVariant}-${intent}`;
         
-        // 🔥 KOMPLETNÍ ELIMINACE RTX 5060 PRO HIGH-END CONTEXT
+        // 🔥 ŽÁDNÉ SCHOVÁVÁNÍ: NATVRDO HIGH-END PRO RELEVANTNÍ STRÁNKY
         let productName = "";
         if (isHighEnd) {
-            // Tady už žádná 5060 neexistuje
             productName = funnelVariant === 'cpu' ? "Ryzen 7 9800X3D" : "RTX 5080";
         } else {
-            // Pouze pro low-end články
-            productName = funnelVariant === 'cpu' ? "Ryzen 5 9600" : "RTX 4060 Ti";
+            productName = funnelVariant === 'cpu' ? "Ryzen 5 9600" : "RTX 5070";
         }
 
         let queryStr = productName;
@@ -78,7 +76,7 @@ export default function MobileStickyButton() {
             return `https://www.amazon.com/s?k=${safeQuery}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
         }
 
-        // 🔥 V10 GOLDEN FORMAT (haff=276049 na začátku, o=3)
+        // 🔥 V10 GOLDEN FORMAT (haff hned za otazníkem)
         return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}&o=3`;
     };
 
@@ -99,31 +97,24 @@ export default function MobileStickyButton() {
     };
 
     const uiText = useMemo(() => {
-        if (isEn) {
-            const name = isHighEnd 
-                ? (funnelVariant === 'cpu' ? "RYZEN 7 9800X3D" : "RTX 5080")
-                : (funnelVariant === 'cpu' ? "RYZEN 5 9600" : "RTX 4060 TI");
-            return `🔥 ${name} DEALS – BEST PRICE ⚡`;
-        }
-        
         if (isHighEnd) {
+            if (isEn) return `🔥 ${funnelVariant === 'cpu' ? "RYZEN 7 9800X3D" : "RTX 5080"} DEALS ⚡`;
             return funnelVariant === 'cpu' 
                 ? `🔥 RYZEN 7 9800X3D SKLADEM ⚡` 
                 : `🔥 RTX 5080 – NEJLEVNĚJI ⚡`;
         }
 
+        if (isEn) return `🔥 ${funnelVariant === 'cpu' ? "RYZEN 5 9600" : "RTX 5070"} DEALS ⚡`;
         return funnelVariant === 'cpu' 
             ? `🔥 RYZEN 5 9600 SKLADEM ⚡` 
-            : `🔥 RTX 4060 TI OD 9 990 Kč ⚡`;
+            : `🔥 RTX 5070 OD 13 490 Kč ⚡`;
     }, [isEn, isHighEnd, funnelVariant]);
 
     if (!isVisible) return null;
 
     return (
         <div className="guru-mobile-sticky-wrapper">
-            <div className="guru-badge">
-                ✔ GURU DOPORUČUJE • SKLADEM
-            </div>
+            <div className="guru-badge">✔ GURU DOPORUČUJE • SKLADEM</div>
             
             <a 
                 href={getLink()}
