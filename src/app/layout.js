@@ -133,22 +133,7 @@ export default async function RootLayout({ children }) {
   return (
     <html lang={locale}>
       <head>
-        {/* 🔥 EZOIC PRIVACY SCRIPTS (MUSÍ BÝT PRVNÍ A NESMÍ MÍT AWAIT/ASYNC MODIFIKACE OD CLOUDFLARE) 🔥 */}
-        <script data-cfasync="false" src="https://cmp.gatekeeperconsent.com/min.js"></script>
-        <script data-cfasync="false" src="https://the.gatekeeperconsent.com/cmp.min.js"></script>
-
-        {/* 🔥 EZOIC HEADER SCRIPTS 🔥 */}
-        <script async src="//www.ezojs.com/ezoic/sa.min.js"></script>
-        <script dangerouslySetInnerHTML={{ 
-          __html: `
-            window.ezstandalone = window.ezstandalone || {};
-            ezstandalone.cmd = ezstandalone.cmd || [];
-          ` 
-        }} />
-        <script src="//ezoicanalytics.com/analytics.js"></script>
-
-        {/* ---------------------------------------------------- */}
-        
+        {/* Ezoic smazán - čisto! */}
         <Script src="https://ssp.seznam.cz/static/js/ssp.js" strategy="afterInteractive" />
         <Script src="https://serve.affiliate.heureka.cz/js/trixam.min.js" strategy="afterInteractive" />
         <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="afterInteractive" />
