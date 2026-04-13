@@ -7,6 +7,8 @@ import {
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText';
+// 🔥 PŘIDÁNO: Import inteligentní komponenty
+import GuruInContentOffer from '../../../components/GuruInContentOffer';
 
 export const runtime = "nodejs";
 export const revalidate = 3600; 
@@ -64,15 +66,14 @@ export default async function CpuComparePage({ params }) {
 
   const { cpuA, cpuB } = data;
 
-  // 🔥 OPRAVENÁ LOGIKA VÍTĚZE A VÝPOČTU PROCENT 🔥
   const winnerCpu = cpuA.performance_index >= cpuB.performance_index ? cpuA : cpuB;
   const loserCpu = cpuA.performance_index >= cpuB.performance_index ? cpuB : cpuA;
   const perfDiff = Math.round((winnerCpu.performance_index / loserCpu.performance_index - 1) * 100);
   const winnerBrand = normalizeName(winnerCpu.name).trim();
   
-  // 🔥 V10 HARD-LOCK LINK (NATIVNÍ HTML, HAFF ID PRO VÍTĚZE) 🔥
+  // 🔥 V10 GOLDEN LINK FORMAT (Fix Heureka & Amazon) 🔥
   const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(winnerCpu.name)}&tag=${AMAZON_TAG}&ascsubtag=cpuvs-compare`;
-  const heurekaLink = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(winnerCpu.name + ' cena')}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-vs-slug`;
+  const heurekaLink = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(winnerCpu.name + ' procesor')}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-vs-slug&o=3`;
 
   const finalAffiliateLink = isEn ? amazonLink : heurekaLink;
   const ctaText = isEn 
@@ -119,6 +120,17 @@ export default async function CpuComparePage({ params }) {
             </div>
         </div>
 
+        {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (V12) 🔥 */}
+        <div style={{ margin: '40px 0' }}>
+            <GuruInContentOffer 
+                productName={winnerCpu.name} 
+                category="cpu" 
+                reason="winner"
+                isEn={isEn}
+                subId={`cpuvs-winner-badge-${winnerBrand}`}
+            />
+        </div>
+
         <div style={{ marginBottom: '40px', background: 'rgba(0,0,0,0.4)', padding: '35px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center' }}>
             <div style={{ marginBottom: '10px', fontWeight: '950', color: '#10b981', textTransform: 'uppercase', fontSize: '18px' }}>
               🏆 {isEn ? 'Winner' : 'Vítěz'}: {winnerBrand} (+{perfDiff}% {isEn ? 'Perf' : 'výkon'})
@@ -133,10 +145,9 @@ export default async function CpuComparePage({ params }) {
             </a>
         </div>
 
-        {/* 🔥 GURU TOOLS - TLAČÍTKA NA KALKULAČKY 🔥 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '40px' }}>
-            <a href="/fps-kalkulacka" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '20px', borderRadius: '15px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)' }}><Gamepad2 size={24} /> FPS KALKULAČKA</a>
-            <a href="/bottleneck-kalkulacka" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '20px', borderRadius: '15px', textDecoration: 'none', fontWeight: '950', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' }}><Activity size={24} /> BOTTLENECK TEST</a>
+            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '20px', borderRadius: '15px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)' }}><Gamepad2 size={24} /> {isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</a>
+            <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '20px', borderRadius: '15px', textDecoration: 'none', fontWeight: '950', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' }}><Activity size={24} /> {isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</a>
         </div>
 
         <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
