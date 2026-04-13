@@ -7,6 +7,8 @@ import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons'; 
 import ShareFpsButton from '../../components/ShareFpsButton';
+// 🔥 PŘIDÁNO: Import inteligentní komponenty
+import GuruInContentOffer from '../../components/GuruInContentOffer';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -155,28 +157,35 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
             </div>
 
             {result && !isCalculating && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', marginTop: '20px', width: '100%', boxSizing: 'border-box' }}>
-                    <ShareFpsButton 
-                        gameName={selectedGame?.name}
-                        cpu={selectedCpu?.name} 
-                        gpu={selectedGpu?.name} 
-                        resolution={selectedRes} 
-                        avgFps={result.fps}
-                        isEn={isEn} 
-                    />
-                    <a 
-                        href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} 
-                        className="bottleneck-cta-btn hover-scale"
-                    >
-                        <AlertTriangle size={20} /> {isEn ? 'TEST PC BOTTLENECK' : 'ZJISTIT BOTTLENECK SESTAVY'}
-                    </a>
-                </div>
-            )}
-
-            {result && !isCalculating && (
                 <div className="result-area" style={{ marginTop: '40px', textAlign: 'center', animation: 'fadeIn 0.7s ease-out' }}>
                     <div style={{ fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px' }}>{isEn ? 'EXPECTED PERFORMANCE' : 'OČEKÁVANÝ VÝKON'}</div>
                     <div className="fps-value" style={{ fontSize: '6rem', fontWeight: '950', color: '#fff', textShadow: '0 0 40px rgba(168, 85, 247, 0.4)', margin: '15px 0' }}>{result.fps} FPS</div>
+
+                    {/* 🔥 AGRESIVNÍ INTELIGENTNÍ NABÍDKA 🔥 */}
+                    <GuruInContentOffer 
+                        productName={selectedGpu?.name} 
+                        category="gpu" 
+                        isEn={isEn} 
+                        reason="upgrade"
+                        subId={`fps-calc-result-${selectedRes}`}
+                    />
+
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', marginTop: '20px', width: '100%', boxSizing: 'border-box' }}>
+                        <ShareFpsButton 
+                            gameName={selectedGame?.name}
+                            cpu={selectedCpu?.name} 
+                            gpu={selectedGpu?.name} 
+                            resolution={selectedRes} 
+                            avgFps={result.fps}
+                            isEn={isEn} 
+                        />
+                        <a 
+                            href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} 
+                            className="bottleneck-cta-btn hover-scale"
+                        >
+                            <AlertTriangle size={20} /> {isEn ? 'TEST PC BOTTLENECK' : 'ZJISTIT BOTTLENECK SESTAVY'}
+                        </a>
+                    </div>
 
                     {isEn ? (
                         <div className="affiliate-cta-grid">
