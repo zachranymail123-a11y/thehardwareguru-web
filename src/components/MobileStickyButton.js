@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
@@ -10,22 +10,22 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export default function MobileStickyButton() {
     const pathname = usePathname() || '';
     const [isVisible, setIsVisible] = useState(false);
-    const [funnelVariant, setFunnelVariant] = useState('gpu');
+    const [activeType, setActiveType] = useState('gpu'); // Střídá 'gpu' a 'cpu'
     const handleScrollRef = useRef(null);
 
     const isEn = pathname.startsWith('/en');
     const platform = isEn ? 'amazon' : 'heureka';
 
+    // 🔥 LOGIKA STŘÍDÁNÍ (každých 5 sekund)
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setActiveType(prev => prev === 'gpu' ? 'cpu' : 'gpu');
+        }, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
     useEffect(() => {
         if (typeof window === 'undefined') return;
-
-        let variant = localStorage.getItem('sticky_funnel_variant');
-        if (!variant) {
-            variant = Math.random() < 0.7 ? 'gpu' : 'cpu';
-            localStorage.setItem('sticky_funnel_variant', variant);
-        }
-        setFunnelVariant(variant);
-
         handleScrollRef.current = () => {
             window.requestAnimationFrame(() => {
                 if (window.scrollY > 450) {
@@ -34,7 +34,6 @@ export default function MobileStickyButton() {
                 }
             });
         };
-
         window.addEventListener('scroll', handleScrollRef.current, { passive: true });
         return () => {
             if (handleScrollRef.current) window.removeEventListener('scroll', handleScrollRef.current);
@@ -42,79 +41,71 @@ export default function MobileStickyButton() {
     }, []);
 
     const getLink = () => {
-        const subId = `v14-sticky-3d-${platform}-${funnelVariant}`;
-        const productName = funnelVariant === 'cpu' ? "Ryzen 7 9800X3D" : "RTX 5080";
-
+        const subId = `v15-sticky-rotate-${platform}-${activeType}`;
+        const productName = activeType === 'cpu' ? "Ryzen 7 9800X3D" : "RTX 5080";
         let queryStr = productName;
-        if (platform === 'heureka') {
-            queryStr += funnelVariant === 'cpu' ? " procesor" : " grafická karta";
-        }
 
+        if (platform === 'heureka') {
+            queryStr += activeType === 'cpu' ? " procesor" : " grafická karta";
+        }
         const safeQuery = queryStr.trim().replace(/\s+/g, '+');
 
         if (platform === 'amazon') {
             return `https://www.amazon.com/s?k=${safeQuery}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
         }
-
         return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}&o=3`;
     };
 
     const handleLogClick = () => {
-        const payload = { platform, category: `sticky_3d_${funnelVariant}`, sub_id: `v14-sticky-3d`, page: pathname };
+        const payload = { platform, category: `rotate_${activeType}`, sub_id: `v15-rotate`, page: pathname };
         if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
             navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
         }
     };
 
-    const uiText = useMemo(() => {
-        if (isEn) {
-            const name = funnelVariant === 'cpu' ? "RYZEN 7 9800X3D" : "RTX 5080";
-            return `🔥 ${name} – CHECK BEST PRICE TODAY ⚡`;
+    // Obsah pro jednotlivé fáze rotace
+    const content = {
+        gpu: {
+            text: isEn ? "🔥 RTX 5080 – CHECK BEST PRICE ⚡" : "🔥 RTX 5080 – DNES NEJLEVNĚJI ⚡",
+            color: "#76b900"
+        },
+        cpu: {
+            text: isEn ? "🔥 RYZEN 7 9800X3D – DEALS ⚡" : "🔥 RYZEN 7 9800X3D – SKLADEM ⚡",
+            color: "#ed1c24"
         }
-        return funnelVariant === 'cpu' 
-            ? `🔥 RYZEN 7 9800X3D – OVĚŘIT CENU ⚡` 
-            : `🔥 RTX 5080 – DNES NEJLEVNĚJI ⚡`;
-    }, [isEn, funnelVariant]);
-
-    // 🔥 CSS Modely pro Mistrovské dílo
-    const GpuModel = () => (
-        <div className="scene gpu-scene">
-            <div className="cube gpu-cube">
-                <div className="face front">GeForce</div>
-                <div className="face back">RTX</div>
-                <div className="face right">5080</div>
-                <div className="face left">GURU</div>
-                <div className="face top">FANS</div>
-                <div className="face bottom">PCB</div>
-            </div>
-        </div>
-    );
-
-    const CpuModel = () => (
-        <div className="scene cpu-scene">
-            <div className="cube cpu-cube">
-                <div className="face front">RYZEN</div>
-                <div className="face back">9800X3D</div>
-                <div className="face right">AMD</div>
-                <div className="face left">ZEN 5</div>
-                <div className="face top">IHS</div>
-                <div className="face bottom">PINS</div>
-            </div>
-        </div>
-    );
+    };
 
     if (!isVisible) return null;
 
     return (
-        <div className="guru-mobile-sticky-wrapper v14-masterpiece">
-            <div className="guru-badge">✔ GURU PREMIUM DOPORUČENÍ • SKLADEM</div>
+        <div className="guru-mobile-sticky-wrapper">
+            <div className="guru-badge">✔ GURU PREMIUM DOPORUČUJE</div>
             
-            <a href={getLink()} target="_blank" rel="nofollow sponsored" onClick={handleLogClick} className="guru-mobile-sticky-btn">
-                {/* 🔥 Rotující 3D Model */}
+            <a href={getLink()} target="_blank" rel="nofollow sponsored" onClick={handleLogClick} className={`guru-mobile-sticky-btn phase-${activeType}`}>
                 <div className="guru-3d-icon">
-                    {funnelVariant === 'cpu' ? <CpuModel /> : <GpuModel />}
+                    <div className={`scene ${activeType}-active`}>
+                        <div className={`cube ${activeType}-cube`}>
+                            {activeType === 'gpu' ? (
+                                <>
+                                    <div className="face front">GeForce</div>
+                                    <div className="face back">RTX</div>
+                                    <div className="face right">5080</div>
+                                    <div className="face left">GURU</div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="face front">RYZEN</div>
+                                    <div className="face back">9800X3D</div>
+                                    <div className="face right">AMD</div>
+                                    <div className="face left">ZEN 5</div>
+                                </>
+                            )}
+                            <div className="face top">CORE</div>
+                            <div className="face bottom">HW</div>
+                        </div>
+                    </div>
                 </div>
-                <span className="guru-btn-text">{uiText}</span>
+                <span className="guru-btn-text">{content[activeType].text}</span>
             </a>
 
             <style dangerouslySetInnerHTML={{__html: `
@@ -131,20 +122,24 @@ export default function MobileStickyButton() {
                 }
                 .guru-mobile-sticky-btn {
                     pointer-events: auto; width: 100%; display: flex; align-items: center; justify-content: flex-start; gap: 15px;
-                    background: #000; border: 2px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 20px;
+                    background: #000; border: 2px solid rgba(147, 51, 234, 0.3); color: #fff; padding: 15px; border-radius: 20px;
                     font-weight: 950; text-transform: uppercase; box-shadow: 0 12px 30px rgba(0,0,0,0.6);
                     cursor: pointer; -webkit-tap-highlight-color: transparent; text-decoration: none;
+                    transition: all 0.5s ease;
                 }
-                .guru-btn-text { font-size: 13px; letter-spacing: -0.3px; text-align: left; flex: 1; }
+                .phase-gpu { border-color: #76b900; }
+                .phase-cpu { border-color: #ed1c24; }
+                
+                .guru-btn-text { font-size: 13px; letter-spacing: -0.3px; text-align: left; flex: 1; transition: opacity 0.3s; }
                 .guru-mobile-sticky-btn:active { transform: scale(0.96); }
 
-                /* 🔥 3D ENGINE (Pure CSS) */
+                /* 3D ENGINE */
                 .guru-3d-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
-                .scene { width: 30px; height: 30px; perspective: 600px; }
+                .scene { width: 30px; height: 30px; perspective: 600px; transition: transform 0.5s; }
                 .cube {
                     width: 100%; height: 100%; position: relative;
                     transform-style: preserve-3d;
-                    animation: rotateCube 8s infinite linear;
+                    animation: rotateCube 6s infinite linear;
                 }
                 @keyframes rotateCube {
                     0% { transform: rotateX(0deg) rotateY(0deg); }
@@ -152,9 +147,9 @@ export default function MobileStickyButton() {
                 }
                 .face {
                     position: absolute; width: 30px; height: 30px;
-                    border: 1px solid rgba(255,255,255,0.2);
+                    border: 1px solid rgba(255,255,255,0.3);
                     display: flex; align-items: center; justify-content: center;
-                    font-size: 5px; font-weight: 900; color: white; text-transform: uppercase;
+                    font-size: 5px; font-weight: 900; text-transform: uppercase;
                 }
                 .face.front  { transform: rotateY(0deg) translateZ(15px); }
                 .face.back   { transform: rotateY(180deg) translateZ(15px); }
@@ -163,10 +158,8 @@ export default function MobileStickyButton() {
                 .face.top    { transform: rotateX(90deg) translateZ(15px); }
                 .face.bottom { transform: rotateX(-90deg) translateZ(15px); }
 
-                /* GPU Specifics */
-                .gpu-cube .face { background: rgba(118, 185, 0, 0.2); border-color: rgba(118, 185, 0, 0.5); color: #76b900; }
-                /* CPU Specifics */
-                .cpu-cube .face { background: rgba(237, 28, 36, 0.15); border-color: rgba(237, 28, 36, 0.4); color: #ed1c24; }
+                .gpu-cube .face { background: rgba(118, 185, 0, 0.3); color: #fff; border-color: #76b900; }
+                .cpu-cube .face { background: rgba(237, 28, 36, 0.3); color: #fff; border-color: #ed1c24; }
             `}} />
         </div>
     );
