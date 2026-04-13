@@ -2,15 +2,17 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { usePathname } from 'next/navigation'; // 🔥 FIX: Import pro tracking
+import { usePathname } from 'next/navigation';
 import { 
  Cpu, Monitor, Zap, AlertTriangle, Crosshair, Settings2, Sparkles, 
- TrendingUp, TrendingDown, Layers, Target, Video, Share2, Check, 
+ Layers, Target, Video, Share2, Check, 
  Twitter, Award, Swords, Gamepad2, ChevronRight, Play, Newspaper, Lightbulb, ShoppingCart, Activity
 } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons'; 
 import ShareResultButton from '../../components/ShareResultButton';
+// 🔥 PŘIDÁNO: Import inteligentní komponenty
+import GuruInContentOffer from '../../components/GuruInContentOffer';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -153,28 +155,23 @@ export default function BottleneckClient({
         window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(titleEn)}`, '_blank');
     };
 
-    const gta6DynamicLink = analysis 
-        ? `/${isEn ? 'en/fps-calculator/gta-6-prediction' : 'fps-kalkulacka/gta-6-predikce'}/${String(analysis.cpuName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-vs-${String(analysis.gpuName || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${resolution}?cpuId=${selectedCpuId}&gpuId=${selectedGpuId}` 
-        : null;
-
     const a = analysis || {};
     const statusColor = (a.bottleneckPercent || 0) < 15 ? '#10b981' : ((a.bottleneckPercent || 0) < 30 ? '#f59e0b' : '#ef4444');
 
-    const cleanCpuName = a.cpuName ? normalizeName(a.cpuName) : '';
-    const cleanGpuName = a.gpuName ? normalizeName(a.gpuName) : '';
-
-    // 🔥 V10 HARD-LOCK REDIRECT LOGIC 🔥
+    // 🔥 V10 HARD-LOCK REDIRECT LOGIC S OPRAVENÝM FORMÁTEM 🔥
     const handleAffiliateClick = (e, name, type) => {
         e.preventDefault();
-        const cleanName = normalizeName(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '+');
+        const cleanName = normalizeName(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
         
         if (isEn) {
-            window.location.href = `https://www.amazon.com/s?k=${cleanName}&tag=thehardware07-20`;
+            window.location.href = `https://www.amazon.com/s?k=${encodeURIComponent(cleanName)}&tag=thehardware07-20`;
             return;
         }
 
         const subId = `v10-bn-${type}`;
-        const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${cleanName}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+        // 🔥 V10 Golden Formát: haff hned na začátku, doména www, param o=3, přidání kategorie pro Heureku
+        const querySuffix = type === 'cpu' ? ' procesor' : ' grafická karta';
+        const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(cleanName + querySuffix)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}&o=3`;
         
         if (navigator.sendBeacon) {
             const payload = { platform: 'heureka', category: `bn_${type}`, sub_id: subId, page: pathname };
@@ -182,8 +179,6 @@ export default function BottleneckClient({
         }
         setTimeout(() => { window.location.href = targetUrl; }, 150);
     };
-
-    const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
 
     return (
         <div className="bn-wrapper">
@@ -266,8 +261,17 @@ export default function BottleneckClient({
                             </div>
                             <div className="percentage-display">
                                 <div className="pct-value" style={{ fontSize: '8rem', fontWeight: '950', textAlign: 'center', color: statusColor, textShadow: `0 0 60px ${statusColor}80` }}>{a.bottleneckPercent}%</div>
-                                <div className="pct-label" style={{ textAlign: 'center', color: statusColor, fontWeight: '900', textTransform: 'uppercase' }}>{a.limitedBy} {isEn ? 'bottlenecks you by' : 'tě brzdí o'} {a.bottleneckPercent}%</div>
+                                <div className="pct-label" style={{ textAlign: 'center', color: statusColor, fontWeight: '900', textTransform: 'uppercase', marginBottom: '20px' }}>{a.limitedBy} {isEn ? 'bottlenecks you by' : 'tě brzdí o'} {a.bottleneckPercent}%</div>
                             </div>
+
+                            {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (V12) 🔥 */}
+                            <GuruInContentOffer 
+                                productName={a.limitedBy === 'CPU' ? "AMD Ryzen 7 9800X3D" : "NVIDIA GeForce RTX 5080"} 
+                                category={a.limitedBy === 'CPU' ? "cpu" : "gpu"} 
+                                isEn={isEn} 
+                                reason="fix"
+                                subId={`bn-calc-fix-${a.bottleneckPercent}`}
+                            />
 
                             <div className="ad-mobile-wrapper" style={{ margin: '30px -20px', display: 'flex', justifyContent: 'center' }}>
                                 <SeznamAd zoneId={408651} width={300} height={250} />
@@ -297,7 +301,6 @@ export default function BottleneckClient({
                 </div>
             </div>
 
-            {/* 🔥 GURU TOOLS - PŘEPÍNACÍ TLAČÍTKA 🔥 */}
             <div className="guru-tools-nav" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '40px' }}>
                 <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ background: 'rgba(6, 182, 212, 0.1)', border: '1px solid #06b6d4', padding: '20px', borderRadius: '15px', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
                     <Gamepad2 size={24} color="#06b6d4" />
@@ -319,7 +322,6 @@ export default function BottleneckClient({
                     <div style={{ display: 'flex', gap: '12px' }}>
                         <button onClick={handleCopyShare} className="premium-share-btn btn-copy" style={{ width: '60px', height: '60px', borderRadius: '18px', border: 'none', cursor: 'pointer', background: '#a855f7', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{copied ? <Check size={20} /> : <Share2 size={20} />}</button>
                         <button onClick={handleXShare} className="premium-share-btn btn-x" style={{ width: '60px', height: '60px', borderRadius: '18px', border: '1px solid #333', cursor: 'pointer', background: '#000', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Twitter size={20} /></button>
-                        <button onClick={handleRedditShare} className="premium-share-btn btn-reddit" style={{ width: '60px', height: '60px', borderRadius: '18px', border: 'none', cursor: 'pointer', background: '#ff4500', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RedditIcon size={20} /></button>
                     </div>
                 </div>
 
@@ -336,7 +338,6 @@ export default function BottleneckClient({
                         <ul className="hub-links-list" style={{ listStyle: 'none', padding: 0 }}>
                             <li style={{ marginBottom: '18px' }}><a href={isEn ? "/en/ocekavane-hry" : "/ocekavane-hry"} style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '16px', fontWeight: 'bold' }}><ChevronRight size={16} /> {isEn ? 'Game Archive' : 'Archiv her'}</a></li>
                             <li style={{ marginBottom: '18px' }}><a href={isEn ? "/en/clanky" : "/clanky"} style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '16px', fontWeight: 'bold' }}><ChevronRight size={16} /> {isEn ? 'News & Articles' : 'Články a Novinky'}</a></li>
-                            <li style={{ marginBottom: '18px' }}><a href={isEn ? "/en/tipy" : "/tipy"} style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '16px', fontWeight: 'bold' }}><ChevronRight size={16} /> {isEn ? 'GURU Tips' : 'GURU Tipy'}</a></li>
                         </ul>
                     </div>
                 </div>
@@ -361,7 +362,12 @@ export default function BottleneckClient({
                 .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
                 .toggle-row { display: flex; align-items: center; gap: 15px; cursor: pointer; background: #000; padding: 18px; border-radius: 15px; font-size: 13px; font-weight: 950; border: 1px solid #222; }
                 .bn-result-card { background: linear-gradient(145deg, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0.6) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 30px; padding: 50px; display: flex; align-items: center; justify-content: center; min-height: 600px; }
-                @media (max-width: 1000px) { .bn-grid { grid-template-columns: 1fr; } .bn-wrapper { padding: 30px; } }
+                @media (max-width: 1000px) { 
+                    .bn-grid { grid-template-columns: 1fr; gap: 40px; } 
+                    .bn-wrapper { padding: 30px; } 
+                    .pct-value { font-size: 5rem !important; }
+                    .affiliate-cta-grid { grid-template-columns: 1fr !important; }
+                }
             `}} />
         </div>
     );
