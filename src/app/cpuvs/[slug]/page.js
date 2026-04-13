@@ -7,7 +7,6 @@ import {
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 import GuruCpuCompareText from '../../../components/GuruCpuCompareText';
-// 🔥 PŘIDÁNO: Import inteligentní komponenty
 import GuruInContentOffer from '../../../components/GuruInContentOffer';
 
 export const runtime = "nodejs";
@@ -71,11 +70,17 @@ export default async function CpuComparePage({ params }) {
   const perfDiff = Math.round((winnerCpu.performance_index / loserCpu.performance_index - 1) * 100);
   const winnerBrand = normalizeName(winnerCpu.name).trim();
   
-  // 🔥 V10 GOLDEN LINK FORMAT (Fix Heureka & Amazon) 🔥
-  const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(winnerCpu.name)}&tag=${AMAZON_TAG}&ascsubtag=cpuvs-compare`;
-  const heurekaLink = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(winnerCpu.name + ' procesor')}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-vs-slug&o=3`;
+  // 🔥 INTELIGENTNÍ DOPORUČENÍ - VŽDY SILNĚJŠÍ CESTA 🔥
+  const isWinnerUltimate = winnerCpu.name.includes('9800X3D') || winnerCpu.name.includes('9950X');
+  const upgradeProduct = isWinnerUltimate ? "ASUS ROG CROSSHAIR X870E" : "AMD Ryzen 7 9800X3D";
+  const upgradeCategory = isWinnerUltimate ? "mb" : "cpu";
 
-  const finalAffiliateLink = isEn ? amazonLink : heurekaLink;
+  // 🔥 AFFILIATE LINKY PRO EXISTUJÍCÍ TLAČÍTKA (V10 GOLDEN) 🔥
+  const getHeurekaUrl = (name) => `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(name + ' procesor')}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=cpuvs-direct&o=3`;
+  const getAmazonUrl = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=${AMAZON_TAG}&ascsubtag=cpuvs-direct`;
+
+  const finalWinnerLink = isEn ? getAmazonUrl(winnerCpu.name) : getHeurekaUrl(winnerCpu.name);
+  
   const ctaText = isEn 
     ? (perfDiff > 20 ? `🔥 Upgrade to ${winnerBrand} (+${perfDiff}%)` : `🔥 Best price for ${winnerBrand}`)
     : (perfDiff > 20 ? `🔥 Upgrade na ${winnerBrand} (+${perfDiff}%)` : `🔥 Výhodná koupě ${winnerBrand}`);
@@ -84,18 +89,6 @@ export default async function CpuComparePage({ params }) {
     <div className="guru-upgrade-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
       
       {!isEn && <Script async src="//serve.affiliate.heureka.cz/js/trixam.min.js" strategy="afterInteractive" />}
-
-      <div className="mobile-anchor-trap" style={{ position: 'fixed', bottom: '100px', right: '15px', zIndex: 9999 }}>
-        <a 
-          href={finalAffiliateLink} 
-          target="_blank" 
-          rel="nofollow sponsored noopener noreferrer" 
-          className="pulse-button"
-          style={{ background: '#0078d4', color: '#fff', padding: '12px 20px', borderRadius: '14px', fontSize: '13px', fontWeight: '900', textDecoration: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.2)' }}
-        >
-          <ShoppingCart size={18} /> {isEn ? 'PRICE' : 'CENA'} {winnerBrand}
-        </a>
-      </div>
 
       <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <div style={{ marginBottom: '30px' }}>
@@ -113,30 +106,32 @@ export default async function CpuComparePage({ params }) {
         <div className="guru-grid-ring" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center', marginBottom: '40px' }}>
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid ${winnerCpu.id === cpuA.id ? '#10b981' : '#4b5563'}`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', boxShadow: winnerCpu.id === cpuA.id ? '0 0 30px rgba(16, 185, 129, 0.2)' : 'none' }}>
                 <h2 style={{ fontSize: 'clamp(1.2rem, 3vw, 2rem)', fontWeight: '950', margin: 0 }}>{normalizeName(cpuA.name)}</h2>
+                <a href={isEn ? getAmazonUrl(cpuA.name) : getHeurekaUrl(cpuA.name)} target="_blank" rel="nofollow sponsored" style={{ display: 'inline-block', marginTop: '15px', color: '#9ca3af', fontSize: '12px', textDecoration: 'underline' }}>{isEn ? 'Check price' : 'Zjistit cenu'}</a>
             </div>
             <div style={{ background: '#f59e0b', color: '#000', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900' }}>VS</div>
             <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderTop: `5px solid ${winnerCpu.id === cpuB.id ? '#10b981' : '#4b5563'}`, borderRadius: '24px', padding: '40px 20px', textAlign: 'center', boxShadow: winnerCpu.id === cpuB.id ? '0 0 30px rgba(16, 185, 129, 0.2)' : 'none' }}>
                 <h2 style={{ fontSize: 'clamp(1.2rem, 3vw, 2rem)', fontWeight: '950', margin: 0 }}>{normalizeName(cpuB.name)}</h2>
+                <a href={isEn ? getAmazonUrl(cpuB.name) : getHeurekaUrl(cpuB.name)} target="_blank" rel="nofollow sponsored" style={{ display: 'inline-block', marginTop: '15px', color: '#9ca3af', fontSize: '12px', textDecoration: 'underline' }}>{isEn ? 'Check price' : 'Zjistit cenu'}</a>
             </div>
         </div>
 
-        {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (V12) 🔥 */}
+        {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (V12) - NABÍZÍ SILNĚJŠÍ HW NEŽ JE V TESTU 🔥 */}
         <div style={{ margin: '40px 0' }}>
             <GuruInContentOffer 
-                productName={winnerCpu.name} 
-                category="cpu" 
-                reason="winner"
+                productName={upgradeProduct} 
+                category={upgradeCategory} 
+                reason="upgrade"
                 isEn={isEn}
-                subId={`cpuvs-winner-badge-${winnerBrand}`}
+                subId={`cpuvs-smart-path-${winnerBrand}`}
             />
         </div>
 
         <div style={{ marginBottom: '40px', background: 'rgba(0,0,0,0.4)', padding: '35px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center' }}>
             <div style={{ marginBottom: '10px', fontWeight: '950', color: '#10b981', textTransform: 'uppercase', fontSize: '18px' }}>
-              🏆 {isEn ? 'Winner' : 'Vítěz'}: {winnerBrand} (+{perfDiff}% {isEn ? 'Perf' : 'výkon'})
+              🏆 {isEn ? 'Best Value Performance' : 'Vítěz srovnání'}: {winnerBrand}
             </div>
             <a 
-              href={finalAffiliateLink} 
+              href={finalWinnerLink} 
               target="_blank" 
               rel="nofollow sponsored noopener noreferrer" 
               style={{ background: isEn ? '#f59e0b' : 'linear-gradient(135deg, #3b82f6 0%, #0078d4 100%)', color: isEn ? '#000' : '#fff', padding: '18px 30px', borderRadius: '16px', fontWeight: '950', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '10px', marginTop: '20px' }}
@@ -151,7 +146,7 @@ export default async function CpuComparePage({ params }) {
         </div>
 
         <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <GuruCpuCompareText cpu1Name={normalizeName(cpuA.name)} cpu2Name={normalizeName(cpuB.name)} perfDiff={Math.round((cpuB.performance_index / cpuA.performance_index - 1) * 100)} cpu1Cores={cpuA.cores} cpu2Cores={cpuB.cores} isEn={isEn} />
+            <GuruCpuCompareText cpu1Name={normalizeName(cpuA.name)} cpu2Name={normalizeName(cpuB.name)} perfDiff={perfDiff} cpu1Cores={cpuA.cores} cpu2Cores={cpuB.cores} isEn={isEn} />
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}><HeurekaButtons isEn={isEn} /></div>
@@ -160,14 +155,6 @@ export default async function CpuComparePage({ params }) {
       <div className="sticky-bottom-anchor" style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: 'rgba(10, 11, 13, 0.98)', borderTop: '1px solid rgba(255, 255, 255, 0.1)', zIndex: 9999, padding: '10px 0', display: 'flex', justifyContent: 'center' }}>
             <SeznamAd zoneId={408654} width={970} height={90} />
       </div>
-
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes pulse-cta { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-        .pulse-button { animation: pulse-cta 2s infinite; }
-        @media (max-width: 768px) {
-            .guru-grid-ring { grid-template-columns: 1fr !important; }
-        }
-      `}} />
     </div>
   );
 }
