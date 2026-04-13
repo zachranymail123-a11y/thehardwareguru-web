@@ -8,9 +8,6 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// 🔥 TOTÁLNÍ ELIMINACE MAINSRTEAMU PRO KALKULAČKY A HIGH-END ČLÁNKY
-const HIGH_END_REGEX = /5090|5080|4090|ultra|high-end|9950x|9900x|9800x3d|bottleneck|kalkulacka/i;
-
 export default function MobileStickyButton() {
     const pathname = usePathname() || '';
     const [isVisible, setIsVisible] = useState(false);
@@ -18,16 +15,7 @@ export default function MobileStickyButton() {
     const handleScrollRef = useRef(null);
 
     const isEn = pathname.startsWith('/en');
-    const isHighEnd = HIGH_END_REGEX.test(pathname.toLowerCase());
     const platform = isEn ? 'amazon' : 'heureka';
-
-    const intent = useMemo(() => {
-        const lower = pathname.toLowerCase();
-        if (lower.includes('bottleneck')) return 'calc';
-        if (lower.includes('gpu')) return 'gpu';
-        if (lower.includes('cpu')) return 'cpu';
-        return 'generic';
-    }, [pathname]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -55,15 +43,10 @@ export default function MobileStickyButton() {
     }, []);
 
     const getLink = () => {
-        const subId = `v10-sticky-${platform}-${funnelVariant}-${intent}`;
+        const subId = `v10-sticky-${platform}-${funnelVariant}`;
         
-        // 🔥 ŽÁDNÉ SCHOVÁVÁNÍ: NATVRDO HIGH-END PRO RELEVANTNÍ STRÁNKY
-        let productName = "";
-        if (isHighEnd) {
-            productName = funnelVariant === 'cpu' ? "Ryzen 7 9800X3D" : "RTX 5080";
-        } else {
-            productName = funnelVariant === 'cpu' ? "Ryzen 5 9600" : "RTX 5070";
-        }
+        // 🔥 NATVRDO DEFINOVANÉ TOP PRODUKTY - ŽÁDNÝ FALLBACK NA 5070
+        const productName = funnelVariant === 'cpu' ? "Ryzen 7 9800X3D" : "RTX 5080";
 
         let queryStr = productName;
         if (platform === 'heureka') {
@@ -76,7 +59,7 @@ export default function MobileStickyButton() {
             return `https://www.amazon.com/s?k=${safeQuery}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
         }
 
-        // 🔥 V10 GOLDEN FORMAT (haff hned za otazníkem)
+        // 🔥 V10 GOLDEN FORMAT (haff na začátku, o=3 pro nejlepší prodejní karty)
         return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}&o=3`;
     };
 
@@ -97,24 +80,23 @@ export default function MobileStickyButton() {
     };
 
     const uiText = useMemo(() => {
-        if (isHighEnd) {
-            if (isEn) return `🔥 ${funnelVariant === 'cpu' ? "RYZEN 7 9800X3D" : "RTX 5080"} DEALS ⚡`;
-            return funnelVariant === 'cpu' 
-                ? `🔥 RYZEN 7 9800X3D SKLADEM ⚡` 
-                : `🔥 RTX 5080 – NEJLEVNĚJI ⚡`;
+        if (isEn) {
+            const name = funnelVariant === 'cpu' ? "RYZEN 7 9800X3D" : "RTX 5080";
+            return `🔥 ${name} DEALS – BEST PRICE ⚡`;
         }
-
-        if (isEn) return `🔥 ${funnelVariant === 'cpu' ? "RYZEN 5 9600" : "RTX 5070"} DEALS ⚡`;
+        
         return funnelVariant === 'cpu' 
-            ? `🔥 RYZEN 5 9600 SKLADEM ⚡` 
-            : `🔥 RTX 5070 OD 13 490 Kč ⚡`;
-    }, [isEn, isHighEnd, funnelVariant]);
+            ? `🔥 RYZEN 7 9800X3D SKLADEM ⚡` 
+            : `🔥 RTX 5080 – NEJLEVNĚJI ⚡`;
+    }, [isEn, funnelVariant]);
 
     if (!isVisible) return null;
 
     return (
         <div className="guru-mobile-sticky-wrapper">
-            <div className="guru-badge">✔ GURU DOPORUČUJE • SKLADEM</div>
+            <div className="guru-badge">
+                ✔ GURU DOPORUČUJE • SKLADEM
+            </div>
             
             <a 
                 href={getLink()}
