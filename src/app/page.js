@@ -1,6 +1,6 @@
 import React from 'react';
 import Script from 'next/script';
-import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, MessageSquare, Award, Bell, Bookmark, Share2, Clock, Compass, Shuffle, Link2 } from 'lucide-react';
+import { Lightbulb, ChevronRight, Activity, Heart, ShieldCheck, Trophy, Rocket, Play, Flame, ShoppingCart, Ghost, Swords, Cpu, Gamepad2, Layers, MessageSquare, Award, Bell, Bookmark, Share2, Clock, Compass, Shuffle, Link2, Zap } from 'lucide-react';
 import HeurekaButtons from '../components/HeurekaButtons';
 
 /**
@@ -299,6 +299,10 @@ export default async function HomePage({ params, isEn: isEnProp }) {
         .social-btn-main.support { background: rgba(234, 179, 8, 0.1); color: #eab308; border-color: rgba(234, 179, 8, 0.3); }
         .social-btn-main.support:hover { background: #eab308; color: #000; box-shadow: 0 10px 25px rgba(234, 179, 8, 0.4); transform: translateY(-3px); }
 
+        /* 🔥 PŘIDÁNO PRO PSU KALKULAČKU 🔥 */
+        .social-btn-main.psucalc { background: rgba(250, 204, 21, 0.1); color: #facc15; border-color: rgba(250, 204, 21, 0.3); }
+        .social-btn-main.psucalc:hover { background: #facc15; color: #000; box-shadow: 0 10px 25px rgba(250, 204, 21, 0.4); transform: translateY(-3px); }
+
         .deal-hp-card { display: flex; align-items: center; gap: 20px; background: linear-gradient(145deg, rgba(15, 17, 21, 0.95) 0%, rgba(249, 115, 22, 0.05) 100%); padding: 20px; border-radius: 24px; border: 1px solid rgba(249, 115, 22, 0.2); transition: 0.4s; text-decoration: none; overflow: hidden; position: relative; }
         .deal-hp-card:hover { transform: translateY(-5px); border-color: #f97316; box-shadow: 0 15px 35px rgba(249, 115, 22, 0.25); }
 
@@ -396,6 +400,11 @@ export default async function HomePage({ params, isEn: isEnProp }) {
 
               <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} className="social-btn-main bottleneck">
                 <Layers size={18}/> {isEn ? 'BOTTLENECK' : 'BOTTLENECK'}
+              </a>
+
+              {/* 🔥 PŘIDÁNO: TLAČÍTKO PRO PSU KALKULAČKU 🔥 */}
+              <a href={isEn ? "/en/psu-calculator" : "/psu-kalkulacka"} className="social-btn-main psucalc">
+                <Zap size={18}/> {isEn ? 'PSU CALCULATOR' : 'PSU KALKULAČKA'}
               </a>
 
               <a href={isEn ? "/en/poradna" : "/poradna"} className="social-btn-main poradna">
