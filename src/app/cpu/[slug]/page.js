@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useState, use } from 'react';
+import React, { useEffect, useState } from 'react';
 import Script from 'next/script'; 
-import { notFound, usePathname } from 'next/navigation';
+import { notFound, useParams, usePathname } from 'next/navigation';
 import { 
  ChevronLeft, Cpu, Database, Gamepad2, ArrowRight, ExternalLink, 
  Activity, CheckCircle2, Swords, LayoutList, ShoppingCart, Flame, Heart, Zap, AlertTriangle
@@ -10,10 +10,12 @@ import {
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 import { createClient } from '@supabase/supabase-js';
+// 🔥 PŘIDÁNO: Naše inteligentní komponenta pro up-sell
+import GuruInContentOffer from '../../../components/GuruInContentOffer';
 
 /**
- * GURU CPU ENGINE - V4.2 (V10 HARD-LOCK UPDATE)
- * 🚀 CÍL: Implementace 150ms delaye a prioritního haff ID pro Heureku.
+ * GURU CPU ENGINE - V15 (CRASH FIX & SMART MONETIZATION)
+ * 🚀 CÍL: Fix klientského pádu (useParams), čisté V10 linky, GuruInContentOffer.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -22,17 +24,20 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 
-export default function CpuDetailPage({ params }) {
-    const p = use(params);
-    const rawSlug = p?.slug || '';
-    const isEn = rawSlug.startsWith('en-');
-    const cpuSlug = rawSlug.replace(/^en-/, '');
+export default function CpuDetailPage() {
+    // 🔥 FIX: Správné vytažení parametrů v klientské komponentě (Zabrání pádu)
+    const params = useParams();
     const pathname = usePathname() || '';
+    
+    const rawSlug = params?.slug || '';
+    const isEn = typeof rawSlug === 'string' && rawSlug.startsWith('en-');
+    const cpuSlug = typeof rawSlug === 'string' ? rawSlug.replace(/^en-/, '') : '';
 
     const [cpu, setCpu] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (!cpuSlug) return;
         const fetchCpu = async () => {
             const authHeaders = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
             try {
@@ -57,42 +62,36 @@ export default function CpuDetailPage({ params }) {
     const vendorColor = (cpu.vendor || '').toUpperCase() === 'INTEL' ? '#0071c5' : (cpu.vendor === 'AMD' ? '#ed1c24' : '#f59e0b');
     const cpuCleanName = normalizeName(cpu.name);
 
-    // 🔥 V10 HARD-LOCK REDIRECT LOGIC 🔥
-    const handleHeurekaAction = (e, name, subId) => {
-        e.preventDefault();
-        const q = encodeURIComponent(name + ' cena');
-        // Prioritní haff ID na začátku URL pro garantované připsání
-        const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
-        
+    // 🔥 V10 GOLDEN FORMAT LINKŮ 🔥
+    const heurekaLink = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(cpu.name + ' procesor')}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-cpu-detail&o=3`;
+    const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(cpu.name)}&tag=thehardware07-20&ascsubtag=cpu-detail`;
+
+    // Čistý tracking na pozadí, který neblokuje prohlížeč
+    const handleLogClick = (category, subId) => {
         if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-            const payload = { platform: 'heureka', category: 'cpu_detail', sub_id: subId, page: pathname };
+            const payload = { platform: isEn ? 'amazon' : 'heureka', category, sub_id: subId, page: pathname };
             navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
         }
-
-        // 150ms delay pro garantovaný zápis cookies a trackingu
-        setTimeout(() => {
-            window.location.href = targetUrl;
-        }, 150);
     };
-
-    const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(cpu.name)}&tag=thehardware07-20&linkCode=ll2&ref_=as_li_ss_tl&camp=1789&creative=9325&ascsubtag=cpu-detail`;
 
     return (
         <div className="guru-page-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
             
             {!isEn && <Script async src="//serve.affiliate.heureka.cz/js/trixam.min.js" strategy="afterInteractive" />}
 
-            {/* 🔥 STICKY MOBILE CTA 🔥 */}
+            {/* 🔥 STICKY MOBILE CTA (ČISTÝ ODKAZ MÍSTO JS REDIRECTU) 🔥 */}
             {!isEn && (
                 <div className="mobile-floating-cta" style={{ position: 'fixed', bottom: '100px', right: '15px', zIndex: 9999 }}>
-                    <button 
-                        onClick={(e) => handleHeurekaAction(e, cpu.name, 'v10-cpu-anchor')}
-                        className="heureka-hn-link pulse-button" 
-                        data-trixam-positionid="276026"
+                    <a 
+                        href={heurekaLink}
+                        target="_blank"
+                        rel="nofollow sponsored"
+                        onClick={() => handleLogClick('cpu_detail_sticky', 'v10-cpu-anchor')}
+                        className="pulse-button" 
                         style={{ background: '#0078d4', color: '#fff', padding: '12px 20px', borderRadius: '14px', fontSize: '13px', fontWeight: '900', textDecoration: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
                     >
                         <ShoppingCart size={18} /> CENA {cpuCleanName}
-                    </button>
+                    </a>
                 </div>
             )}
 
@@ -125,18 +124,28 @@ export default function CpuDetailPage({ params }) {
                         
                         <div className="affiliate-btn-wrap" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
                             {isEn ? (
-                                <a href={amazonLink} target="_blank" rel="nofollow sponsored noopener noreferrer" className="guru-buy-winner-btn amazon-btn hover-scale" style={{ background: '#f59e0b', color: '#000', border: '2px solid #fbbf24', width: '100%', maxWidth: '450px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '18px 24px', borderRadius: '16px', textDecoration: 'none', fontWeight: '950', fontSize: '16px', textTransform: 'uppercase' }}>
+                                <a 
+                                    href={amazonLink} 
+                                    target="_blank" 
+                                    rel="nofollow sponsored noopener noreferrer" 
+                                    onClick={() => handleLogClick('cpu_detail_main', 'v10-cpu-main')}
+                                    className="guru-buy-winner-btn amazon-btn hover-scale" 
+                                    style={{ background: '#f59e0b', color: '#000', border: '2px solid #fbbf24', width: '100%', maxWidth: '450px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '18px 24px', borderRadius: '16px', textDecoration: 'none', fontWeight: '950', fontSize: '16px', textTransform: 'uppercase' }}
+                                >
                                     <ShoppingCart size={16} /> 🔥 BUY {cpuCleanName} ON AMAZON
                                 </a>
                             ) : (
                                 <div style={{ width: '100%', textAlign: 'center' }}>
-                                    <button 
-                                        onClick={(e) => handleHeurekaAction(e, cpu.name, 'v10-cpu-main')}
+                                    <a 
+                                        href={heurekaLink}
+                                        target="_blank"
+                                        rel="nofollow sponsored"
+                                        onClick={() => handleLogClick('cpu_detail_main', 'v10-cpu-main')}
                                         className="guru-buy-winner-btn heureka-btn hover-scale" 
                                         style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #0078d4 100%)', color: '#fff', width: '100%', maxWidth: '450px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '18px 24px', borderRadius: '16px', textDecoration: 'none', fontWeight: '950', fontSize: '16px', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}
                                     >
                                         <ShoppingCart size={16} /> 🔥 POROVNAT NEJLEVNĚJŠÍ CENY
-                                    </button>
+                                    </a>
                                     <div className="trust-stack" style={{ marginTop: '15px', font_size: '12px', color: '#9ca3af', fontWeight: 'bold', textAlign: 'center' }}>
                                         <div>✔ Alza, CZC, Datart a 50+ dalších</div>
                                         <div style={{ color: '#f59e0b', marginTop: '4px' }}>⚡ Cena se mění každých pár hodin</div>
@@ -147,19 +156,30 @@ export default function CpuDetailPage({ params }) {
                     </div>
                 </div>
 
+                {/* 🔥 GURU INTELIGENTNÍ UPSELL 🔥 */}
+                <div style={{ margin: '40px 0' }}>
+                    <GuruInContentOffer 
+                        productName={(cpu.name.includes('9800X3D') || cpu.name.includes('9950X')) ? "NVIDIA GeForce RTX 5080" : "AMD Ryzen 7 9800X3D"} 
+                        category={(cpu.name.includes('9800X3D') || cpu.name.includes('9950X')) ? "gpu" : "cpu"} 
+                        reason="upgrade"
+                        isEn={isEn}
+                        subId={`cpu-detail-upsell-${cpuSlug}`}
+                    />
+                </div>
+
                 <section style={{ marginBottom: '40px' }}>
                     <div className="guru-tools-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                         <div className="tool-cta-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', padding: '40px', borderRadius: '24px' }}>
                             <div className="tool-meta" style={{ color: '#a855f7', fontWeight: '950', fontSize: '12px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}><AlertTriangle size={16} /> BOTTLENECK TEST</div>
                             <h3 style={{ color: '#fff', fontSize: '1.4rem', margin: '0 0 15px 0', textTransform: 'uppercase' }}>CHECK SYSTEM</h3>
                             <p style={{ fontSize: '14px', color: '#9ca3af', lineHeight: '1.5' }}>{isEn ? `Will your GPU handle the ${cpuCleanName}?` : `Bude tvá grafika stačit na procesor ${cpuCleanName}?`}</p>
-                            <a href={isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka'} style={{ background: 'rgba(255,255,255,0.05)', padding: '18px', borderRadius: '12px', text_align: 'center', color: '#fff', text_decoration: 'none', fontWeight: '950', display: 'block', border: '1px solid rgba(255,255,255,0.1)', transition: '0.3s', marginTop: '20px', textAlign: 'center' }}>ZJISTIT BOTTLENECK</a>
+                            <a href={isEn ? '/en/bottleneck-calculator' : '/bottleneck-kalkulacka'} style={{ background: 'rgba(255,255,255,0.05)', padding: '18px', borderRadius: '12px', text_align: 'center', color: '#fff', text_decoration: 'none', fontWeight: '950', display: 'block', border: '1px solid rgba(255,255,255,0.1)', transition: '0.3s', marginTop: '20px', textAlign: 'center' }}>{isEn ? 'TEST BOTTLENECK' : 'ZJISTIT BOTTLENECK'}</a>
                         </div>
                         <div className="tool-cta-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', padding: '40px', borderRadius: '24px' }}>
                             <div className="tool-meta" style={{ color: '#66fcf1', fontWeight: '950', fontSize: '12px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}><Gamepad2 size={16} /> FPS CALCULATOR</div>
                             <h3 style={{ color: '#fff', fontSize: '1.4rem', margin: '0 0 15px 0', textTransform: 'uppercase' }}>GAMING POWER</h3>
                             <p style={{ fontSize: '14px', color: '#9ca3af', lineHeight: '1.5' }}>{isEn ? `How many FPS will ${cpuCleanName} push?` : `Kolik FPS ti dá ${cpuCleanName} ve hrách?`}</p>
-                            <a href={isEn ? '/en/fps-calculator' : '/fps-kalkulacka'} style={{ background: 'rgba(255,255,255,0.05)', padding: '18px', borderRadius: '12px', text_align: 'center', color: '#fff', text_decoration: 'none', fontWeight: '950', display: 'block', border: '1px solid rgba(255,255,255,0.1)', transition: '0.3s', marginTop: '20px', textAlign: 'center' }}>TESTOVAT FPS</a>
+                            <a href={isEn ? '/en/fps-calculator' : '/fps-kalkulacka'} style={{ background: 'rgba(255,255,255,0.05)', padding: '18px', borderRadius: '12px', text_align: 'center', color: '#fff', text_decoration: 'none', fontWeight: '950', display: 'block', border: '1px solid rgba(255,255,255,0.1)', transition: '0.3s', marginTop: '20px', textAlign: 'center' }}>{isEn ? 'TEST FPS' : 'TESTOVAT FPS'}</a>
                         </div>
                     </div>
                 </section>
@@ -181,8 +201,8 @@ export default function CpuDetailPage({ params }) {
                 </section>
 
                 <div className="money-loop-links" style={{ textAlign: 'center', marginTop: '40px' }}>
-                    <a href="/cpu-ranking" style={{ color: '#60a5fa', textDecoration: 'underline', margin: '0 15px', fontWeight: 'bold' }}>Nejlepší procesory 2026 →</a>
-                    <a href="/cpuvs" style={{ color: '#60a5fa', textDecoration: 'underline', margin: '0 15px', fontWeight: 'bold' }}>Porovnat s jiným CPU →</a>
+                    <a href={isEn ? "/en/cpuvs/ranking" : "/cpuvs/ranking"} style={{ color: '#60a5fa', textDecoration: 'underline', margin: '0 15px', fontWeight: 'bold' }}>{isEn ? 'Best CPUs 2026 →' : 'Nejlepší procesory 2026 →'}</a>
+                    <a href={isEn ? "/en/cpuvs" : "/cpuvs"} style={{ color: '#60a5fa', textDecoration: 'underline', margin: '0 15px', fontWeight: 'bold' }}>{isEn ? 'Compare with another CPU →' : 'Porovnat s jiným CPU →'}</a>
                 </div>
 
             </main>
