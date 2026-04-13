@@ -10,17 +10,22 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export default function MobileStickyButton() {
     const pathname = usePathname() || '';
     const [isVisible, setIsVisible] = useState(false);
-    const [activeType, setActiveType] = useState('gpu'); // Střídá 'gpu' a 'cpu'
+    // 🔥 TŘÍFÁZOVÝ FUNNEL: Střídá 'nvidia', 'amd', 'cpu'
+    const [activeType, setActiveType] = useState('nvidia'); 
     const handleScrollRef = useRef(null);
 
     const isEn = pathname.startsWith('/en');
     const platform = isEn ? 'amazon' : 'heureka';
 
-    // 🔥 LOGIKA STŘÍDÁNÍ (každých 5 sekund)
+    // 🔥 LOGIKA TŘÍFÁZOVÉ ROTACE (každé 4 sekundy)
     useEffect(() => {
         const interval = setInterval(() => {
-            setActiveType(prev => prev === 'gpu' ? 'cpu' : 'gpu');
-        }, 5000);
+            setActiveType(prev => {
+                if (prev === 'nvidia') return 'amd';
+                if (prev === 'amd') return 'cpu';
+                return 'nvidia';
+            });
+        }, 4000); // 4 sekundy jsou ideální pro přečtení a postřehnutí změny
         return () => clearInterval(interval);
     }, []);
 
@@ -41,12 +46,17 @@ export default function MobileStickyButton() {
     }, []);
 
     const getLink = () => {
-        const subId = `v15-sticky-rotate-${platform}-${activeType}`;
-        const productName = activeType === 'cpu' ? "Ryzen 7 9800X3D" : "RTX 5080";
-        let queryStr = productName;
+        const subId = `v16-sticky-rotate3-${platform}-${activeType}`;
+        
+        // 🔥 DYNAMICKÝ VÝBĚR PRODUKTU PRO 3 FÁZE
+        let productName = "";
+        if (activeType === 'nvidia') productName = "RTX 5080";
+        else if (activeType === 'amd') productName = "Radeon RX 9070 XT";
+        else productName = "Ryzen 7 9800X3D";
 
+        let queryStr = productName;
         if (platform === 'heureka') {
-            queryStr += activeType === 'cpu' ? " procesor" : " grafická karta";
+            queryStr += (activeType === 'cpu') ? " procesor" : " grafická karta";
         }
         const safeQuery = queryStr.trim().replace(/\s+/g, '+');
 
@@ -57,21 +67,25 @@ export default function MobileStickyButton() {
     };
 
     const handleLogClick = () => {
-        const payload = { platform, category: `rotate_${activeType}`, sub_id: `v15-rotate`, page: pathname };
+        const payload = { platform, category: `rotate3_${activeType}`, sub_id: `v16-rotate3`, page: pathname };
         if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
             navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
         }
     };
 
-    // Obsah pro jednotlivé fáze rotace
+    // 🔥 Obsah pro 3 fáze rotace
     const content = {
-        gpu: {
-            text: isEn ? "🔥 RTX 5080 – CHECK BEST PRICE ⚡" : "🔥 RTX 5080 – DNES NEJLEVNĚJI ⚡",
-            color: "#76b900"
+        nvidia: {
+            text: isEn ? "🔥 RTX 5080 DEALS – CHECK PRICE ⚡" : "🔥 RTX 5080 – OVĚŘIT CENU ⚡",
+            color: "#76b900" // NVIDIA Zelená
+        },
+        amd: {
+            text: isEn ? "🔥 RADEON RX 9070 XT – DEALS ⚡" : "🔥 RX 9070 XT – NEJLEVNĚJI ⚡",
+            color: "#ed1c24" // AMD Červená
         },
         cpu: {
-            text: isEn ? "🔥 RYZEN 7 9800X3D – DEALS ⚡" : "🔥 RYZEN 7 9800X3D – SKLADEM ⚡",
-            color: "#ed1c24"
+            text: isEn ? "🔥 RYZEN 7 9800X3D – IN STOCK ⚡" : "🔥 RYZEN 7 9800X3D – SKLADEM ⚡",
+            color: "#a00000" // CPU Tmavší Červená
         }
     };
 
@@ -81,18 +95,28 @@ export default function MobileStickyButton() {
         <div className="guru-mobile-sticky-wrapper">
             <div className="guru-badge">✔ GURU PREMIUM DOPORUČUJE</div>
             
-            <a href={getLink()} target="_blank" rel="nofollow sponsored" onClick={handleLogClick} className={`guru-mobile-sticky-btn phase-${activeType}`}>
+            <a href={getLink()} target="_blank" rel="nofollow sponsored" onClick={handleLogClick} className={`guru-mobile-sticky-btn phase3-${activeType}`}>
+                {/* 🔥 Rotující 3D Model se 3 stavy */}
                 <div className="guru-3d-icon">
-                    <div className={`scene ${activeType}-active`}>
+                    <div className="scene">
                         <div className={`cube ${activeType}-cube`}>
-                            {activeType === 'gpu' ? (
+                            {activeType === 'nvidia' && (
                                 <>
                                     <div className="face front">GeForce</div>
                                     <div className="face back">RTX</div>
                                     <div className="face right">5080</div>
                                     <div className="face left">GURU</div>
                                 </>
-                            ) : (
+                            )}
+                            {activeType === 'amd' && (
+                                <>
+                                    <div className="face front">RADEON</div>
+                                    <div className="face back">RX 9070</div>
+                                    <div className="face right">XT</div>
+                                    <div className="face left">GURU</div>
+                                </>
+                            )}
+                            {activeType === 'cpu' && (
                                 <>
                                     <div className="face front">RYZEN</div>
                                     <div className="face back">9800X3D</div>
@@ -122,20 +146,23 @@ export default function MobileStickyButton() {
                 }
                 .guru-mobile-sticky-btn {
                     pointer-events: auto; width: 100%; display: flex; align-items: center; justify-content: flex-start; gap: 15px;
-                    background: #000; border: 2px solid rgba(147, 51, 234, 0.3); color: #fff; padding: 15px; border-radius: 20px;
+                    background: #000; border: 2px solid rgba(255, 255, 255, 0.1); color: #fff; padding: 15px; border-radius: 20px;
                     font-weight: 950; text-transform: uppercase; box-shadow: 0 12px 30px rgba(0,0,0,0.6);
                     cursor: pointer; -webkit-tap-highlight-color: transparent; text-decoration: none;
-                    transition: all 0.5s ease;
+                    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); /* Hladší přechod */
                 }
-                .phase-gpu { border-color: #76b900; }
-                .phase-cpu { border-color: #ed1c24; }
+                
+                /* 🔥 Dynamické barvy borderů pro 3 fáze */
+                .phase3-nvidia { border-color: #76b900; }
+                .phase3-amd { border-color: #ed1c24; }
+                .phase3-cpu { border-color: #a00000; }
                 
                 .guru-btn-text { font-size: 13px; letter-spacing: -0.3px; text-align: left; flex: 1; transition: opacity 0.3s; }
                 .guru-mobile-sticky-btn:active { transform: scale(0.96); }
 
                 /* 3D ENGINE */
                 .guru-3d-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
-                .scene { width: 30px; height: 30px; perspective: 600px; transition: transform 0.5s; }
+                .scene { width: 30px; height: 30px; perspective: 600px; }
                 .cube {
                     width: 100%; height: 100%; position: relative;
                     transform-style: preserve-3d;
@@ -158,8 +185,10 @@ export default function MobileStickyButton() {
                 .face.top    { transform: rotateX(90deg) translateZ(15px); }
                 .face.bottom { transform: rotateX(-90deg) translateZ(15px); }
 
-                .gpu-cube .face { background: rgba(118, 185, 0, 0.3); color: #fff; border-color: #76b900; }
-                .cpu-cube .face { background: rgba(237, 28, 36, 0.3); color: #fff; border-color: #ed1c24; }
+                /* 🔥 3 Speciální textury pro 3D Kostky */
+                .nvidia-cube .face { background: rgba(118, 185, 0, 0.3); color: #fff; border-color: #76b900; }
+                .amd-cube .face { background: rgba(237, 28, 36, 0.3); color: #fff; border-color: #ed1c24; }
+                .cpu-cube .face { background: rgba(160, 0, 0, 0.3); color: #fff; border-color: #a00000; }
             `}} />
         </div>
     );
