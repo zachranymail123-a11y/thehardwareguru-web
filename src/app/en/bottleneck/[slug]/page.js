@@ -65,8 +65,14 @@ export default async function BottleneckPageEn({ params }) {
   const targetGpuName = upgradeGpu?.name || "RTX 5070";
   const targetCpuName = upgradeCpu?.name || "Ryzen 7 9800X3D";
 
-  // Zjištění typu bottlenecku pro EN verzi
   const isGpuBottleneck = gpu.performance_index < cpu.performance_index * 2.5;
+
+  // 🔥 INTELIGENTNÍ ULTIMATE UPGRADE (ŽÁDNÁ DUPLICITA) 🔥
+  let ultimateProduct = isGpuBottleneck ? "NVIDIA RTX 5080" : "AMD Ryzen 7 9800X3D";
+  let ultimateCategory = isGpuBottleneck ? "gpu" : "cpu";
+
+  if (ultimateProduct === targetGpuName) ultimateProduct = "NVIDIA RTX 5090";
+  if (ultimateProduct === targetCpuName) ultimateProduct = "AMD Ryzen 9 9950X";
 
   const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=${AMAZON_TAG}&ascsubtag=bn-en-slug-${bottleneckPercent}`;
 
@@ -83,19 +89,19 @@ export default async function BottleneckPageEn({ params }) {
           </h1>
         </header>
 
-        {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (V12 EN) 🔥 */}
+        {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (ULTIMATE CESTA EN) 🔥 */}
         <div style={{ margin: '40px 0' }}>
             <GuruInContentOffer 
-                productName={isGpuBottleneck ? targetGpuName : targetCpuName} 
-                category={isGpuBottleneck ? "gpu" : "cpu"} 
-                reason="fix"
+                productName={ultimateProduct} 
+                category={ultimateCategory} 
+                reason="upgrade"
                 isEn={true}
-                subId={`bn-en-fix-${bottleneckPercent}`}
+                subId={`bn-en-smart-${bottleneckPercent}`}
             />
         </div>
 
         <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 900, marginBottom: '20px', color: '#facc15' }}>
-          🔥 DETAILED UPGRADE OPTIONS
+          🔥 DETAILED UPGRADE OPTIONS FOR YOUR BUILD
         </div>
 
         <section className="affiliate-cta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', padding: '35px', background: 'rgba(0,0,0,0.5)', borderRadius: '28px', border: '1px solid rgba(168,85,247,0.2)' }}>
