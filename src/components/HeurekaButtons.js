@@ -36,13 +36,21 @@ export default function HeurekaButtons({ isEn = false, manualSearch = "" }) {
             searchQuery = fallbacks[category];
         }
 
+        // 🔥 STRATEGICKÉ UPŘESNĚNÍ DOTAZU PRO VYŠŠÍ KONVERZI (POUZE CZ)
+        let finalQuery = searchQuery;
+        if (platform === 'heureka') {
+            if (category === 'cpu' && !finalQuery.toLowerCase().includes('procesor')) finalQuery += " procesor";
+            if (category === 'gpu' && !finalQuery.toLowerCase().includes('grafická')) finalQuery += " grafická karta";
+            if (category === 'mb' && !finalQuery.toLowerCase().includes('deska')) finalQuery += " základní deska";
+        }
+
         if (platform === 'amazon') {
-            return `https://www.amazon.com/s?k=${encodeURIComponent(searchQuery)}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
+            return `https://www.amazon.com/s?k=${encodeURIComponent(finalQuery)}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
         }
         
-        // 🔥 ABSOLUTNĚ ČISTÝ FORMÁT PODLE TVÝCH SCREENSHOTŮ 🔥
-        // Pouze www.heureka.cz a haff jako první parametr. Žádné mazání "Ryzen/Core".
-        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchQuery)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+        // 🔥 TURBO KONVERZNÍ FORMÁT 🔥
+        // Přidán parametr o=3 pro prioritizaci relevantních produktů
+        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(finalQuery)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}&o=3`;
     };
 
     const handleLogClick = (category) => {
