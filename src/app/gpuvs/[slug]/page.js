@@ -9,10 +9,10 @@ import {
 import GuruGpuCompareText from '../../../components/GuruGpuCompareText';
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
+import GuruInContentOffer from '../../../components/GuruInContentOffer';
 
 /**
- * GURU GPU DUELS ENGINE - V8.2 (DEFINITIVE HEUREKA 404 FIX)
- * 🚀 CÍL: Fix Heureka linků na www.heureka.cz s parametrem h[fraze] + Amazon pro EN.
+ * GURU GPU DUELS ENGINE - V12.1 (SMART UPSELL FIX)
  */
 
 export const runtime = "nodejs";
@@ -137,16 +137,16 @@ export default async function GpuVsDetailPage(props) {
 
   const relatedArticles = await getRelatedArticles(gpuA.name, gpuB.name);
 
-  // 🔥 AFFILIATE ODKAZY 🔥
+  // 🔥 INTELIGENTNÍ DOPORUČENÍ - VŽDY SILNĚJŠÍ CESTA 🔥
+  const isWinnerUltimate = winner.name.includes('4090') || winner.name.includes('5090') || winner.name.includes('5080') || winner.name.includes('7900 XTX');
+  const upgradeProduct = isWinnerUltimate ? "AMD Ryzen 7 9800X3D" : "NVIDIA RTX 5080";
+  const upgradeCategory = isWinnerUltimate ? "cpu" : "gpu";
+
+  // 🔥 V10 GOLDEN AFFILIATE ODKAZY PRO VÍTĚZE SOUBOJE 🔥
   const searchName = normalizeName(winner.name).trim();
-  const encodedQuery = encodeURIComponent(searchName);
-  
-  const smartyAffiliateLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodedQuery}`)}`;
-  
-  // 🔥 DEFINITIVNÍ FIX: Pouze www.heureka.cz pro funkční vyhledávání bez 404 🔥
-  const heurekaAffiliateLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodedQuery}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=GpuVsDetail`;
-  
-  const amazonAffiliateLink = `https://www.amazon.com/s?k=${encodedQuery}&tag=thehardware07-20`;
+  const smartyAffiliateLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(searchName)}`)}`;
+  const heurekaAffiliateLink = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName + ' grafická karta')}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=GpuVsDetail&o=3`;
+  const amazonAffiliateLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20`;
 
   return (
     <div className="guru-duel-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -197,6 +197,17 @@ export default async function GpuVsDetailPage(props) {
                 <h2 className="gpu-name-h2" style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0 0 15px 0' }}>{normalizeName(gpuB.name)}</h2>
                 <a href={isEn ? `/en/gpu/${getSafeGpuSlug(gpuB)}` : `/gpu/${getSafeGpuSlug(gpuB)}`} className="entity-link" style={{ color: getVendorColor(gpuB.vendor), textDecoration: 'none', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}><Activity size={12} /> {isEn ? 'Profile' : 'Profil'}</a>
             </div>
+        </div>
+
+        {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (V12.1) - NABÍZÍ VŽDY SILNĚJŠÍ HW NEŽ JE V TESTU 🔥 */}
+        <div style={{ margin: '40px 0' }}>
+            <GuruInContentOffer 
+                productName={upgradeProduct} 
+                category={upgradeCategory} 
+                reason="upgrade"
+                isEn={isEn}
+                subId={`gpuvs-smart-path-${slugify(winner.name)}`}
+            />
         </div>
 
         <section style={{ marginBottom: '60px' }}>
