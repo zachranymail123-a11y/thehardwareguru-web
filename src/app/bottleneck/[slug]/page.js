@@ -8,7 +8,6 @@ import {
 import SeznamAd from '../../../components/SeznamAd';
 import BottleneckFatContent from '../../../components/BottleneckFatContent'; 
 import { createClient } from '@supabase/supabase-js';
-// 🔥 PŘIDÁNO: Import inteligentní komponenty
 import GuruInContentOffer from '../../../components/GuruInContentOffer';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -72,12 +71,17 @@ export default function BottleneckPage({ params }) {
   const targetGpuName = upgradeGpu?.name || "RTX 5070";
   const targetCpuName = upgradeCpu?.name || "Ryzen 7 9800X3D";
 
-  // Zjištění typu bottlenecku pro dynamickou nabídku
   const isGpuBottleneck = gpu.performance_index < cpu.performance_index * 2.5;
+
+  // 🔥 INTELIGENTNÍ ULTIMATE UPGRADE (ŽÁDNÁ DUPLICITA) 🔥
+  let ultimateProduct = isGpuBottleneck ? "NVIDIA RTX 5080" : "AMD Ryzen 7 9800X3D";
+  let ultimateCategory = isGpuBottleneck ? "gpu" : "cpu";
+
+  if (ultimateProduct === targetGpuName) ultimateProduct = "NVIDIA RTX 5090";
+  if (ultimateProduct === targetCpuName) ultimateProduct = "AMD Ryzen 9 9950X";
 
   const subTag = `v10-bn-slug-${bottleneckPercent}`;
 
-  // 🔥 V10 GOLDEN AFFILIATE FORMÁT 🔥
   const getCleanHeurekaLink = (name, type) => {
       let query = String(name || '').replace(/NVIDIA |AMD |Intel |Ryzen |Core /gi, '').trim();
       if (type === 'cpu') query += " procesor";
@@ -109,18 +113,18 @@ export default function BottleneckPage({ params }) {
           </h1>
         </header>
 
-        {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (V12) 🔥 */}
+        {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (ULTIMATE CESTA) 🔥 */}
         <div style={{ margin: '40px 0' }}>
             <GuruInContentOffer 
-                productName={isGpuBottleneck ? targetGpuName : targetCpuName} 
-                category={isGpuBottleneck ? "gpu" : "cpu"} 
-                reason="fix"
-                subId={`bn-slug-fix-${bottleneckPercent}`}
+                productName={ultimateProduct} 
+                category={ultimateCategory} 
+                reason="upgrade"
+                subId={`bn-slug-smart-${bottleneckPercent}`}
             />
         </div>
 
         <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 900, marginBottom: '20px', color: '#facc15' }}>
-          🔥 DETAILNÍ MOŽNOSTI UPGRADU
+          🔥 DETAILNÍ MOŽNOSTI UPGRADU NA MÍRU TVÉ SESTAVĚ
         </div>
 
         <section className="affiliate-cta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', padding: '35px', background: 'rgba(0,0,0,0.5)', borderRadius: '28px', border: '1px solid rgba(168,85,247,0.2)' }}>
