@@ -42,11 +42,12 @@ export default function CpuRankingPage({ isEn = false }) {
     fetchData();
   }, []);
 
-  // 🔥 V10 HARD-LOCK REDIRECT LOGIC 🔥
+  // 🔥 V10 HARD-LOCK REDIRECT LOGIC OPRAVA FRAGMENTU 🔥
   const handleHeurekaAction = (e, name, subId) => {
     e.preventDefault();
     const q = encodeURIComponent(name + ' cena');
-    const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+    // Opraveno: #utm_source... místo &utm_source...
+    const targetUrl = `https://www.heureka.cz/?h%5Bfraze%5D=${q}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     
     if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
       const payload = { platform: 'heureka', category: 'cpu_ranking', sub_id: subId, page: pathname };
@@ -148,7 +149,7 @@ export default function CpuRankingPage({ isEn = false }) {
 
         <div style={{ textAlign: 'center', marginTop: '50px' }}>
           <a
-            href={isEn ? "https://www.amazon.com/s?k=gaming+processor&tag=thehardware07-20" : "https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=procesor+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-rank-footer"}
+            href={isEn ? "https://www.amazon.com/s?k=gaming+processor&tag=thehardware07-20" : "https://www.heureka.cz/?h%5Bfraze%5D=procesor+cena#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-rank-footer"}
             target="_blank"
             rel="nofollow sponsored"
             className="guru-buy-winner-btn"
