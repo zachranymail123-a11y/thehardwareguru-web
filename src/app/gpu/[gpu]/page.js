@@ -9,8 +9,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU ENGINE - DETAIL GRAFIKY V3.6 (V10 HARD-LOCK SERVER FIX)
- * 🚀 CÍL: Spolehlivá detekce angličtiny, Amazon tlačítka, Hard-Lock tracker a kalkulačky.
+ * GURU GPU ENGINE - DETAIL GRAFIKY V3.7 (STRICT BACKUP FIX)
+ * 🚀 CÍL: Spolehlivá detekce angličtiny, Amazon tlačítka a V10 Hard-Lock tracker.
  */
 
 export const runtime = "nodejs";
@@ -80,7 +80,7 @@ export async function generateMetadata(props) {
   // 🔥 AGRESIVNÍ DETEKCE EN: headers + path
   const headersList = headers();
   const fullUrl = headersList.get('x-url') || headersList.get('referer') || "";
-  const isEn = fullUrl.includes('/en/') || rawSlug.startsWith('en-') || props.isEn === true;
+  const isEn = props.isEnProxy === true || props.isEn === true || fullUrl.includes('/en/') || rawSlug.startsWith('en-');
 
   const gpuSlug = rawSlug.replace(/^en-/, '');
   const gpu = await findGpuBySlug(gpuSlug);
@@ -102,7 +102,7 @@ export default async function GpuDetailPage(props) {
   // 🔥 AGRESIVNÍ DETEKCE EN: headers + path
   const headersList = headers();
   const fullUrl = headersList.get('x-url') || headersList.get('referer') || "";
-  const isEn = fullUrl.includes('/en/') || rawSlug.startsWith('en-') || props.isEn === true;
+  const isEn = props.isEnProxy === true || props.isEn === true || fullUrl.includes('/en/') || rawSlug.startsWith('en-');
 
   const gpuSlug = rawSlug.replace(/^en-/, '');
   
@@ -115,7 +115,8 @@ export default async function GpuDetailPage(props) {
   const { similarGpus, recommendedCpus } = await getInternalLinksData(gpu.id);
 
   const searchName = getCleanSearchName(gpu.name);
-  const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20`;
+  // 🔥 OPRAVA: Amazon link pro EN
+  const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20&ascsubtag=v10-gpu-detail`;
   const smartyLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(searchName)}`)}`;
 
   const productSchema = {
@@ -156,7 +157,7 @@ export default async function GpuDetailPage(props) {
           </h1>
         </header>
 
-        {/* 🔥 AFFILIATE BOMB 🔥 */}
+        {/* 🔥 AFFILIATE BOMB (Amazon pro EN, Hard-Lock Heureka pro CZ) 🔥 */}
         <div className="affiliate-cta-grid" style={{ marginBottom: '30px', borderColor: `${vendorColor}40` }}>
             <div className="affiliate-col">
                 <div className="affiliate-col-title" style={{ color: vendorColor }}>
@@ -173,7 +174,7 @@ export default async function GpuDetailPage(props) {
                                 <ShoppingCart size={16} /> Smarty.cz
                             </a>
                             <a 
-                                href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gpu-detail`} 
+                                href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gpu-detail`} 
                                 data-subid="v10-gpu-detail" 
                                 data-cat="gpu_profile" 
                                 target="_blank" 
