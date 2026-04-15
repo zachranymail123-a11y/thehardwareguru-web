@@ -1,6 +1,7 @@
 import React, { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
+import Script from 'next/script';
 import { 
  ChevronLeft, Zap, ArrowRight, Activity, ArrowUpCircle, LayoutList, 
  BarChart3, Gamepad2, Coins, CheckCircle2, Swords, Flame, Heart, 
@@ -12,8 +13,8 @@ import HeurekaButtons from '../../../components/HeurekaButtons';
 import GuruInContentOffer from '../../../components/GuruInContentOffer';
 
 /**
- * GURU GPU DUELS ENGINE - V12.3 (STRICT BACKUP FIX + AWAIT HEADERS FIX)
- * 🚀 CÍL: Fix Error 500 (await headers) + V10 Heureka + Amazon EN.
+ * GURU GPU DUELS ENGINE - V12.4 (FULL EOF FIX)
+ * 🚀 CÍL: Fix Error 500 (await headers) + V10 Heureka + Amazon EN. Kompletní kód.
  */
 
 export const runtime = "nodejs";
@@ -93,7 +94,6 @@ const getRelatedArticles = async (gpuA_Name, gpuB_Name) => {
 export async function generateMetadata(props) {
   const { slug } = await props.params; 
   
-  // 🔥 FIX ERRORU 500: Zabalené a awaitované headers()
   let isEn = props.isEnProxy === true || props.isEn === true || slug?.startsWith('en-');
   try {
       const h = await headers();
@@ -114,7 +114,6 @@ export async function generateMetadata(props) {
 export default async function GpuVsDetailPage(props) {
   const { slug } = await props.params; 
   
-  // 🔥 FIX ERRORU 500: Zabalené a awaitované headers()
   let isEn = props.isEnProxy === true || props.isEn === true || slug?.startsWith('en-');
   try {
       const h = await headers();
@@ -154,12 +153,10 @@ export default async function GpuVsDetailPage(props) {
 
   const relatedArticles = await getRelatedArticles(gpuA.name, gpuB.name);
 
-  // 🔥 INTELIGENTNÍ DOPORUČENÍ - VŽDY SILNĚJŠÍ CESTA 🔥
   const isWinnerUltimate = winner.name.includes('4090') || winner.name.includes('5090') || winner.name.includes('5080') || winner.name.includes('7900 XTX');
   const upgradeProduct = isWinnerUltimate ? "AMD Ryzen 7 9800X3D" : "NVIDIA RTX 5080";
   const upgradeCategory = isWinnerUltimate ? "cpu" : "gpu";
 
-  // 🔥 V10 GOLDEN AFFILIATE ODKAZY (Amazon pro EN, Heureka s '#' pro CZ) 🔥
   const searchName = normalizeName(winner.name).trim();
   const amazonAffiliateLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20&ascsubtag=v10-gpuvs`;
   const smartyAffiliateLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(searchName)}`)}`;
@@ -360,4 +357,33 @@ export default async function GpuVsDetailPage(props) {
         @media (max-width: 768px) {
             .ad-desktop-wrapper { display: none !important; }
             .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
-            .guru-grid-ring { grid-template-columns: 1fr !important;
+            .guru-grid-ring { grid-template-columns: 1fr !important; gap: 10px; }
+            .vs-circle { margin: 10px auto; }
+            .spec-row-style { flex-direction: column !important; gap: 10px; }
+            .table-label { width: 100%; order: -1; }
+            .seo-hub-grid { grid-template-columns: 1fr; }
+        }
+      `}} />
+
+      <Script id="v10-hl-script" strategy="lazyOnload">
+          {`
+              if (typeof window !== 'undefined') {
+                  document.addEventListener('click', function(e) {
+                      const btn = e.target.closest('.v10-hl-btn, .v10-hl-container a, .v10-hl-container button');
+                      if (btn) {
+                          const container = e.target.closest('.v10-hl-container');
+                          const subId = btn.getAttribute('data-subid') || (container ? container.getAttribute('data-subid') : 'unknown');
+                          const cat = btn.getAttribute('data-cat') || (container ? container.getAttribute('data-cat') : 'gpu_duel');
+                          const targetUrl = btn.href || (btn.tagName === 'A' ? btn.href : null);
+                          
+                          if (navigator.sendBeacon && targetUrl) {
+                              navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: cat, sub_id: subId, page: window.location.pathname }));
+                          }
+                      }
+                  });
+              }
+          `}
+      </Script>
+    </div>
+  );
+}
