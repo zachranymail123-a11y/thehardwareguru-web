@@ -10,14 +10,12 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export default function MobileStickyButton() {
     const pathname = usePathname() || '';
     const [isVisible, setIsVisible] = useState(false);
-    // 🔥 TŘÍFÁZOVÝ FUNNEL: Střídá 'nvidia', 'amd', 'cpu'
     const [activeType, setActiveType] = useState('nvidia'); 
     const handleScrollRef = useRef(null);
 
     const isEn = pathname.startsWith('/en');
     const platform = isEn ? 'amazon' : 'heureka';
 
-    // 🔥 LOGIKA TŘÍFÁZOVÉ ROTACE (každé 4 sekundy)
     useEffect(() => {
         const interval = setInterval(() => {
             setActiveType(prev => {
@@ -25,7 +23,7 @@ export default function MobileStickyButton() {
                 if (prev === 'amd') return 'cpu';
                 return 'nvidia';
             });
-        }, 4000); // 4 sekundy jsou ideální pro přečtení a postřehnutí změny
+        }, 4000);
         return () => clearInterval(interval);
     }, []);
 
@@ -45,25 +43,23 @@ export default function MobileStickyButton() {
         };
     }, []);
 
+    // 🔥 PŘESNÝ LINK A ID PODLE HEUREKA MANUÁLU 🔥
     const getLink = () => {
-        const subId = `v16-sticky-rotate3-${platform}-${activeType}`;
-        
-        // 🔥 DYNAMICKÝ VÝBĚR PRODUKTU PRO 3 FÁZE
+        const subId = `sticky-rotate3-${activeType}`;
         let productName = "";
         if (activeType === 'nvidia') productName = "RTX 5080";
         else if (activeType === 'amd') productName = "Radeon RX 9070 XT";
         else productName = "Ryzen 7 9800X3D";
 
-        let queryStr = productName;
-        if (platform === 'heureka') {
-            queryStr += (activeType === 'cpu') ? " procesor" : " grafická karta";
-        }
-        const safeQuery = queryStr.trim().replace(/\s+/g, '+');
+        const queryStr = productName + (isEn ? "" : (activeType === 'cpu' ? " procesor" : " grafická karta"));
+        const safeQuery = encodeURIComponent(queryStr);
 
-        if (platform === 'amazon') {
-            return `https://www.amazon.com/s?k=${safeQuery}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
+        if (isEn) {
+            return `https://www.amazon.com/s?k=${safeQuery}&tag=thehardware07-20&ascsubtag=${subId}`;
         }
-        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}&o=3`;
+        
+        // Formát URL přesně podle Heureka administrace (s mřížkou pro UTM)
+        return `https://www.heureka.cz/?h%5Bfraze%5D=${safeQuery}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     };
 
     const handleLogClick = () => {
@@ -73,19 +69,18 @@ export default function MobileStickyButton() {
         }
     };
 
-    // 🔥 Obsah pro 3 fáze rotace
     const content = {
         nvidia: {
             text: isEn ? "🔥 RTX 5080 DEALS – CHECK PRICE ⚡" : "🔥 RTX 5080 – OVĚŘIT CENU ⚡",
-            color: "#76b900" // NVIDIA Zelená
+            posId: "276026" // Grafické karty
         },
         amd: {
             text: isEn ? "🔥 RADEON RX 9070 XT – DEALS ⚡" : "🔥 RX 9070 XT – NEJLEVNĚJI ⚡",
-            color: "#ed1c24" // AMD Červená
+            posId: "276026" // Grafické karty
         },
         cpu: {
             text: isEn ? "🔥 RYZEN 7 9800X3D – IN STOCK ⚡" : "🔥 RYZEN 7 9800X3D – SKLADEM ⚡",
-            color: "#a00000" // CPU Tmavší Červená
+            posId: "276027" // Procesory
         }
     };
 
@@ -95,8 +90,15 @@ export default function MobileStickyButton() {
         <div className="guru-mobile-sticky-wrapper">
             <div className="guru-badge">✔ GURU PREMIUM DOPORUČUJE</div>
             
-            <a href={getLink()} target="_blank" rel="nofollow sponsored" onClick={handleLogClick} className={`guru-mobile-sticky-btn phase3-${activeType}`}>
-                {/* 🔥 Rotující 3D Model se 3 stavy */}
+            {/* 🔥 KLÍČOVÁ OPRAVA: PŘIDÁNA TŘÍDA A POSITION ID PRO TRACKING HEUREKY 🔥 */}
+            <a 
+                href={getLink()} 
+                target="_blank" 
+                rel="sponsored noopener" 
+                onClick={handleLogClick} 
+                className={isEn ? `guru-mobile-sticky-btn phase3-${activeType}` : `heureka-hn-link guru-mobile-sticky-btn phase3-${activeType}`}
+                data-trixam-positionid={isEn ? undefined : content[activeType].posId}
+            >
                 <div className="guru-3d-icon">
                     <div className="scene">
                         <div className={`cube ${activeType}-cube`}>
@@ -149,10 +151,9 @@ export default function MobileStickyButton() {
                     background: #000; border: 2px solid rgba(255, 255, 255, 0.1); color: #fff; padding: 15px; border-radius: 20px;
                     font-weight: 950; text-transform: uppercase; box-shadow: 0 12px 30px rgba(0,0,0,0.6);
                     cursor: pointer; -webkit-tap-highlight-color: transparent; text-decoration: none;
-                    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); /* Hladší přechod */
+                    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
                 }
                 
-                /* 🔥 Dynamické barvy borderů pro 3 fáze */
                 .phase3-nvidia { border-color: #76b900; }
                 .phase3-amd { border-color: #ed1c24; }
                 .phase3-cpu { border-color: #a00000; }
@@ -160,7 +161,6 @@ export default function MobileStickyButton() {
                 .guru-btn-text { font-size: 13px; letter-spacing: -0.3px; text-align: left; flex: 1; transition: opacity 0.3s; }
                 .guru-mobile-sticky-btn:active { transform: scale(0.96); }
 
-                /* 3D ENGINE */
                 .guru-3d-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
                 .scene { width: 30px; height: 30px; perspective: 600px; }
                 .cube {
@@ -185,7 +185,6 @@ export default function MobileStickyButton() {
                 .face.top    { transform: rotateX(90deg) translateZ(15px); }
                 .face.bottom { transform: rotateX(-90deg) translateZ(15px); }
 
-                /* 🔥 3 Speciální textury pro 3D Kostky */
                 .nvidia-cube .face { background: rgba(118, 185, 0, 0.3); color: #fff; border-color: #76b900; }
                 .amd-cube .face { background: rgba(237, 28, 36, 0.3); color: #fff; border-color: #ed1c24; }
                 .cpu-cube .face { background: rgba(160, 0, 0, 0.3); color: #fff; border-color: #a00000; }
