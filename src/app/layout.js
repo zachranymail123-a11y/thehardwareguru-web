@@ -133,10 +133,8 @@ export default async function RootLayout({ children }) {
   return (
     <html lang={locale}>
       <head>
-        {/* Ezoic smazán - čisto! */}
         <Script src="https://ssp.seznam.cz/static/js/ssp.js" strategy="afterInteractive" />
         
-        {/* 🔥 OPRAVENÁ HEUREKA DLE PŘESNÉHO NÁVODU 🔥 */}
         <Script 
           async 
           type="text/javascript" 
@@ -214,7 +212,8 @@ export default async function RootLayout({ children }) {
             <div className="ad-desktop-anchor">
                 <SeznamAd zoneId={408873} width={728} height={90} />
             </div>
-            <div className="ad-desktop-anchor">
+            {/* 🔥 FIX: Mobile Anchor ID 408678 🔥 */}
+            <div className="ad-mobile-anchor">
                 <SeznamAd zoneId={408678} width={320} height={100} />
             </div>
         </div>
