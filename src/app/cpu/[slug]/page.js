@@ -62,8 +62,8 @@ export default function CpuDetailPage() {
     const vendorColor = (cpu.vendor || '').toUpperCase() === 'INTEL' ? '#0071c5' : (cpu.vendor === 'AMD' ? '#ed1c24' : '#f59e0b');
     const cpuCleanName = normalizeName(cpu.name);
 
-    // 🔥 V10 GOLDEN FORMAT LINKŮ 🔥
-    const heurekaLink = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(cpu.name + ' procesor')}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-cpu-detail&o=3`;
+    // 🔥 V10 GOLDEN FORMAT LINKŮ S OPRAVENÝM FRAGMENTEM 🔥
+    const heurekaLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(cpu.name + ' procesor')}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-cpu-detail`;
     const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(cpu.name)}&tag=thehardware07-20&ascsubtag=cpu-detail`;
 
     // Čistý tracking na pozadí, který neblokuje prohlížeč
@@ -87,7 +87,8 @@ export default function CpuDetailPage() {
                         target="_blank"
                         rel="nofollow sponsored"
                         onClick={() => handleLogClick('cpu_detail_sticky', 'v10-cpu-anchor')}
-                        className="pulse-button" 
+                        className="pulse-button heureka-hn-link" 
+                        data-trixam-positionid="276026"
                         style={{ background: '#0078d4', color: '#fff', padding: '12px 20px', borderRadius: '14px', fontSize: '13px', fontWeight: '900', textDecoration: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer' }}
                     >
                         <ShoppingCart size={18} /> CENA {cpuCleanName}
@@ -141,7 +142,8 @@ export default function CpuDetailPage() {
                                         target="_blank"
                                         rel="nofollow sponsored"
                                         onClick={() => handleLogClick('cpu_detail_main', 'v10-cpu-main')}
-                                        className="guru-buy-winner-btn heureka-btn hover-scale" 
+                                        className="guru-buy-winner-btn heureka-btn heureka-hn-link hover-scale" 
+                                        data-trixam-positionid="276027"
                                         style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #0078d4 100%)', color: '#fff', width: '100%', maxWidth: '450px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '12px', padding: '18px 24px', borderRadius: '16px', textDecoration: 'none', fontWeight: '950', fontSize: '16px', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}
                                     >
                                         <ShoppingCart size={16} /> 🔥 POROVNAT NEJLEVNĚJŠÍ CENY
@@ -184,11 +186,12 @@ export default function CpuDetailPage() {
                     </div>
                 </section>
 
+                {/* Tento kód je nepotřebný, protože tlačítka už nejsou potřeba nebo je řeší GuruInContentOffer a hlavní blok
                 {!isEn && (
                     <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
                         <HeurekaButtons isEn={false} manualSearch={cpu.name} positionId="276027" />
                     </div>
-                )}
+                )} */}
 
                 <section style={{ marginBottom: '60px' }}>
                     <h2 className="section-h2" style={{ color: '#fff', fontSize: '1.8rem', fontWeight: '950', marginBottom: '30px', textTransform: 'uppercase', borderLeft: `4px solid ${vendorColor}`, paddingLeft: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}><LayoutList size={28} /> {isEn ? 'TECHNICAL SPECIFICATIONS' : 'TECHNICKÉ SPECIFIKACE'}</h2>
