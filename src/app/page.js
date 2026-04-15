@@ -303,6 +303,10 @@ export default async function HomePage({ params, isEn: isEnProp }) {
         .social-btn-main.psucalc { background: rgba(250, 204, 21, 0.1); color: #facc15; border-color: rgba(250, 204, 21, 0.3); }
         .social-btn-main.psucalc:hover { background: #facc15; color: #000; box-shadow: 0 10px 25px rgba(250, 204, 21, 0.4); transform: translateY(-3px); }
 
+        /* 🔥 PŘIDÁNO PRO BENCHMARK 🔥 */
+        .social-btn-main.benchmark { background: rgba(168, 85, 247, 0.1); color: #a855f7; border-color: rgba(168, 85, 247, 0.3); }
+        .social-btn-main.benchmark:hover { background: #a855f7; color: #fff; box-shadow: 0 10px 25px rgba(168, 85, 247, 0.4); transform: translateY(-3px); }
+
         .deal-hp-card { display: flex; align-items: center; gap: 20px; background: linear-gradient(145deg, rgba(15, 17, 21, 0.95) 0%, rgba(249, 115, 22, 0.05) 100%); padding: 20px; border-radius: 24px; border: 1px solid rgba(249, 115, 22, 0.2); transition: 0.4s; text-decoration: none; overflow: hidden; position: relative; }
         .deal-hp-card:hover { transform: translateY(-5px); border-color: #f97316; box-shadow: 0 15px 35px rgba(249, 115, 22, 0.25); }
 
@@ -394,6 +398,11 @@ export default async function HomePage({ params, isEn: isEnProp }) {
               <a href={isEn ? "/en/gpuvs" : "/gpuvs"} className="social-btn-main duels"><Swords size={18}/> {isEn ? 'GPU BATTLES' : 'SOUBOJE GPU'}</a>
               <a href={isEn ? "/en/cpuvs" : "/cpuvs"} className="social-btn-main cpuduels"><Cpu size={18}/> {isEn ? 'CPU BATTLES' : 'SOUBOJE CPU'}</a>
               
+              {/* 🔥 PŘIDÁNO: TLAČÍTKO PRO BENCHMARK 🔥 */}
+              <a href={isEn ? "/en/benchmark" : "/benchmark"} className="social-btn-main benchmark">
+                <Trophy size={18}/> {isEn ? 'PC BENCHMARK' : 'BENCHMARK'}
+              </a>
+
               <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="social-btn-main fpscalc">
                 <Gamepad2 size={18}/> {isEn ? 'CAN I RUN IT?' : 'ROZJEDU TO?'}
               </a>
