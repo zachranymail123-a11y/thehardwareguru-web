@@ -20,7 +20,7 @@ import { createClient } from '@supabase/supabase-js';
 /**
  * GURU CPU RECOMMEND ENGINE V2.4 (V10 HARD-LOCK & TOOLS UPDATE)
  * 🚀 CÍL: Implementace V10 Hard-Lock linků a doplnění tlačítek na kalkulačky.
- * OPRAVA: Odstraněno use(params) způsobující client-side error.
+ * OPRAVA: Odstraněno use(params) způsobující client-side error, přidán Amazon pro EN.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -67,17 +67,20 @@ export default function CpuRecommendPage({ params }) {
   if (loading) return null;
   if (!cpu) notFound();
 
-  // 🔥 V10 HARD-LOCK REDIRECT LOGIC S OPRAVENÝM FRAGMENTEM 🔥
+  // 🔥 V10 HARD-LOCK REDIRECT LOGIC + AMAZON PRO EN 🔥
   const handleHeurekaAction = (e, name) => {
     e.preventDefault();
     const cleanName = name.replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '+');
     const subId = `v10-cpu-recommend`;
     
-    // Přesný formát URL podle manuálu (přidán # před UTM parametry)
-    const targetUrl = `https://www.heureka.cz/?h%5Bfraze%5D=${cleanName}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+    // Zohlednění EN verze pro přesměrování na Amazon, CZ verze zůstává tvrdě na Heureku dle manuálu (s # pro UTM)
+    const targetUrl = isEn 
+        ? `https://www.amazon.com/s?k=${encodeURIComponent(cleanName)}&tag=thehardware07-20`
+        : `https://www.heureka.cz/?h%5Bfraze%5D=${cleanName}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     
     if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-      navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify({ platform: 'heureka', category: 'cpu_recommend', sub_id: subId, page: pathname })], { type: 'text/plain' }));
+      const platform = isEn ? 'amazon' : 'heureka';
+      navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify({ platform, category: 'cpu_recommend', sub_id: subId, page: pathname })], { type: 'text/plain' }));
     }
     setTimeout(() => { window.location.href = targetUrl; }, 150);
   };
@@ -134,17 +137,15 @@ export default function CpuRecommendPage({ params }) {
                     )}
                 </div>
 
-                {/* 🔥 V10 HARD-LOCK CONVERSION TRIGGER 🔥 */}
-                {!isEn && (
-                  <div style={{ marginTop: '40px' }}>
-                    <button 
-                      onClick={(e) => handleHeurekaAction(e, cpu.name)}
-                      style={{ background: '#3b82f6', color: '#fff', padding: '18px 40px', borderRadius: '14px', border: 'none', fontWeight: 950, cursor: 'pointer', fontSize: '16px', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: '10px' }}
-                    >
-                      <ShoppingCart size={20} /> ZJISTIT NEJLEPŠÍ CENU
-                    </button>
-                  </div>
-                )}
+                {/* 🔥 V10 HARD-LOCK CONVERSION TRIGGER (PRO CZ I EN) 🔥 */}
+                <div style={{ marginTop: '40px' }}>
+                  <button 
+                    onClick={(e) => handleHeurekaAction(e, cpu.name)}
+                    style={{ background: isEn ? '#f59e0b' : '#3b82f6', color: isEn ? '#000' : '#fff', padding: '18px 40px', borderRadius: '14px', border: 'none', fontWeight: 950, cursor: 'pointer', fontSize: '16px', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: '10px' }}
+                  >
+                    <ShoppingCart size={20} /> {isEn ? 'CHECK PRICE ON AMAZON' : 'ZJISTIT NEJLEPŠÍ CENU'}
+                  </button>
+                </div>
             </div>
         </section>
 
