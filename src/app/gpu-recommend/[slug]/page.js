@@ -15,8 +15,7 @@ import {
   Activity,
   Info,
   HelpCircle,
-  Gamepad2,
-  ShoppingCart
+  Gamepad2
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
@@ -49,12 +48,10 @@ export async function generateStaticParams() {
 const findGpuBySlug = async (gpuSlug) => {
   if (!supabaseUrl || !gpuSlug) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
-  // Očištění slugu pro jistotu
-  const cleanSlug = gpuSlug.replace(/^en-/, '');
   try {
-      const res1 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${cleanSlug}&limit=1`, { headers, cache: 'force-cache' });
+      const res1 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${gpuSlug}&limit=1`, { headers, cache: 'force-cache' });
       if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
-      const clean = cleanSlug.replace(/-/g, ' ').replace(/gb|rtx|rx|geforce|radeon/gi, '').trim();
+      const clean = gpuSlug.replace(/-/g, ' ').replace(/gb|rtx|rx|geforce|radeon/gi, '').trim();
       const tokens = clean.split(/\s+/).filter(t => t.length > 0);
       if (tokens.length > 0) {
           const conditions = tokens.map(t => `name.ilike.*${encodeURIComponent(t)}*`).join(',');
@@ -68,7 +65,7 @@ const findGpuBySlug = async (gpuSlug) => {
 export async function generateMetadata(props) {
   const params = await props.params;
   const rawSlug = params?.slug || '';
-  const isEn = props.isEnProxy === true || props.isEn === true || rawSlug.startsWith('en-');
+  const isEn = rawSlug.startsWith('en-');
   const cleanSlug = rawSlug.replace(/^en-/, '');
   const gpu = await findGpuBySlug(cleanSlug);
   if (!gpu) return { title: '404 | Hardware Guru' };
@@ -83,21 +80,11 @@ export async function generateMetadata(props) {
 export default async function GpuRecommendPage(props) {
   const params = await props.params;
   const rawSlug = params?.slug || '';
-  // 🔥 FIX: Robustní detekce EN
-  const isEn = props.isEnProxy === true || props.isEn === true || rawSlug.startsWith('en-');
+  const isEn = rawSlug.startsWith('en-');
   const cleanSlug = rawSlug.replace(/^en-/, '');
   
   const gpu = await findGpuBySlug(cleanSlug);
   if (!gpu) notFound();
-
-  // 🔥 Google Golden Rich
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Review",
-    "itemReviewed": { "@type": "Product", "name": gpu.name },
-    "reviewRating": { "@type": "Rating", "ratingValue": gpu.performance_index > 100 ? "5" : "4", "bestRating": "5" },
-    "author": { "@type": "Organization", "name": "The Hardware Guru" }
-  };
 
   const isHighEnd = (gpu.performance_index || 0) > 100;
   const isMidRange = (gpu.performance_index || 0) > 50 && (gpu.performance_index || 0) <= 100;
@@ -111,14 +98,10 @@ export default async function GpuRecommendPage(props) {
   const verdict = getVerdict();
   const safeSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
   const vendorColor = (gpu.vendor || '').toUpperCase() === 'NVIDIA' ? '#76b900' : ((gpu.vendor || '').toUpperCase() === 'AMD' ? '#ed1c24' : '#66fcf1');
-  const searchName = normalizeName(gpu.name).trim();
-
-  // 🔥 OPRAVA: Amazon link pro EN a V10 Heureka pro CZ
-  const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20&ascsubtag=v10-recommend`;
 
   return (
     <div className="guru-recommend-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      
       <main className="inner-container" style={{ maxWidth: '900px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
         <div style={{ marginBottom: '30px' }}>
@@ -166,18 +149,11 @@ export default async function GpuRecommendPage(props) {
             </div>
         </section>
 
-        {/* 🔥 PŘIDÁNO: Vložení Heureka/Amazon tlačítek (CTA pod verdiktem) 🔥 */}
+        {/* 🔥 PŘIDÁNO: Vložení Heureka tlačítek (CTA pod verdiktem) 🔥 */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
-            {isEn ? (
-                <a href={amazonLink} target="_blank" rel="nofollow sponsored" style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', padding: '18px 30px', background: '#f59e0b', color: '#000', borderRadius: '16px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', border: '2px solid #fbbf24' }}>
-                    <ShoppingCart size={16} /> BUY ON AMAZON
-                </a>
-            ) : (
-                <div className="v10-hl-container" data-subid="v10-recommend-heureka" data-cat="gpu_recommend">
-                    {/* Zde komponenta HeurekaButtons sama použije upravené V10 linky */}
-                    <HeurekaButtons isEn={false} manualSearch={gpu.name} positionId="276026" />
-                </div>
-            )}
+            <div className="v10-hl-container" data-subid="v10-recommend-heureka" data-cat="gpu_recommend">
+                <HeurekaButtons isEn={isEn} manualSearch={gpu.name} positionId="276026" />
+            </div>
         </div>
 
         {/* 🔥 GURU TOOLS - POVINNÁ TLAČÍTKA NA KALKULAČKY 🔥 */}
