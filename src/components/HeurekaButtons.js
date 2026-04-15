@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from 'react';
-import { Cpu, Monitor, Layers, Database, ChevronRight, ShoppingCart } from 'lucide-react';
+import { Cpu, Monitor, Layers, Database, ChevronRight, Search } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
@@ -48,7 +48,7 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#f59e0b', color: '#000', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', width: '100%' }}
                         onClick={() => handleLogClick('manual_search', 'amazon')}
                     >
-                        <ShoppingCart size={20} /> CHECK ON AMAZON
+                        <Search size={20} /> CHECK ON AMAZON
                     </a>
                 </div>
             );
@@ -78,7 +78,7 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#0078d4', color: '#fff', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', width: '100%', maxWidth: '400px' }}
                     onClick={() => handleLogClick('manual_search', 'heureka')}
                 >
-                    <ShoppingCart size={20} /> POROVNAT CENY NA HEUREKA.CZ
+                    <Search size={20} /> POROVNAT CENY NA HEUREKA.CZ
                 </a>
             </div>
         );
@@ -86,6 +86,13 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
 
     // 🔥 PŘESNÁ DATA Z ADMINU HEUREKY (Z TVÝCH SCREENSHOTŮ) 🔥
     const heurekaData = {
+        search: {
+            id: "276035",
+            label: "Hledej HW",
+            url: "https://www.heureka.cz/#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Search",
+            icon: Search,
+            sub: "NAJDI NEJLEPŠÍ CENU"
+        },
         cpu: {
             id: "276027",
             label: "Procesory",
@@ -117,13 +124,14 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
     };
 
     const buttons = [
+        { key: 'search', ...heurekaData.search, en: 'Search Hardware' },
         { key: 'cpu', ...heurekaData.cpu, en: 'Processors' },
         { key: 'gpu', ...heurekaData.gpu, en: 'Graphics' },
         { key: 'mb', ...heurekaData.mb, en: 'Motherboards' },
         { key: 'ram', ...heurekaData.ram, en: 'Memory' }
     ];
 
-    // 🔥 MÓD 2: ČTYŘI KATEGORICKÁ TLAČÍTKA (Výchozí)
+    // 🔥 MÓD 2: PĚT TLAČÍTEK VČETNĚ SEARCHBARU (Výchozí)
     return (
         <div className="guru-buttons-container">
             {buttons.map((btn) => {
@@ -134,6 +142,28 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
                     ? `https://www.amazon.com/s?k=${encodeURIComponent(btn.en)}&tag=thehardware07-20`
                     : btn.url;
 
+                // Vyhledávací pole Heureky v CZ
+                if (btn.key === 'search' && !isEn) {
+                    return (
+                        <div key={btn.key} className="guru-card search-card" onClick={() => handleLogClick(btn.key, 'heureka')}>
+                             <div className="guru-card-glow" />
+                             <div className="guru-icon-wrapper" style={{ marginRight: '10px', padding: '10px' }}>
+                                 <Icon size={24} className="guru-icon" />
+                             </div>
+                             <div className="guru-content" style={{ width: '100%' }}>
+                                 <div 
+                                     className="heureka-affiliate-searchpanel" 
+                                     data-trixam-positionid={btn.id} 
+                                     data-trixam-codetype="iframe" 
+                                     data-trixam-linktarget="top"
+                                     style={{ width: '100%', height: '50px', display: 'flex', alignItems: 'center' }}
+                                 ></div>
+                             </div>
+                        </div>
+                    );
+                }
+
+                // Standardní tlačítka
                 return (
                     <a
                         key={btn.key}
@@ -161,6 +191,7 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
             })}
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-buttons-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 40px 0; width: 100%; }
+                .search-card { grid-column: 1 / -1; padding: 10px 20px; } /* Search bar na celou šířku nahoře */
                 .guru-card { position: relative; display: flex; align-items: center; background: rgba(10, 10, 10, 0.9); border: 1px solid rgba(147, 51, 234, 0.2); padding: 22px; border-radius: 20px; cursor: pointer; transition: all 0.4s; overflow: hidden; backdrop-filter: blur(12px); text-decoration: none; }
                 .guru-card:hover { transform: translateY(-5px); border-color: #9333ea; box-shadow: 0 15px 40px rgba(147, 51, 234, 0.25); }
                 .guru-card-glow { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 100% 0%, rgba(147, 51, 234, 0.1) 0%, transparent 50%); opacity: 0; }
