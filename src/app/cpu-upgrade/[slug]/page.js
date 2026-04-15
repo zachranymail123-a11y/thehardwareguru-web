@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, use } from 'react';
+import React, { useEffect, useState } from 'react';
 import Script from 'next/script'; 
 import { notFound, usePathname } from 'next/navigation';
 import { 
@@ -17,6 +17,7 @@ import { createClient } from '@supabase/supabase-js';
 /**
  * GURU CPU UPGRADE - DETAIL V3.7 (V10 HARD-LOCK UPDATE)
  * 🚀 CÍL: Fix Heureka linků na V10 Hard-Lock a zachování navigačních nástrojů.
+ * OPRAVA: Odstraněno use(params), přidán Amazon link pro EN verzi.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -26,8 +27,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 
 export default function CpuUpgradePage({ params }) {
-    const p = use(params);
-    const rawSlug = p?.slug || '';
+    // 🔥 FIX: Čteme přímo z params, odstraněno use(params)
+    const rawSlug = params?.slug || '';
     const isEn = rawSlug.startsWith('en-');
     const cpuSlug = rawSlug.replace(/^en-/, '');
     const pathname = usePathname() || '';
@@ -65,16 +66,19 @@ export default function CpuUpgradePage({ params }) {
     const finalPerfDiff = Math.round((cpuB.performance_index / cpuA.performance_index - 1) * 100);
     const cpuBBrand = normalizeName(cpuB.name).trim();
 
-    // 🔥 V10 HARD-LOCK REDIRECT LOGIC 🔥
+    // 🔥 V10 HARD-LOCK REDIRECT LOGIC + AMAZON S OPRAVENÝM FRAGMENTEM 🔥
     const handleHeurekaAction = (e, name, subId) => {
         e.preventDefault();
         const q = encodeURIComponent(name + ' cena');
-        // Prioritní haff ID na začátku URL
-        const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+        
+        // Zohlednění EN verze pro přesměrování na Amazon, CZ verze zůstává tvrdě na Heureku dle manuálu
+        const targetUrl = isEn 
+            ? `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`
+            : `https://www.heureka.cz/?h%5Bfraze%5D=${q}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
         
         if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-            const payload = { platform: 'heureka', category: 'cpu_upgrade', sub_id: subId, page: pathname };
-            navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
+            const platform = isEn ? 'amazon' : 'heureka';
+            navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify({ platform, category: 'cpu_upgrade', sub_id: subId, page: pathname })], { type: 'text/plain' }));
         }
 
         setTimeout(() => {
