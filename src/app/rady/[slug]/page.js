@@ -7,8 +7,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU GUIDE ENGINE - DETAIL V2.6 (HEUREKA CTA UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka konverze.
+ * GURU GUIDE ENGINE - DETAIL V2.7 (EN + V10 HARD-LOCK FIX)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchoru, eliminace hluchých míst + Heureka/Amazon konverze.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -37,10 +37,11 @@ export async function generateMetadata({ params }) {
 
   if (!radaItem) return { title: '404 | The Hardware Guru' };
 
-  const isEn = radaItem.slug_en === slug && slug !== radaItem.slug;
+  // 🔥 FIX: Správná detekce jazyka pro EN proxy nebo slug s prefixem en-
+  const isEn = radaItem.slug_en === slug || slug.startsWith('en-');
   const title = isEn && radaItem.title_en ? radaItem.title_en : (radaItem.title || 'Praktická rada');
   const desc = isEn && radaItem.seo_description_en ? radaItem.seo_description_en : (radaItem.seo_description || '');
-  const safeSlug = radaItem.slug;
+  const safeSlug = radaItem.slug.replace(/^en-/, '');
 
   return {
     title: `${title} | The Hardware Guru`,
@@ -48,7 +49,7 @@ export async function generateMetadata({ params }) {
     alternates: {
       canonical: `${baseUrl}/rady/${safeSlug}`,
       languages: {
-        'en': `${baseUrl}/en/rady/${radaItem.slug_en || safeSlug}`,
+        'en': `${baseUrl}/en/rady/${radaItem.slug_en || `en-${safeSlug}`}`,
         'cs': `${baseUrl}/rady/${safeSlug}`,
         'x-default': `${baseUrl}/rady/${safeSlug}`
       }
@@ -65,10 +66,13 @@ export async function generateMetadata({ params }) {
 export default async function RadaDetail({ params }) {
   const { slug } = await params;
 
+  // 🔥 FIX: Očištění slugu pro Supabase (pokud přišel en- parametr)
+  const cleanSlug = slug.replace(/^en-/, '');
+
   const { data: radaItem, error } = await supabase
     .from('rady')
     .select('*')
-    .or(`slug.eq."${slug}",slug_en.eq."${slug}"`)
+    .or(`slug.eq."${cleanSlug}",slug_en.eq."${slug}"`)
     .single();
 
   if (error || !radaItem) {
@@ -77,7 +81,8 @@ export default async function RadaDetail({ params }) {
 
   const latestRady = await getLatestRady(radaItem.slug);
 
-  const isEn = radaItem.slug_en === slug && radaItem.slug_en !== radaItem.slug;
+  // 🔥 FIX: Detekce jazyka
+  const isEn = radaItem.slug_en === slug || slug.startsWith('en-');
   const title = isEn && radaItem.title_en ? radaItem.title_en : (radaItem.title || 'Neznámá rada');
   const content = isEn 
     ? (radaItem.content_en || radaItem.description_en || radaItem.description || '') 
@@ -88,8 +93,11 @@ export default async function RadaDetail({ params }) {
     ? `BUY FOR BEST PRICE ${priceDisplay ? `(${priceDisplay})` : ''}` 
     : `KOUPIT ZA NEJLEPŠÍ CENU ${priceDisplay ? `(${priceDisplay})` : ''}`;
   const backLinkPath = isEn ? '/en/rady' : '/rady';
-  const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}rady/${slug}`;
+  const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}rady/${isEn ? (radaItem.slug_en || `en-${radaItem.slug}`) : radaItem.slug}`;
   const dateObj = radaItem.created_at ? new Date(radaItem.created_at) : new Date();
+
+  // 🔥 V10 Amazon Fallback link pro EN verzi (pokud nevede jinam, odkazujeme na Amazon Deals)
+  const amazonFallbackLink = "https://www.amazon.com/s?k=PC+Components&tag=thehardware07-20&ascsubtag=v10-rady-detail";
 
   // Google Golden Rich Schema
   const articleSchema = {
@@ -158,9 +166,15 @@ export default async function RadaDetail({ params }) {
               <div dangerouslySetInnerHTML={{ __html: content }} />
           </div>
 
-          {/* 🔥 PŘIDÁNO: Heureka tlačítka pod textem článku 🔥 */}
+          {/* 🔥 PŘIDÁNO: Amazon (EN) nebo Heureka (CZ) tlačítka pod textem článku 🔥 */}
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
-              <HeurekaButtons isEn={isEn} />
+              {isEn ? (
+                  <a href={amazonFallbackLink} target="_blank" rel="nofollow sponsored" className="guru-affiliate-cta" style={{ background: '#f59e0b', color: '#000 !important', border: '2px solid #fbbf24', boxShadow: 'none' }}>
+                      <ShoppingCart size={20} /> CHECK DEALS ON AMAZON
+                  </a>
+              ) : (
+                  <HeurekaButtons isEn={false} />
+              )}
           </div>
 
           {radaItem.affiliate_link && (
@@ -179,7 +193,8 @@ export default async function RadaDetail({ params }) {
                   ? "We found the best deal for you. Instant key delivery and Guru-verified store." 
                   : "Našli jsme pro tebe tu nejlepší cenu na trhu. Okamžité doručení klíče a Guru-ověřený obchod."}
               </p>
-              <a href={radaItem.affiliate_link} target="_blank" rel="nofollow sponsored" className="guru-affiliate-cta">
+              {/* Zde může být také fallback na Amazon link v případě EN */}
+              <a href={isEn ? amazonFallbackLink : radaItem.affiliate_link} target="_blank" rel="nofollow sponsored" className="guru-affiliate-cta">
                 <ShoppingCart size={26} /> {buyBtnText}
               </a>
             </div>
