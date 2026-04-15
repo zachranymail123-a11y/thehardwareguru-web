@@ -2,8 +2,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Cpu, Zap, Trophy, Play, MonitorPlay, AlertTriangle, ArrowRight, Activity, Crosshair, Swords, BookOpen, ShoppingCart, Search } from 'lucide-react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
+
+// Inicializace standardního Supabase klienta přes veřejné proměnné
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default function GuruBenchmarkHub({ t, locale = 'cs' }) {
     const [activeTab, setActiveTab] = useState('cpu'); // 'cpu' | 'gpu'
@@ -21,7 +26,6 @@ export default function GuruBenchmarkHub({ t, locale = 'cs' }) {
     const [gpuLeaderboard, setGpuLeaderboard] = useState([]);
     
     const canvasRef = useRef(null);
-    const supabase = createClientComponentClient();
 
     useEffect(() => {
         fetchLeaderboards();
@@ -177,7 +181,7 @@ export default function GuruBenchmarkHub({ t, locale = 'cs' }) {
         } else {
             return (
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '15px' }}>
-                    <a href={`https://www.amazon.com/s?k=${encodeURIComponent(queryEn)}`} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f59e0b', color: '#fff', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', color: '#000' }} className="hover:scale-105 transition-transform">
+                    <a href={`https://www.amazon.com/s?k=${encodeURIComponent(queryEn)}`} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f59e0b', color: '#fff', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }} className="hover:scale-105 transition-transform">
                         <ShoppingCart size={16} /> Amazon
                     </a>
                 </div>
@@ -279,7 +283,7 @@ export default function GuruBenchmarkHub({ t, locale = 'cs' }) {
                     )}
                 </div>
 
-                {/* Inteligentní Upgrade Doporučení (Zobrazí se po jakémkoliv testu) */}
+                {/* Inteligentní Upgrade Doporučení */}
                 {(cpuScore || gpuScore) && (
                     <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '16px', padding: '30px', textAlign: 'center', marginBottom: '40px', animation: 'fadeIn 0.5s' }}>
                         <h3 style={{ fontSize: '22px', fontWeight: '950', color: '#fff', marginBottom: '10px' }}>{t.upgradeTitle}</h3>
@@ -302,7 +306,7 @@ export default function GuruBenchmarkHub({ t, locale = 'cs' }) {
                     </div>
                 )}
 
-                {/* Leaderboards (Zobrazuje vždy aktuální tabuli podle zvoleného tabu) */}
+                {/* Leaderboards */}
                 <div style={{ marginBottom: '60px' }}>
                     <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '24px', fontWeight: '950', color: '#fff', marginBottom: '20px' }}>
                         <Trophy size={24} color="#f59e0b" /> {t.leaderboard} ({activeTab.toUpperCase()})
