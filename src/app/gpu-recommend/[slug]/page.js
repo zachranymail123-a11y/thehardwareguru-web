@@ -2,33 +2,33 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import Script from 'next/script';
 import { 
- ChevronLeft, 
- CheckCircle2, 
- Monitor, 
- ArrowRight, 
- ThumbsUp, 
- AlertTriangle,
- Flame,
- Heart,
- Zap,
- Swords,
- Activity,
- Info,
- HelpCircle,
- Gamepad2,
- ShoppingCart
+  ChevronLeft, 
+  CheckCircle2, 
+  Monitor, 
+  ArrowRight, 
+  ThumbsUp, 
+  AlertTriangle,
+  Flame,
+  Heart,
+  Zap,
+  Swords,
+  Activity,
+  Info,
+  HelpCircle,
+  Gamepad2,
+  ShoppingCart
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU RECOMMEND ENGINE - DETAIL V5.2 (COMPLETE NO-CUT VERSION)
- * 🚀 CÍL: Fix EN/Amazon, V10 Heureka Hard-Lock a Google Golden Rich SEO.
+ * GURU GPU RECOMMEND ENGINE - DETAIL V4.6 (V10 HARD-LOCK SERVER FIX)
+ * 🚀 CÍL: Integrace Hard-Lock trackeru a doplnění tlačítek kalkulaček beze změn architektury.
  */
 
 export const runtime = "nodejs";
 export const revalidate = 86400; 
-export const dynamicParams = true;
+export const dynamicParams = false;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -49,6 +49,7 @@ export async function generateStaticParams() {
 const findGpuBySlug = async (gpuSlug) => {
   if (!supabaseUrl || !gpuSlug) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+  // Očištění slugu pro jistotu
   const cleanSlug = gpuSlug.replace(/^en-/, '');
   try {
       const res1 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${cleanSlug}&limit=1`, { headers, cache: 'force-cache' });
@@ -67,37 +68,35 @@ const findGpuBySlug = async (gpuSlug) => {
 export async function generateMetadata(props) {
   const params = await props.params;
   const rawSlug = params?.slug || '';
-  const isEn = props.isEn === true || props.isEnProxy === true || rawSlug.startsWith('en-');
+  const isEn = props.isEnProxy === true || props.isEn === true || rawSlug.startsWith('en-');
   const cleanSlug = rawSlug.replace(/^en-/, '');
   const gpu = await findGpuBySlug(cleanSlug);
   if (!gpu) return { title: '404 | Hardware Guru' };
   const safeSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
-  const canonicalUrl = `${baseUrl}${isEn ? '/en' : ''}/gpu-recommend/${safeSlug}`;
+  const canonicalUrl = `${baseUrl}/gpu-recommend/${safeSlug}`;
   return {
-    title: isEn ? `Should I buy ${gpu.name}? Guru Verdict | Hardware Guru` : `Vyplatí se koupit ${gpu.name}? Verdikt Guru | Hardware Guru`,
-    alternates: { canonical: canonicalUrl, languages: { 'en': `${baseUrl}/en/gpu-recommend/${safeSlug}`, 'cs': `${baseUrl}/gpu-recommend/${safeSlug}` } }
+    title: isEn ? `Should I buy ${gpu.name}? Guru Verdict | The Hardware Guru` : `Vyplatí se koupit ${gpu.name}? Verdikt Guru | The Hardware Guru`,
+    alternates: { canonical: canonicalUrl, languages: { 'en': `${baseUrl}/en/gpu-recommend/${safeSlug}`, 'cs': canonicalUrl } }
   };
 }
 
 export default async function GpuRecommendPage(props) {
   const params = await props.params;
   const rawSlug = params?.slug || '';
-  // 🔥 FIX: Robustní detekce jazyka
-  const isEn = props.isEn === true || props.isEnProxy === true || rawSlug.startsWith('en-');
+  // 🔥 FIX: Robustní detekce EN
+  const isEn = props.isEnProxy === true || props.isEn === true || rawSlug.startsWith('en-');
   const cleanSlug = rawSlug.replace(/^en-/, '');
   
   const gpu = await findGpuBySlug(cleanSlug);
   if (!gpu) notFound();
 
-  // 🔥 GOOGLE GOLDEN RICH (JSON-LD) 🔥
+  // 🔥 Google Golden Rich
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Review",
     "itemReviewed": { "@type": "Product", "name": gpu.name },
     "reviewRating": { "@type": "Rating", "ratingValue": gpu.performance_index > 100 ? "5" : "4", "bestRating": "5" },
-    "author": { "@type": "Organization", "name": "The Hardware Guru" },
-    "publisher": { "@type": "Organization", "name": "The Hardware Guru" },
-    "description": isEn ? `Detailed expert recommendation for ${gpu.name}.` : `Detailní expertní doporučení pro kartu ${gpu.name}.`
+    "author": { "@type": "Organization", "name": "The Hardware Guru" }
   };
 
   const isHighEnd = (gpu.performance_index || 0) > 100;
@@ -114,9 +113,8 @@ export default async function GpuRecommendPage(props) {
   const vendorColor = (gpu.vendor || '').toUpperCase() === 'NVIDIA' ? '#76b900' : ((gpu.vendor || '').toUpperCase() === 'AMD' ? '#ed1c24' : '#66fcf1');
   const searchName = normalizeName(gpu.name).trim();
 
-  // 🔥 FIX: Affiliate linky (Amazon pro EN, Hard-Lock Heureka pro CZ)
+  // 🔥 OPRAVA: Amazon link pro EN a V10 Heureka pro CZ
   const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20&ascsubtag=v10-recommend`;
-  const heurekaLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-recommend`;
 
   return (
     <div className="guru-recommend-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -129,6 +127,7 @@ export default async function GpuRecommendPage(props) {
           </a>
         </div>
 
+        {/* 🔥 GURU MONEY FIX: TOP REKLAMA ABOVE THE FOLD */}
         <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
             <div className="ad-desktop-wrapper">
                 <SeznamAd zoneId={408654} width={970} height={210} />
@@ -139,7 +138,7 @@ export default async function GpuRecommendPage(props) {
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div className="recommend-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#66fcf1', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', padding: '6px 20px', border: '1px solid rgba(102,252,241,0.3)', borderRadius: '50px', background: 'rgba(102, 252, 241, 0.05)', marginBottom: '20px' }}>
+          <div className="recommend-badge">
             <Monitor size={16} /> GURU RECOMMENDATION
           </div>
           <h1 className="main-title" style={{ fontSize: 'clamp(2rem, 8vw, 4rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.2' }}>
@@ -148,6 +147,7 @@ export default async function GpuRecommendPage(props) {
           </h1>
         </header>
 
+        {/* 🚀 VELKÝ HERO BLOK VERDIKTU */}
         <section style={{ marginBottom: '60px' }}>
             <div className="verdict-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255, 255, 255, 0.05)', borderTop: `8px solid ${verdict.color}`, borderRadius: '24px', padding: '60px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
                 <div className="verdict-icon" style={{ color: verdict.color, display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
@@ -166,18 +166,21 @@ export default async function GpuRecommendPage(props) {
             </div>
         </section>
 
-        {/* 🔥 GURU AFFILIATE BOMB (Amazon pro EN, Hard-Lock Heureka pro CZ) 🔥 */}
-        <div className="affiliate-cta-grid" style={{ marginBottom: '60px', padding: '35px', background: 'rgba(0,0,0,0.4)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center' }}>
-            <div style={{ color: vendorColor, fontSize: '16px', fontWeight: '950', textTransform: 'uppercase', marginBottom: '25px' }}>{isEn ? `CHECK PRICE` : `ZJISTIT CENU`}</div>
-            <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                {isEn ? (
-                    <a href={amazonLink} target="_blank" rel="nofollow sponsored" className="guru-buy-btn amazon-btn"><ShoppingCart size={16} /> BUY ON AMAZON</a>
-                ) : (
-                    <a href={heurekaLink} className="guru-buy-btn heureka-btn v10-hl-btn" target="_blank" rel="nofollow sponsored"><ShoppingCart size={16} /> KOUPIT NA HEUREKA</a>
-                )}
-            </div>
+        {/* 🔥 PŘIDÁNO: Vložení Heureka/Amazon tlačítek (CTA pod verdiktem) 🔥 */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+            {isEn ? (
+                <a href={amazonLink} target="_blank" rel="nofollow sponsored" style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', padding: '18px 30px', background: '#f59e0b', color: '#000', borderRadius: '16px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', border: '2px solid #fbbf24' }}>
+                    <ShoppingCart size={16} /> BUY ON AMAZON
+                </a>
+            ) : (
+                <div className="v10-hl-container" data-subid="v10-recommend-heureka" data-cat="gpu_recommend">
+                    {/* Zde komponenta HeurekaButtons sama použije upravené V10 linky */}
+                    <HeurekaButtons isEn={false} manualSearch={gpu.name} positionId="276026" />
+                </div>
+            )}
         </div>
 
+        {/* 🔥 GURU TOOLS - POVINNÁ TLAČÍTKA NA KALKULAČKY 🔥 */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '60px' }}>
             <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
                 <Gamepad2 size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</span>
@@ -187,6 +190,7 @@ export default async function GpuRecommendPage(props) {
             </a>
         </div>
 
+        {/* 🚀 QUICK STATS */}
         <section className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '60px' }}>
           <div className="res-card">
               <div className="res-label">PERFORMANCE INDEX</div>
@@ -216,27 +220,29 @@ export default async function GpuRecommendPage(props) {
         </div>
       </main>
 
-      <div className="sticky-bottom-anchor" style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: 'rgba(10, 11, 13, 0.98)', borderTop: '1px solid rgba(255, 255, 255, 0.1)', zIndex: 9999, padding: '10px 0', display: 'flex', justifyContent: 'center', boxShadow: '0 -10px 30px rgba(0,0,0,0.8)' }}>
-          <div className="ad-desktop-wrapper" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+      {/* 🔥 GURU MONEY MAKER: STICKY BOTTOM ANCHOR (Ukotvený formát, 100% CTR Boost) */}
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
               <SeznamAd zoneId={408654} width={970} height={90} />
           </div>
-          <div className="ad-mobile-wrapper" style={{ display: 'none', justifyContent: 'center', width: '100%' }}>
+          <div className="ad-mobile-wrapper">
               <SeznamAd zoneId={408651} width={300} height={100} />
           </div>
       </div>
 
+      {/* 🔥 V10 HARD-LOCK SCRIPT PRO SERVER COMPONENT 🔥 */}
       <Script id="v10-hl-script" strategy="lazyOnload">
           {`
               if (typeof window !== 'undefined') {
                   document.addEventListener('click', function(e) {
-                      const btn = e.target.closest('.v10-hl-btn');
+                      const btn = e.target.closest('.v10-hl-container a, .v10-hl-container button');
                       if (btn) {
-                          e.preventDefault();
-                          const targetUrl = btn.href;
-                          if (navigator.sendBeacon) {
-                              navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: 'gpu_recommend', sub_id: 'v10-recommend', page: window.location.pathname }));
+                          const container = e.target.closest('.v10-hl-container');
+                          const subId = container ? container.getAttribute('data-subid') : 'unknown';
+                          const cat = container ? container.getAttribute('data-cat') : 'gpu_recommend';
+                          if (navigator.sendBeacon && btn.href) {
+                              navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: cat, sub_id: subId, page: window.location.pathname }));
                           }
-                          setTimeout(() => { window.location.href = targetUrl; }, 150);
                       }
                   });
               }
@@ -252,14 +258,26 @@ export default async function GpuRecommendPage(props) {
         .res-label { font-size: 10px; font-weight: 950; text-transform: uppercase; color: #6b7280; letter-spacing: 2px; margin-bottom: 10px; }
         .res-val { font-size: 24px; font-weight: 950; color: #fff; }
 
-        .guru-buy-btn { flex: 1; max-width: 300px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; text-transform: uppercase; transition: 0.3s; }
-        .heureka-btn { background: #0078d4; color: #fff; }
-        .amazon-btn { background: #f59e0b; color: #000; border: 2px solid #fbbf24; }
-
         .guru-support-btn, .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; text-decoration: none; transition: 0.3s; text-transform: uppercase; }
         .guru-support-btn { background: #eab308; color: #000; }
         .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
 
+        /* 🔥 STICKY BOTTOM ANCHOR CSS */
+        .sticky-bottom-anchor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 13, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 9999;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
+
+        /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
         .ad-mobile-wrapper { display: none; width: 100%; }
 
@@ -276,7 +294,6 @@ export default async function GpuRecommendPage(props) {
             .launch-btn { width: 100% !important; justify-content: center; }
             .footer-btns { flex-direction: column; }
             .guru-deals-btn, .guru-support-btn { width: 100% !important; }
-            .guru-buy-btn { width: 100%; max-width: 100%; }
         }
       `}} />
     </div>
