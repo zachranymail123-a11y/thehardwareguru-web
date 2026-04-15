@@ -12,18 +12,29 @@ export default function GuruInContentOffer({
 }) {
     const pathname = usePathname() || '';
     const isAmazon = isEn || pathname.includes('/en');
+    
     if (!productName) return null;
+
+    // 🔥 PŘESNÁ ID Z ADMINU HEUREKY PODLE KATEGORIE 🔥
+    const posIds = {
+        gpu: "276026", // Grafické karty
+        cpu: "276027"  // Procesory
+    };
 
     const getLink = () => {
         const subId = customSubId || `v12-smart-${category}-${reason}`;
         let query = productName;
-        if (!isAmazon) {
-            const lowerQuery = query.toLowerCase();
-            if (category === 'gpu' && !lowerQuery.includes('grafická')) query += " grafická karta";
-            if (category === 'cpu' && !lowerQuery.includes('procesor')) query += " procesor";
-            return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(query)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}&o=3`;
+        
+        if (isAmazon) {
+            return `https://www.amazon.com/s?k=${encodeURIComponent(query)}&tag=thehardware07-20&ascsubtag=${subId}`;
         }
-        return `https://www.amazon.com/s?k=${encodeURIComponent(query)}&tag=thehardware07-20&ascsubtag=${subId}`;
+
+        // Formát URL přesně podle administrace Heureky
+        const lowerQuery = query.toLowerCase();
+        if (category === 'gpu' && !lowerQuery.includes('grafická')) query += " grafická karta";
+        if (category === 'cpu' && !lowerQuery.includes('procesor')) query += " procesor";
+        
+        return `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(query)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     };
 
     const ui = isEn ? {
@@ -44,7 +55,15 @@ export default function GuruInContentOffer({
                 </div>
                 <h3 className="v12-title">{productName}</h3>
                 <p className="v12-desc">{ui.desc}</p>
-                <a href={getLink()} target="_blank" rel="nofollow sponsored" className="v12-button">
+                
+                {/* 🔥 ABSOLUTNĚ KLÍČOVÁ OPRAVA: TŘÍDA A POSITION ID PRO TRACKING 🔥 */}
+                <a 
+                    href={getLink()} 
+                    target="_blank" 
+                    rel="sponsored noopener" 
+                    className={isAmazon ? "v12-button" : "v12-button heureka-hn-link"}
+                    data-trixam-positionid={isAmazon ? undefined : (posIds[category] || "276026")}
+                >
                     <ShoppingCart size={18} />
                     {ui.btn}
                 </a>
