@@ -1,7 +1,7 @@
 "use client";
 
-import React from 'react';
-import { Cpu, Monitor, Layers, Database, ChevronRight } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Cpu, Monitor, Layers, Database, ChevronRight, ShoppingCart } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
@@ -9,8 +9,80 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default function HeurekaButtons({ isEn = false }) {
+export default function HeurekaButtons({ isEn = false, manualSearch = null, positionId = null }) {
     const pathname = usePathname() || '';
+
+    // Inicializace Heureka skriptu pro iframe search bar a dynamická tlačítka
+    useEffect(() => {
+        if (!isEn && typeof window !== 'undefined') {
+            const script = document.createElement('script');
+            script.src = "//serve.affiliate.heureka.cz/js/trixam.min.js";
+            script.async = true;
+            document.body.appendChild(script);
+
+            return () => {
+                if (document.body.contains(script)) {
+                    document.body.removeChild(script);
+                }
+            };
+        }
+    }, [isEn]);
+
+    const handleLogClick = (category, platform) => {
+        const payload = { platform, category: `static_${category}`, sub_id: `v11-${category}`, page: pathname };
+        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+            navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
+        }
+    };
+
+    // 🔥 MÓD 1: MANUÁLNÍ VYHLEDÁVÁNÍ (Vygeneruje vyhledávací pole podle dodaných fotek - ID 276035)
+    // Pokud je předáno manualSearch, chceme zobrazit i dedikované tlačítko a vyhledávací Searchbar Heureky.
+    if (manualSearch) {
+        if (isEn) {
+            return (
+                <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto' }}>
+                    <a 
+                        href={`https://www.amazon.com/s?k=${encodeURIComponent(manualSearch)}&tag=thehardware07-20&ascsubtag=v10-search-fallback`}
+                        target="_blank"
+                        rel="nofollow sponsored"
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#f59e0b', color: '#000', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', width: '100%' }}
+                        onClick={() => handleLogClick('manual_search', 'amazon')}
+                    >
+                        <ShoppingCart size={20} /> CHECK ON AMAZON
+                    </a>
+                </div>
+            );
+        }
+
+        const heurekaManualLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(manualSearch)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Manual%20search`;
+        
+        return (
+            <div className="guru-search-widget-container" style={{ width: '100%', maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
+                
+                {/* 🔥 HEUREKA SEARCHBAR (Z obrázku 3 a 4 - ID: 276035) 🔥 */}
+                <div 
+                    className="heureka-affiliate-searchpanel" 
+                    data-trixam-positionid="276035" 
+                    data-trixam-codetype="iframe" 
+                    data-trixam-linktarget="top"
+                    style={{ width: '100%', minHeight: '100px', display: 'flex', justifyContent: 'center' }}
+                ></div>
+
+                {/* Manuální tlačítko jako pojistka s V10 Hard-Lock formátem (#) */}
+                <a 
+                    href={heurekaManualLink}
+                    target="_blank"
+                    rel="nofollow sponsored"
+                    className="heureka-hn-link guru-buy-winner-btn"
+                    data-trixam-positionid={positionId || "276026"}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#0078d4', color: '#fff', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', width: '100%', maxWidth: '400px' }}
+                    onClick={() => handleLogClick('manual_search', 'heureka')}
+                >
+                    <ShoppingCart size={20} /> POROVNAT CENY NA HEUREKA.CZ
+                </a>
+            </div>
+        );
+    }
 
     // 🔥 PŘESNÁ DATA Z ADMINU HEUREKY (Z TVÝCH SCREENSHOTŮ) 🔥
     const heurekaData = {
@@ -44,13 +116,6 @@ export default function HeurekaButtons({ isEn = false }) {
         }
     };
 
-    const handleLogClick = (category, platform) => {
-        const payload = { platform, category: `static_${category}`, sub_id: `v11-${category}`, page: pathname };
-        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-            navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
-        }
-    };
-
     const buttons = [
         { key: 'cpu', ...heurekaData.cpu, en: 'Processors' },
         { key: 'gpu', ...heurekaData.gpu, en: 'Graphics' },
@@ -58,6 +123,7 @@ export default function HeurekaButtons({ isEn = false }) {
         { key: 'ram', ...heurekaData.ram, en: 'Memory' }
     ];
 
+    // 🔥 MÓD 2: ČTYŘI KATEGORICKÁ TLAČÍTKA (Výchozí)
     return (
         <div className="guru-buttons-container">
             {buttons.map((btn) => {
