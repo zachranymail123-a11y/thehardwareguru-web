@@ -1,14 +1,18 @@
-import Page, { generateMetadata as baseMetadata } from '../../gpu-index/page';
+import GpuIndexPage, { generateMetadata as originalGenerateMetadata } from '../../gpu-index/page';
 
 /**
- * GURU EN PROXY - GPU INDEX
- * Cesta: src/app/en/gpu-index/page.js
+ * GURU GPU INDEX EN PROXY
+ * 🚀 CÍL: Oprava předávání prop a odstranění duplicitního obsahu.
  */
 
-export default async function ProxyPage({ params }) { 
-  return <Page params={params} isEn={true} />; 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export async function generateMetadata(props) {
+  return originalGenerateMetadata({ ...props, isEnProxy: true });
 }
 
-export async function generateMetadata({ params }) { 
-  return baseMetadata({ params, isEn: true }); 
+export default function EnGpuIndexPage(props) {
+  // 🔥 FIX: Správné přiřazení prop isEnProxy={true}
+  return <GpuIndexPage {...props} isEnProxy={true} />;
 }
