@@ -2,28 +2,28 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import Script from 'next/script';
 import { 
-  ChevronLeft, 
-  CheckCircle2, 
-  Monitor, 
-  ArrowRight, 
-  ThumbsUp, 
-  AlertTriangle,
-  Flame,
-  Heart,
-  Zap,
-  Swords,
-  Activity,
-  Info,
-  HelpCircle,
-  Gamepad2,
-  ShoppingCart
+ ChevronLeft, 
+ CheckCircle2, 
+ Monitor, 
+ ArrowRight, 
+ ThumbsUp, 
+ AlertTriangle,
+ Flame,
+ Heart,
+ Zap,
+ Swords,
+ Activity,
+ Info,
+ HelpCircle,
+ Gamepad2,
+ ShoppingCart
 } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU RECOMMEND ENGINE - DETAIL V5.0 (ABSOLUTELY COMPLETE)
- * 🚀 CÍL: Fix EN/Amazon, V10 Heureka a Google Golden Rich SEO bez ořezů.
+ * GURU GPU RECOMMEND ENGINE - DETAIL V5.2 (COMPLETE NO-CUT VERSION)
+ * 🚀 CÍL: Fix EN/Amazon, V10 Heureka Hard-Lock a Google Golden Rich SEO.
  */
 
 export const runtime = "nodejs";
@@ -37,10 +37,18 @@ const baseUrl = "https://thehardwareguru.cz";
 const normalizeName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Radeon |Intel /gi, '');
 const slugify = (text) => text ? text.toLowerCase().replace(/graphics|gpu/gi, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
+export async function generateStaticParams() {
+  const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/gpus?select=slug&limit=1000`, { headers });
+    const data = await res.json();
+    return data.map(gpu => ({ slug: gpu.slug }));
+  } catch (e) { return []; }
+}
+
 const findGpuBySlug = async (gpuSlug) => {
   if (!supabaseUrl || !gpuSlug) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
-  // 🔥 FIX: Očištění slugu od prefixu en- pro databázi
   const cleanSlug = gpuSlug.replace(/^en-/, '');
   try {
       const res1 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${cleanSlug}&limit=1`, { headers, cache: 'force-cache' });
@@ -59,29 +67,29 @@ const findGpuBySlug = async (gpuSlug) => {
 export async function generateMetadata(props) {
   const params = await props.params;
   const rawSlug = params?.slug || '';
-  // 🔥 FIX: Robustní detekce jazyka
   const isEn = props.isEn === true || props.isEnProxy === true || rawSlug.startsWith('en-');
   const cleanSlug = rawSlug.replace(/^en-/, '');
   const gpu = await findGpuBySlug(cleanSlug);
   if (!gpu) return { title: '404 | Hardware Guru' };
-  const safeSlug = gpu.slug || slugify(gpu.name);
+  const safeSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
+  const canonicalUrl = `${baseUrl}${isEn ? '/en' : ''}/gpu-recommend/${safeSlug}`;
   return {
-    title: isEn ? `Should I buy ${gpu.name}? Guru Verdict` : `Vyplatí se koupit ${gpu.name}? Verdikt Guru`,
-    alternates: { canonical: `${baseUrl}${isEn ? '/en' : ''}/gpu-recommend/${safeSlug}` }
+    title: isEn ? `Should I buy ${gpu.name}? Guru Verdict | Hardware Guru` : `Vyplatí se koupit ${gpu.name}? Verdikt Guru | Hardware Guru`,
+    alternates: { canonical: canonicalUrl, languages: { 'en': `${baseUrl}/en/gpu-recommend/${safeSlug}`, 'cs': `${baseUrl}/gpu-recommend/${safeSlug}` } }
   };
 }
 
 export default async function GpuRecommendPage(props) {
   const params = await props.params;
   const rawSlug = params?.slug || '';
-  // 🔥 FIX: Robustní detekce jazyka pro EN proxy i přímé parametry
+  // 🔥 FIX: Robustní detekce jazyka
   const isEn = props.isEn === true || props.isEnProxy === true || rawSlug.startsWith('en-');
   const cleanSlug = rawSlug.replace(/^en-/, '');
   
   const gpu = await findGpuBySlug(cleanSlug);
   if (!gpu) notFound();
 
-  // 🔥 Google Golden Rich (JSON-LD)
+  // 🔥 GOOGLE GOLDEN RICH (JSON-LD) 🔥
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Review",
@@ -92,19 +100,23 @@ export default async function GpuRecommendPage(props) {
     "description": isEn ? `Detailed expert recommendation for ${gpu.name}.` : `Detailní expertní doporučení pro kartu ${gpu.name}.`
   };
 
-  const verdict = (gpu.performance_index || 0) > 100 
-    ? { icon: <ThumbsUp size={50} />, color: '#10b981', en: 'EXCELLENT BUY', cz: 'VÝBORNÁ KOUPĚ' }
-    : (gpu.performance_index || 0) > 50 
-    ? { icon: <CheckCircle2 size={50} />, color: '#66fcf1', en: 'GOOD VALUE', cz: 'DOBRÝ POMĚR CENA/VÝKON' }
-    : { icon: <AlertTriangle size={50} />, color: '#ef4444', en: 'CONSIDER ALTERNATIVES', cz: 'ZVAŽTE ALTERNATIVY' };
+  const isHighEnd = (gpu.performance_index || 0) > 100;
+  const isMidRange = (gpu.performance_index || 0) > 50 && (gpu.performance_index || 0) <= 100;
 
-  const safeSlug = gpu.slug || slugify(gpu.name);
-  const vendorColor = (gpu.vendor || '').toUpperCase() === 'NVIDIA' ? '#76b900' : '#ed1c24';
+  const getVerdict = () => {
+      if (isHighEnd) return { icon: <ThumbsUp size={50} />, color: '#10b981', en: 'EXCELLENT BUY', cz: 'VÝBORNÁ KOUPĚ' };
+      if (isMidRange) return { icon: <CheckCircle2 size={50} />, color: '#66fcf1', en: 'GOOD VALUE', cz: 'DOBRÝ POMĚR CENA/VÝKON' };
+      return { icon: <AlertTriangle size={50} />, color: '#ef4444', en: 'CONSIDER ALTERNATIVES', cz: 'ZVAŽTE ALTERNATIVY' };
+  };
+
+  const verdict = getVerdict();
+  const safeSlug = gpu.slug || slugify(gpu.name).replace(/^rtx/,'geforce-rtx').replace(/^radeon/,'amd-radeon');
+  const vendorColor = (gpu.vendor || '').toUpperCase() === 'NVIDIA' ? '#76b900' : ((gpu.vendor || '').toUpperCase() === 'AMD' ? '#ed1c24' : '#66fcf1');
   const searchName = normalizeName(gpu.name).trim();
 
-  // Affiliate linky s V10 Hard-Lockem
+  // 🔥 FIX: Affiliate linky (Amazon pro EN, Hard-Lock Heureka pro CZ)
   const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20&ascsubtag=v10-recommend`;
-  const heurekaLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_content=v10-recommend`;
+  const heurekaLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-recommend`;
 
   return (
     <div className="guru-recommend-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -118,8 +130,12 @@ export default async function GpuRecommendPage(props) {
         </div>
 
         <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
-            <div className="ad-desktop-wrapper"><SeznamAd zoneId={408654} width={970} height={210} /></div>
-            <div className="ad-mobile-wrapper"><SeznamAd zoneId={408651} width={300} height={250} /></div>
+            <div className="ad-desktop-wrapper">
+                <SeznamAd zoneId={408654} width={970} height={210} />
+            </div>
+            <div className="ad-mobile-wrapper">
+                <SeznamAd zoneId={408651} width={300} height={250} />
+            </div>
         </div>
 
         <header style={{ textAlign: 'center', marginBottom: '40px' }}>
@@ -133,52 +149,81 @@ export default async function GpuRecommendPage(props) {
         </header>
 
         <section style={{ marginBottom: '60px' }}>
-            <div className="verdict-card" style={{ background: 'rgba(15, 17, 21, 0.95)', borderTop: `8px solid ${verdict.color}`, borderRadius: '24px', padding: '60px 40px', textAlign: 'center', boxShadow: '0 30px 70px rgba(0,0,0,0.7)' }}>
-                <div style={{ color: verdict.color, display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>{verdict.icon}</div>
-                <div style={{ fontSize: '40px', fontWeight: '950', color: '#fff', textTransform: 'uppercase' }}>{isEn ? verdict.en : verdict.cz}</div>
-                <div style={{ color: '#d1d5db', fontSize: '1.15rem', marginTop: '30px', lineHeight: '1.8' }}>
+            <div className="verdict-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255, 255, 255, 0.05)', borderTop: `8px solid ${verdict.color}`, borderRadius: '24px', padding: '60px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center', backdropFilter: 'blur(10px)' }}>
+                <div className="verdict-icon" style={{ color: verdict.color, display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+                    {verdict.icon}
+                </div>
+                <div className="verdict-title" style={{ fontSize: '40px', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0', textTransform: 'uppercase', letterSpacing: '2px' }}>
+                    {isEn ? verdict.en : verdict.cz}
+                </div>
+                <div className="verdict-desc" style={{ color: '#d1d5db', fontSize: '1.15rem', maxWidth: '600px', margin: '30px auto 0', lineHeight: '1.8' }}>
                     {isEn ? (
-                        <p>Based on current market data, the <strong>{gpu.name}</strong> is an <strong>{verdict.en.toLowerCase()}</strong>.</p>
+                        <p>Based on current market data and benchmarks, the <strong>{gpu.name}</strong> is considered to be a <strong>{verdict.en.toLowerCase()}</strong>.</p>
                     ) : (
-                        <p>Na základě aktuálních dat hodnotíme kartu <strong>{gpu.name}</strong> jako <strong>{verdict.cz.toLowerCase()}</strong>.</p>
+                        <p>Na základě aktuálních dat z trhu a herních testů hodnotíme kartu <strong>{gpu.name}</strong> jako <strong>{verdict.cz.toLowerCase()}</strong>.</p>
                     )}
                 </div>
             </div>
         </section>
 
-        <div className="affiliate-cta" style={{ marginBottom: '60px', padding: '35px', background: 'rgba(0,0,0,0.4)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center' }}>
+        {/* 🔥 GURU AFFILIATE BOMB (Amazon pro EN, Hard-Lock Heureka pro CZ) 🔥 */}
+        <div className="affiliate-cta-grid" style={{ marginBottom: '60px', padding: '35px', background: 'rgba(0,0,0,0.4)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center' }}>
             <div style={{ color: vendorColor, fontSize: '16px', fontWeight: '950', textTransform: 'uppercase', marginBottom: '25px' }}>{isEn ? `CHECK PRICE` : `ZJISTIT CENU`}</div>
             <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
                 {isEn ? (
-                    <a href={amazonLink} target="_blank" rel="nofollow sponsored" className="guru-btn amazon-btn"><ShoppingCart size={16} /> BUY ON AMAZON</a>
+                    <a href={amazonLink} target="_blank" rel="nofollow sponsored" className="guru-buy-btn amazon-btn"><ShoppingCart size={16} /> BUY ON AMAZON</a>
                 ) : (
-                    <a href={heurekaLink} className="guru-btn heureka-btn v10-hl-btn" target="_blank" rel="nofollow sponsored"><ShoppingCart size={16} /> KOUPIT NA HEUREKA</a>
+                    <a href={heurekaLink} className="guru-buy-btn heureka-btn v10-hl-btn" target="_blank" rel="nofollow sponsored"><ShoppingCart size={16} /> KOUPIT NA HEUREKA</a>
                 )}
             </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '60px' }}>
-            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="tool-btn" style={{ background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4' }}><Gamepad2 size={28} /> <span>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</span></a>
-            <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} className="tool-btn" style={{ background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7' }}><AlertTriangle size={28} /> <span>{isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</span></a>
+            <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
+                <Gamepad2 size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</span>
+            </a>
+            <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                <AlertTriangle size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</span>
+            </a>
         </div>
 
-        <div className="footer-btns" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', marginTop: '80px' }}>
-            <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn"><Flame size={20} /> GAME DEALS</a>
-            <a href={isEn ? "/en/support" : "/support"} className="guru-support-btn"><Heart size={20} /> SUPPORT</a>
+        <section className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '60px' }}>
+          <div className="res-card">
+              <div className="res-label">PERFORMANCE INDEX</div>
+              <div className="res-val" style={{ color: '#66fcf1' }}>{gpu.performance_index || 'N/A'} <span style={{fontSize: '14px'}}>PTS</span></div>
+          </div>
+          <div className="res-card">
+              <div className="res-label">VRAM CAPACITY</div>
+              <div className="res-val">{gpu.vram_gb || '-'} GB</div>
+          </div>
+          <div className="res-card">
+              <div className="res-label">ARCHITECTURE</div>
+              <div className="res-val" style={{ fontSize: '18px' }}>{gpu.architecture || '-'}</div>
+          </div>
+        </section>
+
+        <section style={{ textAlign: 'center', marginTop: '40px' }}>
+            <a href={isEn ? `/en/gpu-performance/${safeSlug}` : `/gpu-performance/${safeSlug}`} className="launch-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', padding: '18px 40px', background: 'linear-gradient(135deg, #66fcf1 0%, #45a29e 100%)', color: '#0b0c10', borderRadius: '16px', fontWeight: '950', fontSize: '15px', textDecoration: 'none', textTransform: 'uppercase', boxShadow: '0 10px 30px rgba(102, 252, 241, 0.3)' }}>
+                <Activity size={20} /> <span>{isEn ? 'Full Benchmarks' : 'Kompletní testy'}</span>
+            </a>
+        </section>
+
+        <div className="footer-btns-section" style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px' }}>
+          <div className="footer-btns" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
+            <a href="https://www.hrkgame.com/en/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn"><Flame size={20} /> {isEn ? 'DEALS' : 'SLEVY'}</a>
+            <a href={isEn ? "/en/support" : "/support"} className="guru-support-btn"><Heart size={20} /> {isEn ? 'SUPPORT' : 'PODPORA'}</a>
+          </div>
         </div>
       </main>
 
-      <style dangerouslySetInnerHTML={{__html: `
-        .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; }
-        .guru-btn { flex: 1; max-width: 300px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; text-transform: uppercase; transition: 0.3s; }
-        .heureka-btn { background: #0078d4; color: #fff; }
-        .amazon-btn { background: #f59e0b; color: #000; border: 2px solid #fbbf24; }
-        .tool-btn { display: flex; align-items: center; justify-content: center; gap: 15px; padding: 25px; border-radius: 20px; text-decoration: none; font-weight: 950; transition: 0.3s; }
-        .guru-deals-btn, .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; text-decoration: none; }
-        .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
-        .guru-support-btn { background: #eab308; color: #000; }
-        @media (max-width: 768px) { .ad-desktop-wrapper { display: none; } .ad-mobile-wrapper { display: flex; } .guru-btn { width: 100%; max-width: 100%; } }
-      `}} />
+      <div className="sticky-bottom-anchor" style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: 'rgba(10, 11, 13, 0.98)', borderTop: '1px solid rgba(255, 255, 255, 0.1)', zIndex: 9999, padding: '10px 0', display: 'flex', justifyContent: 'center', boxShadow: '0 -10px 30px rgba(0,0,0,0.8)' }}>
+          <div className="ad-desktop-wrapper" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper" style={{ display: 'none', justifyContent: 'center', width: '100%' }}>
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
 
       <Script id="v10-hl-script" strategy="lazyOnload">
           {`
@@ -197,6 +242,43 @@ export default async function GpuRecommendPage(props) {
               }
           `}
       </Script>
+
+      <style dangerouslySetInnerHTML={{__html: `
+        .recommend-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; marginBottom: 20px; padding: 6px 20px; border: 1px solid rgba(102,252,241,0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.05); margin-bottom: 20px; }
+        .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
+        .guru-back-btn:hover { background: rgba(102, 252, 241, 0.1); transform: translateX(-5px); }
+
+        .res-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
+        .res-label { font-size: 10px; font-weight: 950; text-transform: uppercase; color: #6b7280; letter-spacing: 2px; margin-bottom: 10px; }
+        .res-val { font-size: 24px; font-weight: 950; color: #fff; }
+
+        .guru-buy-btn { flex: 1; max-width: 300px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; text-transform: uppercase; transition: 0.3s; }
+        .heureka-btn { background: #0078d4; color: #fff; }
+        .amazon-btn { background: #f59e0b; color: #000; border: 2px solid #fbbf24; }
+
+        .guru-support-btn, .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; text-decoration: none; transition: 0.3s; text-transform: uppercase; }
+        .guru-support-btn { background: #eab308; color: #000; }
+        .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
+
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
+        @media (max-width: 768px) {
+            .guru-recommend-wrapper { padding-top: 80px !important; }
+            .inner-container { padding: 0 15px !important; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
+            .main-title { font-size: 1.6rem !important; }
+            .verdict-card { padding: 35px 20px !important; border-radius: 20px !important; }
+            .verdict-title { font-size: 1.8rem !important; }
+            .verdict-desc { font-size: 1rem !important; }
+            .stats-grid { grid-template-columns: 1fr !important; gap: 15px; }
+            .launch-btn { width: 100% !important; justify-content: center; }
+            .footer-btns { flex-direction: column; }
+            .guru-deals-btn, .guru-support-btn { width: 100% !important; }
+            .guru-buy-btn { width: 100%; max-width: 100%; }
+        }
+      `}} />
     </div>
   );
 }
