@@ -62,7 +62,7 @@ export default function CpuVsHub() {
     loadData();
   }, [isEn]);
 
-  // 🔥 V10 HARD-LOCK REDIRECT LOGIC 🔥
+  // 🔥 V10 HARD-LOCK REDIRECT LOGIC (OPRAVA FRAGMENTU) 🔥
   const handleHeurekaAction = (e, id, subId) => {
     e.preventDefault();
     if (!id) return;
@@ -70,8 +70,8 @@ export default function CpuVsHub() {
     if (!cpu) return;
 
     const q = encodeURIComponent(cpu.name + ' cena');
-    // Prioritní haff ID na začátku pro jistotu provize
-    const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+    // Prioritní haff ID na začátku pro jistotu provize + opravený fragment s UTM
+    const targetUrl = `https://www.heureka.cz/?h%5Bfraze%5D=${q}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     
     if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
         const payload = { 
