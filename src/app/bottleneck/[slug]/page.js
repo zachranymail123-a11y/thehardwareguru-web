@@ -82,12 +82,13 @@ export default function BottleneckPage({ params }) {
 
   const subTag = `v10-bn-slug-${bottleneckPercent}`;
 
+  // 🔥 OPRAVENÝ HEUREKA LINK S # PRO UTM PARAMETRY 🔥
   const getCleanHeurekaLink = (name, type) => {
       let query = String(name || '').replace(/NVIDIA |AMD |Intel |Ryzen |Core /gi, '').trim();
       if (type === 'cpu') query += " procesor";
       if (type === 'gpu') query += " grafická karta";
       const safeQuery = query.replace(/\s+/g, '+');
-      return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subTag}&o=3`;
+      return `https://www.heureka.cz/?h%5Bfraze%5D=${safeQuery}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subTag}`;
   };
 
   const handleSilentLog = (cat) => {
@@ -139,11 +140,14 @@ export default function BottleneckPage({ params }) {
                 </div>
                 <div style={{ fontWeight: 900, color: '#a855f7' }}>🔥 {targetGpuName}</div>
                 
+                {/* 🔥 PŘIDÁNA TŘÍDA A POSITION ID PRO GPU 🔥 */}
                 <a 
                   href={getCleanHeurekaLink(targetGpuName, 'gpu')} 
                   onClick={() => handleSilentLog('gpu')}
                   target="_blank" 
-                  rel="nofollow sponsored" 
+                  rel="sponsored noopener" 
+                  className="heureka-hn-link"
+                  data-trixam-positionid="276026"
                   style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
                 >
                     <ShoppingCart size={18} /> ZJISTIT NEJNIŽŠÍ CENU
@@ -161,11 +165,14 @@ export default function BottleneckPage({ params }) {
                 </div>
                 <div style={{ fontWeight: 900, color: '#a855f7' }}>🔥 {targetCpuName}</div>
                 
+                {/* 🔥 PŘIDÁNA TŘÍDA A POSITION ID PRO CPU 🔥 */}
                 <a 
                   href={getCleanHeurekaLink(targetCpuName, 'cpu')} 
                   onClick={() => handleSilentLog('cpu')}
                   target="_blank" 
-                  rel="nofollow sponsored" 
+                  rel="sponsored noopener" 
+                  className="heureka-hn-link"
+                  data-trixam-positionid="276027"
                   style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
                 >
                     <ShoppingCart size={18} /> ZJISTIT NEJNIŽŠÍ CENU
