@@ -12,8 +12,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU UPGRADE ENGINE - DETAIL V121.8 (V10 HARD-LOCK SERVER FIX)
- * 🚀 CÍL: Integrace Hard-Lock trackeru a doplnění tlačítek kalkulaček beze změn architektury.
+ * GURU GPU UPGRADE ENGINE - DETAIL V121.9 (STRICT BACKUP FIX)
+ * 🚀 CÍL: Fix EN/Amazon a V10 Heureka. Žádné ořezy, žádné jiné změny.
  */
 
 export const runtime = "nodejs";
@@ -70,7 +70,7 @@ export async function generateMetadata(props) {
   const { slug } = await props.params;
   const h = headers();
   const fullUrl = h.get('x-url') || h.get('referer') || "";
-  const isEn = fullUrl.includes('/en/') || slug?.startsWith('en-');
+  const isEn = props.isEn === true || props.isEnProxy === true || fullUrl.includes('/en/') || slug?.startsWith('en-');
   const upgrade = await getUpgradeData(slug);
   if (!upgrade || !upgrade.oldGpu) return { title: 'GPU Upgrade | Hardware Guru' };
   const { oldGpu, newGpu } = upgrade;
@@ -82,7 +82,8 @@ export default async function GpuUpgradePage(props) {
   const { slug } = await props.params;
   const h = headers();
   const fullUrl = h.get('x-url') || h.get('referer') || "";
-  const isEn = fullUrl.includes('/en/') || slug?.startsWith('en-');
+  // 🔥 FIX: Robustní detekce EN
+  const isEn = props.isEn === true || props.isEnProxy === true || fullUrl.includes('/en/') || slug?.startsWith('en-');
 
   const upgrade = await getUpgradeData(slug);
   if (!upgrade || !upgrade.oldGpu || !upgrade.newGpu) notFound();
@@ -99,7 +100,8 @@ export default async function GpuUpgradePage(props) {
   };
 
   const searchName = normalizeName(gpuB.name).trim();
-  const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20`;
+  // 🔥 FIX: Oprava Amazon a Heureka linků (Heureka má V10 Hard-Lock s #)
+  const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20&ascsubtag=v10-gpu-upgrade`;
   const smartyLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(searchName)}`)}`;
 
   return (
@@ -143,7 +145,7 @@ export default async function GpuUpgradePage(props) {
                         <>
                             <a href={smartyLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn"><ShoppingCart size={16} /> Smarty.cz</a>
                             <a 
-                                href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gpu-upgrade`}
+                                href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gpu-upgrade`}
                                 data-subid="v10-gpu-upgrade"
                                 data-cat="gpu_upgrade"
                                 target="_blank" 
