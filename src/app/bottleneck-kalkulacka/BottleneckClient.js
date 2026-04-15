@@ -158,26 +158,13 @@ export default function BottleneckClient({
     const a = analysis || {};
     const statusColor = (a.bottleneckPercent || 0) < 15 ? '#10b981' : ((a.bottleneckPercent || 0) < 30 ? '#f59e0b' : '#ef4444');
 
-    // 🔥 V10 HARD-LOCK REDIRECT LOGIC S OPRAVENÝM FORMÁTEM 🔥
-    const handleAffiliateClick = (e, name, type) => {
-        e.preventDefault();
-        const cleanName = normalizeName(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-        
-        if (isEn) {
-            window.location.href = `https://www.amazon.com/s?k=${encodeURIComponent(cleanName)}&tag=thehardware07-20`;
-            return;
-        }
-
-        const subId = `v10-bn-${type}`;
-        // 🔥 V10 Golden Formát: haff hned na začátku, doména www, param o=3, přidání kategorie pro Heureku
-        const querySuffix = type === 'cpu' ? ' procesor' : ' grafická karta';
-        const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(cleanName + querySuffix)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}&o=3`;
-        
+    // 🔥 LOGOVÁNÍ KLIKNUTÍ DO SUPABASE (ZŮSTÁVÁ, ALE BEZ REDIRECTU) 🔥
+    const handleLogClick = (name, type) => {
         if (navigator.sendBeacon) {
-            const payload = { platform: 'heureka', category: `bn_${type}`, sub_id: subId, page: pathname };
+            const subId = `v10-bn-${type}`;
+            const payload = { platform: isEn ? 'amazon' : 'heureka', category: `bn_${type}`, sub_id: subId, page: pathname };
             navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
         }
-        setTimeout(() => { window.location.href = targetUrl; }, 150);
     };
 
     return (
@@ -285,13 +272,37 @@ export default function BottleneckClient({
                             <div className="affiliate-cta-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', width: '100%' }}>
                                 <div className="affiliate-col" style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '15px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                     <div style={{ fontSize: '10px', fontWeight: '900', color: '#a855f7', marginBottom: '10px' }}>{isEn ? 'BUY GPU' : 'KOUPIT GRAFIKU'}</div>
-                                    <a href="#" onClick={(e) => handleAffiliateClick(e, a.gpuName, 'gpu')} className="guru-buy-winner-btn" style={{ width: '100%', padding: '12px', borderRadius: '10px', textDecoration: 'none', fontWeight: '900', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', background: isEn ? '#f59e0b' : '#3b82f6', color: isEn ? '#000' : '#fff' }}>
+                                    
+                                    {/* 🔥 PŘESNÝ HEUREKA LINK PODLE MANUÁLU 🔥 */}
+                                    <a 
+                                        href={isEn 
+                                            ? `https://www.amazon.com/s?k=${encodeURIComponent(normalizeName(a.gpuName))}&tag=thehardware07-20` 
+                                            : `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(normalizeName(a.gpuName) + ' grafická karta')}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-bn-gpu`}
+                                        target="_blank" 
+                                        rel="sponsored noopener"
+                                        className={isEn ? "guru-buy-winner-btn" : "heureka-hn-link guru-buy-winner-btn"}
+                                        data-trixam-positionid={isEn ? undefined : "276026"}
+                                        onClick={() => handleLogClick(a.gpuName, 'gpu')}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', textDecoration: 'none', fontWeight: '900', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', background: isEn ? '#f59e0b' : '#3b82f6', color: isEn ? '#000' : '#fff' }}
+                                    >
                                         <ShoppingCart size={16} /> {isEn ? 'Amazon' : 'Heureka.cz'}
                                     </a>
                                 </div>
                                 <div className="affiliate-col" style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '15px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                     <div style={{ fontSize: '10px', fontWeight: '900', color: '#a855f7', marginBottom: '10px' }}>{isEn ? 'BUY CPU' : 'KOUPIT PROCESOR'}</div>
-                                    <a href="#" onClick={(e) => handleAffiliateClick(e, a.cpuName, 'cpu')} className="guru-buy-winner-btn" style={{ width: '100%', padding: '12px', borderRadius: '10px', textDecoration: 'none', fontWeight: '900', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', background: isEn ? '#f59e0b' : '#3b82f6', color: isEn ? '#000' : '#fff' }}>
+                                    
+                                    {/* 🔥 PŘESNÝ HEUREKA LINK PODLE MANUÁLU 🔥 */}
+                                    <a 
+                                        href={isEn 
+                                            ? `https://www.amazon.com/s?k=${encodeURIComponent(normalizeName(a.cpuName))}&tag=thehardware07-20` 
+                                            : `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(normalizeName(a.cpuName) + ' procesor')}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-bn-cpu`}
+                                        target="_blank" 
+                                        rel="sponsored noopener"
+                                        className={isEn ? "guru-buy-winner-btn" : "heureka-hn-link guru-buy-winner-btn"}
+                                        data-trixam-positionid={isEn ? undefined : "276027"}
+                                        onClick={() => handleLogClick(a.cpuName, 'cpu')}
+                                        style={{ width: '100%', padding: '12px', borderRadius: '10px', textDecoration: 'none', fontWeight: '900', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', background: isEn ? '#f59e0b' : '#3b82f6', color: isEn ? '#000' : '#fff' }}
+                                    >
                                         <ShoppingCart size={16} /> {isEn ? 'Amazon' : 'Heureka.cz'}
                                     </a>
                                 </div>
