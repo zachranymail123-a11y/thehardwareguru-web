@@ -37,10 +37,14 @@ export default function BottleneckResultPage({ params, searchParams }) {
     if (loading) return null;
     if (!s.cpuId || !s.gpuId || !p.slug) return notFound();
 
+    // 🔥 OPRAVA HEUREKA URL PODLE MANUÁLU (Fragment # a UTM parametry)
     const handleHeurekaAction = (e, name) => {
         e.preventDefault();
         const cleanName = name.replace(/NVIDIA |AMD |Intel |GeForce |Radeon /gi, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '+');
-        const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${cleanName}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-res`;
+        
+        // Přesný formát URL z administrace Heureky
+        const targetUrl = `https://www.heureka.cz/?h%5Bfraze%5D=${cleanName}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-res`;
+        
         if (navigator.sendBeacon) {
             navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify({ platform: 'heureka', category: 'bn_res', page: pathname })], { type: 'text/plain' }));
         }
