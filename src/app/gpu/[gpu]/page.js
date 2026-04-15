@@ -9,8 +9,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU ENGINE - DETAIL GRAFIKY V3.7 (STRICT BACKUP FIX)
- * 🚀 CÍL: Spolehlivá detekce angličtiny, Amazon tlačítka a V10 Hard-Lock tracker.
+ * GURU GPU ENGINE - DETAIL GRAFIKY V3.8 (NEXT.JS 15 AWAIT HEADERS FIX)
+ * 🚀 CÍL: Spolehlivá detekce angličtiny, Amazon tlačítka a fix pádu.
  */
 
 export const runtime = "nodejs";
@@ -77,10 +77,10 @@ export async function generateMetadata(props) {
   const params = await props.params;
   const rawSlug = params?.slug || params?.gpu || '';
   
-  // 🔥 AGRESIVNÍ DETEKCE EN: headers + path
-  const headersList = headers();
-  const fullUrl = headersList.get('x-url') || headersList.get('referer') || "";
-  const isEn = props.isEnProxy === true || props.isEn === true || fullUrl.includes('/en/') || rawSlug.startsWith('en-');
+  // 🔥 FIX: AWAIT HEADERS pro Next.js 15
+  const headersList = await headers();
+  const fullUrl = headersList.get('x-url') || headersList.get('referer') || headersList.get('x-invoke-path') || "";
+  const isEn = props.isEnProxy === true || props.isEn === true || rawSlug.startsWith('en-') || fullUrl.includes('/en/');
 
   const gpuSlug = rawSlug.replace(/^en-/, '');
   const gpu = await findGpuBySlug(gpuSlug);
@@ -99,10 +99,10 @@ export default async function GpuDetailPage(props) {
   const params = await props.params;
   const rawSlug = params?.slug || params?.gpu || '';
   
-  // 🔥 AGRESIVNÍ DETEKCE EN: headers + path
-  const headersList = headers();
-  const fullUrl = headersList.get('x-url') || headersList.get('referer') || "";
-  const isEn = props.isEnProxy === true || props.isEn === true || fullUrl.includes('/en/') || rawSlug.startsWith('en-');
+  // 🔥 FIX: AWAIT HEADERS pro Next.js 15
+  const headersList = await headers();
+  const fullUrl = headersList.get('x-url') || headersList.get('referer') || headersList.get('x-invoke-path') || "";
+  const isEn = props.isEnProxy === true || props.isEn === true || rawSlug.startsWith('en-') || fullUrl.includes('/en/');
 
   const gpuSlug = rawSlug.replace(/^en-/, '');
   
@@ -115,7 +115,7 @@ export default async function GpuDetailPage(props) {
   const { similarGpus, recommendedCpus } = await getInternalLinksData(gpu.id);
 
   const searchName = getCleanSearchName(gpu.name);
-  // 🔥 OPRAVA: Amazon link pro EN
+  // 🔥 Amazon link pro EN a V10 Heureka link s '#'
   const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20&ascsubtag=v10-gpu-detail`;
   const smartyLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(searchName)}`)}`;
 
@@ -157,7 +157,7 @@ export default async function GpuDetailPage(props) {
           </h1>
         </header>
 
-        {/* 🔥 AFFILIATE BOMB (Amazon pro EN, Hard-Lock Heureka pro CZ) 🔥 */}
+        {/* 🔥 AFFILIATE BOMB 🔥 */}
         <div className="affiliate-cta-grid" style={{ marginBottom: '30px', borderColor: `${vendorColor}40` }}>
             <div className="affiliate-col">
                 <div className="affiliate-col-title" style={{ color: vendorColor }}>
@@ -292,7 +292,6 @@ export default async function GpuDetailPage(props) {
                   document.addEventListener('click', function(e) {
                       const btn = e.target.closest('.v10-hl-btn, .v10-hl-container a, .v10-hl-container button');
                       if (btn) {
-                          e.preventDefault();
                           const container = e.target.closest('.v10-hl-container');
                           const subId = btn.getAttribute('data-subid') || (container ? container.getAttribute('data-subid') : 'unknown');
                           const cat = btn.getAttribute('data-cat') || (container ? container.getAttribute('data-cat') : 'gpu_profile');
@@ -300,9 +299,6 @@ export default async function GpuDetailPage(props) {
                           
                           if (navigator.sendBeacon && targetUrl) {
                               navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: cat, sub_id: subId, page: window.location.pathname }));
-                          }
-                          if (targetUrl) {
-                              setTimeout(() => { window.location.href = targetUrl; }, 150);
                           }
                       }
                   });
