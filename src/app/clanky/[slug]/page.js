@@ -89,8 +89,8 @@ export default async function ArticleDetailPage(props) {
     const getAmazonLink = (query) => `https://www.amazon.com/s?k=${encodeURIComponent(query)}&tag=thehardware07-20`;
     const getSmartyLink = (query) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(query)}`)}`;
     
-    // 🔥 FIX: Hard-Lock V10 Link (Priority haff ID) 🔥
-    const getHeurekaLink = (query) => `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(query)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-article`;
+    // 🔥 FIX: Hard-Lock V10 Link - OPRAVENÝ FORMÁT S # PRO UTM PARAMETRY 🔥
+    const getHeurekaLink = (query) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(query)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-article`;
 
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -135,6 +135,7 @@ export default async function ArticleDetailPage(props) {
                                     </a>
                                 ) : (
                                     <>
+                                        {/* 🔥 TŘÍDA A POSITION ID HEUREKY JSOU ZDE SPRÁVNĚ ZACHOVÁNY 🔥 */}
                                         <a 
                                             href={getHeurekaLink(searchQuery)} 
                                             className="guru-buy-winner-btn heureka-btn heureka-hn-link" 
