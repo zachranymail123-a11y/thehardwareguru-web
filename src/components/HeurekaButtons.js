@@ -1,5 +1,6 @@
 "use client";
-import React, { useMemo } from 'react';
+
+import React from 'react';
 import { Cpu, Monitor, Layers, Database, ChevronRight } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
@@ -8,84 +9,84 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default function HeurekaButtons({ isEn = false, manualSearch = "" }) {
+export default function HeurekaButtons({ isEn = false }) {
     const pathname = usePathname() || '';
-    const platform = isEn ? 'amazon' : 'heureka';
 
-    const intent = useMemo(() => {
-        const lower = pathname.toLowerCase();
-        if (lower.includes('bottleneck')) return 'calc';
-        if (lower.includes('gpu')) return 'gpu';
-        if (lower.includes('cpu')) return 'cpu';
-        return 'generic';
-    }, [pathname]);
-
-    const getLink = (category) => {
-        const subId = `v10-${platform}-${category}-${intent}`;
-        let searchQuery = "";
-        
-        if (category === intent && manualSearch) {
-            searchQuery = manualSearch;
-        } else {
-            const fallbacks = {
-                cpu: "AMD Ryzen 9 9950X",
-                gpu: "NVIDIA RTX 5080",
-                mb: "X870E AM5",
-                ram: "DDR5 64GB"
-            };
-            searchQuery = fallbacks[category];
+    // 🔥 PŘESNÁ DATA Z ADMINU HEUREKY (Z TVÝCH SCREENSHOTŮ) 🔥
+    const heurekaData = {
+        cpu: {
+            id: "276027",
+            label: "Procesory",
+            url: "https://www.heureka.cz/?h%5Bfraze%5D=procesor#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link",
+            icon: Cpu,
+            sub: "9000 SERIES"
+        },
+        gpu: {
+            id: "276026",
+            label: "Grafiky",
+            url: "https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link",
+            icon: Monitor,
+            sub: "RTX 50 SERIES"
+        },
+        mb: {
+            id: "276033",
+            label: "Desky",
+            url: "https://www.heureka.cz/?h%5Bfraze%5D=zakladni+deska#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link",
+            icon: Layers,
+            sub: "AM5 NEXT-GEN"
+        },
+        ram: {
+            id: "276034",
+            label: "Paměti",
+            url: "https://www.heureka.cz/?h%5Bfraze%5D=ram+pamet#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link",
+            icon: Database,
+            sub: "DDR5 8000MT"
         }
-
-        // 🔥 STRATEGICKÉ UPŘESNĚNÍ DOTAZU PRO VYŠŠÍ KONVERZI (POUZE CZ)
-        let finalQuery = searchQuery;
-        if (platform === 'heureka') {
-            if (category === 'cpu' && !finalQuery.toLowerCase().includes('procesor')) finalQuery += " procesor";
-            if (category === 'gpu' && !finalQuery.toLowerCase().includes('grafická')) finalQuery += " grafická karta";
-            if (category === 'mb' && !finalQuery.toLowerCase().includes('deska')) finalQuery += " základní deska";
-        }
-
-        if (platform === 'amazon') {
-            return `https://www.amazon.com/s?k=${encodeURIComponent(finalQuery)}&tag=thehardware07-20&ascsubtag=${subId}&s=featured`;
-        }
-        
-        // 🔥 TURBO KONVERZNÍ FORMÁT 🔥
-        // Přidán parametr o=3 pro prioritizaci relevantních produktů
-        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(finalQuery)}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}&o=3`;
     };
 
-    const handleLogClick = (category) => {
-        const payload = { platform, category: `static_${category}`, sub_id: `v10-${category}`, page: pathname };
+    const handleLogClick = (category, platform) => {
+        const payload = { platform, category: `static_${category}`, sub_id: `v11-${category}`, page: pathname };
         if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
             navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
         }
     };
 
     const buttons = [
-        { id: 'cpu', icon: Cpu, cz: 'Procesory', en: 'Processors', sub: '9000 SERIES' },
-        { id: 'gpu', icon: Monitor, cz: 'Grafiky', en: 'Graphics', sub: 'RTX 50 SERIES' },
-        { id: 'mb', icon: Layers, cz: 'Desky', en: 'Motherboards', sub: 'AM5 NEXT-GEN' },
-        { id: 'ram', icon: Database, cz: 'Paměti', en: 'Memory', sub: 'DDR5 8000MT' }
+        { key: 'cpu', ...heurekaData.cpu, en: 'Processors' },
+        { key: 'gpu', ...heurekaData.gpu, en: 'Graphics' },
+        { key: 'mb', ...heurekaData.mb, en: 'Motherboards' },
+        { key: 'ram', ...heurekaData.ram, en: 'Memory' }
     ];
 
     return (
         <div className="guru-buttons-container">
             {buttons.map((btn) => {
                 const Icon = btn.icon;
+                
+                // EN verze jede na Amazon (pokud nemáš EN Heureku), CZ verze jede PŘESNĚ podle screenů
+                const finalUrl = isEn 
+                    ? `https://www.amazon.com/s?k=${encodeURIComponent(btn.en)}&tag=thehardware07-20`
+                    : btn.url;
+
                 return (
                     <a
-                        key={btn.id}
-                        href={getLink(btn.id)}
+                        key={btn.key}
+                        href={finalUrl}
                         target="_blank"
                         rel="nofollow sponsored"
-                        onClick={() => handleLogClick(btn.id)}
-                        className="guru-card"
+                        // 🔥 KLÍČOVÉ PRO HEUREKA TRACKING 🔥
+                        className={isEn ? "guru-card" : "heureka-hn-link guru-card"}
+                        data-trixam-positionid={isEn ? undefined : btn.id}
+                        onClick={() => handleLogClick(btn.key, isEn ? 'amazon' : 'heureka')}
                     >
                         <div className="guru-card-glow" />
                         <div className="guru-icon-wrapper">
                             <Icon size={28} className="guru-icon" />
                         </div>
                         <div className="guru-content">
-                            <span className="guru-label">{isEn ? btn.en : btn.cz}</span>
+                            <span className="guru-label">
+                                {isEn ? btn.en : `${btn.label} za nejnižší ceny`}
+                            </span>
                             <span className="guru-sub">{btn.sub}</span>
                         </div>
                         <ChevronRight size={20} className="guru-arrow" />
@@ -101,7 +102,7 @@ export default function HeurekaButtons({ isEn = false, manualSearch = "" }) {
                 .guru-icon-wrapper { background: #1a1a1a; padding: 14px; border-radius: 16px; margin-right: 18px; color: #9333ea; border: 1px solid rgba(255, 255, 255, 0.05); }
                 .guru-card:hover .guru-icon-wrapper { background: #9333ea; color: #fff; }
                 .guru-content { display: flex; flex-direction: column; flex-grow: 1; }
-                .guru-label { color: #fff; font-weight: 900; font-size: 17px; text-transform: uppercase; }
+                .guru-label { color: #fff; font-weight: 900; font-size: 15px; text-transform: uppercase; line-height: 1.2; }
                 .guru-sub { color: #a855f7; font-size: 11px; font-weight: 800; margin-top: 3px; }
                 .guru-arrow { color: rgba(255, 255, 255, 0.1); }
                 @media (max-width: 640px) { .guru-buttons-container { grid-template-columns: 1fr; } }
