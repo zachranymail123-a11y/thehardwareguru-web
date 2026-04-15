@@ -18,7 +18,7 @@ export async function generateMetadata({ params }) {
     const p = await params;
     const { data } = await supabase.from('guru_benchmarks').select('*').eq('slug', p.slug).single();
     if (!data) return { title: 'Výsledek nenalezen | Hardware Guru' };
-    return { title: `${data.nickname} - GURU Skóre ${data.total_score.toLocaleString()} | PC Benchmark` };
+    return { title: `${data.nickname} - Skóre ${data.total_score.toLocaleString()} | GURU Benchmark` };
 }
 
 export default async function ResultPage({ params }) {
@@ -35,7 +35,7 @@ export default async function ResultPage({ params }) {
     const shareUrl = `https://thehardwareguru.cz/benchmark/result/${result.slug}`;
 
     return (
-        <div style={{ background: '#0a0b0d', color: '#fff', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', backgroundPosition: 'center', minHeight: '100vh', padding: '120px 20px 60px', fontFamily: 'sans-serif' }}>
+        <div style={{ background: '#0a0b0d', color: '#fff', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', padding: '120px 20px 60px', fontFamily: 'sans-serif' }}>
             <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
                 
                 {/* TOP REKLAMA */}
@@ -43,13 +43,13 @@ export default async function ResultPage({ params }) {
                     <SeznamAd zoneId={408654} width={970} height={210} />
                 </div>
 
-                {/* HLAVIČKA, CTR TEXT A SDÍLENÍ S X IKONOU */}
+                {/* HLAVIČKA A SDÍLENÍ S X IKONOU */}
                 <div style={{ textAlign: 'center', marginBottom: '30px' }}>
                     <div style={{ color: '#a855f7', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px' }}><Trophy size={18} style={{display:'inline', verticalAlign:'middle', marginRight:'10px'}}/> OFICIÁLNÍ GURU VÝSLEDEK</div>
-                    <h1 style={{ fontSize: 'clamp(3rem, 8vw, 6rem)', fontWeight: '950', textTransform: 'uppercase', margin: 0, lineHeight: '0.9', textShadow: '0 0 30px rgba(168, 85, 247, 0.4)' }}>{result.nickname}</h1>
+                    <h1 style={{ fontSize: 'clamp(3rem, 8vw, 6rem)', fontWeight: '950', textTransform: 'uppercase', margin: 0, lineHeight: '0.9' }}>{result.nickname}</h1>
                     
                     <div style={{ marginTop: '20px' }}>
-                        <h2 style={{ color: '#ff00ff', fontWeight: '950', fontSize: '20px', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '15px' }}>
+                        <h2 style={{ color: '#ff00ff', fontWeight: '950', fontSize: '18px', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '15px' }}>
                              🚀 NEBUĎ SOBEC, UKAŽ OSTATNÍM TU SÍLU!
                         </h2>
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
@@ -60,76 +60,79 @@ export default async function ResultPage({ params }) {
                     </div>
                 </div>
 
-                {/* KOMPLETNÍ GURU HUB (VRÁCENO V PLNE VERZI) */}
-                <div style={{ marginBottom: '40px', background: 'rgba(15, 17, 21, 0.7)', border: '1px solid rgba(255,255,255,0.1)', padding: '30px', borderRadius: '24px', backdropFilter: 'blur(15px)', textAlign:'center' }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' }}>
-                        <Link href="/bottleneck-calculator" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', border: '1px solid #38bdf8', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><Layers size={14} /> BOTTLENECK</Link>
-                        <Link href="/fps-kalkulacka" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid #a855f7', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><Gamepad2 size={14} /> FPS KALKULAČKA</Link>
-                        <Link href="/cpu-index" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(102, 252, 241, 0.1)', color: '#66fcf1', border: '1px solid #66fcf1', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><Cpu size={14} /> KATALOG CPU</Link>
-                        <Link href="/gpu-index" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(255, 0, 85, 0.1)', color: '#ff0055', border: '1px solid #ff0055', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><Zap size={14} /> KATALOG GPU</Link>
-                        <Link href="/clanky" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid #fff', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><BookOpen size={14} /> HW NOVINKY</Link>
-                        <Link href="/slovnik" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(255,255,255,0.05)', color: '#9ca3af', border: '1px solid #9ca3af', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><GraduationCap size={14} /> SLOVNÍK</Link>
-                        <Link href="/tipy" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid #a855f7', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><Lightbulb size={14} /> TIPY</Link>
-                        <Link href="/tweaky" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', border: '1px solid #f59e0b', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><Flash size={14} /> TWEAKY</Link>
+                {/* KOMPLETNÍ GURU HUB - VRÁCENY DUELY */}
+                <div style={{ marginBottom: '40px', background: 'rgba(15, 17, 21, 0.7)', border: '1px solid rgba(255,255,255,0.1)', padding: '25px', borderRadius: '24px', backdropFilter: 'blur(15px)', textAlign:'center' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
+                        <Link href="/bottleneck-calculator" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#38bdf8', border: '1px solid #38bdf8', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Layers size={14} /> BOTTLENECK</Link>
+                        <Link href="/fps-kalkulacka" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#a855f7', border: '1px solid #a855f7', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Gamepad2 size={14} /> FPS KALKULAČKA</Link>
+                        <Link href="/cpu-index" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#66fcf1', border: '1px solid #66fcf1', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Cpu size={14} /> KATALOG CPU</Link>
+                        <Link href="/gpu-index" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#ff0055', border: '1px solid #ff0055', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Zap size={14} /> KATALOG GPU</Link>
+                        <Link href="/cpuvs" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#66fcf1', border: '1px solid #66fcf1', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Swords size={14} /> CPU DUELY</Link>
+                        <Link href="/gpuvs" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#ff0055', border: '1px solid #ff0055', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Swords size={14} /> GPU DUELY</Link>
+                        <Link href="/clanky" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#fff', border: '1px solid #fff', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><BookOpen size={14} /> HW NOVINKY</Link>
+                        <Link href="/slovnik" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#9ca3af', border: '1px solid #9ca3af', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><GraduationCap size={14} /> SLOVNÍK</Link>
+                        <Link href="/tipy" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#a855f7', border: '1px solid #a855f7', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Lightbulb size={14} /> TIPY</Link>
+                        <Link href="/tweaky" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#f59e0b', border: '1px solid #f59e0b', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Flash size={14} /> TWEAKY</Link>
                     </div>
                 </div>
 
-                {/* KARTA VÝSLEDKŮ */}
-                <div style={{ background: 'rgba(15, 17, 21, 0.9)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '30px', padding: '60px 40px', textAlign: 'center', marginBottom: '40px', backdropFilter: 'blur(15px)', boxShadow: '0 20px 50px rgba(0,0,0,0.6)' }}>
-                    <div style={{ fontSize: '20px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '3px' }}>Celkové GURU Skóre</div>
-                    <div style={{ fontSize: 'clamp(5rem, 15vw, 10rem)', fontWeight: '950', color: '#fff', margin: '10px 0', lineHeight: '1', textShadow: '0 0 50px rgba(168, 85, 247, 0.6)' }}>{result.total_score.toLocaleString()}</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', marginTop: '50px' }}>
-                        <div style={{ background: 'rgba(255, 0, 85, 0.05)', border: '1px solid rgba(255, 0, 85, 0.2)', padding: '35px', borderRadius: '24px' }}>
-                            <Cpu size={40} color="#ff0055" style={{margin:'0 auto 20px'}} />
-                            <div style={{ color: '#ff0055', fontSize: '36px', fontWeight: '950' }}>{result.cpu_score.toLocaleString()}</div>
-                            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#fff', marginTop: '10px' }}>{result.cpu_name}</div>
+                {/* KARTA VÝSLEDKŮ - VELKÁ REKLAMA UVNITŘ */}
+                <div style={{ background: 'rgba(15, 17, 21, 0.9)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '30px', padding: '50px 40px', textAlign: 'center', marginBottom: '40px', backdropFilter: 'blur(15px)', boxShadow: '0 20px 50px rgba(0,0,0,0.6)' }}>
+                    <div style={{ fontSize: '18px', color: '#9ca3af', textTransform: 'uppercase' }}>CELKOVÉ GURU SKÓRE</div>
+                    <div style={{ fontSize: 'clamp(5rem, 15vw, 10rem)', fontWeight: '950', color: '#fff', margin: '10px 0', lineHeight: '1' }}>{result.total_score.toLocaleString()}</div>
+                    
+                    <div style={{ margin: '30px 0', display: 'flex', justifyContent: 'center' }}>
+                        <SeznamAd zoneId={408654} width={970} height={210} />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '40px' }}>
+                        <div style={{ background: 'rgba(255, 0, 85, 0.05)', border: '1px solid rgba(255, 0, 85, 0.2)', padding: '25px', borderRadius: '20px' }}>
+                            <Cpu size={32} color="#ff0055" />
+                            <div style={{ color: '#ff0055', fontSize: '32px', fontWeight: '950' }}>{result.cpu_score.toLocaleString()}</div>
+                            <div style={{ fontSize: '14px', color: '#fff' }}>{result.cpu_name}</div>
                         </div>
-                        <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '35px', borderRadius: '24px' }}>
-                            <Zap size={40} color="#10b981" style={{margin:'0 auto 20px'}} />
-                            <div style={{ color: '#10b981', fontSize: '36px', fontWeight: '950' }}>{result.gpu_score.toLocaleString()}</div>
-                            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#fff', marginTop: '10px' }}>{result.gpu_name}</div>
+                        <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '25px', borderRadius: '20px' }}>
+                            <Zap size={32} color="#10b981" />
+                            <div style={{ color: '#10b981', fontSize: '32px', fontWeight: '950' }}>{result.gpu_score.toLocaleString()}</div>
+                            <div style={{ fontSize: '14px', color: '#fff' }}>{result.gpu_name}</div>
                         </div>
                     </div>
                 </div>
 
-                {/* ZHODNOCENÍ + TŘI SAMOSTATNÉ BOXÍKY S REKLAMOU */}
-                <div style={{ background: 'rgba(15, 17, 21, 0.8)', border: `2px solid ${evalColor}`, borderRadius: '24px', padding: '50px 40px', textAlign: 'center', marginBottom: '40px', boxShadow: `0 0 40px ${evalColor}22` }}>
-                    <h2 style={{ fontSize: '36px', fontWeight: '950', color: evalColor, marginBottom: '20px', textTransform: 'uppercase' }}>
+                {/* ZHODNOCENÍ - VELKÁ REKLAMA MÍSTO TŘÍ MALÝCH */}
+                <div style={{ background: 'rgba(15, 17, 21, 0.8)', border: `2px solid ${evalColor}`, borderRadius: '24px', padding: '40px', textAlign: 'center', marginBottom: '40px' }}>
+                    <h2 style={{ fontSize: '32px', fontWeight: '950', color: evalColor, marginBottom: '20px', textTransform: 'uppercase' }}>
                         {isCpuBottleneck ? "⚠️ MASIVNÍ CPU BOTTLENECK!" : isGpuBottleneck ? "⚠️ MASIVNÍ GPU BOTTLENECK!" : "SESTAVA JE SKVĚLE VYVÁŽENÁ!"}
                     </h2>
-                    <p style={{ color: '#fff', fontSize: '1.25rem', marginBottom: '35px', lineHeight: '1.7', maxWidth: '850px', margin: '0 auto 35px' }}>
+                    <p style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '35px', lineHeight: '1.6' }}>
                         {isCpuBottleneck ? `Tvůj procesor ${result.cpu_name} krutě brzdí grafiku. Potřebuješ silnější CPU!` : isGpuBottleneck ? `Tvoje grafika ${result.gpu_name} nestíhá krmit tenhle procesor. Čas na upgrade GPU!` : "Tvoje CPU a GPU tvoří perfektní tandem. Nemáš žádné výrazné úzké hrdlo!"}
                     </p>
                     
                     <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '40px' }}>
                         <p style={{ color: '#9ca3af', marginBottom: '30px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>DOPORUČENÝ UPGRADE PRO MAXIMÁLNÍ FPS:</p>
                         
-                        {/* JEDEN BOX = JEDNA REKLAMA (GRID 3 SLOUPCE) */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '40px' }}>
-                            <div style={{ background: 'rgba(15, 17, 21, 0.95)', borderRadius: '20px', padding: '15px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'center' }}>
-                                <SeznamAd zoneId={408651} width={300} height={250} />
-                            </div>
-                            <div style={{ background: 'rgba(15, 17, 21, 0.95)', borderRadius: '20px', padding: '15px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'center' }}>
-                                <SeznamAd zoneId={408651} width={300} height={250} />
-                            </div>
-                            <div style={{ background: 'rgba(15, 17, 21, 0.95)', borderRadius: '20px', padding: '15px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'center' }}>
-                                <SeznamAd zoneId={408651} width={300} height={250} />
-                            </div>
+                        <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+                            <SeznamAd zoneId={408654} width={970} height={210} />
                         </div>
 
                         <HeurekaButtons isEn={false} />
                         
                         <div style={{ marginTop: '40px' }}>
-                            <Link href="/benchmark" style={{ background: '#ff0055', color: '#fff', padding: '16px 35px', borderRadius: '14px', fontWeight: '950', textDecoration:'none', textTransform:'uppercase', fontSize:'18px', boxShadow: '0 10px 25px rgba(255, 0, 85, 0.4)' }} className="hover:scale-105 transition-all">Zkusit test znovu a porazit je!</Link>
+                            <Link href="/benchmark" style={{ background: '#ff0055', color: '#fff', padding: '16px 35px', borderRadius: '14px', fontWeight: '950', textDecoration:'none', textTransform:'uppercase', fontSize:'18px' }}>ZKUSIT TEST ZNOVU A PORAZIT JE!</Link>
                         </div>
                     </div>
                 </div>
 
-                {/* SÍŇ SLÁVY - TOP 10 */}
-                <div style={{ background: 'rgba(15, 17, 21, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '30px', padding: '50px 40px', marginBottom: '40px', backdropFilter: 'blur(10px)' }}>
+                {/* SÍŇ SLÁVY - VELKÁ REKLAMA UVNITŘ */}
+                <div style={{ background: 'rgba(15, 17, 21, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '30px', padding: '50px 40px', marginBottom: '40px' }}>
                     <h2 style={{ textAlign: 'center', fontSize: '32px', fontWeight: '950', color: '#fff', marginBottom: '40px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
                         <Trophy size={36} color="#f59e0b" /> GURU TOP 10 SÍŇ SLÁVY
                     </h2>
+
+                    <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+                        <SeznamAd zoneId={408654} width={970} height={210} />
+                    </div>
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {topList.map((row, idx) => (
                             <div key={idx} style={{ display: 'grid', gridTemplateColumns: '60px 1fr 150px', alignItems: 'center', padding: '20px 30px', background: row.nickname === result.nickname ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.03)', borderRadius: '16px', border: row.nickname === result.nickname ? '2px solid #a855f7' : '1px solid rgba(255,255,255,0.05)' }}>
@@ -144,8 +147,7 @@ export default async function ResultPage({ params }) {
                     </div>
                 </div>
 
-                {/* SPODNÍ REKLAMA */}
-                <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
+                <div style={{ marginTop: '60px', display: 'flex', justifyContent: 'center' }}>
                     <SeznamAd zoneId={408651} width={300} height={250} />
                 </div>
 
