@@ -7,8 +7,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; // 🔥 PŘIDÁNO: Import Heureka tlačítek
 
 /**
- * GURU GLOSSARY ENGINE - DETAIL V2.6 (HEUREKA CTA UPDATE)
- * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchor, eliminace hluchých míst + Heureka konverze.
+ * GURU GLOSSARY ENGINE - DETAIL V2.7 (EN + V10 HARD-LOCK FIX)
+ * 🚀 CÍL: Přesun TOP banneru "Above Fold", přidání Sticky Bottom Anchor, eliminace hluchých míst + Heureka/Amazon konverze.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -37,10 +37,11 @@ export async function generateMetadata({ params }) {
 
   if (!term) return { title: '404 | The Hardware Guru' };
 
-  const isEn = term.slug_en === slug && slug !== term.slug;
+  // 🔥 FIX: Správná detekce jazyka pro EN proxy nebo slug s prefixem en-
+  const isEn = term.slug_en === slug || slug.startsWith('en-');
   const title = isEn && term.title_en ? term.title_en : (term.title || 'Hardware Slovník');
   const desc = isEn && term.seo_description_en ? term.seo_description_en : (term.seo_description || '');
-  const safeSlug = term.slug;
+  const safeSlug = term.slug.replace(/^en-/, '');
 
   return {
     title: `${title} | The Hardware Guru`,
@@ -48,7 +49,7 @@ export async function generateMetadata({ params }) {
     alternates: {
       canonical: `${baseUrl}/slovnik/${safeSlug}`,
       languages: {
-        'en': `${baseUrl}/en/slovnik/${term.slug_en || safeSlug}`,
+        'en': `${baseUrl}/en/slovnik/${term.slug_en || `en-${safeSlug}`}`,
         'cs': `${baseUrl}/slovnik/${safeSlug}`,
         'x-default': `${baseUrl}/slovnik/${safeSlug}`
       }
@@ -65,10 +66,13 @@ export async function generateMetadata({ params }) {
 export default async function SlovnikDetail({ params }) {
   const { slug } = await params;
 
+  // 🔥 FIX: Očištění slugu pro Supabase (pokud přišel en- parametr)
+  const cleanSlug = slug.replace(/^en-/, '');
+
   const { data: term, error } = await supabase
     .from('slovnik')
     .select('*')
-    .or(`slug.eq."${slug}",slug_en.eq."${slug}"`)
+    .or(`slug.eq."${cleanSlug}",slug_en.eq."${slug}"`)
     .single();
 
   if (error || !term) {
@@ -77,7 +81,8 @@ export default async function SlovnikDetail({ params }) {
 
   const latestTerms = await getLatestTerms(term.slug);
 
-  const isEn = term.slug_en === slug && term.slug_en !== term.slug;
+  // 🔥 FIX: Detekce jazyka
+  const isEn = term.slug_en === slug || slug.startsWith('en-');
   const title = isEn && term.title_en ? term.title_en : (term.title || 'Neznámý pojem');
   const content = isEn 
     ? (term.content_en || term.description_en || term.description || '') 
@@ -89,8 +94,11 @@ export default async function SlovnikDetail({ params }) {
     ? `BUY FOR BEST PRICE ${priceDisplay ? `(${priceDisplay})` : ''}` 
     : `KOUPIT ZA NEJLEPŠÍ CENU ${priceDisplay ? `(${priceDisplay})` : ''}`;
   const backLinkPath = isEn ? '/en/slovnik' : '/slovnik';
-  const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}slovnik/${slug}`;
+  const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}slovnik/${isEn ? (term.slug_en || `en-${term.slug}`) : term.slug}`;
   const dateObj = term.created_at ? new Date(term.created_at) : new Date();
+
+  // 🔥 V10 Amazon Fallback link pro EN verzi (pokud nevede jinam, odkazujeme na Amazon Deals)
+  const amazonFallbackLink = "https://www.amazon.com/s?k=PC+Components&tag=thehardware07-20&ascsubtag=v10-slovnik-detail";
 
   // Google Golden Rich Schema
   const articleSchema = {
@@ -158,9 +166,15 @@ export default async function SlovnikDetail({ params }) {
               <div dangerouslySetInnerHTML={{ __html: content }} />
           </div>
 
-          {/* 🔥 PŘIDÁNO: Heureka tlačítka pod textem 🔥 */}
+          {/* 🔥 PŘIDÁNO: Amazon (EN) nebo Heureka (CZ) tlačítka pod textem 🔥 */}
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
-              <HeurekaButtons isEn={isEn} />
+              {isEn ? (
+                  <a href={amazonFallbackLink} target="_blank" rel="nofollow sponsored" className="guru-affiliate-cta" style={{ background: '#f59e0b', color: '#000 !important', border: '2px solid #fbbf24', boxShadow: 'none' }}>
+                      <ShoppingCart size={20} /> CHECK DEALS ON AMAZON
+                  </a>
+              ) : (
+                  <HeurekaButtons isEn={false} />
+              )}
           </div>
 
           {term.affiliate_link && (
@@ -179,7 +193,8 @@ export default async function SlovnikDetail({ params }) {
                   ? "We found the best price for you. Verified tech store with instant delivery." 
                   : "Našli jsme pro tebe tu nejlepší cenu na trhu. Okamžité doručení a Guru-ověřený obchod."}
               </p>
-              <a href={term.affiliate_link} target="_blank" rel="nofollow sponsored" className="guru-affiliate-cta">
+              {/* Zde může být také fallback na Amazon link v případě EN */}
+              <a href={isEn ? amazonFallbackLink : term.affiliate_link} target="_blank" rel="nofollow sponsored" className="guru-affiliate-cta">
                 <ShoppingCart size={26} /> {buyBtnText}
               </a>
             </div>
