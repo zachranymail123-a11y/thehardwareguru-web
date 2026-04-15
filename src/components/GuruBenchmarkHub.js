@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Cpu, Zap, Play, MonitorPlay, AlertTriangle, ShieldCheck, User, Activity, Crosshair, Swords, BookOpen, Layers, Gamepad2, Share2, Link2 } from 'lucide-react';
+import { Cpu, Zap, Play, MonitorPlay, AlertTriangle, ShieldCheck, User, Activity, Crosshair, Swords, BookOpen, Layers, Gamepad2, Share2, Link2, Facebook, Twitter } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -10,6 +10,13 @@ import HeurekaButtons from './HeurekaButtons';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Reddit Icon Component (Same as in your articles)
+const RedditIcon = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-2.05-6.65c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm4.1 0c-.73 0-1.33-.6-1.33-1.33 0-.73.6-1.33 1.33-1.33.73 0 1.33.6 1.33 1.33 0 .73-.6 1.33-1.33 1.33zm1.64-3.56c-.34 0-.64.16-.84.4-.58-.4-1.36-.67-2.24-.72l.47-2.18 1.5.32c.04.53.48.95 1.02.95.57 0 1.03-.46 1.03-1.03 0-.57-.46-1.03-1.03-1.03-.42 0-.78.26-.94.63l-1.64-.35c-.06-.01-.13 0-.17.05-.05.04-.07.1-.06.16l-.52 2.45c-.93.03-1.74.32-2.35.74-.2-.23-.5-.38-.83-.38-.6 0-1.08.48-1.08 1.08 0 .42.24.78.58.96-.02.12-.03.24-.03.37 0 1.88 2.05 3.4 4.58 3.4s4.58-1.52 4.58-3.4c0-.13-.01-.25-.03-.37.34-.18.58-.54.58-.96 0-.6-.48-1.08-1.08-1.08zm-4.14 3.12c-.93 0-1.66-.4-1.7-.44-.1-.1-.11-.27-.01-.38.1-.1.27-.11.38-.01.02.01.62.33 1.33.33.7 0 1.31-.32 1.33-.33.11-.1.28-.09.38.01.1.11.09.28-.01.38-.04.04-.77.44-1.7.44z" />
+  </svg>
+);
 
 export default function GuruBenchmarkHub({ t = {}, locale = 'cs' }) {
     const router = useRouter();
@@ -28,8 +35,8 @@ export default function GuruBenchmarkHub({ t = {}, locale = 'cs' }) {
         const loadAds = setTimeout(() => {
             try {
                 if (window.szn && window.szn.ads && window.szn.ads.push) {
-                    window.szn.ads.push({ id: "szn-seznam-ad-408654" }); // Top banner
-                    window.szn.ads.push({ id: "szn-seznam-ad-408651" }); // Bottom banner
+                    window.szn.ads.push({ id: "szn-seznam-ad-408654" }); // Top banner (970x210)
+                    window.szn.ads.push({ id: "szn-seznam-ad-408651" }); // Bottom banner (300x250)
                 }
             } catch (e) {
                 console.error("Sklik Ads Error:", e);
@@ -129,16 +136,11 @@ export default function GuruBenchmarkHub({ t = {}, locale = 'cs' }) {
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', color: '#fff', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', backgroundPosition: 'center', fontFamily: 'sans-serif', padding: '40px 20px' }}>
             
-            {/* HORNÍ REKLAMNÍ BANNER (Sklik - Homepage-Top) */}
-            <div style={{ maxWidth: '970px', margin: '0 auto 40px', minHeight: '210px', display: 'flex', justifyContent: 'center' }}>
-                <div id="szn-seznam-ad-408654"></div>
-            </div>
-
             <div style={{ maxWidth: '900px', margin: '0 auto' }}>
                 <canvas ref={canvasRef} width="1024" height="1024" style={{ display: 'none' }}></canvas>
 
                 {/* HLAVIČKA NÁSTROJE */}
-                <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+                <div style={{ textAlign: 'center', marginBottom: '30px' }}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#a855f7', fontSize: '14px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', padding: '6px 20px', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '50px', background: 'rgba(168, 85, 247, 0.1)', marginBottom: '20px', backdropFilter: 'blur(5px)' }}>
                         <ShieldCheck size={16} /> GURU ULTIMATE BENCHMARK
                     </div>
@@ -150,44 +152,28 @@ export default function GuruBenchmarkHub({ t = {}, locale = 'cs' }) {
                     </p>
                 </div>
 
-                {/* GURU EKOSYSTÉM HUB (Přesunuto nahoru) */}
-                <div style={{ marginBottom: '50px', background: 'rgba(15, 17, 21, 0.6)', border: '1px solid rgba(255,255,255,0.1)', padding: '30px', borderRadius: '24px', backdropFilter: 'blur(10px)' }}>
-                    <h2 style={{ fontSize: '24px', fontWeight: '950', color: '#fff', marginBottom: '25px', textAlign: 'center', textTransform: 'uppercase', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
-                        {locale === 'en' ? 'EXPLORE GURU ECOSYSTEM' : 'PROZKOUMEJ CELÝ GURU EKOSYSTÉM'}
-                    </h2>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', justifyContent: 'center' }}>
-                        <Link href={`${prefix}/bottleneck-calculator`} style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: '900', fontSize: '13px', textDecoration: 'none', textTransform: 'uppercase', transition: '0.3s', display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(56, 189, 248, 0.05)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.4)' }} className="hover:bg-[#38bdf8] hover:text-black hover:scale-105">
-                            <Layers size={16} /> {locale === 'en' ? 'BOTTLENECK' : 'BOTTLENECK'}
-                        </Link>
-                        <Link href={`${prefix}/fps-kalkulacka`} style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: '900', fontSize: '13px', textDecoration: 'none', textTransform: 'uppercase', transition: '0.3s', display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(168, 85, 247, 0.05)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.4)' }} className="hover:bg-[#a855f7] hover:text-white hover:scale-105">
-                            <Gamepad2 size={16} /> {locale === 'en' ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}
-                        </Link>
-                        <Link href={`${prefix}/cpuvs`} style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: '900', fontSize: '13px', textDecoration: 'none', textTransform: 'uppercase', transition: '0.3s', display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(102, 252, 241, 0.05)', color: '#66fcf1', border: '1px solid rgba(102, 252, 241, 0.4)' }} className="hover:bg-[#66fcf1] hover:text-black hover:scale-105">
-                            <Cpu size={16} /> {locale === 'en' ? 'CPU BATTLES' : 'SOUBOJE CPU'}
-                        </Link>
-                        <Link href={`${prefix}/gpuvs`} style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: '900', fontSize: '13px', textDecoration: 'none', textTransform: 'uppercase', transition: '0.3s', display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(255, 0, 85, 0.05)', color: '#ff0055', border: '1px solid rgba(255, 0, 85, 0.4)' }} className="hover:bg-[#ff0055] hover:text-white hover:scale-105">
-                            <Swords size={16} /> {locale === 'en' ? 'GPU BATTLES' : 'SOUBOJE GPU'}
-                        </Link>
-                        <Link href={`${prefix}/clanky`} style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: '900', fontSize: '13px', textDecoration: 'none', textTransform: 'uppercase', transition: '0.3s', display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(255, 255, 255, 0.05)', color: '#fff', border: '1px solid rgba(255, 255, 255, 0.2)' }} className="hover:bg-white/20 hover:scale-105">
-                            <BookOpen size={16} /> {locale === 'en' ? 'HW NEWS' : 'HW NOVINKY'}
-                        </Link>
-                    </div>
-                </div>
-
-                {/* SDÍLENÍ NÁSTROJE PŘED SPUŠTĚNÍM */}
+                {/* SDÍLENÍ NÁSTROJE PŘED SPUŠTĚNÍM (IHNED POD NADPISEM) */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '15px', marginBottom: '40px' }}>
-                    <span style={{ fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', fontSize: '14px', letterSpacing: '1px' }}>
-                        <Share2 size={16} style={{display:'inline', verticalAlign:'text-bottom', marginRight:'5px'}}/> {locale === 'en' ? 'SHARE TOOL:' : 'SDÍLET NÁSTROJ:'}
+                    <span style={{ fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', fontSize: '14px', letterSpacing: '1px', display: 'flex', alignItems: 'center' }}>
+                        <Share2 size={16} style={{ marginRight:'8px' }}/> {locale === 'en' ? 'SHARE TOOL:' : 'SDÍLET NÁSTROJ:'}
                     </span>
                     <a href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`} target="_blank" rel="noreferrer" style={{ background: '#1877f2', color: '#fff', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', transition: '0.2s', boxShadow: '0 4px 15px rgba(24, 119, 242, 0.4)' }} className="hover:scale-110">
-                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M18.77,7.46H14.5v-1.9c0-.9.6-1.1,1-1.1h3V.5h-4.33C10.24.5,9.5,3.44,9.5,5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4Z"/></svg>
+                         <Facebook size={20} fill="currentColor" stroke="none" />
+                    </a>
+                    <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noreferrer" style={{ background: '#000', color: '#fff', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', transition: '0.2s', boxShadow: '0 4px 15px rgba(0, 0, 0, 0.4)' }} className="hover:scale-110">
+                        <Twitter size={18} fill="currentColor" stroke="none" />
                     </a>
                     <a href={`https://www.reddit.com/submit?url=${shareUrl}&title=GURU%20Benchmark%20-%20Test%20tvyho%20PC`} target="_blank" rel="noreferrer" style={{ background: '#ff4500', color: '#fff', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', transition: '0.2s', boxShadow: '0 4px 15px rgba(255, 69, 0, 0.4)' }} className="hover:scale-110">
-                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.505 1.12-.823 2.686-1.373 4.417-1.469l.865-4.053c.036-.164.19-.283.359-.283h.032l2.914.613a1.256 1.256 0 0 1 1.434-1.315zm-9.043 8.354a1.26 1.26 0 0 0-1.26 1.26c0 .695.564 1.26 1.26 1.26.695 0 1.26-.565 1.26-1.26a1.26 1.26 0 0 0-1.26-1.26zm8.066 0a1.26 1.26 0 0 0-1.26 1.26c0 .695.564 1.26 1.26 1.26.695 0 1.26-.565 1.26-1.26a1.26 1.26 0 0 0-1.26-1.26zm-4.032 4.148c-1.503 0-2.698-.387-2.836-.431a.333.333 0 0 0-.197.636c.036.012 1.348.462 3.033.462 1.684 0 2.996-.45 3.032-.462a.333.333 0 0 0-.197-.636c-.138.044-1.333.431-2.835.431z"/></svg>
+                        <RedditIcon size={20} />
                     </a>
                     <button onClick={copyLink} style={{ background: copied ? '#10b981' : '#374151', color: '#fff', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', transition: '0.2s', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0, 0, 0, 0.4)' }} className="hover:scale-110">
                         <Link2 size={20} />
                     </button>
+                </div>
+
+                {/* HORNÍ REKLAMNÍ BANNER (Sklik - Homepage-Top) */}
+                <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center', minHeight: '210px' }}>
+                     <div id="szn-seznam-ad-408654"></div>
                 </div>
 
                 {/* FORMULÁŘ NÁSTROJE */}
@@ -242,8 +228,42 @@ export default function GuruBenchmarkHub({ t = {}, locale = 'cs' }) {
                 </div>
 
                 {/* SPODNÍ REKLAMNÍ BANNER (Sklik - Clanek-InText) */}
-                <div style={{ maxWidth: '300px', margin: '0 auto 40px', minHeight: '250px', display: 'flex', justifyContent: 'center' }}>
+                <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center', minHeight: '250px' }}>
                     <div id="szn-seznam-ad-408651"></div>
+                </div>
+
+                {/* GURU EKOSYSTÉM HUB (Design podle image_dda96a.png) */}
+                <div style={{ marginBottom: '50px', background: 'transparent', padding: '10px' }}>
+                    <h2 style={{ fontSize: '28px', fontWeight: '950', color: '#fff', marginBottom: '35px', textAlign: 'center', textTransform: 'uppercase', textShadow: '0 2px 10px rgba(0,0,0,0.9)' }}>
+                        {locale === 'en' ? 'EXPLORE GURU ECOSYSTEM' : 'PROZKOUMEJ CELÝ GURU EKOSYSTÉM'}
+                    </h2>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', justifyContent: 'center' }}>
+                        
+                        {/* Bottleneck (Cyan) */}
+                        <Link href={`${prefix}/bottleneck-calculator`} style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: '900', fontSize: '13px', textDecoration: 'none', textTransform: 'uppercase', transition: '0.3s', display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(15, 17, 21, 0.7)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.4)', backdropFilter: 'blur(5px)' }} className="hover:bg-black/80 hover:scale-105">
+                            <Layers size={16} /> {locale === 'en' ? 'BOTTLENECK' : 'BOTTLENECK'}
+                        </Link>
+                        
+                        {/* FPS Kalkulačka (Purple) */}
+                        <Link href={`${prefix}/fps-kalkulacka`} style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: '900', fontSize: '13px', textDecoration: 'none', textTransform: 'uppercase', transition: '0.3s', display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(15, 17, 21, 0.7)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.4)', backdropFilter: 'blur(5px)' }} className="hover:bg-black/80 hover:scale-105">
+                            <Gamepad2 size={16} /> {locale === 'en' ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}
+                        </Link>
+                        
+                        {/* Souboje CPU (Cyan) */}
+                        <Link href={`${prefix}/cpuvs`} style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: '900', fontSize: '13px', textDecoration: 'none', textTransform: 'uppercase', transition: '0.3s', display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(15, 17, 21, 0.7)', color: '#66fcf1', border: '1px solid rgba(102, 252, 241, 0.4)', backdropFilter: 'blur(5px)' }} className="hover:bg-black/80 hover:scale-105">
+                            <Cpu size={16} /> {locale === 'en' ? 'CPU BATTLES' : 'SOUBOJE CPU'}
+                        </Link>
+                        
+                        {/* Souboje GPU (Red) */}
+                        <Link href={`${prefix}/gpuvs`} style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: '900', fontSize: '13px', textDecoration: 'none', textTransform: 'uppercase', transition: '0.3s', display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(15, 17, 21, 0.7)', color: '#ff0055', border: '1px solid rgba(255, 0, 85, 0.4)', backdropFilter: 'blur(5px)' }} className="hover:bg-black/80 hover:scale-105">
+                            <Swords size={16} /> {locale === 'en' ? 'GPU BATTLES' : 'SOUBOJE GPU'}
+                        </Link>
+                        
+                        {/* HW Novinky (White) */}
+                        <Link href={`${prefix}/clanky`} style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: '900', fontSize: '13px', textDecoration: 'none', textTransform: 'uppercase', transition: '0.3s', display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(15, 17, 21, 0.7)', color: '#fff', border: '1px solid rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(5px)' }} className="hover:bg-black/80 hover:scale-105">
+                            <BookOpen size={16} /> {locale === 'en' ? 'HW NEWS' : 'HW NOVINKY'}
+                        </Link>
+                    </div>
                 </div>
 
             </div>
