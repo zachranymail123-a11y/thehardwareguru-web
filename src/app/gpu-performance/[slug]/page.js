@@ -9,8 +9,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU PERFORMANCE ENGINE V4.0 (FULL NO-CUT VERSION)
- * 🚀 CÍL: Google Golden Rich, Amazon EN Fix a stabilní build.
+ * GURU GPU PERFORMANCE ENGINE V4.1 (ABSOLUTELY COMPLETE - NO CUTS)
+ * 🚀 CÍL: Fix 404, Amazon EN Hard-Lock a Google Golden Rich SEO.
  */
 
 export const runtime = "nodejs";
@@ -63,16 +63,18 @@ export async function generateMetadata(props) {
   if (!gpu) return { title: '404 | Hardware Guru' };
   const safeSlug = gpu.slug || slugify(gpu.name);
   return {
-    title: isEn ? `${gpu.name} Performance & Technical Specs` : `${gpu.name} Výkon a Technické Parametry`,
+    title: isEn ? `${gpu.name} Performance Benchmarks & Specs` : `${gpu.name} Výkon a Technické Parametry`,
     alternates: { canonical: `https://thehardwareguru.cz${isEn ? '/en' : ''}/gpu-performance/${safeSlug}`, languages: { 'en': `https://thehardwareguru.cz/en/gpu-performance/${safeSlug}`, 'cs': `https://thehardwareguru.cz/gpu-performance/${safeSlug}` } }
   };
 }
 
 export default async function GpuPerformancePage(props) {
   const p = await props.params;
-  const isEn = props.isEnProxy === true || (p?.slug && p.slug.startsWith('en-'));
-  const cleanSlug = (p?.slug || '').replace(/^en-/, '');
+  const rawSlug = p?.slug || '';
+  const isEn = props.isEnProxy === true || rawSlug.startsWith('en-');
+  const cleanSlug = rawSlug.replace(/^en-/, '');
   const gpu = await findGpuBySlug(cleanSlug);
+
   if (!gpu) return <div style={{ color: '#f00', padding: '100px', textAlign: 'center', backgroundColor: '#0a0b0d', minHeight: '100vh' }}>GPU NOT FOUND</div>;
 
   const safeSlug = gpu.slug || slugify(gpu.name);
@@ -86,7 +88,7 @@ export default async function GpuPerformancePage(props) {
     "@type": "Product",
     "name": gpu.name,
     "image": "https://thehardwareguru.cz/bg-guru.png",
-    "description": isEn ? `Specs and performance for ${gpu.name}.` : `Specifikace a výkon karty ${gpu.name}.`,
+    "description": isEn ? `Detailed specs and gaming performance for ${gpu.name}.` : `Detailní specifikace a herní výkon karty ${gpu.name}.`,
     "brand": { "@type": "Brand", "name": gpu.vendor }
   };
 
@@ -118,9 +120,9 @@ export default async function GpuPerformancePage(props) {
         </header>
 
         <section style={{ marginBottom: '60px' }}>
-            <div className="index-result-box" style={{ background: 'rgba(15, 17, 21, 0.95)', borderLeft: '8px solid #66fcf1', borderRadius: '24px', padding: '50px 40px', textAlign: 'center' }}>
+            <div className="index-result-box" style={{ background: 'rgba(15, 17, 21, 0.95)', borderLeft: '8px solid #66fcf1', borderRadius: '24px', padding: '50px 40px', boxShadow: '0 30px 70px rgba(0,0,0,0.7)', textAlign: 'center' }}>
                 <div style={{ color: '#66fcf1', fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '15px' }}>{isEn ? 'Gaming Performance Index' : 'Index herního výkonu'}</div>
-                <div style={{ fontSize: 'clamp(60px, 12vw, 100px)', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0' }}>{gpu.performance_index ?? 'N/A'} <span style={{ fontSize: '24px', color: '#66fcf1' }}>PTS</span></div>
+                <div className="index-val" style={{ fontSize: 'clamp(60px, 12vw, 100px)', fontWeight: '950', color: '#fff', lineHeight: '1', margin: '10px 0' }}>{gpu.performance_index ?? 'N/A'} <span style={{ fontSize: '24px', color: '#66fcf1' }}>PTS</span></div>
                 <div style={{ background: 'rgba(102, 252, 241, 0.1)', color: '#66fcf1', padding: '10px 25px', borderRadius: '50px', display: 'inline-flex', alignItems: 'center', gap: '10px', fontWeight: '950', fontSize: '14px', border: '1px solid rgba(102, 252, 241, 0.3)' }}><CheckCircle2 size={18} /> {isEn ? 'Verified' : 'Ověřeno'}</div>
             </div>
         </section>
@@ -221,7 +223,7 @@ export default async function GpuPerformancePage(props) {
         .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; }
         .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; }
         .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
-        .tool-btn { display: flex; align-items: center; justify-content: center; gap: 15px; padding: 25px; borderRadius: 20px; textDecoration: none; fontWeight: 950; transition: 0.3s; border-radius: 20px; }
+        .tool-btn { display: flex; align-items: center; justify-content: center; gap: 15px; padding: 25px; border-radius: 20px; text-decoration: none; font-weight: 950; transition: 0.3s; }
         .silo-link-card { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); padding: 18px 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #d1d5db; transition: 0.3s; border-left: 3px solid #6b7280; }
         .guru-deals-btn, .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; text-decoration: none; }
         .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
