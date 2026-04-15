@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, use } from 'react';
+import React, { useEffect, useState } from 'react';
 import { notFound, usePathname } from 'next/navigation';
 import { 
   ChevronLeft, 
@@ -20,6 +20,7 @@ import { createClient } from '@supabase/supabase-js';
 /**
  * GURU CPU RECOMMEND ENGINE V2.4 (V10 HARD-LOCK & TOOLS UPDATE)
  * 🚀 CÍL: Implementace V10 Hard-Lock linků a doplnění tlačítek na kalkulačky.
+ * OPRAVA: Odstraněno use(params) způsobující client-side error.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -29,8 +30,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 
 export default function CpuRecommendPage({ params }) {
-  const p = use(params);
-  const rawCpuSlug = p?.cpu || '';
+  // 🔥 FIX: Čteme přímo z params, odstraněno use(params)
+  const rawCpuSlug = params?.cpu || '';
   const isEn = rawCpuSlug.startsWith('en-');
   const cpuSlug = rawCpuSlug.replace(/^en-/, '');
   const pathname = usePathname() || '';
@@ -66,12 +67,14 @@ export default function CpuRecommendPage({ params }) {
   if (loading) return null;
   if (!cpu) notFound();
 
-  // 🔥 V10 HARD-LOCK REDIRECT LOGIC 🔥
+  // 🔥 V10 HARD-LOCK REDIRECT LOGIC S OPRAVENÝM FRAGMENTEM 🔥
   const handleHeurekaAction = (e, name) => {
     e.preventDefault();
     const cleanName = name.replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '+');
     const subId = `v10-cpu-recommend`;
-    const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${cleanName}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+    
+    // Přesný formát URL podle manuálu (přidán # před UTM parametry)
+    const targetUrl = `https://www.heureka.cz/?h%5Bfraze%5D=${cleanName}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     
     if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
       navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify({ platform: 'heureka', category: 'cpu_recommend', sub_id: subId, page: pathname })], { type: 'text/plain' }));
