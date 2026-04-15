@@ -75,12 +75,14 @@ export default function CpuFpsHubPage({ params }) {
   const vendorColor = (cpu.vendor || '').toUpperCase() === 'INTEL' ? '#0071c5' : ((cpu.vendor || '').toUpperCase() === 'AMD' ? '#ed1c24' : '#f59e0b');
   const safeSlug = cpu.slug || slugify(cpu.name);
 
-  // 🔥 V10 HARD-LOCK REDIRECT LOGIC 🔥
+  // 🔥 V10 HARD-LOCK REDIRECT LOGIC + OPRAVA UTM FRAGMENTU 🔥
   const handleHeurekaAction = (e, name) => {
     e.preventDefault();
     const cleanName = name.replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '+');
     const subId = `v10-cpu-hub`;
-    const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${cleanName}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+    
+    // Přesný formát URL podle manuálu (přidán # před UTM parametry)
+    const targetUrl = `https://www.heureka.cz/?h%5Bfraze%5D=${cleanName}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     
     if (navigator.sendBeacon) {
       navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify({ platform: 'heureka', category: 'cpu_hub', sub_id: subId, page: pathname })], { type: 'text/plain' }));
