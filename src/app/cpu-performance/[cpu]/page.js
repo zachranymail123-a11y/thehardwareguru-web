@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, use } from 'react';
+import React, { useEffect, useState } from 'react';
 import Script from 'next/script'; 
 import { notFound, usePathname } from 'next/navigation';
 import { 
@@ -13,6 +13,7 @@ import { createClient } from '@supabase/supabase-js';
 /**
  * GURU CPU PERFORMANCE ENGINE V2.9 (V10 HARD-LOCK UPDATE)
  * 🚀 CÍL: Fix Heureka linků na V10 Hard-Lock a zachování nástrojů.
+ * OPRAVA: Odstraněno use(params) způsobující client-side error.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -22,8 +23,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, '');
 
 export default function CpuPerformancePage({ params }) {
-    const p = use(params);
-    const rawCpuSlug = p?.cpu || '';
+    // 🔥 FIX: Čteme přímo z params, odstraněno use(params)
+    const rawCpuSlug = params?.cpu || '';
     const isEn = rawCpuSlug.startsWith('en-');
     const cpuSlug = rawCpuSlug.replace(/^en-/, '');
     const pathname = usePathname() || '';
