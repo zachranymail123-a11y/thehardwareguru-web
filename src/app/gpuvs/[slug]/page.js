@@ -12,7 +12,8 @@ import HeurekaButtons from '../../../components/HeurekaButtons';
 import GuruInContentOffer from '../../../components/GuruInContentOffer';
 
 /**
- * GURU GPU DUELS ENGINE - V12.1 (SMART UPSELL FIX)
+ * GURU GPU DUELS ENGINE - V12.2 (STRICT BACKUP FIX)
+ * 🚀 CÍL: Fix EN/Amazon a V10 Heureka Hard-Lock s '#'. Žádné ořezy.
  */
 
 export const runtime = "nodejs";
@@ -91,7 +92,11 @@ const getRelatedArticles = async (gpuA_Name, gpuB_Name) => {
 
 export async function generateMetadata(props) {
   const { slug } = await props.params; 
-  const isEn = slug?.startsWith('en-');
+  // 🔥 FIX: Robustní detekce EN
+  const h = headers();
+  const fullUrl = h.get('x-url') || h.get('referer') || "";
+  const isEn = props.isEnProxy === true || props.isEn === true || slug?.startsWith('en-') || fullUrl.includes('/en/');
+
   const cleanSlug = slug.replace(/^en-/, '');
   const duel = await getDuelData(cleanSlug);
   if (!duel || !duel.gpuA) return { title: 'GPU Comparison | Hardware Guru' };
@@ -104,7 +109,11 @@ export async function generateMetadata(props) {
 
 export default async function GpuVsDetailPage(props) {
   const { slug } = await props.params; 
-  const isEn = slug?.startsWith('en-');
+  // 🔥 FIX: Robustní detekce EN
+  const h = headers();
+  const fullUrl = h.get('x-url') || h.get('referer') || "";
+  const isEn = props.isEnProxy === true || props.isEn === true || slug?.startsWith('en-') || fullUrl.includes('/en/');
+
   const cleanSlug = slug.replace(/^en-/, '');
   const duel = await getDuelData(cleanSlug);
   
@@ -142,11 +151,11 @@ export default async function GpuVsDetailPage(props) {
   const upgradeProduct = isWinnerUltimate ? "AMD Ryzen 7 9800X3D" : "NVIDIA RTX 5080";
   const upgradeCategory = isWinnerUltimate ? "cpu" : "gpu";
 
-  // 🔥 V10 GOLDEN AFFILIATE ODKAZY PRO VÍTĚZE SOUBOJE 🔥
+  // 🔥 V10 GOLDEN AFFILIATE ODKAZY (Amazon pro EN, Heureka s '#' pro CZ) 🔥
   const searchName = normalizeName(winner.name).trim();
+  const amazonAffiliateLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20&ascsubtag=v10-gpuvs`;
   const smartyAffiliateLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(searchName)}`)}`;
-  const heurekaAffiliateLink = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName + ' grafická karta')}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=GpuVsDetail&o=3`;
-  const amazonAffiliateLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20`;
+  const heurekaAffiliateLink = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName + ' grafická karta')}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=GpuVsDetail&o=3`;
 
   return (
     <div className="guru-duel-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -251,7 +260,13 @@ export default async function GpuVsDetailPage(props) {
             </div>
         </section>
 
-        {!isEn && (<div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}><HeurekaButtons isEn={false} manualSearch={winner.name} positionId="276026" /></div>)}
+        {!isEn && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+                <div className="v10-hl-container" data-subid="v10-gpu-duel-heureka" data-cat="gpu_duel">
+                    <HeurekaButtons isEn={false} manualSearch={winner.name} positionId="276026" />
+                </div>
+            </div>
+        )}
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: '#ff0055' }}><LayoutList size={28} /> {isEn ? 'TECHNICAL SPECS' : 'GURU SPECIFIKACE'}</h2>
@@ -310,7 +325,7 @@ export default async function GpuVsDetailPage(props) {
 
         <div className="footer-btns" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%', marginTop: '50px' }}>
           <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" className="guru-deals-btn"><Flame size={20} /> {isEn ? 'DEALS' : 'SLEVY'}</a>
-          <a href="/support" className="guru-support-btn"><Heart size={20} /> {isEn ? 'SUPPORT' : 'PODPORA'}</a>
+          <a href={isEn ? "/en/support" : "/support"} className="guru-support-btn"><Heart size={20} /> {isEn ? 'SUPPORT' : 'PODPORA'}</a>
         </div>
       </main>
 
@@ -345,6 +360,26 @@ export default async function GpuVsDetailPage(props) {
             .seo-hub-grid { grid-template-columns: 1fr; }
         }
       `}} />
+
+      <Script id="v10-hl-script" strategy="lazyOnload">
+          {`
+              if (typeof window !== 'undefined') {
+                  document.addEventListener('click', function(e) {
+                      const btn = e.target.closest('.v10-hl-btn, .v10-hl-container a, .v10-hl-container button');
+                      if (btn) {
+                          const container = e.target.closest('.v10-hl-container');
+                          const subId = btn.getAttribute('data-subid') || (container ? container.getAttribute('data-subid') : 'unknown');
+                          const cat = btn.getAttribute('data-cat') || (container ? container.getAttribute('data-cat') : 'gpu_duel');
+                          const targetUrl = btn.href || (btn.tagName === 'A' ? btn.href : null);
+                          
+                          if (navigator.sendBeacon && targetUrl) {
+                              navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: cat, sub_id: subId, page: window.location.pathname }));
+                          }
+                      }
+                  });
+              }
+          `}
+      </Script>
     </div>
   );
 }
