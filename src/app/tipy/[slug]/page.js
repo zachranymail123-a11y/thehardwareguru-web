@@ -11,8 +11,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons';
 
 /**
- * GURU TIP ENGINE V6.5 (THE ATOMIC EN FIX + NO TRIMMING)
- * 🚀 CÍL: Absolutní zničení češtiny v EN sekci, Amazon a kalkulačky nahoře.
+ * GURU TIP ENGINE V6.6 (STRICT BACKUP FIX + AWAIT HEADERS FIX)
+ * 🚀 CÍL: Fix Error 500 (await headers) + V10 Heureka Hard-Lock + Amazon EN. Kompletní kód.
  */
 
 export const runtime = "nodejs";
@@ -36,30 +36,42 @@ const getLatestTips = async (excludeId, isEn) => {
 
 export async function generateMetadata(props) {
   const { slug } = await props.params;
-  const h = headers();
-  const fullUrl = h.get('x-url') || h.get('referer') || "";
-  const isEn = fullUrl.includes('/en/') || slug?.startsWith('en-');
-  const { data: tip } = await supabase.from('tipy').select('*').or(`slug.eq."${slug}",slug_en.eq."${slug}"`).single();
+  
+  // 🔥 FIX ERRORU 500: Zabalené a awaitované headers()
+  let isEn = props.isEnProxy === true || props.isEn === true || slug?.startsWith('en-');
+  try {
+      const h = await headers();
+      const fullUrl = h.get('x-url') || h.get('referer') || h.get('x-invoke-path') || "";
+      if (fullUrl.includes('/en/')) isEn = true;
+  } catch (e) {}
+
+  const cleanSlug = slug.replace(/^en-/, '');
+  const { data: tip } = await supabase.from('tipy').select('*').or(`slug.eq."${cleanSlug}",slug_en.eq."${slug}"`).single();
   if (!tip) return { title: '404 | Hardware Guru' };
+  
   const title = isEn && tip.title_en ? tip.title_en : tip.title;
   return {
     title: `${title} | The Hardware Guru`,
     alternates: {
-      canonical: isEn ? `${baseUrl}/en/tipy/${tip.slug_en || tip.slug}` : `${baseUrl}/tipy/${tip.slug}`,
-      languages: { 'en': `${baseUrl}/en/tipy/${tip.slug_en || tip.slug}`, 'cs': `${baseUrl}/tipy/${tip.slug}` }
+      canonical: isEn ? `${baseUrl}/en/tipy/${tip.slug_en || `en-${tip.slug}`}` : `${baseUrl}/tipy/${tip.slug}`,
+      languages: { 'en': `${baseUrl}/en/tipy/${tip.slug_en || `en-${tip.slug}`}`, 'cs': `${baseUrl}/tipy/${tip.slug}` }
     }
   };
 }
 
 export default async function TipDetail(props) {
   const { slug } = await props.params;
-  const h = headers();
-  const fullUrl = h.get('x-url') || h.get('referer') || "";
   
-  // 🔥 AGRESIVNÍ DETEKCE EN JAZYKA
-  const isEn = fullUrl.includes('/en/tipy/') || slug?.startsWith('en-') || props.isEn === true;
+  // 🔥 FIX ERRORU 500: Zabalené a awaitované headers()
+  let isEn = props.isEnProxy === true || props.isEn === true || slug?.startsWith('en-');
+  try {
+      const h = await headers();
+      const fullUrl = h.get('x-url') || h.get('referer') || h.get('x-invoke-path') || "";
+      if (fullUrl.includes('/en/')) isEn = true;
+  } catch (e) {}
 
-  const { data: tip } = await supabase.from('tipy').select('*').or(`slug.eq."${slug}",slug_en.eq."${slug}"`).single();
+  const cleanSlug = slug.replace(/^en-/, '');
+  const { data: tip } = await supabase.from('tipy').select('*').or(`slug.eq."${cleanSlug}",slug_en.eq."${slug}"`).single();
   if (!tip) notFound();
 
   const latestTips = await getLatestTips(tip.id, isEn);
@@ -67,9 +79,10 @@ export default async function TipDetail(props) {
   // 🔥 BRUTÁLNÍ VYNUCENÍ EN SLOUPCŮ Z DB
   const title = isEn ? (tip.title_en || tip.title) : tip.title;
   const content = isEn ? (tip.content_en || tip.content) : tip.content;
-  const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}tipy/${slug}`;
+  const shareUrl = `${baseUrl}/${isEn ? 'en/' : ''}tipy/${isEn ? (tip.slug_en || `en-${tip.slug}`) : tip.slug}`;
 
-  const amazonLink = `https://www.amazon.com/s?k=gaming+hardware&tag=thehardware07-20`;
+  // 🔥 OPRAVA AFFILIATE LINKŮ (Amazon pro EN, V10 Hard-Lock Heureka pro CZ)
+  const amazonLink = `https://www.amazon.com/s?k=gaming+hardware&tag=thehardware07-20&ascsubtag=v10-tipy-detail`;
   const smartyLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz`)}`;
   const heurekaLink = `https://www.heureka.cz/#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Tip%20detail`;
 
@@ -92,7 +105,7 @@ export default async function TipDetail(props) {
             <div className="guru-header-meta">
               <span className="guru-badge"><ShieldCheck size={16} /> GURU ENGINE</span>
               <span className="separator">•</span>
-              <span className="date-span"><Calendar size={16} /> {new Date(tip.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
+              <span className="date-span" suppressHydrationWarning><Calendar size={16} /> {new Date(tip.created_at).toLocaleDateString(isEn ? 'en-US' : 'cs-CZ')}</span>
             </div>
             <h1 className="tip-h1">{title}</h1>
           </header>
@@ -110,7 +123,14 @@ export default async function TipDetail(props) {
                               <a href={smartyLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
                                   <ShoppingCart size={16} /> Smarty.cz
                               </a>
-                              <a href={heurekaLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn">
+                              <a 
+                                  href={heurekaLink} 
+                                  data-trixam-positionid="276026" 
+                                  data-trixam-codetype="link" 
+                                  target="_blank" 
+                                  rel="nofollow sponsored" 
+                                  className="guru-buy-winner-btn heureka-btn heureka-hn-link v10-hl-btn"
+                              >
                                   <ShoppingCart size={16} /> Heureka.cz
                               </a>
                           </>
@@ -125,7 +145,14 @@ export default async function TipDetail(props) {
               <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} className="tool-btn-small cyan-link"><Gamepad2 size={16} /> {isEn ? 'FPS Test' : 'FPS Test'}</a>
           </div>
 
-          <div style={{ marginBottom: '40px' }}><SeznamAd zoneId={408654} width={970} height={210} /></div>
+          <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
+              <div className="ad-desktop-wrapper">
+                  <SeznamAd zoneId={408654} width={970} height={210} />
+              </div>
+              <div className="ad-mobile-wrapper">
+                  <SeznamAd zoneId={408651} width={300} height={250} />
+              </div>
+          </div>
 
           {/* 🔥 SAMOTNÝ TEXT TIPU 🔥 */}
           <div className="guru-prose" style={{ color: '#d1d5db', fontSize: '1.15rem', lineHeight: '1.8' }}>
@@ -145,9 +172,9 @@ export default async function TipDetail(props) {
           </div>
 
           <div className="share-grid">
-              <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`} target="_blank" className="share-card x-bg"><Twitter size={18} /> X / TWITTER</a>
-              <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" className="share-card fb-bg"><Share2 size={18} /> FACEBOOK</a>
-              <a href={`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}`} target="_blank" className="share-card reddit-bg"><RedditIcon size={18} /> REDDIT</a>
+              <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}`} target="_blank" rel="nofollow noopener" className="share-card x-bg"><Twitter size={18} /> X / TWITTER</a>
+              <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="nofollow noopener" className="share-card fb-bg"><Share2 size={18} /> FACEBOOK</a>
+              <a href={`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}`} target="_blank" rel="nofollow noopener" className="share-card reddit-bg"><RedditIcon size={18} /> REDDIT</a>
           </div>
 
           <div className="duel-grid">
@@ -164,7 +191,7 @@ export default async function TipDetail(props) {
                   const ltSlug = isEn ? (lt.slug_en || lt.slug) : lt.slug;
                   return (
                     <Link key={lt.slug} href={isEn ? `/en/tipy/${ltSlug}` : `/tipy/${ltSlug}`} className="related-card">
-                      <img src={lt.image_url} alt={ltTitle} />
+                      <img src={lt.image_url} alt={ltTitle} loading="lazy" />
                       <div className="related-info"><h3>{ltTitle}</h3></div>
                     </Link>
                   );
@@ -175,7 +202,14 @@ export default async function TipDetail(props) {
         </div>
       </main>
 
-      <div className="sticky-bottom-anchor"><SeznamAd zoneId={408654} width={970} height={90} /></div>
+      <div className="sticky-bottom-anchor">
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
+      </div>
 
       <style dangerouslySetInnerHTML={{__html: `
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
@@ -213,13 +247,20 @@ export default async function TipDetail(props) {
         .related-card img { width: 100%; height: 110px; object-fit: cover; }
         .related-info { padding: 12px; }
         .related-info h3 { margin: 0; color: #fff; font-size: 0.85rem; font-weight: 900; }
+        
         .sticky-bottom-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); }
+        
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
         @media (max-width: 768px) {
             .content-padding-box { padding: 30px 20px !important; }
             .tip-h1 { font-size: 1.8rem !important; }
             .affiliate-btn-wrap { flex-direction: column; }
             .guru-buy-winner-btn { max-width: 100%; }
             .guru-tools-small-grid, .share-grid, .duel-grid, .related-grid { grid-template-columns: 1fr; }
+            .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
         }
       `}} />
     </div>
