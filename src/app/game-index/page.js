@@ -26,11 +26,12 @@ export default function GameIndexPage() {
 
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
 
-    // 🔥 V10 HARD-LOCK REDIRECT LOGIC 🔥
+    // 🔥 V10 HARD-LOCK REDIRECT LOGIC (OPRAVA FRAGMENTU) 🔥
     const handleHeurekaAction = (e, name, subId) => {
         e.preventDefault();
         const q = encodeURIComponent(name);
-        const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+        // Opraveno: UTM parametry jsou nyní za znakem #
+        const targetUrl = `https://www.heureka.cz/?h%5Bfraze%5D=${q}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
         
         if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
             const payload = { platform: 'heureka', category: 'game_index', sub_id: subId, page: pathname };
