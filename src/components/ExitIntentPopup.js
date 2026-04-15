@@ -28,13 +28,17 @@ export default function ExitIntentPopup() {
 
     if (!isVisible) return null;
 
-    // 🔥 NEPRŮSTŘELNÝ LINK (Vždy přes hlavní doménu a s haff na začátku)
-    const getLink = (product, category) => {
-        const query = encodeURIComponent(`${product} ${category === 'cpu' ? 'procesor' : 'grafická karta'}`);
-        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${query}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_content=exit-popup-v15&o=3`;
+    // 🔥 PŘESNÝ LINK PODLE MANUÁLU HEUREKY (Z TVÝCH SCREENSHOTŮ) 🔥
+    const getLink = (product) => {
+        const query = encodeURIComponent(product);
+        if (isEn) return `https://www.amazon.com/s?k=${query}&tag=thehardware07-20`;
+        
+        // Formát URL přímo z administrace Heureky pro procesory
+        return `https://www.heureka.cz/?h%5Bfraze%5D=${query}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=exit-popup-v15`;
     };
 
     const product = "AMD Ryzen 7 9800X3D";
+    const processorId = "276027"; // ID pro procesory z tvého screenshotu image_eed862
 
     return (
         <div className="exit-overlay">
@@ -58,7 +62,14 @@ export default function ExitIntentPopup() {
                     <div className="exit-name">{product}</div>
                 </div>
 
-                <a href={getLink(product, 'cpu')} target="_blank" rel="nofollow sponsored" className="exit-cta">
+                {/* 🔥 ABSOLUTNĚ KLÍČOVÁ OPRAVA: PŘIDÁNA TŘÍDA A POSITION ID PRO TRACKING HEUREKY 🔥 */}
+                <a 
+                    href={getLink(product)} 
+                    target="_blank" 
+                    rel="sponsored noopener" 
+                    className={isEn ? "exit-cta" : "exit-cta heureka-hn-link"}
+                    data-trixam-positionid={isEn ? undefined : processorId}
+                >
                     <Zap size={20} fill="currentColor" />
                     {isEn ? "CHECK AVAILABILITY" : "ZJISTIT CENU A SKLAD"}
                 </a>
