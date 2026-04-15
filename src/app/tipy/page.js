@@ -7,8 +7,8 @@ import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons';
 
 /**
- * GURU TIP ARCHIVE ENGINE V2.5 (EN FIX + AFFILIATE BOMB)
- * 🚀 CÍL: Spolehlivá detekce EN, Amazon tlačítko a prolinky na kalkulačky.
+ * GURU TIP ARCHIVE ENGINE V2.6 (STRICT BACKUP FIX + AWAIT HEADERS FIX)
+ * 🚀 CÍL: Fix Error 500 (await headers) + V10 Heureka Hard-Lock + Amazon EN. Kompletní kód.
  */
 
 export const runtime = "nodejs";
@@ -19,9 +19,12 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const baseUrl = "https://thehardwareguru.cz";
 
 export async function generateMetadata(props) {
-  const headersList = headers();
-  const fullUrl = headersList.get('x-url') || headersList.get('referer') || "";
-  const isEn = fullUrl.includes('/en/') || props?.isEn === true;
+  let isEn = props?.isEn === true;
+  try {
+      const headersList = await headers();
+      const fullUrl = headersList.get('x-url') || headersList.get('referer') || headersList.get('x-invoke-path') || "";
+      if (fullUrl.includes('/en/')) isEn = true;
+  } catch (e) {}
 
   const title = isEn ? 'Hardware Guru Tips | Tech Knowledge Base' : 'Guru Hardware Tipy | Databáze moudrosti';
   const desc = isEn 
@@ -39,9 +42,12 @@ export async function generateMetadata(props) {
 }
 
 export default async function TipyArchivePage(props) {
-  const headersList = headers();
-  const fullUrl = headersList.get('x-url') || headersList.get('referer') || "";
-  const isEn = fullUrl.includes('/en/') || props?.isEn === true;
+  let isEn = props?.isEn === true;
+  try {
+      const headersList = await headers();
+      const fullUrl = headersList.get('x-url') || headersList.get('referer') || headersList.get('x-invoke-path') || "";
+      if (fullUrl.includes('/en/')) isEn = true;
+  } catch (e) {}
 
   const supabase = createClient(supabaseUrl, supabaseKey);
   const { data: items, error } = await supabase
@@ -51,8 +57,8 @@ export default async function TipyArchivePage(props) {
 
   const safeItems = items || [];
 
-  // Affiliate & Tools Links
-  const amazonLink = `https://www.amazon.com/s?k=gaming+pc+accessories&tag=thehardware07-20`;
+  // 🔥 OPRAVA AFFILIATE LINKŮ (Amazon pro EN, V10 Hard-Lock Heureka pro CZ)
+  const amazonLink = `https://www.amazon.com/s?k=gaming+pc+accessories&tag=thehardware07-20&ascsubtag=v10-tipy-archive`;
   const smartyLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz`)}`;
   const heurekaLink = `https://www.heureka.cz/#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Tips%20archive`;
 
@@ -85,7 +91,14 @@ export default async function TipyArchivePage(props) {
                           <a href={smartyLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
                               <ShoppingCart size={16} /> Smarty.cz
                           </a>
-                          <a href={heurekaLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn heureka-btn">
+                          <a 
+                              href={heurekaLink} 
+                              data-trixam-positionid="276026" 
+                              data-trixam-codetype="link" 
+                              target="_blank" 
+                              rel="nofollow sponsored" 
+                              className="guru-buy-winner-btn heureka-btn heureka-hn-link v10-hl-btn"
+                          >
                               <ShoppingCart size={16} /> Heureka.cz
                           </a>
                       </>
@@ -102,12 +115,19 @@ export default async function TipyArchivePage(props) {
 
       {!isEn && (
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
-              <HeurekaButtons isEn={false} />
+              <div className="v10-hl-container" data-subid="v10-tipy-archive-widget" data-cat="tips">
+                  <HeurekaButtons isEn={false} positionId="276026" />
+              </div>
           </div>
       )}
 
       <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
-          <SeznamAd zoneId={408654} width={970} height={210} />
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={210} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={250} />
+          </div>
       </div>
 
       <main style={gridContainer}>
@@ -153,7 +173,12 @@ export default async function TipyArchivePage(props) {
       </main>
 
       <div className="sticky-bottom-anchor">
-          <SeznamAd zoneId={408654} width={970} height={90} />
+          <div className="ad-desktop-wrapper">
+              <SeznamAd zoneId={408654} width={970} height={90} />
+          </div>
+          <div className="ad-mobile-wrapper">
+              <SeznamAd zoneId={408651} width={300} height={100} />
+          </div>
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `
@@ -173,10 +198,18 @@ export default async function TipyArchivePage(props) {
         .cyan-link { background: rgba(102, 252, 241, 0.1); color: #66fcf1; border-color: rgba(102, 252, 241, 0.2); }
         .tool-btn-small:hover { transform: translateY(-2px); filter: brightness(1.2); }
 
+        .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; text-decoration: none; transition: 0.3s; text-transform: uppercase; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
+        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; text-decoration: none; transition: 0.3s; text-transform: uppercase; background: #eab308; color: #000; }
+
         .sticky-bottom-anchor { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(10, 11, 13, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.1); z-index: 9999; padding: 10px 0; display: flex; justify-content: center; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); }
 
+        .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
+        .ad-mobile-wrapper { display: none; width: 100%; }
+
         @media (max-width: 768px) {
+            .guru-tip-archive-wrapper { padding-top: 80px !important; }
             .ad-desktop-wrapper { display: none !important; }
+            .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
             .main-title { font-size: 2.2rem !important; }
             .tip-grid { grid-template-columns: 1fr !important; }
             .affiliate-btn-wrap { flex-direction: column; }
