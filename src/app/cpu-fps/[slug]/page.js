@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, use } from 'react';
+import React, { useEffect, useState } from 'react';
 import { notFound, usePathname } from 'next/navigation';
 import { 
   Gamepad2, 
@@ -22,8 +22,9 @@ import HeurekaButtons from '../../../components/HeurekaButtons';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * GURU CPU FPS HUB V1.6 (V10 HARD-LOCK UPDATE)
- * 🚀 CÍL: Implementace V10 Hard-Lock linků, oprava cest a zachování nástrojů.
+ * GURU CPU FPS HUB V1.6 (V10 HARD-LOCK UPDATE + CLIENT FIX)
+ * 🚀 CÍL: Implementace V10 Hard-Lock linků, oprava cest a zachování nástrojů. 
+ * OPRAVA: Odstraněn use(params) způsobující pád na klientovi.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -34,8 +35,8 @@ const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, 
 const slugify = (text) => text ? text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-").replace(/^-+|-+$/g, "").trim() : '';
 
 export default function CpuFpsHubPage({ params }) {
-  const p = use(params);
-  const rawSlug = p?.slug || '';
+  // 🔥 FIX: Odstraněno use(params), čteme přímo objekt params pro zamezení pádu
+  const rawSlug = params?.slug || '';
   const isEn = rawSlug.startsWith('en-');
   const cleanSlug = rawSlug.replace(/^en-/, '');
   const pathname = usePathname() || '';
@@ -75,17 +76,20 @@ export default function CpuFpsHubPage({ params }) {
   const vendorColor = (cpu.vendor || '').toUpperCase() === 'INTEL' ? '#0071c5' : ((cpu.vendor || '').toUpperCase() === 'AMD' ? '#ed1c24' : '#f59e0b');
   const safeSlug = cpu.slug || slugify(cpu.name);
 
-  // 🔥 V10 HARD-LOCK REDIRECT LOGIC + OPRAVA UTM FRAGMENTU 🔥
+  // 🔥 V10 HARD-LOCK REDIRECT LOGIC + AMAZON FIX 🔥
   const handleHeurekaAction = (e, name) => {
     e.preventDefault();
     const cleanName = name.replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '+');
     const subId = `v10-cpu-hub`;
     
-    // Přesný formát URL podle manuálu (přidán # před UTM parametry)
-    const targetUrl = `https://www.heureka.cz/?h%5Bfraze%5D=${cleanName}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+    // Zohlednění EN verze pro přesměrování na Amazon, CZ verze zůstává tvrdě na Heureku dle manuálu
+    const targetUrl = isEn 
+        ? `https://www.amazon.com/s?k=${encodeURIComponent(cleanName)}&tag=thehardware07-20`
+        : `https://www.heureka.cz/?h%5Bfraze%5D=${cleanName}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     
     if (navigator.sendBeacon) {
-      navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify({ platform: 'heureka', category: 'cpu_hub', sub_id: subId, page: pathname })], { type: 'text/plain' }));
+      const platform = isEn ? 'amazon' : 'heureka';
+      navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify({ platform, category: 'cpu_hub', sub_id: subId, page: pathname })], { type: 'text/plain' }));
     }
     setTimeout(() => { window.location.href = targetUrl; }, 150);
   };
