@@ -3,9 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
-import { Gamepad2, Monitor, ChevronLeft, ShoppingCart, Zap, BarChart3, AlertTriangle, ChevronRight } from 'lucide-react';
-import SeznamAd from '../../../../components/SeznamAd';
+import { 
+ Gamepad2, Monitor, ChevronLeft, ChevronRight, Zap, Swords, ShoppingCart, Activity, CheckCircle2, ArrowRight, Flame, Heart, BarChart3, Gauge, Trophy, Info, Crosshair, AlertTriangle
+} from 'lucide-react';
 import GuruAnalysisText from '../../../../components/GuruAnalysisText';
+import SeznamAd from '../../../../components/SeznamAd';
+import HeurekaButtons from '../../../../components/HeurekaButtons'; 
 
 export const runtime = "nodejs";
 export const revalidate = 86400; 
@@ -14,17 +17,26 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 const findGpuBySlug = async (gpuSlug) => {
-    const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
-    const cleanGpuSlug = gpuSlug.replace(/^en-/, ''); // Podpora pro prefix
-    const res = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${cleanGpuSlug}&limit=1`, { headers });
+  if (!supabaseUrl || !gpuSlug) return null;
+  const authHeaders = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+  const cleanSlug = gpuSlug.replace(/^en-/, '');
+  
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${cleanSlug}&limit=1`, { headers: authHeaders });
     const data = await res.json();
-    return data?.[0] || null;
+    if (data?.length) return data[0];
+
+    const searchPattern = `%${cleanSlug.replace(/-/g, '%')}%`;
+    const res2 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&name.ilike.${searchPattern}&limit=1`, { headers: authHeaders });
+    const data2 = await res2.json();
+    return data2?.[0] || null;
+  } catch (e) { return null; }
 };
 
-export default async function GameSpecificFpsPage({ params }) {
+export default async function GameSpecificFpsPage({ params, props = {} }) {
     const p = await params;
     const rawSlug = p.slug || '';
-    const isEn = rawSlug.startsWith('en-');
+    const isEn = props.isEnProxy === true || rawSlug.startsWith('en-');
     const cleanSlug = rawSlug.replace(/^en-/, '');
     const gameSlug = p.game || '';
 
@@ -32,6 +44,7 @@ export default async function GameSpecificFpsPage({ params }) {
     if (!gpu) return notFound();
 
     const fpsData = Array.isArray(gpu.game_fps) ? (gpu.game_fps[0] || {}) : (gpu.game_fps || {});
+    // 🔥 Dynamické mapování na sloupce v DB (cyberpunk-2077 -> cyberpunk_2077_1440p)
     const dbKey = gameSlug.replace(/-/g, '_');
     const fpsValue = fpsData[`${dbKey}_1440p`] || fpsData[`${dbKey}_1080p`] || 0;
     const vendorColor = (gpu.vendor || '').toUpperCase() === 'NVIDIA' ? '#76b900' : '#ed1c24';
@@ -49,7 +62,7 @@ export default async function GameSpecificFpsPage({ params }) {
 
                 <div style={{ marginBottom: '30px' }}>
                     <Link href={isEn ? `/en/gpu-fps/${cleanSlug}` : `/gpu-fps/${cleanSlug}`} className="guru-back-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.6)', color: '#66fcf1', padding: '12px 20px', borderRadius: '12px', textDecoration: 'none', fontWeight: '900', fontSize: '13px', textTransform: 'uppercase', border: '1px solid rgba(102, 252, 241, 0.3)' }}>
-                        <ChevronLeft size={16} /> {isEn ? 'BACK' : 'ZPĚT'}
+                        <ChevronLeft size={16} /> {isEn ? 'BACK TO GPU' : 'ZPĚT NA GRAFIKU'}
                     </Link>
                 </div>
 
@@ -77,7 +90,7 @@ export default async function GameSpecificFpsPage({ params }) {
                 <div style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '60px' }}>
                     <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950' }}>{isEn ? 'Performance Analysis' : 'Analýza výkonu'}</h2>
                     <GuruAnalysisText 
-                        cpuName="High-end CPU" 
+                        cpuName="High-end Gaming CPU" 
                         gpuName={gpu.name} 
                         gameName={gameSlug.replace(/-/g, ' ')} 
                         resolution="1440p" 
