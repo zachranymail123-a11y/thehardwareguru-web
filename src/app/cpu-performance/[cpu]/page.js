@@ -63,8 +63,9 @@ export default function CpuPerformancePage({ params }) {
     const handleHeurekaAction = (e, name, subId) => {
         e.preventDefault();
         const q = encodeURIComponent(name + ' cena');
-        // Prioritní haff ID na začátku URL
-        const targetUrl = `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${q}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
+        
+        // Přesný formát URL podle manuálu (přidán # před UTM parametry)
+        const targetUrl = `https://www.heureka.cz/?h%5Bfraze%5D=${q}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
         
         if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
             const payload = { platform: 'heureka', category: 'cpu_performance', sub_id: subId, page: pathname };
