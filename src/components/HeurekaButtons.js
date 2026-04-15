@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from 'react';
-import { Cpu, Monitor, Layers, Database, ChevronRight, Search } from 'lucide-react';
+import { Cpu, Monitor, Layers, Database, ChevronRight, Search, ShoppingCart } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
@@ -48,7 +48,7 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#f59e0b', color: '#000', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', width: '100%' }}
                         onClick={() => handleLogClick('manual_search', 'amazon')}
                     >
-                        <Search size={20} /> CHECK ON AMAZON
+                        <ShoppingCart size={20} /> CHECK ON AMAZON
                     </a>
                 </div>
             );
@@ -78,7 +78,7 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#0078d4', color: '#fff', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', width: '100%', maxWidth: '400px' }}
                     onClick={() => handleLogClick('manual_search', 'heureka')}
                 >
-                    <Search size={20} /> POROVNAT CENY NA HEUREKA.CZ
+                    <ShoppingCart size={20} /> POROVNAT CENY NA HEUREKA.CZ
                 </a>
             </div>
         );
@@ -131,7 +131,7 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
         { key: 'ram', ...heurekaData.ram, en: 'Memory' }
     ];
 
-    // 🔥 MÓD 2: PĚT TLAČÍTEK VČETNĚ SEARCHBARU (Výchozí)
+    // 🔥 MÓD 2: PĚT TLAČÍTEK VČETNĚ VYMAZLENÉHO SEARCHBARU (Výchozí)
     return (
         <div className="guru-buttons-container">
             {buttons.map((btn) => {
@@ -142,67 +142,87 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
                     ? `https://www.amazon.com/s?k=${encodeURIComponent(btn.en)}&tag=thehardware07-20`
                     : btn.url;
 
-                // Vyhledávací pole Heureky v CZ
+                // 🔥 NOVÝ A LEPŠÍ SEARCH BAR S POŘÁDNÝM CTR POPISEM (Vyplní celou šířku nahoře)
                 if (btn.key === 'search' && !isEn) {
                     return (
-                        <div key={btn.key} className="guru-card search-card" onClick={() => handleLogClick(btn.key, 'heureka')}>
+                        <div key={btn.key} className="guru-search-card" onClick={() => handleLogClick(btn.key, 'heureka')}>
                              <div className="guru-card-glow" />
-                             <div className="guru-icon-wrapper" style={{ marginRight: '10px', padding: '10px' }}>
-                                 <Icon size={24} className="guru-icon" />
+                             <div style={{ textAlign: 'center', marginBottom: '20px', position: 'relative', zIndex: 2 }}>
+                                 <h3 style={{ color: '#66fcf1', fontSize: '1.3rem', fontWeight: '950', textTransform: 'uppercase', margin: '0 0 10px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', letterSpacing: '1px' }}>
+                                     <Search size={24} /> NAJDĚTE NEJLEPŠÍ CENU HARDWARU NA TRHU
+                                 </h3>
+                                 <p style={{ color: '#d1d5db', fontSize: '14px', margin: '0 auto', maxWidth: '650px', fontWeight: '600', lineHeight: '1.6' }}>
+                                     Zadejte přesný název grafické karty, procesoru nebo jiné komponenty. Náš vyhledávač okamžitě porovná nabídky z tisíců ověřených českých e-shopů.
+                                 </p>
                              </div>
-                             <div className="guru-content" style={{ width: '100%' }}>
+                             
+                             <div style={{ width: '100%', position: 'relative', zIndex: 2 }}>
                                  <div 
                                      className="heureka-affiliate-searchpanel" 
                                      data-trixam-positionid={btn.id} 
                                      data-trixam-codetype="iframe" 
                                      data-trixam-linktarget="top"
-                                     style={{ width: '100%', height: '50px', display: 'flex', alignItems: 'center' }}
+                                     style={{ width: '100%', minHeight: '50px', display: 'flex', justifyContent: 'center' }}
                                  ></div>
                              </div>
                         </div>
                     );
                 }
 
-                // Standardní tlačítka
-                return (
-                    <a
-                        key={btn.key}
-                        href={finalUrl}
-                        target="_blank"
-                        rel="nofollow sponsored"
-                        // 🔥 KLÍČOVÉ PRO HEUREKA TRACKING 🔥
-                        className={isEn ? "guru-card" : "heureka-hn-link guru-card"}
-                        data-trixam-positionid={isEn ? undefined : btn.id}
-                        onClick={() => handleLogClick(btn.key, isEn ? 'amazon' : 'heureka')}
-                    >
-                        <div className="guru-card-glow" />
-                        <div className="guru-icon-wrapper">
-                            <Icon size={28} className="guru-icon" />
-                        </div>
-                        <div className="guru-content">
-                            <span className="guru-label">
-                                {isEn ? btn.en : `${btn.label} za nejnižší ceny`}
-                            </span>
-                            <span className="guru-sub">{btn.sub}</span>
-                        </div>
-                        <ChevronRight size={20} className="guru-arrow" />
-                    </a>
-                );
+                // Standardní tlačítka pod searchbarem
+                if (btn.key !== 'search') {
+                    return (
+                        <a
+                            key={btn.key}
+                            href={finalUrl}
+                            target="_blank"
+                            rel="nofollow sponsored"
+                            // 🔥 KLÍČOVÉ PRO HEUREKA TRACKING 🔥
+                            className={isEn ? "guru-card" : "heureka-hn-link guru-card"}
+                            data-trixam-positionid={isEn ? undefined : btn.id}
+                            onClick={() => handleLogClick(btn.key, isEn ? 'amazon' : 'heureka')}
+                        >
+                            <div className="guru-card-glow" />
+                            <div className="guru-icon-wrapper">
+                                <Icon size={28} className="guru-icon" />
+                            </div>
+                            <div className="guru-content">
+                                <span className="guru-label">
+                                    {isEn ? btn.en : `${btn.label} za nejnižší ceny`}
+                                </span>
+                                <span className="guru-sub">{btn.sub}</span>
+                            </div>
+                            <ChevronRight size={20} className="guru-arrow" />
+                        </a>
+                    );
+                }
+                return null;
             })}
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-buttons-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 40px 0; width: 100%; }
-                .search-card { grid-column: 1 / -1; padding: 10px 20px; } /* Search bar na celou šířku nahoře */
+                
+                /* Úprava pro velký Search Bar, aby zabral celou šířku nad ostatními tlačítky */
+                .guru-search-card { grid-column: 1 / -1; position: relative; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(102, 252, 241, 0.3); padding: 30px 20px; border-radius: 20px; transition: all 0.4s; overflow: hidden; backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 10px; }
+                .guru-search-card:hover { border-color: #66fcf1; box-shadow: 0 15px 40px rgba(102, 252, 241, 0.2); }
+                
                 .guru-card { position: relative; display: flex; align-items: center; background: rgba(10, 10, 10, 0.9); border: 1px solid rgba(147, 51, 234, 0.2); padding: 22px; border-radius: 20px; cursor: pointer; transition: all 0.4s; overflow: hidden; backdrop-filter: blur(12px); text-decoration: none; }
                 .guru-card:hover { transform: translateY(-5px); border-color: #9333ea; box-shadow: 0 15px 40px rgba(147, 51, 234, 0.25); }
-                .guru-card-glow { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 100% 0%, rgba(147, 51, 234, 0.1) 0%, transparent 50%); opacity: 0; }
-                .guru-card:hover .guru-card-glow { opacity: 1; }
+                .guru-card-glow { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 100% 0%, rgba(147, 51, 234, 0.1) 0%, transparent 50%); opacity: 0; transition: opacity 0.4s; }
+                .guru-search-card .guru-card-glow { background: radial-gradient(circle at 50% 0%, rgba(102, 252, 241, 0.1) 0%, transparent 70%); }
+                .guru-card:hover .guru-card-glow, .guru-search-card:hover .guru-card-glow { opacity: 1; }
+                
                 .guru-icon-wrapper { background: #1a1a1a; padding: 14px; border-radius: 16px; margin-right: 18px; color: #9333ea; border: 1px solid rgba(255, 255, 255, 0.05); }
                 .guru-card:hover .guru-icon-wrapper { background: #9333ea; color: #fff; }
-                .guru-content { display: flex; flex-direction: column; flex-grow: 1; }
+                .guru-content { display: flex; flex-direction: column; flex-grow: 1; position: relative; z-index: 2; }
                 .guru-label { color: #fff; font-weight: 900; font-size: 15px; text-transform: uppercase; line-height: 1.2; }
                 .guru-sub { color: #a855f7; font-size: 11px; font-weight: 800; margin-top: 3px; }
-                .guru-arrow { color: rgba(255, 255, 255, 0.1); }
-                @media (max-width: 640px) { .guru-buttons-container { grid-template-columns: 1fr; } }
+                .guru-arrow { color: rgba(255, 255, 255, 0.1); position: relative; z-index: 2; }
+                
+                @media (max-width: 640px) { 
+                    .guru-buttons-container { grid-template-columns: 1fr; } 
+                    .guru-search-card h3 { font-size: 1.1rem !important; }
+                    .guru-search-card p { font-size: 13px !important; }
+                }
             `}} />
         </div>
     );
