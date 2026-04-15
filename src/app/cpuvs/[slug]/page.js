@@ -75,8 +75,8 @@ export default async function CpuComparePage({ params }) {
   const upgradeProduct = isWinnerUltimate ? "ASUS ROG CROSSHAIR X870E" : "AMD Ryzen 7 9800X3D";
   const upgradeCategory = isWinnerUltimate ? "mb" : "cpu";
 
-  // 🔥 AFFILIATE LINKY PRO EXISTUJÍCÍ TLAČÍTKA (V10 GOLDEN) 🔥
-  const getHeurekaUrl = (name) => `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(name + ' procesor')}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=cpuvs-direct&o=3`;
+  // 🔥 AFFILIATE LINKY PRO EXISTUJÍCÍ TLAČÍTKA (V10 GOLDEN OPRAVA FRAGMENTU) 🔥
+  const getHeurekaUrl = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name + ' procesor')}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=cpuvs-direct`;
   const getAmazonUrl = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=${AMAZON_TAG}&ascsubtag=cpuvs-direct`;
 
   const finalWinnerLink = isEn ? getAmazonUrl(winnerCpu.name) : getHeurekaUrl(winnerCpu.name);
