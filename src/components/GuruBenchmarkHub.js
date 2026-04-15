@@ -18,7 +18,7 @@ const RedditIcon = ({ size = 20 }) => (
 
 export default function GuruBenchmarkHub({ t = {}, locale = 'cs' }) {
     const router = useRouter();
-    const [gpuDetected, setGpuDetected] = useState('Detekuji...');
+    const [gpuDetected, setGpuDetected] = useState('Detecting...');
     const [nickname, setNickname] = useState('');
     const [cpuInput, setCpuInput] = useState('');
     const [testPhase, setTestPhase] = useState('idle');
@@ -30,7 +30,7 @@ export default function GuruBenchmarkHub({ t = {}, locale = 'cs' }) {
         const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
         if (gl) {
             const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-            setGpuDetected(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || 'Neznámé GPU');
+            setGpuDetected(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || 'Unknown GPU');
         }
         fetchLeaderboard();
     }, []);
@@ -45,7 +45,7 @@ export default function GuruBenchmarkHub({ t = {}, locale = 'cs' }) {
         if (!nickname.trim()) return;
         setTestPhase('cpu');
         await new Promise(r => setTimeout(r, 800));
-        const cScore = 450000; // Logika výpočtu zůstává
+        const cScore = 450000;
         setTestPhase('gpu');
         await new Promise(r => setTimeout(r, 800));
         const gScore = 320000;
@@ -60,7 +60,6 @@ export default function GuruBenchmarkHub({ t = {}, locale = 'cs' }) {
         <div style={{ background: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', minHeight: '100vh', color: '#fff', padding: '120px 20px 60px', fontFamily: 'sans-serif' }}>
             <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
                 
-                {/* 1. HLAVIČKA A SDÍLENÍ S X */}
                 <div style={{ textAlign: 'center', marginBottom: '40px' }}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#a855f7', fontSize: '14px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', padding: '6px 20px', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '50px', background: 'rgba(168, 85, 247, 0.1)', marginBottom: '20px' }}>
                         <ShieldCheck size={16} /> GURU ULTIMATE BENCHMARK
@@ -71,7 +70,7 @@ export default function GuruBenchmarkHub({ t = {}, locale = 'cs' }) {
 
                     <div style={{ marginBottom: '25px' }}>
                         <h2 style={{ color: '#ff00ff', fontWeight: '950', fontSize: '18px', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '15px' }}>
-                             🚀 NEBUĎ SOBEC, UKAŽ OSTATNÍM TU SÍLU!
+                             {locale === 'en' ? "🚀 DON'T BE SELFISH, SHOW THEM THE POWER!" : "🚀 NEBUĎ SOBEC, UKAŽ OSTATNÍM TU SÍLU!"}
                         </h2>
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
                             <a href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`} target="_blank" rel="noreferrer" style={{ background: '#1877f2', color: '#fff', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}><Facebook size={20} fill="#fff" stroke="none" /></a>
@@ -82,56 +81,58 @@ export default function GuruBenchmarkHub({ t = {}, locale = 'cs' }) {
                     </div>
                 </div>
 
-                {/* 2. GURU EKOSYSTÉM HUB */}
                 <div style={{ marginBottom: '40px', background: 'rgba(15, 17, 21, 0.7)', border: '1px solid rgba(255,255,255,0.1)', padding: '30px', borderRadius: '24px', backdropFilter: 'blur(15px)', textAlign:'center' }}>
-                    <h2 style={{ fontSize: '20px', fontWeight: '950', color: '#fff', marginBottom: '25px', textTransform: 'uppercase' }}>PROZKOUMEJ CELÝ GURU EKOSYSTÉM</h2>
+                    <h2 style={{ fontSize: '20px', fontWeight: '950', color: '#fff', marginBottom: '25px', textTransform: 'uppercase' }}>{locale === 'en' ? 'EXPLORE THE ENTIRE GURU ECOSYSTEM' : 'PROZKOUMEJ CELÝ GURU EKOSYSTÉM'}</h2>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center' }}>
-                        <Link href="/bottleneck-calculator" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#38bdf8', border: '1px solid #38bdf8', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Layers size={14} /> BOTTLENECK</Link>
-                        <Link href="/fps-kalkulacka" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#a855f7', border: '1px solid #a855f7', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Gamepad2 size={14} /> FPS KALKULAČKA</Link>
-                        <Link href="/cpuvs" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#66fcf1', border: '1px solid #66fcf1', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Cpu size={14} /> SOUBOJE CPU</Link>
-                        <Link href="/gpuvs" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#ff0055', border: '1px solid #ff0055', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Swords size={14} /> SOUBOJE GPU</Link>
-                        <Link href="/clanky" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#fff', border: '1px solid #fff', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><BookOpen size={14} /> HW NOVINKY</Link>
-                        <Link href="/slovnik" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#9ca3af', border: '1px solid #9ca3af', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><GraduationCap size={14} /> SLOVNÍK</Link>
-                        <Link href="/tipy" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#a855f7', border: '1px solid #a855f7', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Lightbulb size={14} /> TIPY</Link>
-                        <Link href="/tweaky" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#f59e0b', border: '1px solid #f59e0b', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Flash size={14} /> TWEAKY</Link>
+                        <Link href="/bottleneck-calculator" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#38bdf8', border: '1px solid #38bdf8', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Layers size={14} /> {locale === 'en' ? 'BOTTLENECK' : 'BOTTLENECK'}</Link>
+                        <Link href="/fps-kalkulacka" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#a855f7', border: '1px solid #a855f7', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Gamepad2 size={14} /> {locale === 'en' ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</Link>
+                        <Link href="/cpuvs" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#66fcf1', border: '1px solid #66fcf1', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Cpu size={14} /> {locale === 'en' ? 'CPU DUELS' : 'SOUBOJE CPU'}</Link>
+                        <Link href="/gpuvs" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#ff0055', border: '1px solid #ff0055', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Swords size={14} /> {locale === 'en' ? 'GPU DUELS' : 'SOUBOJE GPU'}</Link>
+                        <Link href="/clanky" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#fff', border: '1px solid #fff', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><BookOpen size={14} /> {locale === 'en' ? 'HW NEWS' : 'HW NOVINKY'}</Link>
+                        <Link href="/slovnik" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#9ca3af', border: '1px solid #9ca3af', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><GraduationCap size={14} /> {locale === 'en' ? 'GLOSSARY' : 'SLOVNÍK'}</Link>
+                        <Link href="/tipy" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#a855f7', border: '1px solid #a855f7', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Lightbulb size={14} /> {locale === 'en' ? 'TIPS' : 'TIPY'}</Link>
+                        <Link href="/tweaky" style={{ padding: '10px 15px', borderRadius: '8px', fontWeight: '900', background: 'rgba(15, 17, 21, 0.8)', color: '#f59e0b', border: '1px solid #f59e0b', textDecoration: 'none', fontSize:'11px', display:'flex', alignItems:'center', gap:'5px' }}><Flash size={14} /> {locale === 'en' ? 'TWEAKS' : 'TWEAKY'}</Link>
                     </div>
                 </div>
 
-                {/* 3. SEZNAM REKLAMA NAD FORMULÁŘEM */}
                 <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
                     <SeznamAd zoneId={408654} width={970} height={210} />
                 </div>
 
-                {/* 4. BENCHMARK FORMULÁŘ */}
                 <div style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '50px 40px', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', marginBottom: '60px' }}>
                     {testPhase === 'idle' ? (
                         <form onSubmit={startFullBenchmark} style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
                             <div style={{ padding: '15px 20px', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)', color: '#10b981', fontWeight: '900', fontSize: '14px' }}>
-                                <MonitorPlay size={18} style={{ display:'inline', verticalAlign:'middle', marginRight:'10px'}} /> Auto-GPU: {gpuDetected.split(',')[1] || gpuDetected}
+                                <MonitorPlay size={18} style={{ display:'inline', verticalAlign:'middle', marginRight:'10px'}} /> {locale === 'en' ? 'Auto-GPU:' : 'Auto-GPU:'} {gpuDetected.split(',')[1] || gpuDetected}
                             </div>
                             <div>
-                                <label style={{ display: 'block', color: '#ff00ff', fontWeight: '950', textTransform: 'uppercase', fontSize: '13px', marginBottom: '10px' }}><User size={14} style={{display:'inline', marginRight:'5px'}}/> ZADEJ SVŮJ NICK *</label>
-                                <input type="text" required placeholder="Např. Tapicek, Master99..." value={nickname} onChange={e => setNickname(e.target.value)} style={{ width: '100%', padding: '20px', borderRadius: '12px', background: '#000', border: '1px solid #333', color: '#fff', fontSize: '18px', fontWeight: 'bold' }} />
+                                <label style={{ display: 'block', color: '#ff00ff', fontWeight: '950', textTransform: 'uppercase', fontSize: '13px', marginBottom: '10px' }}><User size={14} style={{display:'inline', marginRight:'5px'}}/> {locale === 'en' ? 'ENTER YOUR NICK *' : 'ZADEJ SVŮJ NICK *'}</label>
+                                <input type="text" required placeholder={locale === 'en' ? "e.g., Tapicek, Master99..." : "Např. Tapicek, Master99..."} value={nickname} onChange={e => setNickname(e.target.value)} style={{ width: '100%', padding: '20px', borderRadius: '12px', background: '#000', border: '1px solid #333', color: '#fff', fontSize: '18px', fontWeight: 'bold' }} />
                             </div>
                             <div>
-                                <label style={{ display: 'block', color: '#fff', fontWeight: '950', textTransform: 'uppercase', fontSize: '13px', marginBottom: '10px' }}><Cpu size={14} style={{display:'inline', marginRight:'5px'}}/> PŘESNÝ NÁZEV TVÉHO PROCESORU</label>
-                                <input type="text" placeholder="Např. AMD Ryzen 7 7800X3D" value={cpuInput} onChange={e => setCpuInput(e.target.value)} style={{ width: '100%', padding: '20px', borderRadius: '12px', background: '#000', border: '1px solid #333', color: '#fff', fontSize: '18px' }} />
+                                <label style={{ display: 'block', color: '#fff', fontWeight: '950', textTransform: 'uppercase', fontSize: '13px', marginBottom: '10px' }}><Cpu size={14} style={{display:'inline', marginRight:'5px'}}/> {locale === 'en' ? 'EXACT CPU NAME' : 'PŘESNÝ NÁZEV TVÉHO PROCESORU'}</label>
+                                <input type="text" placeholder={locale === 'en' ? "e.g., AMD Ryzen 7 7800X3D" : "Např. AMD Ryzen 7 7800X3D"} value={cpuInput} onChange={e => setCpuInput(e.target.value)} style={{ width: '100%', padding: '20px', borderRadius: '12px', background: '#000', border: '1px solid #333', color: '#fff', fontSize: '18px' }} />
                             </div>
-                            <button type="submit" style={{ background: 'linear-gradient(90deg, #ff0055, #a855f7)', padding: '25px', borderRadius: '15px', fontWeight: '950', border: 'none', cursor: 'pointer', color: '#fff', fontSize: '22px', textTransform: 'uppercase' }}>SPUSTIT GURU TEST</button>
+                            <button type="submit" style={{ background: 'linear-gradient(90deg, #ff0055, #a855f7)', padding: '25px', borderRadius: '15px', fontWeight: '950', border: 'none', cursor: 'pointer', color: '#fff', fontSize: '22px', textTransform: 'uppercase' }}>{locale === 'en' ? 'START GURU TEST' : 'SPUSTIT GURU TEST'}</button>
                         </form>
                     ) : (
                         <div style={{ textAlign: 'center', padding: '60px 0' }}>
                             <div className="guru-spinner" style={{ width: '80px', height: '80px', border: '6px solid #fff', borderTopColor: '#ff0055', borderRadius: '50%', margin: '0 auto 30px', animation: 'spin 1s linear infinite' }}></div>
-                            <h2 style={{ fontWeight: '950', fontSize: '32px' }}>{testPhase === 'cpu' ? 'TESTUJI CPU...' : 'MĚŘÍM GPU...'}</h2>
+                            <h2 style={{ fontWeight: '950', fontSize: '32px' }}>{testPhase === 'cpu' ? (locale === 'en' ? 'TESTING CPU...' : 'TESTUJI CPU...') : (locale === 'en' ? 'MEASURING GPU...' : 'MĚŘÍM GPU...')}</h2>
                         </div>
                     )}
                 </div>
 
-                {/* 5. LEADERBOARD (TOP 10) */}
                 <div style={{ background: 'rgba(15, 17, 21, 0.8)', border: '1px solid rgba(168, 85, 247, 0.2)', borderRadius: '24px', padding: '40px', marginBottom: '40px' }}>
                     <h2 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', fontSize: '28px', fontWeight: '950', color: '#fff', marginBottom: '30px', textTransform: 'uppercase' }}>
-                        <Trophy size={32} color="#f59e0b" /> GURU LEADERBOARD (TOP 10)
+                        <Trophy size={32} color="#f59e0b" /> {locale === 'en' ? 'GURU LEADERBOARD (TOP 10)' : 'GURU LEADERBOARD (TOP 10)'}
                     </h2>
+                    
+                    {/* VELKÁ REKLAMA V LEADERBOARDU */}
+                    <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'center' }}>
+                        <SeznamAd zoneId={408654} width={970} height={210} />
+                    </div>
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {leaderboard.map((row, idx) => (
                             <div key={idx} style={{ display: 'grid', gridTemplateColumns: '50px 1fr 120px', alignItems: 'center', padding: '15px 25px', background: idx === 0 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(255,255,255,0.03)', border: `1px solid ${idx === 0 ? '#f59e0b' : 'rgba(255,255,255,0.05)'}`, borderRadius: '12px' }}>
