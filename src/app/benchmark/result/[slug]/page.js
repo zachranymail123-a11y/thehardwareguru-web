@@ -35,15 +35,15 @@ export default async function ResultPage({ params }) {
     let evalTitle, evalDesc, evalColor;
     if (isCpuBottleneck) {
         evalTitle = "⚠️ MASIVNÍ CPU BOTTLENECK!";
-        evalDesc = `Tvůj procesor ${result.cpu_name} je pro grafiku ${result.gpu_name} jako zatažená ruční brzda. GPU musí neustále čekat na data, což ti drasticky sráží FPS i stabilitu. Tohle nevyřešíš nastavením grafiky, tady potřebuješ víc jader a vyšší IPC!`;
+        evalDesc = `Tvůj procesor ${result.cpu_name} je pro grafiku ${result.gpu_name} jako zatažená ruční brzda. GPU musí neustále čekat na data, což ti drasticky sráží FPS i stabilitu. Je čas na upgrade procesoru!`;
         evalColor = "#ff0055";
     } else if (isGpuBottleneck) {
         evalTitle = "⚠️ MASIVNÍ GPU BOTTLENECK!";
-        evalDesc = `Máš výkonu na rozdávání, ale grafická karta ${result.gpu_name} nestíhá krmit tenhle procesor. Tvůj PC má obrovský potenciál pro upgrade grafiky – procesor by bez problémů zvládl mnohem silnější model bez nutnosti měnit zbytek sestavy.`;
+        evalDesc = `Máš výkonu na rozdávání, ale grafická karta ${result.gpu_name} nestíhá krmit tenhle procesor. Tvůj PC má obrovský potenciál pro upgrade grafiky – procesor by bez problémů zvládl mnohem silnější model.`;
         evalColor = "#f59e0b";
     } else {
         evalTitle = "SESTAVA JE SKVĚLE VYVÁŽENÁ!";
-        evalDesc = "Tvoje CPU a GPU tvoří perfektní tandem. Nemáš žádné výrazné úzké hrdlo a ze svého hardwaru ždímáš naprosté maximum. Takhle má vypadat GURU mašina – gratulujeme k vyváženému buildu!";
+        evalDesc = "Tvoje CPU a GPU tvoří perfektní tandem. Nemáš žádné výrazné úzké hrdlo a ze svého hardwaru ždímáš naprosté maximum. Gratulujeme k vyváženému buildu!";
         evalColor = "#10b981";
     }
 
@@ -58,36 +58,32 @@ export default async function ResultPage({ params }) {
                     <div style={{ color: '#a855f7', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px' }}><Trophy size={18} style={{display:'inline', verticalAlign:'middle', marginRight:'10px'}}/> OFICIÁLNÍ GURU VÝSLEDEK</div>
                     <h1 style={{ fontSize: 'clamp(3rem, 8vw, 6rem)', fontWeight: '950', textTransform: 'uppercase', margin: 0, lineHeight: '0.9', textShadow: '0 0 30px rgba(168, 85, 247, 0.4)' }}>{result.nickname}</h1>
                     
-                    {/* CTR TEXT PRO SDÍLENÍ */}
-                    <div style={{ marginTop: '30px', animation: 'pulse 2s infinite' }}>
-                        <h2 style={{ color: '#ff00ff', fontWeight: '950', fontSize: '20px', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '15px' }}>
+                    <div style={{ marginTop: '25px' }}>
+                        <h2 style={{ color: '#ff00ff', fontWeight: '950', fontSize: '18px', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '15px' }}>
                             🚀 NEBUĎ SOBEC, UKAŽ OSTATNÍM TU SÍLU!
                         </h2>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-                        <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" style={{ background: '#1877f2', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '14px', transition: '0.3s' }} className="hover:scale-110"><Facebook fill="#fff" stroke="none" /></a>
-                        <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=Můj PC právě dosáhl skóre ${result.total_score.toLocaleString()} na GURU Benchmarku! Porazíš mě?`} target="_blank" style={{ background: '#000', border:'1px solid #333', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '14px', transition: '0.3s' }} className="hover:scale-110"><Twitter fill="#fff" stroke="none" /></a>
-                        <a href={`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=Můj PC Benchmark Výsledek: ${result.total_score.toLocaleString()}`} target="_blank" style={{ background: '#ff4500', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '14px', transition: '0.3s' }} className="hover:scale-110"><RedditIcon size={28} /></a>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+                            <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" style={{ background: '#1877f2', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}><Facebook fill="#fff" stroke="none" /></a>
+                            <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=Můj PC právě dosáhl skóre ${result.total_score.toLocaleString()} na GURU Benchmarku! Porazíš mě?`} target="_blank" style={{ background: '#000', border:'1px solid #333', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}><Twitter fill="#fff" stroke="none" /></a>
+                            <a href={`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=Můj PC Benchmark Výsledek: ${result.total_score.toLocaleString()}`} target="_blank" style={{ background: '#ff4500', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}><RedditIcon size={24} /></a>
+                        </div>
                     </div>
                 </div>
 
-                {/* 2. GURU EKOSYSTÉM HUB */}
+                {/* 2. GURU HUB */}
                 <div style={{ marginBottom: '40px', background: 'rgba(15, 17, 21, 0.7)', border: '1px solid rgba(255,255,255,0.1)', padding: '30px', borderRadius: '24px', backdropFilter: 'blur(15px)', textAlign:'center' }}>
-                    <h2 style={{ fontSize: '20px', fontWeight: '950', color: '#fff', marginBottom: '25px', textTransform: 'uppercase' }}>PROZKOUMEJ CELÝ GURU EKOSYSTÉM</h2>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' }}>
-                        <Link href="/bottleneck-calculator" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', border: '1px solid #38bdf8', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }} className="hover:bg-[#38bdf8] hover:text-black transition-all"><Layers size={14} /> BOTTLENECK</Link>
-                        <Link href="/fps-kalkulacka" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid #a855f7', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }} className="hover:bg-[#a855f7] hover:text-white transition-all"><Gamepad2 size={14} /> FPS KALKULAČKA</Link>
-                        <Link href="/cpu-index" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(102, 252, 241, 0.1)', color: '#66fcf1', border: '1px solid #66fcf1', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }} className="hover:bg-[#66fcf1] hover:text-black transition-all"><Cpu size={14} /> KATALOG CPU</Link>
-                        <Link href="/gpu-index" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(255, 0, 85, 0.1)', color: '#ff0055', border: '1px solid #ff0055', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }} className="hover:bg-[#ff0055] hover:text-white transition-all"><Zap size={14} /> KATALOG GPU</Link>
-                        <Link href="/clanky" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid #fff', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }} className="hover:bg-white hover:text-black transition-all"><BookOpen size={14} /> HW NOVINKY</Link>
-                        <Link href="/slovnik" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(255,255,255,0.05)', color: '#9ca3af', border: '1px solid #9ca3af', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }} className="hover:bg-white hover:text-black transition-all"><GraduationCap size={14} /> SLOVNÍK POJMŮ</Link>
-                        <Link href="/tipy" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid #a855f7', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }} className="hover:bg-[#a855f7] hover:text-white transition-all"><Lightbulb size={14} /> GURU TIPY</Link>
-                        <Link href="/tweaky" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', border: '1px solid #f59e0b', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }} className="hover:bg-[#f59e0b] hover:text-black transition-all"><Flash size={14} /> GURU TWEAKY</Link>
+                        <Link href="/bottleneck-calculator" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', border: '1px solid #38bdf8', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><Layers size={14} /> BOTTLENECK</Link>
+                        <Link href="/fps-kalkulacka" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid #a855f7', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><Gamepad2 size={14} /> FPS KALKULAČKA</Link>
+                        <Link href="/cpu-index" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(102, 252, 241, 0.1)', color: '#66fcf1', border: '1px solid #66fcf1', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><Cpu size={14} /> KATALOG CPU</Link>
+                        <Link href="/gpu-index" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(255, 0, 85, 0.1)', color: '#ff0055', border: '1px solid #ff0055', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><Zap size={14} /> KATALOG GPU</Link>
+                        <Link href="/clanky" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid #fff', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><BookOpen size={14} /> HW NOVINKY</Link>
+                        <Link href="/slovnik" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(255,255,255,0.05)', color: '#9ca3af', border: '1px solid #9ca3af', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><GraduationCap size={14} /> SLOVNÍK</Link>
+                        <Link href="/tipy" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid #a855f7', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><Lightbulb size={14} /> TIPY</Link>
+                        <Link href="/tweaky" style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '900', background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', border: '1px solid #f59e0b', textDecoration: 'none', fontSize:'12px', display:'flex', alignItems:'center', gap:'8px' }}><Flash size={14} /> TWEAKY</Link>
                     </div>
                 </div>
 
-                {/* REKLAMA TOP */}
                 <div style={{ marginBottom: '40px', display: 'flex', justifyContent: 'center' }}>
                     <SeznamAd zoneId={408654} width={970} height={210} />
                 </div>
@@ -110,15 +106,30 @@ export default async function ResultPage({ params }) {
                     </div>
                 </div>
 
-                {/* 4. DETAILNÍ ZHODNOCENÍ */}
+                {/* 4. ZHODNOCENÍ + BOXÍKY S REKLAMOU */}
                 <div style={{ background: 'rgba(15, 17, 21, 0.8)', border: `2px solid ${evalColor}`, borderRadius: '24px', padding: '50px 40px', textAlign: 'center', marginBottom: '40px', boxShadow: `0 0 40px ${evalColor}22` }}>
                     <h2 style={{ fontSize: '36px', fontWeight: '950', color: evalColor, marginBottom: '20px', textTransform: 'uppercase' }}>{evalTitle}</h2>
                     <p style={{ color: '#fff', fontSize: '1.25rem', marginBottom: '35px', lineHeight: '1.7', maxWidth: '850px', margin: '0 auto 35px' }}>{evalDesc}</p>
                     
                     <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '40px' }}>
-                        <p style={{ color: '#9ca3af', marginBottom: '25px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>Doporučený upgrade pro maximální FPS:</p>
+                        <p style={{ color: '#9ca3af', marginBottom: '30px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>Doporučený upgrade pro maximální FPS:</p>
+                        
+                        {/* BOXÍKY S REKLAMOU SEZNAM */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '40px' }}>
+                            <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '16px', padding: '10px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'center' }}>
+                                <SeznamAd zoneId={408651} width={300} height={250} />
+                            </div>
+                            <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '16px', padding: '10px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'center' }}>
+                                <SeznamAd zoneId={408651} width={300} height={250} />
+                            </div>
+                            <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '16px', padding: '10px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'center' }}>
+                                <SeznamAd zoneId={408651} width={300} height={250} />
+                            </div>
+                        </div>
+
                         <HeurekaButtons isEn={false} />
-                        <div style={{ marginTop: '30px' }}>
+                        
+                        <div style={{ marginTop: '40px' }}>
                             <Link href="/benchmark" style={{ background: '#ff0055', color: '#fff', padding: '16px 35px', borderRadius: '14px', fontWeight: '950', textDecoration:'none', textTransform:'uppercase', fontSize:'18px', boxShadow: '0 10px 25px rgba(255, 0, 85, 0.4)' }} className="hover:scale-105 transition-all">Zkusit test znovu a porazit je!</Link>
                         </div>
                     </div>
@@ -143,19 +154,11 @@ export default async function ResultPage({ params }) {
                     </div>
                 </div>
 
-                {/* REKLAMA IN-TEXT */}
                 <div style={{ marginBottom: '60px', display: 'flex', justifyContent: 'center' }}>
                     <SeznamAd zoneId={408651} width={300} height={250} />
                 </div>
 
             </div>
-            <style dangerouslySetInnerHTML={{__html: `
-                @keyframes pulse {
-                    0% { transform: scale(1); opacity: 1; }
-                    50% { transform: scale(1.05); opacity: 0.8; }
-                    100% { transform: scale(1); opacity: 1; }
-                }
-            `}} />
         </div>
     );
 }
