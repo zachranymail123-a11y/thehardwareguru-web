@@ -76,10 +76,11 @@ export default function FpsCalculatorClient({ gpus = [], cpus = [], games = [], 
     const cleanCpuName = selectedCpu ? normalizeName(selectedCpu.name) : '';
     const cleanGpuName = selectedGpu ? normalizeName(selectedGpu.name) : '';
 
+    // 🔥 V10 GOLDEN FORMAT LINKŮ S OPRAVENÝM FRAGMENTEM 🔥
     const getCleanHeurekaLink = (name, subId) => {
         const cleanStr = name.replace(/NVIDIA |AMD |Intel |GeForce |Radeon |Ryzen |Core /gi, '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
         const safeQuery = cleanStr.replace(/\s+/g, '+');
-        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}&o=3`;
+        return `https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${safeQuery}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subId}`;
     };
 
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
