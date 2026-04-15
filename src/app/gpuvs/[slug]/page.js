@@ -12,8 +12,8 @@ import HeurekaButtons from '../../../components/HeurekaButtons';
 import GuruInContentOffer from '../../../components/GuruInContentOffer';
 
 /**
- * GURU GPU DUELS ENGINE - V12.3 (NEXT.JS 15 AWAIT HEADERS FIX)
- * 🚀 CÍL: Oprava pádu (Error 500) kvůli asynchronním headers() a 100% detekce EN.
+ * GURU GPU DUELS ENGINE - V12.3 (STRICT BACKUP FIX + AWAIT HEADERS FIX)
+ * 🚀 CÍL: Fix Error 500 (await headers) + V10 Heureka + Amazon EN.
  */
 
 export const runtime = "nodejs";
@@ -92,10 +92,14 @@ const getRelatedArticles = async (gpuA_Name, gpuB_Name) => {
 
 export async function generateMetadata(props) {
   const { slug } = await props.params; 
-  // 🔥 FIX: AWAIT HEADERS pro Next.js 15
-  const h = await headers();
-  const fullUrl = h.get('x-url') || h.get('referer') || h.get('x-invoke-path') || "";
-  const isEn = props.isEnProxy === true || props.isEn === true || slug?.startsWith('en-') || fullUrl.includes('/en/');
+  
+  // 🔥 FIX ERRORU 500: Zabalené a awaitované headers()
+  let isEn = props.isEnProxy === true || props.isEn === true || slug?.startsWith('en-');
+  try {
+      const h = await headers();
+      const fullUrl = h.get('x-url') || h.get('referer') || "";
+      if (fullUrl.includes('/en/')) isEn = true;
+  } catch (e) {}
 
   const cleanSlug = slug.replace(/^en-/, '');
   const duel = await getDuelData(cleanSlug);
@@ -109,10 +113,14 @@ export async function generateMetadata(props) {
 
 export default async function GpuVsDetailPage(props) {
   const { slug } = await props.params; 
-  // 🔥 FIX: AWAIT HEADERS pro Next.js 15
-  const h = await headers();
-  const fullUrl = h.get('x-url') || h.get('referer') || h.get('x-invoke-path') || "";
-  const isEn = props.isEnProxy === true || props.isEn === true || slug?.startsWith('en-') || fullUrl.includes('/en/');
+  
+  // 🔥 FIX ERRORU 500: Zabalené a awaitované headers()
+  let isEn = props.isEnProxy === true || props.isEn === true || slug?.startsWith('en-');
+  try {
+      const h = await headers();
+      const fullUrl = h.get('x-url') || h.get('referer') || "";
+      if (fullUrl.includes('/en/')) isEn = true;
+  } catch (e) {}
 
   const cleanSlug = slug.replace(/^en-/, '');
   const duel = await getDuelData(cleanSlug);
@@ -146,10 +154,12 @@ export default async function GpuVsDetailPage(props) {
 
   const relatedArticles = await getRelatedArticles(gpuA.name, gpuB.name);
 
+  // 🔥 INTELIGENTNÍ DOPORUČENÍ - VŽDY SILNĚJŠÍ CESTA 🔥
   const isWinnerUltimate = winner.name.includes('4090') || winner.name.includes('5090') || winner.name.includes('5080') || winner.name.includes('7900 XTX');
   const upgradeProduct = isWinnerUltimate ? "AMD Ryzen 7 9800X3D" : "NVIDIA RTX 5080";
   const upgradeCategory = isWinnerUltimate ? "cpu" : "gpu";
 
+  // 🔥 V10 GOLDEN AFFILIATE ODKAZY (Amazon pro EN, Heureka s '#' pro CZ) 🔥
   const searchName = normalizeName(winner.name).trim();
   const amazonAffiliateLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20&ascsubtag=v10-gpuvs`;
   const smartyAffiliateLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(searchName)}`)}`;
@@ -257,7 +267,13 @@ export default async function GpuVsDetailPage(props) {
             </div>
         </section>
 
-        {!isEn && (<div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}><HeurekaButtons isEn={false} manualSearch={winner.name} positionId="276026" /></div>)}
+        {!isEn && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+                <div className="v10-hl-container" data-subid="v10-gpu-duel-heureka" data-cat="gpu_duel">
+                    <HeurekaButtons isEn={false} manualSearch={winner.name} positionId="276026" />
+                </div>
+            </div>
+        )}
 
         <section style={{ marginBottom: '60px' }}>
           <h2 className="section-h2" style={{ borderLeftColor: '#ff0055' }}><LayoutList size={28} /> {isEn ? 'TECHNICAL SPECS' : 'GURU SPECIFIKACE'}</h2>
@@ -344,33 +360,4 @@ export default async function GpuVsDetailPage(props) {
         @media (max-width: 768px) {
             .ad-desktop-wrapper { display: none !important; }
             .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
-            .guru-grid-ring { grid-template-columns: 1fr !important; gap: 10px; }
-            .vs-circle { margin: 10px auto; }
-            .spec-row-style { flex-direction: column !important; gap: 10px; }
-            .table-label { width: 100%; order: -1; }
-            .seo-hub-grid { grid-template-columns: 1fr; }
-        }
-      `}} />
-
-      <Script id="v10-hl-script" strategy="lazyOnload">
-          {`
-              if (typeof window !== 'undefined') {
-                  document.addEventListener('click', function(e) {
-                      const btn = e.target.closest('.v10-hl-btn, .v10-hl-container a, .v10-hl-container button');
-                      if (btn) {
-                          const container = e.target.closest('.v10-hl-container');
-                          const subId = btn.getAttribute('data-subid') || (container ? container.getAttribute('data-subid') : 'unknown');
-                          const cat = btn.getAttribute('data-cat') || (container ? container.getAttribute('data-cat') : 'gpu_duel');
-                          const targetUrl = btn.href || (btn.tagName === 'A' ? btn.href : null);
-                          
-                          if (navigator.sendBeacon && targetUrl) {
-                              navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: cat, sub_id: subId, page: window.location.pathname }));
-                          }
-                      }
-                  });
-              }
-          `}
-      </Script>
-    </div>
-  );
-}
+            .guru-grid-ring { grid-template-columns: 1fr !important;
