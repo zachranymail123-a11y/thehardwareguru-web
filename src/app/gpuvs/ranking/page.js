@@ -1,11 +1,12 @@
 import React from 'react';
+import { headers } from 'next/headers';
 import { Trophy, Zap, ShieldCheck, Star, Swords, ChevronRight, TrendingUp, ShoppingCart } from 'lucide-react';
 import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU RANKING ENGINE V2.3 (AFFILIATE BOMB UPDATE)
- * 🚀 CÍL: Implementace modrých affiliate tlačítek s opraveným trackováním pro TOP kartu.
+ * GURU GPU RANKING ENGINE V2.4 (AFFILIATE BOMB UPDATE & HARD-LOCK FIX)
+ * 🚀 CÍL: Implementace V10 Heureka Hard-Lock trackeru a fix EN Amazon.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -26,9 +27,13 @@ async function getGpuRanking() {
     } catch (e) { return []; }
 }
 
-export async function generateMetadata({ searchParams }) {
-    const s = await searchParams;
-    const isEn = s?.lang === 'en';
+export async function generateMetadata(props) {
+    const s = await props.searchParams;
+    const h = headers();
+    const fullUrl = h.get('x-url') || h.get('referer') || "";
+    // 🔥 FIX: Robustní detekce EN jazyka
+    const isEn = props.isEnProxy === true || props.isEn === true || fullUrl.includes('/en/') || s?.lang === 'en';
+
     const title = isEn ? 'GPU Performance Ranking 2026 | The Hardware Guru' : 'Žebříček grafických karet 2026 | The Hardware Guru';
     const desc = isEn 
         ? 'Ultimate GPU performance ranking and tier list. Compare top graphics cards from NVIDIA and AMD.' 
@@ -36,10 +41,31 @@ export async function generateMetadata({ searchParams }) {
     return { title, description: desc };
 }
 
-export default async function GpuRankingPage({ searchParams }) {
-    const s = await searchParams;
-    const isEn = s?.lang === 'en';
+export default async function GpuRankingPage(props) {
+    const s = await props.searchParams;
+    const h = headers();
+    const fullUrl = h.get('x-url') || h.get('referer') || "";
+    
+    // 🔥 FIX: Robustní detekce EN
+    const isEn = props.isEnProxy === true || props.isEn === true || fullUrl.includes('/en/') || s?.lang === 'en';
     const gpus = await getGpuRanking();
+
+    // 🔥 GOOGLE GOLDEN RICH (JSON-LD) 🔥
+    const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "name": isEn ? "GPU Hierarchy 2026" : "Žebříček grafických karet 2026",
+        "description": isEn ? "The ultimate ranking of modern GPUs." : "Nejlepší grafické karty podle výkonu.",
+        "itemListElement": gpus.slice(0, 10).map((gpu, index) => ({
+            "@type": "ListItem",
+            "position": index + 1,
+            "item": {
+                "@type": "Product",
+                "name": gpu.name,
+                "url": `https://thehardwareguru.cz${isEn ? '/en' : ''}/gpu/${slugify(gpu.name)}`
+            }
+        }))
+    };
 
     const tiers = [
         { id: 'S', label: 'Tier S: Extreme (4K Ultra)', range: [250, 1000], color: '#66fcf1' },
@@ -51,12 +77,15 @@ export default async function GpuRankingPage({ searchParams }) {
 
     const getVendorColor = (vendor) => vendor?.toUpperCase() === 'NVIDIA' ? '#76b900' : '#ed1c24';
 
-    // 🔥 GENERÁTOR AFFILIATE LINKŮ 🔥
+    // 🔥 GENERÁTOR AFFILIATE LINKŮ (Heureka V10 Hard-Lock & Amazon EN) 🔥
+    const searchTarget = "RTX 5090";
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
     const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+    const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchTarget)}&tag=thehardware07-20&ascsubtag=v10-gpu-ranking`;
 
     return (
         <div className="guru-ranking-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '100px', color: '#fff', fontFamily: 'sans-serif' }}>
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
             <main className="inner-container" style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
                 
                 <header style={{ textAlign: 'center', marginBottom: '60px' }}>
@@ -68,33 +97,43 @@ export default async function GpuRankingPage({ searchParams }) {
                     </h1>
                 </header>
 
-                {/* 🔥 NOVÝ GURU AFFILIATE BOMB GRID (Cílení na RTX 5090 jako leadera žebříčku) 🔥 */}
+                {/* 🔥 NOVÝ GURU AFFILIATE BOMB GRID (Amazon pro EN, Hard-Lock Heureka pro CZ) 🔥 */}
                 <div className="affiliate-cta-grid" style={{ marginBottom: '50px', borderLeft: '4px solid #66fcf1' }}>
                     <div className="affiliate-col">
                         <div className="affiliate-col-title" style={{ color: '#66fcf1' }}>
                             <ShoppingCart size={16} /> {isEn ? `BUY RTX 5090` : `KOUPIT RTX 5090`}
                         </div>
                         <div className="affiliate-btn-wrap">
-                            <a href={getSmartyLink("RTX 5090")} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
-                                <ShoppingCart size={16} /> Smarty.cz
-                            </a>
-                            <a 
-                                href={getHeurekaLink("RTX 5090")} 
-                                data-trixam-positionid="276026" 
-                                data-trixam-codetype="link" 
-                                target="_blank" 
-                                rel="nofollow sponsored" 
-                                className="guru-buy-winner-btn heureka-btn heureka-hn-link"
-                            >
-                                <ShoppingCart size={16} /> Heureka.cz
-                            </a>
+                            {isEn ? (
+                                <a href={amazonLink} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn">
+                                    <ShoppingCart size={16} /> BUY ON AMAZON
+                                </a>
+                            ) : (
+                                <>
+                                    <a href={getSmartyLink("RTX 5090")} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
+                                        <ShoppingCart size={16} /> Smarty.cz
+                                    </a>
+                                    <a 
+                                        href={getHeurekaLink("RTX 5090")} 
+                                        data-trixam-positionid="276026" 
+                                        data-trixam-codetype="link" 
+                                        target="_blank" 
+                                        rel="nofollow sponsored" 
+                                        className="guru-buy-winner-btn heureka-btn heureka-hn-link"
+                                    >
+                                        <ShoppingCart size={16} /> Heureka.cz
+                                    </a>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
-                    <HeurekaButtons isEn={isEn} manualSearch="RTX 5090" positionId="276026" />
-                </div>
+                {!isEn && (
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '60px' }}>
+                        <HeurekaButtons isEn={false} manualSearch="RTX 5090" positionId="276026" />
+                    </div>
+                )}
 
                 {/* 🔥 TOP AD SLOT */}
                 <div style={{ marginBottom: '50px' }}>
@@ -178,6 +217,8 @@ export default async function GpuRankingPage({ searchParams }) {
                 .smarty-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(234, 179, 8, 0.5); }
                 .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
                 .heureka-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
+                .amazon-btn { background: #f59e0b; border: 2px solid #fbbf24; color: #000; }
+                .amazon-btn:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 15px 30px rgba(245, 158, 11, 0.5); }
 
                 /* 🚀 RESPONSIVE ADS SYSTEM */
                 .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
