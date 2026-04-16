@@ -124,9 +124,14 @@ const GlobalPartnersBox = ({ isEn }) => {
 };
 
 export default async function RootLayout({ children }) {
-  const headersList = headers();
-  const fullUrl = headersList.get('referer') || "";
-  const isEn = fullUrl.includes('/en');
+  // 🔥 FIX ERRORU 500: Zabalené a awaitované headers() pro Next.js 15
+  let isEn = false;
+  try {
+      const headersList = await headers();
+      const fullUrl = headersList.get('x-url') || headersList.get('referer') || headersList.get('x-invoke-path') || "";
+      if (fullUrl.includes('/en')) isEn = true;
+  } catch (e) {}
+  
   const locale = isEn ? 'en' : 'cs';
   const envVars = { NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "", NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "" };
 
@@ -150,6 +155,9 @@ export default async function RootLayout({ children }) {
         <Script id="google-analytics" strategy="afterInteractive">
           {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-9W5FBC9P68');`}
         </Script>
+
+        {/* 🔥 PŘIDÁNO: Monetag Script */}
+        <script src="https://quge5.com/88/tag.min.js" data-zone="230278" async data-cfasync="false"></script>
       </head>
 
       <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingBottom: '120px' }}>
