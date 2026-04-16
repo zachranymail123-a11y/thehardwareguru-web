@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { Search, Gamepad2, Zap, Tag, ExternalLink, Flame, TrendingDown } from 'lucide-react';
+import { Search, Gamepad2, Zap, Tag, ExternalLink, Flame, TrendingDown, ShoppingBag } from 'lucide-react';
 
 export default function GameSearchWidget({ isEn = false }) {
   const [query, setQuery] = useState('');
@@ -32,6 +32,14 @@ export default function GameSearchWidget({ isEn = false }) {
         color: '#f36f21',
         badge: 'VELKÝ VÝBĚR',
         icon: <Gamepad2 size={22} />
+      },
+      {
+        name: 'G2A',
+        desc: isEn ? 'World\'s largest digital marketplace' : 'Největší digitální tržiště na světě',
+        url: `https://www.g2a.com/n/reflink-fa31d77ef6?search=${encodedGame}`,
+        color: '#ff9900', // G2A style color
+        badge: 'GIGANT NA TRHU',
+        icon: <ShoppingBag size={22} />
       },
       {
         name: 'HRK Game',
