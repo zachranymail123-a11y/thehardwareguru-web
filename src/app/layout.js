@@ -147,6 +147,14 @@ export default async function RootLayout({ children }) {
           strategy="afterInteractive" 
         />
 
+        {/* 🔥 PŘIDÁNO: Nativní Next.js komponenta pro Monetag Script, aby prosel verifikací 🔥 */}
+        <Script 
+          src="https://quge5.com/88/tag.min.js" 
+          data-zone="230278" 
+          data-cfasync="false" 
+          strategy="beforeInteractive" 
+        />
+
         <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="afterInteractive" />
         <Script id="onesignal-init" strategy="afterInteractive">
           {`window.OneSignalDeferred = window.OneSignalDeferred || []; OneSignalDeferred.push(async function(OneSignal) { await OneSignal.init({ appId: "1ea5ad89-5f3e-4922-b2c8-e8cd05304047" }); });`}
@@ -155,9 +163,6 @@ export default async function RootLayout({ children }) {
         <Script id="google-analytics" strategy="afterInteractive">
           {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-9W5FBC9P68');`}
         </Script>
-
-        {/* 🔥 PŘIDÁNO: Monetag Script */}
-        <script src="https://quge5.com/88/tag.min.js" data-zone="230278" async data-cfasync="false"></script>
       </head>
 
       <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingBottom: '120px' }}>
