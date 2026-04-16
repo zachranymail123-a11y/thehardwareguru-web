@@ -146,15 +146,13 @@ export default async function RootLayout({ children }) {
           strategy="afterInteractive" 
         />
 
-        {/* 🔥 FIX MONETAG: Raw Injection Bypass pro Next.js 🔥 */}
+        {/* 🔥 PŘIDÁNO: Nový a bezpečnější Monetag Script v Next.js Injection formátu 🔥 */}
         <Script id="monetag" strategy="beforeInteractive">
           {`
-          (function(d,z,s){
-            s.src='https://quge5.com/88/tag.min.js';
-            s.setAttribute('data-zone','230278');
-            s.setAttribute('data-cfasync','false');
-            d.head.appendChild(s);
-          })(document,window,document.createElement('script'));
+          (function(s){
+            s.dataset.zone='10883065';
+            s.src='https://nap5k.com/tag.min.js';
+          })([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')));
           `}
         </Script>
 
