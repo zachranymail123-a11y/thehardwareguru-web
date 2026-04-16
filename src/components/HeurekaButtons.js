@@ -101,11 +101,26 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
                     <h3 style={{ color: '#fff', fontSize: '1.3rem', fontWeight: '950', textTransform: 'uppercase' }}>{isEn ? 'GURU GAME & SOFTWARE SEARCH' : 'GURU VYHLEDÁVAČ HER A SOFTWARU'}</h3>
                 </div>
                 <form onSubmit={handleGameSearch} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                    <div style={{ position: 'relative' }}>
+                    <div style={{ position: 'relative', width: '100%', boxSizing: 'border-box' }}>
                         <Search size={22} color="#a855f7" style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)' }} />
-                        <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={isEn ? "Search game or software..." : "např. Pragmata, Windows 11..."} style={{ width: '100%', padding: '15px 15px 15px 50px', borderRadius: '12px', background: 'rgba(0,0,0,0.4)', color: '#fff', border: '1px solid rgba(168, 85, 247, 0.2)', outline: 'none' }} />
+                        <input 
+                            type="text" 
+                            value={query} 
+                            onChange={(e) => setQuery(e.target.value)} 
+                            placeholder={isEn ? "Search game or software..." : "např. Pragmata, Windows 11..."} 
+                            style={{ 
+                                width: '100%', 
+                                padding: '15px 15px 15px 50px', 
+                                borderRadius: '12px', 
+                                background: 'rgba(0,0,0,0.4)', 
+                                color: '#fff', 
+                                border: '1px solid rgba(168, 85, 247, 0.2)', 
+                                outline: 'none',
+                                boxSizing: 'border-box' // 🔥 FIX PŘETEČENÍ 🔥
+                            }} 
+                        />
                     </div>
-                    <button type="submit" style={{ background: 'linear-gradient(90deg, #7e22ce 0%, #a855f7 100%)', color: '#fff', padding: '15px', borderRadius: '12px', fontWeight: '950', cursor: 'pointer', border: 'none', textTransform: 'uppercase' }}>{isEn ? 'FIND THE LOWEST PRICE' : 'ZJISTIT NEJNIŽŠÍ CENU'}</button>
+                    <button type="submit" style={{ background: 'linear-gradient(90deg, #7e22ce 0%, #a855f7 100%)', color: '#fff', padding: '15px', borderRadius: '12px', fontWeight: '950', cursor: 'pointer', border: 'none', textTransform: 'uppercase', width: '100%' }}>{isEn ? 'FIND THE LOWEST PRICE' : 'ZJISTIT NEJNIŽŠÍ CENU'}</button>
                 </form>
                 {hasSearched && (
                     <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -134,9 +149,9 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
             ))}
 
             <style dangerouslySetInnerHTML={{__html: `
-                .guru-buttons-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 40px 0; width: 100%; }
-                .guru-search-card { grid-column: 1 / -1; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(102, 252, 241, 0.3); padding: 30px 20px; border-radius: 20px; }
-                .guru-card { display: flex; align-items: center; justify-content: space-between; background: rgba(10, 10, 10, 0.9); border: 1px solid rgba(147, 51, 234, 0.2); padding: 22px; border-radius: 20px; text-decoration: none; color: #fff; transition: 0.3s; }
+                .guru-buttons-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 40px 0; width: 100%; box-sizing: border-box; }
+                .guru-search-card { grid-column: 1 / -1; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(102, 252, 241, 0.3); padding: 30px 20px; border-radius: 20px; box-sizing: border-box; width: 100%; }
+                .guru-card { display: flex; align-items: center; justify-content: space-between; background: rgba(10, 10, 10, 0.9); border: 1px solid rgba(147, 51, 234, 0.2); padding: 22px; border-radius: 20px; text-decoration: none; color: #fff; transition: 0.3s; box-sizing: border-box; }
                 .guru-card:hover { border-color: #9333ea; transform: translateY(-3px); }
                 .guru-content { display: flex; flex-direction: column; }
                 .guru-label { font-weight: 900; text-transform: uppercase; font-size: 14px; }
