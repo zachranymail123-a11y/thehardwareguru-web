@@ -1,163 +1,185 @@
-"use client";
+import React from 'react';
+import DramCalculator from '../../components/DramCalculator';
+import HeurekaButtons from '../../components/HeurekaButtons'; // OPRAVENO: Velké B podle názvu souboru
+import Link from 'next/link';
+import Script from 'next/script';
+import { 
+  ArrowRight, Cpu, HardDrive, BookOpen, AlertCircle, 
+  ShoppingCart, Calculator, Zap, ShieldCheck, Activity,
+  FileText, Lightbulb
+} from 'lucide-react';
 
-import React, { useEffect, useState } from 'react';
-import { Cpu, Monitor, Layers, Database, ChevronRight, Search, ShoppingCart, Gamepad2, Zap, Tag, ExternalLink, Flame, TrendingDown, ShoppingBag } from 'lucide-react';
-import { usePathname } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+export const metadata = {
+  title: 'DRAM SIMULÁTOR | Hardware Guru',
+  description: 'Profesionální simulátor pro taktování DDR4 a DDR5. Výpočet stability a latence.',
+};
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+export default function RamCalcPage() {
+  return (
+    <div className="guru-page-wrapper">
+      
+      {/* HEUREKA TRIXAM SCRIPT (image_bd3bf2.png) */}
+      <Script 
+        src="//serve.affiliate.heureka.cz/js/trixam.min.js" 
+        strategy="afterInteractive"
+      />
 
-export default function HeurekaButtons({ isEn = false, manualSearch = null, positionId = null }) {
-    const pathname = usePathname() || '';
-    const [query, setQuery] = useState('');
-    const [hasSearched, setHasSearched] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
+      {/* SKLIK RETARGETING / DISPLAY SCRIPT - Nutné pro zobrazení reklam */}
+      <Script strategy="afterInteractive" id="sklik-init">
+        {`
+          window.fort_aw_p = window.fort_aw_p || {};
+          window.fort_aw_p["sklikAd_408873"] = { id: 408873, format: "728x90" };
+          window.fort_aw_p["sklikAd_408655"] = { id: 408655, format: "300x600" };
+        `}
+      </Script>
 
-    useEffect(() => {
-        if (!isEn && typeof window !== 'undefined') {
-            const script = document.createElement('script');
-            script.src = "//serve.affiliate.heureka.cz/js/trixam.min.js";
-            script.async = true;
-            document.body.appendChild(script);
-
-            return () => {
-                if (document.body.contains(script)) {
-                    document.body.removeChild(script);
-                }
-            };
-        }
-    }, [isEn]);
-
-    const handleLogClick = (category, platform) => {
-        const payload = { platform, category: `static_${category}`, sub_id: `v11-${category}`, page: pathname };
-        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-            navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
-        }
-    };
-
-    const handleGameSearch = (e) => {
-        e.preventDefault();
-        if (query.trim().length > 0) {
-            setHasSearched(true);
-        }
-    };
-
-    const getGameLinks = (gameName) => {
-        const encoded = encodeURIComponent(gameName);
-        return [
-            { name: 'Instant Gaming', desc: isEn ? 'Usually the best prices & instant delivery' : 'Většinou absolutně nejnižší cena', url: `https://www.instant-gaming.com/en/search/?q=${encoded}&igr=gamer-32df929`, color: '#ff6600', badge: 'TOP VOLBA', icon: <Zap size={22} /> },
-            { name: 'Gamivo', desc: isEn ? 'Huge catalog & software keys' : 'Největší výběr indie her a Windows', url: `https://www.gamivo.com/search/${encoded}?glv=d712zso6`, color: '#f36f21', badge: 'SUPER CENY', icon: <Gamepad2 size={22} /> },
-            { name: 'G2A', desc: isEn ? 'World\'s largest digital marketplace' : 'Největší digitální tržiště na světě', url: `https://www.g2a.com/n/reflink-fa31d77ef6?search=${encoded}`, color: '#ff9900', badge: 'GIGANT NA TRHU', icon: <ShoppingBag size={22} /> },
-            { name: 'HRK Game', desc: isEn ? 'Frequent flash sales & bundles' : 'Časté bleskové slevy a akce', url: `https://www.hrkgame.com/en/games/products/?search=${encoded}#a_aid=TheHardwareGuru`, color: '#28b3ff', badge: 'BLESKOVÉ AKCE', icon: <Tag size={22} /> }
-        ];
-    };
-
-    if (manualSearch) {
-        if (isEn) {
-            return (
-                <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto' }}>
-                    <a href={`https://www.amazon.com/s?k=${encodeURIComponent(manualSearch)}&tag=thehardware07-20&ascsubtag=v10-search-fallback`} target="_blank" rel="nofollow sponsored" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#f59e0b', color: '#000', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', width: '100%' }} onClick={() => handleLogClick('manual_search', 'amazon')}>
-                        <ShoppingCart size={20} /> CHECK ON AMAZON
-                    </a>
+      <main className="guru-main-container">
+        <div className="guru-grid-layout">
+          
+          {/* LEVÝ SLOUPEC: V.I.P. SESTAVA & SMARTY AD */}
+          <aside className="guru-left-sidebar">
+            <div className="vip-sestava-card shadow-neon">
+              <div className="vip-header">
+                <ShoppingCart size={18} className="text-yellow" />
+                <div>
+                  <small>ULTIMÁTNÍ HERNÍ DĚLO</small>
+                  <h3>V.I.P. GURU SESTAVA</h3>
                 </div>
-            );
-        }
-        const heurekaManualLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(manualSearch)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Manual%20search`;
-        return (
-            <div className="guru-search-widget-container" style={{ width: '100%', maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
-                <div className="heureka-affiliate-searchpanel" data-trixam-positionid="276035" data-trixam-codetype="iframe" data-trixam-linktarget="top" style={{ width: '100%', minHeight: '100px', display: 'flex', justifyContent: 'center' }}></div>
-                <a href={heurekaManualLink} target="_blank" rel="nofollow sponsored" className="heureka-hn-link guru-buy-winner-btn" data-trixam-positionid={positionId || "276026"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#0078d4', color: '#fff', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', width: '100%', maxWidth: '400px' }} onClick={() => handleLogClick('manual_search', 'heureka')}>
-                    <ShoppingCart size={20} /> POROVNAT CENY NA HEUREKA.CZ
-                </a>
-            </div>
-        );
-    }
-
-    const buttons = [
-        { key: 'cpu', label: "Procesory", id: "276027", sub: "9000 SERIES", icon: Cpu, url: "https://www.heureka.cz/?h%5Bfraze%5D=procesor#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842", en: 'Processors' },
-        { key: 'gpu', label: "Grafiky", id: "276026", sub: "RTX 50 SERIES", icon: Monitor, url: "https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842", en: 'Graphics' },
-        { key: 'mb', label: "Desky", id: "276033", sub: "AM5 NEXT-GEN", icon: Layers, url: "https://www.heureka.cz/?h%5Bfraze%5D=zakladni+deska#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842", en: 'Motherboards' },
-        { key: 'ram', label: "Paměti", id: "276034", sub: "DDR5 8000MT", icon: Database, url: "https://www.heureka.cz/?h%5Bfraze%5D=ram+pamet#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842", en: 'Memory' }
-    ];
-
-    return (
-        <div className="guru-buttons-container">
-            {/* HEUREKA HARDWARE */}
-            {!isEn && (
-                <div className="guru-search-card" onClick={() => handleLogClick('search_heureka', 'heureka')}>
-                    <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                        <h3 style={{ color: '#66fcf1', fontSize: '1.3rem', fontWeight: '950', textTransform: 'uppercase', margin: '0' }}>NAJDĚTE NEJLEPŠÍ CENU HARDWARU NA TRHU</h3>
-                        <p style={{ color: '#d1d5db', fontSize: '14px', marginTop: '10px' }}>Náš vyhledávač okamžitě porovná nabídky z tisíců českých e-shopů.</p>
-                    </div>
-                    <div className="heureka-affiliate-searchpanel" data-trixam-positionid="276035" data-trixam-codetype="iframe" data-trixam-linktarget="top" style={{ width: '100%', minHeight: '50px' }}></div>
-                </div>
-            )}
-
-            {/* GURU GAME & SOFTWARE SEARCH */}
-            <div className="guru-search-card" style={{ border: '1px solid rgba(168, 85, 247, 0.3)' }}>
-                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                    <h3 style={{ color: '#fff', fontSize: '1.3rem', fontWeight: '950', textTransform: 'uppercase' }}>{isEn ? 'GURU GAME & SOFTWARE SEARCH' : 'GURU VYHLEDÁVAČ HER A SOFTWARU'}</h3>
-                </div>
-                <form onSubmit={handleGameSearch} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                    <div style={{ position: 'relative', width: '100%', boxSizing: 'border-box' }}>
-                        <Search size={22} color="#a855f7" style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)' }} />
-                        <input 
-                            type="text" 
-                            value={query} 
-                            onChange={(e) => setQuery(e.target.value)} 
-                            placeholder={isEn ? "Search game or software..." : "např. Pragmata, Windows 11..."} 
-                            style={{ 
-                                width: '100%', 
-                                padding: '15px 15px 15px 50px', 
-                                borderRadius: '12px', 
-                                background: 'rgba(0,0,0,0.4)', 
-                                color: '#fff', 
-                                border: '1px solid rgba(168, 85, 247, 0.2)', 
-                                outline: 'none',
-                                boxSizing: 'border-box' // 🔥 FIX PŘETEČENÍ 🔥
-                            }} 
-                        />
-                    </div>
-                    <button type="submit" style={{ background: 'linear-gradient(90deg, #7e22ce 0%, #a855f7 100%)', color: '#fff', padding: '15px', borderRadius: '12px', fontWeight: '950', cursor: 'pointer', border: 'none', textTransform: 'uppercase', width: '100%' }}>{isEn ? 'FIND THE LOWEST PRICE' : 'ZJISTIT NEJNIŽŠÍ CENU'}</button>
-                </form>
-                {hasSearched && (
-                    <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {getGameLinks(query).map((link, idx) => (
-                            <a key={idx} href={link.url} target="_blank" rel="nofollow sponsored" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: `1px solid ${link.color}40`, textDecoration: 'none', transition: '0.2s' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <div style={{ color: link.color }}>{link.icon}</div>
-                                    <span style={{ color: '#fff', fontWeight: 'bold' }}>{link.name}</span>
-                                </div>
-                                <ExternalLink size={18} color="#6b7280" />
-                            </a>
-                        ))}
-                    </div>
-                )}
+              </div>
+              <div className="vip-list">
+                <div className="vip-item"><span>AMD Ryzen 7 9800X3D</span> <button>KOUPIT</button></div>
+                <div className="vip-item"><span>GIGABYTE X870E AORUS ELITE</span> <button>KOUPIT</button></div>
+                <div className="vip-item"><span>Kingston 32GB 6000MT/s</span> <button>KOUPIT</button></div>
+                <div className="vip-item"><span>ZOTAC RTX 5070 Twin Edge</span> <button>KOUPIT</button></div>
+                <div className="vip-item"><span>MSI SPATIUM M461 2TB</span> <button>KOUPIT</button></div>
+                <div className="vip-item"><span>Case dle výběru</span> <button>KOUPIT</button></div>
+              </div>
             </div>
 
-            {/* HARDWARE GRID */}
-            {buttons.map((btn) => (
-                <a key={btn.key} href={isEn ? `https://www.amazon.com/s?k=${encodeURIComponent(btn.en)}&tag=thehardware07-20` : btn.url} target="_blank" rel="nofollow sponsored" className={isEn ? "guru-card" : "heureka-hn-link guru-card"} data-trixam-positionid={isEn ? undefined : btn.id} onClick={() => handleLogClick(btn.key, isEn ? 'amazon' : 'heureka')}>
-                    <div className="guru-content">
-                        <span className="guru-label">{isEn ? btn.en : `${btn.label} za nejnižší ceny`}</span>
-                        <span className="guru-sub">{btn.sub}</span>
-                    </div>
-                    <ChevronRight size={20} />
-                </a>
-            ))}
+            <div className="smarty-ad-wrap">
+              <a href="https://smarty.cz" target="_blank" rel="nofollow">
+                <img src="https://thehardwareguru.cz/smarty-banner.png" alt="Jsem Smarty" className="smarty-img" />
+              </a>
+            </div>
+          </aside>
 
-            <style dangerouslySetInnerHTML={{__html: `
-                .guru-buttons-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 40px 0; width: 100%; box-sizing: border-box; }
-                .guru-search-card { grid-column: 1 / -1; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(102, 252, 241, 0.3); padding: 30px 20px; border-radius: 20px; box-sizing: border-box; width: 100%; }
-                .guru-card { display: flex; align-items: center; justify-content: space-between; background: rgba(10, 10, 10, 0.9); border: 1px solid rgba(147, 51, 234, 0.2); padding: 22px; border-radius: 20px; text-decoration: none; color: #fff; transition: 0.3s; box-sizing: border-box; }
-                .guru-card:hover { border-color: #9333ea; transform: translateY(-3px); }
-                .guru-content { display: flex; flex-direction: column; }
-                .guru-label { font-weight: 900; text-transform: uppercase; font-size: 14px; }
-                .guru-sub { color: #a855f7; font-size: 11px; font-weight: 800; }
-                @media (max-width: 640px) { .guru-buttons-container { grid-template-columns: 1fr; } }
-            `}} />
+          {/* STŘEDOVÝ SLOUPEC: DRAM SIMULÁTOR */}
+          <section className="guru-center-content">
+            <div className="simulator-header">
+              <h1 className="simulator-title">DRAM <span>SIMULÁTOR</span></h1>
+            </div>
+            
+            <DramCalculator isEn={false} />
+
+            <div className="bottom-info-grid">
+              <div className="guru-card-dark">
+                <h3><Lightbulb size={18} color="#facc15" /> GURU RADY & TIPY</h3>
+                <p>Nezapomeň, že u <strong>AMD Ryzen 7000/9000</strong> je FCLK klíčem k výkonu. Vždy se snaž o poměr 1:1 na 6000 MT/s. Pro Intel uživatele s čipy <strong>Hynix A-die</strong> doporučujeme tREFI 65535 pro maximální snížení latence v herní zátěži.</p>
+                <Link href="/clanky" className="guru-link">Další rady a tipy <ArrowRight size={14}/></Link>
+              </div>
+
+              <div className="guru-card-dark">
+                <h3><FileText size={18} color="#a855f7" /> SOUVISEJÍCÍ ČLÁNKY</h3>
+                <ul className="article-list">
+                  <li><Link href="#">Nejlepší herní RAM pro rok 2026</Link></li>
+                  <li><Link href="#">Průvodce taktováním DDR5 pro začátečníky</Link></li>
+                  <li><Link href="#">Jaký má reálný vliv latence na 1% Low FPS?</Link></li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          {/* PRAVÝ SLOUPEC: HEUREKA, REKLAMA & EKOSYSTÉM */}
+          <aside className="guru-right-sidebar">
+            <div className="heureka-widget shadow-neon">
+              <h4 className="widget-title">VÝHODNÝ NÁKUP</h4>
+              <div className="heureka-trixam-wrap">
+                {/* OPRAVENÝ HEUREKA ODKAZ Z image_bd3bf2.png */}
+                <a 
+                  href="https://www.heureka.cz/?h%5Bfraze%5D=ram+pamet#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link" 
+                  className="heureka-hn-link" 
+                  data-trixam-positionid="276034" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  👉 💰 RAM paměti za nejnižší ceny
+                </a>
+              </div>
+              
+              {/* HEUREKA BUTTONS KOMPONENTA */}
+              <HeurekaButtons />
+            </div>
+
+            <div className="sklik-sidebar-ad">
+              <span className="ad-label">REKLAMA</span>
+              <div id="sklikAd_408655" className="sklik-container"></div>
+            </div>
+
+            <div className="ecosystem-widget shadow-neon">
+              <h4 className="eco-title">GURU EKOSYSTÉM</h4>
+              <nav className="eco-nav">
+                <Link href="/bottleneck-kalkulacka" className="eco-item"><AlertCircle size={16} /> <span>Bottleneck Calc</span></Link>
+                <Link href="/fps-kalkulacka" className="eco-item"><Zap size={16} /> <span>FPS Kalkulačka</span></Link>
+                <Link href="/cpuvs" className="eco-item"><Cpu size={16} /> <span>CPU Duel</span></Link>
+                <Link href="/gpuvs" className="eco-item"><HardDrive size={16} /> <span>GPU Duel</span></Link>
+                <Link href="/slovnik" className="eco-item"><BookOpen size={16} /> <span>Guru Slovník</span></Link>
+              </nav>
+            </div>
+          </aside>
+
         </div>
-    );
+
+        {/* CSS STYLY PŘESNĚ PODLE image_bd9d89.png */}
+        <style dangerouslySetInnerHTML={{__html: `
+          .guru-page-wrapper { min-height: 100vh; background-color: #0a0b0d; color: #fff; padding-top: 100px; padding-bottom: 100px; }
+          .guru-main-container { maxWidth: 1600px; margin: 0 auto; padding: 0 20px; }
+          .guru-grid-layout { display: grid; grid-template-columns: 280px 1fr 320px; gap: 30px; }
+          
+          /* VIP SESTAVA */
+          .vip-sestava-card { background: rgba(15, 17, 21, 0.8); border: 1px solid #eab308; border-radius: 12px; padding: 15px; }
+          .vip-header { display: flex; gap: 10px; margin-bottom: 20px; }
+          .vip-header small { color: #eab308; font-weight: 900; font-size: 10px; }
+          .vip-header h3 { font-size: 14px; font-weight: 900; }
+          .vip-list { display: flex; flex-direction: column; gap: 10px; }
+          .vip-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 6px; }
+          .vip-item span { color: #9ca3af; }
+          .vip-item button { background: rgba(102, 252, 241, 0.1); color: #66fcf1; border: 1px solid #66fcf1; font-size: 9px; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
+          
+          /* CENTER CONTENT */
+          .simulator-header { text-align: center; margin-bottom: 40px; }
+          .simulator-title { font-size: 60px; font-weight: 950; text-transform: uppercase; letter-spacing: -3px; }
+          .simulator-title span { color: #a855f7; text-shadow: 0 0 30px rgba(168, 85, 247, 0.4); }
+          .bottom-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px; }
+          .guru-card-dark { background: rgba(15, 17, 21, 0.7); border: 1px solid rgba(255,255,255,0.05); padding: 25px; border-radius: 16px; }
+          .guru-card-dark h3 { font-size: 16px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+          .article-list { padding-left: 20px; display: flex; flex-direction: column; gap: 10px; color: #a855f7; font-weight: 600; }
+          .guru-link { color: #a855f7; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; margin-top: 15px; font-weight: 700; }
+
+          /* SIDEBARS & WIDGETS */
+          .heureka-widget { background: #fff; border-radius: 12px; padding: 20px; color: #000; }
+          .widget-title { font-size: 12px; font-weight: 900; color: #666; margin-bottom: 15px; }
+          .heureka-hn-link { display: block; background: #f7e000; padding: 12px; border-radius: 8px; text-decoration: none; color: #000; font-weight: 900; text-align: center; font-size: 13px; margin-bottom: 10px; }
+          
+          .ecosystem-widget { background: rgba(15, 17, 21, 0.9); padding: 20px; border-radius: 16px; border: 1px solid rgba(168, 85, 247, 0.2); }
+          .eco-title { color: #a855f7; font-size: 12px; font-weight: 950; margin-bottom: 15px; }
+          .eco-nav { display: flex; flex-direction: column; gap: 5px; }
+          .eco-item { display: flex; align-items: center; gap: 12px; padding: 10px 15px; color: #fff; text-decoration: none; background: rgba(255,255,255,0.03); border-radius: 10px; font-size: 14px; font-weight: 600; }
+          .eco-item:hover { background: rgba(168, 85, 247, 0.1); color: #a855f7; }
+
+          .sklik-sidebar-ad { margin: 20px 0; }
+          .sklik-container { min-height: 600px; background: rgba(255,255,255,0.01); border: 1px dashed #333; }
+          .ad-label { font-size: 9px; color: #444; margin-bottom: 5px; display: block; text-align: center; }
+          .smarty-ad-wrap { margin-top: 20px; border-radius: 12px; overflow: hidden; }
+          .smarty-img { width: 100%; display: block; }
+          .shadow-neon { box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+          .text-yellow { color: #eab308; }
+
+          @media (max-width: 1200px) {
+            .guru-grid-layout { grid-template-columns: 1fr; }
+            .guru-left-sidebar, .guru-right-sidebar { display: none; }
+          }
+        `}} />
+      </main>
+    </div>
+  );
 }
