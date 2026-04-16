@@ -42,22 +42,12 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
         return [
             { name: 'Instant Gaming', desc: isEn ? 'Best prices' : 'Většinou nejnižší cena', url: `https://www.instant-gaming.com/en/search/?q=${encoded}&igr=gamer-32df929`, color: '#ff6600', badge: 'TOP VOLBA', Icon: Zap },
             { name: 'Gamivo', desc: isEn ? 'Huge catalog' : 'Největší výběr her a Windows', url: `https://www.gamivo.com/search/${encoded}?glv=d712zso6`, color: '#f36f21', badge: 'VELKÝ VÝBĚR', Icon: Gamepad2 },
-            // 🔥 OPRAVENÝ G2A LINK PRO VYHLEDÁVÁNÍ 🔥
             { name: 'G2A', desc: isEn ? 'Largest marketplace' : 'Největší tržiště na světě', url: `https://www.g2a.com/n/reflink-fa31d77ef6?search=${encoded}`, color: '#ff9900', badge: 'GIGANT', Icon: ShoppingBag },
             { name: 'HRK Game', desc: isEn ? 'Flash sales' : 'Časté bleskové slevy', url: `https://www.hrkgame.com/en/games/products/?search=${encoded}#a_aid=TheHardwareGuru`, color: '#28b3ff', badge: 'BLESKOVÉ AKCE', Icon: Tag }
         ];
     };
 
     if (manualSearch) {
-        if (isEn) {
-            return (
-                <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto' }}>
-                    <a href={`https://www.amazon.com/s?k=${encodeURIComponent(manualSearch)}&tag=thehardware07-20`} target="_blank" rel="nofollow sponsored" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#f59e0b', color: '#000', padding: '15px 30px', borderRadius: '12px', fontWeight: '950', textDecoration: 'none', textTransform: 'uppercase', width: '100%' }}>
-                        <ShoppingCart size={20} /> CHECK ON AMAZON
-                    </a>
-                </div>
-            );
-        }
         const heurekaManualLink = `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(manualSearch)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Manual%20search`;
         return (
             <div className="guru-search-widget-container" style={{ width: '100%', maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
@@ -77,47 +67,66 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
     ];
 
     return (
-        <div className="guru-buttons-container">
+        <div className="guru-buttons-wrapper" style={{ width: '100%', margin: '40px 0' }}>
+            {/* 1. HEUREKA HARDWARE SEARCH */}
             {!isEn && (
-                <div className="guru-search-card">
-                    <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                        <h3 style={{ color: '#66fcf1', fontSize: '1.3rem', fontWeight: '950', textTransform: 'uppercase', margin: '0' }}>NAJDĚTE NEJLEPŠÍ CENU HARDWARU</h3>
-                    </div>
+                <div className="guru-global-search-card" style={{ marginBottom: '20px', background: '#111216', border: '1px solid rgba(102, 252, 241, 0.2)', padding: '30px', borderRadius: '24px' }}>
+                    <h3 style={{ color: '#66fcf1', fontSize: '1.2rem', fontWeight: '950', textTransform: 'uppercase', textAlign: 'center', marginBottom: '15px' }}>NAJDĚTE NEJLEPŠÍ CENU HARDWARU</h3>
                     <div className="heureka-affiliate-searchpanel" data-trixam-positionid="276035" data-trixam-codetype="iframe" data-trixam-linktarget="top" style={{ width: '100%', minHeight: '50px' }}></div>
                 </div>
             )}
 
-            <div className="guru-search-card game-search-card">
-                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                    <h3 style={{ color: '#fff', fontSize: '1.3rem', fontWeight: '950', textTransform: 'uppercase' }}>GURU VYHLEDÁVAČ HER A WINDOWS</h3>
-                </div>
+            {/* 2. GURU GAME SEARCH */}
+            <div className="guru-global-search-card" style={{ marginBottom: '30px', background: '#111216', border: '1px solid rgba(168, 85, 247, 0.2)', padding: '30px', borderRadius: '24px' }}>
+                <h3 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: '950', textTransform: 'uppercase', textAlign: 'center', marginBottom: '15px' }}>GURU VYHLEDÁVAČ HER A WINDOWS</h3>
                 <form onSubmit={handleGameSearch} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                    <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="např. Cyberpunk 2077..." style={{ width: '100%', padding: '15px', borderRadius: '12px', background: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid #a855f7' }} />
-                    <button type="submit" style={{ background: '#a855f7', color: '#fff', padding: '12px', borderRadius: '12px', fontWeight: '950', cursor: 'pointer' }}>ZJISTIT NEJNIŽŠÍ CENU</button>
+                    <div style={{ position: 'relative' }}>
+                        <Search size={20} color="#a855f7" style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)' }} />
+                        <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="např. Pragmata, Windows 11..." style={{ width: '100%', padding: '15px 15px 15px 45px', borderRadius: '12px', background: 'rgba(0,0,0,0.5)', color: '#fff', border: '1px solid rgba(168, 85, 247, 0.3)', outline: 'none' }} />
+                    </div>
+                    <button type="submit" style={{ background: 'linear-gradient(90deg, #7e22ce 0%, #a855f7 100%)', color: '#fff', padding: '15px', borderRadius: '12px', fontWeight: '950', cursor: 'pointer', border: 'none', textTransform: 'uppercase' }}>ZJISTIT NEJNIŽŠÍ CENU</button>
                 </form>
                 {hasSearched && (
                     <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {getGameLinks(query).map((link, idx) => (
-                            <a key={idx} href={link.url} target="_blank" rel="nofollow sponsored" style={{ display: 'flex', justifyContent: 'space-between', padding: '15px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: `1px solid ${link.color}40`, textDecoration: 'none', color: '#fff' }}>
-                                <span>{link.name}</span> <ExternalLink size={18} />
-                            </a>
-                        ))}
+                        {getGameLinks(query).map((link, idx) => {
+                            const Icon = link.Icon;
+                            return (
+                                <a key={idx} href={link.url} target="_blank" rel="nofollow sponsored" className="guru-search-result-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '15px 20px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: `1px solid ${link.color}40`, textDecoration: 'none', transition: '0.2s' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <Icon size={20} color={link.color} />
+                                        <span style={{ color: '#fff', fontWeight: 'bold' }}>{link.name}</span>
+                                    </div>
+                                    <ExternalLink size={16} color="#6b7280" />
+                                </a>
+                            );
+                        })}
                     </div>
                 )}
             </div>
 
-            {buttons.map((btn) => (
-                <a key={btn.key} href={isEn ? `https://www.amazon.com/s?k=${encodeURIComponent(btn.en)}&tag=thehardware07-20` : btn.url} target="_blank" rel="nofollow sponsored" className="guru-card">
-                    <div className="guru-content"><span className="guru-label">{isEn ? btn.en : btn.label}</span></div>
-                    <ChevronRight size={20} />
-                </a>
-            ))}
+            {/* 3. HARDWARE GRID */}
+            <div className="guru-buttons-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+                {buttons.map((btn) => {
+                    const Icon = btn.icon;
+                    return (
+                        <a key={btn.key} href={isEn ? `https://www.amazon.com/s?k=${encodeURIComponent(btn.en)}&tag=thehardware07-20` : btn.url} target="_blank" rel="nofollow sponsored" className="heureka-hn-link guru-category-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(10, 10, 10, 0.9)', border: '1px solid rgba(147, 51, 234, 0.2)', padding: '20px', borderRadius: '20px', textDecoration: 'none' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                <div style={{ background: '#1a1a1a', padding: '10px', borderRadius: '12px', color: '#9333ea' }}><Icon size={24} /></div>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ color: '#fff', fontWeight: '900', fontSize: '14px', textTransform: 'uppercase' }}>{isEn ? btn.en : btn.label}</span>
+                                    <span style={{ color: '#a855f7', fontSize: '10px', fontWeight: '800' }}>{btn.sub}</span>
+                                </div>
+                            </div>
+                            <ChevronRight size={18} color="rgba(255,255,255,0.2)" />
+                        </a>
+                    );
+                })}
+            </div>
 
             <style dangerouslySetInnerHTML={{__html: `
-                .guru-buttons-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 40px 0; width: 100%; }
-                .guru-search-card { grid-column: 1 / -1; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(102, 252, 241, 0.3); padding: 30px 20px; border-radius: 20px; }
-                .game-search-card { border-color: rgba(168, 85, 247, 0.3); }
-                .guru-card { display: flex; align-items: center; justify-content: space-between; background: rgba(10, 10, 10, 0.9); border: 1px solid rgba(147, 51, 234, 0.2); padding: 22px; border-radius: 20px; text-decoration: none; color: #fff; }
+                .guru-search-result-row:hover { background: rgba(255,255,255,0.08) !important; transform: translateX(5px); }
+                .guru-category-card:hover { border-color: #9333ea !important; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(147, 51, 234, 0.2); }
+                .guru-category-card { transition: all 0.3s ease; }
             `}} />
         </div>
     );
