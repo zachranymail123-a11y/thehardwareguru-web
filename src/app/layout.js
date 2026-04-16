@@ -123,7 +123,6 @@ const GlobalPartnersBox = ({ isEn }) => {
 };
 
 export default async function RootLayout({ children }) {
-  // 🔥 FIX ERRORU 500: Zabalené a awaitované headers() pro Next.js 15
   let isEn = false;
   try {
       const headersList = await headers();
@@ -146,7 +145,7 @@ export default async function RootLayout({ children }) {
           strategy="afterInteractive" 
         />
 
-        {/* 🔥 PŘIDÁNO: Nový a bezpečnější Monetag Script v Next.js Injection formátu 🔥 */}
+        {/* 🔥 MONETAG: Raw Injection Bypass pro Next.js 🔥 */}
         <Script id="monetag" strategy="beforeInteractive">
           {`
           (function(s){
@@ -217,15 +216,7 @@ export default async function RootLayout({ children }) {
         <ExitIntentPopup />
         <Analytics />
 
-        <div className="global-sticky-anchor">
-            <div className="ad-desktop-anchor">
-                <SeznamAd zoneId={408873} width={728} height={90} />
-            </div>
-            {/* 🔥 FIX: Mobile Anchor ID 408678 🔥 */}
-            <div className="ad-mobile-anchor">
-                <SeznamAd zoneId={408678} width={320} height={100} />
-            </div>
-        </div>
+        {/* 🔥 SPODNÍ SKLIK KOTVA ODSTRANĚNA, PROSTOR PŘENECHÁN MONETAGU 🔥 */}
       </body>
     </html>
   )
