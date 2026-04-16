@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Cpu, Monitor, Layers, Database, ChevronRight, Search, ShoppingCart, Gamepad2, Zap, Tag, ExternalLink, Flame, TrendingDown } from 'lucide-react';
+import { Cpu, Monitor, Layers, Database, ChevronRight, Search, ShoppingCart, Gamepad2, Zap, Tag, ExternalLink, Flame, TrendingDown, ShoppingBag } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
@@ -52,11 +52,12 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
         return [
             { name: 'Instant Gaming', desc: isEn ? 'Best prices' : 'Většinou nejnižší cena', url: `https://www.instant-gaming.com/en/search/?q=${encoded}&igr=gamer-32df929`, color: '#ff6600', badge: 'TOP VOLBA', Icon: Zap },
             { name: 'Gamivo', desc: isEn ? 'Huge catalog' : 'Největší výběr her a Windows', url: `https://www.gamivo.com/search/${encoded}?glv=d712zso6`, color: '#f36f21', badge: 'VELKÝ VÝBĚR', Icon: Gamepad2 },
+            { name: 'G2A', desc: isEn ? 'Largest marketplace' : 'Největší tržiště na světě', url: `https://www.g2a.com/n/reflink-fa31d77ef6?search=${encoded}`, color: '#ff9900', badge: 'GIGANT', Icon: ShoppingBag },
             { name: 'HRK Game', desc: isEn ? 'Flash sales' : 'Časté bleskové slevy', url: `https://www.hrkgame.com/en/games/products/?search=${encoded}#a_aid=TheHardwareGuru`, color: '#28b3ff', badge: 'BLESKOVÉ AKCE', Icon: Tag }
         ];
     };
 
-    // 🔥 MÓD 1: MANUÁLNÍ VYHLEDÁVÁNÍ (Zůstává nezměněno pro hard-lock)
+    // 🔥 MÓD 1: MANUÁLNÍ VYHLEDÁVÁNÍ (Hard-lock)
     if (manualSearch) {
         if (isEn) {
             return (
@@ -79,7 +80,6 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
         );
     }
 
-    // 🔥 PŘESNÁ DATA PRO HARDWARE TLAČÍTKA
     const heurekaData = {
         cpu: { id: "276027", label: "Procesory", url: "https://www.heureka.cz/?h%5Bfraze%5D=procesor#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link", icon: Cpu, sub: "9000 SERIES" },
         gpu: { id: "276026", label: "Grafiky", url: "https://www.heureka.cz/?h%5Bfraze%5D=graficka+karta#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link", icon: Monitor, sub: "RTX 50 SERIES" },
@@ -94,11 +94,9 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
         { key: 'ram', ...heurekaData.ram, en: 'Memory' }
     ];
 
-    // 🔥 MÓD 2: VŠE V JEDNOM (Dva vyhledávače + Hardware tlačítka)
     return (
         <div className="guru-buttons-container">
             
-            {/* 1. HEUREKA SEARCH BAR */}
             {!isEn && (
                 <div className="guru-search-card" onClick={() => handleLogClick('search_heureka', 'heureka')}>
                     <div className="guru-card-glow" />
@@ -116,7 +114,6 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
                 </div>
             )}
 
-            {/* 2. GURU GAME & SW SEARCH BAR */}
             <div className="guru-search-card game-search-card">
                 <div className="guru-card-glow" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.15) 0%, transparent 70%)' }} />
                 <div style={{ position: 'relative', zIndex: 2 }}>
@@ -178,7 +175,6 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
                 </div>
             </div>
 
-            {/* 3. HARDWARE KATEGORIE TLAČÍTKA */}
             {buttons.map((btn) => {
                 const Icon = btn.icon;
                 const finalUrl = isEn ? `https://www.amazon.com/s?k=${encodeURIComponent(btn.en)}&tag=thehardware07-20` : btn.url;
@@ -198,25 +194,21 @@ export default function HeurekaButtons({ isEn = false, manualSearch = null, posi
 
             <style dangerouslySetInnerHTML={{__html: `
                 .guru-buttons-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 40px 0; width: 100%; }
-                
                 .guru-search-card { grid-column: 1 / -1; position: relative; background: rgba(15, 17, 21, 0.95); border: 1px solid rgba(102, 252, 241, 0.3); padding: 30px 20px; border-radius: 20px; transition: all 0.4s; overflow: hidden; backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin-bottom: 10px; }
                 .game-search-card { border-color: rgba(168, 85, 247, 0.3); }
                 .guru-search-card:hover { border-color: #66fcf1; box-shadow: 0 15px 40px rgba(102, 252, 241, 0.2); }
                 .game-search-card:hover { border-color: #a855f7; box-shadow: 0 15px 40px rgba(168, 85, 247, 0.2); }
-                
                 .guru-card { position: relative; display: flex; align-items: center; background: rgba(10, 10, 10, 0.9); border: 1px solid rgba(147, 51, 234, 0.2); padding: 22px; border-radius: 20px; cursor: pointer; transition: all 0.4s; overflow: hidden; backdrop-filter: blur(12px); text-decoration: none; }
                 .guru-card:hover { transform: translateY(-5px); border-color: #9333ea; box-shadow: 0 15px 40px rgba(147, 51, 234, 0.25); }
                 .guru-card-glow { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 100% 0%, rgba(147, 51, 234, 0.1) 0%, transparent 50%); opacity: 0; transition: opacity 0.4s; }
                 .guru-search-card .guru-card-glow { background: radial-gradient(circle at 50% 0%, rgba(102, 252, 241, 0.1) 0%, transparent 70%); }
                 .guru-card:hover .guru-card-glow, .guru-search-card:hover .guru-card-glow { opacity: 1; }
-                
                 .guru-icon-wrapper { background: #1a1a1a; padding: 14px; border-radius: 16px; margin-right: 18px; color: #9333ea; border: 1px solid rgba(255, 255, 255, 0.05); transition: 0.3s; }
                 .guru-card:hover .guru-icon-wrapper { background: #9333ea; color: #fff; }
                 .guru-content { display: flex; flex-direction: column; flex-grow: 1; position: relative; z-index: 2; }
                 .guru-label { color: #fff; font-weight: 900; font-size: 15px; text-transform: uppercase; line-height: 1.2; transition: 0.3s; }
                 .guru-sub { color: #a855f7; font-size: 11px; font-weight: 800; margin-top: 3px; }
                 .guru-arrow { color: rgba(255, 255, 255, 0.1); position: relative; z-index: 2; }
-                
                 @media (max-width: 640px) { 
                     .guru-buttons-container { grid-template-columns: 1fr; } 
                     .guru-search-card h3 { font-size: 1.1rem !important; }
