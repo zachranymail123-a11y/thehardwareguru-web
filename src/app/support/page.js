@@ -2,10 +2,11 @@ import React from 'react';
 import { ChevronLeft, ShieldCheck, Heart, Flame, ShoppingCart, Info, CheckCircle2, Award, ChevronRight } from 'lucide-react';
 import SeznamAd from '../../components/SeznamAd';
 import Link from 'next/link';
+import HeurekaButtons from '../../components/HeurekaButtons'; // 🔥 IMPORT PŘIDÁN
 
 /**
- * GURU SUPPORT ENGINE V3.0 - THE FINAL CENTERING FIX
- * 🚀 CÍL: Fix roztažení přes celou obrazovku, vše v jedné kompaktní kartě uprostřed.
+ * GURU SUPPORT ENGINE V3.1 - SIDE-BY-SIDE LAYOUT
+ * 🚀 CÍL: Podpora a vyhledávače vedle sebe, plně vycentrované a responzivní.
  */
 
 export const runtime = "nodejs";
@@ -29,7 +30,6 @@ export default async function SupportPage(props) {
 
   const stripeLink = "https://buy.stripe.com/5kQdR900Nc115tSbTD9EI00";
   const revolutTag = "thehardwareguru";
-  const hrkLink = "https://www.hrkgame.com/en/#a_aid=TheHardwareGuru";
 
   return (
     <div className="guru-support-page-root">
@@ -71,7 +71,7 @@ export default async function SupportPage(props) {
 
         .centered-vessel {
           width: 100%;
-          max-width: 500px;
+          max-width: 1200px;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -90,7 +90,38 @@ export default async function SupportPage(props) {
           line-height: 1.1;
         }
 
-        /* 🔥 FIX: Kompaktní karta, která se neroztahuje */
+        /* 🔥 SIDE-BY-SIDE GRID PRO DESKTOP 🔥 */
+        .support-content-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 40px;
+          width: 100%;
+          align-items: center;
+        }
+
+        .support-card-wrapper {
+          width: 100%;
+          max-width: 450px;
+        }
+
+        .heureka-wrapper {
+          width: 100%;
+          max-width: 700px;
+        }
+
+        /* Hack na zrušení defaultního horního marginu u HeurekaButtons aby to lícovalo s podporou */
+        .heureka-wrapper > div {
+          margin-top: 0 !important;
+        }
+
+        @media (min-width: 1024px) {
+          .support-content-grid {
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: center;
+          }
+        }
+
         .guru-central-card {
           background: rgba(17, 19, 24, 0.97);
           backdrop-filter: blur(25px);
@@ -103,9 +134,7 @@ export default async function SupportPage(props) {
           box-sizing: border-box;
         }
 
-        .qr-section {
-          margin-bottom: 35px;
-        }
+        .qr-section { margin-bottom: 35px; }
 
         .qr-frame {
           background: #fff;
@@ -149,12 +178,6 @@ export default async function SupportPage(props) {
         .btn-partners {
           background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(102, 252, 241, 0.1) 100%);
           border: 1px solid rgba(168, 85, 247, 0.5) !important;
-        }
-
-        .btn-affiliate {
-          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
-          margin-top: 15px;
-          box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3);
         }
 
         .ad-row {
@@ -209,51 +232,56 @@ export default async function SupportPage(props) {
           <SeznamAd zoneId={408651} width={300} height={250} />
         </div>
 
-        {/* 📦 JEDNA CENTRÁLNÍ KARTA - VŠE UVNITŘ */}
-        <div className="guru-central-card">
-          <div className="qr-section">
-            <h3 style={{ color: '#eab308', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>
-              {isEn ? "Quick QR payment" : "Rychlá QR platba (CZ)"}
-            </h3>
-            <div className="qr-frame">
-              <img src="/qr-platba.png" alt="QR" style={{ width: '180px', height: '180px', display: 'block' }} />
-            </div>
-          </div>
-
-          <div className="method-stack">
-            {/* GOOGLE */}
-            <div className="guru-btn" style={{ position: 'relative' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-              <span>{isEn ? 'Google Pay' : 'Přispět s Googlem'}</span>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.001 }}>
-                <button id="support-page-swg-btn" swg-standard-button="contribution" style={{ width: '100%', height: '100%', cursor: 'pointer', border: 'none', background: 'transparent' }}></button>
-              </div>
-            </div>
-
-            {/* STRIPE */}
-            <a href={stripeLink} target="_blank" rel="noreferrer" className="guru-btn">💳 {isEn ? "Card / Apple Pay" : "Karta / Apple Pay"}</a>
+        {/* 🔥 SIDE-BY-SIDE ROZLOŽENÍ 🔥 */}
+        <div className="support-content-grid">
             
-            {/* REVOLUT */}
-            <a href={`https://revolut.me/${revolutTag}`} target="_blank" rel="noreferrer" className="guru-btn">
-              <span style={{ background: '#fff', color: '#0075eb', width: '18px', height: '18px', borderRadius: '50%', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900' }}>R</span> 
-              Revolut.me
-            </a>
+            {/* LÁVA - PODPORA KARTA */}
+            <div className="support-card-wrapper">
+                <div className="guru-central-card">
+                  <div className="qr-section">
+                    <h3 style={{ color: '#eab308', fontSize: '15px', fontWeight: '900', textTransform: 'uppercase', margin: 0 }}>
+                      {isEn ? "Quick QR payment" : "Rychlá QR platba (CZ)"}
+                    </h3>
+                    <div className="qr-frame">
+                      <img src="/qr-platba.png" alt="QR" style={{ width: '180px', height: '180px', display: 'block' }} />
+                    </div>
+                  </div>
 
-            {/* PARTNEŘI */}
-            <Link href={isEn ? "/en/sestavy" : "/sestavy"} className="guru-btn btn-partners">
-              <Award size={18} color="#eab308" /> <span>{isEn ? "Our Partners" : "Naši partneři"}</span>
-            </Link>
-          </div>
+                  <div className="method-stack">
+                    {/* GOOGLE */}
+                    <div className="guru-btn" style={{ position: 'relative' }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                      <span>{isEn ? 'Google Pay' : 'Přispět s Googlem'}</span>
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.001 }}>
+                        <button id="support-page-swg-btn" swg-standard-button="contribution" style={{ width: '100%', height: '100%', cursor: 'pointer', border: 'none', background: 'transparent' }}></button>
+                      </div>
+                    </div>
 
-          <div style={{ margin: '25px 0', opacity: '0.1', height: '1px', background: '#fff' }}></div>
+                    {/* STRIPE */}
+                    <a href={stripeLink} target="_blank" rel="noreferrer" className="guru-btn">💳 {isEn ? "Card / Apple Pay" : "Karta / Apple Pay"}</a>
+                    
+                    {/* REVOLUT */}
+                    <a href={`https://revolut.me/${revolutTag}`} target="_blank" rel="noreferrer" className="guru-btn">
+                      <span style={{ background: '#fff', color: '#0075eb', width: '18px', height: '18px', borderRadius: '50%', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900' }}>R</span> 
+                      Revolut.me
+                    </a>
 
-          {/* AFFILIATE */}
-          <a href={hrkLink} target="_blank" rel="nofollow sponsored" className="guru-btn btn-affiliate">
-            <span style={{ fontSize: '18px' }}>🔥</span> {isEn ? "Buy Game - Best Deal" : "Koupit hru za nejlepší cenu"}
-          </a>
+                    {/* PARTNEŘI */}
+                    <Link href={isEn ? "/en/sestavy" : "/sestavy"} className="guru-btn btn-partners">
+                      <Award size={18} color="#eab308" /> <span>{isEn ? "Our Partners" : "Naši partneři"}</span>
+                    </Link>
+                  </div>
+                </div>
+            </div>
+
+            {/* PRAVÁ - HEUREKA BUTTONS */}
+            <div className="heureka-wrapper">
+                <HeurekaButtons isEn={isEn} />
+            </div>
+            
         </div>
 
-        <div style={{ marginTop: '40px', fontSize: '10px', color: '#4b5563', letterSpacing: '2px', fontWeight: 'bold', textAlign: 'center' }}>
+        <div style={{ marginTop: '60px', fontSize: '10px', color: '#4b5563', letterSpacing: '2px', fontWeight: 'bold', textAlign: 'center' }}>
           © {new Date().getFullYear()} THE HARDWARE GURU • MISSION: BUILD THE BEST DB
         </div>
       </div>
@@ -270,9 +298,3 @@ export default async function SupportPage(props) {
     </div>
   );
 }
-
-const containerStyle = { 
-    width: '100%', 
-    minHeight: '100vh', 
-    position: 'relative'
-};
