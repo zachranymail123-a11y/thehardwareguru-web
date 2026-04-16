@@ -2,13 +2,13 @@ import React from 'react';
 import { 
   Flame, 
   Calendar, 
-  Tag, 
   ChevronRight,
   ShoppingCart,
   Heart
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import SeznamAd from '../../components/SeznamAd';
+import GameSearchWidget from '../../components/GameSearchWidget'; // 🔥 PŘIDANÝ IMPORT VYHLEDÁVAČE
 
 /**
  * GURU DEALS ENGINE V1.6 (MOBILE OPTIMIZED)
@@ -71,9 +71,9 @@ export default async function DealsPage(props) {
         </div>
 
         {safeDeals.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '100px 20px', background: 'rgba(15, 17, 21, 0.8)', borderRadius: '24px', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                <Tag size={48} color="#4b5563" style={{ margin: '0 auto 20px' }} />
-                <h2 style={{ fontSize: '24px', fontWeight: '950', color: '#d1d5db', textTransform: 'uppercase' }}>{isEn ? 'NO ACTIVE DEALS' : 'ŽÁDNÉ AKTIVNÍ SLEVY'}</h2>
+            /* 🔥 TADY JE TEN TVŮJ NOVÝ HERNÍ VYHLEDÁVAČ MÍSTO PRÁZDNÉHO BOXU 🔥 */
+            <div style={{ width: '100%', maxWidth: '850px', margin: '0 auto' }}>
+                <GameSearchWidget isEn={isEn} />
             </div>
         ) : (
             <div className="deals-grid">
@@ -118,9 +118,7 @@ export default async function DealsPage(props) {
             {isEn ? "Support Guru by checking these offers." : "Podpoř Guru nákupem skrze tyto odkazy."}
           </h4>
           <div className="footer-btns" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', width: '100%' }}>
-            <a href="https://www.hrkgame.com/en/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn">
-              <Flame size={20} /> {isEn ? 'BEST GAME DEALS' : 'HRY ZA NEJLEPŠÍ CENY'}
-            </a>
+            {/* 🔥 ORANŽOVÉ TLAČÍTKO ODSTRANĚNO 🔥 */}
             <a href={isEn ? "/en/support" : "/support"} className="guru-support-btn">
               <Heart size={20} /> {isEn ? 'SUPPORT GURU' : 'PODPOŘIT GURU'}
             </a>
@@ -143,9 +141,7 @@ export default async function DealsPage(props) {
         .deal-desc { color: #9ca3af; font-size: 0.95rem; line-height: 1.5; margin: 0 0 25px 0; flex: 1; }
         .deal-cta { display: flex; align-items: center; justify-content: space-between; color: #f97316; font-weight: 950; font-size: 14px; text-transform: uppercase; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; }
 
-        .guru-support-btn, .guru-deals-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; font-size: 15px; text-transform: uppercase; text-decoration: none; transition: 0.3s; }
-        .guru-support-btn { background: #eab308; color: #000; }
-        .guru-deals-btn { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #fff; }
+        .guru-support-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 18px 30px; border-radius: 16px; font-weight: 950; font-size: 15px; text-transform: uppercase; text-decoration: none; transition: 0.3s; background: #eab308; color: #000; }
 
         /* 🚀 RESPONSIVE ADS SYSTEM */
         .ad-desktop-wrapper { display: flex; justify-content: center; width: 100%; }
@@ -163,7 +159,7 @@ export default async function DealsPage(props) {
             .deal-title { font-size: 1.2rem !important; }
             .footer-support-section { padding-top: 30px !important; margin-top: 50px !important; }
             .footer-btns { flex-direction: column; }
-            .guru-deals-btn, .guru-support-btn { width: 100%; }
+            .guru-support-btn { width: 100%; }
         }
       `}} />
     </div>
