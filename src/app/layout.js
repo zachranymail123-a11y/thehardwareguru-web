@@ -145,15 +145,17 @@ export default async function RootLayout({ children }) {
           strategy="afterInteractive" 
         />
 
-        {/* 🔥 MONETAG: Raw Injection Bypass pro Next.js 🔥 */}
-        <Script id="monetag" strategy="beforeInteractive">
-          {`
-          (function(s){
-            s.dataset.zone='10883065';
-            s.src='https://nap5k.com/tag.min.js';
-          })([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')));
-          `}
-        </Script>
+        {/* 🔥 FIX MONETAG: Naprosto přímé vložení skriptu (nejsilnější způsob) 🔥 */}
+        <script 
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(s){
+                s.dataset.zone='10883065';
+                s.src='https://nap5k.com/tag.min.js';
+              })([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')));
+            `
+          }}
+        />
 
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-9W5FBC9P68" strategy="afterInteractive" />
         <Script id="google-analytics" strategy="afterInteractive">
@@ -215,8 +217,6 @@ export default async function RootLayout({ children }) {
         <MobileStickyButton />
         <ExitIntentPopup />
         <Analytics />
-
-        {/* 🔥 SPODNÍ SKLIK KOTVA ODSTRANĚNA, PROSTOR PŘENECHÁN MONETAGU 🔥 */}
       </body>
     </html>
   )
