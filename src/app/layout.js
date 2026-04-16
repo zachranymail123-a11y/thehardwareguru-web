@@ -146,13 +146,17 @@ export default async function RootLayout({ children }) {
           strategy="afterInteractive" 
         />
 
-        {/* 🔥 PŘIDÁNO: Nativní Next.js komponenta pro Monetag Script 🔥 */}
-        <Script 
-          src="https://quge5.com/88/tag.min.js" 
-          data-zone="230278" 
-          data-cfasync="false" 
-          strategy="beforeInteractive" 
-        />
+        {/* 🔥 FIX MONETAG: Raw Injection Bypass pro Next.js 🔥 */}
+        <Script id="monetag" strategy="beforeInteractive">
+          {`
+          (function(d,z,s){
+            s.src='https://quge5.com/88/tag.min.js';
+            s.setAttribute('data-zone','230278');
+            s.setAttribute('data-cfasync','false');
+            d.head.appendChild(s);
+          })(document,window,document.createElement('script'));
+          `}
+        </Script>
 
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-9W5FBC9P68" strategy="afterInteractive" />
         <Script id="google-analytics" strategy="afterInteractive">
