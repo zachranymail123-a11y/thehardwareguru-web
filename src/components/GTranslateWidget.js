@@ -5,82 +5,56 @@ import { Globe } from 'lucide-react';
 
 export default function GTranslateWidget() {
   useEffect(() => {
-    // Zabráníme vícenásobnému načtení skriptu při přecházení mezi stránkami
-    if (!window.googleTranslateElementInit) {
-      window.googleTranslateElementInit = () => {
-        new window.google.translate.TranslateElement(
-          { 
-            pageLanguage: 'cs', // Výchozí jazyk tvého webu
-            // 🔥 Všech 11 jazyků pro maximální pokrytí Evropy 🔥
-            includedLanguages: 'de,fr,pl,es,it,sk,hu,ro,uk,bg,nl', 
-            layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
-            autoDisplay: false
-          },
-          'google_translate_element'
-        );
-      };
+    // Inicializace standardního Google Translate widgetu
+    window.googleTranslateElementInit = () => {
+      new window.google.translate.TranslateElement(
+        { 
+          pageLanguage: 'cs',
+          includedLanguages: 'de,fr,pl,es,it,sk,hu,ro,uk,bg,nl',
+          layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+          autoDisplay: false
+        },
+        'google_translate_element'
+      );
+    };
 
+    const addScript = () => {
       const script = document.createElement('script');
       script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
       script.async = true;
       document.body.appendChild(script);
-    }
+    };
+
+    addScript();
   }, []);
 
   return (
-    <div className="guru-translate-wrapper">
-      <div className="translate-icon-box">
-        <Globe size={18} color="#a855f7" />
-        <span style={{ fontSize: '12px', fontWeight: '900', color: '#fff', textTransform: 'uppercase', letterSpacing: '1px' }}>
-          Other Languages
-        </span>
-      </div>
+    <div className="guru-translate-container">
       <div id="google_translate_element"></div>
-
-      {/* CSS pro skrytí ošklivých Google prvků a sladění s Guru stylem */}
+      
       <style dangerouslySetInnerHTML={{__html: `
-        .guru-translate-wrapper {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 12px;
-          background: rgba(17, 19, 24, 0.95);
+        .guru-translate-container {
+          background: rgba(17, 19, 24, 0.9);
+          padding: 5px 10px;
+          border-radius: 8px;
           border: 1px solid rgba(168, 85, 247, 0.3);
-          padding: 20px;
-          border-radius: 16px;
-          width: fit-content;
-          margin: 0 auto;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+          display: inline-block;
         }
-        .translate-icon-box {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-        /* Skrytí otravného horního pruhu od Googlu */
+        /* Skrytí Google lišty a loga */
         .skiptranslate iframe { display: none !important; }
         body { top: 0px !important; }
-        
-        /* Stylování samotného select boxu pro výběr jazyka */
-        .goog-te-combo {
-          background: #111216;
-          color: #fff;
-          border: 2px solid rgba(168, 85, 247, 0.5);
-          padding: 10px 15px;
-          border-radius: 12px;
-          font-family: inherit;
-          font-weight: bold;
-          outline: none;
-          cursor: pointer;
-          transition: 0.3s;
-        }
-        .goog-te-combo:hover {
-          border-color: #a855f7;
-        }
-        
-        /* Skrytí loga Googlu */
         .goog-logo-link { display: none !important; }
-        .goog-te-gadget { color: transparent !important; }
+        .goog-te-gadget { color: transparent !important; font-size: 0 !important; }
+        .goog-te-gadget .goog-te-combo { 
+          background: #000 !important; 
+          color: #fff !important; 
+          border: 1px solid #a855f7 !important; 
+          padding: 5px !important; 
+          border-radius: 4px !important;
+          outline: none !important;
+          font-size: 12px !important;
+          font-weight: bold !important;
+        }
       `}} />
     </div>
   );
