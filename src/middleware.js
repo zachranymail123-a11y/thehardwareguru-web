@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 
 /**
- * 🚀 GURU MASTER MIDDLEWARE V2.8 (ADSENSE & ANTI-404 PROTECTION)
+ * 🚀 GURU MASTER MIDDLEWARE V2.9 (ADSENSE, ANTI-404 & BULLETPROOF SK/CZ ROUTING)
  * Cesta: src/middleware.js
  * 🛡️ FIX 1: Návrat Bot Bypassu. Boti (US IP) nesmí dostat redirect!
  * 🛡️ FIX 2: Geo-IP redirect pro reálné lidi pouze na rootu (SEO Safe).
  * 🛡️ FIX 3: GURU ANTI-404 SHIELD: Odchytáváme mrtvé cesty, co kazí AdSense skóre.
+ * 🛡️ FIX 4: BROWSER LANG SHIELD: Slováci a Češi s VPN už nikdy nespadnou do EN.
  */
 export function middleware(request) {
   const { pathname, search, origin } = request.nextUrl;
@@ -21,7 +22,6 @@ export function middleware(request) {
   });
 
   // 🛡️ GURU ANTI-404 SHIELD: Záchranná síť pro AdSense
-  // Pokud někdo/něco hledá staré skripty nebo neexistující cesty, co vidíme v Analytics
   const forbiddenSuffixes = ['.php', '.asp', '.aspx', '.jsp', '.cgi', 'wp-admin', 'wp-login'];
   if (forbiddenSuffixes.some(suffix => pathname.toLowerCase().includes(suffix))) {
     return NextResponse.redirect(new URL('/', request.url));
@@ -44,10 +44,18 @@ export function middleware(request) {
       return nextWithHeaders(); 
   }
 
-  // 🌍 GEO-IP ENGINE (Pouze pro reálné lidi)
+  // 🌍 GEO-IP & BROWSER LANGUAGE ENGINE (Pouze pro reálné lidi)
   const country = request.headers.get('x-vercel-ip-country') || 'CZ';
+  const acceptLanguage = request.headers.get('accept-language') || '';
+
+  // 1. Zkoušíme IP adresu od Vercelu
   const hasLocalIP = ['CZ', 'SK'].includes(country.toUpperCase());
-  const isForeigner = !hasLocalIP;
+  
+  // 2. POJISTKA: Zkoušíme jazyk prohlížeče (pro lidi na VPN nebo se špatnou IP)
+  const hasLocalLang = acceptLanguage.toLowerCase().includes('cs') || acceptLanguage.toLowerCase().includes('sk');
+
+  // Cizinec je POUZE ten, kdo nemá CZ/SK IP adresu A ZÁROVEŇ nemá prohlížeč v CZ/SK
+  const isForeigner = !hasLocalIP && !hasLocalLang;
 
   // 1. AUTO-REDIRECT PRO CIZINCE POUZE NA ROOTU (/) -> (/en)
   if (pathname === '/' && isForeigner) {
