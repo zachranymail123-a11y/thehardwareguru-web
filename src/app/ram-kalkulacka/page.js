@@ -1,157 +1,127 @@
 import React from 'react';
 import DramCalculator from '../../components/DramCalculator';
 import Link from 'next/link';
-import { ArrowRight, Cpu, HardDrive, BookOpen, AlertCircle, ShoppingCart, Calculator } from 'lucide-react';
+import { ArrowRight, Cpu, HardDrive, BookOpen, AlertCircle, ShoppingCart, Calculator, Zap, ShieldCheck, Activity } from 'lucide-react';
 
 export const metadata = {
-  title: 'GURU RAM Overclocking Kalkulačka | Simulátor latence',
-  description: 'Profesionální simulátor pro DDR4 a DDR5. Výpočet stability, efektivního výkonu a časování podle typu čipu a IMC zátěže.',
+  title: 'DRAM Overclocking Simulátor | RAM Kalkulačka latence | Hardware Guru',
+  description: 'Profesionální simulátor pro taktování DDR4 a DDR5. Vypočítejte si absolutní latenci, stabilitu a efektivní propustnost podle typu vašeho čipu.',
+  alternates: {
+    canonical: 'https://thehardwareguru.cz/ram-kalkulacka',
+  },
+  openGraph: {
+    title: 'DRAM Simulátor | Hardware Guru',
+    description: 'Pokročilé modelování chování operačních pamětí a stability IMC řadiče.',
+    url: 'https://thehardwareguru.cz/ram-kalkulacka',
+    siteName: 'Hardware Guru',
+    images: [
+      {
+        url: '/og-dram.png', // Nezapomeň tento obrázek nahrát do public složky
+        width: 1200,
+        height: 630,
+        alt: 'Hardware Guru DRAM Simulator',
+      },
+    ],
+    locale: 'cs_CZ',
+    type: 'website',
+  },
 };
 
 export default function RamCalcPage() {
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
-      <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'scroll', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
+      <main style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         
-        {/* HEADER SEKCE */}
-        <header style={{ textAlign: 'center', marginBottom: '50px' }}>
-          <h1 style={{ fontSize: 'clamp(2.2rem, 6vw, 4rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0', lineHeight: '1', letterSpacing: '-2px' }}>
-            DRAM <span style={{ color: '#a855f7', textShadow: '0 0 30px rgba(168, 85, 247, 0.5)' }}>SIMULÁTOR</span>
+        <header style={{ textAlign: 'center', marginBottom: '60px' }}>
+          <h1 style={{ fontSize: 'clamp(2.5rem, 7vw, 4.5rem)', fontWeight: '950', color: '#fff', textTransform: 'uppercase', margin: '0', lineHeight: '0.9', letterSpacing: '-3px' }}>
+            DRAM <span style={{ color: '#a855f7', textShadow: '0 0 40px rgba(168, 85, 247, 0.6)' }}>SIMULÁTOR</span>
           </h1>
-          <p style={{ color: '#9ca3af', fontSize: '1.2rem', marginTop: '15px', fontWeight: '500' }}>
-            Profesionální OC modelování stability a propustnosti pamětí.
+          <p style={{ color: '#9ca3af', fontSize: '1.25rem', marginTop: '20px', fontWeight: '500', maxWidth: '750px', margin: '20px auto 0' }}>
+            První český simulátor křemíkového chování. Počítejte stabilitu, True Latency Index a efektivitu propustnosti v reálném čase.
           </p>
         </header>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '30px', alignItems: 'start' }}>
+        <div className="guru-layout-grid">
           
-          {/* LEVÝ SLOUPEC: KALKULAČKA A OBSAH */}
-          <section>
-            <DramCalculator isEn={false} />
-
-            {/* PROLINKOVÁNÍ NA DALŠÍ NÁSTROJE */}
-            <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <Link href="/bottleneck-kalkulacka" className="guru-tool-link">
-                <AlertCircle size={20} color="#a855f7" />
-                <div>
-                  <strong>Bottleneck Kalkulačka</strong>
-                  <span>Brzdí tvá RAM procesor? Zjisti to zde.</span>
-                </div>
-              </Link>
-              <Link href="/fps-kalkulacka" className="guru-tool-link">
-                <Zap size={20} color="#66fcf1" />
-                <div>
-                  <strong>FPS Kalkulačka</strong>
-                  <span>Kolik FPS přidá lepší časování RAM?</span>
-                </div>
-              </Link>
+          <section className="calc-main-section">
+            <div className="sticky-wrapper">
+              <DramCalculator isEn={false} />
             </div>
 
-            {/* TIPY A RADY PRO OC */}
-            <div style={{ marginTop: '60px', padding: '30px', background: 'rgba(255,255,255,0.02)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.5rem', marginBottom: '20px' }}><BookOpen color="#a855f7" /> GURU RADY PRO LADĚNÍ</h2>
-              <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: '15px' }}>
-                <li className="guru-list-item">🚀 <strong>tREFI:</strong> Čím vyšší, tím nižší latence, ale pozor na teploty čipů!</li>
-                <li className="guru-list-item">⚡ <strong>Napětí:</strong> DDR5 Hynix A-die miluje napětí, ale Micron Rev.A má limit mnohem dříve.</li>
-                <li className="guru-list-item">📉 <strong>Latence vs Propustnost:</strong> Někdy je stabilních 6000 CL30 lepší než nestabilních 7200 CL36.</li>
-              </ul>
-              <Link href="/clanky" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '20px', color: '#a855f7', fontWeight: 'bold', textDecoration: 'none' }}>
-                Číst kompletní návod na taktování RAM <ArrowRight size={16} />
-              </Link>
+            <div className="seo-content-block">
+              <div className="seo-card">
+                <h2><Activity size={20} color="#a855f7" /> Proč záleží na latenci RAM?</h2>
+                <p>Absolutní latence v nanosekundách (ns) určuje rychlost, s jakou procesor přistupuje k datům. Zatímco vysoké MT/s zvyšuje teoretickou propustnost, správné časování (CL, tRCD, tRP) je klíčové pro herní plynulost a eliminaci micro-stutteringu.</p>
+              </div>
+              <div className="seo-card">
+                <h2><Zap size={20} color="#a855f7" /> Význam sekundárního časování tRFC</h2>
+                <p>tRFC (Row Refresh Cycle Time) patří mezi nejdůležitější sekundární timingy. U moderních DDR5 modulů s vysokou hustotou čipů má tRFC drastický dopad na celkovou odezvu. Ladění tRFC spolu s tREFI dokáže u Hynix A-die čipů snížit latenci o 5 až 10 ns.</p>
+              </div>
+              <div className="seo-card">
+                <h2><ShieldCheck size={20} color="#a855f7" /> Stabilita a limity IMC</h2>
+                <p>Náš engine simuluje zátěž na paměťový řadič (IMC). U procesorů AMD Ryzen 7000 je ideální sweetspot kolem <strong>6000 MT/s</strong> (v režimu 1:1), zatímco u platformy Intel se maximální stabilní frekvence liší podle kvality křemíku a typu základní desky.</p>
+              </div>
             </div>
           </section>
 
-          {/* PRAVÝ SLOUPEC: ADS, HEUREKA, SIDEBAR */}
-          <aside style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-            
-            {/* REKLAMNÍ SLOOT */}
-            <div className="guru-ad-box">
-              <span style={{ fontSize: '10px', color: '#444' }}>SPONSORED CONTENT</span>
-              <div style={{ width: '100%', height: '250px', background: '#111', borderRadius: '12px', border: '1px dashed #333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                Místo pro tvou reklamu
-              </div>
+          <aside className="guru-sidebar">
+            <div className="sidebar-promo">
+              <span className="ad-label">SPONSORED CONTENT</span>
+              <div className="ad-placeholder">Místo pro tvou reklamu</div>
             </div>
 
-            {/* HEUREKA BUTTONS - NEJLEPŠÍ RAM KITY */}
-            <div style={{ background: '#fff', padding: '20px', borderRadius: '15px', color: '#000' }}>
-              <h4 style={{ margin: '0 0 15px 0', fontSize: '14px', fontWeight: '900' }}>🛒 DOPORUČENÉ RAM (HEUREKA)</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <a href="https://heureka.cz" target="_blank" className="heureka-btn">
-                  Hynix A-die Kit (Best OC) <ShoppingCart size={14} />
+            <div className="heureka-section">
+              <h4>⭐ DOPORUČENO PRO OVERCLOCKING</h4>
+              <div className="heureka-list">
+                <a href="https://ram.heureka.cz/f:21133:43715891;q:hynix%20a-die/" target="_blank" rel="noopener noreferrer" className="heureka-btn">
+                  Hynix A-die (Extreme OC) <ShoppingCart size={14} />
                 </a>
-                <a href="https://heureka.cz" target="_blank" className="heureka-btn">
-                  Samsung B-die DDR4 <ShoppingCart size={14} />
+                <a href="https://ram.heureka.cz/f:21133:351421/" target="_blank" rel="noopener noreferrer" className="heureka-btn">
+                  Samsung B-die (DDR4 King) <ShoppingCart size={14} />
                 </a>
               </div>
+              <p className="affiliate-note">Komunitou ověřené kity s nejlepším potenciálem.</p>
             </div>
 
-            {/* DUELY PROLINKY */}
-            <div className="guru-sidebar-links">
-               <h4 style={{ color: '#a855f7', fontSize: '12px', letterSpacing: '1px' }}>POROVNAT KOMPONENTY</h4>
-               <Link href="/cpuvs" className="sidebar-link"><Cpu size={14} /> CPU Duel</Link>
-               <Link href="/gpuvs" className="sidebar-link"><HardDrive size={14} /> GPU Duel</Link>
-               <Link href="/psu-kalkulacka" className="sidebar-link"><Calculator size={14} /> PSU Kalkulačka</Link>
-               <Link href="/slovnik" className="sidebar-link"><BookOpen size={14} /> Guru Slovník</Link>
+            <div className="nav-links-card">
+               <h4>GURU EKOSYSTÉM</h4>
+               <Link href="/bottleneck-kalkulacka" className="side-nav-link"><AlertCircle size={14} /> Bottleneck Calc</Link>
+               <Link href="/fps-kalkulacka" className="side-nav-link"><Zap size={14} /> FPS Kalkulačka</Link>
+               <Link href="/cpuvs" className="side-nav-link"><Cpu size={14} /> CPU Duel</Link>
+               <Link href="/gpuvs" className="side-nav-link"><HardDrive size={14} /> GPU Duel</Link>
+               <Link href="/slovnik" className="side-nav-link"><BookOpen size={14} /> Guru Slovník</Link>
             </div>
-
           </aside>
         </div>
 
-        {/* CSS STYLY PRO PROLINKY */}
         <style dangerouslySetInnerHTML={{__html: `
-          .guru-tool-link {
-            background: rgba(15, 17, 21, 0.9);
-            border: 1px solid rgba(255,255,255,0.05);
-            padding: 20px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            text-decoration: none;
-            color: #fff;
-            transition: 0.3s;
-          }
-          .guru-tool-link:hover {
-            border-color: #a855f7;
-            background: rgba(168, 85, 247, 0.05);
-            transform: translateY(-3px);
-          }
-          .guru-tool-link strong { display: block; font-size: 16px; }
-          .guru-tool-link span { font-size: 12px; color: #6b7280; }
+          .guru-layout-grid { display: grid; grid-template-columns: 1fr 320px; gap: 40px; }
+          .calc-main-section { min-height: 700px; } /* Prevence CLS */
+          .sticky-wrapper { position: sticky; top: 100px; z-index: 10; max-width: 100%; }
           
-          .heureka-btn {
-            background: #f7e000;
-            color: #000;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-            text-decoration: none;
-            font-weight: 900;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+          @media (max-height: 850px) { .sticky-wrapper { position: static; } }
+
+          .seo-content-block { margin-top: 50px; display: grid; gap: 20px; }
+          .seo-card { background: rgba(15, 17, 21, 0.6); border: 1px solid rgba(255,255,255,0.05); padding: 25px; border-radius: 20px; }
+          .seo-card h2 { font-size: 1.25rem; margin: 0 0 12px 0; display: flex; align-items: center; gap: 10px; color: #fff; }
+          .seo-card p { color: #9ca3af; line-height: 1.6; margin: 0; font-size: 0.9rem; }
+          .heureka-section { background: #fff; padding: 25px; border-radius: 20px; color: #000; }
+          .heureka-section h4 { margin: 0 0 15px 0; font-weight: 950; font-size: 12px; letter-spacing: 1px; }
+          .heureka-list { display: grid; gap: 10px; }
+          .heureka-btn { background: #f7e000; color: #000; padding: 12px; border-radius: 10px; text-align: center; text-decoration: none; font-weight: 900; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+          .heureka-btn:hover { transform: scale(1.03); }
+          .affiliate-note { font-size: 9px; color: #888; margin-top: 12px; text-align: center; font-weight: bold; }
+          .nav-links-card { background: rgba(15, 17, 21, 0.8); padding: 25px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 10px; }
+          .nav-links-card h4 { font-size: 11px; color: #a855f7; letter-spacing: 2px; margin-bottom: 10px; }
+          .side-nav-link { color: #d1d5db; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.03); transition: 0.2s; }
+          .side-nav-link:hover { color: #fff; background: rgba(255,255,255,0.08); transform: translateX(5px); }
+          .ad-placeholder { width: 100%; height: 250px; background: #000; border-radius: 15px; border: 1px dashed #333; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #444; }
+          .ad-label { font-size: 9px; color: #444; margin-bottom: 8px; display: block; letter-spacing: 2px; }
+
+          @media (max-width: 900px) {
+            .guru-layout-grid { grid-template-columns: 1fr; }
+            .sticky-wrapper { position: static; }
           }
-          .guru-sidebar-links {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-          }
-          .sidebar-link {
-            color: #9ca3af;
-            text-decoration: none;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            background: rgba(255,255,255,0.02);
-          }
-          .sidebar-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
-          .guru-list-item { padding-left: 20px; position: relative; color: #d1d5db; font-size: 14px; }
-          .guru-list-item::before { content: '•'; color: #a855f7; position: absolute; left: 0; font-weight: bold; }
         `}} />
       </main>
     </div>
