@@ -28,8 +28,8 @@ import SeznamAd from '../../../../components/SeznamAd';
 import HeurekaButtons from '../../../../components/HeurekaButtons'; 
 
 /**
- * GURU FPS HUNTER V2.2 (V10 HARD-LOCK SERVER FIX + 404 REPAIR)
- * 🚀 CÍL: Fix 404 u EN verzí, oprava Heureka linků a zachování build stability.
+ * GURU FPS HUNTER V2.2 (V10 HARD-LOCK SERVER FIX)
+ * 🚀 CÍL: Integrace Hard-Lock trackeru a doplnění tlačítek kalkulaček beze změn architektury.
  */
 
 export const runtime = "nodejs";
@@ -48,15 +48,10 @@ const getCleanSearchName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Ra
 const findGpuBySlug = async (gpuSlug) => {
   if (!supabaseUrl || !gpuSlug) return null;
   const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
-  
-  // 🔥 OPRAVA 404: Odstranění prefixu en- před dotazem do databáze
-  const cleanSlugForDb = gpuSlug.replace(/^en-/, '');
-
   try {
-      const res1 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${cleanSlugForDb}&limit=1`, { headers, cache: 'force-cache' });
+      const res1 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${gpuSlug}&limit=1`, { headers, cache: 'force-cache' });
       if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
-      
-      const clean = cleanSlugForDb.replace(/-/g, " ").trim();
+      const clean = gpuSlug.replace(/-/g, " ").trim();
       const chunks = clean.match(/\d+|[a-zA-Z]+/g);
       if (chunks && chunks.length > 0) {
           const searchPattern = `%${chunks.join('%')}%`;
@@ -71,13 +66,13 @@ const findGpuBySlug = async (gpuSlug) => {
 export async function generateMetadata(props) {
   const params = await props.params;
   const rawSlug = params?.slug || '';
-  const isEn = props.isEnProxy === true || rawSlug.startsWith('en-');
+  const isEn = rawSlug.startsWith('en-');
   const cleanSlug = rawSlug.replace(/^en-/, '');
   const gpu = await findGpuBySlug(cleanSlug);
   if (!gpu) return { title: '404 | The Hardware Guru' };
   const safeSlug = gpu.slug || slugify(gpu.name);
   return {
-    title: isEn ? `FPS test of ${gpu.name} in ${params.game} | Guru Benchmarks` : `Test FPS ${gpu.name} ve hře ${params.game} | Guru Testy`,
+    title: isEn ? `How much FPS does ${gpu.name} get? | Guru Benchmarks` : `Kolik FPS má ${gpu.name} ve hrách? | Guru Testy`,
     alternates: { canonical: `${baseUrl}/gpu-fps/${safeSlug}`, languages: { 'en': `${baseUrl}/en/gpu-fps/${safeSlug}`, 'cs': `${baseUrl}/gpu-fps/${safeSlug}` } }
   };
 }
@@ -85,10 +80,8 @@ export async function generateMetadata(props) {
 export default async function GpuFpsHunterPage(props) {
   const params = await props.params;
   const rawSlug = params?.slug || '';
-  // 🔥 INTELIGENTNÍ DETEKCE JAZYKA
-  const isEn = props.isEnProxy === true || rawSlug.startsWith('en-');
+  const isEn = rawSlug.startsWith('en-');
   const cleanSlug = rawSlug.replace(/^en-/, '');
-  const gameSlug = params?.game || '';
 
   const gpu = await findGpuBySlug(cleanSlug);
   if (!gpu) notFound();
@@ -98,8 +91,8 @@ export default async function GpuFpsHunterPage(props) {
   const safeSlug = gpu.slug || slugify(gpu.name);
 
   const gamesToShow = [
-    { id: 'resident-evil-requiem', name: 'Resident Evil Requiem', key: 'resident_evil_requiem' },
-    { id: 'cyberpunk-2077', name: 'Cyberpunk 2077', key: 'cyberpunk_2077' },
+    { id: 'resident_evil_requiem', name: 'Resident Evil Requiem', key: 'resident_evil_requiem' },
+    { id: 'cyberpunk', name: 'Cyberpunk 2077', key: 'cyberpunk_2077' },
     { id: 'warzone', name: 'CoD: Warzone', key: 'warzone' },
     { id: 'starfield', name: 'Starfield', key: 'starfield' },
     { id: 'cs2', name: 'Counter-Strike 2', key: 'cs2' },
@@ -117,10 +110,6 @@ export default async function GpuFpsHunterPage(props) {
   const searchName = getCleanSearchName(gpu.name);
   const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
   const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20`;
-
-  // 🔥 URČENÍ FPS PRO KONKRÉTNÍ HRU 🔥
-  const dbKey = gameSlug.replace(/-/g, '_');
-  let currentFps = Number(fpsData[`${dbKey}_1440p`] || fpsData[`${dbKey}_1080p`] || 0);
 
   return (
     <div className="guru-hunter-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -143,11 +132,11 @@ export default async function GpuFpsHunterPage(props) {
           </div>
           <h1 className="main-h1" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: '950', textTransform: 'uppercase', margin: '0', lineHeight: '1.1' }}>
             <span style={{ color: '#d1d5db' }}>{normalizeName(gpu.name)}</span> <br/>
-            <span style={{ color: vendorColor, textShadow: `0 0 30px ${vendorColor}80` }}>{gameSlug.replace(/-/g, ' ').toUpperCase()}</span>
+            <span style={{ color: vendorColor, textShadow: `0 0 30px ${vendorColor}80` }}>{isEn ? 'GAMING PERFORMANCE' : 'HERNÍ VÝKON A FPS'}</span>
           </h1>
         </header>
 
-        {/* 🔥 OPRAVENÝ GURU AFFILIATE BOMB GRID S V10 HARD-LOCK (# FRAGMENT) 🔥 */}
+        {/* 🔥 OPRAVENÝ GURU AFFILIATE BOMB GRID S V10 HARD-LOCK 🔥 */}
         <div className="affiliate-cta-grid" style={{ marginBottom: '50px', borderColor: `${vendorColor}40` }}>
             <div className="affiliate-col">
                 <div className="affiliate-col-title" style={{ color: vendorColor }}>
@@ -164,7 +153,7 @@ export default async function GpuFpsHunterPage(props) {
                                 <ShoppingCart size={16} /> Smarty.cz
                             </a>
                             <a 
-                                href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gpu-fps`}
+                                href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gpu-fps`}
                                 className="guru-buy-winner-btn heureka-btn v10-hl-btn"
                                 data-subid="v10-gpu-fps"
                                 data-cat="gpu_fps_hunter"
@@ -178,23 +167,60 @@ export default async function GpuFpsHunterPage(props) {
             </div>
         </div>
 
-        {/* 🚀 HLAVNÍ FPS MATRIX - KONKRÉTNÍ HRA DETAIL */}
-        <div className="result-card" style={{ background: 'rgba(15,17,21,0.95)', padding: '60px 40px', borderRadius: '32px', border: `2px solid ${vendorColor}`, textAlign: 'center', marginBottom: '60px', boxShadow: `0 0 50px ${vendorColor}20` }}>
-             <div style={{ fontSize: '10rem', fontWeight: '950', color: '#fff', lineHeight: '1' }}>{currentFps || '??'}</div>
-             <div style={{ fontSize: '20px', color: '#4b5563', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '4px' }}>Avg FPS (1440p Ultra)</div>
+        {/* 🚀 HLAVNÍ FPS MATRIX S ALGORITMICKÝM FALLBACKEM */}
+        <div className="fps-matrix-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '25px', marginBottom: '60px', marginTop: '40px' }}>
+          {gamesToShow.map((game) => {
+            let fpsValue = Number(fpsData[`${game.key}_1440p`] || fpsData[`${game.key}_1080p`] || 0);
+
+            if (fpsValue === 0) {
+                const gameDataMap = {
+                    'cyberpunk_2077': { gpu_weight: 1.5, fps_scale: 1.2 },
+                    'cs2': { gpu_weight: 0.4, fps_scale: 3.5 },
+                    'alan_wake_2': { gpu_weight: 1.8, fps_scale: 0.9 },
+                    'valorant': { gpu_weight: 0.3, fps_scale: 4.0 },
+                    'gta_v': { gpu_weight: 1.1, fps_scale: 1.5 },
+                    'generic': { gpu_weight: 1.0, fps_scale: 1.4 }
+                };
+                const gData = gameDataMap[game.key] || gameDataMap['generic'];
+                const gpuEffective = (Number(gpu.performance_index) || 100) / 1.5;
+                const rawGpuFps = (gpuEffective / (gData.gpu_weight || 1)) * gData.fps_scale;
+                fpsValue = Math.max(1, Math.round(rawGpuFps));
+            }
+
+            const verdict = getVerdict(fpsValue);
+
+            return (
+              <a key={game.id} href={`/${isEn ? 'en/' : ''}gpu-fps/${safeSlug}/${game.id.replace(/_/g, '-')}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div className="game-fps-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '30px', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: '0.3s' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: verdict.color }}></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: '950', textTransform: 'uppercase', margin: 0 }}>{game.name}</h3>
+                    <span style={{ fontSize: '10px', fontWeight: '950', color: verdict.color, letterSpacing: '1px' }}>1440p ULTRA</span>
+                  </div>
+                  <div className="fps-main-val" style={{ fontSize: '64px', fontWeight: '950', color: '#fff', lineHeight: '1' }}>
+                    {fpsValue > 0 ? fpsValue : 'N/A'} <span style={{ fontSize: '20px', color: '#4b5563' }}>FPS</span>
+                  </div>
+                  <div style={{ marginTop: '15px', color: verdict.color, fontSize: '12px', fontWeight: '950', textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{verdict.text}</span>
+                    <ChevronRight size={16} />
+                  </div>
+                </div>
+              </a>
+            );
+          })}
         </div>
 
         <section style={{ marginBottom: '60px' }}>
             <div className="analysis-box" style={{ background: 'rgba(15, 17, 21, 0.95)', padding: '45px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <h2 style={{ marginBottom: '20px', color: '#fff', fontSize: '1.5rem', fontWeight: '950' }}>{isEn ? 'Performance Analysis' : 'Analýza výkonu'}</h2>
                 <GuruAnalysisText 
-                    cpuName="High-end Gaming CPU" 
+                    cpuName="Intel Core i9-14900K" 
                     gpuName={gpu.name} 
-                    gameName={gameSlug.replace(/-/g, ' ')} 
+                    gameName="modern games" 
                     resolution="1440p" 
                     bottleneckPercent={0} 
                     isCpuBound={false} 
-                    fps={currentFps} 
+                    fps={Number(fpsData['cyberpunk_2077_1440p'] || 0)} 
                     isEn={isEn} 
                 />
             </div>
@@ -216,6 +242,27 @@ export default async function GpuFpsHunterPage(props) {
                 <HeurekaButtons isEn={false} manualSearch={gpu.name} positionId="276026" />
             </div>
         )}
+
+        <section className="semantic-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '60px' }}>
+            <a href={`/${isEn ? 'en/' : ''}bottleneck/${safeSlug}-with-ryzen-7-7800x3d`} className="deep-link-card" style={{ borderTop: '4px solid #ff0055' }}>
+                <Gauge size={32} color="#ff0055" />
+                <h3>Bottleneck Radar</h3>
+                <p>{isEn ? 'Is your CPU bottlenecking this GPU?' : 'Nezpomaluje tvůj procesor tuhle grafiku?'}</p>
+                <ChevronRight className="arrow" />
+            </a>
+            <a href={`/${isEn ? 'en/' : ''}gpuvs`} className="deep-link-card" style={{ borderTop: '4px solid #a855f7' }}>
+                <Swords size={32} color="#a855f7" />
+                <h3>GPU Srovnávač</h3>
+                <p>{isEn ? 'Compare against the competition.' : 'Srovnej tuhle kartu s konkurencí.'}</p>
+                <ChevronRight className="arrow" />
+            </a>
+            <a href={`/${isEn ? 'en/' : ''}gpu/${safeSlug}`} className="deep-link-card" style={{ borderTop: '4px solid #66fcf1' }}>
+                <Activity size={32} color="#66fcf1" />
+                <h3>Detailní Profil</h3>
+                <p>{isEn ? 'Full specs and architecture.' : 'Kompletní technické specifikace.'}</p>
+                <ChevronRight className="arrow" />
+            </a>
+        </section>
 
         <section className="massive-seo-hub" style={{ marginBottom: '60px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '60px' }}>
             <h2 style={{ fontSize: '1.4rem', fontWeight: '950', textTransform: 'uppercase', marginBottom: '30px', borderLeft: `4px solid ${vendorColor}`, paddingLeft: '15px' }}>
@@ -258,6 +305,7 @@ export default async function GpuFpsHunterPage(props) {
           </div>
       </div>
 
+      {/* 🔥 V10 HARD-LOCK SCRIPT PRO SERVER COMPONENT 🔥 */}
       <Script id="v10-hl-script" strategy="lazyOnload">
           {`
               if (typeof window !== 'undefined') {
@@ -282,15 +330,30 @@ export default async function GpuFpsHunterPage(props) {
         .hunter-badge { display: inline-flex; align-items: center; gap: 8px; color: #a855f7; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 50px; background: rgba(168, 85, 247, 0.1); }
         .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
         
+        .game-fps-card { transition: 0.3s; }
+        .game-fps-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.2) !important; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
+        .deep-link-card { background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; position: relative; }
+        .deep-link-card h3 { font-size: 18px; font-weight: 950; margin: 15px 0 10px 0; text-transform: uppercase; }
+        .deep-link-card p { font-size: 13px; color: #9ca3af; line-height: 1.5; margin: 0; }
+        .deep-link-card .arrow { position: absolute; bottom: 30px; right: 30px; opacity: 0.2; }
+
         .affiliate-cta-grid { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 35px; background: rgba(0,0,0,0.4); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; box-sizing: border-box; }
         .affiliate-col { display: flex; flex-direction: column; align-items: center; width: 100%; }
         .affiliate-col-title { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; font-weight: 950; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 25px; text-align: center; }
         .affiliate-btn-wrap { display: flex; gap: 20px; width: 100%; justify-content: center; flex-wrap: wrap; }
         
+        @keyframes pulse-smarty { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
+        @keyframes pulse-heureka { 0% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(0, 120, 212, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 120, 212, 0); } }
+        
         .guru-buy-winner-btn { flex: 1; max-width: 300px; min-width: 200px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 1px; }
-        .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; }
-        .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; }
+        .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
+        .smarty-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(234, 179, 8, 0.5); }
+        .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
+        .heureka-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 10px 20px rgba(0, 120, 212, 0.5); }
+        
+        /* 🔥 NOVÉ: CSS PRO AMAZON TLAČÍTKO 🔥 */
         .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
+        .amazon-btn:hover { transform: translateY(-5px) scale(1.02); animation: none; box-shadow: 0 15px 30px rgba(245, 158, 11, 0.5); }
 
         .seo-hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
         .hub-column { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
@@ -321,11 +384,22 @@ export default async function GpuFpsHunterPage(props) {
         .ad-mobile-wrapper { display: none; width: 100%; }
 
         @media (max-width: 768px) {
+            .guru-hunter-wrapper { padding-top: 80px !important; }
             .inner-container { padding: 0 15px !important; }
             .ad-desktop-wrapper { display: none !important; }
             .ad-mobile-wrapper { display: flex !important; justify-content: center; width: 100%; }
             .main-h1 { font-size: 1.6rem !important; }
+            .fps-matrix-grid { grid-template-columns: 1fr !important; gap: 15px; }
+            .game-fps-card { padding: 20px !important; border-radius: 18px !important; }
+            .fps-main-val { font-size: 3.5rem !important; }
+            .analysis-box { padding: 25px 15px !important; border-radius: 20px !important; }
+            .semantic-grid { grid-template-columns: 1fr !important; }
+            .deep-link-card { padding: 20px !important; }
+            .guru-deals-btn, .guru-support-btn { width: 100% !important; }
+            .seo-hub-grid { grid-template-columns: 1fr; }
+            .hub-column { padding: 25px; }
             .affiliate-cta-grid { padding: 20px; }
+            .affiliate-col-title { font-size: 14px; margin-bottom: 20px; }
             .affiliate-btn-wrap { flex-direction: column; gap: 15px; }
             .guru-buy-winner-btn { max-width: 100%; width: 100%; padding: 16px; font-size: 15px; }
         }
