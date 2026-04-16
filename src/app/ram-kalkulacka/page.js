@@ -1,6 +1,6 @@
 import React from 'react';
 import DramCalculator from '../../components/DramCalculator';
-import Heurekabuttons from '../../components/Heurekabuttons'; // Import opraven
+import HeurekaButtons from '../../components/HeurekaButtons'; 
 import Link from 'next/link';
 import Script from 'next/script';
 import { 
@@ -107,7 +107,7 @@ export default function RamCalcPage() {
               </div>
               
               {/* HEUREKA BUTTONS KOMPONENTA */}
-              <Heurekabuttons />
+              <HeurekaButtons />
             </div>
 
             <div className="sklik-sidebar-ad">
@@ -129,10 +129,9 @@ export default function RamCalcPage() {
 
         </div>
 
-        {/* CSS STYLY PŘESNĚ PODLE image_bd9d89.png */}
         <style dangerouslySetInnerHTML={{__html: `
           .guru-page-wrapper { min-height: 100vh; background-color: #0a0b0d; color: #fff; padding-top: 100px; padding-bottom: 100px; }
-          .guru-main-container { maxWidth: 1600px; margin: 0 auto; padding: 0 20px; }
+          .guru-main-container { max-width: 1600px; margin: 0 auto; padding: 0 20px; }
           .guru-grid-layout { display: grid; grid-template-columns: 280px 1fr 320px; gap: 30px; }
           
           /* VIP SESTAVA */
