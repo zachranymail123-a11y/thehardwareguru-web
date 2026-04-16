@@ -4,7 +4,6 @@ import React, { useEffect } from 'react';
 
 export default function GTranslateWidget() {
   useEffect(() => {
-    // 1. Načtení originálního překladače
     if (!window.googleTranslateElementInit) {
       window.googleTranslateElementInit = () => {
         new window.google.translate.TranslateElement(
@@ -23,44 +22,35 @@ export default function GTranslateWidget() {
       script.async = true;
       document.body.appendChild(script);
     }
-
-    // 2. Hack: Vložení volby "VYPNOUT" přímo do Google roletky
-    const checkExist = setInterval(function() {
-      const selectElement = document.querySelector('.goog-te-combo');
-      if (selectElement) {
-        if (!selectElement.querySelector('option[value="default_disable"]')) {
-           const defaultOption = document.createElement('option');
-           defaultOption.value = 'default_disable';
-           defaultOption.text = '❌ VYPNOUT PŘEKLAD (CZ)';
-           defaultOption.style.fontWeight = 'bold';
-           defaultOption.style.color = '#ef4444';
-           
-           // Vložíme to hned jako první možnost pod "Vyberte jazyk"
-           if (selectElement.options.length > 0) {
-             selectElement.insertBefore(defaultOption, selectElement.options[1]);
-           } else {
-             selectElement.appendChild(defaultOption);
-           }
-           
-           // Odchycení kliknutí na naši volbu
-           selectElement.addEventListener('change', function() {
-              if (this.value === 'default_disable') {
-                  document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
-                  document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + window.location.hostname;
-                  window.location.reload();
-              }
-           });
-        }
-        clearInterval(checkExist);
-      }
-    }, 500);
-
   }, []);
 
+  const resetTranslation = () => {
+    // Totální vymazání Google Translate paměti a reset stránky do originálu
+    document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/';
+    document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + window.location.hostname;
+    window.location.reload();
+  };
+
   return (
-    <div style={{ display: 'inline-block' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      {/* Samotný Google překladač */}
       <div id="google_translate_element"></div>
       
+      {/* NOUZOVÁ BRZDA - NEPRŮSTŘELNÉ TLAČÍTKO */}
+      <button 
+        onClick={resetTranslation}
+        style={{
+          background: '#ef4444', color: '#fff', border: 'none', 
+          padding: '4px 8px', borderRadius: '4px', fontSize: '10px', 
+          fontWeight: '900', cursor: 'pointer', textTransform: 'uppercase',
+          boxShadow: '0 2px 5px rgba(239, 68, 68, 0.4)',
+          flexShrink: 0
+        }}
+        title="Vypnout překlad a vrátit originál (CZ)"
+      >
+        ❌ VYPNOUT
+      </button>
+
       <style dangerouslySetInnerHTML={{__html: `
         /* Skrytí otravné horní lišty a loga */
         .skiptranslate iframe { display: none !important; }
@@ -68,7 +58,7 @@ export default function GTranslateWidget() {
         .goog-logo-link { display: none !important; }
         .goog-te-gadget { color: transparent !important; font-size: 0 !important; margin: 0 !important; }
         
-        /* Tmavý vzhled roletky */
+        /* Tmavý vzhled pro nativní Google Select */
         .goog-te-combo { 
           background: #111 !important; 
           color: #fff !important; 
