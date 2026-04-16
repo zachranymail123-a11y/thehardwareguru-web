@@ -130,7 +130,7 @@ export default function Navbar() {
       justifyContent: 'space-between', color: '#fff', height: '90px'
     }}>
       
-      {/* 1. LOGO A PŘEKLADAČ (Přidáno striktně POD logo) */}
+      {/* 1. LOGO A TRANSLATOR */}
       <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
         <a href={isEn ? "/en" : "/"} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <ShieldCheck size={28} color="#a855f7" />
@@ -149,6 +149,7 @@ export default function Navbar() {
             HARDWARE GURU
           </span>
         </a>
+        {/* PŘEKLADAČ PŘÍMO POD NÁPISEM */}
         <div style={{ marginTop: '2px', paddingLeft: '38px', transform: 'scale(0.85)', transformOrigin: 'top left' }}>
           <GTranslateWidget />
         </div>
