@@ -151,7 +151,7 @@ export default async function RootLayout({ children }) {
 
       <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingBottom: '120px' }}>
         
-        {/* 🔥 MONETAG IN-PAGE PUSH: Přesně podle instrukcí vloženo HNED PO <head> (na začátek body) 🔥 */}
+        {/* 🔥 MONETAG IN-PAGE PUSH 🔥 */}
         <script dangerouslySetInnerHTML={{ __html: `(function(s){s.dataset.zone='10883065',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))` }}></script>
 
         <AdTracker />
@@ -207,6 +207,14 @@ export default async function RootLayout({ children }) {
         <MobileStickyButton />
         <ExitIntentPopup />
         <Analytics />
+
+        {/* 🔥 POUZE MOBILNÍ SKLIK ANCHOR (Zóna 408678), DESKTOP VYHOZEN 🔥 */}
+        <div className="global-sticky-anchor">
+            <div className="ad-mobile-anchor">
+                <SeznamAd zoneId={408678} width={320} height={100} />
+            </div>
+        </div>
+
       </body>
     </html>
   )
