@@ -1,5 +1,4 @@
 import React, { cache } from 'react';
-import Script from 'next/script';
 import { 
  ChevronLeft, 
  Monitor, 
@@ -12,15 +11,14 @@ import {
  BarChart3,
  Flame,
  Heart,
- ShoppingCart,
- AlertTriangle
+ ShoppingCart
 } from 'lucide-react';
 import SeznamAd from '../../../../../components/SeznamAd';
 import HeurekaButtons from '../../../../../components/HeurekaButtons';
 
 /**
- * GURU GPU PERFORMANCE ENGINE V2.8 (V10 HARD-LOCK SERVER FIX)
- * 🚀 CÍL: Integrace Hard-Lock trackeru a doplnění tlačítek kalkulaček beze změn architektury.
+ * GURU GPU PERFORMANCE ENGINE V2.7 (AFFILIATE BOMB UPDATE)
+ * 🚀 CÍL: Implementace modrých affiliate tlačítek s plným trackováním pod výsledkem FPS.
  */
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -141,6 +139,7 @@ export default async function GpuPerformancePage({ params }) {
     // 🔥 AFFILIATE LINK GENERATORS 🔥
     const searchName = cleanGpuName.trim();
     const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
+    const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
 
     return (
         <div className="guru-performance-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -182,7 +181,7 @@ export default async function GpuPerformancePage({ params }) {
                     </div>
                 </section>
 
-                {/* 🔥 GURU AFFILIATE BOMB S V10 HARD-LOCK 🔥 */}
+                {/* 🔥 GURU AFFILIATE BOMB (Modrá tlačítka) 🔥 */}
                 <div className="affiliate-cta-grid" style={{ marginBottom: '50px', borderLeft: `4px solid ${vendorColor}` }}>
                     <div className="affiliate-col">
                         <div className="affiliate-col-title" style={{ color: vendorColor }}>
@@ -193,12 +192,12 @@ export default async function GpuPerformancePage({ params }) {
                                 <ShoppingCart size={16} /> Smarty.cz
                             </a>
                             <a 
-                                href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gpu-perf`} 
-                                data-subid="v10-gpu-perf" 
-                                data-cat="gpu_performance" 
+                                href={getHeurekaLink(searchName)} 
+                                data-trixam-positionid="276026" 
+                                data-trixam-codetype="link" 
                                 target="_blank" 
                                 rel="nofollow sponsored" 
-                                className="guru-buy-winner-btn heureka-btn v10-hl-btn"
+                                className="guru-buy-winner-btn heureka-btn heureka-hn-link"
                             >
                                 <ShoppingCart size={16} /> Heureka.cz
                             </a>
@@ -216,16 +215,6 @@ export default async function GpuPerformancePage({ params }) {
                     <div className="res-card"><div className="res-label">ARCHITECTURE</div><div className="res-val">{gpu.architecture}</div></div>
                 </section>
 
-                {/* 🔥 GURU TOOLS - POVINNÁ TLAČÍTKA NA KALKULAČKY 🔥 */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '60px', marginBottom: '60px' }}>
-                    <a href={isEn ? "/en/fps-calculator" : "/fps-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(6, 182, 212, 0.1)', color: '#06b6d4', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
-                        <Gamepad2 size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'FPS CALCULATOR' : 'FPS KALKULAČKA'}</span>
-                    </a>
-                    <a href={isEn ? "/en/bottleneck-calculator" : "/bottleneck-kalkulacka"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', padding: '25px', borderRadius: '20px', textDecoration: 'none', fontWeight: '950', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
-                        <AlertTriangle size={28} /> <span style={{ fontSize: '16px' }}>{isEn ? 'BOTTLENECK TEST' : 'BOTTLENECK TEST'}</span>
-                    </a>
-                </div>
-
                 <section style={{ marginBottom: '60px' }}>
                   <h2 className="section-h2" style={{ borderLeftColor: vendorColor }}><Activity size={28} /> {isEn ? 'DEEP DIVE' : 'DETAILNÍ ANALÝZA'}</h2>
                   <div className="deep-links-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
@@ -241,7 +230,7 @@ export default async function GpuPerformancePage({ params }) {
                 </section>
 
                 <div className="footer-btns" style={{ marginTop: '80px', paddingTop: '50px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px' }}>
-                    <a href="https://www.hrkgame.com/en/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn"><Flame size={20} /> DEALS</a>
+                    <a href="https://www.hrkgame.com/#a_aid=TheHardwareGuru" target="_blank" rel="nofollow sponsored" className="guru-deals-btn"><Flame size={20} /> DEALS</a>
                     <a href="/support" className="guru-support-btn"><Heart size={20} /> SUPPORT</a>
                 </div>
             </main>
@@ -255,27 +244,6 @@ export default async function GpuPerformancePage({ params }) {
                 </div>
             </div>
 
-            {/* 🔥 V10 HARD-LOCK SCRIPT PRO SERVER COMPONENT 🔥 */}
-            <Script id="v10-hl-script" strategy="lazyOnload">
-                {`
-                    if (typeof window !== 'undefined') {
-                        document.addEventListener('click', function(e) {
-                            const btn = e.target.closest('.v10-hl-btn');
-                            if (btn) {
-                                e.preventDefault();
-                                const targetUrl = btn.href;
-                                const subId = btn.getAttribute('data-subid');
-                                const cat = btn.getAttribute('data-cat');
-                                if (navigator.sendBeacon) {
-                                    navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: cat, sub_id: subId, page: window.location.pathname }));
-                                }
-                                setTimeout(() => { window.location.href = targetUrl; }, 150);
-                            }
-                        });
-                    }
-                `}
-            </Script>
-
             <style dangerouslySetInnerHTML={{__html: `
                 .radar-badge { display: inline-flex; align-items: center; gap: 8px; color: #66fcf1; font-size: 11px; font-weight: 950; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px; padding: 6px 20px; border: 1px solid rgba(102,252,241,0.3); border-radius: 50px; background: rgba(102, 252, 241, 0.05); }
                 .guru-back-btn { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.6); color: #66fcf1; padding: 12px 20px; border-radius: 12px; text-decoration: none; font-weight: 900; font-size: 13px; text-transform: uppercase; border: 1px solid rgba(102, 252, 241, 0.3); transition: 0.3s; }
@@ -286,9 +254,9 @@ export default async function GpuPerformancePage({ params }) {
                 .res-label { font-size: 11px; font-weight: 950; text-transform: uppercase; color: #4b5563; margin-bottom: 10px; }
                 .res-val { font-size: 24px; font-weight: 950; }
 
-                .deep-link-card { display: flex; align-items: center; gap: 20px; background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 24px; border-bottom: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; position: relative; }
-                .deep-link-card h3 { font-size: 18px; font-weight: 950; margin: 15px 0 10px 0; text-transform: uppercase; }
-                .deep-link-card p { font-size: 13px; color: #9ca3af; line-height: 1.5; margin: 0; }
+                .deep-link-card { display: flex; align-items: center; gap: 20px; background: rgba(15, 17, 21, 0.95); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); text-decoration: none; color: #fff; transition: 0.3s; }
+                .deep-link-card h3 { font-size: 18px; font-weight: 950; margin: 0 0 5px 0; }
+                .deep-link-card p { font-size: 13px; color: #9ca3af; margin: 0; }
 
                 /* Affiliate Bomb Grid & Buttons */
                 .affiliate-cta-grid { display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 35px; background: rgba(0,0,0,0.4); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); width: 100%; box-sizing: border-box; }
