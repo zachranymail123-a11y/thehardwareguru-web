@@ -48,10 +48,15 @@ const getCleanSearchName = (name = '') => name.replace(/NVIDIA |AMD |GeForce |Ra
 const findGpuBySlug = async (gpuSlug) => {
  if (!supabaseUrl || !gpuSlug) return null;
  const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+ 
+ // 🔥 FIX: Před dotazem do DB musíme vždy očistit slug od jazykového prefixu "en-"
+ const cleanSlugForDb = gpuSlug.replace(/^en-/, '');
+
  try {
-     const res1 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${gpuSlug}&limit=1`, { headers, cache: 'force-cache' });
+     const res1 = await fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${cleanSlugForDb}&limit=1`, { headers, cache: 'force-cache' });
      if (res1.ok) { const data1 = await res1.json(); if (data1?.length) return data1[0]; }
-     const clean = gpuSlug.replace(/-/g, " ").trim();
+     
+     const clean = cleanSlugForDb.replace(/-/g, " ").trim();
      const chunks = clean.match(/\d+|[a-zA-Z]+/g);
      if (chunks && chunks.length > 0) {
          const searchPattern = `%${chunks.join('%')}%`;
@@ -66,6 +71,7 @@ const findGpuBySlug = async (gpuSlug) => {
 export async function generateMetadata(props) {
  const params = await props.params;
  const rawSlug = params?.slug || '';
+ // Detekce jazyka pro metadata
  const isEn = props.isEn === true || rawSlug.startsWith('en-');
  const cleanSlug = rawSlug.replace(/^en-/, '');
  const gpu = await findGpuBySlug(cleanSlug);
@@ -80,6 +86,7 @@ export async function generateMetadata(props) {
 export default async function GpuFpsHunterPage(props) {
  const params = await props.params;
  const rawSlug = params?.slug || '';
+ // 🔥 Detekce jazyka z URL nebo props
  const isEn = props.isEn === true || rawSlug.startsWith('en-');
  const cleanSlug = rawSlug.replace(/^en-/, '');
 
@@ -151,7 +158,7 @@ export default async function GpuFpsHunterPage(props) {
                                 <ShoppingCart size={16} /> Smarty.cz
                             </a>
                             <a 
-                                href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gpu-fps-top`} 
+                                href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gpu-fps-top`} 
                                 data-subid="v10-gpu-fps-top"
                                 data-cat="gpu_fps_hunter"
                                 target="_blank" 
@@ -172,7 +179,7 @@ export default async function GpuFpsHunterPage(props) {
            const verdict = getVerdict(fpsValue);
 
            return (
-             <a key={game.id} href={`/${isEn ? 'en/' : ''}gpu-fps/${safeSlug}/${game.id.replace(/_/g, '-')}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+             <a key={game.id} href={`/${isEn ? 'en/' : ''}gpu-fps/${rawSlug}/${game.id.replace(/_/g, '-')}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                <div className="game-fps-card" style={{ background: 'rgba(15, 17, 21, 0.95)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '24px', padding: '30px', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: '0.3s' }}>
                  <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: verdict.color }}></div>
                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>

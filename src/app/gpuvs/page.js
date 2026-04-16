@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Script from 'next/script';
 import { 
  Swords, Zap, RefreshCw, ChevronRight, ArrowLeftRight, ShieldCheck, Flame, AlertTriangle, Gamepad2, ShoppingCart
 } from 'lucide-react';
@@ -8,11 +9,11 @@ import SeznamAd from '../../components/SeznamAd';
 import HeurekaButtons from '../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU DUELS ENGINE - MASTER HUB V68.1 (BUILD FIX & AFFILIATE)
- * 🚀 CÍL: Fix syntaxe (camelCase v stylech) + integrace modrých affiliate tlačítek.
+ * GURU GPU DUELS ENGINE - MASTER HUB V68.2 (STRICT BACKUP FIX)
+ * 🚀 CÍL: Fix EN/Amazon a V10 Heureka Hard-Lock s '#'. Žádné ořezy.
  */
 
-export default function GpuVsHub() {
+export default function GpuVsHub(props) {
   const [isEn, setIsEn] = useState(false);
   const [gpus, setGpus] = useState([]);
   const [existingDuels, setExistingDuels] = useState([]);
@@ -23,9 +24,10 @@ export default function GpuVsHub() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setIsEn(window.location.pathname.startsWith('/en'));
+      // 🔥 FIX: Spolehlivější detekce angličtiny na klientu
+      setIsEn(window.location.pathname.startsWith('/en') || props.isEnProxy === true || props.isEn === true);
     }
-  }, []);
+  }, [props]);
 
   useEffect(() => {
     async function loadData() {
@@ -80,8 +82,10 @@ export default function GpuVsHub() {
     window.location.href = isEn ? `/en/gpuvs/en-${rawSlug}` : `/gpuvs/${rawSlug}`;
   };
 
+  // 🔥 FIX: Oprava odkazů (Amazon pro EN, Hard-Lock Heureka pro CZ)
   const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name)}`)}`;
   const getHeurekaLink = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name)}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=Text%20link`;
+  const getAmazonLink = (name) => `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=thehardware07-20&ascsubtag=v10-gpu-hub`;
 
   return (
     <div className="guru-hub-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', backgroundPosition: 'center', paddingTop: '140px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
@@ -114,7 +118,8 @@ export default function GpuVsHub() {
         .guru-buy-winner-btn { flex: 1; max-width: 300px; min-width: 200px; display: inline-flex; justify-content: center; align-items: center; gap: 12px; padding: 18px 24px; border-radius: 16px; text-decoration: none; font-weight: 950; font-size: 16px; text-transform: uppercase; transition: transform 0.3s ease, box-shadow 0.3s ease; letter-spacing: 1px; }
         .smarty-btn { background: linear-gradient(135deg, #facc15 0%, #eab308 100%); color: #000; border: 2px solid #fef08a; animation: pulse-smarty 2s infinite; }
         .heureka-btn { background: linear-gradient(135deg, #3b82f6 0%, #0078d4 100%); color: #fff; border: 2px solid #60a5fa; animation: pulse-heureka 2s infinite; animation-delay: 1s; }
-
+        .amazon-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #000; border: 2px solid #fbbf24; }
+        
         .seo-hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
         .hub-column { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
         .hub-col-header { display: flex; align-items: center; gap: 15px; font-weight: 950; text-transform: uppercase; margin-bottom: 25px; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
@@ -181,32 +186,45 @@ export default function GpuVsHub() {
                     <Zap fill="currentColor" size={24} /> {isEn ? "START DUEL" : "SPUSTIT SOUBOJ"}
                   </button>
 
+                  {/* 🔥 AFFILIATE BOMB - Amazon pro EN, Hard-Lock Heureka pro CZ 🔥 */}
                   <div className="affiliate-cta-grid" style={{ marginTop: '40px', borderLeft: '4px solid #66fcf1' }}>
                       <div className="affiliate-col">
                           <div className="affiliate-col-title" style={{ color: '#66fcf1' }}>
                               <ShoppingCart size={16} /> {isEn ? `BUY RTX 5070 Ti` : `KOUPIT RTX 5070 Ti`}
                           </div>
                           <div className="affiliate-btn-wrap">
-                              <a href={getSmartyLink("RTX 5070 Ti")} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
-                                  <ShoppingCart size={16} /> Smarty.cz
-                              </a>
-                              <a 
-                                  href={getHeurekaLink("RTX 5070 Ti")} 
-                                  data-trixam-positionid="276026" 
-                                  data-trixam-codetype="link" 
-                                  target="_blank" 
-                                  rel="nofollow sponsored" 
-                                  className="guru-buy-winner-btn heureka-btn heureka-hn-link"
-                              >
-                                  <ShoppingCart size={16} /> Heureka.cz
-                              </a>
+                              {isEn ? (
+                                  <a href={getAmazonLink("RTX 5070 Ti")} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn amazon-btn">
+                                      <ShoppingCart size={16} /> BUY ON AMAZON
+                                  </a>
+                              ) : (
+                                  <>
+                                      <a href={getSmartyLink("RTX 5070 Ti")} target="_blank" rel="nofollow sponsored" className="guru-buy-winner-btn smarty-btn">
+                                          <ShoppingCart size={16} /> Smarty.cz
+                                      </a>
+                                      <a 
+                                          href={getHeurekaLink("RTX 5070 Ti")} 
+                                          data-trixam-positionid="276026" 
+                                          data-trixam-codetype="link" 
+                                          target="_blank" 
+                                          rel="nofollow sponsored" 
+                                          className="guru-buy-winner-btn heureka-btn heureka-hn-link v10-hl-btn"
+                                      >
+                                          <ShoppingCart size={16} /> Heureka.cz
+                                      </a>
+                                  </>
+                              )}
                           </div>
                       </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
-                      <HeurekaButtons isEn={isEn} manualSearch="RTX 5070 Ti" positionId="276026" />
-                  </div>
+                  {!isEn && (
+                      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
+                          <div className="v10-hl-container" data-subid="v10-gpu-hub-widget" data-cat="gpu_hub">
+                              <HeurekaButtons isEn={false} manualSearch="RTX 5070 Ti" positionId="276026" />
+                          </div>
+                      </div>
+                  )}
                 </section>
 
                 <section className="massive-seo-hub" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '30px' }}>
@@ -257,6 +275,27 @@ export default function GpuVsHub() {
               <SeznamAd zoneId={408651} width={300} height={100} />
           </div>
       </div>
+
+      {/* 🔥 V10 HARD-LOCK SCRIPT PRO KLIENTSKOU KOMPONENTU 🔥 */}
+      <Script id="v10-hl-script" strategy="lazyOnload">
+          {`
+              if (typeof window !== 'undefined') {
+                  document.addEventListener('click', function(e) {
+                      const btn = e.target.closest('.v10-hl-btn, .v10-hl-container a, .v10-hl-container button');
+                      if (btn) {
+                          const container = e.target.closest('.v10-hl-container');
+                          const subId = btn.getAttribute('data-subid') || (container ? container.getAttribute('data-subid') : 'unknown');
+                          const cat = btn.getAttribute('data-cat') || (container ? container.getAttribute('data-cat') : 'gpu_hub');
+                          const targetUrl = btn.href || (btn.tagName === 'A' ? btn.href : null);
+                          
+                          if (navigator.sendBeacon && targetUrl) {
+                              navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: cat, sub_id: subId, page: window.location.pathname }));
+                          }
+                      }
+                  });
+              }
+          `}
+      </Script>
     </div>
   );
 }

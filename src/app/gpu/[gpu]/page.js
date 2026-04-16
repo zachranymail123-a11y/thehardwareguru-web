@@ -9,8 +9,8 @@ import SeznamAd from '../../../components/SeznamAd';
 import HeurekaButtons from '../../../components/HeurekaButtons'; 
 
 /**
- * GURU GPU ENGINE - DETAIL GRAFIKY V3.6 (V10 HARD-LOCK SERVER FIX)
- * 🚀 CÍL: Spolehlivá detekce angličtiny, Amazon tlačítka, Hard-Lock tracker a kalkulačky.
+ * GURU GPU ENGINE - DETAIL GRAFIKY V3.8 (NEXT.JS 15 AWAIT HEADERS FIX)
+ * 🚀 CÍL: Spolehlivá detekce angličtiny, Amazon tlačítka a fix pádu.
  */
 
 export const runtime = "nodejs";
@@ -77,10 +77,10 @@ export async function generateMetadata(props) {
   const params = await props.params;
   const rawSlug = params?.slug || params?.gpu || '';
   
-  // 🔥 AGRESIVNÍ DETEKCE EN: headers + path
-  const headersList = headers();
-  const fullUrl = headersList.get('x-url') || headersList.get('referer') || "";
-  const isEn = fullUrl.includes('/en/') || rawSlug.startsWith('en-') || props.isEn === true;
+  // 🔥 FIX: AWAIT HEADERS pro Next.js 15
+  const headersList = await headers();
+  const fullUrl = headersList.get('x-url') || headersList.get('referer') || headersList.get('x-invoke-path') || "";
+  const isEn = props.isEnProxy === true || props.isEn === true || rawSlug.startsWith('en-') || fullUrl.includes('/en/');
 
   const gpuSlug = rawSlug.replace(/^en-/, '');
   const gpu = await findGpuBySlug(gpuSlug);
@@ -99,10 +99,10 @@ export default async function GpuDetailPage(props) {
   const params = await props.params;
   const rawSlug = params?.slug || params?.gpu || '';
   
-  // 🔥 AGRESIVNÍ DETEKCE EN: headers + path
-  const headersList = headers();
-  const fullUrl = headersList.get('x-url') || headersList.get('referer') || "";
-  const isEn = fullUrl.includes('/en/') || rawSlug.startsWith('en-') || props.isEn === true;
+  // 🔥 FIX: AWAIT HEADERS pro Next.js 15
+  const headersList = await headers();
+  const fullUrl = headersList.get('x-url') || headersList.get('referer') || headersList.get('x-invoke-path') || "";
+  const isEn = props.isEnProxy === true || props.isEn === true || rawSlug.startsWith('en-') || fullUrl.includes('/en/');
 
   const gpuSlug = rawSlug.replace(/^en-/, '');
   
@@ -115,7 +115,8 @@ export default async function GpuDetailPage(props) {
   const { similarGpus, recommendedCpus } = await getInternalLinksData(gpu.id);
 
   const searchName = getCleanSearchName(gpu.name);
-  const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20`;
+  // 🔥 Amazon link pro EN a V10 Heureka link s '#'
+  const amazonLink = `https://www.amazon.com/s?k=${encodeURIComponent(searchName)}&tag=thehardware07-20&ascsubtag=v10-gpu-detail`;
   const smartyLink = `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(searchName)}`)}`;
 
   const productSchema = {
@@ -173,7 +174,7 @@ export default async function GpuDetailPage(props) {
                                 <ShoppingCart size={16} /> Smarty.cz
                             </a>
                             <a 
-                                href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena&utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gpu-detail`} 
+                                href={`https://www.heureka.cz/?haff=276049&h%5Bfraze%5D=${encodeURIComponent(searchName)}+cena#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=v10-gpu-detail`} 
                                 data-subid="v10-gpu-detail" 
                                 data-cat="gpu_profile" 
                                 target="_blank" 
@@ -291,7 +292,6 @@ export default async function GpuDetailPage(props) {
                   document.addEventListener('click', function(e) {
                       const btn = e.target.closest('.v10-hl-btn, .v10-hl-container a, .v10-hl-container button');
                       if (btn) {
-                          e.preventDefault();
                           const container = e.target.closest('.v10-hl-container');
                           const subId = btn.getAttribute('data-subid') || (container ? container.getAttribute('data-subid') : 'unknown');
                           const cat = btn.getAttribute('data-cat') || (container ? container.getAttribute('data-cat') : 'gpu_profile');
@@ -299,9 +299,6 @@ export default async function GpuDetailPage(props) {
                           
                           if (navigator.sendBeacon && targetUrl) {
                               navigator.sendBeacon('${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/affiliate_clicks_log?apikey=${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}', JSON.stringify({ platform: 'heureka', category: cat, sub_id: subId, page: window.location.pathname }));
-                          }
-                          if (targetUrl) {
-                              setTimeout(() => { window.location.href = targetUrl; }, 150);
                           }
                       }
                   });
