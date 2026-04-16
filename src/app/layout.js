@@ -14,6 +14,7 @@ import AdTracker from '../components/AdTracker';
 import SeznamAd from '../components/SeznamAd';
 import MobileStickyButton from '../components/MobileStickyButton';
 import ExitIntentPopup from '../components/ExitIntentPopup';
+import GameSearchWidget from '../components/GameSearchWidget'; // 🔥 PŘIDANÝ IMPORT
 import { Cpu, ShieldCheck, Layers, Gamepad2, Lightbulb, Bookmark, ShoppingCart, Rocket } from 'lucide-react';
 
 export const metadata = {
@@ -162,7 +163,13 @@ export default async function RootLayout({ children }) {
 
         <main style={{ paddingTop: '90px', flex: 1, position: 'relative', width: '100%', overflowX: 'hidden' }}>
           {children}
-          <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
+
+          {/* 🔥 GURU SEARCH WIDGET JE TEĎ ZDE: 100% RESPONZIVNÍ PRO MOBIL I 1080p 🔥 */}
+          <div style={{ maxWidth: '1100px', margin: '40px auto 0', padding: '0 20px' }}>
+             <GameSearchWidget isEn={isEn} />
+          </div>
+
+          <div style={{ maxWidth: '1100px', margin: '20px auto 0', padding: '0 20px' }}>
              <ShareWidget isEn={isEn} />
           </div>
         </main>
