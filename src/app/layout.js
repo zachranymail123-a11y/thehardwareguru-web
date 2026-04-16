@@ -137,26 +137,12 @@ export default async function RootLayout({ children }) {
     <html lang={locale}>
       <head>
         <Script src="https://ssp.seznam.cz/static/js/ssp.js" strategy="afterInteractive" />
-        
         <Script 
           async 
           type="text/javascript" 
           src="//serve.affiliate.heureka.cz/js/trixam.min.js" 
           strategy="afterInteractive" 
         />
-
-        {/* 🔥 FIX MONETAG: Naprosto přímé vložení skriptu (nejsilnější způsob) 🔥 */}
-        <script 
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function(s){
-                s.dataset.zone='10883065';
-                s.src='https://nap5k.com/tag.min.js';
-              })([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')));
-            `
-          }}
-        />
-
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-9W5FBC9P68" strategy="afterInteractive" />
         <Script id="google-analytics" strategy="afterInteractive">
           {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-9W5FBC9P68');`}
@@ -164,6 +150,10 @@ export default async function RootLayout({ children }) {
       </head>
 
       <body style={{ margin: 0, padding: 0, backgroundColor: '#0a0b0d', minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingBottom: '120px' }}>
+        
+        {/* 🔥 MONETAG IN-PAGE PUSH: Přesně podle instrukcí vloženo HNED PO <head> (na začátek body) 🔥 */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(s){s.dataset.zone='10883065',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))` }}></script>
+
         <AdTracker />
         <div id="guru-env-bridge" style={{ display: 'none' }} data-url={envVars.NEXT_PUBLIC_SUPABASE_URL} data-key={envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY} />
         <Navbar lang={locale} />
