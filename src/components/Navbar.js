@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { Search, Heart, Loader2, X, ShieldCheck, Share2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import GTranslateWidget from './GTranslateWidget'; // 🔥 IMPORT PŘEKLADAČE 🔥
 
 // GURU ENGINE: Inicializace Supabase
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
@@ -129,24 +130,30 @@ export default function Navbar() {
       justifyContent: 'space-between', color: '#fff', height: '90px'
     }}>
       
-      {/* 1. LOGO */}
-      <a href={isEn ? "/en" : "/"} style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <ShieldCheck size={28} color="#a855f7" />
-        <span style={{ 
-          background: 'linear-gradient(90deg, #66fcf1 0%, #a855f7 100%)', 
-          WebkitBackgroundClip: 'text', 
-          WebkitTextFillColor: 'transparent', 
-          fontFamily: 'sans-serif', 
-          fontSize: '26px', 
-          fontWeight: '950', 
-          letterSpacing: '1px', 
-          textTransform: 'uppercase',
-          fontStyle: 'italic',
-          filter: 'drop-shadow(0 0 10px rgba(168,85,247,0.3))'
-        }}>
-          HARDWARE GURU
-        </span>
-      </a>
+      {/* 1. LOGO A PŘEKLADAČ */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flexShrink: 0, gap: '4px' }}>
+        <a href={isEn ? "/en" : "/"} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <ShieldCheck size={28} color="#a855f7" />
+          <span style={{ 
+            background: 'linear-gradient(90deg, #66fcf1 0%, #a855f7 100%)', 
+            WebkitBackgroundClip: 'text', 
+            WebkitTextFillColor: 'transparent', 
+            fontFamily: 'sans-serif', 
+            fontSize: '26px', 
+            fontWeight: '950', 
+            letterSpacing: '1px', 
+            textTransform: 'uppercase',
+            fontStyle: 'italic',
+            filter: 'drop-shadow(0 0 10px rgba(168,85,247,0.3))'
+          }}>
+            HARDWARE GURU
+          </span>
+        </a>
+        {/* 🔥 GURU TRANSLATE WIDGET PŘIDÁN SEM 🔥 */}
+        <div style={{ transform: 'scale(0.8)', transformOrigin: 'top left', marginTop: '-2px' }}>
+             <GTranslateWidget />
+        </div>
+      </div>
 
       {/* 2. HLEDÁNÍ */}
       <div style={{ flex: 1, display: 'flex', justifyContent: 'center', margin: '0 30px', position: 'relative' }} ref={suggestionRef}>
