@@ -1,222 +1,176 @@
-'use client';
-
-import React, { useEffect, useState } from 'react';
-import { notFound, usePathname } from 'next/navigation';
-import { 
- Zap, Cpu, Monitor, Gauge, ShoppingCart, Gamepad2, Activity
-} from 'lucide-react';
-import SeznamAd from '../../../components/SeznamAd';
-import BottleneckFatContent from '../../../components/BottleneckFatContent'; 
-import { createClient } from '@supabase/supabase-js';
-import GuruInContentOffer from '../../../components/GuruInContentOffer';
+import React from 'react';
+import { notFound } from 'next/navigation';
+import { createClient } from '@/utils/supabase/server';
 import Script from 'next/script';
+import Link from 'next/script';
+import { 
+  Cpu, Zap, ShoppingCart, Gauge, Monitor, 
+  Activity, BookOpen, Calculator, HardDrive, ArrowRight 
+} from 'lucide-react';
+import HeurekaButtons from '@/components/HeurekaButtons';
+import SeznamAd from '@/components/SeznamAd';
+import BottleneckFatContent from '@/components/BottleneckFatContent';
+import GuruInContentOffer from '@/components/GuruInContentOffer';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+export async function generateMetadata({ params }) {
+  const { slug } = params;
+  const supabase = createClient();
+  const hwParts = slug.split('-at-')[0].split('-in-')[0].split('-with-');
+  
+  const { data: cpu } = await supabase.from('cpus').select('name').eq('slug', hwParts[0]).single();
+  const { data: gpu } = await supabase.from('gpus').select('name').eq('slug', hwParts[1]).single();
 
-export default function BottleneckPage({ params }) {
-  const p = params;
-  const pathname = usePathname() || '';
-  const [cpu, setCpu] = useState(null);
-  const [gpu, setGpu] = useState(null);
-  const [upgradeCpu, setUpgradeCpu] = useState(null);
-  const [upgradeGpu, setUpgradeGpu] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const titleName = cpu && gpu ? `${cpu.name} + ${gpu.name}` : slug.replace(/-/g, ' ').toUpperCase();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const cleanSlug = String(p.slug || '');
-      const hwParts = cleanSlug.split('-at-')[0].split('-in-')[0].split('-with-');
-      
-      if (hwParts.length !== 2) { setLoading(false); return; }
+  return {
+    title: `BOTTLENECK TEST: ${titleName} | Hardware Guru`,
+    description: `Detailní analýza bottlenecku a herního výkonu pro ${titleName}. Zjisti, jak tato kombinace funguje v roce 2026.`,
+    alternates: { canonical: `https://thehardwareguru.cz/bottleneck/${slug}` }
+  };
+}
 
-      const headers = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
-      
-      const [cpuRes, gpuRes] = await Promise.all([
-        fetch(`${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=eq.${hwParts[0]}`, { headers }).then(r => r.json()),
-        fetch(`${supabaseUrl}/rest/v1/gpus?select=*,game_fps!gpu_id(*)&slug=eq.${hwParts[1]}`, { headers }).then(r => r.json())
-      ]);
+export default async function BottleneckPage({ params }) {
+  const { slug } = params;
+  const supabase = createClient();
+  const hwParts = slug.split('-at-')[0].split('-in-')[0].split('-with-');
 
-      const cpuData = cpuRes?.[0];
-      const gpuData = gpuRes?.[0];
+  // FETCH DATA Z DB - ŽÁDNÝ FALLBACK, PŘÍMO TVÁ DATA
+  const [cpuRes, gpuRes] = await Promise.all([
+    supabase.from('cpus').select('*, cpu_game_fps(*)').eq('slug', hwParts[0]).single(),
+    supabase.from('gpus').select('*, game_fps(*)').eq('slug', hwParts[1]).single()
+  ]);
 
-      if (cpuData && gpuData) {
-        setCpu(cpuData);
-        setGpu(gpuData);
+  const cpu = cpuRes.data;
+  const gpu = gpuRes.data;
 
-        const [uCpuRes, uGpuRes] = await Promise.all([
-          fetch(`${supabaseUrl}/rest/v1/cpus?select=name,slug,performance_index&performance_index=gt.${(Number(cpuData.performance_index) || 100) * 1.2}&order=performance_index.asc&limit=1`, { headers }).then(r => r.json()),
-          fetch(`${supabaseUrl}/rest/v1/gpus?select=name,slug,performance_index&performance_index=gt.${(Number(gpuData.performance_index) || 100) * 1.2}&order=performance_index.asc&limit=1`, { headers }).then(r => r.json())
-        ]);
-        
-        setUpgradeCpu(uCpuRes?.[0]);
-        setUpgradeGpu(uGpuRes?.[0]);
-      }
-      setLoading(false);
-    };
-    fetchData();
-  }, [p.slug]);
-
-  const cleanSlug = String(p.slug || '');
-  const resParts = cleanSlug.split('-at-');
-  const resolution = resParts[1] === '4k' ? '2160p' : (resParts[1] || '1440p'); 
-  const gameParts = resParts[0].split('-in-');
-
-  if (loading) return null;
   if (!cpu || !gpu) return notFound();
 
+  const resParts = slug.split('-at-');
+  const resolution = resParts[1] === '4k' ? '2160p' : (resParts[1] || '1440p');
+  const gameParts = resParts[0].split('-in-');
+
+  // VÝPOČET BOTTLENECKU PODLE TVÉ LOGIKY
   const bottleneckPercent = Math.max(0, Math.min(Math.round(((Math.max(gpu.performance_index, (cpu.performance_index * 2.9)) / Math.min(gpu.performance_index, (cpu.performance_index * 2.9))) - 1) * 45), 100));
-  
-  const targetGpuName = upgradeGpu?.name || "NVIDIA RTX 5090";
-  const targetCpuName = upgradeCpu?.name || "AMD Ryzen 9 9950X3D2";
-
-  const isGpuBottleneck = gpu.performance_index < cpu.performance_index * 2.5;
-
-  // 🔥 ULTIMÁTNÍ UPGRADE LOGIKA PRO 9950X3D2 🔥
-  let ultimateProduct = isGpuBottleneck ? "NVIDIA RTX 5080" : "AMD Ryzen 7 9800X3D";
-  let ultimateCategory = isGpuBottleneck ? "gpu" : "cpu";
-
-  if (ultimateProduct === targetGpuName) ultimateProduct = "NVIDIA RTX 5090";
-  // Pokud je návrh stejný jako stávající upgrade nebo hledáme absolutní top, dáme X3D2
-  if (ultimateProduct === targetCpuName || !isGpuBottleneck) ultimateProduct = "AMD Ryzen 9 9950X3D2";
-
   const subTag = `v12-bn-slug-${bottleneckPercent}`;
 
-  const getCleanHeurekaLink = (name, type) => {
-      let query = String(name || '').replace(/NVIDIA |AMD |Intel |Ryzen |Core /gi, '').trim();
-      if (type === 'cpu') query += " procesor";
-      if (type === 'gpu') query += " grafická karta";
-      const safeQuery = query.replace(/\s+/g, '+');
-      return `https://www.heureka.cz/?h%5Bfraze%5D=${safeQuery}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subTag}`;
-  };
-
-  const handleSilentLog = (cat) => {
-      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-          const payload = { platform: 'heureka', category: `bn_slug_${cat}`, sub_id: subTag, page: pathname };
-          navigator.sendBeacon(`${supabaseUrl}/rest/v1/affiliate_clicks_log?apikey=${supabaseKey}`, new Blob([JSON.stringify(payload)], { type: 'text/plain' }));
-      }
-  };
-
-  const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name.replace(/NVIDIA |AMD |Intel /gi, '').trim())}`)}`;
+  // ULTIMATE UPGRADE CESTA
+  const isGpuBottleneck = gpu.performance_index < cpu.performance_index * 2.5;
+  let ultimateProduct = isGpuBottleneck ? "NVIDIA RTX 5090" : "AMD Ryzen 9 9950X3D2";
+  let ultimateCategory = isGpuBottleneck ? "gpu" : "cpu";
 
   // GOOGLE GOLDEN RICH - JSON-LD
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "TechArticle",
     "headline": `Bottleneck Test: ${cpu.name} + ${gpu.name}`,
-    "description": `Analýza úzkého hrdla pro sestavu s ${cpu.name} a ${gpu.name}. Výpočet bottlenecku v rozlišení ${resolution}.`,
-    "author": { "@type": "Person", "name": "Hardware Guru" },
+    "image": "https://thehardwareguru.cz/og-bottleneck.png",
+    "author": { "@type": "Person", "name": "The Hardware Guru" },
     "datePublished": "2026-04-22"
   };
 
   return (
-    <div className="guru-bottleneck-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
+    <div className="guru-site-wrapper" style={{ minHeight: '100vh', backgroundColor: '#050505', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '100px', color: '#fff' }}>
       <Script type="application/ld+json" id="json-ld" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      
-      <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
-        <SeznamAd zoneId={408654} width={970} height={210} />
-        
-        <header style={{ textAlign: 'center', margin: '50px 0' }}>
-          <div style={{ color: '#66fcf1', border: '1px solid rgba(102,252,241,0.3)', padding: '6px 20px', borderRadius: '50px', fontSize: '11px', fontWeight: 950, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-            <Gauge size={16} /> <span>GURU BOTTLENECK ANALYSIS V12</span>
-          </div>
-          <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 3rem)', fontWeight: 950, textTransform: 'uppercase', marginTop: '20px' }}>
-            {cpu.name} <span style={{ opacity: 0.2 }}>+</span> {gpu.name}
-          </h1>
-        </header>
+      <Script src="//serve.affiliate.heureka.cz/js/trixam.min.js" strategy="afterInteractive" />
 
-        <div style={{ margin: '40px 0' }}>
+      <main style={{ maxWidth: '1600px', margin: '0 auto', padding: '0 20px' }}>
+        
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '30px' }}>
+          <SeznamAd zoneId={408654} width={970} height={210} />
+        </div>
+
+        <div className="guru-grid-layout" style={{ display: 'grid', gridTemplateColumns: '300px 1fr 340px', gap: '30px' }}>
+          
+          {/* LEVÝ SIDEBAR - V.I.P. SESTAVA */}
+          <aside className="guru-left-sidebar">
+            <div className="vip-sestava-card shadow-gold" style={{ background: 'rgba(15, 17, 21, 0.9)', border: '1px solid #eab308', borderRadius: '12px', padding: '15px' }}>
+              <div className="vip-header" style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <ShoppingCart size={18} style={{ color: '#eab308' }} />
+                <div>
+                  <small style={{ color: '#eab308', fontWeight: '900', fontSize: '10px' }}>ULTIMÁTNÍ HERNÍ DĚLO</small>
+                  <h3 style={{ fontSize: '14px', fontWeight: '900' }}>V.I.P. GURU SESTAVA</h3>
+                </div>
+              </div>
+              <div className="vip-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className="vip-item"><span>{cpu.name}</span> <button className="buy-btn">KOUPIT</button></div>
+                <div className="vip-item"><span>RTX 5090 Founders</span> <button className="buy-btn">KOUPIT</button></div>
+                <div className="vip-item"><span>GIGABYTE X870E AORUS</span> <button className="buy-btn">KOUPIT</button></div>
+                <div className="vip-item"><span>64GB DDR5 6400MT/s</span> <button className="buy-btn">KOUPIT</button></div>
+              </div>
+            </div>
+            <div style={{ marginTop: '20px' }}>
+              <a href="https://smarty.cz" target="_blank" rel="nofollow">
+                <img src="/smarty-banner.png" alt="Smarty" style={{ width: '100%', borderRadius: '12px' }} />
+              </a>
+            </div>
+          </aside>
+
+          {/* STŘED - KALKULAČKA */}
+          <section className="guru-center-content">
+            <header style={{ textAlign: 'center', marginBottom: '40px' }}>
+              <div style={{ color: '#66fcf1', border: '1px solid rgba(102,252,241,0.3)', padding: '6px 20px', borderRadius: '50px', fontSize: '11px', fontWeight: 950, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                <Gauge size={16} /> <span>GURU BOTTLENECK ANALYSIS V12</span>
+              </div>
+              <h1 style={{ fontSize: '3.5rem', fontWeight: 950, textTransform: 'uppercase', marginTop: '15px' }}>
+                {cpu.name} <span style={{ color: '#a855f7' }}>+</span> {gpu.name}
+              </h1>
+            </header>
+
             <GuruInContentOffer 
                 productName={ultimateProduct} 
                 category={ultimateCategory} 
                 reason="upgrade"
-                subId={`bn-slug-smart-${bottleneckPercent}`}
+                subId={subTag}
             />
-        </div>
 
-        <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 900, marginBottom: '20px', color: '#facc15' }}>
-          🔥 DETAILNÍ MOŽNOSTI UPGRADU NA MÍRU TVÉ SESTAVĚ
-        </div>
+            <div style={{ marginTop: '40px' }}>
+              <BottleneckFatContent 
+                  cpuName={cpu.name} 
+                  gpuName={gpu.name} 
+                  gameName={gameParts[1]?.replace(/-/g, ' ').toUpperCase() || 'MODERNÍCH HRÁCH'} 
+                  resolution={resolution === '2160p' ? '4K' : resolution} 
+                  bottleneckPercent={bottleneckPercent} 
+                  bottleneckType={bottleneckPercent < 15 ? 'Balanced' : (gpu.performance_index > cpu.performance_index * 2.9 ? 'CPU' : 'GPU')} 
+                  isEn={false} 
+              />
+            </div>
+          </section>
 
-        <section className="affiliate-cta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', padding: '35px', background: 'rgba(0,0,0,0.5)', borderRadius: '28px', border: '1px solid rgba(168,85,247,0.2)' }}>
-            
-            <div className="affiliate-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
-                <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase' }}>
-                    <Monitor size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> UPGRADE GRAFIKY
-                </div>
-                <div style={{ opacity: 0.6, fontSize: '12px' }}>Guru cena • Skladem</div>
-                <div style={{ background: 'rgba(34,197,94,0.1)', borderRadius: '12px', padding: '12px', fontWeight: 900, width: '100%', textAlign: 'center', border: '1px solid rgba(34,197,94,0.2)', color: '#22c55e' }}>
-                    🚀 {isGpuBottleneck ? `Odstraní ${bottleneckPercent}% ztrátu` : 'Zvýší grafický výkon'}
-                </div>
-                <div style={{ fontWeight: 900, color: '#a855f7' }}>🔥 {targetGpuName}</div>
-                
-                <a 
-                  href={getCleanHeurekaLink(targetGpuName, 'gpu')} 
-                  onClick={() => handleSilentLog('gpu')}
-                  target="_blank" 
-                  rel="sponsored noopener" 
-                  className="heureka-hn-link"
-                  data-trixam-positionid="276026"
-                  style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
-                >
-                    <ShoppingCart size={18} /> ZJISTIT NEJNIŽŠÍ CENU
-                </a>
-                <a href={getSmartyLink(targetGpuName)} target="_blank" rel="nofollow sponsored" style={{ marginTop: '5px', fontSize: '12px', color: '#9ca3af', textDecoration: 'underline' }}>Koupit na Smarty.cz</a>
+          {/* PRAVÝ SIDEBAR */}
+          <aside className="guru-right-sidebar">
+            <div className="heureka-widget shadow-neon" style={{ background: '#fff', padding: '20px', borderRadius: '12px', color: '#000' }}>
+              <h4 style={{ fontSize: '12px', fontWeight: '900', color: '#666', marginBottom: '15px' }}>VÝHODNÝ NÁKUP</h4>
+              <a 
+                href={`https://www.heureka.cz/?h%5Bfraze%5D=${cpu.name.replace(/\s+/g, '+')}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subTag}`}
+                className="heureka-hn-link"
+                data-trixam-positionid="276034"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'block', background: '#f7e000', padding: '12px', borderRadius: '8px', textDecoration: 'none', color: '#000', fontWeight: '900', textAlign: 'center', fontSize: '13px', marginBottom: '10px' }}
+              >
+                👉 {cpu.name} nejnižší cena
+              </a>
+              <HeurekaButtons />
             </div>
 
-            <div className="affiliate-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
-                <div style={{ color: '#a855f7', fontWeight: 950, fontSize: '13px', textTransform: 'uppercase' }}>
-                    <Zap size={16} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> UPGRADE PROCESORU
-                </div>
-                <div style={{ opacity: 0.6, fontSize: '12px' }}>Guru cena • Skladem</div>
-                <div style={{ background: 'rgba(34,197,94,0.1)', borderRadius: '12px', padding: '12px', fontWeight: 900, width: '100%', textAlign: 'center', border: '1px solid rgba(34,197,94,0.2)', color: '#22c55e' }}>
-                    🚀 +35% plynulejší hraní
-                </div>
-                <div style={{ fontWeight: 900, color: '#a855f7' }}>🔥 {targetCpuName}</div>
-                
-                <a 
-                  href={getCleanHeurekaLink(targetCpuName, 'cpu')} 
-                  onClick={() => handleSilentLog('cpu')}
-                  target="_blank" 
-                  rel="sponsored noopener" 
-                  className="heureka-hn-link"
-                  data-trixam-positionid="276027"
-                  style={{ background: '#3b82f6', color: '#fff', padding: '16px', borderRadius: '12px', textDecoration: 'none', fontWeight: 950, width: '100%', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
-                >
-                    <ShoppingCart size={18} /> ZJISTIT NEJNIŽŠÍ CENU
-                </a>
-                <a href={getSmartyLink(targetCpuName)} target="_blank" rel="nofollow sponsored" style={{ marginTop: '5px', fontSize: '12px', color: '#9ca3af', textDecoration: 'underline' }}>Koupit na Smarty.cz</a>
+            <div className="ecosystem-widget shadow-neon" style={{ marginTop: '20px', background: 'rgba(15, 17, 21, 0.9)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
+              <h4 style={{ color: '#a855f7', fontSize: '12px', fontWeight: '950', marginBottom: '15px' }}>EKOSYSTÉM</h4>
+              <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <Link href="/ram-kalkulacka" style={{ color: '#fff', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '600' }}><Activity size={16} /> RAM Simulátor</Link>
+                <Link href="/fps-kalkulacka" style={{ color: '#fff', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '600' }}><Zap size={16} /> FPS Kalkulačka</Link>
+                <Link href="/slovnik" style={{ color: '#fff', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '600' }}><BookOpen size={16} /> Guru Slovník</Link>
+              </nav>
             </div>
-        </section>
-
-        <div style={{ marginTop: '40px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-            <a href="/fps-kalkulacka" style={{ background: '#0a0b0d', border: '1px solid #06b6d4', padding: '20px', borderRadius: '15px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '15px' }}>
-                <Gamepad2 size={24} color="#06b6d4" />
-                <span style={{ fontSize: '16px', fontWeight: '950', color: '#fff' }}>FPS KALKULAČKA</span>
-            </a>
-            <a href="/bottleneck-kalkulacka" style={{ background: '#0a0b0d', border: '1px solid #a855f7', padding: '20px', borderRadius: '15px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '15px' }}>
-                <Activity size={24} color="#a855f7" />
-                <span style={{ fontSize: '16px', fontWeight: '950', color: '#fff' }}>BOTTLENECK TEST</span>
-            </a>
+          </aside>
         </div>
 
-        <div style={{ marginTop: '60px' }}>
-            <BottleneckFatContent 
-                cpuName={cpu.name} 
-                gpuName={gpu.name} 
-                gameName={gameParts[1]?.replace(/-/g, ' ').toUpperCase() || 'MODERNÍCH HRÁCH'} 
-                resolution={resolution === '2160p' ? '4K' : resolution} 
-                bottleneckPercent={bottleneckPercent} 
-                bottleneckType={bottleneckPercent < 15 ? 'Balanced' : (gpu.performance_index > cpu.performance_index * 2.9 ? 'CPU' : 'GPU')} 
-                isEn={false} 
-            />
-        </div>
+        <style dangerouslySetInnerHTML={{__html: `
+          .vip-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 6px; }
+          .buy-btn { background: rgba(102, 252, 241, 0.1); color: #66fcf1; border: 1px solid #66fcf1; font-size: 9px; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: 900; }
+          .shadow-gold { box-shadow: 0 0 20px rgba(234, 179, 8, 0.2); }
+          .shadow-neon { box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        `}} />
       </main>
-
-      <div className="sticky-bottom-anchor" style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: 'rgba(10,11,13,0.98)', borderTop: '1px solid rgba(255,255,255,0.1)', zIndex: 9999, padding: '10px 0', display: 'flex', justifyContent: 'center' }}>
-          <SeznamAd zoneId={408654} width={970} height={90} />
-      </div>
     </div>
   );
 }
