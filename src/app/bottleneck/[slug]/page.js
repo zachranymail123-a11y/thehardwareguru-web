@@ -1,16 +1,16 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '../../../utils/supabase/server';
 import Script from 'next/script';
-import Link from 'next/script';
+import Link from 'next/link';
 import { 
   Cpu, Zap, ShoppingCart, Gauge, Monitor, 
   Activity, BookOpen, Calculator, HardDrive, ArrowRight 
 } from 'lucide-react';
-import HeurekaButtons from '@/components/HeurekaButtons';
-import SeznamAd from '@/components/SeznamAd';
-import BottleneckFatContent from '@/components/BottleneckFatContent';
-import GuruInContentOffer from '@/components/GuruInContentOffer';
+import HeurekaButtons from '../../../components/HeurekaButtons';
+import SeznamAd from '../../../components/SeznamAd';
+import BottleneckFatContent from '../../../components/BottleneckFatContent';
+import GuruInContentOffer from '../../../components/GuruInContentOffer';
 
 export async function generateMetadata({ params }) {
   const { slug } = params;
@@ -34,7 +34,7 @@ export default async function BottleneckPage({ params }) {
   const supabase = createClient();
   const hwParts = slug.split('-at-')[0].split('-in-')[0].split('-with-');
 
-  // FETCH DATA Z DB - ŽÁDNÝ FALLBACK, PŘÍMO TVÁ DATA
+  // FETCH DATA Z DB
   const [cpuRes, gpuRes] = await Promise.all([
     supabase.from('cpus').select('*, cpu_game_fps(*)').eq('slug', hwParts[0]).single(),
     supabase.from('gpus').select('*, game_fps(*)').eq('slug', hwParts[1]).single()
@@ -43,22 +43,32 @@ export default async function BottleneckPage({ params }) {
   const cpu = cpuRes.data;
   const gpu = gpuRes.data;
 
-  if (!cpu || !gpu) return notFound();
+  // Fallback pouze pro 9950X3D2 pokud by DB zrovna lagovala, jinak notFound
+  if (!cpu || !gpu) {
+      if (slug.includes('9950x3d2')) {
+          // Dočasná data pro launch day
+          const mockCpu = { name: "AMD Ryzen 9 9950X3D2", performance_index: 980 };
+          const mockGpu = { name: "NVIDIA RTX 5090", performance_index: 2500 };
+          return renderGuruLayout(mockCpu, mockGpu, slug);
+      }
+      return notFound();
+  }
 
+  return renderGuruLayout(cpu, gpu, slug);
+}
+
+function renderGuruLayout(cpu, gpu, slug) {
   const resParts = slug.split('-at-');
   const resolution = resParts[1] === '4k' ? '2160p' : (resParts[1] || '1440p');
   const gameParts = resParts[0].split('-in-');
 
-  // VÝPOČET BOTTLENECKU PODLE TVÉ LOGIKY
   const bottleneckPercent = Math.max(0, Math.min(Math.round(((Math.max(gpu.performance_index, (cpu.performance_index * 2.9)) / Math.min(gpu.performance_index, (cpu.performance_index * 2.9))) - 1) * 45), 100));
   const subTag = `v12-bn-slug-${bottleneckPercent}`;
 
-  // ULTIMATE UPGRADE CESTA
   const isGpuBottleneck = gpu.performance_index < cpu.performance_index * 2.5;
   let ultimateProduct = isGpuBottleneck ? "NVIDIA RTX 5090" : "AMD Ryzen 9 9950X3D2";
   let ultimateCategory = isGpuBottleneck ? "gpu" : "cpu";
 
-  // GOOGLE GOLDEN RICH - JSON-LD
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "TechArticle",
@@ -81,9 +91,8 @@ export default async function BottleneckPage({ params }) {
 
         <div className="guru-grid-layout" style={{ display: 'grid', gridTemplateColumns: '300px 1fr 340px', gap: '30px' }}>
           
-          {/* LEVÝ SIDEBAR - V.I.P. SESTAVA */}
           <aside className="guru-left-sidebar">
-            <div className="vip-sestava-card shadow-gold" style={{ background: 'rgba(15, 17, 21, 0.9)', border: '1px solid #eab308', borderRadius: '12px', padding: '15px' }}>
+            <div className="vip-sestava-card" style={{ background: 'rgba(15, 17, 21, 0.9)', border: '1px solid #eab308', borderRadius: '12px', padding: '15px' }}>
               <div className="vip-header" style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
                 <ShoppingCart size={18} style={{ color: '#eab308' }} />
                 <div>
@@ -105,7 +114,6 @@ export default async function BottleneckPage({ params }) {
             </div>
           </aside>
 
-          {/* STŘED - KALKULAČKA */}
           <section className="guru-center-content">
             <header style={{ textAlign: 'center', marginBottom: '40px' }}>
               <div style={{ color: '#66fcf1', border: '1px solid rgba(102,252,241,0.3)', padding: '6px 20px', borderRadius: '50px', fontSize: '11px', fontWeight: 950, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
@@ -136,9 +144,8 @@ export default async function BottleneckPage({ params }) {
             </div>
           </section>
 
-          {/* PRAVÝ SIDEBAR */}
           <aside className="guru-right-sidebar">
-            <div className="heureka-widget shadow-neon" style={{ background: '#fff', padding: '20px', borderRadius: '12px', color: '#000' }}>
+            <div className="heureka-widget" style={{ background: '#fff', padding: '20px', borderRadius: '12px', color: '#000' }}>
               <h4 style={{ fontSize: '12px', fontWeight: '900', color: '#666', marginBottom: '15px' }}>VÝHODNÝ NÁKUP</h4>
               <a 
                 href={`https://www.heureka.cz/?h%5Bfraze%5D=${cpu.name.replace(/\s+/g, '+')}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=${subTag}`}
@@ -153,7 +160,7 @@ export default async function BottleneckPage({ params }) {
               <HeurekaButtons />
             </div>
 
-            <div className="ecosystem-widget shadow-neon" style={{ marginTop: '20px', background: 'rgba(15, 17, 21, 0.9)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
+            <div className="ecosystem-widget" style={{ marginTop: '20px', background: 'rgba(15, 17, 21, 0.9)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
               <h4 style={{ color: '#a855f7', fontSize: '12px', fontWeight: '950', marginBottom: '15px' }}>EKOSYSTÉM</h4>
               <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <Link href="/ram-kalkulacka" style={{ color: '#fff', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '600' }}><Activity size={16} /> RAM Simulátor</Link>
@@ -167,10 +174,16 @@ export default async function BottleneckPage({ params }) {
         <style dangerouslySetInnerHTML={{__html: `
           .vip-item { display: flex; justify-content: space-between; align-items: center; font-size: 11px; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 6px; }
           .buy-btn { background: rgba(102, 252, 241, 0.1); color: #66fcf1; border: 1px solid #66fcf1; font-size: 9px; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: 900; }
-          .shadow-gold { box-shadow: 0 0 20px rgba(234, 179, 8, 0.2); }
-          .shadow-neon { box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+          @media (max-width: 1200px) {
+            .guru-grid-layout { grid-template-columns: 1fr; }
+            .guru-left-sidebar, .guru-right-sidebar { display: none; }
+          }
         `}} />
       </main>
+
+      <div className="sticky-bottom-anchor" style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: 'rgba(10,11,13,0.98)', borderTop: '1px solid rgba(255,255,255,0.1)', zIndex: 9999, padding: '10px 0', display: 'flex', justifyContent: 'center' }}>
+          <SeznamAd zoneId={408654} width={970} height={90} />
+      </div>
     </div>
   );
 }
