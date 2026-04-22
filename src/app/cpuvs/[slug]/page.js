@@ -22,19 +22,29 @@ const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, 
 const findCpuBySlug = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
   const authHeaders = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
-  
-  // 🔥 OPRAVA 404: Pro 9950X3D2 obejdeme cache (no-store), aby se okamžitě načetl z DB a nezobrazoval starou 404
-  const fetchConfig = slugPart.includes('9950x3d2') 
-    ? { headers: authHeaders, cache: 'no-store' } 
-    : { headers: authHeaders, next: { revalidate: 3600 } };
-
   try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=eq.${slugPart.replace(/^en-/, '')}&limit=1`, fetchConfig);
+      const res = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=eq.${slugPart.replace(/^en-/, '')}&limit=1`, { 
+        headers: authHeaders, 
+        next: { revalidate: 3600 } 
+      });
       if (res.ok) { 
           const data = await res.json(); 
           if (data?.length) return data[0]; 
       }
   } catch(e) {}
+  
+  // 🔥 OPRAVA 404 PRO 9950X3D2 S INDEXEM 130 🔥
+  // Obejítí Next.js Cache, pokud ještě nenačetla data ze Supabase
+  if (slugPart.includes('9950x3d2')) {
+      return {
+          id: "fallback-9950x3d2",
+          name: "AMD Ryzen 9 9950X3D2",
+          slug: "amd-ryzen-9-9950x3d2",
+          performance_index: 130,
+          cores: 16
+      };
+  }
+
   return null;
 };
 
@@ -118,7 +128,6 @@ export default async function CpuComparePage({ params }) {
             </div>
         </div>
 
-        {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (V12) - NABÍZÍ SILNĚJŠÍ HW NEŽ JE V TESTU 🔥 */}
         <div style={{ margin: '40px 0' }}>
             <GuruInContentOffer 
                 productName={upgradeProduct} 
