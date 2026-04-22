@@ -21,24 +21,15 @@ const normalizeName = (name = '') => name.replace(/AMD |Intel |Ryzen |Core /gi, 
 
 const findCpuBySlug = async (slugPart) => {
   if (!supabaseUrl || !slugPart) return null;
-  
-  // 🔥 OPRAVA PRO 404: Launch Day Bypass pro novinku, pokud DB ještě nemá data
-  if (slugPart.replace(/^en-/, '') === 'amd-ryzen-9-9950x3d2') {
-    return {
-      id: "mock-9950x3d2",
-      name: "AMD Ryzen 9 9950X3D2",
-      slug: "amd-ryzen-9-9950x3d2",
-      performance_index: 980,
-      cores: 16
-    };
-  }
-
   const authHeaders = { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` };
+  
+  // 🔥 OPRAVA 404: Pro 9950X3D2 obejdeme cache (no-store), aby se okamžitě načetl z DB a nezobrazoval starou 404
+  const fetchConfig = slugPart.includes('9950x3d2') 
+    ? { headers: authHeaders, cache: 'no-store' } 
+    : { headers: authHeaders, next: { revalidate: 3600 } };
+
   try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=eq.${slugPart.replace(/^en-/, '')}&limit=1`, { 
-        headers: authHeaders, 
-        next: { revalidate: 3600 } 
-      });
+      const res = await fetch(`${supabaseUrl}/rest/v1/cpus?select=*,cpu_game_fps!cpu_id(*)&slug=eq.${slugPart.replace(/^en-/, '')}&limit=1`, fetchConfig);
       if (res.ok) { 
           const data = await res.json(); 
           if (data?.length) return data[0]; 
@@ -84,13 +75,8 @@ export default async function CpuComparePage({ params }) {
   
   // 🔥 INTELIGENTNÍ DOPORUČENÍ - VŽDY SILNĚJŠÍ CESTA 🔥
   const isWinnerUltimate = winnerCpu.name.includes('9800X3D') || winnerCpu.name.includes('9950X');
-  let upgradeProduct = isWinnerUltimate ? "ASUS ROG CROSSHAIR X870E" : "AMD Ryzen 7 9800X3D";
-  let upgradeCategory = isWinnerUltimate ? "mb" : "cpu";
-
-  // Pokud je v testu novinka 9950X3D2, doporučíme ji místo 9800X3D
-  if (upgradeProduct === "AMD Ryzen 7 9800X3D" && (cpuA.name.includes('9950X3D2') || cpuB.name.includes('9950X3D2'))) {
-      upgradeProduct = "AMD Ryzen 9 9950X3D2";
-  }
+  const upgradeProduct = isWinnerUltimate ? "ASUS ROG CROSSHAIR X870E" : "AMD Ryzen 7 9800X3D";
+  const upgradeCategory = isWinnerUltimate ? "mb" : "cpu";
 
   // 🔥 AFFILIATE LINKY PRO EXISTUJÍCÍ TLAČÍTKA (V10 GOLDEN OPRAVA FRAGMENTU) 🔥
   const getHeurekaUrl = (name) => `https://www.heureka.cz/?h%5Bfraze%5D=${encodeURIComponent(name + ' procesor')}#utm_source=thehardwareguru.cz&utm_medium=affiliate&utm_campaign=25842&utm_content=cpuvs-direct`;
