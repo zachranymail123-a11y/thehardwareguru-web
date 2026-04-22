@@ -9,6 +9,7 @@ import SeznamAd from '../../../components/SeznamAd';
 import BottleneckFatContent from '../../../components/BottleneckFatContent'; 
 import { createClient } from '@supabase/supabase-js';
 import GuruInContentOffer from '../../../components/GuruInContentOffer';
+import Script from 'next/script';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -66,23 +67,22 @@ export default function BottleneckPage({ params }) {
   if (!cpu || !gpu) return notFound();
 
   const bottleneckPercent = Math.max(0, Math.min(Math.round(((Math.max(gpu.performance_index, (cpu.performance_index * 2.9)) / Math.min(gpu.performance_index, (cpu.performance_index * 2.9))) - 1) * 45), 100));
-  const afterFps = Math.round(60 * (1 + (bottleneckPercent / 100) + 0.2));
   
-  const targetGpuName = upgradeGpu?.name || "RTX 5070";
-  const targetCpuName = upgradeCpu?.name || "Ryzen 7 9800X3D";
+  const targetGpuName = upgradeGpu?.name || "NVIDIA RTX 5090";
+  const targetCpuName = upgradeCpu?.name || "AMD Ryzen 9 9950X3D2";
 
   const isGpuBottleneck = gpu.performance_index < cpu.performance_index * 2.5;
 
-  // 🔥 INTELIGENTNÍ ULTIMATE UPGRADE (ŽÁDNÁ DUPLICITA) 🔥
+  // 🔥 ULTIMÁTNÍ UPGRADE LOGIKA PRO 9950X3D2 🔥
   let ultimateProduct = isGpuBottleneck ? "NVIDIA RTX 5080" : "AMD Ryzen 7 9800X3D";
   let ultimateCategory = isGpuBottleneck ? "gpu" : "cpu";
 
   if (ultimateProduct === targetGpuName) ultimateProduct = "NVIDIA RTX 5090";
-  if (ultimateProduct === targetCpuName) ultimateProduct = "AMD Ryzen 9 9950X";
+  // Pokud je návrh stejný jako stávající upgrade nebo hledáme absolutní top, dáme X3D2
+  if (ultimateProduct === targetCpuName || !isGpuBottleneck) ultimateProduct = "AMD Ryzen 9 9950X3D2";
 
-  const subTag = `v10-bn-slug-${bottleneckPercent}`;
+  const subTag = `v12-bn-slug-${bottleneckPercent}`;
 
-  // 🔥 OPRAVENÝ HEUREKA LINK S # PRO UTM PARAMETRY 🔥
   const getCleanHeurekaLink = (name, type) => {
       let query = String(name || '').replace(/NVIDIA |AMD |Intel |Ryzen |Core /gi, '').trim();
       if (type === 'cpu') query += " procesor";
@@ -100,8 +100,20 @@ export default function BottleneckPage({ params }) {
 
   const getSmartyLink = (name) => `https://ehub.cz/system/scripts/click.php?a_aid=71c85dea&a_bid=1651aa06&desturl=${encodeURIComponent(`https://www.smarty.cz/Vyhledavani?query=${encodeURIComponent(name.replace(/NVIDIA |AMD |Intel /gi, '').trim())}`)}`;
 
+  // GOOGLE GOLDEN RICH - JSON-LD
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": `Bottleneck Test: ${cpu.name} + ${gpu.name}`,
+    "description": `Analýza úzkého hrdla pro sestavu s ${cpu.name} a ${gpu.name}. Výpočet bottlenecku v rozlišení ${resolution}.`,
+    "author": { "@type": "Person", "name": "Hardware Guru" },
+    "datePublished": "2026-04-22"
+  };
+
   return (
     <div className="guru-bottleneck-wrapper" style={{ minHeight: '100vh', backgroundColor: '#0a0b0d', backgroundImage: 'url("/bg-guru.png")', backgroundSize: 'cover', backgroundAttachment: 'fixed', paddingTop: '120px', paddingBottom: '160px', color: '#fff', fontFamily: 'sans-serif' }}>
+      <Script type="application/ld+json" id="json-ld" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      
       <main style={{ maxWidth: '1100px', margin: '0 auto', width: '100%', padding: '0 20px' }}>
         <SeznamAd zoneId={408654} width={970} height={210} />
         
@@ -114,7 +126,6 @@ export default function BottleneckPage({ params }) {
           </h1>
         </header>
 
-        {/* 🔥 GURU INTELIGENTNÍ DOPORUČENÍ (ULTIMATE CESTA) 🔥 */}
         <div style={{ margin: '40px 0' }}>
             <GuruInContentOffer 
                 productName={ultimateProduct} 
@@ -140,7 +151,6 @@ export default function BottleneckPage({ params }) {
                 </div>
                 <div style={{ fontWeight: 900, color: '#a855f7' }}>🔥 {targetGpuName}</div>
                 
-                {/* 🔥 PŘIDÁNA TŘÍDA A POSITION ID PRO GPU 🔥 */}
                 <a 
                   href={getCleanHeurekaLink(targetGpuName, 'gpu')} 
                   onClick={() => handleSilentLog('gpu')}
@@ -165,7 +175,6 @@ export default function BottleneckPage({ params }) {
                 </div>
                 <div style={{ fontWeight: 900, color: '#a855f7' }}>🔥 {targetCpuName}</div>
                 
-                {/* 🔥 PŘIDÁNA TŘÍDA A POSITION ID PRO CPU 🔥 */}
                 <a 
                   href={getCleanHeurekaLink(targetCpuName, 'cpu')} 
                   onClick={() => handleSilentLog('cpu')}
