@@ -117,17 +117,17 @@ export default function ContactPage(props) {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', fontSize: '1.1rem', color: '#d1d5db' }}>
                 <div>
                   <strong style={{ color: '#fff' }}>{isEn ? 'Name:' : 'Jméno / Fyzická osoba:'}</strong><br/>
-                  Petr Ťapťuch
+                  TheHardwareGuru
                 </div>
                 <div>
                   <strong style={{ color: '#fff' }}>{isEn ? 'Address:' : 'Sídlo / Adresa:'}</strong><br/>
-                  Albrechtická 560/94<br/>
-                  794 01 Krnov<br/>
+                  Guruland 11<br/>
+                  111 11 Guruland<br/>
                   {isEn ? 'Czech Republic' : 'Česká republika'}
                 </div>
                 <div>
                   <strong style={{ color: '#fff' }}>{isEn ? 'Reg. Number (IČO):' : 'IČO:'}</strong><br/>
-                  69606846
+                  11111111
                   <div style={{ fontSize: '0.85rem', marginTop: '4px', color: '#9ca3af' }}>{isEn ? 'Non-VAT payer' : 'Neplátce DPH'}</div>
                 </div>
               </div>
